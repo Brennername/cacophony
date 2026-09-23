@@ -187,36 +187,36 @@ To specify the native engine mechanisms required to support resource-constrained
 - [x] T8.10: Implement automated Gitea OAuth2 application registration script on container startup (registers `cacophony-dashboard` client credentials automatically via Gitea CLI so manual UI admin setup is eliminated).
 
 ## Phase 9: Modern Angular Dashboard & System Monitor
-- [ ] T9.1: Initialize Angular v20+ standalone zoneless application with mobile-first CSS architecture.
-- [ ] T9.2: Create design system with CSS custom properties:
-  - [ ] T9.2.1: Dark Theme (default: deep slate backgrounds, high-contrast crisp text, subtle borders).
-  - [ ] T9.2.2: Light Theme (clean, high-contrast daylight mode).
-  - [ ] T9.2.3: High Contrast Theme (WCAG AAA compliant black/yellow/white styling).
-- [ ] T9.3: Build Hardware Diagnostics Monitor component (KDE System Monitor aesthetic):
-  - [ ] T9.3.1: Live animated meters for GPU Busy %, VRAM used/total, GTT used/total.
-  - [ ] T9.3.2: Thermal status badge with zone color coding (Nominal, Warm, Elevated, Danger) and degrees Celsius.
-  - [ ] T9.3.3: Electrical & frequency readouts: vddgfx voltage (mV), PPT power (W), sclk frequency (MHz).
-  - [ ] T9.3.4: Active loaded Ollama model badge with VRAM allocation footprint.
-- [ ] T9.4: Build Live Queue & Active Task Inspector component:
-  - [ ] T9.4.1: Stepper visualization of active task stages (Generation -> Scrub -> Test -> Review -> Merge).
-  - [ ] T9.4.2: Streaming log terminal with search and autoscroll.
-  - [ ] T9.4.3: Live token processing speed gauge (tokens/sec).
-- [ ] T9.5: Build Queue Management component:
-  - [ ] T9.5.1: Priority re-ordering (drag or move up/down), priority tags (P0, P1, P2).
-  - [ ] T9.5.2: Pause, Resume, and Drain controls for scheduler daemon.
-  - [ ] T9.5.3: Manual task creation form with focus files and test command inputs.
-- [ ] T9.6: Build Task History & Metrics component:
-  - [ ] T9.6.1: Filterable table of past runs (Passed, Failed, Remediated).
-  - [ ] T9.6.2: Direct links to Gitea PRs, commit diffs, and issue tickets.
-  - [ ] T9.6.3: Rolling success rate gauge, model health leaderboard, and failure reason taxonomy.
-- [ ] T9.7: Build Test Runner & Process Monitor component:
-  - [ ] T9.7.1: Process table showing non-model spawned tasks (npm test, vitest, mvn test, linters, git operations).
-  - [ ] T9.7.2: Execution duration, exit code, and live stdout/stderr inspection.
-- [ ] T9.8: Build Frontier Decomposition Modal:
-  - [ ] T9.8.1: Prompt box for high-level goal input.
-  - [ ] T9.8.2: Interactive preview of decomposed tasks before committing to queue.
-- [ ] T9.9: Write component tests verifying signals reactivity, mobile responsiveness, and theme switching.
-- [ ] T9.10: Implement Gitea SSO Auth Guard and Login/Callback components (login with Gitea, token storage, user session state).
+- [x] T9.1: Initialize Angular v20+ standalone zoneless application with mobile-first CSS architecture.
+- [x] T9.2: Create design system with CSS custom properties:
+  - [x] T9.2.1: Dark Theme (default: deep slate backgrounds, high-contrast crisp text, subtle borders).
+  - [x] T9.2.2: Light Theme (clean, high-contrast daylight mode).
+  - [x] T9.2.3: High Contrast Theme (WCAG AAA compliant black/yellow/white styling).
+- [x] T9.3: Build Hardware Diagnostics Monitor component (KDE System Monitor aesthetic):
+  - [x] T9.3.1: Live animated meters for GPU Busy %, VRAM used/total, GTT used/total.
+  - [x] T9.3.2: Thermal status badge with zone color coding (Nominal, Warm, Elevated, Danger) and degrees Celsius.
+  - [x] T9.3.3: Electrical & frequency readouts: vddgfx voltage (mV), PPT power (W), sclk frequency (MHz).
+  - [x] T9.3.4: Active loaded Ollama model badge with VRAM allocation footprint.
+- [x] T9.4: Build Live Queue & Active Task Inspector component:
+  - [x] T9.4.1: Stepper visualization of active task stages (Generation -> Scrub -> Test -> Review -> Merge).
+  - [x] T9.4.2: Streaming log terminal with search and autoscroll.
+  - [x] T9.4.3: Live token processing speed gauge (tokens/sec).
+- [x] T9.5: Build Queue Management component:
+  - [x] T9.5.1: Priority re-ordering (drag or move up/down), priority tags (P0, P1, P2).
+  - [x] T9.5.2: Pause, Resume, and Drain controls for scheduler daemon.
+  - [x] T9.5.3: Manual task creation form with focus files and test command inputs.
+- [x] T9.6: Build Task History & Metrics component:
+  - [x] T9.6.1: Filterable table of past runs (Passed, Failed, Remediated).
+  - [x] T9.6.2: Direct links to Gitea PRs, commit diffs, and issue tickets.
+  - [x] T9.6.3: Rolling success rate gauge, model health leaderboard, and failure reason taxonomy.
+- [x] T9.7: Build Test Runner & Process Monitor component:
+  - [x] T9.7.1: Process table showing non-model spawned tasks (npm test, vitest, mvn test, linters, git operations).
+  - [x] T9.7.2: Execution duration, exit code, and live stdout/stderr inspection.
+- [x] T9.8: Build Frontier Decomposition Modal:
+  - [x] T9.8.1: Prompt box for high-level goal input.
+  - [x] T9.8.2: Interactive preview of decomposed tasks before committing to queue.
+- [x] T9.9: Write component tests verifying signals reactivity, mobile responsiveness, and theme switching.
+- [x] T9.10: Implement Gitea SSO Auth Guard and Login/Callback components (login with Gitea, token storage, user session state).
 
 ## Phase 10: System Integration, End-to-End Validation & Documentation
 - [ ] T10.1: Build unified startup entrypoint running HTTP API, SSE streaming, task scheduler, and Angular web server.

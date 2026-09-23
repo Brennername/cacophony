@@ -10,7 +10,6 @@
   "bin": {
     "cacophony": "./bin/cacophony"
   },
-
   "scripts": {
     "build": "npm run --workspaces --if-present build",
     "test": "npm run --workspaces --if-present test",
@@ -23,7 +22,7 @@
   "devDependencies": {
     "@types/node": "^22.13.0",
     "prettier": "^3.5.0",
-    "typescript": "^5.7.0"
+    "typescript": "~6.0.2"
   },
   "engines": {
     "node": ">=22.0.0"

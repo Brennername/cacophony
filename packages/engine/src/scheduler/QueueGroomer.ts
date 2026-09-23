@@ -36,7 +36,7 @@ export class QueueGroomer {
     this.projectDir = projectDir;
     this.stackDetector = stackDetector ?? new StackDetector();
     this.defaultDirectives = defaultDirectives ?? [
-      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages.",
+      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented.",
       "Quality Standards: Adhere strictly to SOLID principles, modularity, and explicit typing.",
       "Documentation: Comment code thoroughly explaining how and why functionality is structured."
     ];
@@ -110,7 +110,7 @@ export class QueueGroomer {
       taskDirectives.push("Feature Exemption: Emojis permitted where required for feature functionality.");
       groomNotes.push("Feature emoji exemption detected and injected into prompt directives.");
     } else {
-      taskDirectives.push("Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages.");
+      taskDirectives.push("Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented.");
     }
 
     if (allowedImports.size > 0) {

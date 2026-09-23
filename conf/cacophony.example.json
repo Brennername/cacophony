@@ -58,7 +58,7 @@
   "directives": [
     "Strict TypeScript: Explicit typing required on all parameters and returns. No 'any' or 'unknown'.",
     "ECMAScript Module Resolution (NodeNext): All relative imports must include explicit '.js' extensions.",
-    "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages.",
+    "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented.",
     "SOLID Principles: Single responsibility, decoupled interfaces, dependency injection.",
     "Mobile-First Design: All web user interfaces must prioritize mobile layouts before desktop adaptation."
   ]

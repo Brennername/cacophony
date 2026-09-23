@@ -17,7 +17,7 @@ export const DEFAULT_STACK_PROFILES: readonly IStackProfile[] = [
     directives: [
       "ECMAScript Module Resolution (NodeNext): All relative imports must include explicit '.js' extensions.",
       "Strict TypeScript: Explicit typing on all parameters and returns. No 'any' or 'unknown'.",
-      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages."
+      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented."
     ],
     defaultScrubberRules: [
       "EmojiScrubberRule",
@@ -41,7 +41,7 @@ export const DEFAULT_STACK_PROFILES: readonly IStackProfile[] = [
     directives: [
       "Standard Module Resolution: Relative imports should omit file extensions.",
       "Strict TypeScript: Explicit typing on all parameters and returns. No 'any' or 'unknown'.",
-      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages."
+      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented."
     ],
     defaultScrubberRules: [
       "EmojiScrubberRule",
@@ -59,7 +59,7 @@ export const DEFAULT_STACK_PROFILES: readonly IStackProfile[] = [
     directives: [
       "Java Clean Code: Adhere to standard Java package structures mirroring src/main/java and src/test/java.",
       "Explicit Signatures: Strict public/private visibility and full generics type annotations.",
-      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages."
+      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented."
     ],
     defaultScrubberRules: ["EmojiScrubberRule", "JavaPackageScrubberRule", "BannedImportsScrubberRule"],
     defaultDisabledScrubbers: ["EsmRelativeImportScrubberRule", "ExtensionHeuristicScrubberRule"]
@@ -73,7 +73,7 @@ export const DEFAULT_STACK_PROFILES: readonly IStackProfile[] = [
     directives: [
       "Java Clean Code: Adhere to standard Java package structures mirroring src/main/java and src/test/java.",
       "Explicit Signatures: Strict public/private visibility and full generics type annotations.",
-      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages."
+      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented."
     ],
     defaultScrubberRules: ["EmojiScrubberRule", "JavaPackageScrubberRule", "BannedImportsScrubberRule"],
     defaultDisabledScrubbers: ["EsmRelativeImportScrubberRule", "ExtensionHeuristicScrubberRule"]
@@ -87,7 +87,7 @@ export const DEFAULT_STACK_PROFILES: readonly IStackProfile[] = [
     directives: [
       "Go Idioms: Handle errors explicitly; do not panic in standard library or service code.",
       "Strict Formatting: Adhere to gofmt conventions.",
-      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages."
+      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented."
     ],
     defaultScrubberRules: ["EmojiScrubberRule"],
     defaultDisabledScrubbers: [
@@ -104,7 +104,7 @@ export const DEFAULT_STACK_PROFILES: readonly IStackProfile[] = [
     defaultTestRunner: "cargo test",
     directives: [
       "Rust Idioms: Strict ownership, pattern matching, Result/Option error handling without unwrap().",
-      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages."
+      "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented."
     ],
     defaultScrubberRules: ["EmojiScrubberRule"],
     defaultDisabledScrubbers: [
@@ -124,7 +124,7 @@ export const GENERIC_STACK_PROFILE: IStackProfile = {
   directives: [
     "Quality Standards: Adhere strictly to SOLID principles, modularity, and explicit typing.",
     "Documentation: Comment code thoroughly explaining how and why functionality is structured.",
-    "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages."
+    "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented."
   ],
   defaultScrubberRules: ["EmojiScrubberRule"]
 };
