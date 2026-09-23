@@ -6,6 +6,7 @@ import { migration004 } from "./004_model_registry.js";
 import { migration005 } from "./005_persistent_sessions.js";
 import { migration006 } from "./006_repository_symbol_graph.js";
 import { migration007 } from "./007_git_checkpoints.js";
+import { migration008 } from "./008_test_execution_runs.js";
 
 /**
  * MigrationRegistry
@@ -21,7 +22,8 @@ export class MigrationRegistry {
     migration004,
     migration005,
     migration006,
-    migration007
+    migration007,
+    migration008
   ];
 
   /**

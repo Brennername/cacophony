@@ -17,3 +17,4 @@ export * from "./lsp/index.js";
 export * from "./repomap/index.js";
 export * from "./context/index.js";
 export * from "./git/index.js";
+export * from "./testing/index.js";
