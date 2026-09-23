@@ -1,7 +1,7 @@
 {
-  "name": "@cacophony/engine",
+  "name": "@cacophony/tools",
   "version": "1.0.0",
-  "description": "Core orchestration engine, task scheduler, hardware telemetry daemon, and agent runtime",
+  "description": "Deterministic tool execution suite, execution guard, and MCP server for Cacophony",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -14,13 +14,11 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "node --test dist/**/*.test.js",
-    "dev": "node dist/index.js"
+    "test": "node --test dist/tests/*.test.js"
   },
   "dependencies": {
     "@cacophony/shared-types": "*",
-    "@cacophony/db": "*",
-    "@cacophony/tools": "*"
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

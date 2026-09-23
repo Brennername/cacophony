@@ -9,7 +9,7 @@
 - Mobile-first responsive UI with Dark Mode (default), Light Mode, and High Contrast Mode.
 - All secrets strictly confined to .env and encrypted vault.
 - Never delete source files with rm; move deprecated files to .trash/ with justification documentation.
-- Always commit changes, 
+- Always commit changes, update ignore files, and do the things necessary to keep the workspace clean. if you need to use a branch or worktree or workbranch or whatever, do so, but make sure your work is prod ready.
 ---
 
 # Technical Design Document: Local LLM Code Generation & Adaptation Layer
@@ -152,23 +152,21 @@ To specify the native engine mechanisms required to support resource-constrained
   - [x] T7.0.3: Implement Live LLM Stream Tap & Audit engine (tap, suspend, resume, untap real-time generation tokens via IPC broadcast).
   - [x] T7.0.4: Create executable script `bin/cacophony` in project root and register package.json bin entry point.
   - [x] T7.0.5: Write unit tests verifying CLI dispatch, IPC communication, lifecycle state transitions, and stream tap/untap.
-- [ ] T7.1: Implement ICacophonyTool interface with Zod parameter schemas, documentation metadata, and execution handlers.
-
-
-- [ ] T7.2: Implement core file system tools:
-  - [ ] T7.2.1: `view_file` (with line slicing, start/end bounds, byte offset pagination).
-  - [ ] T7.2.2: `replace_file_content` (precise single contiguous block replacement).
-  - [ ] T7.2.3: `multi_replace_file_content` (multiple atomic block replacements in a single invocation).
-  - [ ] T7.2.4: `write_to_file` (safe file creation and overwrite).
-  - [ ] T7.2.5: `list_dir` (directory inspection with recursive child counting).
-- [ ] T7.3: Implement search and analysis tools:
-  - [ ] T7.3.1: `grep_search` (ripgrep/regex matching with line numbers and file filtering).
-  - [ ] T7.3.2: `locate_feature` (symbol and identifier finder).
-  - [ ] T7.3.3: `ast_inspect` (structural extraction of interfaces, classes, and function signatures).
-  - [ ] T7.3.4: `regex_tool` (pattern search and batch sed replacement).
-- [ ] T7.4: Implement `run_command` with ExecutionGuard security filter (blacklisting destructive commands: rm, sudo, dd, mkfs, git reset --hard, git push --force).
-- [ ] T7.5: Build McpServer exposing all registered tools over stdio and SSE for external AI agents and IDEs.
-- [ ] T7.6: Write unit tests for all tools verifying parameter validation, boundary conditions, and execution guards.
+- [x] T7.1: Implement ICacophonyTool interface with Zod parameter schemas, documentation metadata, and execution handlers.
+- [x] T7.2: Implement core file system tools:
+  - [x] T7.2.1: `view_file` (with line slicing, start/end bounds, byte offset pagination).
+  - [x] T7.2.2: `replace_file_content` (precise single contiguous block replacement).
+  - [x] T7.2.3: `multi_replace_file_content` (multiple atomic block replacements in a single invocation).
+  - [x] T7.2.4: `write_to_file` (safe file creation and overwrite).
+  - [x] T7.2.5: `list_dir` (directory inspection with recursive child counting).
+- [x] T7.3: Implement search and analysis tools:
+  - [x] T7.3.1: `grep_search` (ripgrep/regex matching with line numbers and file filtering).
+  - [x] T7.3.2: `locate_feature` (symbol and identifier finder).
+  - [x] T7.3.3: `ast_inspect` (structural extraction of interfaces, classes, and function signatures).
+  - [x] T7.3.4: `regex_tool` (pattern search and batch sed replacement).
+- [x] T7.4: Implement `run_command` with ExecutionGuard security filter (blacklisting destructive commands: rm, sudo, dd, mkfs, git reset --hard, git push --force).
+- [x] T7.5: Build McpServer exposing all registered tools over stdio and SSE for external AI agents and IDEs.
+- [x] T7.6: Write unit tests for all tools verifying parameter validation, boundary conditions, and execution guards.
 
 ## Phase 8: Gitea Integration & Automated Development Cycle
 - [ ] T8.1: Implement GiteaApiClient for repository management, branch creation, commit querying, and PR operations.

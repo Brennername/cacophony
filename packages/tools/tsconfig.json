@@ -5,9 +5,7 @@
     "outDir": "./dist"
   },
   "references": [
-    { "path": "../shared-types" },
-    { "path": "../db" },
-    { "path": "../tools" }
+    { "path": "../shared-types" }
   ],
   "include": ["src/**/*"]
 }
