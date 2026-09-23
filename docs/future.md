@@ -1,10 +1,17 @@
-# Future Architecture & Planned Capabilities: Gitea API Integration & Least-Privilege Permission Guardrails
+# Future Capabilities & Conceptual Feature Roadmap (`docs/future.md`)
 
-This document outlines architectural plans for post-Phase 16 feature sets, specifically focused on deep Gitea API integration and fine-grained, least-privilege permission guardrails across the Cacophony subsystem topology.
+> [!IMPORTANT]
+> **Operational Purpose & Authoring Directive:**
+> This document serves as the high-level conceptual repository for uncommitted future features, aspirational ideas, and exploratory capabilities.
+> When updating this document, the AI assistant must **synthesize and distill** raw user ideas into clear, cohesive, and logically structured architectural specifications.
+> **Do NOT copy verbatim or reproduce incoherent prompt phrasing.** Reorganize, categorize, and logically design the content so it cleanly articulates the features envisioned for the future, without prematurely committing them to the active implementation roadmap.
+> Once specific features are selected and approved for active architectural design, they transition from this document to [`docs/planning.md`](file:///home/nexen/projects/cacophony/docs/planning.md), where they will be broken down into concrete phases to form the next taskcade.
 
 ---
 
-## 1. Gitea API Scopes & Access Control Matrix
+## 1. Gitea API Integration & Least-Privilege Permission Guardrails
+
+### 1.1 Gitea API Scopes & Access Control Matrix
 
 Selected token permissions limit authorization strictly to the corresponding [API](http://localhost:19634/api/swagger) routes. Reference: [Gitea OAuth2 Provider Documentation](https://docs.gitea.com/development/oauth2-provider#scopes).
 
@@ -22,11 +29,11 @@ Selected token permissions limit authorization strictly to the corresponding [AP
 
 ---
 
-## 2. Least-Privilege Permission Guardrails
+### 1.2 Least-Privilege Permission Guardrails
 
 Just as modern database architectures separate permissions between read-replicas, write masters, and migration operators, Cacophony enforces strict privilege separation between agent roles and UI layers. No single token or agent possesses blanket permissions across the entire platform.
 
-### Subsystem Permission Segregation
+#### Subsystem Permission Segregation
 1. **Public / Read-Only Inspector (Web Dashboard)**:
    - Scopes: `repository:read`, `user:read`, `issue:read`.
    - Guardrail: Cannot mutate git branches, alter repository settings, or trigger unauthorized PRs.
@@ -42,16 +49,16 @@ Just as modern database architectures separate permissions between read-replicas
 
 ---
 
-## 3. Deep Gitea API Integration Capabilities
+### 1.3 Deep Gitea API Integration Capabilities
 
-### Autonomous Issue-to-Pull-Request Lifecycle
+#### Autonomous Issue-to-Pull-Request Lifecycle
 - Automated task ingestion directly from assigned Gitea issues via `GET /repos/{owner}/{repo}/issues`.
 - Dynamic branching for incoming tasks via `POST /repos/{owner}/{repo}/branches`.
 - Automated submission of detailed pull requests with structured markdown summaries and test verification reports via `POST /repos/{owner}/{repo}/pulls`.
 - Automated code reviews evaluating SOLID compliance, test coverage, and security boundaries via `POST /repos/{owner}/{repo}/pulls/{index}/reviews`.
 
-### Real-Time Webhook Event Dispatching
+#### Real-Time Webhook Event Dispatching
 - Bi-directional event hooks capturing `issue_comment`, `pull_request`, and `push` events to trigger arena tasks immediately without constant polling overhead.
 
-### Integrated Package & Artifact Provenance
+#### Integrated Package & Artifact Provenance
 - Direct integration with Gitea's built-in package registry to publish and verify reproducible build bundles, test caches, and distribution packages.
