@@ -69,4 +69,23 @@ describe("Unified Startup Entrypoint & End-to-End Server Validation", () => {
     const tasks = (await listRes.json()) as Array<{ title: string }>;
     assert.ok(tasks.some((t) => t.title === "E2E Automated Task"));
   });
+
+  it("should resolve dynamic host origin and return network profile from /api/config/network", async () => {
+    const res = await fetch(`http://127.0.0.1:${testHttpPort}/api/config/network`, {
+      headers: {
+        "X-Forwarded-Host": "192.168.1.150:24072",
+        "X-Forwarded-Proto": "https",
+        Origin: "https://192.168.1.150:24072"
+      }
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers.get("access-control-allow-origin"), "https://192.168.1.150:24072");
+    assert.ok(res.headers.get("content-security-policy")?.includes("default-src"));
+
+    const data = (await res.json()) as { resolvedOrigin: string; isLan: boolean; isLoopback: boolean };
+    assert.strictEqual(data.resolvedOrigin, "https://192.168.1.150:24072");
+    assert.strictEqual(data.isLan, true);
+    assert.strictEqual(data.isLoopback, false);
+  });
 });

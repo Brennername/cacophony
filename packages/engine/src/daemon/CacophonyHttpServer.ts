@@ -71,16 +71,40 @@ export class CacophonyHttpServer {
   }
 
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+    // Dynamic Origin & Host Resolution
+    const forwardedProto = (req.headers["x-forwarded-proto"] as string) || "http";
+    const forwardedHost = (req.headers["x-forwarded-host"] as string) || req.headers.host || "localhost:24161";
+    const clientOrigin = `${forwardedProto}://${forwardedHost}`;
+    const url = new URL(req.url ?? "/", clientOrigin);
 
-    // Set CORS headers
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    // Dynamic CORS & CSP headers
+    const requestOrigin = (req.headers.origin as string) || "*";
+    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss: http: https:;"
+    );
 
     if (req.method === "OPTIONS") {
       res.writeHead(204);
       res.end();
+      return;
+    }
+
+    // 1b. REST API: Dynamic Network Profile Configuration
+    if (url.pathname === "/api/config/network" && req.method === "GET") {
+      const networkConfig = {
+        resolvedOrigin: clientOrigin,
+        forwardedHost,
+        forwardedProto,
+        isLoopback: forwardedHost.includes("localhost") || forwardedHost.includes("127.0.0.1"),
+        isLan: /^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(forwardedHost)
+      };
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(networkConfig));
       return;
     }
 

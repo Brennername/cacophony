@@ -57,6 +57,12 @@
       "lodash"
     ]
   },
+  "network_profile": {
+    "mode": "lan_shared",
+    "allowed_modes": ["local_only", "lan_shared", "reverse_proxy", "custom_domain"],
+    "custom_domain": "cacophony.local",
+    "trusted_proxies": ["127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+  },
   "directives": [
     "Strict TypeScript: Explicit typing required on all parameters and returns. No 'any' or 'unknown'.",
     "ECMAScript Module Resolution (NodeNext): All relative imports must include explicit '.js' extensions.",

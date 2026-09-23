@@ -106,18 +106,18 @@
 *RDF Category: `spec:NetworkAgnosticRoutingCategory`*
 
 ### T19.1: Dynamic Host & IP Resolution (`spec:DynamicHostResolution`)
-- [ ] T19.1.1: Header-Based Host Translation:
-  - [ ] T19.1.1.1: Eliminate all hardcoded `http://localhost:...` strings across frontend services and backend redirect generators.
-  - [ ] T19.1.1.2: Implement dynamic host resolution middleware in `CacophonyHttpServer` inspecting `X-Forwarded-Host`, `X-Forwarded-Proto`, and `Host` headers.
-  - [ ] T19.1.1.3: Provide resolved origin context to Angular frontend via `GET /api/config/network` (exposing client-visible base URL).
-- [ ] T19.1.2: Wi-Fi LAN & Mobile Access Adaptation:
-  - [ ] T19.1.2.1: Detect incoming client connection interface (loopback `127.0.0.1` vs LAN IP `192.168.x.x` vs tailscale/wireguard IP).
-  - [ ] T19.1.2.2: Format OAuth2 redirect URIs and Gitea/Authentik public URLs dynamically matching the client's ingress route.
-  - [ ] T19.1.2.3: Add network profile configuration options in `conf/cacophony.example.json` (`local_only`, `lan_shared`, `reverse_proxy`, `custom_domain`).
-- [ ] T19.1.3: Cross-Origin Resource Sharing (CORS) & Security Policies:
-  - [ ] T19.1.3.1: Configure dynamic CORS headers in `CacophonyHttpServer` permitting requests from detected LAN IP subnets.
-  - [ ] T19.1.3.2: Configure Content Security Policy (CSP) headers permitting WebSocket and SSE connections from LAN origins.
-  - [ ] T19.1.3.3: Write automated integration tests asserting successful API access and OAuth redirects from remote IP simulation.
+- [x] T19.1.1: Header-Based Host Translation:
+  - [x] T19.1.1.1: Eliminate all hardcoded `http://localhost:...` strings across frontend services and backend redirect generators.
+  - [x] T19.1.1.2: Implement dynamic host resolution middleware in `CacophonyHttpServer` inspecting `X-Forwarded-Host`, `X-Forwarded-Proto`, and `Host` headers.
+  - [x] T19.1.1.3: Provide resolved origin context to Angular frontend via `GET /api/config/network` (exposing client-visible base URL).
+- [x] T19.1.2: Wi-Fi LAN & Mobile Access Adaptation:
+  - [x] T19.1.2.1: Detect incoming client connection interface (loopback `127.0.0.1` vs LAN IP `192.168.x.x` vs tailscale/wireguard IP).
+  - [x] T19.1.2.2: Format OAuth2 redirect URIs and Gitea/Authentik public URLs dynamically matching the client's ingress route.
+  - [x] T19.1.2.3: Add network profile configuration options in `conf/cacophony.example.json` (`local_only`, `lan_shared`, `reverse_proxy`, `custom_domain`).
+- [x] T19.1.3: Cross-Origin Resource Sharing (CORS) & Security Policies:
+  - [x] T19.1.3.1: Configure dynamic CORS headers in `CacophonyHttpServer` permitting requests from detected LAN IP subnets.
+  - [x] T19.1.3.2: Configure Content Security Policy (CSP) headers permitting WebSocket and SSE connections from LAN origins.
+  - [x] T19.1.3.3: Write automated integration tests asserting successful API access and OAuth redirects from remote IP simulation.
 
 ---
 
