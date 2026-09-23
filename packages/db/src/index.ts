@@ -11,4 +11,5 @@ export * from "./repositories/VaultRepository.js";
 export * from "./repositories/StackProfileRepository.js";
 export * from "./repositories/LspDiagnosticRepository.js";
 export * from "./repositories/ModelRegistryRepository.js";
+export * from "./repositories/SessionRepository.js";
 

@@ -87,34 +87,34 @@
   - [x] T11.3.3.3: Write unit tests verifying MCP client handshake, tool catalog synchronization, and secure execution.
 
 ### T11.4: Auto-Compacting Conversation Sessions (`spec:AutoCompactingSessions`)
-- [ ] T11.4.1: Token Budget & Utilization Monitor:
-  - [ ] T11.4.1.1: Implement `TokenUsageTracker` measuring accumulated prompt and completion tokens per session against model context limits.
-  - [ ] T11.4.1.2: Implement configurable compaction triggers (warning threshold: 70%, compaction threshold: 85% of max context window).
-  - [ ] T11.4.1.3: Implement message importance scoring (system directives, user instructions, latest code changes vs intermediate debug logs).
-- [ ] T11.4.2: Background Conversation Summarizer:
-  - [ ] T11.4.2.1: Implement `SessionCompactor` creating hierarchical summaries of past conversation turns.
-  - [ ] T11.4.2.2: Extract and preserve critical state: modified files list, architectural decisions, outstanding errors, and test outcomes.
-  - [ ] T11.4.2.3: Replace historical turns with a structured `[Session Summary]` block while keeping initial system prompts and the latest N turns intact.
-  - [ ] T11.4.2.4: Execute compaction asynchronously in background without blocking active generation streams.
-- [ ] T11.4.3: Compaction Verification & Rollback:
-  - [ ] T11.4.3.1: Validate that compacted context reduces token count by at least 40% while preserving key facts.
-  - [ ] T11.4.3.2: Store compaction snapshots in database table `session_compaction_history` to permit conversational rollback.
-  - [ ] T11.4.3.3: Write unit tests verifying token calculation, compaction thresholds, and summary preservation.
+- [x] T11.4.1: Token Budget & Utilization Monitor:
+  - [x] T11.4.1.1: Implement `TokenUsageTracker` measuring accumulated prompt and completion tokens per session against model context limits.
+  - [x] T11.4.1.2: Implement configurable compaction triggers (warning threshold: 70%, compaction threshold: 85% of max context window).
+  - [x] T11.4.1.3: Implement message importance scoring (system directives, user instructions, latest code changes vs intermediate debug logs).
+- [x] T11.4.2: Background Conversation Summarizer:
+  - [x] T11.4.2.1: Implement `SessionCompactor` creating hierarchical summaries of past conversation turns.
+  - [x] T11.4.2.2: Extract and preserve critical state: modified files list, architectural decisions, outstanding errors, and test outcomes.
+  - [x] T11.4.2.3: Replace historical turns with a structured `[Session Summary]` block while keeping initial system prompts and the latest N turns intact.
+  - [x] T11.4.2.4: Execute compaction asynchronously in background without blocking active generation streams.
+- [x] T11.4.3: Compaction Verification & Rollback:
+  - [x] T11.4.3.1: Validate that compacted context reduces token count by at least 40% while preserving key facts.
+  - [x] T11.4.3.2: Store compaction snapshots in database table `session_compaction_history` to permit conversational rollback.
+  - [x] T11.4.3.3: Write unit tests verifying token calculation, compaction thresholds, and summary preservation.
 
 ### T11.5: Persistent Multi-Tab Session Storage (`spec:PersistentSessionStorage`)
-- [ ] T11.5.1: Session Schema & Persistence Layer:
-  - [ ] T11.5.1.1: Create database table `sessions` (id, title, branch, active_model, total_tokens, status, created_at, updated_at).
-  - [ ] T11.5.1.2: Create database table `session_messages` (id, session_id, role, content, tool_calls_json, tool_results_json, token_count, created_at).
-  - [ ] T11.5.1.3: Create database table `session_tabs` (id, session_id, tab_name, active_file, cursor_position, order_index).
-  - [ ] T11.5.1.4: Implement `SessionRepository` and `SessionMessageRepository` in `@cacophony/db`.
-- [ ] T11.5.2: Multi-Tab Session Manager:
-  - [ ] T11.5.2.1: Implement `SessionManager` supporting concurrent multi-tab sessions with isolated conversational contexts.
-  - [ ] T11.5.2.2: Implement branch-scoped session binding (switching git branches auto-switches or filters relevant sessions).
-  - [ ] T11.5.2.3: Implement session save, export (JSON/Markdown), fork, and resume capabilities.
-- [ ] T11.5.3: Session Search & Indexing:
-  - [ ] T11.5.3.1: Implement full-text search across session messages and tool invocations using PostgreSQL full-text search in PGlite.
-  - [ ] T11.5.3.2: Implement session tagging and bookmarking for high-value architectural decisions.
-  - [ ] T11.5.3.3: Write unit tests verifying multi-tab session state isolation, persistence, and message retrieval.
+- [x] T11.5.1: Session Schema & Persistence Layer:
+  - [x] T11.5.1.1: Create database table `sessions` (id, title, branch, active_model, total_tokens, status, created_at, updated_at).
+  - [x] T11.5.1.2: Create database table `session_messages` (id, session_id, role, content, tool_calls_json, tool_results_json, token_count, created_at).
+  - [x] T11.5.1.3: Create database table `session_tabs` (id, session_id, tab_name, active_file, cursor_position, order_index).
+  - [x] T11.5.1.4: Implement `SessionRepository` and `SessionMessageRepository` in `@cacophony/db`.
+- [x] T11.5.2: Multi-Tab Session Manager:
+  - [x] T11.5.2.1: Implement `SessionManager` supporting concurrent multi-tab sessions with isolated conversational contexts.
+  - [x] T11.5.2.2: Implement branch-scoped session binding (switching git branches auto-switches or filters relevant sessions).
+  - [x] T11.5.2.3: Implement session save, export (JSON/Markdown), fork, and resume capabilities.
+- [x] T11.5.3: Session Search & Indexing:
+  - [x] T11.5.3.1: Implement full-text search across session messages and tool invocations using PostgreSQL full-text search in PGlite.
+  - [x] T11.5.3.2: Implement session tagging and bookmarking for high-value architectural decisions.
+  - [x] T11.5.3.3: Write unit tests verifying multi-tab session state isolation, persistence, and message retrieval.
 
 ---
 

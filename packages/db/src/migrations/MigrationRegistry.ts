@@ -3,6 +3,7 @@ import { migration001 } from "./001_initial_schema.js";
 import { migration002 } from "./002_stack_profiles.js";
 import { migration003 } from "./003_lsp_diagnostics.js";
 import { migration004 } from "./004_model_registry.js";
+import { migration005 } from "./005_persistent_sessions.js";
 
 /**
  * MigrationRegistry
@@ -15,7 +16,8 @@ export class MigrationRegistry {
     migration001,
     migration002,
     migration003,
-    migration004
+    migration004,
+    migration005
   ];
 
   /**

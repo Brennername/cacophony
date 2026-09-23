@@ -10,4 +10,6 @@ export * from "./StreamTapManager.js";
 export * from "./IModelRegistry.js";
 export * from "./ModelRegistry.js";
 export * from "./OpenAiCompatibleProvider.js";
+export * from "./SessionCompactor.js";
+export * from "./SessionManager.js";
 
