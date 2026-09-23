@@ -169,22 +169,22 @@ To specify the native engine mechanisms required to support resource-constrained
 - [x] T7.6: Write unit tests for all tools verifying parameter validation, boundary conditions, and execution guards.
 
 ## Phase 8: Gitea Integration & Automated Development Cycle
-- [ ] T8.1: Implement GiteaApiClient for repository management, branch creation, commit querying, and PR operations.
-- [ ] T8.2: Implement GitWorktreeManager managing isolated ephemeral worktrees in /workspaces without polluting repository roots.
-- [ ] T8.3: Implement automated PR creation workflow:
-  - [ ] T8.3.1: Push task branch to internal Gitea instance once local tests and deterministic scrubbers pass.
-  - [ ] T8.3.2: Open Pull Request via Gitea API with formatted description, task ID, and test output summary.
-- [ ] T8.4: Implement Automated PR Review Loop:
-  - [ ] T8.4.1: Reviewer agent fetches PR diff from Gitea.
-  - [ ] T8.4.2: Local LLM generates structured review verdict (APPROVE, REQUEST_CHANGES, REJECT) with inline line comments.
-  - [ ] T8.4.3: Post review comments to Gitea PR.
-  - [ ] T8.4.4: If approved, trigger automated merge; if changes requested, generate remediation task into the queue.
-- [ ] T8.5: Implement Gitea Webhook Receiver endpoint to asynchronously ingest issue/PR events into Cacophony queue.
-- [ ] T8.6: Write integration tests mocking Gitea API endpoints and validating PR creation and review flows.
-- [ ] T8.7: Implement Gitea OAuth2 SSO authentication provider for Cacophony backend (authorization code grant flow, token exchange, user profile extraction, and JWT session generation).
-- [ ] T8.8: Configure Gitea email confirmation bypass (`GITEA__service__REGISTER_EMAIL_CONFIRM=false`) in environment/Docker Compose for seamless immediate SSO onboarding without external email dependencies.
-- [ ] T8.9: Add integrated local mail catcher service (Mailpit) on unallocated random ports (Web: 15417, SMTP: 18860) with environment toggle (`GITEA_ENABLE_MAIL_CATCHER=true|false`) to intercept and view verification emails when email confirmation is explicitly required.
-- [ ] T8.10: Implement automated Gitea OAuth2 application registration script on container startup (registers `cacophony-dashboard` client credentials automatically via Gitea CLI so manual UI admin setup is eliminated).
+- [x] T8.1: Implement GiteaApiClient for repository management, branch creation, commit querying, and PR operations.
+- [x] T8.2: Implement GitWorktreeManager managing isolated ephemeral worktrees in /workspaces without polluting repository roots.
+- [x] T8.3: Implement automated PR creation workflow:
+  - [x] T8.3.1: Push task branch to internal Gitea instance once local tests and deterministic scrubbers pass.
+  - [x] T8.3.2: Open Pull Request via Gitea API with formatted description, task ID, and test output summary.
+- [x] T8.4: Implement Automated PR Review Loop:
+  - [x] T8.4.1: Reviewer agent fetches PR diff from Gitea.
+  - [x] T8.4.2: Local LLM generates structured review verdict (APPROVE, REQUEST_CHANGES, REJECT) with inline line comments.
+  - [x] T8.4.3: Post review comments to Gitea PR.
+  - [x] T8.4.4: If approved, trigger automated merge; if changes requested, generate remediation task into the queue.
+- [x] T8.5: Implement Gitea Webhook Receiver endpoint to asynchronously ingest issue/PR events into Cacophony queue.
+- [x] T8.6: Write integration tests mocking Gitea API endpoints and validating PR creation and review flows.
+- [x] T8.7: Implement Gitea OAuth2 SSO authentication provider for Cacophony backend (authorization code grant flow, token exchange, user profile extraction, and JWT session generation).
+- [x] T8.8: Configure Gitea email confirmation bypass (`GITEA__service__REGISTER_EMAIL_CONFIRM=false`) in environment/Docker Compose for seamless immediate SSO onboarding without external email dependencies.
+- [x] T8.9: Add integrated local mail catcher service (Mailpit) on unallocated random ports (Web: 15417, SMTP: 18860) with environment toggle (`GITEA_ENABLE_MAIL_CATCHER=true|false`) to intercept and view verification emails when email confirmation is explicitly required.
+- [x] T8.10: Implement automated Gitea OAuth2 application registration script on container startup (registers `cacophony-dashboard` client credentials automatically via Gitea CLI so manual UI admin setup is eliminated).
 
 ## Phase 9: Modern Angular Dashboard & System Monitor
 - [ ] T9.1: Initialize Angular v20+ standalone zoneless application with mobile-first CSS architecture.
