@@ -9,6 +9,8 @@ export const CacophonySystemConfigSchema = z.object({
   data_dir: z.string().default("data/cacophony_pglite"),
   workspaces_dir: z.string().default("workspaces"),
   concurrency_limit: z.number().int().positive().default(1),
+  default_session_model: z.string().default("qwen2.5-coder:7b"),
+  default_context_tokens: z.number().int().positive().default(8192),
   role_models: z.record(AgentRoleSchema, z.string()),
   candidate_models: z.array(z.string()),
   eviction_thresholds: z.object({

@@ -8,6 +8,12 @@ export interface ActiveSessionContext {
   readonly tabs: readonly SessionTabRecord[];
 }
 
+export interface SessionManagerOptions {
+  readonly maxContextTokens?: number | undefined;
+  readonly defaultModel?: string | undefined;
+  readonly defaultBranch?: string | undefined;
+}
+
 /**
  * SessionManager
  *
@@ -18,16 +24,27 @@ export interface ActiveSessionContext {
  */
 export class SessionManager {
   private readonly compactor: SessionCompactor;
+  private readonly defaultModel: string;
+  private readonly defaultBranch: string;
 
   constructor(
     private readonly repository: SessionRepository,
-    maxContextTokens = 8192
+    options: SessionManagerOptions = {}
   ) {
-    this.compactor = new SessionCompactor({ maxContextTokens });
+    const maxTokens = options.maxContextTokens ?? 8192;
+    this.defaultModel = options.defaultModel ?? "qwen2.5-coder:7b";
+    this.defaultBranch = options.defaultBranch ?? "master";
+    this.compactor = new SessionCompactor({ maxContextTokens: maxTokens });
   }
 
-  public async createSession(title: string, branch = "master", activeModel = "qwen2.5-coder:7b"): Promise<SessionRecord> {
+  public async createSession(
+    title: string,
+    options?: { branch?: string | undefined; activeModel?: string | undefined } | undefined
+  ): Promise<SessionRecord> {
     const id = `session-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const branch = options?.branch ?? this.defaultBranch;
+    const activeModel = options?.activeModel ?? this.defaultModel;
+
     const record: Omit<SessionRecord, "created_at" | "updated_at"> = {
       id,
       title,

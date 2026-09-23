@@ -3,6 +3,8 @@
   "data_dir": "data/cacophony_pglite",
   "workspaces_dir": "workspaces",
   "concurrency_limit": 1,
+  "default_session_model": "qwen2.5-coder:7b",
+  "default_context_tokens": 8192,
   "role_models": {
     "implementer": "qwen2.5-coder:7b",
     "reviewer": "qwen2.5-coder:7b",

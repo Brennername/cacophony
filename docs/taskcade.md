@@ -8,6 +8,7 @@
 - Single-concurrency scheduler: Vega APU affinity grouping (minimizes Ollama model unloads), model failure eviction (3-4 consecutive fails), and weighted random fallback.
 - Mobile-first responsive UI with Dark Mode (default), Light Mode, and High Contrast Mode adhering to Angular best practices (`docs/SKILL.md`).
 - All secrets strictly confined to .env and encrypted vault.
+- Zero Hardcoding & Whitebox Configurability: Any option, parameter, hyperparameter, model identifier, context limit, or threshold must be configurable via typed options/config schemas with intelligent defaults, never hardcoded as arbitrary string or numeric literals.
 - Never delete source files with rm; move deprecated files to .trash/ with justification documentation.
 - Always commit changes, keep workspace clean, and ensure work is production ready.
 

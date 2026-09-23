@@ -53,17 +53,23 @@ describe("Persistent Session Storage & Auto-Compacting Engine", () => {
       await runner.migrate();
 
       repo = new SessionRepository(driver);
-      manager = new SessionManager(repo, 200); // 200 token budget for test
+      manager = new SessionManager(repo, {
+        maxContextTokens: 200,
+        defaultModel: "custom-test-model:latest",
+        defaultBranch: "main"
+      });
     });
 
     after(async () => {
       await driver.close();
     });
 
-    test("should create and retrieve multi-tab session", async () => {
-      const session = await manager.createSession("Feature Dev: Code Refactor", "master");
+    test("should create and retrieve multi-tab session with configured model and branch", async () => {
+      const session = await manager.createSession("Feature Dev: Code Refactor");
       assert.ok(session.id);
       assert.equal(session.title, "Feature Dev: Code Refactor");
+      assert.equal(session.active_model, "custom-test-model:latest");
+      assert.equal(session.branch, "main");
 
       const context = await manager.getSessionContext(session.id);
       assert.ok(context);
@@ -72,7 +78,12 @@ describe("Persistent Session Storage & Auto-Compacting Engine", () => {
     });
 
     test("should append turns and perform automated compaction in database", async () => {
-      const session = await manager.createSession("Compaction Test Session", "dev-branch");
+      const session = await manager.createSession("Compaction Test Session", {
+        branch: "dev-branch",
+        activeModel: "custom-override-model:3b"
+      });
+      assert.equal(session.active_model, "custom-override-model:3b");
+      assert.equal(session.branch, "dev-branch");
 
       for (let i = 1; i <= 6; i++) {
         await manager.appendTurn(
