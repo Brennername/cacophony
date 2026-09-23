@@ -5,6 +5,7 @@ import { EsmRelativeImportScrubberRule } from "../scrubber/rules/EsmRelativeImpo
 import { ExtensionHeuristicScrubberRule } from "../scrubber/rules/ExtensionHeuristicScrubberRule.js";
 import { BannedImportsScrubberRule } from "../scrubber/rules/BannedImportsScrubberRule.js";
 import { JavaPackageScrubberRule } from "../scrubber/rules/JavaPackageScrubberRule.js";
+import { PrettierFormattingScrubberRule } from "../scrubber/rules/PrettierFormattingScrubberRule.js";
 import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { AstValidator } from "../scrubber/AstValidator.js";
 
@@ -146,6 +147,42 @@ describe("Deterministic Code Scrubber & AST Validation", () => {
     });
   });
 
+  describe("PrettierFormattingScrubberRule", () => {
+    const rule = new PrettierFormattingScrubberRule();
+
+    test("should normalize CRLF line endings to LF", () => {
+      const code = "const a = 1;\r\nconst b = 2;\r\n";
+      const result = rule.scrub(code, "test.ts");
+      assert.equal(result.modified, true);
+      assert.equal(result.content, "const a = 1;\nconst b = 2;\n");
+      assert.ok(result.issuesFixed.some((i) => i.includes("Normalized CRLF")));
+    });
+
+    test("should strip trailing whitespace from line ends", () => {
+      const code = "const a = 1;   \nconst b = 2;\t\n";
+      const result = rule.scrub(code, "test.ts");
+      assert.equal(result.modified, true);
+      assert.equal(result.content, "const a = 1;\nconst b = 2;\n");
+      assert.ok(result.issuesFixed.some((i) => i.includes("trailing whitespace")));
+    });
+
+    test("should ensure single EOF newline", () => {
+      const code = "const a = 1;\n\n\n";
+      const result = rule.scrub(code, "test.ts");
+      assert.equal(result.modified, true);
+      assert.equal(result.content, "const a = 1;\n");
+      assert.ok(result.issuesFixed.some((i) => i.includes("single EOF newline")));
+    });
+
+    test("should skip when disabled in options", () => {
+      const code = "const a = 1;   \r\n";
+      const result = rule.scrub(code, "test.ts", { disabledRules: ["PrettierFormattingScrubberRule"] });
+      assert.equal(result.modified, false);
+      assert.equal(result.content, code);
+      assert.ok(result.issuesDetected[0]?.includes("skipped via rule disable flag"));
+    });
+  });
+
   describe("CodeScrubber Engine Pipeline & Universal Exemptions", () => {
     const scrubber = new CodeScrubber();
 
@@ -158,7 +195,7 @@ describe("Deterministic Code Scrubber & AST Validation", () => {
     });
 
     test("should allow redis and bypass emoji scrubbing when feature flags are provided", () => {
-      const code = 'import redis from "redis";\nconst icon = "\u{1F600}";';
+      const code = 'import redis from "redis";\nconst icon = "\u{1F600}";\n';
       const result = scrubber.scrubContent(code, "src/cache.ts", {
         stack: "typescript-nodenext",
         allowedImports: ["redis"],
@@ -170,7 +207,7 @@ describe("Deterministic Code Scrubber & AST Validation", () => {
     });
 
     test("should bypass specific rule when listed in disabledRules", () => {
-      const code = 'import { config } from "./config";';
+      const code = 'import { config } from "./config";\n';
       const result = scrubber.scrubContent(code, "src/main.ts", {
         stack: "typescript-nodenext",
         disabledRules: ["EsmRelativeImportScrubberRule"]

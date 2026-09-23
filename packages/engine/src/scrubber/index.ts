@@ -4,5 +4,6 @@ export * from "./rules/EsmRelativeImportScrubberRule.js";
 export * from "./rules/ExtensionHeuristicScrubberRule.js";
 export * from "./rules/BannedImportsScrubberRule.js";
 export * from "./rules/JavaPackageScrubberRule.js";
+export * from "./rules/PrettierFormattingScrubberRule.js";
 export * from "./CodeScrubber.js";
 export * from "./AstValidator.js";

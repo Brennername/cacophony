@@ -9,5 +9,7 @@ export * from "./repositories/ModelHealthRepository.js";
 export * from "./repositories/TelemetryRepository.js";
 export * from "./repositories/VaultRepository.js";
 export * from "./repositories/StackProfileRepository.js";
+export * from "./repositories/LspDiagnosticRepository.js";
 export * from "./migrations/002_stack_profiles.js";
+export * from "./migrations/003_lsp_diagnostics.js";
 

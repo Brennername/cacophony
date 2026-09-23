@@ -2,6 +2,7 @@ import { PGliteDriver } from "@cacophony/db";
 import { MigrationRunner } from "@cacophony/db";
 import { migration001 } from "@cacophony/db";
 import { migration002 } from "@cacophony/db";
+import { migration003 } from "@cacophony/db";
 import { TaskRepository } from "@cacophony/db";
 import { StageRepository } from "@cacophony/db";
 import { ModelHealthRepository } from "@cacophony/db";
@@ -70,7 +71,7 @@ export class CacophonyDaemon {
 
     // 1. Database Connection and Migrations
     await this.driver.connect();
-    const migrationRunner = new MigrationRunner(this.driver, [migration001, migration002]);
+    const migrationRunner = new MigrationRunner(this.driver, [migration001, migration002, migration003]);
     await migrationRunner.migrate();
 
     // 2. Initialize Repositories

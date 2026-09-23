@@ -12,4 +12,5 @@ export * from "./implementations/LocateFeatureTool.js";
 export * from "./implementations/AstInspectTool.js";
 export * from "./implementations/RegexTool.js";
 export * from "./implementations/RunCommandTool.js";
+export * from "./implementations/LspTools.js";
 export * from "./mcp/McpServer.js";

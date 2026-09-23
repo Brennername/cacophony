@@ -6,6 +6,7 @@ import { EsmRelativeImportScrubberRule } from "./rules/EsmRelativeImportScrubber
 import { ExtensionHeuristicScrubberRule } from "./rules/ExtensionHeuristicScrubberRule.js";
 import { BannedImportsScrubberRule } from "./rules/BannedImportsScrubberRule.js";
 import { JavaPackageScrubberRule } from "./rules/JavaPackageScrubberRule.js";
+import { PrettierFormattingScrubberRule } from "./rules/PrettierFormattingScrubberRule.js";
 
 export interface FileScrubResult {
   readonly filePath: string;
@@ -52,7 +53,8 @@ export class CodeScrubber {
       new EsmRelativeImportScrubberRule(),
       new ExtensionHeuristicScrubberRule(),
       new BannedImportsScrubberRule(),
-      new JavaPackageScrubberRule()
+      new JavaPackageScrubberRule(),
+      new PrettierFormattingScrubberRule()
     ];
   }
 

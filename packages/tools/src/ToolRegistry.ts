@@ -10,6 +10,7 @@ import { LocateFeatureTool } from "./implementations/LocateFeatureTool.js";
 import { AstInspectTool } from "./implementations/AstInspectTool.js";
 import { RegexTool } from "./implementations/RegexTool.js";
 import { RunCommandTool } from "./implementations/RunCommandTool.js";
+import { LspGetDiagnosticsTool, LspFindDefinitionTool } from "./implementations/LspTools.js";
 
 /**
  * Registry holding and orchestrating all available Cacophony tools.
@@ -84,5 +85,7 @@ export class ToolRegistry {
     this.registerTool(new AstInspectTool());
     this.registerTool(new RegexTool());
     this.registerTool(new RunCommandTool());
+    this.registerTool(new LspGetDiagnosticsTool());
+    this.registerTool(new LspFindDefinitionTool());
   }
 }

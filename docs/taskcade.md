@@ -23,7 +23,7 @@
 ---
 
 ## Active Phase 6 Outstanding Item
-- [ ] T6.1.4: Implement automated code formatter invocation (Prettier / ESLint programmatic autofix) integrated into `CodeScrubber` pipeline.
+- [x] T6.1.4: Implement automated code formatter invocation (Prettier / ESLint programmatic autofix) integrated into `CodeScrubber` pipeline.
 
 ---
 
@@ -31,27 +31,27 @@
 *RDF Category: `spec:ContextAndIntelligenceCategory`*
 
 ### T11.1: Language Server Protocol (LSP) Integration (`spec:LanguageServerProtocolIntegration`)
-- [ ] T11.1.1: Core LSP Client & Lifecycle Manager:
-  - [ ] T11.1.1.1: Define `ILspClient` interface (lifecycle `start`, `stop`, `restart`, `sendRequest`, `onNotification`, `onDiagnostic`).
-  - [ ] T11.1.1.2: Implement `LspProcessSupervisor` managing child language server processes via JSON-RPC stdio.
-  - [ ] T11.1.1.3: Implement auto-detection and launcher for `typescript-language-server` / `tsserver`.
-  - [ ] T11.1.1.4: Implement auto-detection and launcher for Java (`jdtls` / Eclipse JDT LS).
-  - [ ] T11.1.1.5: Implement auto-detection and launcher for Go (`gopls`).
-  - [ ] T11.1.1.6: Implement auto-detection and launcher for Rust (`rust-analyzer`).
-  - [ ] T11.1.1.7: Implement LSP workspace capability negotiation (`textDocument/publishDiagnostics`, `textDocument/definition`, `textDocument/references`, `textDocument/hover`, `textDocument/documentSymbol`).
-- [ ] T11.1.2: Compiler Diagnostics & Type Error Ingestion:
-  - [ ] T11.1.2.1: Implement `LspDiagnosticIngestor` subscribing to `textDocument/publishDiagnostics`.
-  - [ ] T11.1.2.2: Implement structured normalization of compiler diagnostics (severity: Error, Warning, Info, Hint; code, source, message, range).
-  - [ ] T11.1.2.3: Implement `LspDiagnosticStore` tracking active workspace errors and warnings keyed by URI and revision.
-  - [ ] T11.1.2.4: Implement post-edit diagnostic settling barrier (wait for language server debounced analysis to complete before proceeding to test phase).
-- [ ] T11.1.3: Self-Healing LSP Error Feedback:
-  - [ ] T11.1.3.1: Implement `LspErrorFeedbackFormatter` generating targeted markdown error snippets with exact line context and compiler error codes.
-  - [ ] T11.1.3.2: Integrate LSP diagnostic feedback into `SelfHealingParseLoop` to trigger auto-remediation before running full test suites.
-  - [ ] T11.1.3.3: Store LSP diagnostics in database table `lsp_diagnostic_snapshots` for telemetry and model error tracking.
-- [ ] T11.1.4: Symbol Navigation & Workspace Querying:
-  - [ ] T11.1.4.1: Implement LSP-powered go-to-definition and find-references tools for the engine.
-  - [ ] T11.1.4.2: Expose `lsp_get_diagnostics` and `lsp_find_definition` as callable tools in `packages/tools`.
-  - [ ] T11.1.4.3: Write comprehensive unit tests for LSP JSON-RPC message framing, process supervisor, and diagnostic parsing.
+- [x] T11.1.1: Core LSP Client & Lifecycle Manager:
+  - [x] T11.1.1.1: Define `ILspClient` interface (lifecycle `start`, `stop`, `restart`, `sendRequest`, `onNotification`, `onDiagnostic`).
+  - [x] T11.1.1.2: Implement `LspProcessSupervisor` managing child language server processes via JSON-RPC stdio.
+  - [x] T11.1.1.3: Implement auto-detection and launcher for `typescript-language-server` / `tsserver`.
+  - [x] T11.1.1.4: Implement auto-detection and launcher for Java (`jdtls` / Eclipse JDT LS).
+  - [x] T11.1.1.5: Implement auto-detection and launcher for Go (`gopls`).
+  - [x] T11.1.1.6: Implement auto-detection and launcher for Rust (`rust-analyzer`).
+  - [x] T11.1.1.7: Implement LSP workspace capability negotiation (`textDocument/publishDiagnostics`, `textDocument/definition`, `textDocument/references`, `textDocument/hover`, `textDocument/documentSymbol`).
+- [x] T11.1.2: Compiler Diagnostics & Type Error Ingestion:
+  - [x] T11.1.2.1: Implement `LspDiagnosticIngestor` subscribing to `textDocument/publishDiagnostics`.
+  - [x] T11.1.2.2: Implement structured normalization of compiler diagnostics (severity: Error, Warning, Info, Hint; code, source, message, range).
+  - [x] T11.1.2.3: Implement `LspDiagnosticStore` tracking active workspace errors and warnings keyed by URI and revision.
+  - [x] T11.1.2.4: Implement post-edit diagnostic settling barrier (wait for language server debounced analysis to complete before proceeding to test phase).
+- [x] T11.1.3: Self-Healing LSP Error Feedback:
+  - [x] T11.1.3.1: Implement `LspErrorFeedbackFormatter` generating targeted markdown error snippets with exact line context and compiler error codes.
+  - [x] T11.1.3.2: Integrate LSP diagnostic feedback into `SelfHealingParseLoop` to trigger auto-remediation before running full test suites.
+  - [x] T11.1.3.3: Store LSP diagnostics in database table `lsp_diagnostic_snapshots` for telemetry and model error tracking.
+- [x] T11.1.4: Symbol Navigation & Workspace Querying:
+  - [x] T11.1.4.1: Implement LSP-powered go-to-definition and find-references tools for the engine.
+  - [x] T11.1.4.2: Expose `lsp_get_diagnostics` and `lsp_find_definition` as callable tools in `packages/tools`.
+  - [x] T11.1.4.3: Write comprehensive unit tests for LSP JSON-RPC message framing, process supervisor, and diagnostic parsing.
 
 ### T11.2: Model-Agnostic Registry & Multi-Provider Architecture (`spec:ModelAgnosticRegistry`)
 - [ ] T11.2.1: Unified Model Registry Abstraction:

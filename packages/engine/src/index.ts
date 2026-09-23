@@ -13,4 +13,5 @@ export * from "./daemon/DaemonIPC.js";
 export * from "./daemon/CacophonyDaemon.js";
 export * from "./cli/CacophonyCli.js";
 export * from "./gitea/index.js";
+export * from "./lsp/index.js";
 
