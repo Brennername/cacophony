@@ -2,17 +2,18 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TaskHistoryComponent } from '../task-history/task-history.component';
 import { CheckpointTimelineComponent } from '../checkpoint-timeline/checkpoint-timeline.component';
+import { TrendChartComponent } from '../trend-chart/trend-chart.component';
 import { RepoStateService } from '../../services/repo-state.service';
 
 /**
  * Task History route view:
  * Audited execution runs, failure cause taxonomy, diff comparisons, Gitea PR links,
- * and Git micro-checkpoint timeline.
+ * AOC historical trend charts, and Git micro-checkpoint timeline.
  */
 @Component({
   selector: 'app-history-view',
   standalone: true,
-  imports: [CommonModule, TaskHistoryComponent, CheckpointTimelineComponent],
+  imports: [CommonModule, TaskHistoryComponent, CheckpointTimelineComponent, TrendChartComponent],
   template: `
     <div class="view-container">
       <div class="view-header">
@@ -21,6 +22,10 @@ import { RepoStateService } from '../../services/repo-state.service';
       </div>
 
       <div class="history-grid">
+        <section class="grid-card-wrapper full-width">
+          <app-trend-chart />
+        </section>
+
         <section class="grid-card-wrapper full-width">
           <app-task-history />
         </section>

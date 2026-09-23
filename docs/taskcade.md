@@ -181,22 +181,22 @@
 *RDF Category: `spec:AnalyticsAndMetricsCategory`*
 
 ### T22.1: Failure Mode Taxonomy & Classification Engine (`spec:FailureTaxonomy`)
-- [ ] T22.1.1: Categorization Engine:
-  - [ ] T22.1.1.1: Implement `FailureClassifier` in `@cacophony/engine` parsing task errors into normalized categories: `SYNTAX_ERROR`, `TEST_ASSERTION_FAILURE`, `TYPE_CHECK_ERROR`, `BANNED_IMPORT`, `THERMAL_THROTTLE`, `CONTEXT_OVERFLOW`, `TIMEOUT`.
-  - [ ] T22.1.1.2: Persist failure taxonomy codes in `tasks.failure_category` and `task_stages.failure_code`.
-- [ ] T22.1.2: Statistical Aggregation Services:
-  - [ ] T22.1.2.1: Implement database aggregation queries calculating failure distributions per model and per stack profile.
-  - [ ] T22.1.2.2: Implement `GET /api/analytics/failures` returning rolling trend data over configurable windows (24h, 7d, 30d).
+- [x] T22.1.1: Categorization Engine:
+  - [x] T22.1.1.1: Implement `FailureClassifier` in `@cacophony/engine` parsing task errors into normalized categories: `SYNTAX_ERROR`, `TEST_ASSERTION_FAILURE`, `TYPE_CHECK_ERROR`, `BANNED_IMPORT`, `THERMAL_THROTTLE`, `CONTEXT_OVERFLOW`, `TIMEOUT`.
+  - [x] T22.1.1.2: Persist failure taxonomy codes in `tasks.failure_category` and `task_stages.failure_code`.
+- [x] T22.1.2: Statistical Aggregation Services:
+  - [x] T22.1.2.1: Implement database aggregation queries calculating failure distributions per model and per stack profile.
+  - [x] T22.1.2.2: Implement `GET /api/analytics/failures` returning rolling trend data over configurable windows (24h, 7d, 30d).
 
 ### T22.2: Historical Trend Lines & Shaded Area-Under-Curve Charts (`spec:AocCharts`)
-- [ ] T22.2.1: Charting Architecture:
-  - [ ] T22.2.1.1: Create `TrendChartComponent` (standalone) using lightweight SVG rendering without heavy third-party bundle dependencies.
-  - [ ] T22.2.1.2: Render KDE System Monitor aesthetic multi-series line graphs with semi-transparent shaded area-under-curve fills.
-  - [ ] T22.2.1.3: Support toggling metrics: GPU Temperature vs Wattage, Success Rate Trend, Token Throughput, Failure Mode Frequencies.
-- [ ] T22.2.2: Interactive Tooltips & Cross-Filtering:
-  - [ ] T22.2.2.1: Implement hover tooltip displaying point-in-time metrics, active task title, and model name.
-  - [ ] T22.2.2.2: Clicking a failure spike filters task history to the corresponding time window and failure category.
-  - [ ] T22.2.2.3: Write component tests verifying SVG path rendering, coordinate scaling, and data updates.
+- [x] T22.2.1: Charting Architecture:
+  - [x] T22.2.1.1: Create `TrendChartComponent` (standalone) using lightweight SVG rendering without heavy third-party bundle dependencies.
+  - [x] T22.2.1.2: Render KDE System Monitor aesthetic multi-series line graphs with semi-transparent shaded area-under-curve fills.
+  - [x] T22.2.1.3: Support toggling metrics: GPU Temperature vs Wattage, Success Rate Trend, Token Throughput, Failure Mode Frequencies.
+- [x] T22.2.2: Interactive Tooltips & Cross-Filtering:
+  - [x] T22.2.2.1: Implement hover tooltip displaying point-in-time metrics, active task title, and model name.
+  - [x] T22.2.2.2: Clicking a failure spike filters task history to the corresponding time window and failure category.
+  - [x] T22.2.2.3: Write component tests verifying SVG path rendering, coordinate scaling, and data updates.
 
 ---
 

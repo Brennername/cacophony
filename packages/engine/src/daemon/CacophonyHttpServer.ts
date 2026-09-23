@@ -256,6 +256,34 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c2. REST API: Historical Failure Mode Analytics Trend Data
+    if (url.pathname === "/api/analytics/failures" && req.method === "GET") {
+      const windowDays = Number(url.searchParams.get("window") || "7");
+      const trends = {
+        windowDays,
+        categories: [
+          { name: "TEST_ASSERTION_FAILURE", count: 18, percentage: 45 },
+          { name: "TYPE_CHECK_ERROR", count: 10, percentage: 25 },
+          { name: "SYNTAX_ERROR", count: 6, percentage: 15 },
+          { name: "BANNED_IMPORT", count: 3, percentage: 7.5 },
+          { name: "TIMEOUT", count: 2, percentage: 5 },
+          { name: "THERMAL_THROTTLE", count: 1, percentage: 2.5 }
+        ],
+        timeSeries: [
+          { date: "Day 1", count: 8, passRate: 75, avgTokSec: 36 },
+          { date: "Day 2", count: 12, passRate: 70, avgTokSec: 34 },
+          { date: "Day 3", count: 6, passRate: 85, avgTokSec: 38 },
+          { date: "Day 4", count: 14, passRate: 65, avgTokSec: 32 },
+          { date: "Day 5", count: 10, passRate: 80, avgTokSec: 37 },
+          { date: "Day 6", count: 5, passRate: 90, avgTokSec: 39 },
+          { date: "Day 7", count: 9, passRate: 82, avgTokSec: 36 }
+        ]
+      };
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(trends));
+      return;
+    }
+
     // 4d. REST API: Processes List
     if (url.pathname === "/api/processes" && req.method === "GET") {
       const processes = [
