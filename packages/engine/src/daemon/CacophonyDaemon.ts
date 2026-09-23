@@ -1,15 +1,13 @@
-import { PGliteDriver } from "@cacophony/db";
-import { MigrationRunner } from "@cacophony/db";
-import { migration001 } from "@cacophony/db";
-import { migration002 } from "@cacophony/db";
-import { migration003 } from "@cacophony/db";
-import { migration004 } from "@cacophony/db";
-import { TaskRepository } from "@cacophony/db";
-import { StageRepository } from "@cacophony/db";
-import { ModelHealthRepository } from "@cacophony/db";
-import { TelemetryRepository } from "@cacophony/db";
-import { StackProfileRepository } from "@cacophony/db";
-import { ModelRegistryRepository } from "@cacophony/db";
+import {
+  PGliteDriver,
+  MigrationRunner,
+  TaskRepository,
+  StageRepository,
+  ModelHealthRepository,
+  TelemetryRepository,
+  StackProfileRepository,
+  ModelRegistryRepository
+} from "@cacophony/db";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
 import { QueueGroomer } from "../scheduler/QueueGroomer.js";
@@ -73,7 +71,7 @@ export class CacophonyDaemon {
 
     // 1. Database Connection and Migrations
     await this.driver.connect();
-    const migrationRunner = new MigrationRunner(this.driver, [migration001, migration002, migration003, migration004]);
+    const migrationRunner = new MigrationRunner(this.driver);
     await migrationRunner.migrate();
 
     // 2. Initialize Repositories

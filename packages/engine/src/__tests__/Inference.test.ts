@@ -10,7 +10,7 @@ import { SecretVault } from "../inference/SecretVault.js";
 import { FrontierTaskDecomposer } from "../inference/FrontierTaskDecomposer.js";
 import type { IInferenceProvider } from "../inference/IInferenceProvider.js";
 import type { InferenceRequest, InferenceResponse } from "@cacophony/shared-types";
-import { PGliteDriver, VaultRepository, TaskRepository, MigrationRunner, migration001 } from "@cacophony/db";
+import { PGliteDriver, VaultRepository, TaskRepository, MigrationRunner } from "@cacophony/db";
 
 describe("Model Inference & Adaptation Engine", () => {
   describe("AdaptiveOutputFormatter", () => {
@@ -142,7 +142,7 @@ And that concludes the file.
     before(async () => {
       driver = new PGliteDriver();
       await driver.connect();
-      const runner = new MigrationRunner(driver, [migration001]);
+      const runner = new MigrationRunner(driver);
       await runner.migrate();
 
       const vaultRepo = new VaultRepository(driver);
@@ -169,7 +169,7 @@ And that concludes the file.
     before(async () => {
       driver = new PGliteDriver();
       await driver.connect();
-      const runner = new MigrationRunner(driver, [migration001]);
+      const runner = new MigrationRunner(driver);
       await runner.migrate();
       taskRepo = new TaskRepository(driver);
     });

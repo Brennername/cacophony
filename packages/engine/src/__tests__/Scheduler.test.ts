@@ -5,7 +5,7 @@ import { ModelAffinityTaskSorter } from "../scheduler/ModelAffinityTaskSorter.js
 import { ModelEvictionManager } from "../scheduler/ModelEvictionManager.js";
 import { QueueGroomer } from "../scheduler/QueueGroomer.js";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
-import { PGliteDriver, TaskRepository, StageRepository, ModelHealthRepository, MigrationRunner, migration001 } from "@cacophony/db";
+import { PGliteDriver, TaskRepository, StageRepository, ModelHealthRepository, MigrationRunner } from "@cacophony/db";
 import { FallbackTelemetryProvider } from "../telemetry/FallbackTelemetryProvider.js";
 import type { TaskRecord } from "@cacophony/shared-types";
 
@@ -94,7 +94,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
     before(async () => {
       driver = new PGliteDriver();
       await driver.connect();
-      const runner = new MigrationRunner(driver, [migration001]);
+      const runner = new MigrationRunner(driver);
       await runner.migrate();
 
       healthRepo = new ModelHealthRepository(driver);
@@ -222,7 +222,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
     before(async () => {
       driver = new PGliteDriver();
       await driver.connect();
-      const runner = new MigrationRunner(driver, [migration001]);
+      const runner = new MigrationRunner(driver);
       await runner.migrate();
 
       taskRepo = new TaskRepository(driver);

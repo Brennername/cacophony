@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { PGliteDriver } from "../drivers/PGliteDriver.js";
 import { SQLiteDriver } from "../drivers/SQLiteDriver.js";
 import { MigrationRunner } from "../migrations/MigrationRunner.js";
-import { migration001 } from "../migrations/001_initial_schema.js";
 import { TaskRepository } from "../repositories/TaskRepository.js";
 import { StageRepository } from "../repositories/StageRepository.js";
 import { ModelHealthRepository } from "../repositories/ModelHealthRepository.js";
@@ -25,9 +24,9 @@ describe("Database & Persistence Layer", () => {
       driver = new PGliteDriver();
       await driver.connect();
 
-      const runner = new MigrationRunner(driver, [migration001]);
+      const runner = new MigrationRunner(driver);
       const applied = await runner.migrate();
-      assert.equal(applied.length, 1);
+      assert.ok(applied.length >= 1);
       assert.equal(applied[0], "001_initial_schema");
 
       taskRepo = new TaskRepository(driver);
@@ -179,9 +178,9 @@ describe("Database & Persistence Layer", () => {
       sqliteDriver = new SQLiteDriver(":memory:");
       await sqliteDriver.connect();
 
-      const runner = new MigrationRunner(sqliteDriver, [migration001]);
+      const runner = new MigrationRunner(sqliteDriver);
       const applied = await runner.migrate();
-      assert.equal(applied.length, 1);
+      assert.ok(applied.length >= 1);
     });
 
     after(async () => {

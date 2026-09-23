@@ -72,19 +72,19 @@
   - [x] T11.2.4.3: Write unit tests verifying provider registry registration, discovery, and dynamic routing.
 
 ### T11.3: Model Context Protocol (MCP) Client & External Tool Discovery (`spec:ModelContextProtocolSupport`)
-- [ ] T11.3.1: Bidirectional MCP Client Core:
-  - [ ] T11.3.1.1: Implement `McpClientManager` supporting outbound connections to external MCP servers via Stdio and SSE transports.
-  - [ ] T11.3.1.2: Implement MCP tool discovery protocol (`tools/list`) querying external servers and registering discovered tools into engine runtime.
-  - [ ] T11.3.1.3: Implement MCP resource discovery (`resources/list`, `resources/read`) to pull external documentation and configuration.
-  - [ ] T11.3.1.4: Implement MCP prompt template ingestion (`prompts/list`, `prompts/get`).
-- [ ] T11.3.2: Configuration & Third-Party Server Connections:
-  - [ ] T11.3.2.1: Define MCP configuration schema in `conf/mcp_servers.json` (server command, arguments, environment variables, transport type).
-  - [ ] T11.3.2.2: Implement secure credential injection from `SecretVault` for external MCP servers requiring authentication.
-  - [ ] T11.3.2.3: Implement connection health checks and automatic reconnection for SSE and stdio MCP servers.
-- [ ] T11.3.3: Tool Namespace & Security Isolation:
-  - [ ] T11.3.3.1: Implement tool namespacing (`serverName:toolName`) to prevent collision between internal and external tools.
-  - [ ] T11.3.3.2: Apply `ExecutionGuard` security policies to external MCP tool invocations (auditing, parameter sanitation, timeout gating).
-  - [ ] T11.3.3.3: Write unit tests verifying MCP client handshake, tool catalog synchronization, and secure execution.
+- [x] T11.3.1: Bidirectional MCP Client Core:
+  - [x] T11.3.1.1: Implement `McpClientManager` supporting outbound connections to external MCP servers via Stdio and SSE transports.
+  - [x] T11.3.1.2: Implement MCP tool discovery protocol (`tools/list`) querying external servers and registering discovered tools into engine runtime.
+  - [x] T11.3.1.3: Implement MCP resource discovery (`resources/list`, `resources/read`) to pull external documentation and configuration.
+  - [x] T11.3.1.4: Implement MCP prompt template ingestion (`prompts/list`, `prompts/get`).
+- [x] T11.3.2: Configuration & Third-Party Server Connections:
+  - [x] T11.3.2.1: Define MCP configuration schema in `conf/mcp_servers.json` (server command, arguments, environment variables, transport type).
+  - [x] T11.3.2.2: Implement secure credential injection from `SecretVault` for external MCP servers requiring authentication.
+  - [x] T11.3.2.3: Implement connection health checks and automatic reconnection for SSE and stdio MCP servers.
+- [x] T11.3.3: Tool Namespace & Security Isolation:
+  - [x] T11.3.3.1: Implement tool namespacing (`serverName:toolName`) to prevent collision between internal and external tools.
+  - [x] T11.3.3.2: Apply `ExecutionGuard` security policies to external MCP tool invocations (auditing, parameter sanitation, timeout gating).
+  - [x] T11.3.3.3: Write unit tests verifying MCP client handshake, tool catalog synchronization, and secure execution.
 
 ### T11.4: Auto-Compacting Conversation Sessions (`spec:AutoCompactingSessions`)
 - [ ] T11.4.1: Token Budget & Utilization Monitor:

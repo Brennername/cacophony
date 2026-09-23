@@ -1,4 +1,5 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
+import { MigrationRegistry } from "./MigrationRegistry.js";
 
 /**
  * Interface contract for individual database migrations.
@@ -20,9 +21,9 @@ export class MigrationRunner {
   private readonly driver: IDatabaseDriver;
   private readonly migrations: readonly Migration[];
 
-  constructor(driver: IDatabaseDriver, migrations: readonly Migration[]) {
+  constructor(driver: IDatabaseDriver, migrations?: readonly Migration[]) {
     this.driver = driver;
-    this.migrations = migrations;
+    this.migrations = migrations ?? MigrationRegistry.getAllMigrations();
   }
 
   /**

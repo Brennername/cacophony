@@ -6,7 +6,7 @@ import * as os from "node:os";
 import { StackDetector } from "../scheduler/stack/StackDetector.js";
 import { DEFAULT_STACK_PROFILES, GENERIC_STACK_PROFILE } from "../scheduler/stack/defaultProfiles.js";
 import { QueueGroomer } from "../scheduler/QueueGroomer.js";
-import { PGliteDriver, MigrationRunner, migration001, migration002, StackProfileRepository } from "@cacophony/db";
+import { PGliteDriver, MigrationRunner, StackProfileRepository } from "@cacophony/db";
 import type { TaskRecord } from "@cacophony/shared-types";
 
 describe("Stack & Skill Instruction Profile System", () => {
@@ -129,7 +129,7 @@ describe("Stack & Skill Instruction Profile System", () => {
     before(async () => {
       driver = new PGliteDriver();
       await driver.connect();
-      const runner = new MigrationRunner(driver, [migration001, migration002]);
+      const runner = new MigrationRunner(driver);
       await runner.migrate();
       repo = new StackProfileRepository(driver);
     });
