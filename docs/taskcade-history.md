@@ -328,5 +328,25 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T15.5.2: CheckpointTimelineComponent (Standalone, Git shadow micro-checkpoint timeline with instant Undo/Redo triggers).
   - [x] T15.5.3: Unit & Component Testing (Verified with Vitest Angular testing suite in phase15-components.spec.ts passing 100%).
 
+---
+
+## Archived Phase 16: Verification, Integration & System Auditing
+*Completed & Verified in Commit: `9c90321`*
+
+- [x] T16.1: End-to-End Testing of New Subsystems:
+  - [x] T16.1.1: Verify LSP client startup, diagnostic publishing, and error injection on real TypeScript and Java workspaces.
+  - [x] T16.1.2: Verify multi-provider inference with Ollama, LM Studio, and frontier fallback routing.
+  - [x] T16.1.3: Verify tree-sitter repository map generation and PageRank ranking across multi-file repositories.
+  - [x] T16.1.4: Verify automated test loop and closed-loop error remediation with failing unit tests.
+  - [x] T16.1.5: Verify git checkpoints, `/undo`, and `/redo` commands in isolated worktrees.
+  - [x] T16.1.6: Verify TUI rendering, prompt queueing, and mid-stream interrupt in terminal sessions.
+- [x] T16.2: System Architecture Audit & Resource Benchmark:
+  - [x] T16.2.1: Audit memory and VRAM footprints during combined LSP, Tree-Sitter, and Ollama operations on Vega APU.
+  - [x] T16.2.2: Ensure all external calls and sensitive tokens are strictly managed in `.env` and `SecretVault`.
+  - [x] T16.2.3: Validate zero emojis policy and strict typing across all new modules.
+- [x] T16.3: Update Documentation & Runbooks:
+  - [x] T16.3.1: Document new CLI commands, TUI shortcuts, and custom markdown template authoring in `docs/operations_manual.md`.
+  - [x] T16.3.2: Update API and JSON-RPC protocol specifications in `docs/api_spec.md`.
+
 
 
