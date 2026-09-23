@@ -227,3 +227,32 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
 - [x] T10.2: Validate Docker Compose multi-container deployment (Cacophony + Gitea + Ollama host bridge).
 - [x] T10.3: Execute end-to-end task journey: feature decomposition -> task queue -> Ollama generation -> deterministic scrub -> test execution -> Gitea PR push -> local model review -> automated merge.
 - [x] T10.4: Document operation manual, API specifications, and troubleshooting runbooks in docs/.
+
+---
+
+## Archived Phase 11: Context & Intelligence Engine (OpenCode & Aider Spec)
+*Completed & Verified in Commits: `33fdebc`, `02b14e3`, `70384ad`, `9679193`, and `1a217fc`*
+
+- [x] T11.1: Language Server Protocol (LSP) Integration (`spec:LanguageServerProtocolIntegration`):
+  - [x] T11.1.1: Core LSP Client & Lifecycle Manager (ILspClient, LspProcessSupervisor, multi-language detection for TypeScript, Java, Go, Rust).
+  - [x] T11.1.2: Compiler Diagnostics & Type Error Ingestion (LspDiagnosticIngestor, structured normalization, settling barriers).
+  - [x] T11.1.3: Self-Healing LSP Error Feedback (LspErrorFeedbackFormatter, SelfHealingParseLoop integration, lsp_diagnostic_snapshots DB persistence).
+  - [x] T11.1.4: Symbol Navigation & Workspace Querying (lsp_get_diagnostics, lsp_find_definition tools in ToolRegistry).
+- [x] T11.2: Model-Agnostic Registry & Multi-Provider Architecture (`spec:ModelAgnosticRegistry`):
+  - [x] T11.2.1: Unified Model Registry Abstraction (IModelRegistry, ModelSpec, model_registry_entries DB repository).
+  - [x] T11.2.2: Local Provider Adapters (LMStudioProvider, OllamaDiscoveryService, LocalEndpointScanner port probing).
+  - [x] T11.2.3: Cloud & Frontier Provider Adapters (OpenAiCompatibleProvider generic driver supporting custom baseURL and auth).
+  - [x] T11.2.4: Model Benchmarking & Dynamic Capability Matrix (ModelCapabilityProber, WHOLE_FILE_ONLY vs DIFF_CAPABLE tagging).
+- [x] T11.3: Model Context Protocol (MCP) Client & External Tool Discovery (`spec:ModelContextProtocolSupport`):
+  - [x] T11.3.1: Bidirectional MCP Client Core (McpClientManager supporting Stdio and SSE transports, external tool registration).
+  - [x] T11.3.2: Configuration & Third-Party Server Connections (conf/mcp_servers.json schema, vault credential injection, reconnection logic).
+  - [x] T11.3.3: Tool Namespace & Security Isolation (serverName:toolName namespacing, ExecutionGuard security policies).
+- [x] T11.4: Auto-Compacting Conversation Sessions (`spec:AutoCompactingSessions`):
+  - [x] T11.4.1: Token Budget & Utilization Monitor (TokenUsageTracker, warning/compaction thresholds, message importance scoring).
+  - [x] T11.4.2: Background Conversation Summarizer (SessionCompactor hierarchical turn summarization, state preservation).
+  - [x] T11.4.3: Compaction Verification & Rollback (token reduction validation, session_compaction_history DB snapshots).
+- [x] T11.5: Persistent Multi-Tab Session Storage (`spec:PersistentSessionStorage`):
+  - [x] T11.5.1: Session Schema & Persistence Layer (sessions, session_messages, session_tabs relational tables and SessionRepository).
+  - [x] T11.5.2: Multi-Tab Session Manager (SessionManager multi-tab isolation, git branch binding, export/fork/resume).
+  - [x] T11.5.3: Session Search & Indexing (PostgreSQL full-text search across session turns and bookmarks).
+
