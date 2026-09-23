@@ -311,5 +311,22 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T14.5.1: JSON-RPC & WebSocket Protocol Layer (HeadlessServerProtocol implementing JSON-RPC 2.0 dispatch, method handlers, error formatting, and streaming notifications).
   - [x] T14.5.2: Editor & Extension Hooks (Authentication token verification and bi-directional RPC for VS Code / Cursor extensions).
 
+---
+
+## Archived Phase 15: Modern Angular UI Enhancements for New Features
+*Completed & Verified in Commit: `28c82fd`*
+
+- [x] T15.1: Multi-Tab Session & Conversation Inspector (`spec:PersistentSessionStorage`):
+  - [x] T15.1.1: SessionTabsComponent (Standalone, Angular Signals `signal<SessionTab[]>`, `model<string>`, mobile-first scrollable tab bar, tab create/close actions).
+  - [x] T15.1.2: ConversationTimelineComponent (Standalone, signal-based message stream, computed token counters, tool accordions, mobile-first CSS custom properties).
+- [x] T15.2: Interactive Repository Map & Context Selector (`spec:RepositoryStructureMapping`, `spec:GranularMultiFileContext`):
+  - [x] T15.2.1: RepoMapViewerComponent (Standalone, SVG dependency graph, symbol centrality scaling, search filtering, node selection drawer).
+- [x] T15.4: LSP Diagnostics & Automated Test Loop Panel (`spec:LanguageServerProtocolIntegration`, `spec:AutomatedTestLoopIntegration`):
+  - [x] T15.4.1: LspTestLoopPanelComponent (Standalone, live LSP compiler diagnostics grouped by severity, automated test execution loop status with collapsible failure snippets).
+- [x] T15.5: Execution Mode & Checkpoint Controller (`spec:FlexibleExecutionModes`, `spec:AutomatedGitCheckpoints`, `spec:GitUndoRedoCommands`):
+  - [x] T15.5.1: ExecutionModeSelectorComponent (Standalone, mobile-first segmented control for Plan, Build, and Auto execution safety modes).
+  - [x] T15.5.2: CheckpointTimelineComponent (Standalone, Git shadow micro-checkpoint timeline with instant Undo/Redo triggers).
+  - [x] T15.5.3: Unit & Component Testing (Verified with Vitest Angular testing suite in phase15-components.spec.ts passing 100%).
+
 
 

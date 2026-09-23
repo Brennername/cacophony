@@ -28,66 +28,8 @@
 
 ---
 
-## Active Taskcade: Phase 15 & 16 Execution
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 14.*
-
----
-
-## Phase 15: Modern Angular UI Enhancements for New Features
-*Requirements: Adhere strictly to `docs/SKILL.md` (Angular v20+ Standalone, Zoneless `provideZonelessChangeDetection()`, Signals `signal()`, `computed()`, `effect()`, `input()`, `output()`, `model()`, `@defer` incremental hydration, Mobile-First CSS Custom Properties)*
-
-### T15.1: Multi-Tab Session & Conversation Inspector (`spec:PersistentSessionStorage`)
-- [ ] T15.1.1: Create `SessionTabsComponent` (standalone):
-  - [ ] T15.1.1.1: Use Angular Signals (`signal<SessionTab[]>`, `model<string>`) to manage active and background tabs.
-  - [ ] T15.1.1.2: Support tab creation, close, rename, and branch switching with zero `zone.js` dependencies.
-  - [ ] T15.1.1.3: Mobile-first responsive scrollable tab bar with touch swipe gestures.
-- [ ] T15.1.2: Create `ConversationTimelineComponent` (standalone):
-  - [ ] T15.1.2.1: Signal-based message stream rendering with computed token counter and cost tracker.
-  - [ ] T15.1.2.2: Render formatted markdown, syntax-highlighted code diffs, and tool invocation accordions.
-  - [ ] T15.1.2.3: Implement `@defer (on viewport)` for historical message virtualization and lazy rendering.
-- [ ] T15.1.3: Create `SessionSearchModalComponent` (standalone):
-  - [ ] T15.1.3.1: Full-text search input with `computed()` filtered results across archived and active sessions.
-  - [ ] T15.1.3.2: Keyboard navigation (`Escape` close, arrows navigate, `Enter` select session).
-
-### T15.2: Interactive Repository Map & Context Selector (`spec:RepositoryStructureMapping`, `spec:GranularMultiFileContext`)
-- [ ] T15.2.1: Create `RepoMapViewerComponent` (standalone):
-  - [ ] T15.2.1.1: SVG/Canvas dependency graph visualizer showing symbol centrality and architectural clusters.
-  - [ ] T15.2.1.2: Zoom, pan, and node focus using fine-grained Signals state.
-  - [ ] T15.2.1.3: Lazy-load graph engine via `@defer (hydrate on interaction)`.
-- [ ] T15.2.2: Create `ContextTaggingBarComponent` (standalone):
-  - [ ] T15.2.2.1: Visual chip list of currently tagged files (`EDITABLE` vs `READ_ONLY`) with token count badges.
-  - [ ] T15.2.2.2: Quick `/add` and `/drop` search dropdown with autocomplete.
-  - [ ] T15.2.2.3: Visual warning indicator when context exceeds recommended token budget.
-
-### T15.3: Steerable Generation & Prompt Queue Controller (`spec:SteerableGenerationAndQueue`)
-- [ ] T15.3.1: Create `PromptInputBarComponent` (standalone):
-  - [ ] T15.3.1.1: Multi-line autogrowing textarea with signal-based character and token estimation.
-  - [ ] T15.3.1.2: Interrupt / Cancel button (`signal<boolean>` reflecting streaming state) sending immediate abort signal.
-  - [ ] T15.3.1.3: Custom Markdown command autocomplete menu (`/` trigger displaying registered commands).
-- [ ] T15.3.2: Create `QueuedPromptsDrawerComponent` (standalone):
-  - [ ] T15.3.2.1: Drag-and-drop or reorderable list of pending follow-up prompts queued during active streaming.
-  - [ ] T15.3.2.2: Edit, delete, or promote queued prompts using Signal actions.
-
-### T15.4: LSP Diagnostics & Automated Test Loop Panel (`spec:LanguageServerProtocolIntegration`, `spec:AutomatedTestLoopIntegration`)
-- [ ] T15.4.1: Create `LspDiagnosticsWidgetComponent` (standalone):
-  - [ ] T15.4.1.1: Live list of workspace compiler diagnostics grouped by file and severity (Error, Warning, Info).
-  - [ ] T15.4.1.2: Click-to-focus on diagnostic location, showing compiler code and documentation link.
-  - [ ] T15.4.1.3: Real-time update via SSE diagnostic event stream.
-- [ ] T15.4.2: Create `TestLoopInspectorComponent` (standalone):
-  - [ ] T15.4.2.1: Visual indicator of post-edit test execution status (Running, Passed, Failed, Retrying).
-  - [ ] T15.4.2.2: Formatted stack trace viewer with collapsible frames and failing assertion diffs.
-  - [ ] T15.4.2.3: Manual trigger button to re-run scoped or global test suites.
-
-### T15.5: Execution Mode & Checkpoint Controller (`spec:FlexibleExecutionModes`, `spec:AutomatedGitCheckpoints`, `spec:GitUndoRedoCommands`)
-- [ ] T15.5.1: Create `ExecutionModeSelectorComponent` (standalone):
-  - [ ] T15.5.1.1: Mode toggle switch (`Plan`, `Build`, `Auto`) with badge descriptions.
-  - [ ] T15.5.1.2: Mobile-first responsive segmented control with high-contrast accessibility styling.
-- [ ] T15.5.2: Create `CheckpointTimelineComponent` (standalone):
-  - [ ] T15.5.2.1: Visual timeline of micro-checkpoints and shadow commits.
-  - [ ] T15.5.2.2: One-click `Undo` and `Redo` action buttons with confirmation modals.
-  - [ ] T15.5.2.3: Inline diff preview modal showing checkpoint changes against previous state.
-- [ ] T15.5.3: Unit & Component Testing:
-  - [ ] T15.5.3.1: Write component unit tests for all new standalone components verifying Signals reactivity, zoneless change detection, and theme custom property styling.
+## Active Taskcade: Phase 16 Execution
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 15.*
 
 ---
 
