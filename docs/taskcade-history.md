@@ -288,5 +288,28 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T13.1.3: Failure Diagnostics & Stack Trace Extraction (TestOutputParser parsing failures, assertion diffs, root causes, and formatting remediation snippets).
   - [x] T13.1.4: Closed-Loop Model Remediation (ClosedLoopTestRemediator running bounded 3-attempt remediation cycles with automatic GitUndoManager rollback on failure).
 
+---
+
+## Archived Phase 14: Terminal User Interface (TUI) & Developer Experience
+*Completed & Verified in Commit: `2a77bfa`*
+
+- [x] T14.1: Advanced Terminal User Interface (`spec:AdvancedTerminalUserInterface`):
+  - [x] T14.1.1: TUI Architecture & Framework Setup (ScreenBuffer 2D grid, responsive layout engine, Dark/Light/High-Contrast ANSI color palettes in TuiTheme).
+  - [x] T14.1.2: Split Panes & Widgets (ConversationPane markdown formatting, TelemetryBar live Vega APU readouts, ContextInspectorPane focus file tagging, StreamingLogDrawer).
+  - [x] T14.1.3: Keyboard Navigation & Searchable Command Palette (TerminalApp managing Tab cycle focus, Ctrl+P fuzzy command palette, Ctrl+T drawer toggle, automated tests).
+- [x] T14.2: Steerable Generation & Prompt Queue (`spec:SteerableGenerationAndQueue`):
+  - [x] T14.2.1: Mid-Stream Execution Interruption (LivePromptQueue propagating AbortController, resetting stream state, and emitting interruption events).
+  - [x] T14.2.2: Live Prompt Queue & Follow-Up Injection (LivePromptQueue sequential prompt ordering, mid-stream steering guidance annotations).
+- [x] T14.3: Custom Markdown Commands (`spec:CustomMarkdownCommands`):
+  - [x] T14.3.1: Template Format & Discovery (CustomMarkdownCommandEngine YAML frontmatter parsing, variable interpolation $ARG, $SELECTION, $FILES, $TEST_OUTPUT).
+  - [x] T14.3.2: Built-in Command Library (Created /refactor, /test, /review, /explain, /doc in conf/commands/).
+  - [x] T14.3.3: Execution & Discovery Engine (Dynamic directory scanning and command registration, verified with unit tests).
+- [x] T14.4: Flexible Execution Modes (`spec:FlexibleExecutionModes`):
+  - [x] T14.4.1: Non-Interactive CLI Mode (ExecutionSafetyManager Plan, Build, and Auto mode enforcement with strict disk guardrails).
+  - [x] T14.4.2: Interactive Execution Safety Modes (Plan mode disk protection, Build mode review requirements, Auto mode end-to-end execution).
+- [x] T14.5: Headless Server Protocol & Extension Hooks (`spec:HeadlessServerProtocol`):
+  - [x] T14.5.1: JSON-RPC & WebSocket Protocol Layer (HeadlessServerProtocol implementing JSON-RPC 2.0 dispatch, method handlers, error formatting, and streaming notifications).
+  - [x] T14.5.2: Editor & Extension Hooks (Authentication token verification and bi-directional RPC for VS Code / Cursor extensions).
+
 
 
