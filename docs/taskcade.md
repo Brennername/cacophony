@@ -24,7 +24,7 @@
 
 ---
 
-## Active Milestone Era: System Hardening, Authentik SSO, Full-Stack Real Data, Mobile-First Routed UI & Mechanistic Code Synthesis
+## Active Milestone Era: System Hardening, Authentik SSO, Full-Stack Real Data, Mobile-First Routed UI, Rule DSL, Stochastic Optimization & Hardware Discovery
 
 *See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 16.*
 
@@ -260,3 +260,176 @@
   - [ ] T24.2.2.1: Create automated hardware capability prober testing quantization throughput (Q4_K_M, Q8_0, FP16) on each node.
   - [ ] T24.2.2.2: Save optimal batch sizes, context limits, and thermal thresholds per card in `hardware_profiles` table.
   - [ ] T24.2.2.3: Expose multi-node fleet overview and hardware diagnostics in Angular dashboard route `/fleet`.
+
+---
+
+## Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine
+*RDF Category: `spec:RepairRuleDslCategory`*
+
+### T25.1: Declarative Rule DSL Grammar, AST & Configuration Schemas (`spec:RuleDslArchitecture`)
+- [ ] T25.1.1: Rule Grammar & Schema Definitions:
+  - [ ] T25.1.1.1: Define `@cacophony/shared-types` schemas for `RuleSeverity` (`silent_repair`, `soft_warning`, `hard_rejection`, `disabled`) and `RuleLifecycleHook` (`pre_generation`, `post_generation`, `pre_test`, `post_test`).
+  - [ ] T25.1.1.2: Define core interfaces: `IRepairRule<TContext, TResult>`, `RuleEvaluationContext`, `RuleExecutionResult`, `RuleDiagnostic`, `IRulePipeline`.
+  - [ ] T25.1.1.3: Author JSON Schema / Zod validator for declarative YAML pipeline definitions (`conf/pipelines/*.yml`).
+  - [ ] T25.1.1.4: Implement lightweight DSL parser supporting human-readable rule declarations (e.g. `pipeline "vega_hardened" { hook post_generation { rule strip_emojis [severity=silent_repair]; rule enforce_esm_js [severity=silent_repair]; } hook pre_test { rule banned_imports [severity=hard_rejection, packages=["conductor", "lodash"]]; rule loose_root_files [severity=soft_warning]; } }`).
+  - [ ] T25.1.1.5: Support variable interpolation and environment substitution within rule arguments (e.g. `${PROJECT_ROOT}`, `${TARGET_ARCH}`).
+- [ ] T25.1.2: Pipeline Chaining & Execution Engine:
+  - [ ] T25.1.2.1: Implement `RulePipelineEngine` in `@cacophony/engine` orchestrating rule sequences per lifecycle hook.
+  - [ ] T25.1.2.2: Implement short-circuit logic: when a `hard_rejection` rule triggers, halt subsequent rules unless configured with `continueOnError: true`.
+  - [ ] T25.1.2.3: Implement soft-warning accumulator: rules marked `soft_warning` emit non-fatal warnings preserved in task stage metadata for telemetry without failing the build.
+  - [ ] T25.1.2.4: Implement dry-run execution mode (`simulate: true`) calculating would-be modifications and rejections without altering files on disk.
+  - [ ] T25.1.2.5: Implement execution telemetry recorder persisting rule run durations, modification counts, and diagnostics in `rule_executions` database table.
+
+### T25.2: Core Deterministic Repair Rule Catalog (`spec:CoreRuleCatalog`)
+- [ ] T25.2.1: Formatting & Token Hygiene Rules:
+  - [ ] T25.2.1.1: Implement `StripEmojisRule`: Scans source files and documentation for unicode emoji ranges (excluding musical notation symbols U+2669 through U+266F), stripping or flagging per severity mode.
+  - [ ] T25.2.1.2: Implement `EnforceEsmJsExtensionRule`: TypeScript compiler/NodeNext ESM relative import scrubber appending missing `.js` extensions on relative module paths (`from './Foo.js'`).
+  - [ ] T25.2.1.3: Implement `WhitespaceAndEolNormalizerRule`: Normalizes CRLF to LF, trims trailing whitespace, and ensures final newline in modified files.
+- [ ] T25.2.2: Structural & Boundary Protection Rules:
+  - [ ] T25.2.2.1: Implement `LooseRootFileGuardRule`: Prevents models from creating loose source or test files in the project root directory; auto-relocates or rejects based on configurable package boundary policies.
+  - [ ] T25.2.2.2: Implement `EmptyFileGuardRule`: Detects 0-byte or whitespace-only files created by models and rejects or removes them.
+  - [ ] T25.2.2.3: Implement `PlaceholderStubDetectorRule`: Scans code for unfulfilled placeholder stubs (e.g. `// TODO: implement later`, `throw new Error("Not implemented")`, `// ... rest of code goes here ...`) and flags per configured tolerance.
+  - [ ] T25.2.2.4: Implement `BannedImportScrubberRule`: Detects hallucinated or blacklisted packages (e.g. legacy imports, forbidden framework dependencies) and strips or alerts.
+- [ ] T25.2.3: Mechanistic AST Alignment Rules:
+  - [ ] T25.2.3.1: Implement `AstSignatureAlignRule`: Cross-references extracted symbol signatures from Phase 23, mechanistically aligning inverted argument order, parameter name typos, and optional argument gaps.
+  - [ ] T25.2.3.2: Implement `TypeScriptDiagnosticRepairRule`: Consumes TypeScript compiler diagnostics (`tsc --noEmit`), attempting deterministic AST rewrites for trivial errors (e.g. missing type imports, unused variable prefixes `_`).
+
+### T25.3: Verification, Profiling & Unit Testing (`spec:RuleDslVerification`)
+- [ ] T25.3.1: Unit & Regression Tests:
+  - [ ] T25.3.1.1: Write unit tests for DSL parser validating grammar syntax errors, nested block scoping, and parameter parsing.
+  - [ ] T25.3.1.2: Write unit tests for each core rule validating idempotency, modification detection, and diagnostic reporting.
+  - [ ] T25.3.1.3: Write integration tests validating pipeline chaining, short-circuiting on hard rejections, and accumulation of soft warnings.
+  - [ ] T25.3.1.4: Benchmark rule execution overhead verifying total pipeline run latency remains under 50ms for typical source changes.
+
+---
+
+## Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparameter Optimization
+*RDF Category: `spec:StochasticRuleOptimizationCategory`*
+
+### T26.1: Historical Arena Telemetry Ingestion & Dataset Normalization (`spec:HistoricalArenaIngestion`)
+- [ ] T26.1.1: Decoupled Data Extraction Adapter:
+  - [ ] T26.1.1.1: Implement `HistoricalArenaIngestionAdapter` in `@cacophony/engine` reading external telemetry from `~/projects/drumalyzer/data/arena/` without relying on legacy bash or JS runners.
+  - [ ] T26.1.1.2: Ingest summary telemetry from `stats.json` (3,584 total tasks: 624 completed, 2,960 failed) into `historical_arenas` table.
+  - [ ] T26.1.1.3: Parse individual task records from `data/arena/completed/`, `data/arena/failed/`, and `data/arena/exhausted/` directories.
+  - [ ] T26.1.1.4: Ingest failure postmortems and error stack traces from `data/arena/postmortems/` into `historical_postmortems` table.
+  - [ ] T26.1.1.5: Ingest patch diff files from `data/arena/patches/` and lineage DAGs from `data/arena/lineage/`.
+- [ ] T26.1.2: Telemetry Normalization & Mitigation Paradox Analysis:
+  - [ ] T26.1.2.1: Normalize legacy failure codes (`review_failed: 1049`, `validation_failed: 134`, `disallowed_root_files: 84`, `test_failed: 167`, `no_changes_produced: 1520`).
+  - [ ] T26.1.2.2: Implement `MitigationParadoxAnalyzer`: Calculate the ratio of deterministic validation rejections vs real test assertion failures across historical models.
+  - [ ] T26.1.2.3: Generate baseline report demonstrating how overly rigid verifiers artificially inflated failure rates from ~4.6% (real test failures) to over 33% (rejections).
+  - [ ] T26.1.2.4: Export normalized dataset into benchmark test suite for offline rule backtesting.
+
+### T26.2: Offline Rule Pipeline Backtesting Engine (`spec:RuleBacktestingEngine`)
+- [ ] T26.2.1: Backtest Execution Runner:
+  - [ ] T26.2.1.1: Implement `RuleBacktestRunner` capable of replaying historical model diffs against arbitrary candidate rule pipelines.
+  - [ ] T26.2.1.2: Simulate rule execution across 3,500+ historical patches, measuring: would-be auto-repairs, avoided rejections, and test outcomes.
+  - [ ] T26.2.1.3: Calculate counterfactual pass rates: determine how many of the 1,049 `review_failed` tasks would have passed under `silent_repair` or `soft_warning` policies.
+  - [ ] T26.2.1.4: Multi-threaded backtest execution leveraging worker threads to evaluate thousands of candidate configurations in seconds.
+
+### T26.3: Stochastic Hyperparameter Search Engine (`spec:HyperparameterOptimizationEngine`)
+- [ ] T26.3.1: Search Space Definition & Objective Formulation:
+  - [ ] T26.3.1.1: Define typed search space covering: rule enablement (boolean vector), rule severity mode, timeout limits, regex tolerances, and pipeline ordering.
+  - [ ] T26.3.1.2: Formulate multi-objective loss function balancing pass rate ($w_{\text{pass}}$), false rejection rate ($w_{\text{false}}$), execution latency ($w_{\text{lat}}$), and code change churn ($w_{\text{churn}}$).
+  - [ ] T26.3.1.3: Implement Stochastic Random Search sampler evaluating uniformly and Gaussian-distributed configuration candidates.
+  - [ ] T26.3.1.4: Implement Genetic / Evolutionary Pipeline Optimizer: mutating rule toggles, swapping pipeline order, and breeding high-performing configurations over $N$ generations.
+  - [ ] T26.3.1.5: Implement Bayesian Optimization (using Gaussian Process surrogate with Expected Improvement acquisition) for continuous rule hyperparameters.
+- [ ] T26.3.2: Automated Configuration Profile Generation:
+  - [ ] T26.3.2.1: Run optimization across model categories: emitting tuned pipelines for `qwen2.5-coder:7b-4k`, `deepseek-r1:8b-4k`, `gemma3:4b-it-qat`, and future architectures.
+  - [ ] T26.3.2.2: Export winning hyperparameter configurations as declarative pipeline files in `conf/pipelines/optimized/`.
+  - [ ] T26.3.2.3: Expose optimization CLI: `cacophony rules optimize --dataset=historical-arena --strategy=genetic --generations=50`.
+  - [ ] T26.3.2.4: Write unit and integration tests verifying backtest accuracy and optimizer convergence.
+
+---
+
+## Phase 27: Autonomous Hardware Feature Discovery & Whitebox Ollama Tuning
+*RDF Category: `spec:AutonomousHardwareCategory`*
+
+### T27.1: Host Hardware Probing & Multi-Vendor Capability Scanner (`spec:HardwareProbingEngine`)
+- [ ] T27.1.1: Host Architecture & Device Scanner:
+  - [ ] T27.1.1.1: Implement `HardwareDiscoveryEngine` in `@cacophony/engine` querying Linux `/sys` and `/proc` filesystems without external binary dependencies.
+  - [ ] T27.1.1.2: Read `/sys/class/drm/card*/device/vendor` and `device` discovering all discrete and integrated GPU devices.
+  - [ ] T27.1.1.3: Probe sysfs `/sys/class/kfd/kfd/topology/nodes/` extracting AMD APU/GPU compute topology, SIMD engine count, and GTT memory aperture.
+  - [ ] T27.1.1.4: Probe unified system memory: calculate host RAM, swap configuration, and shared VRAM allocation for APUs (Cezanne / Vega gfx900).
+  - [ ] T27.1.1.5: Detect secondary vendor tool availability in PATH (`lspci`, `lshw`, `lsusb`, `rocminfo`, `vulkaninfo`, `nvidia-smi`, `clinfo`).
+- [ ] T27.1.2: Device Classification & Profile Recommendation:
+  - [ ] T27.1.2.1: Classify candidate compute devices into normalized categories: `AMD_APU_VEGA`, `AMD_DISCRETE_RDNA`, `NVIDIA_CUDA`, `INTEL_ARC`, `APPLE_SILICON`, `CPU_FALLBACK`.
+  - [ ] T27.1.2.2: Map detected hardware against known compute backend matrix: Vulkan vs ROCm vs CUDA vs Metal.
+  - [ ] T27.1.2.3: Identify hardware constraints (e.g. APU compute ring watchdog timeouts, absence of dedicated VRAM, lack of native Flash Attention in older GCN/Vega architectures).
+  - [ ] T27.1.2.4: Generate typed `HardwareDiscoveryReport` exposing detected devices, recommended hardware profile ID, and risk warnings.
+
+### T27.2: Whitebox Ollama Systemd Configuration & Override Generator (`spec:OllamaWhiteboxTuning`)
+- [ ] T27.2.1: Whitebox Override Generator:
+  - [ ] T27.2.1.1: Implement `OllamaSystemdGenerator` producing service drop-in configuration (`/etc/systemd/system/ollama.service.d/override.conf`) and environment definitions.
+  - [ ] T27.2.1.2: Default AMD Vega Profile Generator:
+    - Generate `OLLAMA_IGPU_ENABLE=1`, `OLLAMA_VULKAN=1`, `OLLAMA_FLASH_ATTENTION=0`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_KEEP_ALIVE=-1`, `OLLAMA_DEBUG=1`, `OLLAMA_HOST=0.0.0.0`.
+    - Generate kernel module parameter configuration `/etc/modprobe.d/amdgpu.conf` with `options amdgpu lockup_timeout=60000` to prevent compute ring resets.
+  - [ ] T27.2.1.3: AMD RDNA2/3 Profile Generator:
+    - Generate `HSA_OVERRIDE_GFX_VERSION=10.3.0` (or `11.0.0`), `OLLAMA_FLASH_ATTENTION=1`, ROCm backend enablement.
+  - [ ] T27.2.1.4: NVIDIA CUDA Profile Generator:
+    - Generate `CUDA_VISIBLE_DEVICES`, `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_NUM_PARALLEL=2`, compute capability flags.
+  - [ ] T27.2.1.5: Apple Silicon & CPU Fallback Profile Generator:
+    - Generate thread pool sizing matched to CPU performance cores (`OLLAMA_NUM_THREADS`).
+- [ ] T27.2.2: Dry-Run, Diff Inspection & Safe Provisioning CLI:
+  - [ ] T27.2.2.1: Implement CLI command `cacophony hardware inspect` printing human-readable hardware inventory and detected GPUs.
+  - [ ] T27.2.2.2: Implement CLI command `cacophony hardware generate-overrides` displaying exact file diffs for `/etc/systemd/system/ollama.service.d/override.conf` and `/etc/modprobe.d/amdgpu.conf`.
+  - [ ] T27.2.2.3: Provide optional `--apply` flag that checks for root/sudo elevation, writes configuration files, executes `systemctl daemon-reload`, and verifies Ollama health.
+  - [ ] T27.2.2.4: Provide automatic rollback backup files (`override.conf.bak`) before modifying existing system configuration.
+
+### T27.3: Hardware Profile Benchmarking & Adaptive Context Tuning (`spec:HardwareBenchmarking`)
+- [ ] T27.3.1: Automated Micro-Benchmark Suite:
+  - [ ] T27.3.1.1: Implement `HardwareBenchmarkRunner` executing standardized inference probes against Ollama.
+  - [ ] T27.3.1.2: Measure prompt ingestion throughput (tokens/sec) across context window sizes (2k, 4k, 8k, 16k, 32k).
+  - [ ] T27.3.1.3: Measure generation throughput (tokens/sec) and time-to-first-token (TTFT).
+  - [ ] T27.3.1.4: Monitor host RAM and VRAM utilization during inference, detecting memory thrashing or swap allocation.
+  - [ ] T27.3.1.5: Detect GPU driver hangs or Vulkan device lost errors, automatically identifying the maximum stable context ceiling.
+- [ ] T27.3.2: Adaptive Hardware Profile Persistence:
+  - [ ] T27.3.2.1: Save calibrated hardware profile in `hardware_profiles` database table and `conf/hardware.json`.
+  - [ ] T27.3.2.2: Wire runtime scheduler to enforce calibrated context ceilings and concurrency limits based on the active hardware profile.
+  - [ ] T27.3.2.3: Write automated integration tests for hardware scanner and profile generator.
+
+---
+
+## Phase 28: Stochastic Exploration Scheduler & Multi-Armed Bandit Dispatcher
+*RDF Category: `spec:StochasticSchedulingCategory`*
+
+### T28.1: Multi-Armed Bandit Scheduling & Epsilon-Greedy Dispatcher (`spec:BanditScheduler`)
+- [ ] T28.1.1: Bandit Policy Engine:
+  - [ ] T28.1.1.1: Implement `BanditTaskScheduler` in `@cacophony/engine` wrapping the single-concurrency queue dispatcher.
+  - [ ] T28.1.1.2: Implement Epsilon-Greedy Policy ($\epsilon \in [0.05, 0.25]$, configurable via `.env` `SCHEDULER_EXPLORATION_RATE=0.15`):
+    - With probability $1 - \epsilon$: Exploit the highest-rated model for the requested role based on historical win rate.
+    - With probability $\epsilon$: Explore a randomly sampled qualified candidate model or expanded configuration.
+  - [ ] T28.1.1.3: Implement Upper Confidence Bound (UCB-1) Policy calculating uncertainty bonus: $\text{score}_i = \bar{X}_i + c \sqrt{\frac{\ln N}{n_i}}$.
+  - [ ] T28.1.1.4: Implement Thompson Sampling Policy sampling from posterior Beta distribution $Beta(\alpha_i, \beta_i)$ for each candidate arm.
+  - [ ] T28.1.1.5: Ensure exploration never violates active hardware safety constraints (e.g. never exceeds hardware profile context or VRAM ceiling).
+- [ ] T28.1.2: Multi-Dimensional Exploration Spaces:
+  - [ ] T28.1.2.1: Model Architecture Exploration: Randomly trial non-primary models (e.g. give a code task to `deepseek-r1:8b`, `phi4-mini`, or `llama3.1` instead of default `qwen2.5-coder`).
+  - [ ] T28.1.2.2: Context Window Tier Exploration: Dynamically test larger context windows (e.g. 8k or 16k instead of standard 4k) when VRAM headroom permits.
+  - [ ] T28.1.2.3: Sampling Hyperparameter Exploration: Vary temperature ($\pm 0.15$), top_p, and repetition penalties to gather empirical generation diversity.
+  - [ ] T28.1.2.4: Log every exploration event with explicit tag `task.is_exploratory = true` and `task.exploration_rationale`.
+
+### T28.2: Empirical Reward Function & Dynamic Promotion Engine (`spec:DynamicPromotionEngine`)
+- [ ] T28.2.1: Multi-Factor Reward Formulation:
+  - [ ] T28.2.1.1: Calculate empirical reward $R \in [-1.0, 1.0]$ upon task stage completion:
+    - $+1.0$: Tests pass cleanly on first attempt without remediation.
+    - $+0.8$: Tests pass after deterministic rule remediation (e.g. ESM `.js` import fix).
+    - $+0.3$: Code generates syntactically valid AST but fails unit test assertion.
+    - $-0.2$: Code rejected by deterministic validation rules.
+    - $-0.5$: Code produces syntax error or compiler fatal error.
+    - $-1.0$: Inference triggers GPU crash, driver timeout, or thermal abort.
+  - [ ] T28.2.1.2: Update model posterior parameters ($\alpha, \beta$) and rolling Elo ratings in `model_registry` table.
+- [ ] T28.2.2: Dynamic Retry Escalation & Role Promotion:
+  - [ ] T28.2.2.1: When a primary model fails a task stage, query the bandit policy for the highest-potential alternative candidate rather than a hardcoded static fallback.
+  - [ ] T28.2.2.2: Implement dynamic role promotion: when an exploratory model's empirical win rate significantly exceeds the primary model ($p < 0.05$ binomial test), propose or automatically update the default role assignment in `conf/cacophony.json`.
+  - [ ] T28.2.2.3: Persist dynamic promotion history in `model_promotions` table with statistical justification.
+
+### T28.3: Mobile-First Frontend Telemetry & Stochastic Control Dashboard (`spec:StochasticUiDashboard`)
+- [ ] T28.3.1: Angular Telemetry & Exploration UI:
+  - [ ] T28.3.1.1: Create `ExplorationControlComponent` (standalone) in `/models` route displaying live exploration rate slider ($\epsilon$), active policy (Epsilon-Greedy vs UCB vs Thompson), and current exploration trials count.
+  - [ ] T28.3.1.2: Render interactive Beta distribution curve visualizations showing uncertainty and confidence intervals per model.
+  - [ ] T28.3.1.3: Render 2D Pareto-Frontier scatter plot (Success Rate % vs Tokens/Second vs VRAM footprint) with model comparison overlays.
+  - [ ] T28.3.1.4: Add "Exploratory Run" badge to Task Card and Gantt Transport timeline for all tasks executed under exploration policy.
+  - [ ] T28.3.1.5: Implement Rule Pipeline Visualizer in `/settings` route allowing operators to toggle individual rules on/off, adjust severities, and view counterfactual pass rates.
+- [ ] T28.3.2: Automated Verification:
+  - [ ] T28.3.2.1: Write unit tests verifying epsilon-greedy probabilistic distribution and random seed reproducibility.
+  - [ ] T28.3.2.2: Write integration tests verifying UCB-1 and Thompson sampling convergence towards optimal models on synthetic task series.
+  - [ ] T28.3.2.3: Write e2e tests asserting telemetry updates and live UI signal synchronization on the Angular dashboard.
