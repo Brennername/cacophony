@@ -125,30 +125,30 @@
 *RDF Category: `spec:ResponsiveInterfaceCategory`*
 
 ### T20.1: Angular Router Architecture & Route Modularization (`spec:AngularRouting`)
-- [ ] T20.1.1: Route Structure & View Decomposition:
-  - [ ] T20.1.1.1: Replace monolithic single-page forever-scroll in `AppComponent` with structured Angular child routing.
-  - [ ] T20.1.1.2: Create `/dashboard` route: System vitals header, active running task card, and compact live queue snapshot.
-  - [ ] T20.1.1.3: Create `/queue` route: Full task queue management, drag-and-drop reordering, priority filters, and enqueue drawer.
-  - [ ] T20.1.1.4: Create `/history` route: Audited execution runs, failure cause taxonomy, diff comparisons, and Gitea PR links.
-  - [ ] T20.1.1.5: Create `/models` route: Model health leaderboard, eviction statistics, tokens/sec gauges, and fallback matrices.
-  - [ ] T20.1.1.6: Create `/repomap` route: Full-screen interactive SVG/Canvas repository dependency graph with pan/zoom.
-  - [ ] T20.1.1.7: Create `/processes` route: Non-model test runners, linter executions, git worktrees, and shell audits.
-  - [ ] T20.1.1.8: Create `/settings` route: Theme selection, SSO configuration, network profiles, and vault secrets manager.
-- [ ] T20.1.2: Mobile Responsive Navigation:
-  - [ ] T20.1.2.1: Design and implement mobile slide-out Hamburger Drawer with swipe gestures for narrow viewports (< 768px).
-  - [ ] T20.1.2.2: Implement Mobile Bottom Navigation Bar (`Dashboard`, `Queue`, `History`, `Models`, `More`) with tap targets > 48px.
-  - [ ] T20.1.2.3: Eliminate header button horizontal overflow on mobile screens; collapse secondary actions into contextual kebab menu.
-  - [ ] T20.1.2.4: Ensure 100% compliance with mobile accessibility standards (WCAG tap targets, ARIA labels, focus states).
+- [x] T20.1.1: Route Structure & View Decomposition:
+  - [x] T20.1.1.1: Replace monolithic single-page forever-scroll in `AppComponent` with structured Angular child routing.
+  - [x] T20.1.1.2: Create `/dashboard` route: System vitals header, active running task card, and compact live queue snapshot.
+  - [x] T20.1.1.3: Create `/queue` route: Full task queue management, drag-and-drop reordering, priority filters, and enqueue drawer.
+  - [x] T20.1.1.4: Create `/history` route: Audited execution runs, failure cause taxonomy, diff comparisons, and Gitea PR links.
+  - [x] T20.1.1.5: Create `/models` route: Model health leaderboard, eviction statistics, tokens/sec gauges, and fallback matrices.
+  - [x] T20.1.1.6: Create `/repomap` route: Full-screen interactive SVG/Canvas repository dependency graph with pan/zoom.
+  - [x] T20.1.1.7: Create `/processes` route: Non-model test runners, linter executions, git worktrees, and shell audits.
+  - [x] T20.1.1.8: Create `/settings` route: Theme selection, SSO configuration, network profiles, and vault secrets manager.
+- [x] T20.1.2: Mobile Responsive Navigation:
+  - [x] T20.1.2.1: Design and implement mobile slide-out Hamburger Drawer with swipe gestures for narrow viewports (< 768px).
+  - [x] T20.1.2.2: Implement Mobile Bottom Navigation Bar (`Dashboard`, `Queue`, `History`, `Models`, `More`) with tap targets > 48px.
+  - [x] T20.1.2.3: Eliminate header button horizontal overflow on mobile screens; collapse secondary actions into contextual kebab menu.
+  - [x] T20.1.2.4: Ensure 100% compliance with mobile accessibility standards (WCAG tap targets, ARIA labels, focus states).
 
 ### T20.2: High-Density Desktop Grid & Gap Elimination (`spec:DesktopGridOptimization`)
-- [ ] T20.2.1: CSS Grid Flow & Auto-Fitting Layout Engine:
-  - [ ] T20.2.1.1: Refactor desktop layout from rigid 2-column grid to dynamic CSS Grid with `grid-auto-flow: dense` and masonry-inspired packing.
-  - [ ] T20.2.1.2: Implement card height expansion (`display: flex; flex: 1`) preventing blank vertical gaps at column bottoms.
-  - [ ] T20.2.1.3: Ensure `ProcessInspectorComponent` and `QueueManagerComponent` fluidly resize and consume remaining viewport height.
-  - [ ] T20.2.1.4: Provide customizable desktop dashboard widget layout with persistent localStorage layout preferences.
-- [ ] T20.2.2: Responsive Visual Polish:
-  - [ ] T20.2.2.1: Verify smooth transitions across Dark, Light, and High-Contrast themes across all routes.
-  - [ ] T20.2.2.2: Write component tests verifying route transitions and responsive breakpoint triggers.
+- [x] T20.2.1: CSS Grid Flow & Auto-Fitting Layout Engine:
+  - [x] T20.2.1.1: Refactor desktop layout from rigid 2-column grid to dynamic CSS Grid with `grid-auto-flow: dense` and masonry-inspired packing.
+  - [x] T20.2.1.2: Implement card height expansion (`display: flex; flex: 1`) preventing blank vertical gaps at column bottoms.
+  - [x] T20.2.1.3: Ensure `ProcessInspectorComponent` and `QueueManagerComponent` fluidly resize and consume remaining viewport height.
+  - [x] T20.2.1.4: Provide customizable desktop dashboard widget layout with persistent localStorage layout preferences.
+- [x] T20.2.2: Responsive Visual Polish:
+  - [x] T20.2.2.1: Verify smooth transitions across Dark, Light, and High-Contrast themes across all routes.
+  - [x] T20.2.2.2: Write component tests verifying route transitions and responsive breakpoint triggers.
 
 ---
 

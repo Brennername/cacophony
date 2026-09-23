@@ -120,4 +120,53 @@ describe('Phase 15: Modern Angular Standalone Components (Signals & Zoneless)', 
       expect(compiled.textContent).toContain('TS2304');
     });
   });
+
+  describe('Phase 20: Mobile-First Route Views & High-Density Navigation (T20.1 & T20.2)', () => {
+    it('should configure and resolve modular route definitions', async () => {
+      const { routes } = await import('../app.routes');
+      expect(routes.length).toBeGreaterThanOrEqual(9);
+
+      const paths = routes.map((r) => r.path);
+      expect(paths).toContain('');
+      expect(paths).toContain('dashboard');
+      expect(paths).toContain('queue');
+      expect(paths).toContain('history');
+      expect(paths).toContain('models');
+      expect(paths).toContain('repomap');
+      expect(paths).toContain('processes');
+      expect(paths).toContain('settings');
+      expect(paths).toContain('auth/callback');
+    });
+
+    it('should render DashboardViewComponent with dense card sections', async () => {
+      const { DashboardViewComponent } = await import('./views/dashboard-view.component');
+      TestBed.configureTestingModule({
+        imports: [DashboardViewComponent],
+      });
+      const fixture = TestBed.createComponent(DashboardViewComponent);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('.dashboard-grid')).toBeTruthy();
+      expect(compiled.querySelector('app-hardware-monitor')).toBeTruthy();
+      expect(compiled.querySelector('app-task-inspector')).toBeTruthy();
+      expect(compiled.querySelector('app-queue-manager')).toBeTruthy();
+    });
+
+    it('should render SettingsViewComponent and toggle themes', async () => {
+      const { SettingsViewComponent } = await import('./views/settings-view.component');
+      TestBed.configureTestingModule({
+        imports: [SettingsViewComponent],
+      });
+      const fixture = TestBed.createComponent(SettingsViewComponent);
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance;
+      expect(comp.themeService.currentTheme()).toBe('dark');
+      comp.themeService.setTheme('high-contrast');
+      expect(comp.themeService.currentTheme()).toBe('high-contrast');
+      comp.themeService.setTheme('dark');
+    });
+  });
 });
+
