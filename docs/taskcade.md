@@ -1,225 +1,344 @@
 # Cacophony Taskcade: Autonomous Local Model Arena & Code Orchestrator
 
 ## Architectural Directives & Operational Rules
-- Zero Emojis in any code, comments, documentation, or commits.
+- Zero Emojis in any code, comments, documentation, or commits (unless a feature explicitly declares emoji exemption).
 - SOLID principles strictly enforced across all modules.
-- Strict typing: TypeScript (Node.js/Bun) and modern Angular (v20+); strictly NO Python in core codebase.
-- Database: Default to PGlite (in-process WASM/Node PostgreSQL) with clean abstraction for SQLite, PostgreSQL, and MariaDB.
+- Strict typing: TypeScript (Node.js/Bun) and modern Angular (v20+ with Signals, Zoneless, Standalone); strictly NO Python in core codebase.
+- Database: PGlite (in-process WASM/Node PostgreSQL) with clean abstraction for SQLite, PostgreSQL, and MariaDB.
 - Single-concurrency scheduler: Vega APU affinity grouping (minimizes Ollama model unloads), model failure eviction (3-4 consecutive fails), and weighted random fallback.
-- Mobile-first responsive UI with Dark Mode (default), Light Mode, and High Contrast Mode.
+- Mobile-first responsive UI with Dark Mode (default), Light Mode, and High Contrast Mode adhering to Angular best practices (`docs/SKILL.md`).
 - All secrets strictly confined to .env and encrypted vault.
 - Never delete source files with rm; move deprecated files to .trash/ with justification documentation.
-- Always commit changes, update ignore files, and do the things necessary to keep the workspace clean. if you need to use a branch or worktree or workbranch or whatever, do so, but make sure your work is prod ready.
----
-
-# Technical Design Document: Local LLM Code Generation & Adaptation Layer
-
-## 1. Objective
-
-To specify the native engine mechanisms required to support resource-constrained local LLMs (running on consumer hardware) in reliably producing functional code modifications, replacing external interactive CLI agent dependencies with an internal, robust processing pipeline.
+- Always commit changes, keep workspace clean, and ensure work is production ready.
 
 ---
 
-## 2. Core Operational Strategies
-
-### Adaptive Output Formatting
-
-* **Local Models:** Enforce whole-file rewrites. Because resource-constrained models struggle with fine-grained search-and-replace diff syntax, prompts must explicitly demand the complete file content enclosed in standard markdown code blocks.
-* **Frontier Models:** Permit concise structural diffs or targeted code blocks to minimize token overhead and latency.
-
-### Self-Healing Parse and Feedback Loops
-
-* **Validation Layer:** Automatically inspect LLM outputs for structural compliance, missing code fences, or malformed payloads before applying changes to disk.
-* **Error Injection:** When a parse or syntax validation step fails, construct a corrective follow-up prompt appending the exact parser error message, instructing the model to self-correct on the subsequent attempt within a bounded retry limit.
-
-### Context Minimization and Scoping
-
-* **Targeted File Injection:** Prevent context window degradation by limiting the payload strictly to the task description, immediate file dependencies, and a compact directory tree map rather than dumping entire repository contents.
-* **Isolation:** Ensure context assembly happens per-task inside dedicated execution boundaries.
-
-### Deterministic Post-Processing Guard
-
-* **Syntax & Extension Validation:** Pass raw model outputs through a deterministic sanitation layer prior to disk persistence.
-* **Heuristic Corrections:** Automatically intercept and rectify common local model failure modes, such as incorrect file extension assignments (e.g., swapping `.ts` and `.js`) or malformed import statements.
+## Taskcade Rotation & History Protocol
+1. **Verification Gate**: No task is marked completed `[x]` or rotated without passing its verified automated test suite or operational validation.
+2. **Archival Procedure**: When an entire phase or major milestone is fully verified, its completed checklist items are transferred from `docs/taskcade.md` to `docs/taskcade-history.md`.
+3. **Traceability**: Each archived phase preserves its task IDs, descriptions, subtask trees, associated git commit hashes, and verification scope.
+4. **Token Efficiency**: Active planning and execution in `docs/taskcade.md` remain uncluttered, allowing AI agents and human operators to focus directly on pending work without context exhaustion.
+5. **Reference**: See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 10.
 
 ---
 
-## Phase 1: Project Scaffolding & Container Topology
-- [x] T1.1: Initialize monorepo workspace structure (backend API/engine, frontend Angular app, shared types, tools package).
-- [x] T1.2: Configure root TypeScript configuration (tsconfig.base.json) with strict null checks, ES2022/NodeNext resolution, and explicit typing.
-- [x] T1.3: Create root .gitignore and .dockerignore files ensuring secrets, logs, local DB files, and build outputs are excluded.
-- [x] T1.4: Define .env.example and generate .env with tested and unallocated random ports (Frontend: 24072, API: 24161, MCP: 21264, Gitea HTTP: 19634, Gitea SSH: 17883) and secure vault master key.
-- [x] T1.5: Draft docker-compose.yml defining Cacophony Engine, Gitea service with OAuth2 enabled, and bind-mounted volumes (/config, /data, /workspaces).
-- [x] T1.6: Create initial configuration schema in conf/cacophony.example.json defining model mappings, thermal thresholds, and execution guards.
+## Active Phase 6 Outstanding Item
+- [ ] T6.1.4: Implement automated code formatter invocation (Prettier / ESLint programmatic autofix) integrated into `CodeScrubber` pipeline.
 
-## Phase 2: Database Abstraction & PGlite Persistence Layer
-- [x] T2.1: Define IDatabaseDriver and IRepository interfaces with strict generic typing for CRUD, transactions, and raw queries.
-- [x] T2.2: Implement PGliteDriver leveraging @electric-sql/pglite for file-backed embedded PostgreSQL storage in data/cacophony_pglite.
-- [x] T2.3: Implement SQLiteDriver and external PostgreSQL/MariaDB driver adapters satisfying the IDatabaseDriver interface.
-- [x] T2.4: Create automated database migration runner executing ordered SQL migrations on engine startup.
-- [x] T2.5: Write initial DDL migration creating core tables:
-  - [x] T2.5.1: Table `tasks` (id, title, prompt, role, status, priority, model_assigned, test_command, focus_files, target_branch, pr_url, failure_count, timestamps).
-  - [x] T2.5.2: Table `task_stages` (id, task_id, stage_name, stage_status, started_at, completed_at, log_output, tokens_sent, tokens_received, duration_ms).
-  - [x] T2.5.3: Table `model_health_profiles` (model_id, provider, total_tasks, total_success, total_failures, consecutive_failures, avg_latency_ms, avg_tks, status).
-  - [x] T2.5.4: Table `telemetry_snapshots` (timestamp, gpu_busy_pct, vram_used_bytes, vram_total_bytes, gtt_used_bytes, edge_temp_c, vddgfx_mv, ppt_watts, sclk_mhz, current_model).
-  - [x] T2.5.5: Table `pr_reviews` (id, task_id, gitea_pr_id, reviewer_model, verdict, review_notes, diff_analyzed, created_at).
-  - [x] T2.5.6: Table `tool_audit_logs` (id, task_id, tool_name, parameters_json, result_summary, execution_time_ms, created_at).
-  - [x] T2.5.7: Table `secret_vault` (id, secret_key, encrypted_value, iv, created_at, updated_at).
-- [x] T2.6: Implement repository services with typed queries: TaskRepository, StageRepository, ModelHealthRepository, TelemetryRepository.
-- [x] T2.7: Write unit tests verifying PGlite driver transactions, schema migrations, and repository queries.
+---
 
-## Phase 3: Hardware Diagnostics & Sensor Telemetry Engine
-- [x] T3.1: Define IHardwareTelemetryProvider interface for sampling GPU busy percentage, VRAM, GTT, temperature, voltage, wattage, and clock speed.
-- [x] T3.2: Implement AmdVegaTelemetryProvider for sysfs direct sensor extraction:
-  - [x] T3.2.1: Dynamic discovery of amdgpu hwmon controller (/sys/class/hwmon/hwmon* matching name=amdgpu).
-  - [x] T3.2.2: Extraction of edge temperature (temp1_input), core voltage vddgfx (in0_input), PPT wattage (power1_input), and core clock sclk (freq1_input).
-  - [x] T3.2.3: Extraction of GPU busy percent (/sys/class/drm/card*/device/gpu_busy_percent).
-  - [x] T3.2.4: Extraction of VRAM used and total (/sys/class/drm/card*/device/mem_info_vram_used and mem_info_vram_total).
-  - [x] T3.2.5: Extraction of GTT used and total (/sys/class/drm/card*/device/mem_info_gtt_used and mem_info_gtt_total).
-- [x] T3.3: Implement FallbackTelemetryProvider querying Linux `sensors`, `radeontop`, or `nvidia-smi` when sysfs direct nodes are unavailable.
-- [x] T3.4: Implement ThermalGovernor managing pacing delays (Nominal: 0s, Warm 70-79C: 5s, Elevated 80-89C: 15s, Danger >=90C: pause until <80C).
-- [x] T3.5: Build background telemetry polling service with configurable sample intervals (default 1000ms) publishing to SQLite/PGlite and SSE broadcast.
-- [x] T3.6: Write unit tests verifying sysfs parsing, fallback resilience, and thermal zone transitions.
+## Phase 11: Context & Intelligence Engine (OpenCode & Aider Spec)
+*RDF Category: `spec:ContextAndIntelligenceCategory`*
 
-## Phase 4: Single-Concurrency Intelligent Task Scheduler & Model Governor
-- [x] T4.1: Implement single-concurrency execution mutex ensuring only one inference or heavy compilation process executes on the Vega APU at any instant.
-- [x] T4.2: Build Ollama state probe querying host Ollama `/api/ps` to identify the currently active loaded model in VRAM.
-- [x] T4.3: Implement Model Affinity Task Sorter:
-  - [x] T4.3.1: Given a list of pending tasks, sort tasks matching the currently loaded model first to prevent redundant model evictions.
-  - [x] T4.3.2: Prevent starvation of non-matching tasks via age-based priority escalation.
-- [x] T4.4: Implement Model Eviction & Weighted Random Selection Engine:
-  - [x] T4.4.1: Track consecutive failures per model; if consecutive failures reach 3, trigger temporary eviction.
-  - [x] T4.4.2: Calculate dynamic performance weights based on historical pass rate per role/category.
-  - [x] T4.4.3: Implement weighted random roulette selector choosing alternate model when default model is evicted.
-- [x] T4.5: Implement QueueGroomer service:
-  - [x] T4.5.1: Automatic focus file detection based on prompt analysis and workspace file tree.
-  - [x] T4.5.2: Automatic test command scoping (targeting specific package/workspace tests instead of global suite).
-  - [x] T4.5.3: Directive injection (preventing hallucinated imports, enforcing strict typing and zero emojis).
-- [x] T4.6: Implement task lifecycle state machine managing transitions (PENDING -> SCHEDULED -> RUNNING -> REMEDIATING -> TESTING -> IN_REVIEW -> COMPLETED | FAILED).
-- [x] T4.7: Write unit tests for task sorting, model affinity prioritization, eviction trigger, and weighted random selection.
-- [x] T4.8: Implement Language-Agnostic Stack & Skill Instruction Profile System:
-  - [x] T4.8.1: Define `IStackProfile` interface (name, detectionRules, directives, scrubberRules, defaultTestRunner).
-  - [x] T4.8.2: Implement automatic stack detector probing workspace markers (e.g. `pom.xml` for Java/Maven, `build.gradle` for Java/Gradle, `tsconfig.json` inspecting `moduleResolution` for TypeScript Bundler vs NodeNext, `go.mod` for Go, `Cargo.toml` for Rust).
-  - [x] T4.8.3: Decouple `QueueGroomer` from hardcoded TypeScript/NodeNext directives, dynamically resolving stack-specific directives and negative prompts from detected or configured profiles.
-  - [x] T4.8.4: Create SQL table `stack_instruction_profiles` and repository for persisting custom user-defined stack rules and skills via the Angular UI and configuration files.
+### T11.1: Language Server Protocol (LSP) Integration (`spec:LanguageServerProtocolIntegration`)
+- [ ] T11.1.1: Core LSP Client & Lifecycle Manager:
+  - [ ] T11.1.1.1: Define `ILspClient` interface (lifecycle `start`, `stop`, `restart`, `sendRequest`, `onNotification`, `onDiagnostic`).
+  - [ ] T11.1.1.2: Implement `LspProcessSupervisor` managing child language server processes via JSON-RPC stdio.
+  - [ ] T11.1.1.3: Implement auto-detection and launcher for `typescript-language-server` / `tsserver`.
+  - [ ] T11.1.1.4: Implement auto-detection and launcher for Java (`jdtls` / Eclipse JDT LS).
+  - [ ] T11.1.1.5: Implement auto-detection and launcher for Go (`gopls`).
+  - [ ] T11.1.1.6: Implement auto-detection and launcher for Rust (`rust-analyzer`).
+  - [ ] T11.1.1.7: Implement LSP workspace capability negotiation (`textDocument/publishDiagnostics`, `textDocument/definition`, `textDocument/references`, `textDocument/hover`, `textDocument/documentSymbol`).
+- [ ] T11.1.2: Compiler Diagnostics & Type Error Ingestion:
+  - [ ] T11.1.2.1: Implement `LspDiagnosticIngestor` subscribing to `textDocument/publishDiagnostics`.
+  - [ ] T11.1.2.2: Implement structured normalization of compiler diagnostics (severity: Error, Warning, Info, Hint; code, source, message, range).
+  - [ ] T11.1.2.3: Implement `LspDiagnosticStore` tracking active workspace errors and warnings keyed by URI and revision.
+  - [ ] T11.1.2.4: Implement post-edit diagnostic settling barrier (wait for language server debounced analysis to complete before proceeding to test phase).
+- [ ] T11.1.3: Self-Healing LSP Error Feedback:
+  - [ ] T11.1.3.1: Implement `LspErrorFeedbackFormatter` generating targeted markdown error snippets with exact line context and compiler error codes.
+  - [ ] T11.1.3.2: Integrate LSP diagnostic feedback into `SelfHealingParseLoop` to trigger auto-remediation before running full test suites.
+  - [ ] T11.1.3.3: Store LSP diagnostics in database table `lsp_diagnostic_snapshots` for telemetry and model error tracking.
+- [ ] T11.1.4: Symbol Navigation & Workspace Querying:
+  - [ ] T11.1.4.1: Implement LSP-powered go-to-definition and find-references tools for the engine.
+  - [ ] T11.1.4.2: Expose `lsp_get_diagnostics` and `lsp_find_definition` as callable tools in `packages/tools`.
+  - [ ] T11.1.4.3: Write comprehensive unit tests for LSP JSON-RPC message framing, process supervisor, and diagnostic parsing.
 
+### T11.2: Model-Agnostic Registry & Multi-Provider Architecture (`spec:ModelAgnosticRegistry`)
+- [ ] T11.2.1: Unified Model Registry Abstraction:
+  - [ ] T11.2.1.1: Define `IModelRegistry` interface (register, deregister, discover, queryCapabilities, benchmarkModel, getOptimalModelForTask).
+  - [ ] T11.2.1.2: Implement `ModelSpec` schema (model ID, family, provider, context window size, max output tokens, tool calling capability, diff format capability, cost per 1k tokens, local vs cloud).
+  - [ ] T11.2.1.3: Create database table `model_registry_entries` and repository in `@cacophony/db`.
+- [ ] T11.2.2: Local Provider Adapters:
+  - [ ] T11.2.2.1: Implement `LMStudioProvider` connecting to local LM Studio server (`http://localhost:1234/v1`).
+  - [ ] T11.2.2.2: Implement `OllamaDiscoveryService` dynamically querying `/api/tags` and `/api/show` to extract model parameters and quantization info.
+  - [ ] T11.2.2.3: Implement `LocalEndpointScanner` probing standard local inference ports (Ollama: 11434, LM Studio: 1234, vLLM: 8000, LocalAI: 8080).
+- [ ] T11.2.3: Cloud & Frontier Provider Adapters:
+  - [ ] T11.2.3.1: Refactor `FrontierProvider` into modular provider drivers: `OpenAiDriver`, `AnthropicDriver`, `GeminiDriver`, `GroqDriver`, `MistralDriver`.
+  - [ ] T11.2.3.2: Implement OpenAI-compatible generic driver supporting any custom baseURL and API key.
+  - [ ] T11.2.3.3: Implement rate limiting and exponential backoff retry policies per provider.
+- [ ] T11.2.4: Model Benchmarking & Dynamic Capability Matrix:
+  - [ ] T11.2.4.1: Implement `ModelCapabilityProber` running lightweight probe tasks (JSON formatting, diff generation, code completion) on model registration.
+  - [ ] T11.2.4.2: Dynamically tag models as `WHOLE_FILE_ONLY` vs `DIFF_CAPABLE` based on probe results.
+  - [ ] T11.2.4.3: Write unit tests verifying provider registry registration, discovery, and dynamic routing.
 
-## Phase 5: Model Inference & Frontier Orchestration Layer
-- [x] T5.1: Define IInferenceProvider interface with support for streaming, non-streaming, token accounting, and cancellation.
-- [x] T5.2: Implement OllamaProvider for local inference via host HTTP API (supporting model preload, keep_alive=-1, options tuning).
-- [x] T5.3: Implement FrontierProvider supporting OpenAI, Anthropic Claude, and Google Gemini endpoints.
-- [x] T5.4: Implement SecretVault service using AES-256-GCM encryption for storing external API keys securely in the database.
-- [x] T5.5: Implement FrontierTaskDecomposer:
-  - [x] T5.5.1: Takes high-level feature requirements and prompts frontier model with structured Zod schema output.
-  - [x] T5.5.2: Validates breakdown into atomic tasks with role assignments, focus files, and scoped test commands.
-  - [x] T5.5.3: Inserts parsed tasks into PGlite database ready for scheduling.
-- [x] T5.6: Write unit tests mocking Ollama and Frontier APIs, testing token speed metrics and Zod schema validation.
-- [x] T5.7: Implement Adaptive Output Formatter:
-  - [x] T5.7.1: Local model whole-file rewrite synthesizer requiring full file markdown code fence blocks.
-  - [x] T5.7.2: Frontier model structural diff and concise targeted edit block support.
-- [x] T5.8: Implement Self-Healing Parse and Feedback Loop:
-  - [x] T5.8.1: Structural compliance validator inspecting LLM outputs for code fences, markdown integrity, and non-empty content before disk write.
-  - [x] T5.8.2: Parser error injection feedback engine constructing corrective follow-up prompts with exact error messages within bounded retry limit.
-- [x] T5.9: Implement Context Minimizer and Scoper:
-  - [x] T5.9.1: Targeted file injector limiting prompt payload strictly to task description, immediate file dependencies, and compact directory map.
-  - [x] T5.9.2: Dedicated execution boundary isolating context assembly per task.
+### T11.3: Model Context Protocol (MCP) Client & External Tool Discovery (`spec:ModelContextProtocolSupport`)
+- [ ] T11.3.1: Bidirectional MCP Client Core:
+  - [ ] T11.3.1.1: Implement `McpClientManager` supporting outbound connections to external MCP servers via Stdio and SSE transports.
+  - [ ] T11.3.1.2: Implement MCP tool discovery protocol (`tools/list`) querying external servers and registering discovered tools into engine runtime.
+  - [ ] T11.3.1.3: Implement MCP resource discovery (`resources/list`, `resources/read`) to pull external documentation and configuration.
+  - [ ] T11.3.1.4: Implement MCP prompt template ingestion (`prompts/list`, `prompts/get`).
+- [ ] T11.3.2: Configuration & Third-Party Server Connections:
+  - [ ] T11.3.2.1: Define MCP configuration schema in `conf/mcp_servers.json` (server command, arguments, environment variables, transport type).
+  - [ ] T11.3.2.2: Implement secure credential injection from `SecretVault` for external MCP servers requiring authentication.
+  - [ ] T11.3.2.3: Implement connection health checks and automatic reconnection for SSE and stdio MCP servers.
+- [ ] T11.3.3: Tool Namespace & Security Isolation:
+  - [ ] T11.3.3.1: Implement tool namespacing (`serverName:toolName`) to prevent collision between internal and external tools.
+  - [ ] T11.3.3.2: Apply `ExecutionGuard` security policies to external MCP tool invocations (auditing, parameter sanitation, timeout gating).
+  - [ ] T11.3.3.3: Write unit tests verifying MCP client handshake, tool catalog synchronization, and secure execution.
 
-## Phase 6: Deterministic Code Correction & Scrubbing Tools
-- [ ] T6.1: Implement CodeScrubber module with automated pre-commit and pre-review rules:
-  - [x] T6.1.1: Relative ESM import extension fixer (automatically appending .js to relative imports in TypeScript).
-  - [x] T6.1.2: Unicode emoji scrubber (stripping all emojis from source code, comments, and string literals).
-  - [x] T6.1.3: Banned import and hallucination scanner (flagging uninstalled or prohibited dependencies).
-  - [ ] T6.1.4: Automated code formatter invocation (Prettier / ESLint autofix).
-  - [x] T6.1.5: Heuristic extension and syntax corrector (automatically intercepting and fixing swapped .ts/.js file paths and malformed import declarations before disk write).
-  - [x] T6.1.6: Feature-level emoji exemption mechanism (allow tasks and files to declare `allow_emojis: true` or `// @cacophony-allow-emojis` annotation when a feature specifically requires emojis, automatically bypassing the emoji scrubber).
-  - [x] T6.1.7: Feature-level import and universal scrubber exemption mechanism:
-    - [x] T6.1.7.1: Feature import allowance flags (allow tasks and source files to declare approved libraries like `allowed_imports: ["redis", "express"]` or inline `// @cacophony-allow-import: redis` / `// @cacophony-allow-all-imports`, permitting required libraries without triggering banned imports scrubber).
-    - [x] T6.1.7.2: Universal scrubber rule bypass flags (allow tasks and source files to declare specific rule exemptions like `disabled_rules: ["EsmRelativeImportScrubberRule"]`, inline `// @cacophony-disable-scrubber: <RuleName>`, or universal bypass `// @cacophony-disable-all-scrubbers` across all modular scrubbers).
-    - [x] T6.1.7.3: Dynamic directive adaptation in `QueueGroomer`: adjust prompt directives dynamically when tasks declare approved libraries (e.g. permitting redis imports for cache features) or feature emoji exemptions.
-- [x] T6.2: Implement AstValidator module:
-  - [x] T6.2.1: Static AST verification using TypeScript Compiler API to detect unreferenced exports or missing types prior to running full test suites.
-- [x] T6.3: Write unit tests verifying deterministic fixes, emoji stripping, import resolution, and AST diagnostics.
-- [x] T6.4: Implement Stack-Aware Modular Code Scrubber:
-  - [x] T6.4.1: Convert scrubbing rules into modular plugins (`IExtensionScrubber`, `IImportValidator`, `IEmojiScrubber`, `IFormattingScrubber`).
-  - [x] T6.4.2: Gate the .js extension rewrite rule so it only triggers when `typescript-nodenext` is explicitly detected or configured, avoiding corrupting bundler-based TypeScript or other stacks.
-  - [x] T6.4.3: Add Java-specific deterministic scrubbers (e.g. checkstyle package matching, missing imports, unreferenced static methods).
+### T11.4: Auto-Compacting Conversation Sessions (`spec:AutoCompactingSessions`)
+- [ ] T11.4.1: Token Budget & Utilization Monitor:
+  - [ ] T11.4.1.1: Implement `TokenUsageTracker` measuring accumulated prompt and completion tokens per session against model context limits.
+  - [ ] T11.4.1.2: Implement configurable compaction triggers (warning threshold: 70%, compaction threshold: 85% of max context window).
+  - [ ] T11.4.1.3: Implement message importance scoring (system directives, user instructions, latest code changes vs intermediate debug logs).
+- [ ] T11.4.2: Background Conversation Summarizer:
+  - [ ] T11.4.2.1: Implement `SessionCompactor` creating hierarchical summaries of past conversation turns.
+  - [ ] T11.4.2.2: Extract and preserve critical state: modified files list, architectural decisions, outstanding errors, and test outcomes.
+  - [ ] T11.4.2.3: Replace historical turns with a structured `[Session Summary]` block while keeping initial system prompts and the latest N turns intact.
+  - [ ] T11.4.2.4: Execute compaction asynchronously in background without blocking active generation streams.
+- [ ] T11.4.3: Compaction Verification & Rollback:
+  - [ ] T11.4.3.1: Validate that compacted context reduces token count by at least 40% while preserving key facts.
+  - [ ] T11.4.3.2: Store compaction snapshots in database table `session_compaction_history` to permit conversational rollback.
+  - [ ] T11.4.3.3: Write unit tests verifying token calculation, compaction thresholds, and summary preservation.
 
+### T11.5: Persistent Multi-Tab Session Storage (`spec:PersistentSessionStorage`)
+- [ ] T11.5.1: Session Schema & Persistence Layer:
+  - [ ] T11.5.1.1: Create database table `sessions` (id, title, branch, active_model, total_tokens, status, created_at, updated_at).
+  - [ ] T11.5.1.2: Create database table `session_messages` (id, session_id, role, content, tool_calls_json, tool_results_json, token_count, created_at).
+  - [ ] T11.5.1.3: Create database table `session_tabs` (id, session_id, tab_name, active_file, cursor_position, order_index).
+  - [ ] T11.5.1.4: Implement `SessionRepository` and `SessionMessageRepository` in `@cacophony/db`.
+- [ ] T11.5.2: Multi-Tab Session Manager:
+  - [ ] T11.5.2.1: Implement `SessionManager` supporting concurrent multi-tab sessions with isolated conversational contexts.
+  - [ ] T11.5.2.2: Implement branch-scoped session binding (switching git branches auto-switches or filters relevant sessions).
+  - [ ] T11.5.2.3: Implement session save, export (JSON/Markdown), fork, and resume capabilities.
+- [ ] T11.5.3: Session Search & Indexing:
+  - [ ] T11.5.3.1: Implement full-text search across session messages and tool invocations using PostgreSQL full-text search in PGlite.
+  - [ ] T11.5.3.2: Implement session tagging and bookmarking for high-value architectural decisions.
+  - [ ] T11.5.3.3: Write unit tests verifying multi-tab session state isolation, persistence, and message retrieval.
 
-## Phase 7: Tool Execution Suite & MCP Server
-- [x] T7.0: Unified CLI Command Palette & Lifecycle Binary (`bin/cacophony`):
-  - [x] T7.0.1: Implement DaemonIPCServer and DaemonIPCClient (Unix domain socket / IPC communication for lifecycle control and live LLM stream broadcasts).
-  - [x] T7.0.2: Implement CacophonyCli command routing (start, stop, pause, resume, drain, kill, status, models, telemetry, tasks, history, scrub).
-  - [x] T7.0.3: Implement Live LLM Stream Tap & Audit engine (tap, suspend, resume, untap real-time generation tokens via IPC broadcast).
-  - [x] T7.0.4: Create executable script `bin/cacophony` in project root and register package.json bin entry point.
-  - [x] T7.0.5: Write unit tests verifying CLI dispatch, IPC communication, lifecycle state transitions, and stream tap/untap.
-- [x] T7.1: Implement ICacophonyTool interface with Zod parameter schemas, documentation metadata, and execution handlers.
-- [x] T7.2: Implement core file system tools:
-  - [x] T7.2.1: `view_file` (with line slicing, start/end bounds, byte offset pagination).
-  - [x] T7.2.2: `replace_file_content` (precise single contiguous block replacement).
-  - [x] T7.2.3: `multi_replace_file_content` (multiple atomic block replacements in a single invocation).
-  - [x] T7.2.4: `write_to_file` (safe file creation and overwrite).
-  - [x] T7.2.5: `list_dir` (directory inspection with recursive child counting).
-- [x] T7.3: Implement search and analysis tools:
-  - [x] T7.3.1: `grep_search` (ripgrep/regex matching with line numbers and file filtering).
-  - [x] T7.3.2: `locate_feature` (symbol and identifier finder).
-  - [x] T7.3.3: `ast_inspect` (structural extraction of interfaces, classes, and function signatures).
-  - [x] T7.3.4: `regex_tool` (pattern search and batch sed replacement).
-- [x] T7.4: Implement `run_command` with ExecutionGuard security filter (blacklisting destructive commands: rm, sudo, dd, mkfs, git reset --hard, git push --force).
-- [x] T7.5: Build McpServer exposing all registered tools over stdio and SSE for external AI agents and IDEs.
-- [x] T7.6: Write unit tests for all tools verifying parameter validation, boundary conditions, and execution guards.
+---
 
-## Phase 8: Gitea Integration & Automated Development Cycle
-- [x] T8.1: Implement GiteaApiClient for repository management, branch creation, commit querying, and PR operations.
-- [x] T8.2: Implement GitWorktreeManager managing isolated ephemeral worktrees in /workspaces without polluting repository roots.
-- [x] T8.3: Implement automated PR creation workflow:
-  - [x] T8.3.1: Push task branch to internal Gitea instance once local tests and deterministic scrubbers pass.
-  - [x] T8.3.2: Open Pull Request via Gitea API with formatted description, task ID, and test output summary.
-- [x] T8.4: Implement Automated PR Review Loop:
-  - [x] T8.4.1: Reviewer agent fetches PR diff from Gitea.
-  - [x] T8.4.2: Local LLM generates structured review verdict (APPROVE, REQUEST_CHANGES, REJECT) with inline line comments.
-  - [x] T8.4.3: Post review comments to Gitea PR.
-  - [x] T8.4.4: If approved, trigger automated merge; if changes requested, generate remediation task into the queue.
-- [x] T8.5: Implement Gitea Webhook Receiver endpoint to asynchronously ingest issue/PR events into Cacophony queue.
-- [x] T8.6: Write integration tests mocking Gitea API endpoints and validating PR creation and review flows.
-- [x] T8.7: Implement Gitea OAuth2 SSO authentication provider for Cacophony backend (authorization code grant flow, token exchange, user profile extraction, and JWT session generation).
-- [x] T8.8: Configure Gitea email confirmation bypass (`GITEA__service__REGISTER_EMAIL_CONFIRM=false`) in environment/Docker Compose for seamless immediate SSO onboarding without external email dependencies.
-- [x] T8.9: Add integrated local mail catcher service (Mailpit) on unallocated random ports (Web: 15417, SMTP: 18860) with environment toggle (`GITEA_ENABLE_MAIL_CATCHER=true|false`) to intercept and view verification emails when email confirmation is explicitly required.
-- [x] T8.10: Implement automated Gitea OAuth2 application registration script on container startup (registers `cacophony-dashboard` client credentials automatically via Gitea CLI so manual UI admin setup is eliminated).
+## Phase 12: Repository Mapping & Granular Multi-File Context (Aider Core)
+*RDF Category: `spec:GitAndWorkflowCategory`*
 
-## Phase 9: Modern Angular Dashboard & System Monitor
-- [x] T9.1: Initialize Angular v20+ standalone zoneless application with mobile-first CSS architecture.
-- [x] T9.2: Create design system with CSS custom properties:
-  - [x] T9.2.1: Dark Theme (default: deep slate backgrounds, high-contrast crisp text, subtle borders).
-  - [x] T9.2.2: Light Theme (clean, high-contrast daylight mode).
-  - [x] T9.2.3: High Contrast Theme (WCAG AAA compliant black/yellow/white styling).
-- [x] T9.3: Build Hardware Diagnostics Monitor component (KDE System Monitor aesthetic):
-  - [x] T9.3.1: Live animated meters for GPU Busy %, VRAM used/total, GTT used/total.
-  - [x] T9.3.2: Thermal status badge with zone color coding (Nominal, Warm, Elevated, Danger) and degrees Celsius.
-  - [x] T9.3.3: Electrical & frequency readouts: vddgfx voltage (mV), PPT power (W), sclk frequency (MHz).
-  - [x] T9.3.4: Active loaded Ollama model badge with VRAM allocation footprint.
-- [x] T9.4: Build Live Queue & Active Task Inspector component:
-  - [x] T9.4.1: Stepper visualization of active task stages (Generation -> Scrub -> Test -> Review -> Merge).
-  - [x] T9.4.2: Streaming log terminal with search and autoscroll.
-  - [x] T9.4.3: Live token processing speed gauge (tokens/sec).
-- [x] T9.5: Build Queue Management component:
-  - [x] T9.5.1: Priority re-ordering (drag or move up/down), priority tags (P0, P1, P2).
-  - [x] T9.5.2: Pause, Resume, and Drain controls for scheduler daemon.
-  - [x] T9.5.3: Manual task creation form with focus files and test command inputs.
-- [x] T9.6: Build Task History & Metrics component:
-  - [x] T9.6.1: Filterable table of past runs (Passed, Failed, Remediated).
-  - [x] T9.6.2: Direct links to Gitea PRs, commit diffs, and issue tickets.
-  - [x] T9.6.3: Rolling success rate gauge, model health leaderboard, and failure reason taxonomy.
-- [x] T9.7: Build Test Runner & Process Monitor component:
-  - [x] T9.7.1: Process table showing non-model spawned tasks (npm test, vitest, mvn test, linters, git operations).
-  - [x] T9.7.2: Execution duration, exit code, and live stdout/stderr inspection.
-- [x] T9.8: Build Frontier Decomposition Modal:
-  - [x] T9.8.1: Prompt box for high-level goal input.
-  - [x] T9.8.2: Interactive preview of decomposed tasks before committing to queue.
-- [x] T9.9: Write component tests verifying signals reactivity, mobile responsiveness, and theme switching.
-- [x] T9.10: Implement Gitea SSO Auth Guard and Login/Callback components (login with Gitea, token storage, user session state).
+### T12.1: Repository Structure Mapping (`spec:RepositoryStructureMapping`)
+- [ ] T12.1.1: Tree-Sitter & AST Symbol Extraction:
+  - [ ] T12.1.1.1: Integrate `web-tree-sitter` (WASM) or TypeScript Compiler API for multi-language AST parsing (TypeScript, JavaScript, Java, Go, Rust, Python, HTML/CSS).
+  - [ ] T12.1.1.2: Implement `SymbolExtractor` extracting classes, interfaces, methods, functions, type aliases, and exported variables with line ranges.
+  - [ ] T12.1.1.3: Implement cross-file dependency graph builder analyzing imports, exports, and call hierarchies across the workspace.
+- [ ] T12.1.2: Graph Centrality & PageRank Ranking:
+  - [ ] T12.1.2.1: Implement dependency graph data structure (`SymbolGraph` with nodes=symbols/files and edges=imports/calls).
+  - [ ] T12.1.2.2: Implement PageRank algorithm over `SymbolGraph` to determine key architectural hubs and high-centrality files.
+  - [ ] T12.1.2.3: Cache ranked symbol index in database table `repository_symbol_graph` with file mtime invalidation.
+- [ ] T12.1.3: Compressed Architectural Map Generation (Repo Map):
+  - [ ] T12.1.3.1: Implement `RepoMapGenerator` fitting repository structure into configurable token budgets (e.g., 1024, 2048, 4096 tokens).
+  - [ ] T12.1.3.2: Format output showing file paths, critical classes, and signatures with indentation matching directory hierarchy.
+  - [ ] T12.1.3.3: Implement query-focused repo map: given a user query, bias symbol ranking toward files containing query keywords and their immediate graph neighbors.
+  - [ ] T12.1.3.4: Write unit tests verifying symbol extraction, graph ranking, token budget adherence, and query biasing.
 
-## Phase 10: System Integration, End-to-End Validation & Documentation
-- [x] T10.1: Build unified startup entrypoint running HTTP API, SSE streaming, task scheduler, and Angular web server.
-- [x] T10.2: Validate Docker Compose multi-container deployment (Cacophony + Gitea + Ollama host bridge).
-- [x] T10.3: Execute end-to-end task journey: feature decomposition -> task queue -> Ollama generation -> deterministic scrub -> test execution -> Gitea PR push -> local model review -> automated merge.
-- [x] T10.4: Document operation manual, API specifications, and troubleshooting runbooks in docs/.
+### T12.2: Granular Multi-File Context Selection (`spec:GranularMultiFileContext`)
+- [ ] T12.2.1: Context Tagging & Scoping Engine:
+  - [ ] T12.2.1.1: Implement `ContextManager` maintaining active session context files categorized as `EDITABLE` (read-write) or `REFERENCE` (read-only).
+  - [ ] T12.2.1.2: Implement commands `/add <file>`, `/drop <file>`, `/read-only <file>`, and `/clear` in both CLI and engine API.
+  - [ ] T12.2.1.3: Implement glob pattern matching for batch file inclusion (`/add src/services/*.ts`).
+- [ ] T12.2.2: Smart Context Recommendations:
+  - [ ] T12.2.2.1: Implement `ContextRecommender` analyzing user prompt and active files, suggesting related files based on the dependency graph.
+  - [ ] T12.2.2.2: Implement automatic inclusion of test files corresponding to editable source files (e.g., `foo.ts` -> `foo.test.ts` or `foo.spec.ts`).
+  - [ ] T12.2.2.3: Warn users when context size exceeds 60% of model window, providing actionable suggestions to drop unneeded files.
+- [ ] T12.2.3: Multi-File Edit Coordination:
+  - [ ] T12.2.3.1: Implement multi-file transaction staging: coordinate generation of changes across multiple files before committing any to disk.
+  - [ ] T12.2.3.2: Verify cross-file type consistency and interface matching prior to disk application.
+  - [ ] T12.2.3.3: Write unit tests for context tagging, budget allocation, and multi-file staging.
+
+### T12.3: Automated Git Checkpoints & Micro-Snapshots (`spec:AutomatedGitCheckpoints`)
+- [ ] T12.3.1: Shadow Git Checkpoint Manager:
+  - [ ] T12.3.1.1: Implement `GitCheckpointService` creating atomic lightweight git commits or shadow git refs (`refs/cacophony/checkpoints/<timestamp>`) before and after edits.
+  - [ ] T12.3.1.2: Implement pre-edit snapshotting capturing dirty workspace state without interfering with user working tree.
+  - [ ] T12.3.1.3: Implement structured commit message generator documenting task ID, model assigned, and summary of changes.
+- [ ] T12.3.2: Checkpoint Metadata & Storage:
+  - [ ] T12.3.2.1: Create database table `git_checkpoints` (id, session_id, task_id, commit_hash, parent_hash, message, files_changed, created_at).
+  - [ ] T12.3.2.2: Implement checkpoint diff generator producing readable unified diffs between checkpoints.
+  - [ ] T12.3.2.3: Implement automatic checkpoint retention policy (pruning checkpoints older than 7 days or exceeding 500 per workspace).
+- [ ] T12.3.3: Testing & Resilience:
+  - [ ] T12.3.3.1: Verify checkpoints work seamlessly inside isolated git worktrees.
+  - [ ] T12.3.3.2: Write unit tests verifying checkpoint creation, ref storage, and metadata indexing.
+
+### T12.4: Git-Based Undo / Redo Engine (`spec:GitUndoRedoCommands`)
+- [ ] T12.4.1: Instant State Rollback:
+  - [ ] T12.4.1.1: Implement `GitUndoManager` handling `/undo` command: reverts working tree to the immediate pre-task checkpoint.
+  - [ ] T12.4.1.2: Implement `/redo` command: reapplies rolled-back checkpoint forward if no conflicting edits have occurred.
+  - [ ] T12.4.1.3: Synchronize conversational context state upon undo (remove corresponding LLM turns or mark them as undone).
+- [ ] T12.4.2: Selective & Partial Rollback:
+  - [ ] T12.4.2.1: Implement `/undo <file>` allowing rollback of a single specific file while preserving changes to other files.
+  - [ ] T12.4.2.2: Implement conflict detection warning users if manual uncommitted edits will be overwritten by undo.
+  - [ ] T12.4.2.3: Write unit tests validating single-file undo, full task undo, redo chains, and context synchronization.
+
+---
+
+## Phase 13: Execution & Automated Test Feedback Loop (Aider & OpenCode)
+*RDF Category: `spec:ExecutionAndFeedbackCategory`*
+
+### T13.1: Automated Test Loop Integration (`spec:AutomatedTestLoopIntegration`)
+- [ ] T13.1.1: Project Test Suite Auto-Discovery:
+  - [ ] T13.1.1.1: Implement `TestRunnerDetector` auto-detecting project test frameworks (Vitest, Jest, Mocha, Playwright, JUnit/Maven, JUnit/Gradle, Go Test, Cargo Test).
+  - [ ] T13.1.1.2: Implement fine-grained test scoping (run only tests affected by changed files based on dependency graph).
+  - [ ] T13.1.1.3: Allow workspace and task-level test command overrides in configuration and UI.
+- [ ] T13.1.2: Post-Edit Test Execution Runner:
+  - [ ] T13.1.2.1: Implement `AutomatedTestLoopRunner` executing scoped test suites automatically upon code application.
+  - [ ] T13.1.2.2: Capture real-time stdout, stderr, process exit codes, and execution duration.
+  - [ ] T13.1.2.3: Implement test execution timeout guard (prevent runaway tests or infinite loops with configurable threshold).
+- [ ] T13.1.3: Failure Diagnostics & Stack Trace Extraction:
+  - [ ] T13.1.3.1: Implement `TestOutputParser` parsing stack traces, failed assertion diffs (expected vs received), and file/line locations.
+  - [ ] T13.1.3.2: Filter out noisy test runner boilerplate, isolating root failure causes.
+  - [ ] T13.1.3.3: Store test execution logs in database table `test_execution_runs`.
+- [ ] T13.1.4: Closed-Loop Model Remediation:
+  - [ ] T13.1.4.1: If tests fail, feed parsed error traces, failing assertion details, and line snippets directly back to the model.
+  - [ ] T13.1.4.2: Enforce bounded remediation cycle (maximum 3 retry attempts before declaring task failed or escalating to frontier model).
+  - [ ] T13.1.4.3: Automatically rollback changes via `GitUndoManager` if remediation fails after maximum attempts.
+  - [ ] T13.1.4.4: Write unit and integration tests verifying test runner invocation, failure parsing, and closed-loop retry logic.
+
+---
+
+## Phase 14: Terminal User Interface (TUI) & Developer Experience
+*RDF Category: `spec:InterfaceAndControlCategory`*
+
+### T14.1: Advanced Terminal User Interface (`spec:AdvancedTerminalUserInterface`)
+- [ ] T14.1.1: TUI Architecture & Framework Setup:
+  - [ ] T14.1.1.1: Select and integrate Node.js TUI framework (such as `@inquirer/core`, `blessed`, or terminal-kit) within `@cacophony/cli`.
+  - [ ] T14.1.1.2: Implement responsive terminal layout engine handling resizing and responsive terminal dimensions.
+  - [ ] T14.1.1.3: Design terminal color themes matching backend (Dark, Light, High-Contrast ANSI palettes).
+- [ ] T14.1.2: Split Panes & Widgets:
+  - [ ] T14.1.2.1: Implement Main Conversation Pane: formatted markdown rendering, code syntax highlighting, and message streaming.
+  - [ ] T14.1.2.2: Implement Hardware & Telemetry Bar: compact live readouts of GPU %, VRAM, temp, active Ollama model.
+  - [ ] T14.1.2.3: Implement Context & File Inspector Pane: listing active editable files, reference files, and token budget.
+  - [ ] T14.1.2.4: Implement Streaming Log & Process Output Drawer: toggleable split view showing test runs, git output, and tool logs.
+- [ ] T14.1.3: Keyboard Navigation & Searchable Command Palette:
+  - [ ] T14.1.3.1: Implement fuzzy searchable command palette (`Ctrl+P` or `/`) with autocomplete.
+  - [ ] T14.1.3.2: Implement keyboard shortcuts (`Ctrl+C` cancel, `Ctrl+L` clear, `Ctrl+T` toggle pane, `Tab` cycle focus).
+  - [ ] T14.1.3.3: Write automated tests verifying TUI rendering, keybinding dispatch, and screen buffer management.
+
+### T14.2: Steerable Generation & Prompt Queue (`spec:SteerableGenerationAndQueue`)
+- [ ] T14.2.1: Mid-Stream Execution Interruption:
+  - [ ] T14.2.1.1: Implement `AbortController` propagation across inference providers, cancelling in-flight HTTP requests and model generation instantly.
+  - [ ] T14.2.1.2: Clean up partial workspace modifications upon mid-stream interruption via pre-edit checkpoints.
+  - [ ] T14.2.1.3: Broadcast interruption events over IPC and SSE to notify connected UIs.
+- [ ] T14.2.2: Live Prompt Queue & Follow-Up Injection:
+  - [ ] T14.2.2.1: Implement `LivePromptQueue` allowing users to type and submit instructions while the model is actively streaming.
+  - [ ] T14.2.2.2: Queue follow-up prompts into session sequence, automatically executing next prompt upon completion of current turn.
+  - [ ] T14.2.2.3: Implement mid-stream steering: allow user to inject guidance annotations that append to the current generation context.
+  - [ ] T14.2.2.4: Write unit tests verifying prompt queue sequencing, stream cancellation, and state recovery.
+
+### T14.3: Custom Markdown Commands (`spec:CustomMarkdownCommands`)
+- [ ] T14.3.1: Template Format & Discovery:
+  - [ ] T14.3.1.1: Define Markdown command specification in `.cacophony/commands/*.md` and user home `~/.cacophony/commands/*.md`.
+  - [ ] T14.3.1.2: Implement YAML frontmatter parsing for command metadata (name, description, arguments, role, temperature, focus files).
+  - [ ] T14.3.1.3: Implement variable placeholder interpolation (`$ARG1`, `$ARG2`, `$SELECTION`, `$FILES`, `$TEST_OUTPUT`).
+- [ ] T14.3.2: Built-in Command Library:
+  - [ ] T14.3.2.1: Create `/refactor`: structured code refactoring with focus file targeting.
+  - [ ] T14.3.2.2: Create `/test`: generate unit tests for selected file adhering to testing framework conventions.
+  - [ ] T14.3.2.3: Create `/review`: perform in-depth code review against SOLID principles and strict typing.
+  - [ ] T14.3.2.4: Create `/explain`: explain complex algorithms or architecture with mermaid diagrams.
+  - [ ] T14.3.2.5: Create `/doc`: generate comprehensive API documentation and comments.
+- [ ] T14.3.3: Execution & Discovery Engine:
+  - [ ] T14.3.3.1: Implement `CustomCommandRegistry` scanning and registering commands on startup and file change.
+  - [ ] T14.3.3.2: Expose custom commands in CLI autocomplete, TUI command palette, and Angular web UI.
+  - [ ] T14.3.3.3: Write unit tests verifying template interpolation, argument validation, and command discovery.
+
+### T14.4: Flexible Execution Modes (`spec:FlexibleExecutionModes`)
+- [ ] T14.4.1: Non-Interactive CLI Mode (Headless Batch):
+  - [ ] T14.4.1.1: Implement CLI flag `--non-interactive` / `-b` for headless CI/CD and automation scripts (`cacophony -b "fix linter errors in src/"`).
+  - [ ] T14.4.1.2: Implement structured JSON output mode (`--json`) emitting machine-readable results, diffs, and exit codes.
+  - [ ] T14.4.1.3: Implement return codes (0: success, 1: test failure, 2: syntax error, 3: timeout/hardware thermal).
+- [ ] T14.4.2: Interactive Execution Safety Modes:
+  - [ ] T14.4.2.1: Implement `Plan Mode`: generates and presents implementation plan for user review without modifying disk.
+  - [ ] T14.4.2.2: Implement `Build Mode`: applies changes to disk and runs tests, requiring manual approval before git commits or PRs.
+  - [ ] T14.4.2.3: Implement `Auto Mode`: fully autonomous execution (plan -> code -> scrub -> test -> commit/PR) with safety guardrails.
+  - [ ] T14.4.2.4: Implement mode switching via `/mode <plan|build|auto>` at runtime.
+  - [ ] T14.4.2.5: Write unit tests verifying mode enforcement and execution barriers.
+
+### T14.5: Headless Server Protocol & Extension Hooks (`spec:HeadlessServerProtocol`)
+- [ ] T14.5.1: JSON-RPC & WebSocket Protocol Layer:
+  - [ ] T14.5.1.1: Define JSON-RPC 2.0 protocol specifications for remote engine control over WebSocket and Unix Domain Sockets.
+  - [ ] T14.5.1.2: Implement bidirectional RPC methods: `session/create`, `session/prompt`, `session/interrupt`, `context/addFile`, `repo/getMap`, `engine/status`.
+  - [ ] T14.5.1.3: Implement streaming notification events: `stream/token`, `task/stageChange`, `telemetry/update`, `test/output`.
+- [ ] T14.5.2: Editor & Extension Hooks:
+  - [ ] T14.5.2.1: Create VS Code / Cursor extension protocol adapter enabling external IDEs to drive the Cacophony engine.
+  - [ ] T14.5.2.2: Implement file change synchronization hooks (syncing external editor unsaved buffer edits with engine context).
+  - [ ] T14.5.2.3: Implement authentication token verification for remote headless connections.
+  - [ ] T14.5.2.4: Write unit tests verifying protocol serialization, message dispatch, and socket connection lifecycle.
+
+---
+
+## Phase 15: Modern Angular UI Enhancements for New Features
+*Requirements: Adhere strictly to `docs/SKILL.md` (Angular v20+ Standalone, Zoneless `provideZonelessChangeDetection()`, Signals `signal()`, `computed()`, `effect()`, `input()`, `output()`, `model()`, `@defer` incremental hydration, Mobile-First CSS Custom Properties)*
+
+### T15.1: Multi-Tab Session & Conversation Inspector (`spec:PersistentSessionStorage`)
+- [ ] T15.1.1: Create `SessionTabsComponent` (standalone):
+  - [ ] T15.1.1.1: Use Angular Signals (`signal<SessionTab[]>`, `model<string>`) to manage active and background tabs.
+  - [ ] T15.1.1.2: Support tab creation, close, rename, and branch switching with zero `zone.js` dependencies.
+  - [ ] T15.1.1.3: Mobile-first responsive scrollable tab bar with touch swipe gestures.
+- [ ] T15.1.2: Create `ConversationTimelineComponent` (standalone):
+  - [ ] T15.1.2.1: Signal-based message stream rendering with computed token counter and cost tracker.
+  - [ ] T15.1.2.2: Render formatted markdown, syntax-highlighted code diffs, and tool invocation accordions.
+  - [ ] T15.1.2.3: Implement `@defer (on viewport)` for historical message virtualization and lazy rendering.
+- [ ] T15.1.3: Create `SessionSearchModalComponent` (standalone):
+  - [ ] T15.1.3.1: Full-text search input with `computed()` filtered results across archived and active sessions.
+  - [ ] T15.1.3.2: Keyboard navigation (`Escape` close, arrows navigate, `Enter` select session).
+
+### T15.2: Interactive Repository Map & Context Selector (`spec:RepositoryStructureMapping`, `spec:GranularMultiFileContext`)
+- [ ] T15.2.1: Create `RepoMapViewerComponent` (standalone):
+  - [ ] T15.2.1.1: SVG/Canvas dependency graph visualizer showing symbol centrality and architectural clusters.
+  - [ ] T15.2.1.2: Zoom, pan, and node focus using fine-grained Signals state.
+  - [ ] T15.2.1.3: Lazy-load graph engine via `@defer (hydrate on interaction)`.
+- [ ] T15.2.2: Create `ContextTaggingBarComponent` (standalone):
+  - [ ] T15.2.2.1: Visual chip list of currently tagged files (`EDITABLE` vs `READ_ONLY`) with token count badges.
+  - [ ] T15.2.2.2: Quick `/add` and `/drop` search dropdown with autocomplete.
+  - [ ] T15.2.2.3: Visual warning indicator when context exceeds recommended token budget.
+
+### T15.3: Steerable Generation & Prompt Queue Controller (`spec:SteerableGenerationAndQueue`)
+- [ ] T15.3.1: Create `PromptInputBarComponent` (standalone):
+  - [ ] T15.3.1.1: Multi-line autogrowing textarea with signal-based character and token estimation.
+  - [ ] T15.3.1.2: Interrupt / Cancel button (`signal<boolean>` reflecting streaming state) sending immediate abort signal.
+  - [ ] T15.3.1.3: Custom Markdown command autocomplete menu (`/` trigger displaying registered commands).
+- [ ] T15.3.2: Create `QueuedPromptsDrawerComponent` (standalone):
+  - [ ] T15.3.2.1: Drag-and-drop or reorderable list of pending follow-up prompts queued during active streaming.
+  - [ ] T15.3.2.2: Edit, delete, or promote queued prompts using Signal actions.
+
+### T15.4: LSP Diagnostics & Automated Test Loop Panel (`spec:LanguageServerProtocolIntegration`, `spec:AutomatedTestLoopIntegration`)
+- [ ] T15.4.1: Create `LspDiagnosticsWidgetComponent` (standalone):
+  - [ ] T15.4.1.1: Live list of workspace compiler diagnostics grouped by file and severity (Error, Warning, Info).
+  - [ ] T15.4.1.2: Click-to-focus on diagnostic location, showing compiler code and documentation link.
+  - [ ] T15.4.1.3: Real-time update via SSE diagnostic event stream.
+- [ ] T15.4.2: Create `TestLoopInspectorComponent` (standalone):
+  - [ ] T15.4.2.1: Visual indicator of post-edit test execution status (Running, Passed, Failed, Retrying).
+  - [ ] T15.4.2.2: Formatted stack trace viewer with collapsible frames and failing assertion diffs.
+  - [ ] T15.4.2.3: Manual trigger button to re-run scoped or global test suites.
+
+### T15.5: Execution Mode & Checkpoint Controller (`spec:FlexibleExecutionModes`, `spec:AutomatedGitCheckpoints`, `spec:GitUndoRedoCommands`)
+- [ ] T15.5.1: Create `ExecutionModeSelectorComponent` (standalone):
+  - [ ] T15.5.1.1: Mode toggle switch (`Plan`, `Build`, `Auto`) with badge descriptions.
+  - [ ] T15.5.1.2: Mobile-first responsive segmented control with high-contrast accessibility styling.
+- [ ] T15.5.2: Create `CheckpointTimelineComponent` (standalone):
+  - [ ] T15.5.2.1: Visual timeline of micro-checkpoints and shadow commits.
+  - [ ] T15.5.2.2: One-click `Undo` and `Redo` action buttons with confirmation modals.
+  - [ ] T15.5.2.3: Inline diff preview modal showing checkpoint changes against previous state.
+- [ ] T15.5.3: Unit & Component Testing:
+  - [ ] T15.5.3.1: Write component unit tests for all new standalone components verifying Signals reactivity, zoneless change detection, and theme custom property styling.
+
+---
+
+## Phase 16: Verification, Integration & System Auditing
+- [ ] T16.1: End-to-End Testing of New Subsystems:
+  - [ ] T16.1.1: Verify LSP client startup, diagnostic publishing, and error injection on real TypeScript and Java workspaces.
+  - [ ] T16.1.2: Verify multi-provider inference with Ollama, LM Studio, and frontier fallback routing.
+  - [ ] T16.1.3: Verify tree-sitter repository map generation and PageRank ranking across multi-file repositories.
+  - [ ] T16.1.4: Verify automated test loop and closed-loop error remediation with failing unit tests.
+  - [ ] T16.1.5: Verify git checkpoints, `/undo`, and `/redo` commands in isolated worktrees.
+  - [ ] T16.1.6: Verify TUI rendering, prompt queueing, and mid-stream interrupt in terminal sessions.
+- [ ] T16.2: System Architecture Audit & Resource Benchmark:
+  - [ ] T16.2.1: Audit memory and VRAM footprints during combined LSP, Tree-Sitter, and Ollama operations on Vega APU.
+  - [ ] T16.2.2: Ensure all external calls and sensitive tokens are strictly managed in `.env` and `SecretVault`.
+  - [ ] T16.2.3: Validate zero emojis policy and strict typing across all new modules.
+- [ ] T16.3: Update Documentation & Runbooks:
+  - [ ] T16.3.1: Document new CLI commands, TUI shortcuts, and custom markdown template authoring in `docs/operations_manual.md`.
+  - [ ] T16.3.2: Update API and JSON-RPC protocol specifications in `docs/api_spec.md`.
