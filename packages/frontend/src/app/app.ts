@@ -10,6 +10,11 @@ import { QueueManagerComponent } from './components/queue-manager/queue-manager.
 import { TaskHistoryComponent } from './components/task-history/task-history.component';
 import { ProcessInspectorComponent } from './components/process-inspector/process-inspector.component';
 import { FrontierModalComponent, DecomposedTaskPreview } from './components/frontier-modal/frontier-modal.component';
+import { SessionTabsComponent } from './components/session-tabs/session-tabs.component';
+import { ExecutionModeSelectorComponent } from './components/execution-mode-selector/execution-mode-selector.component';
+import { RepoMapViewerComponent } from './components/repo-map-viewer/repo-map-viewer.component';
+import { CheckpointTimelineComponent } from './components/checkpoint-timeline/checkpoint-timeline.component';
+import { LspTestLoopPanelComponent } from './components/lsp-test-loop-panel/lsp-test-loop-panel.component';
 
 @Component({
   selector: 'app-root',
@@ -23,6 +28,11 @@ import { FrontierModalComponent, DecomposedTaskPreview } from './components/fron
     TaskHistoryComponent,
     ProcessInspectorComponent,
     FrontierModalComponent,
+    SessionTabsComponent,
+    ExecutionModeSelectorComponent,
+    RepoMapViewerComponent,
+    CheckpointTimelineComponent,
+    LspTestLoopPanelComponent,
   ],
   template: `
     <div class="app-container">
@@ -57,6 +67,12 @@ import { FrontierModalComponent, DecomposedTaskPreview } from './components/fron
 
       <router-outlet></router-outlet>
 
+      <!-- Session Tabs and Safety Mode Segmented Controller -->
+      <div class="session-control-bar">
+        <app-session-tabs />
+        <app-execution-mode-selector />
+      </div>
+
       <!-- Main Responsive Content Grid -->
       <main class="content-grid">
         <!-- Hardware Diagnostics (Full Width on mobile, 1 col on desktop) -->
@@ -69,6 +85,16 @@ import { FrontierModalComponent, DecomposedTaskPreview } from './components/fron
           <app-task-inspector />
         </section>
 
+        <!-- Repository Map Visualizer -->
+        <section class="grid-section">
+          <app-repo-map-viewer />
+        </section>
+
+        <!-- LSP Diagnostics & Automated Test Loop -->
+        <section class="grid-section">
+          <app-lsp-test-loop-panel />
+        </section>
+
         <!-- Queue Management -->
         <section class="grid-section">
           <app-queue-manager />
@@ -77,6 +103,11 @@ import { FrontierModalComponent, DecomposedTaskPreview } from './components/fron
         <!-- Task History & Model Leaderboard -->
         <section class="grid-section">
           <app-task-history />
+        </section>
+
+        <!-- Git Checkpoint Shadow Timeline -->
+        <section class="grid-section">
+          <app-checkpoint-timeline />
         </section>
 
         <!-- Spawned Processes & Non-Model Tests -->
@@ -98,7 +129,22 @@ import { FrontierModalComponent, DecomposedTaskPreview } from './components/fron
       gap: 1rem;
       padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border-subtle);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .session-control-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .session-control-bar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
     }
 
     .brand-group {
