@@ -1,0 +1,47 @@
+# Node & dependencies
+node_modules/
+dist/
+dist-*/
+build/
+.npm/
+*.tsbuildinfo
+
+# Angular build outputs
+.angular/
+coverage/
+
+# Environment secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Cacophony persistence & runtime data
+data/
+workspaces/
+.arena/
+logs/
+*.log
+
+# PGlite and database storage
+*.db
+*.sqlite
+*.sqlite3
+pglite/
+cacophony_pglite/
+
+# System & IDE artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*~
+
+# Trash folder (deprecated source code preserved per project rule)
+.trash/*
+!.trash/README.md

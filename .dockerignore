@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-*
+build
+.git
+.github
+.vscode
+.env
+.env.*
+data
+workspaces
+logs
+*.log
+.trash
+coverage
+.angular

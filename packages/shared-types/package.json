@@ -1,0 +1,25 @@
+{
+  "name": "@cacophony/shared-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript interfaces, domain schemas, and contracts for Cacophony",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

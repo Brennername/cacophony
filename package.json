@@ -1,0 +1,31 @@
+{
+  "name": "cacophony",
+  "version": "1.0.0",
+  "description": "Autonomous local model arena and multi-agent code orchestration platform",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "bin": {
+    "cacophony": "./bin/cacophony"
+  },
+
+  "scripts": {
+    "build": "npm run --workspaces --if-present build",
+    "test": "npm run --workspaces --if-present test",
+    "lint": "npm run --workspaces --if-present lint",
+    "format": "prettier --write \"packages/**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"packages/**/*.{ts,json,md}\"",
+    "start": "node packages/engine/dist/index.js",
+    "dev": "npm run --workspace=@cacophony/engine dev"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

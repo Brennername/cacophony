@@ -1,0 +1,27 @@
+{
+  "name": "@cacophony/db",
+  "version": "1.0.0",
+  "description": "Database abstraction layer and PGlite persistence engine for Cacophony",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@cacophony/shared-types": "*",
+    "@electric-sql/pglite": "^0.2.14"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,91 @@
+services:
+  cacophony-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cacophony-engine
+    restart: unless-stopped
+    ports:
+      - "${PORT_FRONTEND:-24072}:3000"
+      - "${PORT_API:-24161}:3002"
+      - "${PORT_MCP:-21264}:3003"
+    environment:
+      - NODE_ENV=production
+      - DB_DRIVER=${DB_DRIVER:-pglite}
+      - DB_PATH=/app/data/cacophony_pglite
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - GITEA_BASE_URL=${GITEA_BASE_URL:-http://cacophony-gitea:3000}
+      - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
+      - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
+      - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
+      - GITEA_OAUTH_CLIENT_SECRET=${GITEA_OAUTH_CLIENT_SECRET:-}
+      - GITEA_OAUTH_REDIRECT_URI=${GITEA_OAUTH_REDIRECT_URI:-http://localhost:24072/auth/callback}
+      - SYSFS_DRM_PATH=/host/sys/class/drm
+      - SYSFS_HWMON_PATH=/host/sys/class/hwmon
+      - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./conf:/app/conf:ro
+      - ./data:/app/data:rw
+      - ./workspaces:/app/workspaces:rw
+      - ./.env:/app/.env:ro
+      - /sys/class/drm:/host/sys/class/drm:ro
+      - /sys/class/hwmon:/host/sys/class/hwmon:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - cacophony-gitea
+    networks:
+      - cacophony-net
+
+  cacophony-gitea:
+    image: gitea/gitea:1.22-rootless
+    container_name: cacophony-gitea
+    restart: unless-stopped
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=sqlite3
+      - GITEA__database__PATH=/data/gitea/gitea.db
+      - GITEA__server__ROOT_URL=${GITEA_PUBLIC_URL:-http://localhost:19634/}
+      - GITEA__server__HTTP_PORT=3000
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__server__DISABLE_SSH=false
+      - GITEA__service__DISABLE_REGISTRATION=false
+      - GITEA__service__REQUIRE_SIGNIN_VIEW=false
+      - GITEA__service__REGISTER_EMAIL_CONFIRM=${GITEA_REQUIRE_EMAIL_CONFIRM:-false}
+      - GITEA__service__ENABLE_NOTIFY_MAIL=${GITEA_ENABLE_MAIL_CATCHER:-false}
+      - GITEA__mailer__ENABLED=${GITEA_ENABLE_MAIL_CATCHER:-false}
+      - GITEA__mailer__PROTOCOL=smtp
+      - GITEA__mailer__SMTP_ADDR=cacophony-mailpit
+      - GITEA__mailer__SMTP_PORT=1025
+      - GITEA__mailer__FROM=cacophony-gitea@local.internal
+      - GITEA__oauth2__ENABLE=true
+    ports:
+      - "${PORT_GITEA_HTTP:-19634}:3000"
+      - "${PORT_GITEA_SSH:-17883}:2222"
+    volumes:
+      - gitea-data:/data
+      - ./workspaces/gitea-repositories:/data/git/repositories
+    networks:
+      - cacophony-net
+
+  cacophony-mailpit:
+    image: axllent/mailpit:latest
+    container_name: cacophony-mailpit
+    restart: unless-stopped
+    ports:
+      - "${PORT_MAILPIT_HTTP:-15417}:8025"
+      - "${PORT_MAILPIT_SMTP:-18860}:1025"
+    networks:
+      - cacophony-net
+
+volumes:
+  gitea-data:
+    driver: local
+
+networks:
+  cacophony-net:
+    driver: bridge

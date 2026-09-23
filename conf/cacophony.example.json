@@ -1,0 +1,65 @@
+{
+  "system_name": "cacophony",
+  "data_dir": "data/cacophony_pglite",
+  "workspaces_dir": "workspaces",
+  "concurrency_limit": 1,
+  "role_models": {
+    "implementer": "qwen2.5-coder:7b",
+    "reviewer": "qwen2.5-coder:7b",
+    "architect": "deepseek-r1:8b",
+    "planner": "deepseek-r1:8b",
+    "test_engineer": "qwen2.5-coder:7b",
+    "doc_writer": "gemma3:4b",
+    "type_specialist": "qwen2.5-coder:7b",
+    "security_auditor": "qwen2.5-coder:7b"
+  },
+  "candidate_models": [
+    "qwen2.5-coder:7b",
+    "deepseek-r1:8b",
+    "gemma3:4b",
+    "qwen2.5-coder:3b"
+  ],
+  "eviction_thresholds": {
+    "consecutive_failures": 3,
+    "cooldown_period_seconds": 1800
+  },
+  "thermal_limits": {
+    "nominal_max": 70,
+    "warm_max": 80,
+    "elevated_max": 90,
+    "pacing_delays_seconds": {
+      "nominal": 0,
+      "warm": 5,
+      "elevated": 15,
+      "danger_pause": 10
+    }
+  },
+  "execution_guards": {
+    "blacklisted_commands": [
+      "rm",
+      "sudo",
+      "mkfs",
+      "dd",
+      "git reset --hard origin/master",
+      "git push --force"
+    ],
+    "max_command_timeout_ms": 300000
+  },
+  "deterministic_scrubbing": {
+    "enforce_js_extension_on_relative_ts_imports": true,
+    "strip_unicode_emojis": true,
+    "banned_dependencies": [
+      "express",
+      "redis",
+      "koa",
+      "lodash"
+    ]
+  },
+  "directives": [
+    "Strict TypeScript: Explicit typing required on all parameters and returns. No 'any' or 'unknown'.",
+    "ECMAScript Module Resolution (NodeNext): All relative imports must include explicit '.js' extensions.",
+    "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages.",
+    "SOLID Principles: Single responsibility, decoupled interfaces, dependency injection.",
+    "Mobile-First Design: All web user interfaces must prioritize mobile layouts before desktop adaptation."
+  ]
+}

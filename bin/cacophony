@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+import * as path from "node:path";
+import * as fs from "node:fs";
+
+// Resolve compiled CLI entrypoint from engine dist
+const cliPath = path.resolve(import.meta.dirname, "../packages/engine/dist/cli/runCli.js");
+
+if (!fs.existsSync(cliPath)) {
+  console.error("Error: Cacophony CLI distribution bundle not found. Please run 'npm run build' first.");
+  process.exit(1);
+}
+
+await import(cliPath);

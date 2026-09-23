@@ -1,0 +1,155 @@
+import type {
+  InferenceRequest,
+  InferenceResponse,
+  InferenceProviderType
+} from "@cacophony/shared-types";
+import type { IInferenceProvider } from "./IInferenceProvider.js";
+
+/**
+ * OllamaProvider
+ *
+ * Dispatches inference requests to local Ollama instance via HTTP API.
+ * Configured with keep_alive=-1 to prevent model eviction on consumer APUs,
+ * capturing prompt evaluation counts and real-time generation speed (tokens/sec).
+ */
+export class OllamaProvider implements IInferenceProvider {
+  private readonly baseUrl: string;
+
+  constructor(baseUrl: string = process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434") {
+    this.baseUrl = baseUrl;
+  }
+
+  public getProviderType(): InferenceProviderType {
+    return "ollama";
+  }
+
+  public async generate(request: InferenceRequest): Promise<InferenceResponse> {
+    const startMs = Date.now();
+    const url = `${this.baseUrl}/api/chat`;
+
+    const body = {
+      model: request.model,
+      messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
+      stream: false,
+      keep_alive: -1,
+      options: {
+        temperature: request.temperature ?? 0.2,
+        num_predict: request.maxTokens ?? 4096
+      }
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Ollama generation failed (HTTP ${res.status}): ${errText}`);
+    }
+
+    const data = (await res.json()) as {
+      readonly message?: { readonly content: string };
+      readonly prompt_eval_count?: number;
+      readonly eval_count?: number;
+      readonly total_duration?: number;
+    };
+
+    const latencyMs = Math.max(1, Date.now() - startMs);
+    const tokensPrompt = data.prompt_eval_count ?? 0;
+    const tokensCompletion = data.eval_count ?? 0;
+    const totalTokens = tokensPrompt + tokensCompletion;
+    const tokensPerSec = tokensCompletion > 0 ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2)) : 0;
+
+    return {
+      content: data.message?.content ?? "",
+      model: request.model,
+      tokensPrompt,
+      tokensCompletion,
+      totalTokens,
+      latencyMs,
+      tokensPerSec
+    };
+  }
+
+  public async stream(
+    request: InferenceRequest,
+    onChunk: (chunk: string) => void
+  ): Promise<InferenceResponse> {
+    const startMs = Date.now();
+    const url = `${this.baseUrl}/api/chat`;
+
+    const body = {
+      model: request.model,
+      messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
+      stream: true,
+      keep_alive: -1,
+      options: {
+        temperature: request.temperature ?? 0.2,
+        num_predict: request.maxTokens ?? 4096
+      }
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok || !res.body) {
+      const errText = await res.text();
+      throw new Error(`Ollama streaming failed (HTTP ${res.status}): ${errText}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let accumulatedContent = "";
+    let tokensPrompt = 0;
+    let tokensCompletion = 0;
+
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line) as {
+            readonly message?: { readonly content: string };
+            readonly prompt_eval_count?: number;
+            readonly eval_count?: number;
+            readonly done?: boolean;
+          };
+          if (parsed.message?.content) {
+            accumulatedContent += parsed.message.content;
+            onChunk(parsed.message.content);
+          }
+          if (parsed.prompt_eval_count) tokensPrompt = parsed.prompt_eval_count;
+          if (parsed.eval_count) tokensCompletion = parsed.eval_count;
+        } catch {
+          // Ignore JSON chunk parse error
+        }
+      }
+    }
+
+    const latencyMs = Math.max(1, Date.now() - startMs);
+    const totalTokens = tokensPrompt + tokensCompletion;
+    const tokensPerSec = tokensCompletion > 0 ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2)) : 0;
+
+    return {
+      content: accumulatedContent,
+      model: request.model,
+      tokensPrompt,
+      tokensCompletion,
+      totalTokens,
+      latencyMs,
+      tokensPerSec
+    };
+  }
+}
