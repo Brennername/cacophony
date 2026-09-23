@@ -256,3 +256,25 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T11.5.2: Multi-Tab Session Manager (SessionManager multi-tab isolation, git branch binding, export/fork/resume).
   - [x] T11.5.3: Session Search & Indexing (PostgreSQL full-text search across session turns and bookmarks).
 
+---
+
+## Archived Phase 12: Repository Mapping & Granular Multi-File Context (Aider Core)
+*Completed & Verified in Commit: `91ea16d`*
+
+- [x] T12.1: Repository Structure Mapping (`spec:RepositoryStructureMapping`):
+  - [x] T12.1.1: Tree-Sitter & AST Symbol Extraction (SymbolExtractor using TypeScript Compiler API, Java/Go/Python grammar regexes).
+  - [x] T12.1.2: Graph Centrality & PageRank Ranking (SymbolGraph dependency graph, PageRank centrality ranking, 006_repository_symbol_graph DB index).
+  - [x] T12.1.3: Compressed Architectural Map Generation (RepoMapGenerator token budgeting, query biasing, indented tree hierarchy).
+- [x] T12.2: Granular Multi-File Context Selection (`spec:GranularMultiFileContext`):
+  - [x] T12.2.1: Context Tagging & Scoping Engine (ContextManager EDITABLE vs REFERENCE scoping, /add /drop /read-only /clear).
+  - [x] T12.2.2: Smart Context Recommendations (ContextRecommender analyzing prompt and active files, suggesting tests and dependencies).
+  - [x] T12.2.3: Multi-File Edit Coordination (MultiFileEditCoordinator atomic in-memory staging with AST validation before disk apply).
+- [x] T12.3: Automated Git Checkpoints & Micro-Snapshots (`spec:AutomatedGitCheckpoints`):
+  - [x] T12.3.1: Shadow Git Checkpoint Manager (GitCheckpointService atomic commit snapshots and unified diffs).
+  - [x] T12.3.2: Checkpoint Metadata & Storage (007_git_checkpoints migration, GitCheckpointRepository in @cacophony/db).
+  - [x] T12.3.3: Testing & Resilience (Verified with automated git commits and isolated worktrees).
+- [x] T12.4: Git-Based Undo / Redo Engine (`spec:GitUndoRedoCommands`):
+  - [x] T12.4.1: Instant State Rollback (GitUndoManager /undo reverting to pre-task snapshot, /redo re-applying forward).
+  - [x] T12.4.2: Selective & Partial Rollback (Targeted single-file undo /undo <file>, conflict detection).
+
+
