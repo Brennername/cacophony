@@ -54,22 +54,22 @@
   - [x] T11.1.4.3: Write comprehensive unit tests for LSP JSON-RPC message framing, process supervisor, and diagnostic parsing.
 
 ### T11.2: Model-Agnostic Registry & Multi-Provider Architecture (`spec:ModelAgnosticRegistry`)
-- [ ] T11.2.1: Unified Model Registry Abstraction:
-  - [ ] T11.2.1.1: Define `IModelRegistry` interface (register, deregister, discover, queryCapabilities, benchmarkModel, getOptimalModelForTask).
-  - [ ] T11.2.1.2: Implement `ModelSpec` schema (model ID, family, provider, context window size, max output tokens, tool calling capability, diff format capability, cost per 1k tokens, local vs cloud).
-  - [ ] T11.2.1.3: Create database table `model_registry_entries` and repository in `@cacophony/db`.
-- [ ] T11.2.2: Local Provider Adapters:
-  - [ ] T11.2.2.1: Implement `LMStudioProvider` connecting to local LM Studio server (`http://localhost:1234/v1`).
-  - [ ] T11.2.2.2: Implement `OllamaDiscoveryService` dynamically querying `/api/tags` and `/api/show` to extract model parameters and quantization info.
-  - [ ] T11.2.2.3: Implement `LocalEndpointScanner` probing standard local inference ports (Ollama: 11434, LM Studio: 1234, vLLM: 8000, LocalAI: 8080).
-- [ ] T11.2.3: Cloud & Frontier Provider Adapters:
-  - [ ] T11.2.3.1: Refactor `FrontierProvider` into modular provider drivers: `OpenAiDriver`, `AnthropicDriver`, `GeminiDriver`, `GroqDriver`, `MistralDriver`.
-  - [ ] T11.2.3.2: Implement OpenAI-compatible generic driver supporting any custom baseURL and API key.
-  - [ ] T11.2.3.3: Implement rate limiting and exponential backoff retry policies per provider.
-- [ ] T11.2.4: Model Benchmarking & Dynamic Capability Matrix:
-  - [ ] T11.2.4.1: Implement `ModelCapabilityProber` running lightweight probe tasks (JSON formatting, diff generation, code completion) on model registration.
-  - [ ] T11.2.4.2: Dynamically tag models as `WHOLE_FILE_ONLY` vs `DIFF_CAPABLE` based on probe results.
-  - [ ] T11.2.4.3: Write unit tests verifying provider registry registration, discovery, and dynamic routing.
+- [x] T11.2.1: Unified Model Registry Abstraction:
+  - [x] T11.2.1.1: Define `IModelRegistry` interface (register, deregister, discover, queryCapabilities, benchmarkModel, getOptimalModelForTask).
+  - [x] T11.2.1.2: Implement `ModelSpec` schema (model ID, family, provider, context window size, max output tokens, tool calling capability, diff format capability, cost per 1k tokens, local vs cloud).
+  - [x] T11.2.1.3: Create database table `model_registry_entries` and repository in `@cacophony/db`.
+- [x] T11.2.2: Local Provider Adapters:
+  - [x] T11.2.2.1: Implement `LMStudioProvider` connecting to local LM Studio server (`http://localhost:1234/v1`).
+  - [x] T11.2.2.2: Implement `OllamaDiscoveryService` dynamically querying `/api/tags` and `/api/show` to extract model parameters and quantization info.
+  - [x] T11.2.2.3: Implement `LocalEndpointScanner` probing standard local inference ports (Ollama: 11434, LM Studio: 1234, vLLM: 8000, LocalAI: 8080).
+- [x] T11.2.3: Cloud & Frontier Provider Adapters:
+  - [x] T11.2.3.1: Refactor `FrontierProvider` into modular provider drivers: `OpenAiDriver`, `AnthropicDriver`, `GeminiDriver`, `GroqDriver`, `MistralDriver`.
+  - [x] T11.2.3.2: Implement OpenAI-compatible generic driver supporting any custom baseURL and API key.
+  - [x] T11.2.3.3: Implement rate limiting and exponential backoff retry policies per provider.
+- [x] T11.2.4: Model Benchmarking & Dynamic Capability Matrix:
+  - [x] T11.2.4.1: Implement `ModelCapabilityProber` running lightweight probe tasks (JSON formatting, diff generation, code completion) on model registration.
+  - [x] T11.2.4.2: Dynamically tag models as `WHOLE_FILE_ONLY` vs `DIFF_CAPABLE` based on probe results.
+  - [x] T11.2.4.3: Write unit tests verifying provider registry registration, discovery, and dynamic routing.
 
 ### T11.3: Model Context Protocol (MCP) Client & External Tool Discovery (`spec:ModelContextProtocolSupport`)
 - [ ] T11.3.1: Bidirectional MCP Client Core:

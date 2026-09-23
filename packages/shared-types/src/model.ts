@@ -3,7 +3,16 @@ import { z } from "zod";
 /**
  * Supported inference provider engines.
  */
-export const InferenceProviderTypeSchema = z.enum(["ollama", "openai", "anthropic", "gemini"]);
+export const InferenceProviderTypeSchema = z.enum([
+  "ollama",
+  "openai",
+  "anthropic",
+  "gemini",
+  "lmstudio",
+  "groq",
+  "mistral",
+  "custom"
+]);
 export type InferenceProviderType = z.infer<typeof InferenceProviderTypeSchema>;
 
 /**
