@@ -219,7 +219,7 @@ To specify the native engine mechanisms required to support resource-constrained
 - [x] T9.10: Implement Gitea SSO Auth Guard and Login/Callback components (login with Gitea, token storage, user session state).
 
 ## Phase 10: System Integration, End-to-End Validation & Documentation
-- [ ] T10.1: Build unified startup entrypoint running HTTP API, SSE streaming, task scheduler, and Angular web server.
-- [ ] T10.2: Validate Docker Compose multi-container deployment (Cacophony + Gitea + Ollama host bridge).
-- [ ] T10.3: Execute end-to-end task journey: feature decomposition -> task queue -> Ollama generation -> deterministic scrub -> test execution -> Gitea PR push -> local model review -> automated merge.
-- [ ] T10.4: Document operation manual, API specifications, and troubleshooting runbooks in docs/.
+- [x] T10.1: Build unified startup entrypoint running HTTP API, SSE streaming, task scheduler, and Angular web server.
+- [x] T10.2: Validate Docker Compose multi-container deployment (Cacophony + Gitea + Ollama host bridge).
+- [x] T10.3: Execute end-to-end task journey: feature decomposition -> task queue -> Ollama generation -> deterministic scrub -> test execution -> Gitea PR push -> local model review -> automated merge.
+- [x] T10.4: Document operation manual, API specifications, and troubleshooting runbooks in docs/.

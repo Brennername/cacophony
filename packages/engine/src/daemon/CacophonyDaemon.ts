@@ -18,6 +18,7 @@ import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 import { StreamTapManager } from "../inference/StreamTapManager.js";
 import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { DaemonIPCServer } from "./DaemonIPC.js";
+import { CacophonyHttpServer } from "./CacophonyHttpServer.js";
 
 
 
@@ -25,6 +26,9 @@ export interface DaemonConfig {
   readonly dbPath?: string;
   readonly socketPath?: string;
   readonly pollIntervalMs?: number;
+  readonly httpPort?: number;
+  readonly httpHost?: string;
+  readonly frontendDistPath?: string;
 }
 
 /**
@@ -46,6 +50,7 @@ export class CacophonyDaemon {
   private telemetryPoller!: TelemetryPoller;
   private scheduler!: TaskScheduler;
   private ipcServer!: DaemonIPCServer;
+  private httpServer?: CacophonyHttpServer | undefined;
   private startTime = 0;
   private isRunning = false;
 
@@ -110,15 +115,29 @@ export class CacophonyDaemon {
     });
     await this.ipcServer.start();
 
+    // 6. Unified HTTP API, SSE Streaming, and Frontend Server
+    if (this.config.httpPort || this.config.frontendDistPath) {
+      this.httpServer = new CacophonyHttpServer(this, {
+        ...(this.config.httpPort !== undefined ? { httpPort: this.config.httpPort } : {}),
+        ...(this.config.httpHost !== undefined ? { httpHost: this.config.httpHost } : {}),
+        ...(this.config.frontendDistPath !== undefined ? { frontendDistPath: this.config.frontendDistPath } : {})
+      });
+      await this.httpServer.start();
+    }
+
     this.isRunning = true;
   }
 
   /**
-   * Cleanly shuts down scheduler, telemetry poller, IPC server, and database.
+   * Cleanly shuts down scheduler, telemetry poller, IPC server, HTTP server, and database.
    */
   public async stop(): Promise<void> {
     if (!this.isRunning) return;
 
+    if (this.httpServer) {
+      await this.httpServer.stop();
+      this.httpServer = undefined;
+    }
     if (this.scheduler) {
       this.scheduler.stop();
     }
