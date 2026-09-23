@@ -3,11 +3,8 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install build essentials for native addons if needed
+# Install minimal build tools (git for repository context)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    make \
-    g++ \
     git \
     && rm -rf /var/lib/apt/lists/*
 
