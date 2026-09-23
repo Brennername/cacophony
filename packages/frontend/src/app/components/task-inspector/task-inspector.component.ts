@@ -1,16 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
+import { StageProgressBarComponent } from '../stage-progress-bar/stage-progress-bar.component';
+import { GanttTransportComponent } from '../gantt-transport/gantt-transport.component';
 
 /**
- * Visual stepper tracking task pipeline progression:
- * Planning -> Generation -> Deterministic Scrub -> Test Execution -> PR Review -> Merge.
- * Also includes live streaming log preview and token generation gauge.
+ * Visual stepper and Gantt transport tracking task pipeline progression:
+ * 1/7 Planning through 7/7 PR Review with intra-stage token velocity.
  */
 @Component({
   selector: 'app-task-inspector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StageProgressBarComponent, GanttTransportComponent],
   template: `
     <div class="cacophony-card inspector-card">
       <div class="header-row">
@@ -32,6 +33,14 @@ import { ArenaStateStore } from '../../services/arena-state.store';
           <span class="task-title">{{ task.title }}</span>
           <span class="badge role">{{ task.role }}</span>
         </div>
+
+        <!-- 7-Stage Granular Segmented Progress Bar -->
+        <app-stage-progress-bar
+          [progressPercent]="task.progressPercent ?? 42"
+          [tokensPerSec]="task.tokensPerSec ?? 0"
+          [currentStageNumber]="3"
+          activeStageLabel="3/7 Generation"
+        />
 
         <!-- Stage Stepper Pipeline -->
         <div class="stepper-container">
@@ -81,6 +90,9 @@ import { ArenaStateStore } from '../../services/arena-state.store';
           </div>
           <pre class="terminal-content"><code>{{ task.logSnippet }}</code></pre>
         </div>
+
+        <!-- Interactive DAW Gantt Transport Timeline -->
+        <app-gantt-transport />
       } @else {
         <div class="empty-state">
           <p>No active tasks currently executing in the arena.</p>

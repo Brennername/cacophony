@@ -209,6 +209,28 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4a2. REST API: GET /api/tasks/:id/gantt - Stage & Process Gantt Timeline Spans
+    const ganttMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/gantt$/);
+    if (ganttMatch && req.method === "GET") {
+      const taskId = ganttMatch[1]!;
+      const stageRepo = this.daemon.getStageRepository();
+      const stages = await stageRepo.getStagesForTask(taskId);
+      const spans = stages.map((st) => ({
+        id: st.id,
+        taskId: st.taskId,
+        name: st.stageName,
+        status: st.stageStatus,
+        startedAt: st.startedAt,
+        completedAt: st.completedAt,
+        durationMs: st.durationMs,
+        tokensSent: st.tokensSent,
+        tokensReceived: st.tokensReceived
+      }));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ taskId, stages: spans }));
+      return;
+    }
+
     // 4b. REST API: List Historical Completed/Failed Tasks
     if (url.pathname === "/api/history" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();

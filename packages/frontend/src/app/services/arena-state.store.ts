@@ -23,6 +23,7 @@ export interface TaskItem {
   currentStage?: string;
   tokensPerSec?: number;
   logSnippet?: string;
+  progressPercent?: number;
 }
 
 export interface ProcessItem {

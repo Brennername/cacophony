@@ -156,24 +156,24 @@
 *RDF Category: `spec:RealtimeExecutionObservabilityCategory`*
 
 ### T21.1: Multi-Level Task Progress Tracking (`spec:MultiLevelProgress`)
-- [ ] T21.1.1: Stage Pipeline Breakdown & Progress Metrics:
-  - [ ] T21.1.1.1: Define structured stage steps in `TaskRepository`: `1/7 Planning`, `2/7 Context Assembly`, `3/7 Generation`, `4/7 Scrubbing`, `5/7 Test Verification`, `6/7 Remediation`, `7/7 PR Review`.
-  - [ ] T21.1.1.2: Calculate task overall progress percentage (`task.progressPercent = (completedStages / totalStages) * 100`).
-  - [ ] T21.1.1.3: Track sub-stage intra-progress (e.g. Generation token count vs context window limit; Test runs passed `x/y`).
-- [ ] T21.1.2: Frontend Stage Progress Bar Components:
-  - [ ] T21.1.2.1: Create `StageProgressBarComponent` (standalone): Animated segmented progress bar displaying active stage name and completion percentage.
-  - [ ] T21.1.2.2: Add intra-stage token progress indicators and live tokens/second velocity meters.
-  - [ ] T21.1.2.3: Support click-to-expand stage drawer showing live console log output for each completed or active stage.
+- [x] T21.1.1: Stage Pipeline Breakdown & Progress Metrics:
+  - [x] T21.1.1.1: Define structured stage steps in `TaskRepository`: `1/7 Planning`, `2/7 Context Assembly`, `3/7 Generation`, `4/7 Scrubbing`, `5/7 Test Verification`, `6/7 Remediation`, `7/7 PR Review`.
+  - [x] T21.1.1.2: Calculate task overall progress percentage (`task.progressPercent = (completedStages / totalStages) * 100`).
+  - [x] T21.1.1.3: Track sub-stage intra-progress (e.g. Generation token count vs context window limit; Test runs passed `x/y`).
+- [x] T21.1.2: Frontend Stage Progress Bar Components:
+  - [x] T21.1.2.1: Create `StageProgressBarComponent` (standalone): Animated segmented progress bar displaying active stage name and completion percentage.
+  - [x] T21.1.2.2: Add intra-stage token progress indicators and live tokens/second velocity meters.
+  - [x] T21.1.2.3: Support click-to-expand stage drawer showing live console log output for each completed or active stage.
 
 ### T21.2: Real-Time Transport & Interactive Gantt Timeline (`spec:GanttTransportTimeline`)
-- [ ] T21.2.1: Timeline Data Model & Persistence:
-  - [ ] T21.2.1.1: Persist high-precision timestamps (`started_at`, `completed_at`, `duration_ms`) for each task stage in `task_stages` table.
-  - [ ] T21.2.1.2: Implement `GET /api/tasks/:id/gantt` returning timeline spans for all stages and spawned subprocesses.
-- [ ] T21.2.2: Interactive Gantt Transport Component:
-  - [ ] T21.2.2.1: Create `GanttTransportComponent` (standalone): Audio DAW-inspired horizontal timeline with moving playhead scrub bar.
-  - [ ] T21.2.2.2: Render concurrent operations (model token streaming, background compiler test runs, git commit creation) on stacked swimlanes.
-  - [ ] T21.2.2.3: Interactive zoom (`Ctrl + Scroll`) and time scrubber allowing post-mortem inspection of latency bottlenecks.
-  - [ ] T21.2.2.4: Write unit tests validating progress calculation algorithms and timeline bounds.
+- [x] T21.2.1: Timeline Data Model & Persistence:
+  - [x] T21.2.1.1: Persist high-precision timestamps (`started_at`, `completed_at`, `duration_ms`) for each task stage in `task_stages` table.
+  - [x] T21.2.1.2: Implement `GET /api/tasks/:id/gantt` returning timeline spans for all stages and spawned subprocesses.
+- [x] T21.2.2: Interactive Gantt Transport Component:
+  - [x] T21.2.2.1: Create `GanttTransportComponent` (standalone): Audio DAW-inspired horizontal timeline with moving playhead scrub bar.
+  - [x] T21.2.2.2: Render concurrent operations (model token streaming, background compiler test runs, git commit creation) on stacked swimlanes.
+  - [x] T21.2.2.3: Interactive zoom (`Ctrl + Scroll`) and time scrubber allowing post-mortem inspection of latency bottlenecks.
+  - [x] T21.2.2.4: Write unit tests validating progress calculation algorithms and timeline bounds.
 
 ---
 

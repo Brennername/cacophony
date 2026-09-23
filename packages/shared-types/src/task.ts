@@ -38,15 +38,18 @@ export const AgentRoleSchema = z.enum([
 export type AgentRole = z.infer<typeof AgentRoleSchema>;
 
 /**
- * Granular stages tracked within a single task's pipeline execution.
+ * Granular stages tracked within a single task's pipeline execution:
+ * 1/7 Planning, 2/7 Context Assembly, 3/7 Generation, 4/7 Scrubbing,
+ * 5/7 Test Verification, 6/7 Remediation, 7/7 PR Review.
  */
 export const StageNameSchema = z.enum([
   "planning",
+  "context_assembly",
   "generation",
   "deterministic_scrub",
   "test_execution",
-  "pr_review",
-  "merge"
+  "remediation",
+  "pr_review"
 ]);
 export type StageName = z.infer<typeof StageNameSchema>;
 
@@ -69,6 +72,7 @@ export interface TaskRecord {
   readonly targetBranch: string | null;
   readonly prUrl: string | null;
   readonly failureCount: number;
+  readonly progressPercent?: number;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly completedAt: string | null;

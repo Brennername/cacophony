@@ -168,5 +168,59 @@ describe('Phase 15: Modern Angular Standalone Components (Signals & Zoneless)', 
       comp.themeService.setTheme('dark');
     });
   });
+
+  describe('Phase 21: Real-Time Task Progress & Gantt Transport (T21.1 & T21.2)', () => {
+    it('should render StageProgressBarComponent and calculate step progress', async () => {
+      const { StageProgressBarComponent } = await import('./stage-progress-bar/stage-progress-bar.component');
+      TestBed.configureTestingModule({
+        imports: [StageProgressBarComponent],
+      });
+      const fixture = TestBed.createComponent(StageProgressBarComponent);
+      fixture.componentRef.setInput('progressPercent', 57);
+      fixture.componentRef.setInput('tokensPerSec', 42.5);
+      fixture.componentRef.setInput('currentStageNumber', 4);
+      fixture.componentRef.setInput('activeStageLabel', '4/7 Scrubbing');
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance;
+      expect(comp.progressPercent()).toBe(57);
+      expect(comp.tokensPerSec()).toBe(42.5);
+      expect(comp.currentStageNumber()).toBe(4);
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).toContain('4/7 Scrubbing');
+      expect(compiled.textContent).toContain('42.5');
+      expect(compiled.textContent).toContain('57%');
+
+      // Test click to expand stage details
+      expect(comp.expandedStage()).toBeNull();
+      comp.selectStage(comp.stages()[0]!);
+      expect(comp.expandedStage()?.name).toBe('planning');
+    });
+
+    it('should render GanttTransportComponent with zoom controls and playhead', async () => {
+      const { GanttTransportComponent } = await import('./gantt-transport/gantt-transport.component');
+      TestBed.configureTestingModule({
+        imports: [GanttTransportComponent],
+      });
+      const fixture = TestBed.createComponent(GanttTransportComponent);
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance;
+      expect(comp.zoomLevel()).toBe(1.0);
+      comp.zoomIn();
+      expect(comp.zoomLevel()).toBe(1.5);
+      comp.zoomOut();
+      expect(comp.zoomLevel()).toBe(1.0);
+
+      comp.resetPlayhead();
+      expect(comp.playheadPos()).toBe(0);
+
+      expect(comp.inferenceSpans().length).toBeGreaterThanOrEqual(1);
+      expect(comp.testSpans().length).toBeGreaterThanOrEqual(1);
+      expect(comp.gitSpans().length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
+
 
