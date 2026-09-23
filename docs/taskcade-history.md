@@ -277,4 +277,16 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T12.4.1: Instant State Rollback (GitUndoManager /undo reverting to pre-task snapshot, /redo re-applying forward).
   - [x] T12.4.2: Selective & Partial Rollback (Targeted single-file undo /undo <file>, conflict detection).
 
+---
+
+## Archived Phase 13: Execution & Automated Test Feedback Loop (Aider & OpenCode)
+*Completed & Verified in Commit: `c77b50d`*
+
+- [x] T13.1: Automated Test Loop Integration (`spec:AutomatedTestLoopIntegration`):
+  - [x] T13.1.1: Project Test Suite Auto-Discovery (TestRunnerDetector auto-detecting Vitest, Jest, Mocha, Playwright, Node:test, Maven, Gradle, Go, Cargo, with test scoping).
+  - [x] T13.1.2: Post-Edit Test Execution Runner (AutomatedTestLoopRunner running scoped tests with timeout guards, persisting runs in 008_test_execution_runs).
+  - [x] T13.1.3: Failure Diagnostics & Stack Trace Extraction (TestOutputParser parsing failures, assertion diffs, root causes, and formatting remediation snippets).
+  - [x] T13.1.4: Closed-Loop Model Remediation (ClosedLoopTestRemediator running bounded 3-attempt remediation cycles with automatic GitUndoManager rollback on failure).
+
+
 

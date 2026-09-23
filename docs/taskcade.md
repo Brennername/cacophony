@@ -28,30 +28,6 @@
 
 ---
 
-## Phase 13: Execution & Automated Test Feedback Loop (Aider & OpenCode)
-*RDF Category: `spec:ExecutionAndFeedbackCategory`*
-
-### T13.1: Automated Test Loop Integration (`spec:AutomatedTestLoopIntegration`)
-- [x] T13.1.1: Project Test Suite Auto-Discovery:
-  - [x] T13.1.1.1: Implement `TestRunnerDetector` auto-detecting project test frameworks (Vitest, Jest, Mocha, Playwright, JUnit/Maven, JUnit/Gradle, Go Test, Cargo Test).
-  - [x] T13.1.1.2: Implement fine-grained test scoping (run only tests affected by changed files based on dependency graph).
-  - [x] T13.1.1.3: Allow workspace and task-level test command overrides in configuration and UI.
-- [x] T13.1.2: Post-Edit Test Execution Runner:
-  - [x] T13.1.2.1: Implement `AutomatedTestLoopRunner` executing scoped test suites automatically upon code application.
-  - [x] T13.1.2.2: Capture real-time stdout, stderr, process exit codes, and execution duration.
-  - [x] T13.1.2.3: Implement test execution timeout guard (prevent runaway tests or infinite loops with configurable threshold).
-- [x] T13.1.3: Failure Diagnostics & Stack Trace Extraction:
-  - [x] T13.1.3.1: Implement `TestOutputParser` parsing stack traces, failed assertion diffs (expected vs received), and file/line locations.
-  - [x] T13.1.3.2: Filter out noisy test runner boilerplate, isolating root failure causes.
-  - [x] T13.1.3.3: Store test execution logs in database table `test_execution_runs`.
-- [x] T13.1.4: Closed-Loop Model Remediation:
-  - [x] T13.1.4.1: If tests fail, feed parsed error traces, failing assertion details, and line snippets directly back to the model.
-  - [x] T13.1.4.2: Enforce bounded remediation cycle (maximum 3 retry attempts before declaring task failed or escalating to frontier model).
-  - [x] T13.1.4.3: Automatically rollback changes via `GitUndoManager` if remediation fails after maximum attempts.
-  - [x] T13.1.4.4: Write unit and integration tests verifying test runner invocation, failure parsing, and closed-loop retry logic.
-
----
-
 ## Phase 14: Terminal User Interface (TUI) & Developer Experience
 *RDF Category: `spec:InterfaceAndControlCategory`*
 
