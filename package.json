@@ -16,7 +16,11 @@
     "lint": "npm run --workspaces --if-present lint",
     "format": "prettier --write \"packages/**/*.{ts,json,md}\"",
     "format:check": "prettier --check \"packages/**/*.{ts,json,md}\"",
-    "start": "node packages/engine/dist/index.js",
+    "start": "bin/cacophony start",
+    "start:daemon": "bin/cacophony start-daemon",
+    "ensure-start": "bin/cacophony ensure-start",
+    "status": "bin/cacophony status",
+    "stop": "bin/cacophony stop",
     "dev": "npm run --workspace=@cacophony/engine dev"
   },
   "devDependencies": {

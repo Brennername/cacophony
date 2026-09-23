@@ -173,15 +173,7 @@ export class CacophonyCli {
       uptimeSeconds: number;
       pendingTasksCount: number;
       activeTaskId: string | null;
-      telemetry?: {
-        edgeTempC: number;
-        gpuBusyPct: number;
-        vddgfxMv: number;
-        pptWatts: number;
-        sclkMhz: number;
-        vramUsedMb: number;
-        vramTotalMb: number;
-      };
+      telemetry?: import("@cacophony/shared-types").HardwareTelemetrySnapshot;
     };
 
     console.log("Cacophony Arena Status: ONLINE");
@@ -190,11 +182,19 @@ export class CacophonyCli {
     console.log(`Active Running Task: ${res.activeTaskId || "None (Idle)"}`);
 
     if (res.telemetry) {
+      const { gpu, thermalZone, pacingDelaySeconds, activeModel } = res.telemetry;
+      const vramUsedMb = Math.round(gpu.vramUsedBytes / (1024 * 1024));
+      const vramTotalMb = Math.round(gpu.vramTotalBytes / (1024 * 1024));
+
       console.log("\nHardware APU Telemetry:");
-      console.log(`  GPU Load: ${res.telemetry.gpuBusyPct}%`);
-      console.log(`  Edge Temp: ${res.telemetry.edgeTempC}C`);
-      console.log(`  Core Voltage: ${res.telemetry.vddgfxMv}mV | Power: ${res.telemetry.pptWatts}W | Clock: ${res.telemetry.sclkMhz}MHz`);
-      console.log(`  VRAM: ${res.telemetry.vramUsedMb}MB / ${res.telemetry.vramTotalMb}MB`);
+      console.log(`  GPU Load: ${gpu.gpuBusyPercent}% | Thermal Zone: ${thermalZone} (Pacing Delay: ${pacingDelaySeconds}s)`);
+      console.log(`  Edge Temp: ${gpu.edgeTempCelsius}C | Power: ${gpu.pptWatts}W | Clock: ${gpu.sclkMhz}MHz`);
+      console.log(`  Core Voltage: ${gpu.vddgfxMilliVolts}mV | SoC: ${gpu.socMilliVolts}mV`);
+      console.log(`  VRAM: ${vramUsedMb}MB / ${vramTotalMb}MB (${gpu.vramPercent.toFixed(1)}%)`);
+      if (activeModel) {
+        const modelVramMb = Math.round(activeModel.vramSizeBytes / (1024 * 1024));
+        console.log(`  Active VRAM Model: ${activeModel.name} (${modelVramMb}MB resident)`);
+      }
     }
 
     return 0;

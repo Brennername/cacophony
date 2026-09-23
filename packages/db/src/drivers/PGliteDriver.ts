@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
 
@@ -18,6 +19,9 @@ export class PGliteDriver implements IDatabaseDriver {
 
   public async connect(): Promise<void> {
     if (this.pg) return;
+    if (this.dataDir) {
+      fs.mkdirSync(this.dataDir, { recursive: true });
+    }
     this.pg = this.dataDir ? new PGlite(this.dataDir) : new PGlite();
     await this.pg.waitReady;
   }

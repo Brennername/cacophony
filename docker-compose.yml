@@ -6,9 +6,9 @@ services:
     container_name: cacophony-engine
     restart: unless-stopped
     ports:
-      - "${PORT_FRONTEND:-24072}:3000"
-      - "${PORT_API:-24161}:3002"
-      - "${PORT_MCP:-21264}:3003"
+      - "${PORT_FRONTEND:-24072}:${PORT_API:-24161}"
+      - "${PORT_API:-24161}:${PORT_API:-24161}"
+      - "${PORT_MCP:-21264}:${PORT_MCP:-21264}"
     environment:
       - NODE_ENV=production
       - DB_DRIVER=${DB_DRIVER:-pglite}
