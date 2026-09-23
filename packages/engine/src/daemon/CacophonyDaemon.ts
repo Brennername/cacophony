@@ -165,6 +165,18 @@ export class CacophonyDaemon {
     return this.taskRepo;
   }
 
+  public getStageRepository(): StageRepository {
+    return this.stageRepo;
+  }
+
+  public getModelHealthRepository(): ModelHealthRepository {
+    return this.healthRepo;
+  }
+
+  public getTelemetryPoller(): TelemetryPoller {
+    return this.telemetryPoller;
+  }
+
   public getStackProfileRepository(): StackProfileRepository {
     return this.stackProfileRepo;
   }

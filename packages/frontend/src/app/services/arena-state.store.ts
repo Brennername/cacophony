@@ -40,69 +40,101 @@ export interface ProcessItem {
   providedIn: 'root',
 })
 export class ArenaStateStore {
-  // Telemetry Signal
+  // Telemetry Signal initialized with zero/clean state
   public readonly telemetry = signal<TelemetryMetrics>({
-    gpuBusyPercent: 18,
-    vramUsedMb: 2150,
+    gpuBusyPercent: 0,
+    vramUsedMb: 0,
     vramTotalMb: 16384,
-    gttUsedMb: 4120,
+    gttUsedMb: 0,
     gttTotalMb: 16384,
-    edgeTempCelsius: 58.4,
+    edgeTempCelsius: 0,
     thermalZone: 'nominal',
-    vddgfxMv: 785,
-    pptPowerW: 24.2,
-    sclkMhz: 1200,
-    activeModel: 'qwen2.5-coder:7b',
+    vddgfxMv: 0,
+    pptPowerW: 0,
+    sclkMhz: 0,
+    activeModel: 'None',
   });
 
-  // Task Queue Signals
-  public readonly tasks = signal<TaskItem[]>([
-    {
-      id: 'task-101',
-      title: 'Implement AST inspection validator',
-      status: 'RUNNING',
-      priority: 'P0',
-      role: 'implementer',
-      currentStage: 'generation',
-      tokensPerSec: 42.5,
-      logSnippet: 'Streaming AST tokens from Ollama qwen2.5-coder:7b...',
-    },
-    {
-      id: 'task-102',
-      title: 'Scrub ESM relative import extensions',
-      status: 'PENDING',
-      priority: 'P1',
-      role: 'implementer',
-    },
-    {
-      id: 'task-103',
-      title: 'Verify Gitea OAuth2 session exchange',
-      status: 'COMPLETED',
-      priority: 'P1',
-      role: 'test_engineer',
-    },
-  ]);
+  // Task Queue Signals initialized empty from real backend
+  public readonly tasks = signal<TaskItem[]>([]);
 
-  // Process Monitor Signals
-  public readonly processes = signal<ProcessItem[]>([
-    {
-      id: 'proc-1',
-      command: 'npm run test --workspace=@cacophony/tools',
-      durationMs: 791,
-      exitCode: 0,
-      status: 'SUCCESS',
-    },
-    {
-      id: 'proc-2',
-      command: 'git worktree add -B task-101 /workspaces/task-101 main',
-      durationMs: 230,
-      exitCode: 0,
-      status: 'SUCCESS',
-    },
-  ]);
+  // Process Monitor Signals initialized empty
+  public readonly processes = signal<ProcessItem[]>([]);
 
   // Scheduler control signal
   public readonly schedulerPaused = signal<boolean>(false);
+
+  private eventSource: EventSource | null = null;
+
+  constructor() {
+    this.connectLiveStreams();
+    this.fetchInitialState();
+  }
+
+  private connectLiveStreams(): void {
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+
+    try {
+      this.eventSource = new EventSource('/api/events');
+      this.eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'telemetry') {
+            this.telemetry.set({
+              gpuBusyPercent: data.gpuBusy ?? 0,
+              vramUsedMb: data.vramUsedMb ?? 0,
+              vramTotalMb: data.vramTotalMb ?? 16384,
+              gttUsedMb: data.gttUsedMb ?? 0,
+              gttTotalMb: data.gttTotalMb ?? 16384,
+              edgeTempCelsius: data.edgeTempCelsius ?? 0,
+              thermalZone: data.thermalZone ?? 'nominal',
+              vddgfxMv: data.vddgfxMv ?? 0,
+              pptPowerW: data.pptPowerW ?? 0,
+              sclkMhz: data.sclkMhz ?? 0,
+              activeModel: data.activeModel ?? 'None',
+            });
+          }
+        } catch {
+          // ignore stream parse errors
+        }
+      };
+    } catch {
+      // offline / mock environment
+    }
+  }
+
+  public async fetchInitialState(): Promise<void> {
+    try {
+      const res = await fetch('/api/tasks');
+      if (res.ok) {
+        const rawTasks = await res.json() as Array<{ id: string; title: string; status: string; priority: string; role: string }>;
+        const items: TaskItem[] = rawTasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          status: (t.status as TaskItem['status']) || 'PENDING',
+          priority: (t.priority as TaskItem['priority']) || 'P1',
+          role: t.role || 'implementer',
+        }));
+        if (items.length > 0) {
+          this.tasks.set(items);
+        }
+      }
+    } catch {
+      // offline
+    }
+
+    try {
+      const procRes = await fetch('/api/processes');
+      if (procRes.ok) {
+        const rawProcs = await procRes.json() as ProcessItem[];
+        if (rawProcs.length > 0) {
+          this.processes.set(rawProcs);
+        }
+      }
+    } catch {
+      // offline
+    }
+  }
 
   // Computed Selectors
   public readonly activeTask = computed(() =>

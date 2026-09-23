@@ -4,6 +4,7 @@ import { RouterOutlet } from '@angular/router';
 import { ThemeService } from './services/theme.service';
 import { AuthService } from './services/auth.service';
 import { ArenaStateStore } from './services/arena-state.store';
+import { RepoStateService } from './services/repo-state.service';
 import { HardwareMonitorComponent } from './components/hardware-monitor/hardware-monitor.component';
 import { TaskInspectorComponent } from './components/task-inspector/task-inspector.component';
 import { QueueManagerComponent } from './components/queue-manager/queue-manager.component';
@@ -87,7 +88,7 @@ import { LspTestLoopPanelComponent } from './components/lsp-test-loop-panel/lsp-
 
         <!-- Repository Map Visualizer -->
         <section class="grid-section">
-          <app-repo-map-viewer />
+          <app-repo-map-viewer [nodes]="repoService.repoSymbols()" />
         </section>
 
         <!-- LSP Diagnostics & Automated Test Loop -->
@@ -107,7 +108,7 @@ import { LspTestLoopPanelComponent } from './components/lsp-test-loop-panel/lsp-
 
         <!-- Git Checkpoint Shadow Timeline -->
         <section class="grid-section">
-          <app-checkpoint-timeline />
+          <app-checkpoint-timeline [checkpoints]="repoService.checkpoints()" />
         </section>
 
         <!-- Spawned Processes & Non-Model Tests -->
@@ -199,6 +200,7 @@ import { LspTestLoopPanelComponent } from './components/lsp-test-loop-panel/lsp-
 export class AppComponent {
   public readonly themeService = inject(ThemeService);
   public readonly authService = inject(AuthService);
+  public readonly repoService = inject(RepoStateService);
   private readonly store = inject(ArenaStateStore);
 
   public readonly frontierModal = viewChild(FrontierModalComponent);

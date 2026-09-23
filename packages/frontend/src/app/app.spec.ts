@@ -45,6 +45,9 @@ describe('Angular Standalone Dashboard Component Tests', () => {
     });
 
     const store = TestBed.inject(ArenaStateStore);
+    store.addTask('Task A', 'P1');
+    store.addTask('Task B', 'P1');
+    store.addTask('Task C', 'P2');
     expect(store.tasks().length).toBeGreaterThanOrEqual(3);
 
     const firstTaskId = store.tasks()[0]!.id;
