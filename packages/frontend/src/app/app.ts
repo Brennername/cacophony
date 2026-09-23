@@ -44,12 +44,12 @@ import { LspTestLoopPanelComponent } from './components/lsp-test-loop-panel/lsp-
         </div>
 
         <div class="controls-group">
-          <!-- Gitea SSO Login / User Status -->
+          <!-- Dynamic Enterprise SSO Login / User Status -->
           @if (authService.session().isAuthenticated) {
-            <span class="user-pill">{{ authService.session().username }}</span>
+            <span class="user-pill">{{ authService.session().username }} ({{ authService.session().provider || 'SSO' }})</span>
           } @else {
-            <button class="btn btn-outline" (click)="authService.loginWithGitea()">
-              Login with Gitea
+            <button class="btn btn-outline" (click)="authService.login()">
+              Login with {{ authService.activeProvider() | uppercase }}
             </button>
           }
 

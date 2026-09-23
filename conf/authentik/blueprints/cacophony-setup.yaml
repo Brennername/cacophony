@@ -1,0 +1,52 @@
+version: 1
+metadata:
+  name: "Cacophony Automated SSO Setup"
+  labels:
+    cacophony.internal/managed: "true"
+entries:
+  - model: authentik_flows.flow
+    id: default-auth-flow
+    identifiers:
+      slug: "cacophony-auth-flow"
+    attrs:
+      name: "Cacophony Authorization Flow"
+      title: "Cacophony AI Studio Login"
+      designation: "authentication"
+
+  - model: authentik_core.group
+    id: group-cacophony-admins
+    identifiers:
+      name: "cacophony-admins"
+    attrs:
+      is_superuser: true
+
+  - model: authentik_core.group
+    id: group-cacophony-operators
+    identifiers:
+      name: "cacophony-operators"
+    attrs:
+      is_superuser: false
+
+  - model: authentik_providers_oauth2.oauth2provider
+    id: cacophony-oauth2-provider
+    identifiers:
+      name: "Cacophony OAuth2 Provider"
+    attrs:
+      client_type: "confidential"
+      client_id: "cacophony-client"
+      client_secret: "cacophony-client-secret-generated"
+      redirect_uris:
+        - "http://localhost:24072/auth/callback"
+        - "http://127.0.0.1:24072/auth/callback"
+      sub_mode: "hashed_user_id"
+      include_claims_in_id_token: true
+      issuer_mode: "per_provider"
+
+  - model: authentik_core.application
+    id: cacophony-app
+    identifiers:
+      slug: "cacophony"
+    attrs:
+      name: "Cacophony AI Studio"
+      provider: !KeyOf cacophony-oauth2-provider
+      open_in_new_tab: false

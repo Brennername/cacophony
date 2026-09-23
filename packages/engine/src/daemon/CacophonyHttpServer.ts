@@ -115,9 +115,20 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // 2b. REST API: Dynamic Auth Configuration for Frontend
+    // 2b. REST API: Dynamic Multi-Provider Auth Configuration for Frontend
     if (url.pathname === "/api/config/auth" && req.method === "GET") {
+      const activeProvider = process.env["SSO_PROVIDER"] || "authentik";
       const authConfig = {
+        activeProvider,
+        authentik: {
+          issuerUrl: process.env["AUTHENTIK_ISSUER_URL"] || "http://localhost:9000/application/o/cacophony/",
+          clientId: process.env["AUTHENTIK_OAUTH_CLIENT_ID"] || "cacophony-client",
+          redirectUri: process.env["AUTHENTIK_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback"
+        },
+        authelia: {
+          portalUrl: process.env["AUTHELIA_PORTAL_URL"] || "http://localhost:9091/",
+          forwardAuthEnabled: process.env["AUTHELIA_FORWARD_AUTH_ENABLED"] !== "false"
+        },
         giteaPublicUrl: process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
         clientId: process.env["GITEA_OAUTH_CLIENT_ID"] || "cacophony-dashboard",
         redirectUri: process.env["GITEA_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback"

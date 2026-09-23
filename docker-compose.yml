@@ -82,10 +82,81 @@ services:
     networks:
       - cacophony-net
 
+  cacophony-redis:
+    image: docker.io/library/redis:alpine
+    container_name: cacophony-redis
+    restart: unless-stopped
+    command: --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - cacophony-net
+
+  cacophony-authentik-server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2024.8.3}
+    container_name: cacophony-authentik-server
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_REDIS__HOST: cacophony-redis
+      AUTHENTIK_POSTGRESQL__HOST: ${AUTHENTIK_POSTGRESQL__HOST:-cacophony-engine}
+      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_DB_USER:-cacophony}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASS:-cacophony}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+      - authentik-certs:/certs
+      - ./conf/authentik/blueprints:/blueprints:ro
+    ports:
+      - "${PORT_AUTHENTIK_HTTP:-9000}:9000"
+      - "${PORT_AUTHENTIK_HTTPS:-9443}:9443"
+    depends_on:
+      - cacophony-redis
+    networks:
+      - cacophony-net
+
+  cacophony-authentik-worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2024.8.3}
+    container_name: cacophony-authentik-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: cacophony-redis
+      AUTHENTIK_POSTGRESQL__HOST: ${AUTHENTIK_POSTGRESQL__HOST:-cacophony-engine}
+      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_DB_USER:-cacophony}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASS:-cacophony}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - authentik-media:/media
+      - authentik-templates:/templates
+      - authentik-certs:/certs
+      - ./conf/authentik/blueprints:/blueprints:ro
+    depends_on:
+      - cacophony-redis
+    networks:
+      - cacophony-net
+
 volumes:
   gitea-data:
     driver: local
   gitea-config:
+    driver: local
+  redis-data:
+    driver: local
+  authentik-media:
+    driver: local
+  authentik-templates:
+    driver: local
+  authentik-certs:
     driver: local
 
 networks:
