@@ -20,14 +20,33 @@ export class AuthService {
     isAuthenticated: false,
   });
 
+  private authConfig = {
+    giteaPublicUrl: 'http://localhost:19634',
+    clientId: 'cacophony-dashboard',
+    redirectUri: 'http://localhost:24072/auth/callback',
+  };
+
   constructor() {
     this.restoreSession();
+    this.loadAuthConfig();
   }
 
-  public loginWithGitea(): void {
-    const publicUrl = 'http://localhost:19634';
-    const clientId = 'cacophony-dashboard';
-    const redirectUri = encodeURIComponent('http://localhost:24072/auth/callback');
+  private async loadAuthConfig(): Promise<void> {
+    try {
+      const res = await fetch('/api/config/auth');
+      if (res.ok) {
+        this.authConfig = await res.json();
+      }
+    } catch {
+      // Fallback to defaults if backend offline
+    }
+  }
+
+  public async loginWithGitea(): Promise<void> {
+    await this.loadAuthConfig();
+    const publicUrl = this.authConfig.giteaPublicUrl;
+    const clientId = this.authConfig.clientId;
+    const redirectUri = encodeURIComponent(this.authConfig.redirectUri);
     const state = Math.random().toString(36).substring(2);
 
     window.location.href = `${publicUrl}/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}`;

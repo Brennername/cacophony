@@ -115,6 +115,18 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 2b. REST API: Dynamic Auth Configuration for Frontend
+    if (url.pathname === "/api/config/auth" && req.method === "GET") {
+      const authConfig = {
+        giteaPublicUrl: process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
+        clientId: process.env["GITEA_OAUTH_CLIENT_ID"] || "cacophony-dashboard",
+        redirectUri: process.env["GITEA_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback"
+      };
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(authConfig));
+      return;
+    }
+
     // 3. REST API: List Tasks
     if (url.pathname === "/api/tasks" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();
