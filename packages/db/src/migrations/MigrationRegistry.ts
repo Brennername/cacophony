@@ -4,6 +4,8 @@ import { migration002 } from "./002_stack_profiles.js";
 import { migration003 } from "./003_lsp_diagnostics.js";
 import { migration004 } from "./004_model_registry.js";
 import { migration005 } from "./005_persistent_sessions.js";
+import { migration006 } from "./006_repository_symbol_graph.js";
+import { migration007 } from "./007_git_checkpoints.js";
 
 /**
  * MigrationRegistry
@@ -17,7 +19,9 @@ export class MigrationRegistry {
     migration002,
     migration003,
     migration004,
-    migration005
+    migration005,
+    migration006,
+    migration007
   ];
 
   /**

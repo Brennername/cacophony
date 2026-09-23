@@ -12,4 +12,5 @@ export * from "./repositories/StackProfileRepository.js";
 export * from "./repositories/LspDiagnosticRepository.js";
 export * from "./repositories/ModelRegistryRepository.js";
 export * from "./repositories/SessionRepository.js";
-
+export * from "./repositories/RepositorySymbolRepository.js";
+export * from "./repositories/GitCheckpointRepository.js";

@@ -14,4 +14,6 @@ export * from "./daemon/CacophonyDaemon.js";
 export * from "./cli/CacophonyCli.js";
 export * from "./gitea/index.js";
 export * from "./lsp/index.js";
-
+export * from "./repomap/index.js";
+export * from "./context/index.js";
+export * from "./git/index.js";
