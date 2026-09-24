@@ -204,33 +204,33 @@
 *RDF Category: `spec:MechanisticCodeSynthesisCategory`*
 
 ### T23.1: Codebase Signature Map Extraction & Storage (`spec:SignatureMapExtraction`)
-- [ ] T23.1.1: AST Deep Type & Interface Harvester:
-  - [ ] T23.1.1.1: Implement `SignatureHarvester` using TypeScript Compiler API extracting: exported function signatures, parameter names and types, return types, interface contracts, type aliases, class constructor overloads.
-  - [ ] T23.1.1.2: Support Java AST parsing (via Tree-Sitter) extracting public class methods, parameters, and generic constraints.
-  - [ ] T23.1.1.3: Support Go AST parsing extracting struct signatures, interfaces, and exported method receivers.
-- [ ] T23.1.2: Compressed Signature Representation:
-  - [ ] T23.1.2.1: Formulate ultra-compact signature notation minimizing token overhead when injected into local model prompts.
-  - [ ] T23.1.2.2: Persist codebase signature index in `code_signature_index` relational table in `@cacophony/db`.
-  - [ ] T23.1.2.3: Update signature index automatically via git commit hooks or file change watchers.
+- [x] T23.1.1: AST Deep Type & Interface Harvester:
+  - [x] T23.1.1.1: Implement `SignatureHarvester` using TypeScript Compiler API extracting: exported function signatures, parameter names and types, return types, interface contracts, type aliases, class constructor overloads.
+  - [x] T23.1.1.2: Support Java AST parsing (via Tree-Sitter) extracting public class methods, parameters, and generic constraints.
+  - [x] T23.1.1.3: Support Go AST parsing extracting struct signatures, interfaces, and exported method receivers.
+- [x] T23.1.2: Compressed Signature Representation:
+  - [x] T23.1.2.1: Formulate ultra-compact signature notation minimizing token overhead when injected into local model prompts.
+  - [x] T23.1.2.2: Persist codebase signature index in `code_signature_index` relational table in `@cacophony/db`.
+  - [x] T23.1.2.3: Update signature index automatically via git commit hooks or file change watchers.
 
 ### T23.2: Queryable Model Tools for Signature Targeting (`spec:SignatureQueryTools`)
-- [ ] T23.2.1: Model Context Protocol (MCP) Signature Tools:
-  - [ ] T23.2.1.1: Implement `query_data_shape` tool allowing local models to query expected input/output interfaces of target functions.
-  - [ ] T23.2.1.2: Implement `query_functional_interface` tool allowing models to inspect valid lambda parameters and method signatures.
-  - [ ] T23.2.1.3: Implement `query_overload_map` tool returning valid argument permutations for polymorphic functions.
-- [ ] T23.2.2: Prompt Generation Integration:
-  - [ ] T23.2.2.1: Inject extracted signature map into task prompt as a strict target mini-specification.
-  - [ ] T23.2.2.2: Provide models with explicit type constraints before generation begins to maximize first-pass success rate.
+- [x] T23.2.1: Model Context Protocol (MCP) Signature Tools:
+  - [x] T23.2.1.1: Implement `query_data_shape` tool allowing local models to query expected input/output interfaces of target functions.
+  - [x] T23.2.1.2: Implement `query_functional_interface` tool allowing models to inspect valid lambda parameters and method signatures.
+  - [x] T23.2.1.3: Implement `query_overload_map` tool returning valid argument permutations for polymorphic functions.
+- [x] T23.2.2: Prompt Generation Integration:
+  - [x] T23.2.2.1: Inject extracted signature map into task prompt as a strict target mini-specification.
+  - [x] T23.2.2.2: Provide models with explicit type constraints before generation begins to maximize first-pass success rate.
 
 ### T23.3: Mechanistic Correction & Hallucination Repair Pipeline (`spec:MechanisticCorrection`)
-- [ ] T23.3.1: Pre-Test Deterministic Alignment Engine:
-  - [ ] T23.3.1.1: Implement `SignatureAlignmentScrubber` running immediately after LLM code generation and before test execution.
-  - [ ] T23.3.1.2: Detect common hallucination modes: misspelled parameter names, inverted argument orders, mismatched optional flags.
-  - [ ] T23.3.1.3: Mechanistically rewrite generated function calls and method signatures to match the authoritative signature map.
-- [ ] T23.3.2: Automated Verification:
-  - [ ] T23.3.2.1: Write unit tests verifying signature extraction across complex TypeScript and Java classes.
-  - [ ] T23.3.2.2: Write integration tests demonstrating successful mechanistic correction of misspelled parameters without test execution failure.
-  - [ ] T23.3.2.3: Measure and log improvement in first-pass test pass rates across local models.
+- [x] T23.3.1: Pre-Test Deterministic Alignment Engine:
+  - [x] T23.3.1.1: Implement `SignatureAlignmentScrubber` running immediately after LLM code generation and before test execution.
+  - [x] T23.3.1.2: Detect common hallucination modes: misspelled parameter names, inverted argument orders, mismatched optional flags.
+  - [x] T23.3.1.3: Mechanistically rewrite generated function calls and method signatures to match the authoritative signature map.
+- [x] T23.3.2: Automated Verification:
+  - [x] T23.3.2.1: Write unit tests verifying signature extraction across complex TypeScript and Java classes.
+  - [x] T23.3.2.2: Write integration tests demonstrating successful mechanistic correction of misspelled parameters without test execution failure.
+  - [x] T23.3.2.3: Measure and log improvement in first-pass test pass rates across local models.
 
 ---
 

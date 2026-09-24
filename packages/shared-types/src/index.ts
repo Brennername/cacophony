@@ -7,4 +7,5 @@ export * from "./vault.js";
 export * from "./config.js";
 export * from "./stack.js";
 export * from "./auth.js";
+export * from "./signature.js";
 

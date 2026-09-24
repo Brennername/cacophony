@@ -11,6 +11,7 @@ import { AstInspectTool } from "./implementations/AstInspectTool.js";
 import { RegexTool } from "./implementations/RegexTool.js";
 import { RunCommandTool } from "./implementations/RunCommandTool.js";
 import { LspGetDiagnosticsTool, LspFindDefinitionTool } from "./implementations/LspTools.js";
+import { QueryDataShapeTool, QueryFunctionalInterfaceTool, QueryOverloadMapTool } from "./implementations/SignatureTools.js";
 
 /**
  * Registry holding and orchestrating all available Cacophony tools.
@@ -87,5 +88,8 @@ export class ToolRegistry {
     this.registerTool(new RunCommandTool());
     this.registerTool(new LspGetDiagnosticsTool());
     this.registerTool(new LspFindDefinitionTool());
+    this.registerTool(new QueryDataShapeTool());
+    this.registerTool(new QueryFunctionalInterfaceTool());
+    this.registerTool(new QueryOverloadMapTool());
   }
 }
