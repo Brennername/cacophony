@@ -11,9 +11,20 @@ export interface WorktreeDescriptor {
   readonly worktreePath: string;
 }
 
+export interface TaskBranchOptions {
+  readonly priority?: string | undefined;
+  readonly slug?: string | undefined;
+  readonly targetBranch?: string | undefined;
+}
+
 /**
  * Manages isolated ephemeral git worktrees in workspaces/ without polluting
  * the root repository checkout.
+ *
+ * Implements:
+ * - Isolation per task under workspaces/worktree-<taskId>
+ * - Branch naming convention: task/<priority>-<taskId>-<slug> branching off targetBranch (default main)
+ * - Safe prune and cleanup of worktree directory and local branch on completion/failure
  */
 export class GitWorktreeManager {
   private readonly repositoryRoot: string;
@@ -25,6 +36,21 @@ export class GitWorktreeManager {
   }
 
   /**
+   * Generates standardized branch name: task/<priority>-<taskId>-<slug>
+   */
+  public formatBranchName(taskId: string, options?: TaskBranchOptions): string {
+    const priority = (options?.priority || "P1").toLowerCase();
+    const rawSlug = options?.slug || "task";
+    const cleanSlug = rawSlug
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 30);
+
+    return `task/${priority}-${taskId}-${cleanSlug || "work"}`;
+  }
+
+  /**
    * Initializes workspace root directory if not present.
    */
   public async initialize(): Promise<void> {
@@ -32,11 +58,28 @@ export class GitWorktreeManager {
   }
 
   /**
-   * Creates an isolated ephemeral worktree checkout for a given task.
+   * Creates an isolated ephemeral worktree checkout for a given task under workspaces/worktree-<taskId>.
    */
-  public async createWorktree(taskId: string, branchName: string, baseBranch = "main"): Promise<WorktreeDescriptor> {
+  public async createWorktree(
+    taskId: string,
+    branchNameOrOptions?: string | TaskBranchOptions,
+    baseBranch = "main"
+  ): Promise<WorktreeDescriptor> {
     await this.initialize();
-    const worktreePath = path.join(this.workspacesRoot, `task-${taskId}`);
+
+    let branchName: string;
+    let targetBase = baseBranch;
+
+    if (typeof branchNameOrOptions === "string") {
+      branchName = branchNameOrOptions;
+    } else {
+      branchName = this.formatBranchName(taskId, branchNameOrOptions);
+      if (branchNameOrOptions?.targetBranch) {
+        targetBase = branchNameOrOptions.targetBranch;
+      }
+    }
+
+    const worktreePath = path.join(this.workspacesRoot, `worktree-${taskId}`);
 
     // If directory already exists, clean it up first
     try {
@@ -47,10 +90,10 @@ export class GitWorktreeManager {
 
     // Ensure branch exists or create from baseBranch
     try {
-      await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" "${baseBranch}"`, {
+      await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" "${targetBase}"`, {
         cwd: this.repositoryRoot
       });
-    } catch (err: unknown) {
+    } catch {
       // If baseBranch doesn't exist, try HEAD
       await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" HEAD`, {
         cwd: this.repositoryRoot
@@ -83,9 +126,12 @@ export class GitWorktreeManager {
   }
 
   /**
-   * Safely removes and prunes the worktree directory.
+   * Safely removes and prunes the worktree directory and optional branch.
    */
-  public async removeWorktree(worktreePath: string): Promise<void> {
+  public async removeWorktree(
+    worktreePath: string,
+    options?: { deleteBranch?: boolean | undefined; branchName?: string | undefined } | undefined
+  ): Promise<void> {
     try {
       await execAsync(`git worktree remove --force "${worktreePath}"`, {
         cwd: this.repositoryRoot
@@ -104,5 +150,24 @@ export class GitWorktreeManager {
     } catch {
       // ignore
     }
+
+    if (options?.deleteBranch && options.branchName) {
+      try {
+        await execAsync(`git branch -D "${options.branchName}"`, { cwd: this.repositoryRoot });
+      } catch {
+        // ignore if already deleted
+      }
+    }
+  }
+
+  /**
+   * Cleans up worktrees and branches for terminal tasks (COMPLETED or FAILED).
+   */
+  public async cleanupTerminalTask(taskId: string, branchName?: string): Promise<void> {
+    const worktreePath = path.join(this.workspacesRoot, `worktree-${taskId}`);
+    await this.removeWorktree(worktreePath, {
+      deleteBranch: Boolean(branchName),
+      branchName
+    });
   }
 }

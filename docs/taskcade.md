@@ -26,25 +26,7 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 37.*
-
----
-
-## Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failure Taxonomy
-*RDF Category: *
-
-### T38.1: Sandboxed Subprocess Execution with Memory & Timeout Bounds
-  - [ ] T38.1.1: Implement SandboxedProcessRunner in packages/engine/src/testing/ executing test commands via child_process.spawn with strict timeout and maxBuffer.
-  - [ ] T38.1.2: Enforce process group termination: kill all child spawned subprocesses on timeout to prevent zombie compiler/test processes.
-  - [ ] T38.1.3: Capture stdout and stderr streams in real-time, enforcing maximum log output size limit (default 256KB) to avoid memory bloating.
-  - [ ] T38.1.4: Persist structured test results (exitCode, durationMs, stdoutSnippet, stderrSnippet) into task_stages table.
-
-### T38.2: Failure Cause Classifier & Automated Root-Cause Taxonomy
-  - [ ] T38.2.1: Implement FailureClassifier in packages/engine/src/analytics/ categorizing test failures into taxonomy buckets: SYNTAX_ERROR, TYPE_MISMATCH, ASSERTION_FAILURE, TIMEOUT, MISSING_DEPENDENCY.
-  - [ ] T38.2.2: Extract specific failure line numbers and error messages from stack traces (Jest, Vitest, cargo test, go test, mvn test).
-  - [ ] T38.2.3: Expose REST endpoint GET /api/analytics/failures returning historical failure cause distributions across models and roles.
-  - [ ] T38.2.4: Feed classified failure context into ClosedLoopTestRemediator prompt for targeted one-shot error repair.
-
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 38.*
 
 ---
 

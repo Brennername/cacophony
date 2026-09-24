@@ -973,4 +973,22 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T37.3.3: Implement Rust syntax scrubber stripping markdown fences, unescaped raw string literals, and emoji comments.
   - [x] T37.3.4: Write unit tests verifying Cargo workspace package detection and scoped test command resolution.
 
+---
+
+## Archived Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failure Taxonomy
+*Completed & Verified in Commit: `f057b87`*
+
+### T38.1: Sandboxed Subprocess Execution with Memory & Timeout Bounds
+  - [x] T38.1.1: Implement SandboxedProcessRunner in packages/engine/src/testing/ executing test commands via child_process.spawn with strict timeout and maxBuffer.
+  - [x] T38.1.2: Enforce process group termination: kill all child spawned subprocesses on timeout to prevent zombie compiler/test processes.
+  - [x] T38.1.3: Capture stdout and stderr streams in real-time, enforcing maximum log output size limit (default 256KB) to avoid memory bloating.
+  - [x] T38.1.4: Persist structured test results (exitCode, durationMs, stdoutSnippet, stderrSnippet) into task_stages table.
+
+### T38.2: Failure Cause Classifier & Automated Root-Cause Taxonomy
+  - [x] T38.2.1: Implement FailureClassifier in packages/engine/src/analytics/ categorizing test failures into taxonomy buckets: SYNTAX_ERROR, TYPE_MISMATCH, ASSERTION_FAILURE, TIMEOUT, MISSING_DEPENDENCY.
+  - [x] T38.2.2: Extract specific failure line numbers and error messages from stack traces (Jest, Vitest, cargo test, go test, mvn test).
+  - [x] T38.2.3: Expose REST endpoint GET /api/analytics/failures returning historical failure cause distributions across models and roles.
+  - [x] T38.2.4: Feed classified failure context into ClosedLoopTestRemediator prompt for targeted one-shot error repair.
+
+
 

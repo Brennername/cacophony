@@ -586,6 +586,39 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c4. REST API: Gitea Webhook Dispatcher
+    if (url.pathname === "/api/webhooks/gitea" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", async () => {
+        try {
+          const { GiteaWebhookReceiver } = await import("../gitea/GiteaWebhookReceiver.js");
+          const taskRepo = this.daemon.getTaskRepository();
+          const secret = process.env.GITEA_WEBHOOK_SECRET || undefined;
+          const receiver = new GiteaWebhookReceiver(taskRepo, secret);
+
+          const event = (req.headers["x-gitea-event"] || req.headers["x-github-event"] || "pull_request") as string;
+          const signature = (req.headers["x-gitea-signature"] || req.headers["x-hub-signature-256"]) as string | undefined;
+
+          if (secret && signature && !receiver.verifySignature(body, signature)) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid webhook HMAC signature" }));
+            return;
+          }
+
+          const payload = JSON.parse(body);
+          const result = await receiver.handleWebhook(event, payload);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+      return;
+    }
+
     // 4d. REST API: Processes List
     if (url.pathname === "/api/processes" && req.method === "GET") {
       const processes = [
