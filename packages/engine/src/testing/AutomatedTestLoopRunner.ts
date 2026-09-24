@@ -1,10 +1,7 @@
-import * as childProcess from "node:child_process";
-import * as util from "node:util";
 import type { TestExecutionRepository } from "@cacophony/db";
 import { TestRunnerDetector, type DetectedTestSuite } from "./TestRunnerDetector.js";
 import { TestOutputParser, type ParsedTestOutput } from "./TestOutputParser.js";
-
-const execAsync = util.promisify(childProcess.exec);
+import { SandboxedProcessRunner } from "./SandboxedProcessRunner.js";
 
 export interface TestExecutionOptions {
   readonly taskId?: string | undefined;
@@ -39,21 +36,23 @@ export interface TestRunResult {
 export class AutomatedTestLoopRunner {
   private readonly detector: TestRunnerDetector;
   private readonly parser: TestOutputParser;
+  private readonly sandboxedRunner: SandboxedProcessRunner;
 
   constructor(
     private readonly repository?: TestExecutionRepository | undefined,
     detector?: TestRunnerDetector | undefined,
-    parser?: TestOutputParser | undefined
+    parser?: TestOutputParser | undefined,
+    sandboxedRunner?: SandboxedProcessRunner | undefined
   ) {
     this.detector = detector ?? new TestRunnerDetector();
     this.parser = parser ?? new TestOutputParser();
+    this.sandboxedRunner = sandboxedRunner ?? new SandboxedProcessRunner();
   }
 
   public async runTests(
     workspaceRoot: string,
     options: TestExecutionOptions = {}
   ): Promise<TestRunResult> {
-    const startTime = Date.now();
     const runId = `test-run-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const timeoutMs = options.timeoutMs ?? 120000;
     const attempt = options.attemptNumber ?? 1;
@@ -69,27 +68,16 @@ export class AutomatedTestLoopRunner {
       finalCommand = this.detector.scopeCommand(detected, options.changedFiles ?? []);
     }
 
-    let stdout = "";
-    let stderr = "";
-    let exitCode = 0;
+    const sandboxedResult = await this.sandboxedRunner.run(finalCommand, {
+      cwd: workspaceRoot,
+      timeoutMs,
+      maxBufferBytes: 256 * 1024
+    });
 
-    try {
-      const execResult = await execAsync(finalCommand, {
-        cwd: workspaceRoot,
-        timeout: timeoutMs,
-        maxBuffer: 10 * 1024 * 1024
-      });
-      stdout = execResult.stdout;
-      stderr = execResult.stderr;
-      exitCode = 0;
-    } catch (err: unknown) {
-      const errorObj = err as { stdout?: string; stderr?: string; code?: number; message?: string };
-      stdout = errorObj.stdout || "";
-      stderr = errorObj.stderr || errorObj.message || String(err);
-      exitCode = typeof errorObj.code === "number" ? errorObj.code : 1;
-    }
-
-    const durationMs = Date.now() - startTime;
+    const stdout = sandboxedResult.stdout;
+    const stderr = sandboxedResult.stderr;
+    const exitCode = sandboxedResult.exitCode;
+    const durationMs = sandboxedResult.durationMs;
     const parsed = this.parser.parse(stdout, stderr);
     const passed = exitCode === 0 && parsed.passed;
     const remediationSnippet = this.parser.formatRemediationSnippet(parsed);

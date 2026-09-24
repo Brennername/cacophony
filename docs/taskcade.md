@@ -26,31 +26,7 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 36.*
-
----
-
-## Phase 37: Multi-Stack Profile Verifiers, AST Inversion Repair & Scrubber Catalog
-*RDF Category: *
-
-### T37.1: TypeScript AST Parameter Inversion & Signature Scrubber
-  - [ ] T37.1.1: Implement AstParameterCorrectionRules in packages/engine/src/rules/catalog/ using TypeScript AST parser to detect transposed arguments.
-  - [ ] T37.1.2: Implement deterministic repair rule verifying parameter name matching between call-site expressions and function declarations.
-  - [ ] T37.1.3: Add unit tests verifying inverted function arguments (e.g. fn(b, a) when definition is fn(a, b)) are automatically corrected.
-  - [ ] T37.1.4: Register AstParameterCorrectionRules in RulePipelineEngine standard post_generation hook.
-
-### T37.2: Go Struct Signature Harvester & Cross-Language AST Parser
-  - [ ] T37.2.1: Implement GoSignatureHarvester in packages/engine/src/signature/ extracting struct definitions, interface methods, and package comments from .go files.
-  - [ ] T37.2.2: Add go test command scoping and test assertion extraction in QueueGroomer for Go projects.
-  - [ ] T37.2.3: Implement Go AST scrubber stripping forbidden emojis and enforcing gofmt-compliant tab indentation in generated Go source.
-  - [ ] T37.2.4: Write unit tests verifying Go struct signature extraction and verification against mock go.mod projects.
-
-### T37.3: Rust Struct & Trait Signature Harvester
-  - [ ] T37.3.1: Implement RustSignatureHarvester in packages/engine/src/signature/ parsing pub struct, pub trait, and pub fn definitions from Cargo projects.
-  - [ ] T37.3.2: Add cargo test scoping in QueueGroomer detecting workspace member crates and applying -p <crate> flags.
-  - [ ] T37.3.3: Implement Rust syntax scrubber stripping markdown fences, unescaped raw string literals, and emoji comments.
-  - [ ] T37.3.4: Write unit tests verifying Cargo workspace package detection and scoped test command resolution.
-
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 37.*
 
 ---
 

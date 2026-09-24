@@ -5,12 +5,10 @@ import type { SelfHealingParser } from "../inference/SelfHealingParser.js";
 import type { RulePipelineEngine } from "../rules/RulePipelineEngine.js";
 import type { RulePipelineDeclaration } from "@cacophony/shared-types";
 import type { StreamTapManager } from "../inference/StreamTapManager.js";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
+import type { StageRepository } from "@cacophony/db";
+import { SandboxedProcessRunner } from "../testing/SandboxedProcessRunner.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-
-const execAsync = promisify(exec);
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -18,8 +16,10 @@ export interface AutonomousWorkerPipelineOptions {
   readonly contextMinimizer: ContextMinimizer;
   readonly parser: SelfHealingParser;
   readonly ruleEngine: RulePipelineEngine;
-  readonly streamTapManager?: StreamTapManager;
-  readonly defaultPipeline?: RulePipelineDeclaration;
+  readonly streamTapManager?: StreamTapManager | undefined;
+  readonly defaultPipeline?: RulePipelineDeclaration | undefined;
+  readonly stageRepository?: StageRepository | undefined;
+  readonly sandboxedRunner?: SandboxedProcessRunner | undefined;
 }
 
 /**
@@ -41,6 +41,8 @@ export class AutonomousWorkerPipeline {
   private readonly ruleEngine: RulePipelineEngine;
   private readonly streamTapManager: StreamTapManager | undefined;
   private readonly defaultPipeline: RulePipelineDeclaration;
+  private readonly sandboxedRunner: SandboxedProcessRunner;
+  private readonly stageRepo: StageRepository | undefined;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
     this.workspaceRoot = options.workspaceRoot;
@@ -49,6 +51,8 @@ export class AutonomousWorkerPipeline {
     this.parser = options.parser;
     this.ruleEngine = options.ruleEngine;
     this.streamTapManager = options.streamTapManager;
+    this.stageRepo = options.stageRepository;
+    this.sandboxedRunner = options.sandboxedRunner ?? new SandboxedProcessRunner();
     this.defaultPipeline = options.defaultPipeline ?? {
       id: "pipeline_autonomous_standard",
       name: "Standard Autonomous Code Pipeline",
@@ -139,15 +143,39 @@ export class AutonomousWorkerPipeline {
         await fs.writeFile(targetAbs, finalCode, "utf-8");
       }
 
-      // 4. Run Scoped Test Command if specified
+      // 4. Run Scoped Test Command with SandboxedProcessRunner
       if (groomed.scopedTestCommand) {
-        try {
-          await execAsync(groomed.scopedTestCommand, {
-            cwd: this.workspaceRoot,
-            timeout: 60000
-          });
-        } catch (testErr) {
-          console.error(`[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}':`, testErr);
+        let testStageId: number | null = null;
+        if (this.stageRepo) {
+          testStageId = await this.stageRepo.recordStageStart(groomed.task.id, "test_execution");
+        }
+
+        const runResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
+          cwd: this.workspaceRoot,
+          timeoutMs: 60000,
+          maxBufferBytes: 256 * 1024
+        });
+
+        const stdoutSnippet = runResult.stdout.slice(0, 4000);
+        const stderrSnippet = runResult.stderr.slice(0, 4000);
+        const logOutput = `Exit Code: ${runResult.exitCode}\nDuration: ${runResult.durationMs}ms\n\n[STDOUT]:\n${stdoutSnippet}\n\n[STDERR]:\n${stderrSnippet}`;
+
+        if (this.stageRepo && testStageId !== null) {
+          await this.stageRepo.recordStageCompletion(
+            testStageId,
+            runResult.exitCode === 0 ? "SUCCESS" : "FAILURE",
+            logOutput,
+            0,
+            0,
+            runResult.durationMs
+          );
+        }
+
+        if (runResult.exitCode !== 0) {
+          console.error(
+            `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, timedOut=${runResult.timedOut}):`,
+            stderrSnippet || stdoutSnippet
+          );
           return false;
         }
       }

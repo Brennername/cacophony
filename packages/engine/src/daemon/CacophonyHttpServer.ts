@@ -458,28 +458,77 @@ export class CacophonyHttpServer {
     // 4c2. REST API: Historical Failure Mode Analytics Trend Data
     if (url.pathname === "/api/analytics/failures" && req.method === "GET") {
       const windowDays = Number(url.searchParams.get("window") || "7");
-      const trends = {
-        windowDays,
-        categories: [
-          { name: "TEST_ASSERTION_FAILURE", count: 18, percentage: 45 },
-          { name: "TYPE_CHECK_ERROR", count: 10, percentage: 25 },
-          { name: "SYNTAX_ERROR", count: 6, percentage: 15 },
-          { name: "BANNED_IMPORT", count: 3, percentage: 7.5 },
-          { name: "TIMEOUT", count: 2, percentage: 5 },
-          { name: "THERMAL_THROTTLE", count: 1, percentage: 2.5 }
-        ],
-        timeSeries: [
-          { date: "Day 1", count: 8, passRate: 75, avgTokSec: 36 },
-          { date: "Day 2", count: 12, passRate: 70, avgTokSec: 34 },
-          { date: "Day 3", count: 6, passRate: 85, avgTokSec: 38 },
-          { date: "Day 4", count: 14, passRate: 65, avgTokSec: 32 },
-          { date: "Day 5", count: 10, passRate: 80, avgTokSec: 37 },
-          { date: "Day 6", count: 5, passRate: 90, avgTokSec: 39 },
-          { date: "Day 7", count: 9, passRate: 82, avgTokSec: 36 }
-        ]
+      const filterModel = url.searchParams.get("model") || undefined;
+      const filterRole = url.searchParams.get("role") || undefined;
+
+      const { FailureClassifier } = await import("../analytics/FailureClassifier.js");
+      const taskRepo = this.daemon.getTaskRepository();
+      const stageRepo = this.daemon.getStageRepository();
+
+      const failedTasks = await taskRepo.listRecent(100, { status: "FAILED" });
+      const counts: Record<string, number> = {
+        SYNTAX_ERROR: 0,
+        TYPE_MISMATCH: 0,
+        ASSERTION_FAILURE: 0,
+        TIMEOUT: 0,
+        MISSING_DEPENDENCY: 0,
+        BANNED_IMPORT: 0,
+        THERMAL_THROTTLE: 0,
+        CONTEXT_OVERFLOW: 0,
+        UNKNOWN: 0
       };
+
+      const modelBreakdown: Record<string, Record<string, number>> = {};
+      const roleBreakdown: Record<string, Record<string, number>> = {};
+
+      let totalCount = 0;
+      for (const t of failedTasks) {
+        if (filterModel && t.modelAssigned !== filterModel) continue;
+        if (filterRole && t.role !== filterRole) continue;
+
+        const stages = await stageRepo.getStagesForTask(t.id);
+        const failedStage = stages.find((s) => s.stageStatus === "FAILURE") || stages[stages.length - 1];
+        const log = failedStage?.logOutput || "";
+
+        const classification = FailureClassifier.classify(log, { logOutput: log });
+        const cat = classification.category;
+        counts[cat] = (counts[cat] || 0) + 1;
+        totalCount++;
+
+        const mKey = t.modelAssigned || "unassigned";
+        if (!modelBreakdown[mKey]) modelBreakdown[mKey] = {};
+        modelBreakdown[mKey][cat] = (modelBreakdown[mKey][cat] || 0) + 1;
+
+        const rKey = t.role || "generic";
+        if (!roleBreakdown[rKey]) roleBreakdown[rKey] = {};
+        roleBreakdown[rKey][cat] = (roleBreakdown[rKey][cat] || 0) + 1;
+      }
+
+      // If zero failed tasks in DB yet, provide empty/nominal category distribution
+      const categories = Object.entries(counts)
+        .map(([name, count]) => ({
+          name,
+          count,
+          percentage: totalCount > 0 ? Math.round((count / totalCount) * 1000) / 10 : 0
+        }))
+        .filter((c) => totalCount === 0 || c.count > 0);
+
+      const responsePayload = {
+        windowDays,
+        totalFailures: totalCount,
+        categories: categories.length > 0 ? categories : [
+          { name: "ASSERTION_FAILURE", count: 0, percentage: 0 },
+          { name: "TYPE_MISMATCH", count: 0, percentage: 0 },
+          { name: "SYNTAX_ERROR", count: 0, percentage: 0 },
+          { name: "MISSING_DEPENDENCY", count: 0, percentage: 0 },
+          { name: "TIMEOUT", count: 0, percentage: 0 }
+        ],
+        modelBreakdown,
+        roleBreakdown
+      };
+
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(trends));
+      res.end(JSON.stringify(responsePayload));
       return;
     }
 

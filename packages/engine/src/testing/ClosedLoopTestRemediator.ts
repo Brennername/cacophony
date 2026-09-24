@@ -1,5 +1,6 @@
 import type { AutomatedTestLoopRunner, TestRunResult } from "./AutomatedTestLoopRunner.js";
 import type { GitUndoManager } from "../git/GitUndoManager.js";
+import { FailureClassifier, type ClassificationResult } from "../analytics/FailureClassifier.js";
 
 export interface RemediationOptions {
   readonly maxAttempts?: number | undefined; // default 3
@@ -11,11 +12,13 @@ export interface RemediationResult {
   readonly totalAttempts: number;
   readonly rolledBack: boolean;
   readonly finalTestResult: TestRunResult;
+  readonly classification?: ClassificationResult | undefined;
 }
 
 export type CodeRemediationHandler = (
   remediationSnippet: string,
-  attempt: number
+  attempt: number,
+  classification?: ClassificationResult
 ) => Promise<void>;
 
 /**
@@ -46,6 +49,7 @@ export class ClosedLoopTestRemediator {
   ): Promise<RemediationResult> {
     let attempt = 1;
     let latestRun: TestRunResult | null = null;
+    let latestClassification: ClassificationResult | undefined;
 
     while (attempt <= this.maxAttempts) {
       latestRun = await this.testRunner.runTests(workspaceRoot, {
@@ -60,13 +64,31 @@ export class ClosedLoopTestRemediator {
           success: true,
           totalAttempts: attempt,
           rolledBack: false,
-          finalTestResult: latestRun
+          finalTestResult: latestRun,
+          classification: latestClassification
         };
       }
 
+      latestClassification = FailureClassifier.classify(
+        latestRun.stderr || latestRun.stdout,
+        { exitCode: latestRun.exitCode, logOutput: latestRun.remediationSnippet }
+      );
+
       if (attempt < this.maxAttempts) {
-        // Invoke remediation callback to generate and apply code fix
-        await remediationHandler(latestRun.remediationSnippet, attempt);
+        // Build targeted prompt snippet with taxonomy and location hints
+        let targetedSnippet = latestRun.remediationSnippet;
+        if (latestClassification.category !== "UNKNOWN") {
+          targetedSnippet = `[FAILURE TAXONOMY]: ${latestClassification.category} (Confidence: ${Math.round(latestClassification.confidence * 100)}%)\n${targetedSnippet}`;
+        }
+        if (latestClassification.locations && latestClassification.locations.length > 0) {
+          const locs = latestClassification.locations
+            .map((l) => `  - ${l.file}:${l.line}${l.message ? ` (${l.message})` : ""}`)
+            .join("\n");
+          targetedSnippet = `${targetedSnippet}\n\n[DETECTED ERROR LOCATIONS]:\n${locs}`;
+        }
+
+        // Invoke remediation callback to generate and apply targeted code fix
+        await remediationHandler(targetedSnippet, attempt, latestClassification);
       }
 
       attempt++;
@@ -83,7 +105,8 @@ export class ClosedLoopTestRemediator {
       success: false,
       totalAttempts: this.maxAttempts,
       rolledBack,
-      finalTestResult: latestRun!
+      finalTestResult: latestRun!,
+      classification: latestClassification
     };
   }
 }

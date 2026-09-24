@@ -129,7 +129,8 @@ export class CacophonyDaemon {
       contextMinimizer: minimizer,
       parser,
       ruleEngine,
-      streamTapManager: this.streamTapManager
+      streamTapManager: this.streamTapManager,
+      stageRepository: this.stageRepo
     });
 
     this.scheduler.setExecutionHandler((groomed, model) => worker.executeTask(groomed, model));
