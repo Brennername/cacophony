@@ -194,12 +194,24 @@ describe('Phase 15: Modern Angular Standalone Components (Signals & Zoneless)', 
       const comp = fixture.componentInstance;
       expect(comp.progressPercent()).toBe(57);
       expect(comp.tokensPerSec()).toBe(42.5);
+      expect(comp.formattedTokensPerSec()).toBe('42.5');
       expect(comp.currentStageNumber()).toBe(4);
 
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).toContain('4/7 Scrubbing');
       expect(compiled.textContent).toContain('42.5');
       expect(compiled.textContent).toContain('57%');
+
+      // Test fixed-width element class presence
+      const fixedEl = compiled.querySelector('.fixed-tks');
+      expect(fixedEl).not.toBeNull();
+      expect(fixedEl?.textContent?.trim()).toBe('42.5');
+
+      // Test live matching with runTokensPerSec
+      fixture.componentRef.setInput('runTokensPerSec', 42.0);
+      fixture.detectChanges();
+      expect(comp.isLiveMatched()).toBe(true);
+      expect(compiled.textContent).toContain('LIVE');
 
       // Test click to expand stage details
       expect(comp.expandedStage()).toBeNull();

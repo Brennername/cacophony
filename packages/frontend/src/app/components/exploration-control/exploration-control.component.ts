@@ -94,7 +94,7 @@ export interface BanditArmUi {
 
             <div class="beta-params">
               <span>Beta Prior: α={{ arm.alpha }}, β={{ arm.beta }}</span>
-              <span>{{ arm.tokensPerSec }} tok/s</span>
+              <span><span class="fixed-tks">{{ formatTks(arm.tokensPerSec) }}</span> tok/s</span>
             </div>
           </div>
         }
@@ -245,6 +245,16 @@ export interface BanditArmUi {
       font-size: 0.7rem;
       color: var(--text-secondary, #94a3b8);
       font-family: monospace;
+      white-space: nowrap;
+    }
+
+    .beta-params .fixed-tks {
+      min-width: 4.5ch;
+      width: 4.5ch;
+      text-align: right;
+      display: inline-block;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
     }
   `],
 })
@@ -295,5 +305,9 @@ export class ExplorationControlComponent {
   public onEpsilonChange(event: Event): void {
     const val = parseFloat((event.target as HTMLInputElement).value);
     this.epsilon.set(val);
+  }
+
+  public formatTks(val: number | null | undefined): string {
+    return (Number(val) || 0).toFixed(1);
   }
 }

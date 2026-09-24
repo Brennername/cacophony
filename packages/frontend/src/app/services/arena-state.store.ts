@@ -65,10 +65,25 @@ export class ArenaStateStore {
   // Live Terminal Stream Buffer
   public readonly liveStreamBuffer = signal<string>('');
 
-  // Live Token Velocity (tokens per second)
+  // Live Instantaneous Token Velocity (tokens per second over rolling 2s window)
   public readonly liveTokenVelocity = signal<number>(0);
+
+  // Cumulative Run Token Velocity (total tokens in current task run / elapsed generation seconds)
+  public readonly runTokenVelocity = signal<number>(0);
+
+  // Velocity Match Status: true when live instantaneous velocity matches overall run velocity
+  public readonly isVelocityMatched = computed(() => {
+    const live = this.liveTokenVelocity();
+    const run = this.runTokenVelocity();
+    if (live <= 0 || run <= 0) return false;
+    return Math.abs(live - run) <= 1.5;
+  });
+
   private tokenArrivalTimestamps: number[] = [];
   private velocityDecayTimer: ReturnType<typeof setInterval> | null = null;
+  private runTokenCount = 0;
+  private runStartTimestamp: number | null = null;
+  private currentTaskIdForRun: string | null = null;
 
   // Selected Task for Drill-Down Modal
   public readonly selectedTask = signal<TaskItem | null>(null);
@@ -151,21 +166,47 @@ export class ArenaStateStore {
             if (data.buffer) {
               this.liveStreamBuffer.set(data.buffer);
             }
+            if (data.taskId) {
+              this.currentTaskIdForRun = data.taskId;
+              this.runTokenCount = 0;
+              this.runStartTimestamp = null;
+              this.runTokenVelocity.set(0);
+              this.tokenArrivalTimestamps = [];
+              this.liveTokenVelocity.set(0);
+            }
           }
           if (data.type === 'token') {
             const token = data.token ?? '';
+            const taskId = data.taskId ?? this.activeTask()?.id ?? null;
+            if (taskId && taskId !== this.currentTaskIdForRun) {
+              this.currentTaskIdForRun = taskId;
+              this.runTokenCount = 0;
+              this.runStartTimestamp = null;
+              this.runTokenVelocity.set(0);
+              this.tokenArrivalTimestamps = [];
+              this.liveTokenVelocity.set(0);
+            }
+
             this.liveStreamBuffer.update((prev) => {
               const updated = prev + token;
               return updated.length > 25000 ? updated.slice(-25000) : updated;
             });
 
-            // Calculate rolling token velocity over a 2-second sliding window
             const now = Date.now();
+            if (this.runStartTimestamp === null) {
+              this.runStartTimestamp = now;
+            }
+            this.runTokenCount++;
+            const elapsedRunSec = Math.max(0.5, (now - this.runStartTimestamp) / 1000);
+            const runVelocity = Number((this.runTokenCount / elapsedRunSec).toFixed(1));
+            this.runTokenVelocity.set(runVelocity);
+
+            // Calculate rolling token velocity over a 2-second sliding window
             this.tokenArrivalTimestamps.push(now);
             const cutoff = now - 2000;
             this.tokenArrivalTimestamps = this.tokenArrivalTimestamps.filter((t) => t >= cutoff);
             const count = this.tokenArrivalTimestamps.length;
-            const velocity = count > 1 ? Number((count / 2.0).toFixed(1)) : (count === 1 ? 1 : 0);
+            const velocity = count > 1 ? Number((count / 2.0).toFixed(1)) : (count === 1 ? 1.0 : 0.0);
             this.liveTokenVelocity.set(velocity);
           }
         } catch {
@@ -173,15 +214,21 @@ export class ArenaStateStore {
         }
       };
 
-      // Velocity decay timer: resets velocity to 0 when no tokens have arrived in 2 seconds
+      // Velocity decay timer: resets live velocity toward 0 when tokens pause
       this.velocityDecayTimer = setInterval(() => {
         const now = Date.now();
         const cutoff = now - 2000;
         this.tokenArrivalTimestamps = this.tokenArrivalTimestamps.filter((t) => t >= cutoff);
-        if (this.tokenArrivalTimestamps.length === 0 && this.liveTokenVelocity() > 0) {
-          this.liveTokenVelocity.set(0);
+        if (this.tokenArrivalTimestamps.length === 0) {
+          if (this.liveTokenVelocity() > 0) {
+            this.liveTokenVelocity.set(0);
+          }
+        } else {
+          const count = this.tokenArrivalTimestamps.length;
+          const velocity = Number((count / 2.0).toFixed(1));
+          this.liveTokenVelocity.set(velocity);
         }
-      }, 500);
+      }, 250);
 
       // Periodic poll every 2.5 seconds to refresh task statuses and process metrics
       setInterval(() => {

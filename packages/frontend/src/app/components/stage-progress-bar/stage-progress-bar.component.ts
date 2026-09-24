@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface StageStepInfo {
@@ -27,8 +27,14 @@ export interface StageStepInfo {
           <span class="step-counter">Stage {{ currentStageNumber() }} / 7</span>
         </div>
         <div class="velocity-meter">
-          <span class="velocity-val">{{ tokensPerSec() }}</span>
+          @if (isLiveMatched()) {
+            <span class="live-pill">LIVE</span>
+          }
+          <span class="velocity-val fixed-tks">{{ formattedTokensPerSec() }}</span>
           <span class="velocity-unit">tok/s</span>
+          @if (formattedRunTokensPerSec(); as runVal) {
+            <span class="run-caption font-mono">(run <span class="fixed-tks">{{ runVal }}</span>)</span>
+          }
           <span class="overall-percent">{{ progressPercent() }}%</span>
         </div>
       </div>
@@ -106,12 +112,51 @@ export interface StageStepInfo {
       align-items: baseline;
       gap: 0.25rem;
       font-family: var(--font-mono);
+      white-space: nowrap;
     }
 
     .velocity-val {
       font-weight: 700;
       color: var(--color-accent);
       font-size: 0.875rem;
+      display: inline-block;
+      min-width: 5.5ch;
+      width: 5.5ch;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
+    .run-caption {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-left: 0.25rem;
+    }
+
+    .run-caption .fixed-tks {
+      min-width: 4.5ch;
+      width: 4.5ch;
+      text-align: right;
+      display: inline-block;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
+    .live-pill {
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 3px;
+      padding: 0 0.35rem;
+      margin-right: 0.25rem;
+      animation: pulse-live 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
     }
 
     .velocity-unit {
@@ -207,8 +252,25 @@ export interface StageStepInfo {
 export class StageProgressBarComponent {
   public progressPercent = input<number>(0);
   public tokensPerSec = input<number>(0);
+  public runTokensPerSec = input<number | undefined>(undefined);
   public currentStageNumber = input<number>(1);
   public activeStageLabel = input<string>('Planning');
+
+  public readonly formattedTokensPerSec = computed(() => {
+    return (this.tokensPerSec() || 0).toFixed(1);
+  });
+
+  public readonly formattedRunTokensPerSec = computed(() => {
+    const run = this.runTokensPerSec();
+    return run !== undefined ? run.toFixed(1) : null;
+  });
+
+  public readonly isLiveMatched = computed(() => {
+    const live = this.tokensPerSec();
+    const run = this.runTokensPerSec();
+    if (!run || live <= 0) return false;
+    return Math.abs(live - run) <= 1.5;
+  });
 
   public stages = input<StageStepInfo[]>([
     { index: 1, name: 'planning', label: '1/7 Planning', status: 'SUCCESS', durationMs: 120 },

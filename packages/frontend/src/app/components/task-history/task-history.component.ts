@@ -35,7 +35,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
             </div>
             <div class="stats">
               <span>{{ entry.successRate }}% win</span>
-              <span>{{ entry.avgTokensPerSec }} tok/s</span>
+              <span><span class="fixed-tks">{{ formatTks(entry.avgTokensPerSec) }}</span> tok/s</span>
             </div>
           </div>
         }
@@ -168,6 +168,16 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       font-size: 0.75rem;
       color: var(--text-muted);
       font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+
+    .fixed-tks {
+      display: inline-block;
+      min-width: 5ch;
+      width: 5ch;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
     }
 
     .table-container {
@@ -256,6 +266,10 @@ export class TaskHistoryComponent {
   public readonly historyItems = this.metricsService.historyItems;
   public readonly leaderboard = this.metricsService.leaderboard;
   public readonly successRate = this.metricsService.rollingSuccessRate;
+
+  public formatTks(val: number | null | undefined): string {
+    return (Number(val) || 0).toFixed(1);
+  }
 
   public drillDown(taskId: string): void {
     void this.store.selectTask(taskId);

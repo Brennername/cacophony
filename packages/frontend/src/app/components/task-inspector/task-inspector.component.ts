@@ -20,9 +20,22 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
           <span class="subtext">Real-time LLM stage pipeline & token stream</span>
         </div>
         @if (activeTask(); as task) {
-          <div class="speed-badge">
-            <span class="num">{{ currentVelocity() }}</span>
-            <span class="unit">tok/s</span>
+          <div class="speed-hud">
+            <div class="speed-badge" [class.matched]="isVelocityMatched()">
+              <span class="hud-pill" [class.live-active]="isVelocityMatched()">
+                {{ isVelocityMatched() ? 'LIVE' : (liveVelocity() > 0 ? 'STREAM' : 'PAUSED') }}
+              </span>
+              <div class="hud-metric">
+                <span class="metric-caption">LIVE</span>
+                <span class="num fixed-tks">{{ formattedLiveVelocity() }}</span>
+              </div>
+              <span class="hud-slash">/</span>
+              <div class="hud-metric">
+                <span class="metric-caption">RUN</span>
+                <span class="num fixed-tks">{{ formattedRunVelocity() }}</span>
+              </div>
+              <span class="unit">tok/s</span>
+            </div>
           </div>
         }
       </div>
@@ -38,7 +51,8 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
         <!-- 7-Stage Granular Segmented Progress Bar -->
         <app-stage-progress-bar
           [progressPercent]="task.progressPercent ?? 42"
-          [tokensPerSec]="currentVelocity()"
+          [tokensPerSec]="liveVelocity() > 0 ? liveVelocity() : runVelocity()"
+          [runTokensPerSec]="runVelocity()"
           [currentStageNumber]="3"
           activeStageLabel="3/7 Generation"
         />
@@ -121,26 +135,88 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       color: var(--text-muted);
     }
 
+    .speed-hud {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     .speed-badge {
       display: inline-flex;
-      align-items: baseline;
-      gap: 0.25rem;
+      align-items: center;
+      gap: 0.35rem;
       padding: 0.25rem 0.625rem;
       background: var(--bg-surface-elevated);
-      border: 1px solid var(--color-brand);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
+      white-space: nowrap;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .speed-badge.matched {
+      border-color: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+    }
+
+    .hud-pill {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.35rem;
+      border-radius: 3px;
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      text-transform: uppercase;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    .hud-pill.live-active {
+      background: rgba(16, 185, 129, 0.18);
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+
+    .hud-metric {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.2rem;
+    }
+
+    .metric-caption {
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: var(--text-muted);
     }
 
     .speed-badge .num {
       font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
       font-weight: 700;
       color: var(--color-brand);
-      font-size: 1.125rem;
+      font-size: 1rem;
+      display: inline-block;
+      min-width: 5.5ch;
+      width: 5.5ch;
+      text-align: right;
+    }
+
+    .speed-badge.matched .num {
+      color: #10b981;
+    }
+
+    .hud-slash {
+      font-size: 0.75rem;
+      color: var(--border-strong);
+      padding: 0 0.1rem;
     }
 
     .speed-badge .unit {
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       color: var(--text-secondary);
+      margin-left: 0.1rem;
     }
 
     .task-info-banner {
@@ -331,10 +407,26 @@ export class TaskInspectorComponent {
   public readonly activeTask = this.store.activeTask;
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
 
-  public readonly currentVelocity = computed(() => {
-    const liveVel = this.store.liveTokenVelocity();
-    if (liveVel > 0) return liveVel;
+  public readonly liveVelocity = computed(() => this.store.liveTokenVelocity());
+  public readonly runVelocity = computed(() => {
+    const run = this.store.runTokenVelocity();
+    if (run > 0) return run;
     return this.activeTask()?.tokensPerSec ?? 0;
+  });
+  public readonly isVelocityMatched = this.store.isVelocityMatched;
+
+  public readonly formattedLiveVelocity = computed(() => {
+    return this.liveVelocity().toFixed(1);
+  });
+
+  public readonly formattedRunVelocity = computed(() => {
+    return this.runVelocity().toFixed(1);
+  });
+
+  public readonly currentVelocity = computed(() => {
+    const liveVel = this.liveVelocity();
+    if (liveVel > 0) return liveVel;
+    return this.runVelocity();
   });
 
   private terminalContentEl = viewChild<ElementRef<HTMLElement>>('terminalContent');

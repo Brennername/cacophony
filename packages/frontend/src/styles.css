@@ -303,3 +303,17 @@ code, pre, .font-mono {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ==========================================================================
+   Fixed-Width Token Velocity Utility (Prevents layout jitter and resizing)
+   ========================================================================== */
+.fixed-tks {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  min-width: 5.5ch;
+  width: 5.5ch;
+  text-align: right;
+  white-space: nowrap;
+}

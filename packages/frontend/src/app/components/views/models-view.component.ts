@@ -47,7 +47,7 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
               </div>
               <div class="metric-col">
                 <span class="metric-label">Velocity</span>
-                <span class="metric-value font-mono">{{ entry.avgTokensPerSec }} tok/s</span>
+                <span class="metric-value font-mono"><span class="fixed-tks">{{ formatTks(entry.avgTokensPerSec) }}</span> tok/s</span>
               </div>
               <div class="metric-col">
                 <span class="metric-label">Total Runs</span>
@@ -206,6 +206,15 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
       color: var(--color-brand);
     }
 
+    .fixed-tks {
+      display: inline-block;
+      min-width: 5ch;
+      width: 5ch;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
     .bar-container {
       height: 6px;
       background: var(--bg-surface-elevated);
@@ -223,4 +232,8 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
 })
 export class ModelsViewComponent {
   public readonly metricsService = inject(HistoryMetricsService);
+
+  public formatTks(val: number | null | undefined): string {
+    return (Number(val) || 0).toFixed(1);
+  }
 }
