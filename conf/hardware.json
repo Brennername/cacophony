@@ -1,0 +1,20 @@
+{
+  "activeProfileId": "amd_vega_apu_hardened",
+  "hostname": "auto",
+  "primaryCategory": "AMD_APU_VEGA",
+  "backend": "Vulkan",
+  "maxStableContext": 4096,
+  "recommendedConcurrency": 1,
+  "flashAttention": false,
+  "vramApertureMb": 8192,
+  "hostRamMb": 16384,
+  "environment": {
+    "OLLAMA_IGPU_ENABLE": "1",
+    "OLLAMA_VULKAN": "1",
+    "OLLAMA_FLASH_ATTENTION": "0",
+    "OLLAMA_NUM_PARALLEL": "1",
+    "OLLAMA_MAX_LOADED_MODELS": "1",
+    "OLLAMA_KEEP_ALIVE": "-1",
+    "OLLAMA_DEBUG": "1"
+  }
+}

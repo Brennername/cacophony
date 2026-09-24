@@ -11,3 +11,4 @@ export * from "./signature.js";
 export * from "./fleet.js";
 export * from "./rules.js";
 export * from "./optimization.js";
+export * from "./hardware.js";

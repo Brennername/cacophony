@@ -345,47 +345,47 @@
 *RDF Category: `spec:AutonomousHardwareCategory`*
 
 ### T27.1: Host Hardware Probing & Multi-Vendor Capability Scanner (`spec:HardwareProbingEngine`)
-- [ ] T27.1.1: Host Architecture & Device Scanner:
-  - [ ] T27.1.1.1: Implement `HardwareDiscoveryEngine` in `@cacophony/engine` querying Linux `/sys` and `/proc` filesystems without external binary dependencies.
-  - [ ] T27.1.1.2: Read `/sys/class/drm/card*/device/vendor` and `device` discovering all discrete and integrated GPU devices.
-  - [ ] T27.1.1.3: Probe sysfs `/sys/class/kfd/kfd/topology/nodes/` extracting AMD APU/GPU compute topology, SIMD engine count, and GTT memory aperture.
-  - [ ] T27.1.1.4: Probe unified system memory: calculate host RAM, swap configuration, and shared VRAM allocation for APUs (Cezanne / Vega gfx900).
-  - [ ] T27.1.1.5: Detect secondary vendor tool availability in PATH (`lspci`, `lshw`, `lsusb`, `rocminfo`, `vulkaninfo`, `nvidia-smi`, `clinfo`).
-- [ ] T27.1.2: Device Classification & Profile Recommendation:
-  - [ ] T27.1.2.1: Classify candidate compute devices into normalized categories: `AMD_APU_VEGA`, `AMD_DISCRETE_RDNA`, `NVIDIA_CUDA`, `INTEL_ARC`, `APPLE_SILICON`, `CPU_FALLBACK`.
-  - [ ] T27.1.2.2: Map detected hardware against known compute backend matrix: Vulkan vs ROCm vs CUDA vs Metal.
-  - [ ] T27.1.2.3: Identify hardware constraints (e.g. APU compute ring watchdog timeouts, absence of dedicated VRAM, lack of native Flash Attention in older GCN/Vega architectures).
-  - [ ] T27.1.2.4: Generate typed `HardwareDiscoveryReport` exposing detected devices, recommended hardware profile ID, and risk warnings.
+- [x] T27.1.1: Host Architecture & Device Scanner:
+  - [x] T27.1.1.1: Implement `HardwareDiscoveryEngine` in `@cacophony/engine` querying Linux `/sys` and `/proc` filesystems without external binary dependencies.
+  - [x] T27.1.1.2: Read `/sys/class/drm/card*/device/vendor` and `device` discovering all discrete and integrated GPU devices.
+  - [x] T27.1.1.3: Probe sysfs `/sys/class/kfd/kfd/topology/nodes/` extracting AMD APU/GPU compute topology, SIMD engine count, and GTT memory aperture.
+  - [x] T27.1.1.4: Probe unified system memory: calculate host RAM, swap configuration, and shared VRAM allocation for APUs (Cezanne / Vega gfx900).
+  - [x] T27.1.1.5: Detect secondary vendor tool availability in PATH (`lspci`, `lshw`, `lsusb`, `rocminfo`, `vulkaninfo`, `nvidia-smi`, `clinfo`).
+- [x] T27.1.2: Device Classification & Profile Recommendation:
+  - [x] T27.1.2.1: Classify candidate compute devices into normalized categories: `AMD_APU_VEGA`, `AMD_DISCRETE_RDNA`, `NVIDIA_CUDA`, `INTEL_ARC`, `APPLE_SILICON`, `CPU_FALLBACK`.
+  - [x] T27.1.2.2: Map detected hardware against known compute backend matrix: Vulkan vs ROCm vs CUDA vs Metal.
+  - [x] T27.1.2.3: Identify hardware constraints (e.g. APU compute ring watchdog timeouts, absence of dedicated VRAM, lack of native Flash Attention in older GCN/Vega architectures).
+  - [x] T27.1.2.4: Generate typed `HardwareDiscoveryReport` exposing detected devices, recommended hardware profile ID, and risk warnings.
 
 ### T27.2: Whitebox Ollama Systemd Configuration & Override Generator (`spec:OllamaWhiteboxTuning`)
-- [ ] T27.2.1: Whitebox Override Generator:
-  - [ ] T27.2.1.1: Implement `OllamaSystemdGenerator` producing service drop-in configuration (`/etc/systemd/system/ollama.service.d/override.conf`) and environment definitions.
-  - [ ] T27.2.1.2: Default AMD Vega Profile Generator:
+- [x] T27.2.1: Whitebox Override Generator:
+  - [x] T27.2.1.1: Implement `OllamaSystemdGenerator` producing service drop-in configuration (`/etc/systemd/system/ollama.service.d/override.conf`) and environment definitions.
+  - [x] T27.2.1.2: Default AMD Vega Profile Generator:
     - Generate `OLLAMA_IGPU_ENABLE=1`, `OLLAMA_VULKAN=1`, `OLLAMA_FLASH_ATTENTION=0`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_KEEP_ALIVE=-1`, `OLLAMA_DEBUG=1`, `OLLAMA_HOST=0.0.0.0`.
     - Generate kernel module parameter configuration `/etc/modprobe.d/amdgpu.conf` with `options amdgpu lockup_timeout=60000` to prevent compute ring resets.
-  - [ ] T27.2.1.3: AMD RDNA2/3 Profile Generator:
+  - [x] T27.2.1.3: AMD RDNA2/3 Profile Generator:
     - Generate `HSA_OVERRIDE_GFX_VERSION=10.3.0` (or `11.0.0`), `OLLAMA_FLASH_ATTENTION=1`, ROCm backend enablement.
-  - [ ] T27.2.1.4: NVIDIA CUDA Profile Generator:
+  - [x] T27.2.1.4: NVIDIA CUDA Profile Generator:
     - Generate `CUDA_VISIBLE_DEVICES`, `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_NUM_PARALLEL=2`, compute capability flags.
-  - [ ] T27.2.1.5: Apple Silicon & CPU Fallback Profile Generator:
+  - [x] T27.2.1.5: Apple Silicon & CPU Fallback Profile Generator:
     - Generate thread pool sizing matched to CPU performance cores (`OLLAMA_NUM_THREADS`).
-- [ ] T27.2.2: Dry-Run, Diff Inspection & Safe Provisioning CLI:
-  - [ ] T27.2.2.1: Implement CLI command `cacophony hardware inspect` printing human-readable hardware inventory and detected GPUs.
-  - [ ] T27.2.2.2: Implement CLI command `cacophony hardware generate-overrides` displaying exact file diffs for `/etc/systemd/system/ollama.service.d/override.conf` and `/etc/modprobe.d/amdgpu.conf`.
-  - [ ] T27.2.2.3: Provide optional `--apply` flag that checks for root/sudo elevation, writes configuration files, executes `systemctl daemon-reload`, and verifies Ollama health.
-  - [ ] T27.2.2.4: Provide automatic rollback backup files (`override.conf.bak`) before modifying existing system configuration.
+- [x] T27.2.2: Dry-Run, Diff Inspection & Safe Provisioning CLI:
+  - [x] T27.2.2.1: Implement CLI command `cacophony hardware inspect` printing human-readable hardware inventory and detected GPUs.
+  - [x] T27.2.2.2: Implement CLI command `cacophony hardware generate-overrides` displaying exact file diffs for `/etc/systemd/system/ollama.service.d/override.conf` and `/etc/modprobe.d/amdgpu.conf`.
+  - [x] T27.2.2.3: Provide optional `--apply` flag that checks for root/sudo elevation, writes configuration files, executes `systemctl daemon-reload`, and verifies Ollama health.
+  - [x] T27.2.2.4: Provide automatic rollback backup files (`override.conf.bak`) before modifying existing system configuration.
 
 ### T27.3: Hardware Profile Benchmarking & Adaptive Context Tuning (`spec:HardwareBenchmarking`)
-- [ ] T27.3.1: Automated Micro-Benchmark Suite:
-  - [ ] T27.3.1.1: Implement `HardwareBenchmarkRunner` executing standardized inference probes against Ollama.
-  - [ ] T27.3.1.2: Measure prompt ingestion throughput (tokens/sec) across context window sizes (2k, 4k, 8k, 16k, 32k).
-  - [ ] T27.3.1.3: Measure generation throughput (tokens/sec) and time-to-first-token (TTFT).
-  - [ ] T27.3.1.4: Monitor host RAM and VRAM utilization during inference, detecting memory thrashing or swap allocation.
-  - [ ] T27.3.1.5: Detect GPU driver hangs or Vulkan device lost errors, automatically identifying the maximum stable context ceiling.
-- [ ] T27.3.2: Adaptive Hardware Profile Persistence:
-  - [ ] T27.3.2.1: Save calibrated hardware profile in `hardware_profiles` database table and `conf/hardware.json`.
-  - [ ] T27.3.2.2: Wire runtime scheduler to enforce calibrated context ceilings and concurrency limits based on the active hardware profile.
-  - [ ] T27.3.2.3: Write automated integration tests for hardware scanner and profile generator.
+- [x] T27.3.1: Automated Micro-Benchmark Suite:
+  - [x] T27.3.1.1: Implement `HardwareBenchmarkRunner` executing standardized inference probes against Ollama.
+  - [x] T27.3.1.2: Measure prompt ingestion throughput (tokens/sec) across context window sizes (2k, 4k, 8k, 16k, 32k).
+  - [x] T27.3.1.3: Measure generation throughput (tokens/sec) and time-to-first-token (TTFT).
+  - [x] T27.3.1.4: Monitor host RAM and VRAM utilization during inference, detecting memory thrashing or swap allocation.
+  - [x] T27.3.1.5: Detect GPU driver hangs or Vulkan device lost errors, automatically identifying the maximum stable context ceiling.
+- [x] T27.3.2: Adaptive Hardware Profile Persistence:
+  - [x] T27.3.2.1: Save calibrated hardware profile in `hardware_profiles` database table and `conf/hardware.json`.
+  - [x] T27.3.2.2: Wire runtime scheduler to enforce calibrated context ceilings and concurrency limits based on the active hardware profile.
+  - [x] T27.3.2.3: Write automated integration tests for hardware scanner and profile generator.
 
 ---
 
