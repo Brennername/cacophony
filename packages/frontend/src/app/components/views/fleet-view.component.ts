@@ -75,26 +75,57 @@ export interface FleetNodeView {
         }
       </div>
 
-      <div class="cacophony-card diagnostic-tools-card">
+      <div class="cacophony-card diagnostic-tools-card" [class.all-good]="diagnosticReport()?.allRequiredInstalled">
         <div class="tools-header">
           <div class="tools-title">
-            <h3>Recommended Hardware Diagnostic & Sensor Utilities</h3>
-            <p class="subtitle">Install native Linux monitoring tools to enable live VRAM bus, thermal sensors, and GPU compute ring inspection</p>
+            <h3>{{ diagnosticReport()?.allRequiredInstalled ? 'Host Monitoring Utilities Verified' : 'Recommended Hardware Diagnostic & Sensor Utilities' }}</h3>
+            <p class="subtitle">
+              {{ diagnosticReport()?.allRequiredInstalled 
+                 ? 'All native Linux monitoring tools are detected. VRAM bus, thermal sensors, and GPU compute ring inspection are fully enabled.'
+                 : 'Install missing native Linux monitoring tools to enable live VRAM bus, thermal sensors, and GPU compute ring inspection.' }}
+            </p>
           </div>
-          <button class="copy-btn" (click)="copyInstallCommand()">{{ copyButtonText() }}</button>
+          @if (!diagnosticReport()?.allRequiredInstalled) {
+            <button class="copy-btn" (click)="copyInstallCommand()">{{ copyButtonText() }}</button>
+          }
         </div>
-        <div class="code-snippet font-mono">
-          <code>sudo apt update && sudo apt install -y radeontop lm-sensors btop htop mesa-utils vulkan-tools pciutils</code>
-        </div>
+
+        @if (!diagnosticReport()?.allRequiredInstalled && diagnosticReport()?.unifiedInstallCommand) {
+          <div class="code-snippet font-mono">
+            <code>{{ diagnosticReport()?.unifiedInstallCommand }}</code>
+          </div>
+        }
+
+        @if (diagnosticReport()?.missingCapabilities && diagnosticReport()!.missingCapabilities.length > 0) {
+          <div class="missing-capabilities-box">
+            <span class="missing-title">Disabled Capabilities Due to Missing Tools:</span>
+            <ul class="missing-list">
+              @for (cap of diagnosticReport()!.missingCapabilities; track cap) {
+                <li>{{ cap }}</li>
+              }
+            </ul>
+          </div>
+        }
+
         <div class="tools-pills">
-          <span class="tool-pill"><strong>radeontop:</strong> AMD VRAM & GTT aperture bus monitor</span>
-          <span class="tool-pill"><strong>lm-sensors:</strong> SoC voltage & package thermals</span>
-          <span class="tool-pill"><strong>btop:</strong> Real-time swap, memory & thread monitor</span>
-          <span class="tool-pill"><strong>vulkaninfo:</strong> Compute queue & heap inspector</span>
+          @if (diagnosticReport()?.tools) {
+            @for (tool of diagnosticReport()!.tools; track tool.binaryName) {
+              <span class="tool-pill" [class.installed]="tool.installed" [class.missing]="!tool.installed">
+                <span class="status-indicator"></span>
+                <strong>{{ tool.binaryName }}:</strong> {{ tool.installed ? (tool.version || 'installed') : 'missing (' + tool.packageName + ')' }}
+              </span>
+            }
+          } @else {
+            <span class="tool-pill"><strong>radeontop:</strong> AMD VRAM & GTT aperture bus monitor</span>
+            <span class="tool-pill"><strong>sensors:</strong> SoC voltage & package thermals</span>
+            <span class="tool-pill"><strong>btop:</strong> Real-time swap, memory & thread monitor</span>
+            <span class="tool-pill"><strong>vulkaninfo:</strong> Compute queue & heap inspector</span>
+          }
         </div>
       </div>
     </div>
   `,
+
   styles: [`
     .view-container {
       display: flex;
@@ -296,10 +327,31 @@ export interface FleetNodeView {
       color: #38bdf8;
     }
 
-    .tools-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+    .diagnostic-tools-card.all-good {
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      background: rgba(6, 78, 59, 0.2);
+    }
+
+    .missing-capabilities-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .missing-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--status-danger, #ef4444);
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .missing-list {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
     }
 
     .tool-pill {
@@ -309,6 +361,33 @@ export interface FleetNodeView {
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .tool-pill.installed {
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .tool-pill.missing {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .status-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .tool-pill.installed .status-indicator {
+      background: #10b981;
+    }
+
+    .tool-pill.missing .status-indicator {
+      background: #ef4444;
     }
 
     .tool-pill strong {
@@ -344,10 +423,12 @@ export class FleetViewComponent implements OnInit {
     },
   ]);
 
+  public diagnosticReport = signal<any | null>(null);
   public copyButtonText = signal<string>('Copy Command');
 
   public async copyInstallCommand(): Promise<void> {
-    const cmd = 'sudo apt update && sudo apt install -y radeontop lm-sensors btop htop mesa-utils vulkan-tools pciutils';
+    const report = this.diagnosticReport();
+    const cmd = report?.unifiedInstallCommand || 'sudo apt update && sudo apt install -y radeontop lm-sensors btop htop mesa-utils vulkan-tools pciutils';
     try {
       await navigator.clipboard.writeText(cmd);
       this.copyButtonText.set('Copied!');
@@ -369,5 +450,16 @@ export class FleetViewComponent implements OnInit {
     } catch {
       // offline fallback
     }
+
+    try {
+      const toolsRes = await fetch('/api/hardware/tools');
+      if (toolsRes.ok) {
+        const report = await toolsRes.json();
+        this.diagnosticReport.set(report);
+      }
+    } catch {
+      // offline fallback
+    }
   }
 }
+

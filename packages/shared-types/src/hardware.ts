@@ -111,3 +111,55 @@ export const WhiteboxOverrideConfigSchema = z.object({
   modprobeContent: z.string().optional(),
   environmentVars: z.record(z.string()),
 });
+
+/**
+ * Diagnostic record for a system utility or driver tool.
+ */
+export interface ToolRequirement {
+  readonly binaryName: string;
+  readonly packageName: string;
+  readonly category: "gpu_monitor" | "sensors" | "system_inspect" | "driver_diagnostics";
+  readonly installed: boolean;
+  readonly version?: string;
+  readonly description: string;
+  readonly enabledFeatures: readonly string[];
+  readonly disabledFeaturesIfMissing: readonly string[];
+  readonly installCommand: string;
+}
+
+export const ToolRequirementSchema = z.object({
+  binaryName: z.string(),
+  packageName: z.string(),
+  category: z.enum(["gpu_monitor", "sensors", "system_inspect", "driver_diagnostics"]),
+  installed: z.boolean(),
+  version: z.string().optional(),
+  description: z.string(),
+  enabledFeatures: z.array(z.string()),
+  disabledFeaturesIfMissing: z.array(z.string()),
+  installCommand: z.string(),
+});
+
+/**
+ * Comprehensive diagnostic report detailing host tools availability,
+ * missing dependencies, and recommended install commands.
+ */
+export interface SystemToolsDiagnosticReport {
+  readonly timestamp: string;
+  readonly hostname: string;
+  readonly allRequiredInstalled: boolean;
+  readonly tools: readonly ToolRequirement[];
+  readonly missingTools: readonly ToolRequirement[];
+  readonly unifiedInstallCommand: string;
+  readonly missingCapabilities: readonly string[];
+}
+
+export const SystemToolsDiagnosticReportSchema = z.object({
+  timestamp: z.string(),
+  hostname: z.string(),
+  allRequiredInstalled: z.boolean(),
+  tools: z.array(ToolRequirementSchema),
+  missingTools: z.array(ToolRequirementSchema),
+  unifiedInstallCommand: z.string(),
+  missingCapabilities: z.array(z.string()),
+});
+

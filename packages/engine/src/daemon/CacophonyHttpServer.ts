@@ -108,6 +108,23 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 1c. REST API: Host System Tool Availability & Missing Dependencies Diagnostic Report
+    if (url.pathname === "/api/hardware/tools" && req.method === "GET") {
+      try {
+        const { SystemToolScanner } = await import("../hardware/SystemToolScanner.js");
+        const scanner = new SystemToolScanner();
+        const report = await scanner.scan();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(report));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: message }));
+      }
+      return;
+    }
+
+
     // 1. SSE Real-Time Stream
     if (url.pathname === "/api/events" && req.method === "GET") {
       res.writeHead(200, {

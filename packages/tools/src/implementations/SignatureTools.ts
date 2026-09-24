@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { ToolResult, ToolDefinition } from "@cacophony/shared-types";
+
 import {
   QueryDataShapeParamsSchema,
   type QueryDataShapeParams,

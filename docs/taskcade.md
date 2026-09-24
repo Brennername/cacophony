@@ -26,35 +26,32 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 30.*
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 31.*
 
 ---
 
-## Phase 31: Closed-Loop PR Review & Self-Remediation Workflow with Missing Tool Diagnostic Guidance
-*RDF Category: `spec:ClosedLoopRemediationAndDiagnosticsCategory`*
+## Phase 32: Autonomous Continuous Arena Engine & Self-Taskcade Database Grooming
+*RDF Category: `spec:AutonomousContinuousExecutionCategory`*
 
-### T31.1: End-to-End Autonomous PR Lifecycle & Scheduler Integration (`spec:ClosedLoopPrWorkflow`)
-- [ ] T31.1.1: Closed-Loop PR Review & Remediation Coordinator:
-  - [ ] T31.1.1.1: Implement `ClosedLoopPrCoordinator` in `@cacophony/engine/gitea`: coordinates `AutomatedPrWorkflow` and `AutomatedPrReviewLoop` with `TaskScheduler`.
-  - [ ] T31.1.1.2: When `AutomatedPrReviewLoop` returns `remediationRequired: true` (`REQUEST_CHANGES` with inline comments), automatically synthesize and enqueue a high-priority (`P0`) remediation task targeting the existing worktree and branch.
-  - [ ] T31.1.1.3: Ensure remediation tasks bypass duplicate branch creation, focus on flagged lines from review comments, and execute automated test suites.
-  - [ ] T31.1.1.4: When review verdict is `APPROVED`, trigger automated squash merge via `GiteaApiClient.mergePullRequest` and record resolution in `task_stages` and `pr_reviews` tables.
+### T32.1: Autonomous Taskcade Self-Grooming & In-Database Task Planning (`spec:DatabaseTaskcadeGroomer`)
+- [ ] T32.1.1: Database-Native Taskcade Storage & Grooming Engine:
+  - [ ] T32.1.1.1: Define `TaskcadePlanningService` in `@cacophony/engine`: parses high-level system objectives and decomposes them directly into `tasks` and `task_stages` tables in PGlite.
+  - [ ] T32.1.1.2: Implement autonomous queue replenishment: when active queue drops below threshold, automatically trigger Frontier/Ollama task decomposition from backlog objectives.
+  - [ ] T32.1.1.3: Provide database status sync between PGlite and `docs/taskcade.md` tracking execution lifecycle state.
 
-### T31.2: System Tool Availability & Missing Dependency Diagnostic Engine (`spec:MissingToolsDiagnostics`)
-- [ ] T31.2.1: Host System Capability & Tool Scanner:
-  - [ ] T31.2.1.1: Define `ToolRequirement` and `SystemToolsDiagnosticReport` interfaces in `@cacophony/shared-types` identifying key binary capabilities: `radeontop`, `lm-sensors`, `btop`, `vulkan-tools` (`vulkaninfo`), `pciutils` (`lspci`), `mesa-utils`, `rocm-smi`, `nvidia-smi`.
-  - [ ] T31.2.1.2: Implement `SystemToolScanner` in `@cacophony/engine/hardware`: tests `which <tool>` or executes probe to determine installation status, version, and feature enablement.
-  - [ ] T31.2.1.3: Expose `GET /api/hardware/tools` REST endpoint returning complete diagnostic report with missing tools, affected capabilities, and copy-paste installation commands.
-- [ ] T31.2.2: Mobile-First Frontend Missing Tools Guidance Widget:
-  - [ ] T31.2.2.1: Update Angular `FleetViewComponent` and `HardwareMonitorComponent` to dynamically query `/api/hardware/tools`.
-  - [ ] T31.2.2.2: If missing tools are detected, render high-visibility, mobile-friendly alert card listing disabled functionality and one-click copy-paste command for `sudo apt install`.
-  - [ ] T31.2.2.3: Automatically hide or mark as verified when all required utilities are installed.
+### T32.2: Continuous Autonomous Code Generation & Self-Healing Execution Daemon (`spec:AutonomousExecutionDaemon`)
+- [ ] T32.2.1: Continuous Execution Loop Integration:
+  - [ ] T32.2.1.1: Connect `TaskScheduler.setExecutionHandler` to an autonomous worker pipeline: Context Minimizer -> Ollama/Frontier Code Generation -> Deterministic Rule Pipeline -> Scoped Test Verification -> Git Checkpoint.
+  - [ ] T32.2.1.2: If generation or compilation fails, automatically trigger `ClosedLoopTestRemediator` with compiler/LSP error feedback.
+  - [ ] T32.2.1.3: Enable continuous background execution mode capable of running sustained multi-hour task streams safely within Vega APU thermal limits.
 
-### T31.3: Automated Verification & Integration Suite (`spec:ClosedLoopVerification`)
-- [ ] T31.3.1: Unit & Integration Tests:
-  - [ ] T31.3.1.1: Write unit tests verifying `ClosedLoopPrCoordinator` lifecycle: task creation -> PR publish -> review evaluation -> remediation enqueuing on change request -> auto-merge on approval.
-  - [ ] T31.3.1.2: Write unit tests for `SystemToolScanner` verifying accurate detection of present vs missing binaries and installation command generation.
-  - [ ] T31.3.1.3: Run full monorepo test suite (`npm test`) asserting 100% pass rate.
+### T32.3: Verification & Operational System Startup (`spec:ContinuousOperationalValidation`)
+- [ ] T32.3.1: Verification & Startup:
+  - [ ] T32.3.1.1: Verify end-to-end task execution loop with synthetic unit tasks.
+  - [ ] T32.3.1.2: Run full monorepo test suite (`npm test`).
+  - [ ] T32.3.1.3: Start background daemon with initial work queue.
+
+
 
 
 

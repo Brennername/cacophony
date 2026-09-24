@@ -106,6 +106,7 @@ Base URL: `http://<host>:24161` (Supports reverse proxy headers `X-Forwarded-Hos
 
 ### 3.3 Hardware & Telemetry
 - `GET /api/telemetry` — Immediate point-in-time snapshot of system and GPU sensor metrics.
+- `GET /api/hardware/tools` — Host diagnostic and monitoring tool availability, missing package diagnostics, and copy-paste install command (`SystemToolsDiagnosticReport`).
 - `GET /api/analytics/failures` — Aggregated failure taxonomy distribution over rolling time windows (24h, 7d, 30d).
 - `GET /api/config/network` — Resolved client origin URL and network accessibility profile (`lan_shared`, `local_only`).
 

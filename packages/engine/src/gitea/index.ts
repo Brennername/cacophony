@@ -8,3 +8,5 @@ export * from "./GiteaOAuthProvider.js";
 export * from "./GiteaPermissionGuard.js";
 export * from "./GiteaIssueIngestionWorker.js";
 export * from "./GiteaPackageClient.js";
+export * from "./ClosedLoopPrCoordinator.js";
+

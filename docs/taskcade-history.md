@@ -815,6 +815,35 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T30.1.1.4: Document Headless JSON-RPC 2.0 & WebSocket Protocols.
   - [x] T30.1.1.5: Document Container Topology & Port Allocations (Frontend 24072, API 24161, MCP 21264, Gitea 19634/17883, Authentik 9000/9443).
 
+---
+
+## Archived Phase 31: Closed-Loop PR Review & Self-Remediation Workflow with Missing Tool Diagnostic Guidance
+*Completed & Verified in Phase 31 Verification Suite*
+
+### T31.1: End-to-End Autonomous PR Lifecycle & Scheduler Integration (`spec:ClosedLoopPrWorkflow`)
+- [x] T31.1.1: Closed-Loop PR Review & Remediation Coordinator:
+  - [x] T31.1.1.1: Implement `ClosedLoopPrCoordinator` in `@cacophony/engine/gitea`: coordinates `AutomatedPrWorkflow` and `AutomatedPrReviewLoop` with `TaskScheduler`.
+  - [x] T31.1.1.2: When `AutomatedPrReviewLoop` returns `remediationRequired: true` (`REQUEST_CHANGES` with inline comments), automatically synthesize and enqueue a high-priority (`P0`) remediation task targeting the existing worktree and branch.
+  - [x] T31.1.1.3: Ensure remediation tasks bypass duplicate branch creation, focus on flagged lines from review comments, and execute automated test suites.
+  - [x] T31.1.1.4: When review verdict is `APPROVED`, trigger automated squash merge via `GiteaApiClient.mergePullRequest` and record resolution in `task_stages` and `pr_reviews` tables.
+
+### T31.2: System Tool Availability & Missing Dependency Diagnostic Engine (`spec:MissingToolsDiagnostics`)
+- [x] T31.2.1: Host System Capability & Tool Scanner:
+  - [x] T31.2.1.1: Define `ToolRequirement` and `SystemToolsDiagnosticReport` interfaces in `@cacophony/shared-types` identifying key binary capabilities: `radeontop`, `lm-sensors`, `btop`, `vulkan-tools` (`vulkaninfo`), `pciutils` (`lspci`), `mesa-utils`, `rocm-smi`, `nvidia-smi`.
+  - [x] T31.2.1.2: Implement `SystemToolScanner` in `@cacophony/engine/hardware`: tests `which <tool>` or executes probe to determine installation status, version, and feature enablement.
+  - [x] T31.2.1.3: Expose `GET /api/hardware/tools` REST endpoint returning complete diagnostic report with missing tools, affected capabilities, and copy-paste installation commands.
+- [x] T31.2.2: Mobile-First Frontend Missing Tools Guidance Widget:
+  - [x] T31.2.2.1: Update Angular `FleetViewComponent` and `HardwareMonitorComponent` to dynamically query `/api/hardware/tools`.
+  - [x] T31.2.2.2: If missing tools are detected, render high-visibility, mobile-friendly alert card listing disabled functionality and one-click copy-paste command for `sudo apt install`.
+  - [x] T31.2.2.3: Automatically hide or mark as verified when all required utilities are installed.
+
+### T31.3: Automated Verification & Integration Suite (`spec:ClosedLoopVerification`)
+- [x] T31.3.1: Unit & Integration Tests:
+  - [x] T31.3.1.1: Write unit tests verifying `ClosedLoopPrCoordinator` lifecycle: task creation -> PR publish -> review evaluation -> remediation enqueuing on change request -> auto-merge on approval.
+  - [x] T31.3.1.2: Write unit tests for `SystemToolScanner` verifying accurate detection of present vs missing binaries and installation command generation.
+  - [x] T31.3.1.3: Run full monorepo test suite (`npm test`) asserting 100% pass rate.
+
+
 
 
 
