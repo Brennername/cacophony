@@ -220,6 +220,11 @@ export class QueueGroomer {
       }
     }
 
+    if (profile?.id === "go" && firstFile.includes("/")) {
+      const dirCandidate = path.dirname(firstFile);
+      return `go test ./${dirCandidate}/...`;
+    }
+
     return null;
   }
 }

@@ -20,6 +20,7 @@ import {
   BannedImportScrubberRule,
   AstSignatureAlignRule,
   TypeScriptDiagnosticRepairRule,
+  AstParameterCorrectionRules,
 } from "./catalog/index.js";
 
 /**
@@ -68,6 +69,7 @@ export class RulePipelineEngine {
     this.registerRule(new BannedImportScrubberRule());
     this.registerRule(new AstSignatureAlignRule());
     this.registerRule(new TypeScriptDiagnosticRepairRule());
+    this.registerRule(new AstParameterCorrectionRules());
   }
 
   /**

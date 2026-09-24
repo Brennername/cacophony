@@ -37,7 +37,7 @@ export interface PropertySignature {
 export interface CodeSignatureRecord {
   readonly id: string;
   readonly filePath: string;
-  readonly language: "typescript" | "java" | "go";
+  readonly language: "typescript" | "java" | "go" | "rust";
   readonly identifier: string;
   readonly kind: "function" | "class" | "interface" | "type";
   readonly callables: readonly CallableSignature[];
