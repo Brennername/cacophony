@@ -38,3 +38,21 @@
   - [ ] T45.1.2: Add visual thermal pacing alert thresholds in frontend TelemetryBar for Nominal (<70C), Warm (70-79C), Elevated (80-89C), and Danger (>=90C).
   - [ ] T45.1.3: Integrate automated pacing status in DashboardViewComponent showing active model pacing delays (0s, 5s, 15s).
   - [ ] T45.1.4: Write frontend unit tests verifying reactive signal updates on telemetry threshold crossings.
+
+---
+
+## Phase 46: End-to-End Autonomous Pipeline Integration: Multi-Stage Telemetry, Git Worktrees & PR Automation
+*RDF Category: orchestration*
+
+### T46.1: Live Pipeline Multi-Stage Transitions & Real-Time Stepper Telemetry
+  - [ ] T46.1.1: Connect AutonomousWorkerPipeline stages (Planning, Generation, Scrubbing, Testing, Review, Merge) to stageRepo records and broadcast stage transitions over SSE.
+  - [ ] T46.1.2: Update TaskInspectorComponent stage stepper to dynamically highlight active pipeline stages in real-time instead of hardcoded stage numbers.
+  - [ ] T46.1.3: Persist generated code diffs directly into task.logSnippet so Code Diffs tab in TaskDetailModalComponent displays actual diffs.
+  - [ ] T46.1.4: Write unit tests verifying stage transition broadcasts and stage timing telemetry.
+
+### T46.2: Git Worktree Branch Isolation & Autonomous Gitea PR Publication
+  - [ ] T46.2.1: Integrate GitWorktreeManager with AutonomousWorkerPipeline: create ephemeral branch `task/<priority>-<taskId>` per task execution.
+  - [ ] T46.2.2: Commit verified code modifications to task branch using git worktree without touching main workspace.
+  - [ ] T46.2.3: Wire AutomatedPrPublisher to open pull requests in Gitea automatically upon test passing.
+  - [ ] T46.2.4: Write integration tests verifying automated branch creation, commit creation, and PR publication workflow.
+
