@@ -341,4 +341,103 @@ export class UserService {
       assert.equal(inDb.status, "PENDING");
     });
   });
+
+  describe("Phase 43: Frontier Fallback Router, Circuit Breaker & Quota Tracking (T43.1)", () => {
+    test("T43.1.1 & T43.1.2: CircuitBreaker should trip on 429/5xx and route to fallback provider", async () => {
+      const { FrontierFallbackRouter } = await import("../inference/FrontierFallbackRouter.js");
+      const { ProviderCircuitBreaker } = await import("../inference/CircuitBreaker.js");
+
+      // 1. Unit test ProviderCircuitBreaker transitions
+      const breaker = new ProviderCircuitBreaker({ failureThreshold: 2, cooldownMs: 50 });
+      assert.equal(breaker.getState(), "CLOSED");
+      assert.equal(breaker.canExecute(), true);
+
+      breaker.recordFailure(true);
+      assert.equal(breaker.getState(), "CLOSED");
+
+      breaker.recordFailure(true);
+      assert.equal(breaker.getState(), "OPEN");
+      assert.equal(breaker.canExecute(), false);
+
+      // Wait for cooldown
+      await new Promise((r) => setTimeout(r, 60));
+      assert.equal(breaker.getState(), "HALF_OPEN");
+      assert.equal(breaker.canExecute(), true);
+
+      breaker.recordSuccess();
+      assert.equal(breaker.getState(), "CLOSED");
+
+      // 2. Multi-provider Fallback Router
+      let primaryAttempts = 0;
+      const failingPrimary: IInferenceProvider = {
+        getProviderType: () => "openai",
+        generate: async () => {
+          primaryAttempts++;
+          throw new Error("429 Too Many Requests: Rate limit exceeded");
+        },
+        stream: async () => { throw new Error("429 Too Many Requests"); }
+      };
+
+      let fallbackAttempts = 0;
+      const workingSecondary: IInferenceProvider = {
+        getProviderType: () => "ollama",
+        generate: async (req) => {
+          fallbackAttempts++;
+          return {
+            content: "Fallback response generated successfully",
+            model: req.model,
+            tokensPrompt: 40,
+            tokensCompletion: 25,
+            totalTokens: 65,
+            latencyMs: 150,
+            tokensPerSec: 166.7
+          };
+        },
+        stream: async () => { throw new Error("Not implemented"); }
+      };
+
+      const router = new FrontierFallbackRouter("deepseek-r1:8b");
+      router.registerProvider({ providerType: "openai", provider: failingPrimary, priority: 1 });
+      router.registerProvider({ providerType: "ollama", provider: workingSecondary, priority: 2 });
+
+      // Run multiple generation calls to trip the primary circuit
+      const res1 = await router.generate({
+        model: "deepseek-r1:8b",
+        messages: [{ role: "user", content: "Solve problem" }]
+      });
+      assert.equal(res1.content, "Fallback response generated successfully");
+      assert.equal(primaryAttempts, 1);
+      assert.equal(fallbackAttempts, 1);
+
+      await router.generate({
+        model: "deepseek-r1:8b",
+        messages: [{ role: "user", content: "Solve problem again" }]
+      });
+
+      await router.generate({
+        model: "deepseek-r1:8b",
+        messages: [{ role: "user", content: "Solve problem 3rd time" }]
+      });
+
+      // Primary breaker should be OPEN
+      const primaryBreaker = router.getCircuitBreaker("openai");
+      assert.equal(primaryBreaker?.getState(), "OPEN");
+
+      // 3. TokenQuotaTracker accounting verification
+      const tracker = router.getQuotaTracker();
+      const ollamaUsage = tracker.getUsage("ollama");
+      assert.equal(ollamaUsage.requestCount, 3);
+      assert.equal(ollamaUsage.totalTokens, 195);
+
+      const allUsage = tracker.getAllUsage();
+      assert.ok(allUsage.ollama);
+
+      // Verify circuit status snapshot
+      const statuses = router.getAllCircuitStatus();
+      assert.ok(statuses.openai);
+      assert.equal(statuses.openai.state, "OPEN");
+      assert.ok(statuses.ollama);
+      assert.equal(statuses.ollama.state, "CLOSED");
+    });
+  });
 });

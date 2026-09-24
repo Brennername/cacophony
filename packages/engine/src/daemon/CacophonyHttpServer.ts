@@ -685,6 +685,22 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4i. REST API: Provider Quotas & Circuit Breaker Health
+    if (url.pathname === "/api/config/quotas" && req.method === "GET") {
+      const router = this.daemon.getFallbackRouter();
+      const circuitBreakers = router ? router.getAllCircuitStatus() : {};
+      const usage = router ? router.getQuotaTracker().getAllUsage() : {};
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        status: "HEALTHY",
+        circuitBreakers,
+        quotas: usage,
+        timestamp: new Date().toISOString()
+      }));
+      return;
+    }
+
     // 5. Static Angular Frontend Serving
     if (this.config.frontendDistPath) {
       await this.serveStaticFrontend(url.pathname, res);

@@ -57,6 +57,7 @@ export class CacophonyDaemon {
   private scheduler!: TaskScheduler;
   private ipcServer!: DaemonIPCServer;
   private httpServer?: CacophonyHttpServer | undefined;
+  private fallbackRouter?: import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter | undefined;
   private planningTimer: NodeJS.Timeout | null = null;
   private pruningTimer: NodeJS.Timeout | null = null;
   private startTime = 0;
@@ -131,6 +132,14 @@ export class CacophonyDaemon {
     const { AutonomousWorkerPipeline } = await import("../scheduler/AutonomousWorkerPipeline.js");
 
     const ollama = new OllamaProvider();
+    const { FrontierFallbackRouter } = await import("../inference/FrontierFallbackRouter.js");
+    this.fallbackRouter = new FrontierFallbackRouter("deepseek-r1:8b");
+    this.fallbackRouter.registerProvider({
+      providerType: "ollama",
+      provider: ollama,
+      priority: 0
+    });
+
     const minimizer = new ContextMinimizer(process.cwd());
     const parser = new SelfHealingParser();
     const ruleEngine = new RulePipelineEngine();
@@ -345,6 +354,10 @@ export class CacophonyDaemon {
 
   public getUserSessionRepository(): UserSessionRepository {
     return this.userSessionRepo;
+  }
+
+  public getFallbackRouter(): import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter | undefined {
+    return this.fallbackRouter;
   }
 
   private async handleCommand(command: string, params?: Record<string, unknown>): Promise<unknown> {
