@@ -15,3 +15,4 @@ This directory stores deprecated source code files and documentation that have b
 | Date | Original Path | Reason for Deprecation |
 | :--- | :--- | :--- |
 | 2026-09-24 | packages/frontend/src/app/components/phase15-components.spec.ts | Decomposed into co-located component spec files; phase-named monolithic test file retired. |
+| 2026-09-24 | scripts/generate_taskcade_expansion.mjs | One-off script used to populate Phases 57 through 68 in docs/taskcade.md; retired after execution. |

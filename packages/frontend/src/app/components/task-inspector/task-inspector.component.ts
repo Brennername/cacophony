@@ -26,7 +26,7 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
                 {{ isStreamActive() ? 'LIVE' : 'PAUSED' }}
               </span>
               <div class="hud-metric">
-                <span class="metric-caption">LIVE</span>
+                <span class="metric-caption"></span>
                 <span class="num fixed-tks">{{ formattedLiveVelocity() }}</span>
               </div>
               <span class="hud-slash">/</span>

@@ -514,3 +514,491 @@
   - [ ] T56.6.3: Stream remote node execution tokens and stages back to coordinator via SSE proxy. [File: packages/engine/src/fleet/FleetTaskRouter.ts] [Method: proxyRemoteStream] [Test: npm test -- packages/engine/src/tests/fleet_router.test.ts]
   - [ ] T56.6.4: Write unit tests verifying tasks requiring high VRAM are routed to nodes with sufficient available GPU memory. [File: packages/engine/src/tests/fleet_router.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_router.test.ts]
 
+
+---
+
+## Phase 57: Rolling 100-Task Success Meter & Failure-to-Success Quality Telemetry
+*RDF Category: telemetry*
+
+### T57.1: Mathematical Rolling 100-Task Success Rate Window in Backend
+  - [ ] T57.1.1: Implement TaskRepository.getRollingSuccessStats(sampleSize: number = 100) querying the last N finished tasks with status in ('COMPLETED', 'FAILED'). [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.getRollingSuccessStats] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [ ] T57.1.2: Calculate success percentage as (completedCount / totalFinished) * 100 rounded to 1 decimal place, handling zero-division cleanly when totalFinished is 0. [File: packages/db/src/repositories/TaskRepository.ts] [Type: RollingSuccessStats] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [ ] T57.1.3: Track previous window success rate to compute rolling trend direction ('improving' | 'declining' | 'stable') across consecutive 50-task sub-windows. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.getRollingSuccessStats] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [ ] T57.1.4: Write unit tests verifying getRollingSuccessStats accurately computes rates for 0%, 50%, 100%, and arbitrary completion ratios across 100 tasks. [File: packages/db/src/tests/rolling_success.test.ts] [Test: npm test -- packages/db/src/tests/rolling_success.test.ts]
+
+### T57.2: REST API: GET /api/metrics/success-rate Endpoint
+  - [ ] T57.2.1: Register route GET /api/metrics/success-rate in CacophonyHttpServer returning structured RollingSuccessStats JSON payload. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/metrics/success-rate] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T57.2.2: Support optional query parameter ?window=N (default 100, min 10, max 500) to allow customized historical sample depths. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleSuccessRateMetric] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T57.2.3: Return breakdown by model assigned: per-model success rate, run count, and failure count within the 100-task rolling window. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/metrics/success-rate] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T57.2.4: Write integration tests verifying /api/metrics/success-rate returns 200 with valid schema and correct calculations. [File: packages/engine/src/tests/success_rate_api.test.ts] [Test: npm test -- packages/engine/src/tests/success_rate_api.test.ts]
+
+### T57.3: Real-Time SSE Success Rate Broadcast on Task Completion
+  - [ ] T57.3.1: Broadcast SSE event 'success_rate_updated' to all connected clients whenever a task transitions to COMPLETED or FAILED in AutonomousWorkerPipeline. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: finalizeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T57.3.2: Include updated rolling percentage, total completed count, total failed count, and current streak in the SSE payload. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastSuccessRate] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T57.3.3: Implement throttling in SSE broadcast governor to limit metric broadcasts to at most once per 500ms under high-throughput task completions. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastThrottled] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T57.3.4: Write integration tests verifying SSE clients receive success_rate_updated notifications immediately upon task status transition. [File: packages/engine/src/tests/sse_telemetry.test.ts] [Test: npm test -- packages/engine/src/tests/sse_telemetry.test.ts]
+
+### T57.4: Frontend SuccessMeterComponent with Color-Coded Radial & Linear Gauges
+  - [ ] T57.4.1: Create standalone SuccessMeterComponent in packages/frontend/src/app/components/success-meter/ using Angular Signals and Zoneless change detection. [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Class: SuccessMeterComponent] [Test: npm test]
+  - [ ] T57.4.2: Render SVG circular radial gauge with smooth stroke-dashoffset transition visualizing rolling success percentage (0% to 100%). [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Template: radial-gauge] [Test: npm test]
+  - [ ] T57.4.3: Implement color-coded threshold status: Critical Red (<50%), Warning Amber (50-79%), Optimal Emerald (>=80%) based on current success rate. [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Computed: statusColorClass] [Test: npm test]
+  - [ ] T57.4.4: Display numeric percentage in fixed-width tabular font with pass/fail counts breakdown ('X passed / Y failed in last 100 tasks'). [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Template: metrics-summary] [Test: npm test]
+  - [ ] T57.4.5: Write frontend unit tests verifying reactive signal updates, SVG dashoffset calculations, and color threshold classes. [File: packages/frontend/src/app/components/success-meter/success-meter.component.spec.ts] [Test: npm test]
+
+### T57.5: Telemetry Bar & Dashboard Header Success Meter Integration
+  - [ ] T57.5.1: Wire SuccessMeterComponent into DashboardViewComponent header adjacent to Active Task Inspector. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Component: DashboardViewComponent] [Test: npm test]
+  - [ ] T57.5.2: Integrate compact success percentage pill into root TelemetryBar component visible on all routes. [File: packages/frontend/src/app/components/telemetry-bar/telemetry-bar.component.ts] [Component: TelemetryBarComponent] [Test: npm test]
+  - [ ] T57.5.3: Bind ArenaStateStore successRate signal to SSE 'success_rate_updated' events for seamless live updates without polling. [File: packages/frontend/src/app/services/arena-state.store.ts] [Method: handleSseEvent] [Test: npm test]
+  - [ ] T57.5.4: Apply responsive mobile-first CSS rules hiding radial graphics on small mobile screens (<480px) while maintaining compact text percentage. [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Styles: media-query] [Test: npm test]
+
+---
+
+## Phase 58: Dynamic Multi-Model Rotation, Failure Fallback Cascade & Adaptive Context Window Reduction (8k -> 4k)
+*RDF Category: orchestration*
+
+### T58.1: Heterogeneous Model Task Distributor & Anti-Starvation Scheduler
+  - [ ] T58.1.1: Refactor TaskScheduler.selectModelForTask to distribute task assignments across all healthy models in ModelRegistry instead of locking to a single model. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: selectModelForTask] [Test: npm test -- packages/engine/src/tests/scheduler_model_rotation.test.ts]
+  - [ ] T58.1.2: Implement model usage balancing: track run counts per model in memory and prioritize idle registered models (e.g. qwen2.5-coder:7b, deepseek-r1:8b, gemma3:4b). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: getLeastRecentlyUsedModel] [Test: npm test -- packages/engine/src/tests/scheduler_model_rotation.test.ts]
+  - [ ] T58.1.3: Remove hardcoded modelName in TaskcadePlanningService.replenishQueueIfLow, allowing dynamic model assignment from registered model pool. [File: packages/engine/src/inference/TaskcadePlanningService.ts] [Method: replenishQueueIfLow] [Test: npm test -- packages/engine/src/tests/taskcade_planning.test.ts]
+  - [ ] T58.1.4: Write unit tests verifying that 20 consecutive queued tasks receive balanced allocations across 3 distinct registered model IDs. [File: packages/engine/src/tests/model_distribution.test.ts] [Test: npm test -- packages/engine/src/tests/model_distribution.test.ts]
+
+### T58.2: Role-to-Model Specialization Router (Architect, Implementer, Reviewer, DocWriter)
+  - [ ] T58.2.1: Implement RoleModelAffinityMatrix mapping task roles to preferred model capabilities: architect -> reasoning models (8b), implementer -> code generation (3b/7b), reviewer -> verification (8b), doc_writer -> language models (4b/7b). [File: packages/engine/src/inference/RoleModelRouter.ts] [Class: RoleModelRouter] [Test: npm test -- packages/engine/src/tests/role_model_router.test.ts]
+  - [ ] T58.2.2: Evaluate model availability: fallback to next best qualified model in the affinity tier if preferred model is unavailable or in cooldown. [File: packages/engine/src/inference/RoleModelRouter.ts] [Method: resolveModelForRole] [Test: npm test -- packages/engine/src/tests/role_model_router.test.ts]
+  - [ ] T58.2.3: Support runtime override of role affinity configuration via GET/PUT /api/config/role-models REST endpoints. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: /api/config/role-models] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T58.2.4: Write unit tests verifying that tasks with role 'architect' receive deepseek-r1:8b while role 'implementer' receives qwen2.5-coder models. [File: packages/engine/src/tests/role_model_router.test.ts] [Test: npm test -- packages/engine/src/tests/role_model_router.test.ts]
+
+### T58.3: Dynamic Failure Fallback Cascade (Sequential Alternative Model Selection)
+  - [ ] T58.3.1: Implement FailureFallbackCascade in TaskScheduler: when a task fails execution, identify the next alternative model in the role cascade. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: getFallbackModelForTask] [Test: npm test -- packages/engine/src/tests/failure_fallback_cascade.test.ts]
+  - [ ] T58.3.2: Requeue failed task with incremented failureCount, updated modelAssigned to fallback model, and status PENDING. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleTaskFailure] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T58.3.3: Cap retries at maxTaskRetries (default 3); mark task permanently FAILED only after exhausting all available alternative models in cascade. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: handleFailedTaskRetries] [Test: npm test -- packages/engine/src/tests/failure_fallback_cascade.test.ts]
+  - [ ] T58.3.4: Write unit tests verifying task failing under model A automatically retries under model B and records fallback lineage. [File: packages/engine/src/tests/failure_fallback_cascade.test.ts] [Test: npm test -- packages/engine/src/tests/failure_fallback_cascade.test.ts]
+
+### T58.4: Adaptive Context Window Reduction (Automatic Fallback from 8192 to 4096 Tokens)
+  - [ ] T58.4.1: Add contextWindowSize option (default 8192) to OllamaInferenceOptions and InferenceJob payload. [File: packages/shared-types/src/inference.ts] [Type: OllamaInferenceOptions] [Test: npm test]
+  - [ ] T58.4.2: Implement AdaptiveContextManager detecting task failures caused by context overflow, repetitive loops, or VRAM pressure. [File: packages/engine/src/inference/AdaptiveContextManager.ts] [Class: AdaptiveContextManager] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+  - [ ] T58.4.3: On retry of a failed task, reduce context window parameter num_ctx from 8192 to 4096 tokens to force concise generation and reduce VRAM allocation. [File: packages/engine/src/inference/AdaptiveContextManager.ts] [Method: calculateRetryContextOptions] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+  - [ ] T58.4.4: Trigger aggressive AST import pruning and context minimization when context window drops to 4096 tokens. [File: packages/engine/src/inference/ContextMinimizer.ts] [Method: pruneForCompactWindow] [Test: npm test -- packages/engine/src/tests/context_minimizer.test.ts]
+  - [ ] T58.4.5: Write unit tests verifying num_ctx is set to 8192 on initial attempt and reduced to 4096 on first retry following failure. [File: packages/engine/src/tests/adaptive_context.test.ts] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+
+### T58.5: Model Eviction Recovery & Consecutive Failure Cooldown Daemon
+  - [ ] T58.5.1: Enhance ModelEvictionManager with cooldown timer: models with 3 consecutive failures enter COOLDOWN state for 5 minutes instead of permanent ejection. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: handleModelFailure] [Test: npm test -- packages/engine/src/tests/model_eviction.test.ts]
+  - [ ] T58.5.2: Implement probe task execution: after cooldown expires, dispatch a low-complexity P2 test task to evaluate whether model has recovered. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: scheduleProbeTask] [Test: npm test -- packages/engine/src/tests/model_eviction.test.ts]
+  - [ ] T58.5.3: Restore model status to ACTIVE on probe success; escalate to EJECTED only if probe task fails. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: handleProbeResult] [Test: npm test -- packages/engine/src/tests/model_eviction.test.ts]
+  - [ ] T58.5.4: Write unit tests verifying model enters COOLDOWN after 3 consecutive failures and recovers cleanly upon passing probe task. [File: packages/engine/src/tests/model_eviction_cooldown.test.ts] [Test: npm test -- packages/engine/src/tests/model_eviction_cooldown.test.ts]
+
+### T58.6: Failure Classifier Feedback Propagation for Adaptive Retries
+  - [ ] T58.6.1: Classify task failure error type (SYNTAX_ERROR, TYPE_MISMATCH, ASSERTION_FAILURE, TIMEOUT, MEMORY_OOM) in FailureClassifier. [File: packages/engine/src/analytics/FailureClassifier.ts] [Method: classify] [Test: npm test -- packages/engine/src/tests/failure_classifier.test.ts]
+  - [ ] T58.6.2: Format targeted retry prompt directive: append categorized error explanation and exact failing assertion to retry prompt. [File: packages/engine/src/inference/AdaptiveContextManager.ts] [Method: formatRetryPromptWithDiagnostics] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+  - [ ] T58.6.3: Record failure category in stageRepo records for longitudinal failure mode correlation analytics. [File: packages/db/src/repositories/StageRepository.ts] [Method: recordStageCompletion] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
+  - [ ] T58.6.4: Write unit tests verifying retry prompt includes exact compiler error diagnostic and tailored instruction to fix failing test. [File: packages/engine/src/tests/retry_prompt_diagnostics.test.ts] [Test: npm test -- packages/engine/src/tests/retry_prompt_diagnostics.test.ts]
+
+---
+
+## Phase 59: Live Test Execution Stream & Dedicated Testing Panel (Refactoring 'Processes' View to 'Testing')
+*RDF Category: frontend*
+
+### T59.1: Global Navigation & Route Refactor: Rename 'Processes' to 'Testing' (/testing Route)
+  - [ ] T59.1.1: Rename navigation bar label from 'Processes' to 'Testing' in app.html and update active route link to '/testing'. [File: packages/frontend/src/app/app.html] [Template: nav-links] [Test: npm test]
+  - [ ] T59.1.2: Define route '/testing' in app.routes.ts mapping to TestingViewComponent. [File: packages/frontend/src/app/app.routes.ts] [Route: /testing] [Test: npm test]
+  - [ ] T59.1.3: Add redirect route from '/processes' to '/testing' in app.routes.ts ensuring bookmark and legacy URL compatibility. [File: packages/frontend/src/app/app.routes.ts] [Route: /processes] [Test: npm test]
+  - [ ] T59.1.4: Update frontend route unit tests in app.routes.spec.ts validating presence of '/testing' route and redirect. [File: packages/frontend/src/app/app.routes.spec.ts] [Test: npm test]
+
+### T59.2: Dedicated Testing View Layout & Active Test Execution Dashboard
+  - [ ] T59.2.1: Create standalone TestingViewComponent in packages/frontend/src/app/components/views/testing-view.component.ts with modern responsive grid layout. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Class: TestingViewComponent] [Test: npm test]
+  - [ ] T59.2.2: Implement Active Test Card displaying currently executing test command, target file paths, elapsed duration timer, and live status pill. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: active-test-card] [Test: npm test]
+  - [ ] T59.2.3: Render test execution summary counters: Total Tests Run, Passed Count, Failed Count, Current Pass Rate %, and Average Test Duration. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: summary-counters] [Test: npm test]
+  - [ ] T59.2.4: Write unit tests verifying TestingViewComponent renders summary metrics and responds to active test execution signal changes. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.3: Live Test Output Streamer (SSE Terminal Stream for Test Runner Stdout/Stderr)
+  - [ ] T59.3.1: Connect TestingViewComponent to SSE event 'test_output' streaming real-time stdout and stderr lines from the active test runner subprocess. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: connectTestStream] [Test: npm test]
+  - [ ] T59.3.2: Render high-density terminal log component with auto-scroll to bottom, ANSI color support, and line numbers. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: test-terminal] [Test: npm test]
+  - [ ] T59.3.3: Implement live pause/resume auto-scroll toggle and copy log buffer button with visual feedback. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: copyLog] [Test: npm test]
+  - [ ] T59.3.4: Write frontend unit tests verifying log buffer appends incoming test stream chunks and triggers auto-scroll. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.4: Historical Test Run Table with High-Density Filtering and Pass/Fail Verdicts
+  - [ ] T59.4.1: Implement Historical Test Runs table in TestingViewComponent listing past test executions fetched from GET /api/tests/history. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: history-table] [Test: npm test]
+  - [ ] T59.4.2: Render column data: Status badge (PASSED, FAILED, TIMEOUT), Task Title, Test Command, Execution Duration ms, Timestamp, and Actions. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: table-rows] [Test: npm test]
+  - [ ] T59.4.3: Add filter tabs (ALL, PASSED, FAILED) and search input filtering test runs by command or task ID. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: filterTests] [Test: npm test]
+  - [ ] T59.4.4: Write frontend unit tests validating filter tabs and text search accurately filter displayed historical test rows. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.5: Associated App Subprocess List in Testing View Bottom Drawer
+  - [ ] T59.5.1: Create Collapsible Subprocess Drawer component at bottom of TestingViewComponent displaying associated application background processes. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: subprocess-drawer] [Test: npm test]
+  - [ ] T59.5.2: Render process table displaying: Daemon Worker, Ollama Engine, PGlite Database, Gitea Git Server, and Mailpit with PID, CPU %, RSS MB, and Uptime. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: process-table] [Test: npm test]
+  - [ ] T59.5.3: Add operator action button to restart any stuck background process via POST /api/processes/:name/restart with confirmation dialog. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: restartProcess] [Test: npm test]
+  - [ ] T59.5.4: Write frontend unit tests verifying subprocess drawer expands/collapses and displays live process metrics from ArenaStateStore. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.6: Deep Test Run Inspection Modal with Collapsible Stderr Stack Traces
+  - [ ] T59.6.1: Create TestRunDetailModalComponent opening upon clicking any historical test run row. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts] [Class: TestRunDetailModalComponent] [Test: npm test]
+  - [ ] T59.6.2: Render modal tabs: Full Output, Failing Assertions, Code Diffs, and Environment Variables. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts] [Template: modal-tabs] [Test: npm test]
+  - [ ] T59.6.3: Highlight failing test assertion line in red with syntax-highlighted code snippet showing expected vs actual values. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts] [Template: assertion-diff] [Test: npm test]
+  - [ ] T59.6.4: Write unit tests verifying modal open/close lifecycle, escape key listener, and assertion extraction parser. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.spec.ts] [Test: npm test]
+
+---
+
+## Phase 60: Real Multi-Armed Bandit Implementation (Thompson Sampling, UCB-1 & Epsilon-Greedy Wireup)
+*RDF Category: orchestration*
+
+### T60.1: Empirical Reward Calculation from Real Test Passes and Failure Counts
+  - [ ] T60.1.1: Implement calculateEmpiricalReward(testOutcome: boolean, durationMs: number, tokensPerSec: number) in BanditTaskScheduler returning scalar reward [0.0, 1.0]. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: calculateEmpiricalReward] [Test: npm test -- packages/engine/src/tests/bandit_scheduler.test.ts]
+  - [ ] T60.1.2: Grant baseline reward 1.0 on test pass; 0.0 on test failure; apply velocity modifier (+0.1 for tok/s > 30, -0.1 for tok/s < 15) clamped to [0.0, 1.0]. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: calculateEmpiricalReward] [Test: npm test -- packages/engine/src/tests/bandit_scheduler.test.ts]
+  - [ ] T60.1.3: Hook reward calculation into AutonomousWorkerPipeline upon stage 'test_execution' completion, updating active model arm in BanditRepository. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: finalizeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T60.1.4: Write unit tests verifying that test passes yield reward >= 0.9 while test failures yield reward 0.0 across varying durations. [File: packages/engine/src/tests/bandit_reward_calc.test.ts] [Test: npm test -- packages/engine/src/tests/bandit_reward_calc.test.ts]
+
+### T60.2: Thompson Sampling Policy Engine with Beta(Alpha, Beta) Distribution Sampling
+  - [ ] T60.2.1: Implement sampleBeta(alpha: number, beta: number) using Marsaglia and Tsang method or standard Gamma transform for accurate Beta distribution sampling. [File: packages/engine/src/bandit/ThompsonSamplingPolicy.ts] [Method: sampleBeta] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T60.2.2: Evaluate all candidate model arms under Thompson Sampling: select arm with highest sample from Beta(alpha + 1, beta + 1). [File: packages/engine/src/bandit/ThompsonSamplingPolicy.ts] [Method: selectArm] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T60.2.3: Update arm alpha on reward >= 0.5 (success) and beta on reward < 0.5 (failure) in database bandit_arms table. [File: packages/engine/src/bandit/BanditRepository.ts] [Method: recordArmOutcome] [Test: npm test -- packages/engine/src/tests/bandit_repository.test.ts]
+  - [ ] T60.2.4: Write unit tests demonstrating that an arm with 90% success rate is selected significantly more frequently than an arm with 20% success rate over 1000 trials. [File: packages/engine/src/tests/thompson_sampling_convergence.test.ts] [Test: npm test -- packages/engine/src/tests/thompson_sampling_convergence.test.ts]
+
+### T60.3: Upper Confidence Bound (UCB-1) Policy Implementation with Tunable Exploration Factor
+  - [ ] T60.3.1: Implement Ucb1Policy in packages/engine/src/bandit/ calculating UCB score: averageReward + c * sqrt(2 * ln(totalTrials) / armTrials). [File: packages/engine/src/bandit/Ucb1Policy.ts] [Class: Ucb1Policy] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T60.3.2: Ensure all arms are sampled at least once before applying UCB formula to guarantee baseline exploration of newly registered models. [File: packages/engine/src/bandit/Ucb1Policy.ts] [Method: selectArm] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T60.3.3: Expose exploration factor parameter c (default sqrt(2) ~ 1.414) as configurable option via API and UI slider. [File: packages/engine/src/bandit/Ucb1Policy.ts] [Property: explorationFactor] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T60.3.4: Write unit tests verifying that unvisited arms receive infinite priority and high-variance arms are adequately explored. [File: packages/engine/src/tests/ucb1_policy.test.ts] [Test: npm test -- packages/engine/src/tests/ucb1_policy.test.ts]
+
+### T60.4: Epsilon-Greedy Policy Engine with Exponential Decay Schedule
+  - [ ] T60.4.1: Implement EpsilonGreedyPolicy selecting random exploration arm with probability epsilon, and highest empirical mean arm with probability 1 - epsilon. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Class: EpsilonGreedyPolicy] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T60.4.2: Implement exponential epsilon decay: epsilon = max(minEpsilon, initialEpsilon * (decayRate ^ epoch)) allowing gradual shift from exploration to exploitation. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Method: stepEpoch] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T60.4.3: Expose initialEpsilon (default 0.2), minEpsilon (default 0.05), and decayRate (default 0.995) as typed configuration options. [File: packages/shared-types/src/bandit.ts] [Type: EpsilonGreedyConfig] [Test: npm test]
+  - [ ] T60.4.4: Write unit tests verifying epsilon decreases over epochs and exploitation probability increases as expected. [File: packages/engine/src/tests/epsilon_greedy.test.ts] [Test: npm test -- packages/engine/src/tests/epsilon_greedy.test.ts]
+
+### T60.5: REST API: GET/PUT /api/bandit/policy and GET /api/bandit/arms Real Telemetry Wireup
+  - [ ] T60.5.1: Implement GET /api/bandit/arms returning live arm statistics (alpha, beta, winRate, totalRuns, avgTks, status) queried directly from database. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/bandit/arms] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T60.5.2: Implement PUT /api/bandit/policy updating active bandit policy ('thompson' | 'ucb1' | 'epsilon_greedy') and parameters in real time without restart. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: PUT /api/bandit/policy] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T60.5.3: Remove all fallback mock arrays in bandit HTTP handlers; return 100% empirical database records. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleBanditApi] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T60.5.4: Write integration tests verifying PUT /api/bandit/policy alters runtime scheduler behavior and GET /api/bandit/arms reflects updated stats. [File: packages/engine/src/tests/bandit_api.test.ts] [Test: npm test -- packages/engine/src/tests/bandit_api.test.ts]
+
+### T60.6: ExplorationControlComponent Live Bandit Data Binding and Control UI
+  - [ ] T60.6.1: Connect ExplorationControlComponent to GET /api/bandit/arms and GET /api/bandit/policy on component initialization. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Method: ngOnInit] [Test: npm test]
+  - [ ] T60.6.2: Wire policy selector buttons (Thompson Sampling, UCB-1, Epsilon-Greedy) to dispatch PUT /api/bandit/policy with optimistic UI update. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Method: switchPolicy] [Test: npm test]
+  - [ ] T60.6.3: Render live model arm cards showing real empirical win rates, pull counts, Alpha/Beta distributions, and current selection probability. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Template: arm-cards] [Test: npm test]
+  - [ ] T60.6.4: Write frontend unit tests verifying policy selection triggers API call and arm statistics display live data from ArenaStateStore. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.spec.ts] [Test: npm test]
+
+---
+
+## Phase 61: Test Execution Subprocess Isolation, Guardrails & Memory Limits
+*RDF Category: testing*
+
+### T61.1: Sandboxed Subprocess Test Execution Runner with Structured Execution Options
+  - [ ] T61.1.1: Create SandboxedSubprocessRunner in packages/engine/src/testing/SandboxedSubprocessRunner.ts executing task test commands using node:child_process spawn. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Class: SandboxedSubprocessRunner] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.1.2: Sanitize execution environment: whitelist safe environment variables (PATH, NODE_ENV, HOME) and scrub all API keys and vault secrets from child process env. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: sanitizeEnvironment] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.1.3: Set process execution current working directory strictly to target workspace or isolated task worktree folder. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: executeTest] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.1.4: Write unit tests verifying that subprocess runner executes test commands and captures standard output and exit codes cleanly. [File: packages/engine/src/tests/subprocess_runner.test.ts] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+
+### T61.2: Subprocess Memory Limit Guardrails via Cgroups and Node Memory Caps
+  - [ ] T61.2.1: Implement memory guardrail injecting --max-old-space-size=2048 into NODE_OPTIONS for Node.js test executions. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: applyMemoryLimits] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.2.2: Poll child process memory usage via /proc/<pid>/statm or pidusage every 500ms; terminate process if RSS exceeds 2500 MB. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: monitorMemory] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.2.3: Record MEMORY_EXCEEDED failure diagnostic when test execution is killed due to memory limit breach. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Type: TestExecutionResult] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.2.4: Write unit tests verifying memory monitoring aborts high-memory allocating processes and flags memory limit breach. [File: packages/engine/src/tests/subprocess_memory_limits.test.ts] [Test: npm test -- packages/engine/src/tests/subprocess_memory_limits.test.ts]
+
+### T61.3: Execution Timeout Watchdog with Graceful SIGTERM/SIGKILL Cascade
+  - [ ] T61.3.1: Implement timeout watchdog timer (configurable per task, default 60 seconds) aborting hanging or deadlocked test processes. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: startWatchdog] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.3.2: Implement two-stage termination: send SIGTERM, wait 3 seconds for graceful process cleanup, then escalate to SIGKILL if process remains alive. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: terminateChildProcess] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.3.3: Record TIMEOUT error classification and preserve any stdout/stderr captured prior to process termination. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: handleTimeout] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [ ] T61.3.4: Write unit tests verifying that a hanging child process (e.g. infinite loop) is terminated within timeout threshold and marked TIMEOUT. [File: packages/engine/src/tests/subprocess_timeout.test.ts] [Test: npm test -- packages/engine/src/tests/subprocess_timeout.test.ts]
+
+### T61.4: Structured Test Output Parser for Vitest, Node Test Runner, and Jest
+  - [ ] T61.4.1: Create StructuredTestOutputParser in packages/engine/src/testing/StructuredTestOutputParser.ts parsing raw terminal text into structured test results. [File: packages/engine/src/testing/StructuredTestOutputParser.ts] [Class: StructuredTestOutputParser] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+  - [ ] T61.4.2: Parse total tests, passed count, failed count, skipped count, and duration from Vitest and Node.js native test runner summaries. [File: packages/engine/src/testing/StructuredTestOutputParser.ts] [Method: parseSummary] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+  - [ ] T61.4.3: Extract failing test file paths, failing assertion descriptions, and line numbers from stderr stack traces. [File: packages/engine/src/testing/StructuredTestOutputParser.ts] [Method: extractFailures] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+  - [ ] T61.4.4: Write unit tests verifying parser extracts accurate pass/fail counts and failure locations from sample Vitest, Node test, and Jest outputs. [File: packages/engine/src/tests/test_output_parser.test.ts] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+
+### T61.5: Test Run Record Persistence in test_execution_runs Database Table
+  - [ ] T61.5.1: Create TestExecutionRepository in packages/db/src/repositories/TestExecutionRepository.ts managing test_execution_runs table records. [File: packages/db/src/repositories/TestExecutionRepository.ts] [Class: TestExecutionRepository] [Test: npm test -- packages/db/src/tests/TestExecutionRepository.test.ts]
+  - [ ] T61.5.2: Persist complete test execution record: taskId, command, exitCode, durationMs, passedCount, failedCount, stdoutSnippet, stderrSnippet, status. [File: packages/db/src/repositories/TestExecutionRepository.ts] [Method: recordRun] [Test: npm test -- packages/db/src/tests/TestExecutionRepository.test.ts]
+  - [ ] T61.5.3: Add method listRecentRuns(limit: number, filter?: { status?: string }) returning historical test runs ordered by created_at DESC. [File: packages/db/src/repositories/TestExecutionRepository.ts] [Method: listRecentRuns] [Test: npm test -- packages/db/src/tests/TestExecutionRepository.test.ts]
+  - [ ] T61.5.4: Write unit tests verifying test run records are inserted and queried correctly with full payload fidelity. [File: packages/db/src/tests/test_execution_runs.test.ts] [Test: npm test -- packages/db/src/tests/test_execution_runs.test.ts]
+
+### T61.6: Test Failure Triage Engine Extracting Exact Failing Assertion and Line
+  - [ ] T61.6.1: Implement TestFailureTriager in packages/engine/src/testing/TestFailureTriager.ts analyzing test stderr to determine root cause category. [File: packages/engine/src/testing/TestFailureTriager.ts] [Class: TestFailureTriager] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [ ] T61.6.2: Classify failures: AssertionFailure (expected vs actual), CompilationError (TS syntax/type), RuntimeCrash (uncaught exception), Timeout. [File: packages/engine/src/testing/TestFailureTriager.ts] [Type: FailureClassification] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [ ] T61.6.3: Extract minimal failing code snippet and expected value to inject directly into next remediation prompt. [File: packages/engine/src/testing/TestFailureTriager.ts] [Method: buildRemediationContext] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [ ] T61.6.4: Write unit tests verifying triager correctly isolates assertion mismatches and formats clean remediation context. [File: packages/engine/src/tests/failure_triager.test.ts] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+
+---
+
+## Phase 62: AST Context Slicing, Import Pruning & Focused Prompt Generation
+*RDF Category: context*
+
+### T62.1: Abstract Syntax Tree (AST) Context Slicer for TypeScript and Go Codebases
+  - [ ] T62.1.1: Create AstContextSlicer in packages/engine/src/context/AstContextSlicer.ts using TypeScript compiler API (ts.createSourceFile). [File: packages/engine/src/context/AstContextSlicer.ts] [Class: AstContextSlicer] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+  - [ ] T62.1.2: Traverse AST extracting exported type aliases, interfaces, function signatures, and class method signatures without function bodies. [File: packages/engine/src/context/AstContextSlicer.ts] [Method: extractInterfaceSkeleton] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+  - [ ] T62.1.3: Generate compact architectural skeleton file replacing method bodies with '/* implementation */' to reduce token footprint by up to 80%. [File: packages/engine/src/context/AstContextSlicer.ts] [Method: generateSkeleton] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+  - [ ] T62.1.4: Write unit tests verifying AST slicer preserves complete interface and function signatures while stripping inner logic. [File: packages/engine/src/tests/ast_slicer.test.ts] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+
+### T62.2: Focused Import Skeleton Generator Pruning Unused External Modules
+  - [ ] T62.2.1: Create ImportPruningEngine in packages/engine/src/context/ImportPruningEngine.ts analyzing module dependency trees. [File: packages/engine/src/context/ImportPruningEngine.ts] [Class: ImportPruningEngine] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+  - [ ] T62.2.2: Identify and strip unused external imports from prompt context that do not intersect with target focus files. [File: packages/engine/src/context/ImportPruningEngine.ts] [Method: pruneUnusedImports] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+  - [ ] T62.2.3: Consolidate duplicate import declarations into single clean import statements. [File: packages/engine/src/context/ImportPruningEngine.ts] [Method: consolidateImports] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+  - [ ] T62.2.4: Write unit tests verifying that external library declarations (e.g. lodash, rxjs) not needed by the task are omitted from prompt context. [File: packages/engine/src/tests/import_pruner.test.ts] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+
+### T62.3: Context Budget Allocator Enforcing Strict 4k and 8k Token Boundaries
+  - [ ] T62.3.1: Implement ContextBudgetAllocator in packages/engine/src/context/ContextBudgetAllocator.ts calculating token distribution per task. [File: packages/engine/src/context/ContextBudgetAllocator.ts] [Class: ContextBudgetAllocator] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+  - [ ] T62.3.2: Allocate budget partitions: 30% for system directives and rules, 35% for codebase context skeletons, 35% reserved for generation completion. [File: packages/engine/src/context/ContextBudgetAllocator.ts] [Method: calculatePartitions] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+  - [ ] T62.3.3: Dynamically truncate lower-priority background files when total estimated tokens exceed context ceiling (4096 or 8192). [File: packages/engine/src/context/ContextBudgetAllocator.ts] [Method: enforceBudget] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+  - [ ] T62.3.4: Write unit tests verifying budget allocator maintains prompt token count strictly within specified limit. [File: packages/engine/src/tests/context_budget.test.ts] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+
+### T62.4: Markdown Fence Stripper and Self-Healing Code Extractor
+  - [ ] T62.4.1: Implement stripMarkdownFences(rawText: string) in SelfHealingParser stripping leading/trailing markdown code fences (```typescript, ```). [File: packages/engine/src/inference/SelfHealingParser.ts] [Method: stripMarkdownFences] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+  - [ ] T62.4.2: Detect and strip conversational filler preceding code ('Here is the code:', 'Certainly! Here is...') to produce pure raw source code. [File: packages/engine/src/inference/SelfHealingParser.ts] [Method: stripConversationalPreamble] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+  - [ ] T62.4.3: Repair truncated code blocks: close unclosed brackets, parentheses, and string literals when model stream cuts off at max tokens. [File: packages/engine/src/inference/SelfHealingParser.ts] [Method: repairTruncatedSyntax] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+  - [ ] T62.4.4: Write unit tests verifying parser extracts clean, compilable TypeScript code from markdown-wrapped and conversational model outputs. [File: packages/engine/src/tests/self_healing_parser.test.ts] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+
+### T62.5: Focused File Diff Builder Generating Minimal Targeted Replacement Patches
+  - [ ] T62.5.1: Create FocusedDiffBuilder in packages/engine/src/context/FocusedDiffBuilder.ts generating surgical line-level replacement chunks. [File: packages/engine/src/context/FocusedDiffBuilder.ts] [Class: FocusedDiffBuilder] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+  - [ ] T62.5.2: Compare generated code against original file to identify only modified functions and interfaces rather than overwriting entire files. [File: packages/engine/src/context/FocusedDiffBuilder.ts] [Method: computeTargetedChunks] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+  - [ ] T62.5.3: Format unified diff format string for display in TaskDetailModal and Pull Request description. [File: packages/engine/src/context/FocusedDiffBuilder.ts] [Method: formatUnifiedDiff] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+  - [ ] T62.5.4: Write unit tests verifying diff builder identifies exact changed lines and generates valid unified diff syntax. [File: packages/engine/src/tests/diff_builder.test.ts] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+
+### T62.6: Prompt Token Estimation and Pre-Flight Context Overflow Detector
+  - [ ] T62.6.1: Implement estimateTokenCount(text: string) in packages/engine/src/inference/TokenEstimator.ts using byte-pair encoding (BPE) approximation. [File: packages/engine/src/inference/TokenEstimator.ts] [Class: TokenEstimator] [Test: npm test -- packages/engine/src/tests/token_estimator.test.ts]
+  - [ ] T62.6.2: Execute pre-flight check in AutonomousWorkerPipeline before sending inference request to Ollama: reject or compact if tokens exceed 90% of model window. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: validatePromptBudget] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T62.6.3: Log token estimation metrics (promptTokensEstimate, availableCompletionBudget) in task_stages record. [File: packages/db/src/repositories/StageRepository.ts] [Method: recordStageCompletion] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
+  - [ ] T62.6.4: Write unit tests verifying token estimator accurately predicts token usage within 5% error margin of standard tokenizer. [File: packages/engine/src/tests/token_estimator.test.ts] [Test: npm test -- packages/engine/src/tests/token_estimator.test.ts]
+
+---
+
+## Phase 63: Automated Remediation Loop & Compiler Diagnostic Feedback Propagation
+*RDF Category: orchestration*
+
+### T63.1: Automated Remediation Stage in AutonomousWorkerPipeline
+  - [ ] T63.1.1: Add 'remediation' stage to AutonomousWorkerPipeline pipeline execution sequence between 'test_execution' and 'review'. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Property: stages] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T63.1.2: Trigger remediation stage automatically whenever test_execution fails with non-zero exit code or assertion failure. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleTestFailure] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T63.1.3: Update task status to 'REMEDIATING' and broadcast SSE stage transition event to connected frontend clients. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: broadcastStageTransition] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T63.1.4: Write integration tests verifying that failing test automatically advances task into REMEDIATING status. [File: packages/engine/src/tests/remediation_pipeline.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_pipeline.test.ts]
+
+### T63.2: Compiler Diagnostic Parser Extracting TypeScript (tsc) Diagnostic Objects
+  - [ ] T63.2.1: Create CompilerDiagnosticParser in packages/engine/src/testing/CompilerDiagnosticParser.ts parsing raw compiler output into typed diagnostics. [File: packages/engine/src/testing/CompilerDiagnosticParser.ts] [Class: CompilerDiagnosticParser] [Test: npm test -- packages/engine/src/tests/compiler_diagnostics.test.ts]
+  - [ ] T63.2.2: Extract filePath, lineNumber, columnNumber, errorCode (e.g. TS2304, TS2345), and error message from tsc output regex: /^(.*)\((\d+),(\d+)\): error (TS\d+): (.*)$/m. [File: packages/engine/src/testing/CompilerDiagnosticParser.ts] [Method: parseTscOutput] [Test: npm test -- packages/engine/src/tests/compiler_diagnostics.test.ts]
+  - [ ] T63.2.3: Filter and prioritize top 3 root-cause syntax/type diagnostics to avoid overwhelming the remediation prompt. [File: packages/engine/src/testing/CompilerDiagnosticParser.ts] [Method: prioritizeDiagnostics] [Test: npm test -- packages/engine/src/tests/compiler_diagnostics.test.ts]
+  - [ ] T63.2.4: Write unit tests verifying parser extracts accurate file locations and error codes from compiler error logs. [File: packages/engine/src/tests/compiler_diagnostics.test.ts] [Test: npm test -- packages/engine/src/tests/compiler_diagnostics.test.ts]
+
+### T63.3: Remediation Prompt Formatter Injecting Exact Failing Line and Compiler Diagnostics
+  - [ ] T63.3.1: Create RemediationPromptFormatter in packages/engine/src/inference/RemediationPromptFormatter.ts generating focused remediation prompt. [File: packages/engine/src/inference/RemediationPromptFormatter.ts] [Class: RemediationPromptFormatter] [Test: npm test -- packages/engine/src/tests/remediation_prompt.test.ts]
+  - [ ] T63.3.2: Format remediation prompt with structured sections: '1. Original Task Goal', '2. Current Code with Bug', '3. Compiler Error Diagnostics', '4. Failing Test Assertion', '5. Required Surgical Fix'. [File: packages/engine/src/inference/RemediationPromptFormatter.ts] [Method: formatPrompt] [Test: npm test -- packages/engine/src/tests/remediation_prompt.test.ts]
+  - [ ] T63.3.3: Add explicit instruction demanding only the fixed code replacement without conversational filler or duplicate explanations. [File: packages/engine/src/inference/RemediationPromptFormatter.ts] [Method: formatDirectives] [Test: npm test -- packages/engine/src/tests/remediation_prompt.test.ts]
+  - [ ] T63.3.4: Write unit tests verifying remediation prompt contains all compiler diagnostics and exact failing code lines. [File: packages/engine/src/tests/remediation_prompt.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_prompt.test.ts]
+
+### T63.4: Remediation Attempt Counter and Circuit Breaker (Max 2 Attempts)
+  - [ ] T63.4.1: Track remediationAttempts counter in task execution context; enforce maxRemediationAttempts ceiling of 2. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeRemediation] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
+  - [ ] T63.4.2: When remediation count reaches 2 without passing tests, trigger circuit breaker: stop remediation and fail task with REMEDIATION_EXHAUSTED. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: checkRemediationBreaker] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
+  - [ ] T63.4.3: Prevent infinite token expenditure on fundamentally unviable prompts or corrupted task specifications. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleRemediationExhaustion] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
+  - [ ] T63.4.4: Write unit tests simulating repeated test failure verifying pipeline halts remediation after 2 attempts and flags task failed. [File: packages/engine/src/tests/remediation_circuit_breaker.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
+
+### T63.5: Remediation Success Telemetry Tracking per Model and Error Category
+  - [ ] T63.5.1: Record remediation outcome in ModelHealthRepository: track totalRemediationAttempts and totalRemediationSuccess per model ID. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: recordRemediation] [Test: npm test -- packages/db/src/tests/ModelHealthRepository.test.ts]
+  - [ ] T63.5.2: Compute remediationRecoveryRate as (totalRemediationSuccess / totalRemediationAttempts) * 100 in model health profiles. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: listProfiles] [Test: npm test -- packages/db/src/tests/ModelHealthRepository.test.ts]
+  - [ ] T63.5.3: Expose remediation recovery metrics in GET /api/models/leaderboard response. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/models/leaderboard] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T63.5.4: Write unit tests verifying successful remediation increments model recovery counters in database. [File: packages/engine/src/tests/remediation_telemetry.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_telemetry.test.ts]
+
+### T63.6: Fast Remediation Pre-Flight Check via Compiler Diagnostic Re-Verification
+  - [ ] T63.6.1: Run instant in-memory TypeScript diagnostic check on remediated code before executing full test suite to fail fast on syntax errors. [File: packages/engine/src/testing/DiagnosticPreFlightChecker.ts] [Class: DiagnosticPreFlightChecker] [Test: npm test -- packages/engine/src/tests/preflight_checker.test.ts]
+  - [ ] T63.6.2: Abort and re-prompt immediately if remediated code introduces new syntax errors, saving test runner subprocess execution time. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePreFlight] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T63.6.3: Pass valid remediated code forward to 'test_execution' stage for complete verification. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: advanceToTestExecution] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T63.6.4: Write unit tests verifying pre-flight check catches obvious syntax mistakes without launching full test suite. [File: packages/engine/src/tests/preflight_checker.test.ts] [Test: npm test -- packages/engine/src/tests/preflight_checker.test.ts]
+
+---
+
+## Phase 64: Gitea Autonomous Worktree Management, PR Automation & Review Verdicts
+*RDF Category: orchestration*
+
+### T64.1: Ephemeral Git Worktree Provisioning per Task Execution
+  - [ ] T64.1.1: Create GitWorktreeManager in packages/engine/src/gitea/GitWorktreeManager.ts using git worktree add to spawn isolated working directories. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Class: GitWorktreeManager] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
+  - [ ] T64.1.2: Create ephemeral task branch 'task/<priority>-<taskId>' based on master/main branch HEAD. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: createWorktree] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
+  - [ ] T64.1.3: Clean up and remove git worktree upon task completion or cancellation using git worktree remove --force. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: removeWorktree] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
+  - [ ] T64.1.4: Write unit tests verifying worktree creation, isolated file modification, and clean teardown without affecting main repository. [File: packages/engine/src/tests/worktree_manager.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
+
+### T64.2: Structured Conventional Commit Generator with Zero Emojis
+  - [ ] T64.2.1: Create ConventionalCommitGenerator in packages/engine/src/gitea/ConventionalCommitGenerator.ts generating structured commit messages. [File: packages/engine/src/gitea/ConventionalCommitGenerator.ts] [Class: ConventionalCommitGenerator] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
+  - [ ] T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, reviewer -> test, doc_writer -> docs. [File: packages/engine/src/gitea/ConventionalCommitGenerator.ts] [Method: resolveCommitType] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
+  - [ ] T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicode emojis or pictographs prior to execution. [File: packages/engine/src/gitea/ConventionalCommitGenerator.ts] [Method: formatCommitMessage] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
+  - [ ] T64.2.4: Write unit tests verifying commit message adheres to conventional commits standard and contains task ID metadata. [File: packages/engine/src/tests/commit_generator.test.ts] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
+
+### T64.3: Autonomous Gitea Pull Request Publisher via Gitea REST API
+  - [ ] T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interacting with Gitea API (POST /api/v1/repos/{owner}/{repo}/pulls). [File: packages/engine/src/gitea/GiteaPrClient.ts] [Class: GiteaPrClient] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
+  - [ ] T64.3.2: Push task branch to Gitea remote origin using configured authentication token from secret vault. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: pushBranch] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
+  - [ ] T64.3.3: Open pull request with title matching task title and body formatted with markdown task description, stage timing, and test verification logs. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: openPullRequest] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
+  - [ ] T64.3.4: Store opened PR URL in task.prUrl and broadcast 'pr_created' SSE notification to frontend. [File: packages/db/src/repositories/TaskRepository.ts] [Method: updateBranchAndPr] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+
+### T64.4: Automated Review Stage Assigning Reviewer Role Model to Inspect Diffs
+  - [ ] T64.4.1: Implement automated PR review stage in AutonomousWorkerPipeline dispatching git diff to reviewer model (e.g. deepseek-r1:8b). [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standards, and zero-emoji compliance. [File: packages/engine/src/gitea/AutomatedPrReviewer.ts] [Class: AutomatedPrReviewer] [Test: npm test -- packages/engine/src/tests/pr_reviewer.test.ts]
+  - [ ] T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detailed review commentary. [File: packages/engine/src/gitea/AutomatedPrReviewer.ts] [Method: parseReviewVerdict] [Test: npm test -- packages/engine/src/tests/pr_reviewer.test.ts]
+  - [ ] T64.4.4: Write unit tests verifying review prompt formatting and verdict parsing from model review output. [File: packages/engine/src/tests/pr_reviewer.test.ts] [Test: npm test -- packages/engine/src/tests/pr_reviewer.test.ts]
+
+### T64.5: Gitea PR Review Submission and Status Check Integration
+  - [ ] T64.5.1: Submit review comment and status to Gitea via POST /api/v1/repos/{owner}/{repo}/pulls/{index}/reviews. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: submitReview] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
+  - [ ] T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 'success' (green) or 'failure' (red) based on test run. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: setCommitStatus] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
+  - [ ] T64.5.3: Persist review record in pr_reviews database table for auditability and compliance tracking. [File: packages/db/src/repositories/PrReviewRepository.ts] [Method: recordReview] [Test: npm test -- packages/db/src/tests/PrReviewRepository.test.ts]
+  - [ ] T64.5.4: Write integration tests verifying review verdict and commit status checks appear correctly on Gitea PR. [File: packages/engine/src/tests/gitea_review_flow.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_review_flow.test.ts]
+
+### T64.6: Automated Squash-Merge Workflow on Green Test and Approved Review
+  - [ ] T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in GiteaPrClient. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: mergePullRequest] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
+  - [ ] T64.6.2: Verify preconditions prior to merge: test status check must be 'success' and review verdict must be 'APPROVE'. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Method: evaluateMergeEligibility] [Test: npm test -- packages/engine/src/tests/gitea_workflow.test.ts]
+  - [ ] T64.6.3: Execute squash-merge via Gitea API (POST /api/v1/repos/{owner}/{repo}/pulls/{index}/merge); delete remote task branch automatically. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: mergePullRequest] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
+  - [ ] T64.6.4: Write integration tests verifying that PR meeting all criteria is automatically merged into master and task branch cleaned up. [File: packages/engine/src/tests/automated_merge.test.ts] [Test: npm test -- packages/engine/src/tests/automated_merge.test.ts]
+
+---
+
+## Phase 65: Mobile-First Testing View Polish, Responsive Process Manager & Live Test Telemetry
+*RDF Category: frontend*
+
+### T65.1: Mobile-First High-Density Testing Table with Swipeable Action Triggers
+  - [ ] T65.1.1: Implement mobile-first CSS media queries in TestingViewComponent adapting table into touch-friendly cards on screens <768px. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Styles: mobile-responsive] [Test: npm test]
+  - [ ] T65.1.2: Add swipe-to-inspect gesture trigger on mobile cards revealing quick-action buttons (View Stderr, Copy Logs, Re-run). [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: mobile-card-actions] [Test: npm test]
+  - [ ] T65.1.3: Ensure all tap targets adhere to WCAG minimum 44x44px spacing on mobile touch interfaces. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Styles: touch-targets] [Test: npm test]
+  - [ ] T65.1.4: Write frontend unit tests verifying mobile card view renders required action triggers on small screen viewports. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T65.2: Real-Time Test Counter Badge in Root Navigation Header
+  - [ ] T65.2.1: Add reactive test counter badge to Testing navigation tab in AppComponent header displaying currently active test runs count. [File: packages/frontend/src/app/app.ts] [Template: nav-badge] [Test: npm test]
+  - [ ] T65.2.2: Compute activeRunningTestsCount signal from ArenaStateStore; animate badge pulse when new test begins executing. [File: packages/frontend/src/app/app.ts] [Computed: activeRunningTestsCount] [Test: npm test]
+  - [ ] T65.2.3: Hide badge or display subtle zero indicator when no tests are actively executing to avoid visual clutter. [File: packages/frontend/src/app/app.ts] [Template: badge-visibility] [Test: npm test]
+  - [ ] T65.2.4: Write unit tests in app.spec.ts verifying navigation badge updates reactively when running test signal changes. [File: packages/frontend/src/app/app.spec.ts] [Test: npm test]
+
+### T65.3: Filter and Search Toolbar for Past and Current Test Executions
+  - [ ] T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, RUNNING) and debounced search input. [File: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts] [Class: TestFilterToolbarComponent] [Test: npm test]
+  - [ ] T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, test command, or failing test file name. [File: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts] [Method: onSearchInput] [Test: npm test]
+  - [ ] T65.3.3: Persist active filter selection in URL query params (?filter=failed) to allow bookmarking and direct links. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: updateFilterParam] [Test: npm test]
+  - [ ] T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correctly filters test rows. [File: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.spec.ts] [Test: npm test]
+
+### T65.4: Collapsible Associated Process Drawer with Live CPU and RSS Memory Metrics
+  - [ ] T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-drawer/ displaying system processes. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Class: ProcessDrawerComponent] [Test: npm test]
+  - [ ] T65.4.2: Render animated toggle header showing process count and cumulative memory usage (e.g. '5 System Processes Active - 1.2 GB RSS'). [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Template: drawer-header] [Test: npm test]
+  - [ ] T65.4.3: Implement smooth slide transition when expanding/collapsing drawer using CSS grid-template-rows animation. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Styles: drawer-animation] [Test: npm test]
+  - [ ] T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly and displays correct process summaries. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts] [Test: npm test]
+
+### T65.5: Operator Process Control Actions (Restart, Terminate) with Confirmation Modals
+  - [ ] T65.5.1: Add action buttons (Restart, Terminate) to process table rows with role-gated authorization (ADMIN and OPERATOR only). [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Template: action-buttons] [Test: npm test]
+  - [ ] T65.5.2: Create ConfirmationDialogComponent prompting operator before restarting critical infrastructure services (Ollama, PGlite). [File: packages/frontend/src/app/components/confirmation-dialog/confirmation-dialog.component.ts] [Class: ConfirmationDialogComponent] [Test: npm test]
+  - [ ] T65.5.3: Dispatch POST /api/processes/:name/restart via TaskApiService on confirmation and display transient toast notification. [File: packages/frontend/src/app/services/task-api.service.ts] [Method: restartProcess] [Test: npm test]
+  - [ ] T65.5.4: Write unit tests verifying process action modal confirmation flow and role authorization gates. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts] [Test: npm test]
+
+### T65.6: WCAG AAA High-Contrast & OLED Theme Polish for Testing Panel
+  - [ ] T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 background, #10b981 emerald, #ef4444 red borders). [File: packages/frontend/src/styles.css] [Theme: oled] [Test: npm test]
+  - [ ] T65.6.2: Implement High Contrast Mode (WCAG AAA) color definitions ensuring minimum 7:1 contrast ratio across all test badges and terminal text. [File: packages/frontend/src/styles.css] [Theme: high-contrast] [Test: npm test]
+  - [ ] T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen reader accessibility. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: aria-live] [Test: npm test]
+  - [ ] T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background variable tokens. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+---
+
+## Phase 66: Clean Slate Real-History Persistence & Model Stat Reset Daemon
+*RDF Category: persistence*
+
+### T66.1: Database Schema Indexes for High-Velocity Task and Stage Queries
+  - [ ] T66.1.1: Add migration 011_task_history_indexes.ts creating composite index on tasks(status, updated_at DESC) for fast history pagination. [File: packages/db/src/migrations/011_task_history_indexes.ts] [Migration: 011_task_history_indexes] [Test: npm test -- packages/db/src/__tests__/Database.test.ts]
+  - [ ] T66.1.2: Create index on task_stages(task_id, stage_name, started_at DESC) optimizing stage span queries for task detail modals. [File: packages/db/src/migrations/011_task_history_indexes.ts] [Index: idx_stages_task_started] [Test: npm test -- packages/db/src/__tests__/Database.test.ts]
+  - [ ] T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health profile lookups during scheduling ticks. [File: packages/db/src/migrations/011_task_history_indexes.ts] [Index: idx_model_health_status] [Test: npm test -- packages/db/src/__tests__/Database.test.ts]
+  - [ ] T66.1.4: Write unit tests verifying migration 011 executes idempotently and indexes improve query plan execution speed. [File: packages/db/src/__tests__/Database.test.ts] [Test: npm test -- packages/db/src/__tests__/Database.test.ts]
+
+### T66.2: REST API: DELETE /api/history Purging Mock/Obsolete Task Records
+  - [ ] T66.2.1: Register route DELETE /api/history in CacophonyHttpServer with role-gated admin authentication. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: DELETE /api/history] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T66.2.2: Implement TaskRepository.purgeHistoricalTasks(options?: { olderThanDays?: number, status?: TaskStatus[] }) purging finished tasks. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.purgeHistoricalTasks] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [ ] T66.2.3: Cascade delete associated records in task_stages, task_telemetry_correlations, and test_execution_runs. [File: packages/db/src/repositories/TaskRepository.ts] [Method: purgeHistoricalTasks] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [ ] T66.2.4: Write integration tests verifying DELETE /api/history removes COMPLETED and FAILED tasks while preserving PENDING and RUNNING tasks. [File: packages/engine/src/tests/history_purge_api.test.ts] [Test: npm test -- packages/engine/src/tests/history_purge_api.test.ts]
+
+### T66.3: Model Health Profile Reset Routine Clearing Mock Stats
+  - [ ] T66.3.1: Implement ModelHealthRepository.resetAllStats() resetting total_tasks, total_success, total_failures, and consecutive_failures to 0. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: ModelHealthRepository.resetAllStats] [Test: npm test -- packages/db/src/tests/ModelHealthRepository.test.ts]
+  - [ ] T66.3.2: Reset avg_latency_ms and avg_tokens_per_sec to 0.0 and restore status to 'ACTIVE' for all registered models. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: resetAllStats] [Test: npm test -- packages/db/src/tests/ModelHealthRepository.test.ts]
+  - [ ] T66.3.3: Expose POST /api/models/reset-stats endpoint triggering clean-slate reset of model leaderboard metrics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/reset-stats] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T66.3.4: Write unit tests verifying resetAllStats updates all model rows to clean baseline values without dropping records. [File: packages/db/src/tests/model_health_reset.test.ts] [Test: npm test -- packages/db/src/tests/model_health_reset.test.ts]
+
+### T66.4: Telemetry Snapshot Auto-Compaction Daemon Rolling Up Data Older Than 7 Days
+  - [ ] T66.4.1: Implement TelemetryCompactorDaemon in packages/engine/src/telemetry/TelemetryCompactorDaemon.ts running every 24 hours. [File: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts] [Class: TelemetryCompactorDaemon] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
+  - [ ] T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour average summary records. [File: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts] [Method: aggregateHourlySnapshots] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
+  - [ ] T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup insertion, freeing disk space. [File: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts] [Method: pruneRawSnapshots] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
+  - [ ] T66.4.4: Write unit tests verifying compactor rolls up 3600 raw records into single hourly average and deletes originals safely. [File: packages/engine/src/tests/telemetry_compactor.test.ts] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
+
+### T66.5: Cacophony CLI Command: cacophony history reset and cacophony history prune
+  - [ ] T66.5.1: Add CLI subcommand 'history' to bin/cacophony CLI entrypoint with actions: 'list', 'reset', 'prune'. [File: bin/cacophony.ts] [Subcommand: history] [Test: node bin/cacophony.ts history list]
+  - [ ] T66.5.2: Support --days=N flag for prune action to retain specified window of historical tasks. [File: bin/cacophony.ts] [Option: --days] [Test: node bin/cacophony.ts history prune --days=7]
+  - [ ] T66.5.3: Implement interactive confirmation prompt (or --yes flag for automated scripts) before executing destructive reset. [File: bin/cacophony.ts] [Method: confirmAction] [Test: node bin/cacophony.ts history reset --yes]
+  - [ ] T66.5.4: Write CLI integration tests verifying history reset and prune subcommands interact properly with daemon IPC socket. [File: packages/engine/src/tests/cli_history.test.ts] [Test: npm test -- packages/engine/src/tests/cli_history.test.ts]
+
+### T66.6: Automated Backup Snapshot Generation Prior to History Pruning
+  - [ ] T66.6.1: Implement createDatabaseBackup(backupDir: string) in DatabaseMaintenanceService creating point-in-time snapshot before purge. [File: packages/db/src/services/DatabaseMaintenanceService.ts] [Method: createDatabaseBackup] [Test: npm test -- packages/db/src/tests/database_maintenance.test.ts]
+  - [ ] T66.6.2: Save compressed JSON archive containing dumped tasks and task_stages to data/backups/cacophony_backup_<timestamp>.json.gz. [File: packages/db/src/services/DatabaseMaintenanceService.ts] [Method: exportTasksToJson] [Test: npm test -- packages/db/src/tests/database_maintenance.test.ts]
+  - [ ] T66.6.3: Automatically prune backups older than 30 days to enforce storage retention limits. [File: packages/db/src/services/DatabaseMaintenanceService.ts] [Method: pruneOldBackups] [Test: npm test -- packages/db/src/tests/database_maintenance.test.ts]
+  - [ ] T66.6.4: Write unit tests verifying backup archive is written to disk and can be inspected before purge proceeds. [File: packages/db/src/tests/database_backup.test.ts] [Test: npm test -- packages/db/src/tests/database_backup.test.ts]
+
+---
+
+## Phase 67: Real-Time Stream Tap Filtering & Multi-Task Tap Isolation
+*RDF Category: telemetry*
+
+### T67.1: Multi-Task Stream Tap Isolation in StreamTapManager
+  - [ ] T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId instead of a single global shared buffer. [File: packages/engine/src/inference/StreamTapManager.ts] [Class: StreamTapManager] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T67.1.2: Prevent token cross-contamination between concurrent or sequential task executions: append tokens strictly to target taskId buffer. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: appendToken] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T67.1.3: Expose getTaskBuffer(taskId: string) returning the isolated stream buffer for a specific task. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: getTaskBuffer] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T67.1.4: Write unit tests verifying that tokens appended to task-1 are never visible in task-2 buffer. [File: packages/engine/src/tests/stream_tap_isolation.test.ts] [Test: npm test -- packages/engine/src/tests/stream_tap_isolation.test.ts]
+
+### T67.2: Task-Specific SSE Stream Channel (/api/stream/:taskId)
+  - [ ] T67.2.1: Add parameterized SSE route GET /api/stream/:taskId in CacophonyHttpServer allowing clients to subscribe to specific task output. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/stream/:taskId] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T67.2.2: Stream initial buffer chunk (stream_init event) upon client connection containing all tokens accumulated so far for that task. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleTaskSseStream] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T67.2.3: Stream incremental token chunks (token event) in real time as Ollama delivers inference chunks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastTaskToken] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T67.2.4: Write integration tests verifying multiple SSE clients connected to different tasks receive their respective token streams. [File: packages/engine/src/tests/task_sse_streams.test.ts] [Test: npm test -- packages/engine/src/tests/task_sse_streams.test.ts]
+
+### T67.3: Instantaneous vs Rolling Token Velocity Smoothing Engine
+  - [ ] T67.3.1: Implement Exponential Moving Average (EMA) token velocity smoother in ArenaStateStore: smoothed = alpha * instant + (1 - alpha) * smoothed. [File: packages/frontend/src/app/services/arena-state.store.ts] [Method: updateSmoothedVelocity] [Test: npm test]
+  - [ ] T67.3.2: Set smoothing coefficient alpha = 0.25 to eliminate visual strobing while maintaining responsiveness to real speed changes. [File: packages/frontend/src/app/services/arena-state.store.ts] [Property: velocityAlpha] [Test: npm test]
+  - [ ] T67.3.3: Expose formattedSmoothedVelocity signal formatted to fixed 1 decimal place with tabular numbers font styling. [File: packages/frontend/src/app/services/arena-state.store.ts] [Computed: formattedSmoothedVelocity] [Test: npm test]
+  - [ ] T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden token spikes and smoothly decays to 0 on pause. [File: packages/frontend/src/app/services/arena-state.store.spec.ts] [Test: npm test]
+
+### T67.4: Historical Stream Buffer Replay from Persisted Stage Output
+  - [ ] T67.4.1: Implement replayStreamForTask(taskId: string) in TaskApiService fetching persisted generation stage log output. [File: packages/frontend/src/app/services/task-api.service.ts] [Method: replayStreamForTask] [Test: npm test]
+  - [ ] T67.4.2: Update TaskInspectorComponent to display historical log buffer when viewing a non-active or completed task selected from list. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Method: selectTaskToInspect] [Test: npm test]
+  - [ ] T67.4.3: Show status pill 'COMPLETED' or 'ARCHIVED' instead of 'LIVE' when viewing historical streams. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Template: stream-status] [Test: npm test]
+  - [ ] T67.4.4: Write unit tests verifying task inspector switches cleanly between live SSE streaming and static historical stage replay. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm test]
+
+### T67.5: SSE Client Reconnect and Last-Event-ID State Restoration
+  - [ ] T67.5.1: Implement Last-Event-ID tracking in CacophonyHttpServer SSE broadcaster numbering each streamed token event sequentially. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastEventWithId] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T67.5.2: Handle reconnect requests: when client reconnects with Last-Event-ID, replay missed tokens from the ring buffer before resuming live stream. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: resumeSseStream] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T67.5.3: Add automatic reconnect logic with exponential backoff in frontend ArenaStateStore eventSource connection handler. [File: packages/frontend/src/app/services/arena-state.store.ts] [Method: connectLiveStreams] [Test: npm test]
+  - [ ] T67.5.4: Write integration tests verifying that simulated network disconnection and reconnection causes zero token loss. [File: packages/engine/src/tests/sse_reconnect.test.ts] [Test: npm test -- packages/engine/src/tests/sse_reconnect.test.ts]
+
+### T67.6: Stream Tap Buffer Memory Governor and Rolling Eviction
+  - [ ] T67.6.1: Enforce maximum per-task buffer size limit of 100,000 characters (~25,000 tokens) in StreamTapManager. [File: packages/engine/src/inference/StreamTapManager.ts] [Property: maxBufferSize] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T67.6.2: Implement FIFO rolling truncation: slice oldest characters when buffer exceeds max limit to prevent node process heap bloat. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: enforceBufferLimit] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T67.6.3: Evict buffers for tasks completed more than 30 minutes ago during periodic garbage collection sweep. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: sweepStaleBuffers] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T67.6.4: Write unit tests verifying buffer truncation preserves newest tokens and stale task buffers are purged from memory. [File: packages/engine/src/tests/stream_tap_governor.test.ts] [Test: npm test -- packages/engine/src/tests/stream_tap_governor.test.ts]
+
+---
+
+## Phase 68: Multi-Model Load Balancer & VRAM-Aware Task Placement
+*RDF Category: hardware*
+
+### T68.1: Static VRAM Model Memory Footprint Catalog (3b, 4b, 7b, 8b Quantized Profiles)
+  - [ ] T68.1.1: Create ModelVramCatalog in packages/engine/src/hardware/ModelVramCatalog.ts defining expected VRAM footprints per quantized model. [File: packages/engine/src/hardware/ModelVramCatalog.ts] [Class: ModelVramCatalog] [Test: npm test -- packages/engine/src/tests/vram_catalog.test.ts]
+  - [ ] T68.1.2: Populate baseline memory footprints: qwen2.5-coder:3b (2.2 GB), gemma3:4b (3.1 GB), qwen2.5-coder:7b (5.2 GB), deepseek-r1:8b (6.1 GB). [File: packages/engine/src/hardware/ModelVramCatalog.ts] [Data: MODEL_VRAM_TABLE] [Test: npm test -- packages/engine/src/tests/vram_catalog.test.ts]
+  - [ ] T68.1.3: Add dynamic KV-cache memory calculation scaling VRAM requirements by configured context window (4096 vs 8192 tokens). [File: packages/engine/src/hardware/ModelVramCatalog.ts] [Method: estimateTotalVramMb] [Test: npm test -- packages/engine/src/tests/vram_catalog.test.ts]
+  - [ ] T68.1.4: Write unit tests verifying catalog accurately returns base footprint and adds context buffer overhead per model ID. [File: packages/engine/src/tests/vram_catalog.test.ts] [Test: npm test -- packages/engine/src/tests/vram_catalog.test.ts]
+
+### T68.2: Dynamic VRAM Headroom Check via AmdVegaTelemetryProvider
+  - [ ] T68.2.1: Implement checkVramHeadroom(requiredMb: number) in AmdVegaTelemetryProvider querying current sysfs vram_used and vram_total. [File: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts] [Method: checkVramHeadroom] [Test: npm test -- packages/engine/src/tests/hardware_telemetry.test.ts]
+  - [ ] T68.2.2: Enforce safety margin: require at least 1024 MB buffer above model requirement to prevent APU system freeze or out-of-memory kernel kill. [File: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts] [Property: SAFETY_MARGIN_MB] [Test: npm test -- packages/engine/src/tests/hardware_telemetry.test.ts]
+  - [ ] T68.2.3: Integrate VRAM headroom check into TaskScheduler.canDispatch: defer dispatching heavy 8b tasks if free VRAM is below threshold. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: canDispatch] [Test: npm test -- packages/engine/src/tests/scheduler_vram_check.test.ts]
+  - [ ] T68.2.4: Write unit tests verifying scheduler defers 8b tasks when VRAM headroom is constrained and allows lighter 3b tasks. [File: packages/engine/src/tests/scheduler_vram_check.test.ts] [Test: npm test -- packages/engine/src/tests/scheduler_vram_check.test.ts]
+
+### T68.3: Warm Model Affinity Cache Prioritizing In-Memory Ollama Models
+  - [ ] T68.3.1: Query Ollama loaded models API (GET /api/ps) every 5 seconds in TaskScheduler to detect which model is currently resident in VRAM. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: queryLoadedModels] [Test: npm test -- packages/engine/src/tests/warm_model_affinity.test.ts]
+  - [ ] T68.3.2: Prioritize pending tasks that can be fulfilled by the currently loaded warm model to eliminate 5-15s cold-load swap latency. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Method: sortByWarmModelAffinity] [Test: npm test -- packages/engine/src/tests/queue_groomer.test.ts]
+  - [ ] T68.3.3: Cap consecutive warm model task batching at 5 tasks to prevent starvation of tasks requiring alternative model capabilities. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Method: applyStarvationCap] [Test: npm test -- packages/engine/src/tests/queue_groomer.test.ts]
+  - [ ] T68.3.4: Write unit tests demonstrating that tasks matching the currently loaded model are dispatched first while preventing starvation. [File: packages/engine/src/tests/warm_model_affinity.test.ts] [Test: npm test -- packages/engine/src/tests/warm_model_affinity.test.ts]
+
+### T68.4: Explicit Model Unload Controller (keep_alive: 0) on Architecture Shift
+  - [ ] T68.4.1: Implement unloadModel(modelName: string) in OllamaProvider issuing POST /api/generate with { model: modelName, keep_alive: 0 }. [File: packages/engine/src/inference/OllamaProvider.ts] [Method: unloadModel] [Test: npm test -- packages/engine/src/tests/ollama_provider.test.ts]
+  - [ ] T68.4.2: Trigger explicit model unload before loading a disparate model architecture when free VRAM headroom is insufficient for co-residency. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: prepareModelExecution] [Test: npm test -- packages/engine/src/tests/scheduler_model_unload.test.ts]
+  - [ ] T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GPU memory before launching next inference request. [File: packages/engine/src/inference/OllamaProvider.ts] [Method: waitForModelEviction] [Test: npm test -- packages/engine/src/tests/ollama_provider.test.ts]
+  - [ ] T68.4.4: Write unit tests verifying unloadModel sends keep_alive: 0 and waits for memory reclamation. [File: packages/engine/src/tests/model_unload_flow.test.ts] [Test: npm test -- packages/engine/src/tests/model_unload_flow.test.ts]
+
+### T68.5: Multi-Accelerator Task Placement Engine for Multi-GPU Systems
+  - [ ] T68.5.1: Create MultiGpuTaskRouter in packages/engine/src/hardware/MultiGpuTaskRouter.ts discovering all GPU devices (/sys/class/drm/card*). [File: packages/engine/src/hardware/MultiGpuTaskRouter.ts] [Class: MultiGpuTaskRouter] [Test: npm test -- packages/engine/src/tests/multi_gpu_router.test.ts]
+  - [ ] T68.5.2: Map individual model allocations to target accelerator by passing CUDA_VISIBLE_DEVICES or ROCR_VISIBLE_DEVICES environment variable. [File: packages/engine/src/hardware/MultiGpuTaskRouter.ts] [Method: getDeviceEnvForModel] [Test: npm test -- packages/engine/src/tests/multi_gpu_router.test.ts]
+  - [ ] T68.5.3: Balance concurrent models across discrete GPU and APU when dual-accelerator hardware is detected. [File: packages/engine/src/hardware/MultiGpuTaskRouter.ts] [Method: balanceAccelerators] [Test: npm test -- packages/engine/src/tests/multi_gpu_router.test.ts]
+  - [ ] T68.5.4: Write unit tests verifying multi-GPU router assigns tasks to the accelerator with the greatest available VRAM headroom. [File: packages/engine/src/tests/multi_gpu_router.test.ts] [Test: npm test -- packages/engine/src/tests/multi_gpu_router.test.ts]
+
+### T68.6: Out-of-Memory (OOM) Predictive Guard Preventing APU Hangs
+  - [ ] T68.6.1: Implement OomPredictiveGuard in packages/engine/src/hardware/OomPredictiveGuard.ts monitoring kernel sysfs memory pressure signals. [File: packages/engine/src/hardware/OomPredictiveGuard.ts] [Class: OomPredictiveGuard] [Test: npm test -- packages/engine/src/tests/oom_guard.test.ts]
+  - [ ] T68.6.2: Intercept and abort task dispatch when total system memory availability (MemAvailable from /proc/meminfo) drops below 1.5 GB. [File: packages/engine/src/hardware/OomPredictiveGuard.ts] [Method: evaluateSystemMemoryPressure] [Test: npm test -- packages/engine/src/tests/oom_guard.test.ts]
+  - [ ] T68.6.3: Broadcast 'system_memory_warning' SSE alert and transition scheduler to backpressure pause state until memory normalizes. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Event: system_memory_warning] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T68.6.4: Write unit tests simulating low memory conditions verifying that OOM guard halts task dispatch and emits warning alerts. [File: packages/engine/src/tests/oom_guard.test.ts] [Test: npm test -- packages/engine/src/tests/oom_guard.test.ts]
