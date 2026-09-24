@@ -26,25 +26,7 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 40.*
-
----
-
-## Phase 41: Database Engine Portability, Auto-Vacuuming & Storage Optimization
-*RDF Category: *
-
-### T41.1: PGlite WAL Compaction & Automated Vacuum Daemon
-  - [ ] T41.1.1: Implement DatabaseMaintenanceService in packages/db/ running periodic VACUUM ANALYZE and checkpoint compaction.
-  - [ ] T41.1.2: Add storage size monitoring: track PGlite directory size in data/cacophony_pglite and emit warning if size exceeds threshold.
-  - [ ] T41.1.3: Implement telemetry table partitioning: split telemetry_snapshots by week or archive older snapshots to parquet/json files.
-  - [ ] T41.1.4: Write integration test verifying database compaction does not lock active task transactions.
-
-### T41.2: Multi-Driver Compatibility Verification (PostgreSQL, SQLite, MariaDB)
-  - [ ] T41.2.1: Verify DDL migrations on external PostgreSQL 16+ instance using pg connection string.
-  - [ ] T41.2.2: Verify SQLite fallback driver in node:sqlite experimental mode for zero-dependency local runs.
-  - [ ] T41.2.3: Document DB_DRIVER and DB_CONNECTION_STRING configuration options in conf/cacophony.example.json.
-  - [ ] T41.2.4: Write cross-driver repository test asserting identical CRUD behavior across PGlite and SQLite drivers.
-
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 41.*
 
 ---
 

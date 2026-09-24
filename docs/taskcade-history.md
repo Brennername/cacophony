@@ -1023,3 +1023,20 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T40.2.2: Update ThemeService to store active theme in localStorage and toggle between dark, light, and high-contrast modes.
   - [x] T40.2.3: Verify contrast ratios meet WCAG AA standards (> 4.5:1 for body text, > 3:1 for badges and gauges) across all themes.
   - [x] T40.2.4: Add visual theme selector in top navigation bar and Settings page.
+
+---
+
+## Archived Phase 41: Database Engine Portability, Auto-Vacuuming & Storage Optimization
+*Completed & Verified in Commit: `23f59ad`*
+
+### T41.1: PGlite WAL Compaction & Automated Vacuum Daemon
+  - [x] T41.1.1: Implement DatabaseMaintenanceService in packages/db/ running periodic VACUUM ANALYZE and checkpoint compaction.
+  - [x] T41.1.2: Add storage size monitoring: track PGlite directory size in data/cacophony_pglite and emit warning if size exceeds threshold.
+  - [x] T41.1.3: Implement telemetry table partitioning: split telemetry_snapshots by week or archive older snapshots to parquet/json files.
+  - [x] T41.1.4: Write integration test verifying database compaction does not lock active task transactions.
+
+### T41.2: Multi-Driver Compatibility Verification (PostgreSQL, SQLite, MariaDB)
+  - [x] T41.2.1: Verify DDL migrations on external PostgreSQL 16+ instance using pg connection string.
+  - [x] T41.2.2: Verify SQLite fallback driver in node:sqlite experimental mode for zero-dependency local runs.
+  - [x] T41.2.3: Document DB_DRIVER and DB_CONNECTION_STRING configuration options in conf/cacophony.example.json.
+  - [x] T41.2.4: Write cross-driver repository test asserting identical CRUD behavior across PGlite and SQLite drivers.
