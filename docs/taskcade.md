@@ -81,14 +81,14 @@
 *RDF Category: `spec:DocumentationAndInterfaceCatalogCategory`*
 
 ### T30.1: Complete Interface Catalog & Execution Entrypoints Specification (`spec:EntrypointsDocumentation`)
-- [ ] T30.1.1: Author `docs/entrypoints.md` documenting all executable entrypoints, ports, CLI binaries, HTTP endpoints, WebSocket channels, and headless server protocols:
-  - [ ] T30.1.1.1: Document CLI Entrypoints:
+- [x] T30.1.1: Author `docs/entrypoints.md` documenting all executable entrypoints, ports, CLI binaries, HTTP endpoints, WebSocket channels, and headless server protocols:
+  - [x] T30.1.1.1: Document CLI Entrypoints:
     - `bin/cacophony` and `npm start` (Unified entrypoint hosting Angular UI and API engine).
     - `cacophony tui` (`packages/engine/src/tui/TerminalApp.ts` - interactive terminal developer interface).
     - `cacophony rules optimize` (`packages/engine/src/cli/` - genetic/Bayesian hyperparameter rule optimizer).
     - `cacophony hardware inspect` & `cacophony hardware generate-overrides` (systemd override generator).
     - `bin/bootstrap-authentik.sh` (declarative Authentik OIDC bootstrapper).
-  - [ ] T30.1.1.2: Document HTTP REST & SSE Endpoints:
+  - [x] T30.1.1.2: Document HTTP REST & SSE Endpoints:
     - Core Tasks & Scheduler: `GET /api/tasks`, `POST /api/tasks`, `GET /api/tasks/:id`, `DELETE /api/tasks/:id`, `GET /api/tasks/:id/gantt`.
     - SSE Live Streaming: `GET /api/events` (telemetry, stage progress, process spawns, LSP diagnostics).
     - Telemetry & Hardware: `GET /api/telemetry`, `GET /api/analytics/failures`, `GET /api/config/network`.
@@ -97,7 +97,7 @@
     - Fleet & Remote Workers: `POST /api/fleet/register`, `GET /api/fleet/nodes`.
     - Webhook Receiver: `POST /api/webhooks/gitea`.
     - MCP Tool Discovery: `GET /api/mcp/tools`, `POST /api/mcp/execute`.
-  - [ ] T30.1.1.3: Document Angular Frontend Routes & Client Navigation:
+  - [x] T30.1.1.3: Document Angular Frontend Routes & Client Navigation:
     - `/dashboard` (Vitals header, active task card, live queue snapshot).
     - `/queue` (Queue manager, drag-and-drop reordering, enqueue drawer).
     - `/history` (Execution audit history, failure taxonomy, diff viewer, Gitea PR links).
@@ -106,9 +106,9 @@
     - `/processes` (Background compiler test runner, linters, git worktrees).
     - `/fleet` (Multi-node compute cluster overview, hardware diagnostics, tool install guidance).
     - `/settings` (Themes, SSO authentication, network profiles, secret vault).
-  - [ ] T30.1.1.4: Document Headless JSON-RPC 2.0 & WebSocket Protocols:
+  - [x] T30.1.1.4: Document Headless JSON-RPC 2.0 & WebSocket Protocols:
     - Headless server protocol for editor extensions (VS Code, Cursor, terminal sidecars).
-  - [ ] T30.1.1.5: Document Container Topology & Port Allocations:
+  - [x] T30.1.1.5: Document Container Topology & Port Allocations:
     - Ports table: Frontend (24072), Backend API (24161), MCP (21264), Gitea HTTP (19634), Gitea SSH (17883), Authentik HTTP (9000), Authentik HTTPS (9443).
 
 
