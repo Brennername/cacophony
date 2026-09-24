@@ -129,4 +129,49 @@ describe("Phase 13: Execution & Automated Test Feedback Loop", () => {
       assert.ok(runCounter >= 0);
     });
   });
+
+  describe("Phase 44: Cross-Workspace Sandboxing & Multi-Session Isolation (T44.1)", () => {
+    test("T44.1: should allocate isolated workspace roots, prevent collision, and auto-cleanup expired sandboxes", async () => {
+      const { WorkspaceIsolationManager } = await import("../isolation/WorkspaceIsolationManager.js");
+      const tempBase = await fs.mkdtemp(path.join(os.tmpdir(), "cacophony-iso-test-"));
+
+      const manager = new WorkspaceIsolationManager({
+        baseWorkspacesDir: tempBase,
+        defaultTtlMs: 200, // short ttl for testing
+        maxConcurrentWorkspaces: 5
+      });
+
+      // 1. Allocate two isolated workspaces
+      const wsA = manager.allocateWorkspace("session-alpha", ["task-1"]);
+      const wsB = manager.allocateWorkspace("session-beta", ["task-2"]);
+
+      assert.notEqual(wsA.rootPath, wsB.rootPath);
+      assert.ok(wsA.rootPath.includes("ws-session-alpha"));
+      assert.ok(wsB.rootPath.includes("ws-session-beta"));
+
+      // Write independent files in each
+      await fs.writeFile(path.join(wsA.rootPath, "file.txt"), "Content from Alpha");
+      await fs.writeFile(path.join(wsB.rootPath, "file.txt"), "Content from Beta");
+
+      const readA = await fs.readFile(path.join(wsA.rootPath, "file.txt"), "utf-8");
+      const readB = await fs.readFile(path.join(wsB.rootPath, "file.txt"), "utf-8");
+      assert.equal(readA, "Content from Alpha");
+      assert.equal(readB, "Content from Beta");
+
+      // Verify active listing
+      const active = manager.getAllActiveWorkspaces();
+      assert.equal(active.length, 2);
+
+      // Release task from workspace A and run cleanup
+      wsA.activeTaskIds.clear();
+      await new Promise((r) => setTimeout(r, 220));
+
+      const cleanedCount = manager.cleanupStaleWorkspaces();
+      assert.equal(cleanedCount, 1);
+      assert.equal(manager.getWorkspace("session-alpha"), undefined);
+
+      // Clean up test base
+      await fs.rm(tempBase, { recursive: true, force: true });
+    });
+  });
 });
