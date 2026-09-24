@@ -133,6 +133,119 @@ And that concludes the file.
 
       fs.rmSync(tempDir, { recursive: true, force: true });
     });
+
+    test("T42.1: should slice secondary AST dependencies, preserving type fidelity and achieving >=40% token reduction", async () => {
+      const { AstContextSlicer } = await import("../context/AstContextSlicer.js");
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cacophony-slicer-test-"));
+      const srcDir = path.join(tempDir, "src");
+      fs.mkdirSync(srcDir, { recursive: true });
+
+      // Create a hefty secondary dependency file with heavy implementations
+      const heavyDependencyCode = `
+export interface UserQueryOptions {
+  limit: number;
+  offset: number;
+  includeInactive?: boolean;
+}
+
+export type UserStatus = "active" | "suspended" | "pending";
+
+export class UserRepository {
+  private cache: Map<string, any> = new Map();
+  private connectionPool: any[] = [];
+
+  constructor(connectionString: string) {
+    for (let i = 0; i < 50; i++) {
+      this.connectionPool.push({ id: i, active: true, buffer: Buffer.alloc(1024) });
+    }
+  }
+
+  public async findUserById(id: string): Promise<any> {
+    const cached = this.cache.get(id);
+    if (cached) return cached;
+    // Massive complex database logic simulation
+    const query = "SELECT * FROM users WHERE id = '" + id + "' AND deleted_at IS NULL";
+    const res = await Promise.resolve({ id, name: "Alice", status: "active" });
+    this.cache.set(id, res);
+    return res;
+  }
+
+  public async listUsers(options: UserQueryOptions): Promise<any[]> {
+    const results: any[] = [];
+    for (let i = 0; i < options.limit; i++) {
+      results.push({ id: "user-" + (options.offset + i), status: "active" });
+    }
+    return results;
+  }
+
+  public purgeCache(): void {
+    this.cache.clear();
+  }
+}
+
+export class UnrelatedClassWithHeavyLogic {
+  public computeComplexMetrics(): number {
+    let acc = 0;
+    for (let i = 0; i < 1000; i++) {
+      acc += Math.sqrt(i) * Math.sin(i);
+    }
+    return acc;
+  }
+}
+`;
+      fs.writeFileSync(path.join(srcDir, "user-repository.ts"), heavyDependencyCode);
+
+      // Create focus file that only imports UserRepository and UserQueryOptions
+      const focusCode = `
+import { UserRepository, UserQueryOptions } from "./user-repository.js";
+
+export class UserService {
+  constructor(private readonly repo: UserRepository) {}
+
+  public async getUser(id: string) {
+    return this.repo.findUserById(id);
+  }
+}
+`;
+      fs.writeFileSync(path.join(srcDir, "user-service.ts"), focusCode);
+
+      const slicer = new AstContextSlicer(tempDir);
+      const imports = slicer.extractImportedSymbols(focusCode, "src/user-service.ts");
+      assert.equal(imports.length, 2);
+      assert.ok(imports.some((i: any) => i.importedName === "UserRepository"));
+      assert.ok(imports.some((i: any) => i.importedName === "UserQueryOptions"));
+
+      // 1. Direct AST Type Skeleton Verification
+      const sliced = slicer.generateTypeSkeleton(
+        heavyDependencyCode,
+        ["UserRepository", "UserQueryOptions"],
+        "src/user-repository.ts"
+      );
+      assert.ok(sliced.skeletonContent.includes("export interface UserQueryOptions"));
+      assert.ok(sliced.skeletonContent.includes("class UserRepository"));
+      assert.ok(sliced.skeletonContent.includes("findUserById(id: string): Promise<any>;"));
+      assert.ok(sliced.skeletonContent.includes("listUsers(options: UserQueryOptions): Promise<any[]>;"));
+      // Ensure private fields and method bodies are pruned
+      assert.equal(sliced.skeletonContent.includes("Massive complex database logic"), false);
+      assert.equal(sliced.skeletonContent.includes("UnrelatedClassWithHeavyLogic"), false);
+      assert.ok(sliced.reductionRatio >= 0.40, `Expected reduction >= 0.40, got ${sliced.reductionRatio}`);
+
+      // 2. Integration with ContextMinimizer
+      const minimizer = new ContextMinimizer(tempDir);
+      const bundle = minimizer.assembleContext(
+        "Implement cached user retrieval",
+        ["src/user-service.ts"],
+        ["Zero Emojis"],
+        true
+      );
+
+      assert.ok(bundle.assembledPrompt.includes("=== SLICED DEPENDENCY SKELETONS ==="));
+      assert.ok(bundle.assembledPrompt.includes("--- Skeleton: src/user-repository.ts ---"));
+      assert.ok(bundle.tokenSavingsEstimate);
+      assert.ok(bundle.tokenSavingsEstimate.savingsPercent >= 40);
+
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
   });
 
   describe("SecretVault AES-256-GCM Encryption", () => {

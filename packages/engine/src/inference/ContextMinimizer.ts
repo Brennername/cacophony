@@ -1,11 +1,18 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { AstContextSlicer } from "../context/AstContextSlicer.js";
 
 export interface ContextBundle {
   readonly prompt: string;
   readonly fileContents: ReadonlyMap<string, string>;
+  readonly dependencySkeletons?: ReadonlyMap<string, string> | undefined;
   readonly compactFileTree: string;
   readonly assembledPrompt: string;
+  readonly tokenSavingsEstimate?: {
+    readonly originalBytes: number;
+    readonly minimizedBytes: number;
+    readonly savingsPercent: number;
+  } | undefined;
 }
 
 /**
@@ -20,21 +27,29 @@ export interface ContextBundle {
 export class ContextMinimizer {
   private readonly projectDir: string;
   private readonly maxFileSizeBytes: number;
+  private readonly slicer: AstContextSlicer;
 
   constructor(projectDir: string = process.cwd(), maxFileSizeBytes = 65536) {
     this.projectDir = projectDir;
     this.maxFileSizeBytes = maxFileSizeBytes;
+    this.slicer = new AstContextSlicer(projectDir);
   }
 
   /**
    * Assembles a minimal, scoped context bundle for a task.
+   * If enableAstSlicing is true, parses imports from primary focus files and injects
+   * lightweight type skeletons for referenced secondary dependencies instead of full files.
    */
   public assembleContext(
     prompt: string,
     focusFiles: readonly string[],
-    customDirectives: readonly string[] = []
+    customDirectives: readonly string[] = [],
+    enableAstSlicing = true
   ): ContextBundle {
     const fileContents = new Map<string, string>();
+    const dependencySkeletons = new Map<string, string>();
+    let originalDepBytes = 0;
+    let skeletonDepBytes = 0;
 
     // 1. Read immediate focus files
     for (const relPath of focusFiles) {
@@ -54,10 +69,58 @@ export class ContextMinimizer {
       }
     }
 
-    // 2. Build compact directory tree map (top 2 levels only)
+    // 2. Perform AST dependency slicing on referenced internal modules
+    if (enableAstSlicing) {
+      const referencedSymbolsByModule = new Map<string, Set<string>>();
+
+      for (const [focusPath, content] of fileContents.entries()) {
+        if (focusPath.endsWith(".ts") || focusPath.endsWith(".tsx")) {
+          const imported = this.slicer.extractImportedSymbols(content, focusPath);
+          const focusDir = path.dirname(path.resolve(this.projectDir, focusPath));
+
+          for (const imp of imported) {
+            if (imp.moduleSpecifier.startsWith(".")) {
+              // Relative local import
+              const resolvedRelNoExt = imp.moduleSpecifier.replace(/\.js$/, "");
+              let candidatePath = path.resolve(focusDir, `${resolvedRelNoExt}.ts`);
+              if (!fs.existsSync(candidatePath)) {
+                candidatePath = path.resolve(focusDir, `${resolvedRelNoExt}/index.ts`);
+              }
+
+              if (fs.existsSync(candidatePath)) {
+                const relCandidate = path.relative(this.projectDir, candidatePath);
+                // Only slice secondary dependencies not already in primary focus files
+                if (!fileContents.has(relCandidate)) {
+                  if (!referencedSymbolsByModule.has(candidatePath)) {
+                    referencedSymbolsByModule.set(candidatePath, new Set());
+                  }
+                  referencedSymbolsByModule.get(candidatePath)!.add(imp.importedName);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      for (const [depPath, symbolSet] of referencedSymbolsByModule.entries()) {
+        try {
+          const depContent = fs.readFileSync(depPath, "utf-8");
+          originalDepBytes += depContent.length;
+          const relDep = path.relative(this.projectDir, depPath);
+          const symbols = Array.from(symbolSet);
+          const sliced = this.slicer.generateTypeSkeleton(depContent, symbols, relDep);
+          skeletonDepBytes += sliced.skeletonContent.length;
+          dependencySkeletons.set(relDep, sliced.skeletonContent);
+        } catch {
+          // Ignore unreadable dependency
+        }
+      }
+    }
+
+    // 3. Build compact directory tree map (top 2 levels only)
     const compactFileTree = this.buildCompactTree();
 
-    // 3. Assemble complete prompt payload
+    // 4. Assemble complete prompt payload
     const sections: string[] = [
       "=== TASK OBJECTIVE ===",
       prompt,
@@ -82,13 +145,30 @@ export class ContextMinimizer {
       }
     }
 
+    if (dependencySkeletons.size > 0) {
+      sections.push("", "=== SLICED DEPENDENCY SKELETONS ===");
+      for (const [depPath, skeleton] of dependencySkeletons.entries()) {
+        sections.push(`--- Skeleton: ${depPath} ---`);
+        sections.push(`\`\`\`typescript\n${skeleton}\n\`\`\``);
+      }
+    }
+
     const assembledPrompt = sections.join("\n");
+    const savingsPercent = originalDepBytes > 0
+      ? Number((((originalDepBytes - skeletonDepBytes) / originalDepBytes) * 100).toFixed(1))
+      : 0;
 
     return {
       prompt,
       fileContents,
+      dependencySkeletons,
       compactFileTree,
-      assembledPrompt
+      assembledPrompt,
+      tokenSavingsEstimate: originalDepBytes > 0 ? {
+        originalBytes: originalDepBytes,
+        minimizedBytes: skeletonDepBytes,
+        savingsPercent
+      } : undefined
     };
   }
 

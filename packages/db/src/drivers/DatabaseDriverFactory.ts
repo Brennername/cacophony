@@ -11,10 +11,10 @@ export type SupportedDatabaseDriverType = "pglite" | "postgres" | "sqlite" | "ma
  * Driver connection configuration options.
  */
 export interface DatabaseDriverConfig {
-  readonly driver?: SupportedDatabaseDriverType;
-  readonly connectionString?: string;
-  readonly dataDir?: string;
-  readonly sqliteDbPath?: string;
+  readonly driver?: SupportedDatabaseDriverType | undefined;
+  readonly connectionString?: string | undefined;
+  readonly dataDir?: string | undefined;
+  readonly sqliteDbPath?: string | undefined;
 }
 
 /**
