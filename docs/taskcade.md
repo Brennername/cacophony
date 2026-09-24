@@ -307,37 +307,37 @@
 *RDF Category: `spec:StochasticRuleOptimizationCategory`*
 
 ### T26.1: Historical Arena Telemetry Ingestion & Dataset Normalization (`spec:HistoricalArenaIngestion`)
-- [ ] T26.1.1: Decoupled Data Extraction Adapter:
-  - [ ] T26.1.1.1: Implement `HistoricalArenaIngestionAdapter` in `@cacophony/engine` reading external telemetry from `~/projects/drumalyzer/data/arena/` without relying on legacy bash or JS runners.
-  - [ ] T26.1.1.2: Ingest summary telemetry from `stats.json` (3,584 total tasks: 624 completed, 2,960 failed) into `historical_arenas` table.
-  - [ ] T26.1.1.3: Parse individual task records from `data/arena/completed/`, `data/arena/failed/`, and `data/arena/exhausted/` directories.
-  - [ ] T26.1.1.4: Ingest failure postmortems and error stack traces from `data/arena/postmortems/` into `historical_postmortems` table.
-  - [ ] T26.1.1.5: Ingest patch diff files from `data/arena/patches/` and lineage DAGs from `data/arena/lineage/`.
-- [ ] T26.1.2: Telemetry Normalization & Mitigation Paradox Analysis:
-  - [ ] T26.1.2.1: Normalize legacy failure codes (`review_failed: 1049`, `validation_failed: 134`, `disallowed_root_files: 84`, `test_failed: 167`, `no_changes_produced: 1520`).
-  - [ ] T26.1.2.2: Implement `MitigationParadoxAnalyzer`: Calculate the ratio of deterministic validation rejections vs real test assertion failures across historical models.
-  - [ ] T26.1.2.3: Generate baseline report demonstrating how overly rigid verifiers artificially inflated failure rates from ~4.6% (real test failures) to over 33% (rejections).
-  - [ ] T26.1.2.4: Export normalized dataset into benchmark test suite for offline rule backtesting.
+- [x] T26.1.1: Decoupled Data Extraction Adapter:
+  - [x] T26.1.1.1: Implement `HistoricalArenaIngestionAdapter` in `@cacophony/engine` reading external telemetry from `~/projects/drumalyzer/data/arena/` without relying on legacy bash or JS runners.
+  - [x] T26.1.1.2: Ingest summary telemetry from `stats.json` (3,584 total tasks: 624 completed, 2,960 failed) into `historical_arenas` table.
+  - [x] T26.1.1.3: Parse individual task records from `data/arena/completed/`, `data/arena/failed/`, and `data/arena/exhausted/` directories.
+  - [x] T26.1.1.4: Ingest failure postmortems and error stack traces from `data/arena/postmortems/` into `historical_postmortems` table.
+  - [x] T26.1.1.5: Ingest patch diff files from `data/arena/patches/` and lineage DAGs from `data/arena/lineage/`.
+- [x] T26.1.2: Telemetry Normalization & Mitigation Paradox Analysis:
+  - [x] T26.1.2.1: Normalize legacy failure codes (`review_failed: 1049`, `validation_failed: 134`, `disallowed_root_files: 84`, `test_failed: 167`, `no_changes_produced: 1520`).
+  - [x] T26.1.2.2: Implement `MitigationParadoxAnalyzer`: Calculate the ratio of deterministic validation rejections vs real test assertion failures across historical models.
+  - [x] T26.1.2.3: Generate baseline report demonstrating how overly rigid verifiers artificially inflated failure rates from ~4.6% (real test failures) to over 33% (rejections).
+  - [x] T26.1.2.4: Export normalized dataset into benchmark test suite for offline rule backtesting.
 
 ### T26.2: Offline Rule Pipeline Backtesting Engine (`spec:RuleBacktestingEngine`)
-- [ ] T26.2.1: Backtest Execution Runner:
-  - [ ] T26.2.1.1: Implement `RuleBacktestRunner` capable of replaying historical model diffs against arbitrary candidate rule pipelines.
-  - [ ] T26.2.1.2: Simulate rule execution across 3,500+ historical patches, measuring: would-be auto-repairs, avoided rejections, and test outcomes.
-  - [ ] T26.2.1.3: Calculate counterfactual pass rates: determine how many of the 1,049 `review_failed` tasks would have passed under `silent_repair` or `soft_warning` policies.
-  - [ ] T26.2.1.4: Multi-threaded backtest execution leveraging worker threads to evaluate thousands of candidate configurations in seconds.
+- [x] T26.2.1: Backtest Execution Runner:
+  - [x] T26.2.1.1: Implement `RuleBacktestRunner` capable of replaying historical model diffs against arbitrary candidate rule pipelines.
+  - [x] T26.2.1.2: Simulate rule execution across 3,500+ historical patches, measuring: would-be auto-repairs, avoided rejections, and test outcomes.
+  - [x] T26.2.1.3: Calculate counterfactual pass rates: determine how many of the 1,049 `review_failed` tasks would have passed under `silent_repair` or `soft_warning` policies.
+  - [x] T26.2.1.4: Multi-threaded backtest execution leveraging worker threads to evaluate thousands of candidate configurations in seconds.
 
 ### T26.3: Stochastic Hyperparameter Search Engine (`spec:HyperparameterOptimizationEngine`)
-- [ ] T26.3.1: Search Space Definition & Objective Formulation:
-  - [ ] T26.3.1.1: Define typed search space covering: rule enablement (boolean vector), rule severity mode, timeout limits, regex tolerances, and pipeline ordering.
-  - [ ] T26.3.1.2: Formulate multi-objective loss function balancing pass rate ($w_{\text{pass}}$), false rejection rate ($w_{\text{false}}$), execution latency ($w_{\text{lat}}$), and code change churn ($w_{\text{churn}}$).
-  - [ ] T26.3.1.3: Implement Stochastic Random Search sampler evaluating uniformly and Gaussian-distributed configuration candidates.
-  - [ ] T26.3.1.4: Implement Genetic / Evolutionary Pipeline Optimizer: mutating rule toggles, swapping pipeline order, and breeding high-performing configurations over $N$ generations.
-  - [ ] T26.3.1.5: Implement Bayesian Optimization (using Gaussian Process surrogate with Expected Improvement acquisition) for continuous rule hyperparameters.
-- [ ] T26.3.2: Automated Configuration Profile Generation:
-  - [ ] T26.3.2.1: Run optimization across model categories: emitting tuned pipelines for `qwen2.5-coder:7b-4k`, `deepseek-r1:8b-4k`, `gemma3:4b-it-qat`, and future architectures.
-  - [ ] T26.3.2.2: Export winning hyperparameter configurations as declarative pipeline files in `conf/pipelines/optimized/`.
-  - [ ] T26.3.2.3: Expose optimization CLI: `cacophony rules optimize --dataset=historical-arena --strategy=genetic --generations=50`.
-  - [ ] T26.3.2.4: Write unit and integration tests verifying backtest accuracy and optimizer convergence.
+- [x] T26.3.1: Search Space Definition & Objective Formulation:
+  - [x] T26.3.1.1: Define typed search space covering: rule enablement (boolean vector), rule severity mode, timeout limits, regex tolerances, and pipeline ordering.
+  - [x] T26.3.1.2: Formulate multi-objective loss function balancing pass rate ($w_{\text{pass}}$), false rejection rate ($w_{\text{false}}$), execution latency ($w_{\text{lat}}$), and code change churn ($w_{\text{churn}}$).
+  - [x] T26.3.1.3: Implement Stochastic Random Search sampler evaluating uniformly and Gaussian-distributed configuration candidates.
+  - [x] T26.3.1.4: Implement Genetic / Evolutionary Pipeline Optimizer: mutating rule toggles, swapping pipeline order, and breeding high-performing configurations over $N$ generations.
+  - [x] T26.3.1.5: Implement Bayesian Optimization (using Gaussian Process surrogate with Expected Improvement acquisition) for continuous rule hyperparameters.
+- [x] T26.3.2: Automated Configuration Profile Generation:
+  - [x] T26.3.2.1: Run optimization across model categories: emitting tuned pipelines for `qwen2.5-coder:7b-4k`, `deepseek-r1:8b-4k`, `gemma3:4b-it-qat`, and future architectures.
+  - [x] T26.3.2.2: Export winning hyperparameter configurations as declarative pipeline files in `conf/pipelines/optimized/`.
+  - [x] T26.3.2.3: Expose optimization CLI: `cacophony rules optimize --dataset=historical-arena --strategy=genetic --generations=50`.
+  - [x] T26.3.2.4: Write unit and integration tests verifying backtest accuracy and optimizer convergence.
 
 ---
 
