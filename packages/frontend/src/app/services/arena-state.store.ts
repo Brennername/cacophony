@@ -142,11 +142,16 @@ export class ArenaStateStore {
               activeModel: data.activeModel ?? 'None',
             });
           }
+          if (data.type === 'stream_init') {
+            if (data.buffer) {
+              this.liveStreamBuffer.set(data.buffer);
+            }
+          }
           if (data.type === 'token') {
             const token = data.token ?? '';
             this.liveStreamBuffer.update((prev) => {
               const updated = prev + token;
-              return updated.length > 10000 ? updated.slice(-10000) : updated;
+              return updated.length > 25000 ? updated.slice(-25000) : updated;
             });
           }
         } catch {

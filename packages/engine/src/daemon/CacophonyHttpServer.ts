@@ -179,11 +179,39 @@ export class CacophonyHttpServer {
         Connection: "keep-alive"
       });
       res.write(`data: ${JSON.stringify({ type: "connected", timestamp: new Date().toISOString() })}\n\n`);
+
+      const streamTap = this.daemon.getStreamTapManager();
+      if (streamTap) {
+        const activeTaskId = streamTap.getActiveTask();
+        const initialBuffer = streamTap.getBuffer(activeTaskId || undefined);
+        if (activeTaskId && initialBuffer) {
+          res.write(
+            `data: ${JSON.stringify({
+              type: "stream_init",
+              taskId: activeTaskId,
+              buffer: initialBuffer,
+              timestamp: Date.now()
+            })}\n\n`
+          );
+        }
+      }
+
       this.sseClients.add(res);
 
       req.on("close", () => {
         this.sseClients.delete(res);
       });
+      return;
+    }
+
+    // 1a. Stream Buffer Query for specific or active task
+    if (url.pathname === "/api/stream/buffer" && req.method === "GET") {
+      const streamTap = this.daemon.getStreamTapManager();
+      const taskId = url.searchParams.get("taskId") || undefined;
+      const buffer = streamTap ? streamTap.getBuffer(taskId) : "";
+      const activeTaskId = streamTap ? streamTap.getActiveTask() : null;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ taskId: taskId || activeTaskId, buffer, activeTaskId }));
       return;
     }
 

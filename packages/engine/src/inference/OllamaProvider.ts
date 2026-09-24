@@ -137,14 +137,15 @@ export class OllamaProvider implements IInferenceProvider {
         if (!line.trim()) continue;
         try {
           const parsed = JSON.parse(line) as {
-            readonly message?: { readonly content: string };
+            readonly message?: { readonly content?: string; readonly thinking?: string };
             readonly prompt_eval_count?: number;
             readonly eval_count?: number;
             readonly done?: boolean;
           };
-          if (parsed.message?.content) {
-            accumulatedContent += parsed.message.content;
-            onChunk(parsed.message.content);
+          const chunkText = parsed.message?.content || parsed.message?.thinking || "";
+          if (chunkText) {
+            accumulatedContent += chunkText;
+            onChunk(chunkText);
           }
           if (parsed.prompt_eval_count) tokensPrompt = parsed.prompt_eval_count;
           if (parsed.eval_count) tokensCompletion = parsed.eval_count;

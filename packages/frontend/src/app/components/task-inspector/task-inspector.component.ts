@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, effect, viewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 import { StageProgressBarComponent } from '../stage-progress-bar/stage-progress-bar.component';
@@ -90,7 +90,7 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
             <span class="terminal-title">live-llm-stream (task: {{ task.id }})</span>
             <button class="expand-btn" (click)="drillDown(task)">Expand Log</button>
           </div>
-          <pre class="terminal-content"><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+          <pre #terminalContent class="terminal-content"><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
         </div>
 
         <!-- Interactive Gantt Transport Timeline -->
@@ -330,6 +330,43 @@ export class TaskInspectorComponent {
   private readonly store = inject(ArenaStateStore);
   public readonly activeTask = this.store.activeTask;
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
+
+  private terminalContentEl = viewChild<ElementRef<HTMLElement>>('terminalContent');
+
+  constructor() {
+    effect(() => {
+      // Whenever buffer changes, auto scroll to bottom
+      const _ = this.liveStreamBuffer();
+      const el = this.terminalContentEl()?.nativeElement;
+      if (el) {
+        requestAnimationFrame(() => {
+          el.scrollTop = el.scrollHeight;
+        });
+      }
+    });
+
+    effect(() => {
+      // Fetch buffer from backend if active task changes and liveStreamBuffer is currently empty
+      const active = this.activeTask();
+      if (active && !this.liveStreamBuffer()) {
+        void this.fetchTaskBuffer(active.id);
+      }
+    });
+  }
+
+  private async fetchTaskBuffer(taskId: string): Promise<void> {
+    try {
+      const res = await fetch(`/api/stream/buffer?taskId=${encodeURIComponent(taskId)}`);
+      if (res.ok) {
+        const data = await res.json() as { buffer?: string };
+        if (data.buffer && !this.liveStreamBuffer()) {
+          this.store.liveStreamBuffer.set(data.buffer);
+        }
+      }
+    } catch {
+      // Ignore network errors
+    }
+  }
 
   public drillDown(task: TaskItem): void {
     void this.store.selectTask(task);

@@ -86,6 +86,9 @@ describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
       tapMgr.emitToken("task-123", "ignored");
 
       assert.deepEqual(tokens, ["const ", "x = ", "42;"]);
+      assert.equal(tapMgr.getBuffer("task-123"), "const x = 42;ignored");
+      tapMgr.clearBuffer("task-123");
+      assert.equal(tapMgr.getBuffer("task-123"), "");
     });
 
     test("should manage suspend and resume states", () => {

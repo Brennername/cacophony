@@ -17,6 +17,9 @@ export class StreamTapManager {
   private readonly suspendedTasks = new Set<string>();
   private activeTaskId: string | null = null;
 
+  private readonly taskBuffers = new Map<string, string>();
+  private readonly maxBufferSize = 25000;
+
   constructor() {
     this.emitter.setMaxListeners(100);
   }
@@ -36,9 +39,13 @@ export class StreamTapManager {
   }
 
   /**
-   * Emits a generated token to all active stream tap listeners.
+   * Emits a generated token to all active stream tap listeners and stores in ring buffer.
    */
   public emitToken(taskId: string, token: string): void {
+    const current = this.taskBuffers.get(taskId) || "";
+    const updated = (current + token).slice(-this.maxBufferSize);
+    this.taskBuffers.set(taskId, updated);
+
     const event: StreamTokenEvent = {
       taskId,
       token,
@@ -46,6 +53,24 @@ export class StreamTapManager {
     };
     this.emitter.emit("token", event);
     this.emitter.emit(`token:${taskId}`, event);
+  }
+
+  /**
+   * Gets the buffered tokens for a task or the active task.
+   */
+  public getBuffer(taskId?: string): string {
+    const target = taskId || this.activeTaskId;
+    if (!target) return "";
+    return this.taskBuffers.get(target) || "";
+  }
+
+  /**
+   * Clears the buffer for a task.
+   */
+  public clearBuffer(taskId?: string): void {
+    const target = taskId || this.activeTaskId;
+    if (!target) return;
+    this.taskBuffers.delete(target);
   }
 
   /**
