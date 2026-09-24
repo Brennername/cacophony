@@ -33,32 +33,16 @@ interface NetworkProfileConfig {
           <p class="card-desc">Select high-contrast accessibility or modern dark/light color palettes</p>
 
           <div class="theme-options">
-            <button
-              class="theme-btn"
-              [class.active]="themeService.currentTheme() === 'dark'"
-              (click)="themeService.setTheme('dark')"
-            >
-              <span class="preview dark-box"></span>
-              <span class="name">Dark (Obsidian)</span>
-            </button>
-
-            <button
-              class="theme-btn"
-              [class.active]="themeService.currentTheme() === 'light'"
-              (click)="themeService.setTheme('light')"
-            >
-              <span class="preview light-box"></span>
-              <span class="name">Light (Clean)</span>
-            </button>
-
-            <button
-              class="theme-btn"
-              [class.active]="themeService.currentTheme() === 'high-contrast'"
-              (click)="themeService.setTheme('high-contrast')"
-            >
-              <span class="preview contrast-box"></span>
-              <span class="name">High Contrast (AAA)</span>
-            </button>
+            @for (th of themeService.availableThemes; track th.id) {
+              <button
+                class="theme-btn"
+                [class.active]="themeService.currentTheme() === th.id"
+                (click)="themeService.setTheme(th.id)"
+              >
+                <span class="preview" [ngClass]="th.id + '-box'"></span>
+                <span class="name">{{ th.name }}</span>
+              </button>
+            }
           </div>
         </div>
 
@@ -213,7 +197,10 @@ interface NetworkProfileConfig {
 
     .dark-box { background: #0a0d14; }
     .light-box { background: #f8fafc; }
-    .contrast-box { background: #ffff00; }
+    .contrast-box, .high-contrast-box { background: #ffff00; }
+    .oled-box { background: #000000; border: 1px solid #333333; }
+    .nord-box { background: #88c0d0; }
+    .cyberpunk-box { background: #00f0ff; }
 
     .auth-status-box {
       display: flex;

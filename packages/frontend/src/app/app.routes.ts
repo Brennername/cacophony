@@ -20,6 +20,10 @@ export const routes: Routes = [
     component: DashboardViewComponent,
   },
   {
+    path: 'tasks/:id',
+    component: DashboardViewComponent,
+  },
+  {
     path: 'queue',
     component: QueueViewComponent,
   },

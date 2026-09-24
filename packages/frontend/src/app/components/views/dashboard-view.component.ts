@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { HardwareMonitorComponent } from '../hardware-monitor/hardware-monitor.component';
 import { TaskInspectorComponent } from '../task-inspector/task-inspector.component';
 import { QueueManagerComponent } from '../queue-manager/queue-manager.component';
@@ -8,7 +9,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
 /**
  * Dashboard Overview route view:
  * Shows hardware diagnostics, active task inspector, and compact queue snapshot.
- * Designed with a high-density, gap-free CSS grid layout.
+ * Supports direct task bookmarking via /tasks/:id routing.
  */
 @Component({
   selector: 'app-dashboard-view',
@@ -67,6 +68,14 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     }
   `],
 })
-export class DashboardViewComponent {
+export class DashboardViewComponent implements OnInit {
   public readonly store = inject(ArenaStateStore);
+  private readonly route = inject(ActivatedRoute);
+
+  public ngOnInit(): void {
+    const taskId = this.route.snapshot.paramMap.get('id');
+    if (taskId) {
+      void this.store.selectTask(taskId);
+    }
+  }
 }

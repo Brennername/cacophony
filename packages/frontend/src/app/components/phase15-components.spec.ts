@@ -140,8 +140,17 @@ describe('Phase 15: Modern Angular Standalone Components (Signals & Zoneless)', 
 
     it('should render DashboardViewComponent with dense card sections', async () => {
       const { DashboardViewComponent } = await import('./views/dashboard-view.component');
+      const { ActivatedRoute } = await import('@angular/router');
       TestBed.configureTestingModule({
         imports: [DashboardViewComponent],
+        providers: [
+          {
+            provide: ActivatedRoute,
+            useValue: {
+              snapshot: { paramMap: { get: () => null } },
+            },
+          },
+        ],
       });
       const fixture = TestBed.createComponent(DashboardViewComponent);
       fixture.detectChanges();
@@ -248,6 +257,89 @@ describe('Phase 15: Modern Angular Standalone Components (Signals & Zoneless)', 
       // Test hover tooltip
       comp.hoverPoint({ x: 50, y: 80, label: 'Day 2', value: 12 }, 1);
       expect(comp.hoveredPoint()?.value).toBe(12);
+    });
+  });
+
+  describe('Phase 40: Mobile-First UI Density, Multi-Theme Palettes & Interactive Drill-Downs (T40.1 & T40.2)', () => {
+    it('T40.1: should render TaskDetailModalComponent with tab navigation and copy actions', async () => {
+      const { TaskDetailModalComponent } = await import('./task-detail-modal/task-detail-modal.component');
+      const { ArenaStateStore } = await import('../services/arena-state.store');
+
+      TestBed.configureTestingModule({
+        imports: [TaskDetailModalComponent],
+      });
+
+      const store = TestBed.inject(ArenaStateStore);
+      store.selectedTask.set({
+        id: 'task-modal-test',
+        title: 'Drilldown Test Task',
+        status: 'RUNNING',
+        priority: 'P0',
+        role: 'implementer',
+        prompt: 'Build resilient subsystem',
+        testCommand: 'npm run test:fast',
+        stages: [
+          {
+            id: '1',
+            stageName: 'generation',
+            stageStatus: 'SUCCESS',
+            logOutput: 'Generating code...',
+            durationMs: 1200,
+            startedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString()
+          },
+          {
+            id: '2',
+            stageName: 'test_execution',
+            stageStatus: 'FAILURE',
+            logOutput: 'FAIL src/app.spec.ts\nAssertionError: expected true to be false',
+            durationMs: 450,
+            startedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString()
+          }
+        ]
+      });
+
+      const fixture = TestBed.createComponent(TaskDetailModalComponent);
+      fixture.detectChanges();
+
+      const comp = fixture.componentInstance;
+      expect(comp.activeTab()).toBe('overview');
+
+      comp.activeTab.set('stages');
+      expect(comp.activeTab()).toBe('stages');
+
+      comp.activeTab.set('diffs');
+      expect(comp.activeTab()).toBe('diffs');
+
+      comp.activeTab.set('stderr');
+      expect(comp.activeTab()).toBe('stderr');
+      expect(comp.extractTestStderr(store.selectedTask())).toContain('AssertionError');
+
+      comp.copyText('npm run test:fast', 'Copied!');
+      expect(comp.copiedMessage()).toBe('Copied!');
+
+      comp.handleEscape();
+      expect(store.selectedTask()).toBeNull();
+    });
+
+    it('T40.2: should support curated theme cycling in ThemeService', async () => {
+      const { ThemeService } = await import('../services/theme.service');
+      TestBed.configureTestingModule({
+        providers: [ThemeService],
+      });
+      const themeService = TestBed.inject(ThemeService);
+
+      expect(themeService.availableThemes.length).toBeGreaterThanOrEqual(6);
+      expect(themeService.availableThemes.some((t) => t.id === 'oled')).toBe(true);
+      expect(themeService.availableThemes.some((t) => t.id === 'nord')).toBe(true);
+      expect(themeService.availableThemes.some((t) => t.id === 'cyberpunk')).toBe(true);
+
+      themeService.setTheme('nord');
+      expect(themeService.currentTheme()).toBe('nord');
+
+      themeService.setTheme('cyberpunk');
+      expect(themeService.currentTheme()).toBe('cyberpunk');
     });
   });
 });

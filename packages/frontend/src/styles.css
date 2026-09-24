@@ -101,6 +101,93 @@
   --scrollbar-track: #000000;
 }
 
+/* OLED Pure Black Theme */
+[data-theme="oled"] {
+  color-scheme: dark;
+  --bg-primary: #000000;
+  --bg-secondary: #080808;
+  --bg-surface: #101010;
+  --bg-surface-elevated: #181818;
+  --bg-glass: rgba(0, 0, 0, 0.95);
+
+  --border-subtle: #222222;
+  --border-strong: #383838;
+
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --text-muted: #666666;
+
+  --color-brand: #3b82f6;
+  --color-brand-glow: rgba(59, 130, 246, 0.25);
+  --color-accent: #06b6d4;
+
+  --status-nominal: #10b981;
+  --status-warm: #f59e0b;
+  --status-elevated: #f97316;
+  --status-danger: #ef4444;
+
+  --scrollbar-thumb: #222222;
+  --scrollbar-track: #000000;
+}
+
+/* Nord Theme (Arctic Frost) */
+[data-theme="nord"] {
+  color-scheme: dark;
+  --bg-primary: #2e3440;
+  --bg-secondary: #3b4252;
+  --bg-surface: #434c5e;
+  --bg-surface-elevated: #4c566a;
+  --bg-glass: rgba(46, 52, 64, 0.9);
+
+  --border-subtle: #4c566a;
+  --border-strong: #616e88;
+
+  --text-primary: #eceff4;
+  --text-secondary: #e5e9f0;
+  --text-muted: #d8dee9;
+
+  --color-brand: #88c0d0;
+  --color-brand-glow: rgba(136, 192, 208, 0.3);
+  --color-accent: #81a1c1;
+
+  --status-nominal: #a3be8c;
+  --status-warm: #ebcb8b;
+  --status-elevated: #d08770;
+  --status-danger: #bf616a;
+
+  --scrollbar-thumb: #4c566a;
+  --scrollbar-track: #2e3440;
+}
+
+/* Cyberpunk Charcoal Theme */
+[data-theme="cyberpunk"] {
+  color-scheme: dark;
+  --bg-primary: #0f1015;
+  --bg-secondary: #161822;
+  --bg-surface: #1e2230;
+  --bg-surface-elevated: #282d40;
+  --bg-glass: rgba(15, 16, 21, 0.92);
+
+  --border-subtle: #3a415a;
+  --border-strong: #00f0ff;
+
+  --text-primary: #fcee0a;
+  --text-secondary: #00f0ff;
+  --text-muted: #7982a6;
+
+  --color-brand: #00f0ff;
+  --color-brand-glow: rgba(0, 240, 255, 0.4);
+  --color-accent: #ff0055;
+
+  --status-nominal: #00ff66;
+  --status-warm: #fcee0a;
+  --status-elevated: #ff7700;
+  --status-danger: #ff0055;
+
+  --scrollbar-thumb: #00f0ff;
+  --scrollbar-track: #0f1015;
+}
+
 /* Global Reset & Base Layout */
 *, *::before, *::after {
   box-sizing: border-box;
