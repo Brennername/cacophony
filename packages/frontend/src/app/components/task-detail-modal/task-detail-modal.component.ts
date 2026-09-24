@@ -1,4 +1,4 @@
-import { Component, inject, signal, HostListener } from '@angular/core';
+import { Component, inject, signal, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
 
@@ -165,16 +165,16 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'stderr'
               <div class="section-block">
                 <div class="header-with-action">
                   <h4 class="section-title">Live Terminal & Inference Output Stream</h4>
-                  <button class="copy-action-btn" (click)="copyText(liveStreamBuffer() || task.logSnippet || '', 'Terminal log copied!')">Copy Logs</button>
+                  <button class="copy-action-btn" (click)="copyText(getStreamContent(task), 'Terminal log copied!')">Copy Logs</button>
                 </div>
                 <div class="full-terminal-box">
                   <div class="terminal-bar">
                     <span class="dot red"></span>
                     <span class="dot yellow"></span>
                     <span class="dot green"></span>
-                    <span class="terminal-title font-mono">{{ task.id }} (Live LLM Tokens)</span>
+                    <span class="terminal-title font-mono">{{ task.id }} (LLM Token Stream)</span>
                   </div>
-                  <pre class="full-terminal-content"><code>{{ liveStreamBuffer() || task.logSnippet || 'Awaiting model inference tokens...' }}</code></pre>
+                  <pre class="full-terminal-content"><code>{{ getStreamContent(task) }}</code></pre>
                 </div>
               </div>
             }
@@ -632,6 +632,63 @@ export class TaskDetailModalComponent {
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
   public readonly activeTab = signal<TaskModalTab>('overview');
   public readonly copiedMessage = signal<string | null>(null);
+
+  // Task-specific stream buffer fetched from backend
+  public readonly taskStreamBuffer = signal<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      const task = this.store.selectedTask();
+      if (!task) {
+        this.taskStreamBuffer.set(null);
+        return;
+      }
+
+      // If selected task is the active RUNNING task, liveStreamBuffer reflects it live
+      if (task.status === 'RUNNING') {
+        this.taskStreamBuffer.set(null);
+        return;
+      }
+
+      // Otherwise fetch historical token buffer for this specific task
+      void this.fetchHistoricalBuffer(task.id);
+    });
+  }
+
+  private async fetchHistoricalBuffer(taskId: string): Promise<void> {
+    try {
+      const res = await fetch(`/api/stream/buffer?taskId=${encodeURIComponent(taskId)}`);
+      if (res.ok) {
+        const data = await res.json() as { buffer?: string };
+        this.taskStreamBuffer.set(data.buffer || null);
+      }
+    } catch {
+      this.taskStreamBuffer.set(null);
+    }
+  }
+
+  public getStreamContent(task: any): string {
+    if (task.status === 'RUNNING') {
+      return this.liveStreamBuffer() || task.logSnippet || 'Streaming tokens from active inference...';
+    }
+
+    const fetched = this.taskStreamBuffer();
+    if (fetched && fetched.trim().length > 0) {
+      return fetched;
+    }
+
+    if (task.logSnippet && task.logSnippet.trim().length > 0) {
+      return task.logSnippet;
+    }
+
+    // Check generation stage log
+    const genStage = task.stages?.find((s: any) => s.stageName === 'generation');
+    if (genStage?.logOutput) {
+      return genStage.logOutput;
+    }
+
+    return '// No historical stream token log recorded for this completed/pending task.';
+  }
 
   @HostListener('window:keydown.escape')
   public handleEscape(): void {

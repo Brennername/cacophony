@@ -86,11 +86,7 @@ export class QueueGroomer {
         testCommand = scoped;
         modified = true;
         groomNotes.push(`Scoped test command to: ${testCommand}`);
-      } else if (activeProfile.defaultTestRunner && (!testCommand || testCommand.includes("@pkg") || testCommand === "npm test")) {
-        testCommand = activeProfile.defaultTestRunner;
-        modified = true;
-        groomNotes.push(`Defaulted test command from profile to: ${testCommand}`);
-      } else if (!testCommand || testCommand.includes("@pkg")) {
+      } else {
         testCommand = "";
       }
     }

@@ -1,4 +1,4 @@
-import { Component, inject, effect, viewChild, ElementRef } from '@angular/core';
+import { Component, inject, effect, viewChild, ElementRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 import { StageProgressBarComponent } from '../stage-progress-bar/stage-progress-bar.component';
@@ -21,7 +21,7 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
         </div>
         @if (activeTask(); as task) {
           <div class="speed-badge">
-            <span class="num">{{ task.tokensPerSec ?? 0 }}</span>
+            <span class="num">{{ currentVelocity() }}</span>
             <span class="unit">tok/s</span>
           </div>
         }
@@ -38,7 +38,7 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
         <!-- 7-Stage Granular Segmented Progress Bar -->
         <app-stage-progress-bar
           [progressPercent]="task.progressPercent ?? 42"
-          [tokensPerSec]="task.tokensPerSec ?? 0"
+          [tokensPerSec]="currentVelocity()"
           [currentStageNumber]="3"
           activeStageLabel="3/7 Generation"
         />
@@ -330,6 +330,12 @@ export class TaskInspectorComponent {
   private readonly store = inject(ArenaStateStore);
   public readonly activeTask = this.store.activeTask;
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
+
+  public readonly currentVelocity = computed(() => {
+    const liveVel = this.store.liveTokenVelocity();
+    if (liveVel > 0) return liveVel;
+    return this.activeTask()?.tokensPerSec ?? 0;
+  });
 
   private terminalContentEl = viewChild<ElementRef<HTMLElement>>('terminalContent');
 

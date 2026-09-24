@@ -105,7 +105,14 @@ export class SelfHealingParser {
     provider: IInferenceProvider,
     baseRequest: InferenceRequest,
     onChunk?: (chunk: string) => void
-  ): Promise<{ readonly code: string; readonly attempts: number; readonly rawOutput: string }> {
+  ): Promise<{
+    readonly code: string;
+    readonly attempts: number;
+    readonly rawOutput: string;
+    readonly tokensPerSec: number;
+    readonly tokensPrompt: number;
+    readonly tokensCompletion: number;
+  }> {
     const messages: ChatMessage[] = [...baseRequest.messages];
     let attempts = 0;
 
@@ -120,7 +127,10 @@ export class SelfHealingParser {
         return {
           code: validation.code,
           attempts,
-          rawOutput: response.content
+          rawOutput: response.content,
+          tokensPerSec: response.tokensPerSec,
+          tokensPrompt: response.tokensPrompt,
+          tokensCompletion: response.tokensCompletion
         };
       }
 

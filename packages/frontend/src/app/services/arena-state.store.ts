@@ -65,6 +65,11 @@ export class ArenaStateStore {
   // Live Terminal Stream Buffer
   public readonly liveStreamBuffer = signal<string>('');
 
+  // Live Token Velocity (tokens per second)
+  public readonly liveTokenVelocity = signal<number>(0);
+  private tokenArrivalTimestamps: number[] = [];
+  private velocityDecayTimer: ReturnType<typeof setInterval> | null = null;
+
   // Selected Task for Drill-Down Modal
   public readonly selectedTask = signal<TaskItem | null>(null);
 
@@ -153,11 +158,30 @@ export class ArenaStateStore {
               const updated = prev + token;
               return updated.length > 25000 ? updated.slice(-25000) : updated;
             });
+
+            // Calculate rolling token velocity over a 2-second sliding window
+            const now = Date.now();
+            this.tokenArrivalTimestamps.push(now);
+            const cutoff = now - 2000;
+            this.tokenArrivalTimestamps = this.tokenArrivalTimestamps.filter((t) => t >= cutoff);
+            const count = this.tokenArrivalTimestamps.length;
+            const velocity = count > 1 ? Number((count / 2.0).toFixed(1)) : (count === 1 ? 1 : 0);
+            this.liveTokenVelocity.set(velocity);
           }
         } catch {
           // ignore stream parse errors
         }
       };
+
+      // Velocity decay timer: resets velocity to 0 when no tokens have arrived in 2 seconds
+      this.velocityDecayTimer = setInterval(() => {
+        const now = Date.now();
+        const cutoff = now - 2000;
+        this.tokenArrivalTimestamps = this.tokenArrivalTimestamps.filter((t) => t >= cutoff);
+        if (this.tokenArrivalTimestamps.length === 0 && this.liveTokenVelocity() > 0) {
+          this.liveTokenVelocity.set(0);
+        }
+      }, 500);
 
       // Periodic poll every 2.5 seconds to refresh task statuses and process metrics
       setInterval(() => {

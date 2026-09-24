@@ -407,8 +407,26 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // 4a1. REST API: GET /api/tasks/:id - Detailed Task Record with Stages
+    // 4a0. REST API: DELETE /api/tasks - Purge pending tasks (supports ?pattern=query)
+    if (url.pathname === "/api/tasks" && req.method === "DELETE") {
+      const taskRepo = this.daemon.getTaskRepository();
+      const pattern = url.searchParams.get("pattern") || undefined;
+      const deletedCount = await taskRepo.purgePendingTasks(pattern);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, deletedCount }));
+      return;
+    }
+
+    // 4a1. REST API: GET or DELETE /api/tasks/:id - Detailed Task Record with Stages or Deletion
     const taskDetailMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)$/);
+    if (taskDetailMatch && req.method === "DELETE") {
+      const taskId = taskDetailMatch[1]!;
+      const taskRepo = this.daemon.getTaskRepository();
+      await taskRepo.deleteTask(taskId);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, taskId }));
+      return;
+    }
     if (taskDetailMatch && req.method === "GET") {
       const taskId = taskDetailMatch[1]!;
       const taskRepo = this.daemon.getTaskRepository();

@@ -158,6 +158,29 @@ export class TaskRepository {
     return rows.map((r) => this.mapRow(r));
   }
 
+  /**
+   * Deletes a task by ID.
+   */
+  public async deleteTask(id: string): Promise<boolean> {
+    await this.driver.execute("DELETE FROM tasks WHERE id = $1", [id]);
+    return true;
+  }
+
+  /**
+   * Purges pending tasks matching an optional title query.
+   */
+  public async purgePendingTasks(titlePattern?: string): Promise<number> {
+    if (titlePattern) {
+      const res = await this.driver.execute(
+        "DELETE FROM tasks WHERE status = 'PENDING' AND title LIKE $1",
+        [titlePattern]
+      );
+      return (res as any)?.affectedRows ?? 0;
+    }
+    const res = await this.driver.execute("DELETE FROM tasks WHERE status = 'PENDING'");
+    return (res as any)?.affectedRows ?? 0;
+  }
+
   private mapRow(row: TaskRow): TaskRecord {
     return {
       id: row.id,
