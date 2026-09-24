@@ -26,18 +26,7 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 43.*
-
----
-
-## Phase 44: Cross-Workspace Sandboxing, Dynamic IPC Channels & Multi-Session Isolation
-*RDF Category: isolation*
-
-### T44.1: Multi-Workspace Sandbox Isolation & Subprocess Limits
-  - [ ] T44.1.1: Implement WorkspaceIsolationManager in packages/engine/src/isolation/ managing per-workspace temporary roots, permissions, and environment sandboxing.
-  - [ ] T44.1.2: Add memory limits and process group cgroup isolation controls to prevent external compiler subprocesses from destabilizing the host system.
-  - [ ] T44.1.3: Provide automated cleanup of stale temporary workspaces when sessions terminate or reach idle timeout.
-  - [ ] T44.1.4: Write unit and integration tests verifying concurrent task execution across isolated workspace sandboxes without path collisions.
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 44.*
 
 ---
 

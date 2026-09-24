@@ -1062,3 +1062,14 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T43.1.2: Automatically fall back to secondary provider or high-reasoning local model (deepseek-r1:8b) when circuit opens.
   - [x] T43.1.3: Implement TokenQuotaTracker recording daily and monthly token consumption and estimated dollar cost per provider.
   - [x] T43.1.4: Expose GET /api/config/quotas endpoint returning remaining token budget and circuit breaker health statuses.
+
+---
+
+## Archived Phase 44: Cross-Workspace Sandboxing, Dynamic IPC Channels & Multi-Session Isolation
+*Completed & Verified in Commit: `8a39ff5`*
+
+### T44.1: Multi-Workspace Sandbox Isolation & Subprocess Limits
+  - [x] T44.1.1: Implement WorkspaceIsolationManager in packages/engine/src/isolation/ managing per-workspace temporary roots, permissions, and environment sandboxing.
+  - [x] T44.1.2: Add memory limits and process group cgroup isolation controls to prevent external compiler subprocesses from destabilizing the host system.
+  - [x] T44.1.3: Provide automated cleanup of stale temporary workspaces when sessions terminate or reach idle timeout.
+  - [x] T44.1.4: Write unit and integration tests verifying concurrent task execution across isolated workspace sandboxes without path collisions.
