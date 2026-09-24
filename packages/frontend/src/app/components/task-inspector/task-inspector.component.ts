@@ -21,9 +21,9 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
         </div>
         @if (activeTask(); as task) {
           <div class="speed-hud">
-            <div class="speed-badge" [class.matched]="isVelocityMatched()">
-              <span class="hud-pill" [class.live-active]="isVelocityMatched()">
-                {{ isVelocityMatched() ? 'LIVE' : (liveVelocity() > 0 ? 'STREAM' : 'PAUSED') }}
+            <div class="speed-badge" [class.live-active]="isStreamActive()">
+              <span class="hud-pill" [class.live]="isStreamActive()" [class.paused]="!isStreamActive()">
+                {{ isStreamActive() ? 'LIVE' : 'PAUSED' }}
               </span>
               <div class="hud-metric">
                 <span class="metric-caption">LIVE</span>
@@ -53,6 +53,7 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
           [progressPercent]="task.progressPercent ?? 42"
           [tokensPerSec]="liveVelocity() > 0 ? liveVelocity() : runVelocity()"
           [runTokensPerSec]="runVelocity()"
+          [isLive]="isStreamActive()"
           [currentStageNumber]="3"
           activeStageLabel="3/7 Generation"
         />
@@ -150,32 +151,49 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       white-space: nowrap;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
     }
 
-    .speed-badge.matched {
-      border-color: #10b981;
-      box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+    .speed-badge.live-active {
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
     }
 
     .hud-pill {
       font-size: 0.625rem;
       font-weight: 700;
       letter-spacing: 0.05em;
-      padding: 0.15rem 0.35rem;
+      padding: 0.15rem 0.4rem;
       border-radius: 3px;
-      background: rgba(148, 163, 184, 0.15);
-      color: var(--text-muted);
-      border: 1px solid rgba(148, 163, 184, 0.25);
       text-transform: uppercase;
-      min-width: 48px;
+      min-width: 52px;
       text-align: center;
+      transition: color 0.4s ease, background 0.4s ease, border-color 0.4s ease;
     }
 
-    .hud-pill.live-active {
+    .hud-pill.live {
       background: rgba(16, 185, 129, 0.18);
       color: #10b981;
-      border-color: rgba(16, 185, 129, 0.5);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      animation: gentle-live-breathe 2.4s ease-in-out infinite;
+    }
+
+    .hud-pill.paused {
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      animation: none;
+    }
+
+    @keyframes gentle-live-breathe {
+      0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.25);
+      }
+      50% {
+        opacity: 0.8;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.45);
+      }
     }
 
     .hud-metric {
@@ -413,6 +431,7 @@ export class TaskInspectorComponent {
     if (run > 0) return run;
     return this.activeTask()?.tokensPerSec ?? 0;
   });
+  public readonly isStreamActive = this.store.isStreamActive;
   public readonly isVelocityMatched = this.store.isVelocityMatched;
 
   public readonly formattedLiveVelocity = computed(() => {

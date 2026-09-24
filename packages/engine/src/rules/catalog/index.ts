@@ -8,4 +8,4 @@ export * from "./BannedImportScrubberRule.js";
 export * from "./AstSignatureAlignRule.js";
 export * from "./TypeScriptDiagnosticRepairRule.js";
 export * from "./AstParameterCorrectionRules.js";
-
+export * from "./FilePlacementAndNamingConventionRule.js";

@@ -10,6 +10,7 @@ import {
   EmptyFileGuardRule,
   PlaceholderStubDetectorRule,
   BannedImportScrubberRule,
+  FilePlacementAndNamingConventionRule,
 } from "../rules/index.js";
 import { RuleEvaluationContext, RulePipelineDeclaration } from "@cacophony/shared-types";
 
@@ -179,6 +180,55 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
       const result = await rule.evaluate(context, "hard_rejection", { packages: ["conductor"] });
       assert.ok(!result.passed);
       assert.equal(result.hardRejected, true);
+    });
+
+    it("FilePlacementAndNamingConventionRule: should hard reject phase-numbered filenames and loose component specs", async () => {
+      const rule = new FilePlacementAndNamingConventionRule();
+
+      // Case 1: Phase-numbered file rejection
+      const phaseContext: RuleEvaluationContext = {
+        projectRoot: "/tmp/cacophony",
+        hook: "post_generation",
+        modifiedFiles: ["/tmp/cacophony/packages/frontend/src/app/components/phase15-components.spec.ts"],
+        fileContents: new Map([["/tmp/cacophony/packages/frontend/src/app/components/phase15-components.spec.ts", "// test"]]),
+        simulate: true,
+      };
+
+      const phaseResult = await rule.evaluate(phaseContext, "hard_rejection");
+      assert.ok(!phaseResult.passed);
+      assert.equal(phaseResult.hardRejected, true);
+      assert.ok(phaseResult.diagnostics.length >= 1);
+      assert.ok(phaseResult.diagnostics[0]!.message.includes("phase-numbered filename"));
+
+      // Case 2: Misplaced component spec in parent components dir
+      const misplacedContext: RuleEvaluationContext = {
+        projectRoot: "/tmp/cacophony",
+        hook: "post_generation",
+        modifiedFiles: ["/tmp/cacophony/packages/frontend/src/app/components/my-widget.spec.ts"],
+        fileContents: new Map([["/tmp/cacophony/packages/frontend/src/app/components/my-widget.spec.ts", "// test"]]),
+        simulate: true,
+      };
+
+      const misplacedResult = await rule.evaluate(misplacedContext, "hard_rejection");
+      assert.ok(!misplacedResult.passed);
+      assert.equal(misplacedResult.hardRejected, true);
+      assert.ok(misplacedResult.diagnostics.some((d) => d.message.includes("Misplaced component test file")));
+
+      // Case 3: Proper co-located component spec passes
+      const validContext: RuleEvaluationContext = {
+        projectRoot: "/tmp/cacophony",
+        hook: "post_generation",
+        modifiedFiles: [
+          "/tmp/cacophony/packages/frontend/src/app/components/session-tabs/session-tabs.component.ts",
+          "/tmp/cacophony/packages/frontend/src/app/components/session-tabs/session-tabs.component.spec.ts",
+        ],
+        fileContents: new Map(),
+        simulate: true,
+      };
+
+      const validResult = await rule.evaluate(validContext, "hard_rejection");
+      assert.ok(validResult.passed);
+      assert.equal(validResult.diagnostics.length, 0);
     });
   });
 

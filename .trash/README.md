@@ -14,4 +14,4 @@ This directory stores deprecated source code files and documentation that have b
 ## Archive Log
 | Date | Original Path | Reason for Deprecation |
 | :--- | :--- | :--- |
-| *(None yet - Initial repository creation)* | | |
+| 2026-09-24 | packages/frontend/src/app/components/phase15-components.spec.ts | Decomposed into co-located component spec files; phase-named monolithic test file retired. |

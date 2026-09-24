@@ -27,8 +27,10 @@ export interface StageStepInfo {
           <span class="step-counter">Stage {{ currentStageNumber() }} / 7</span>
         </div>
         <div class="velocity-meter">
-          @if (isLiveMatched()) {
-            <span class="live-pill">LIVE</span>
+          @if (isLiveActive()) {
+            <span class="live-pill active">LIVE</span>
+          } @else if (hasRun()) {
+            <span class="live-pill paused">PAUSED</span>
           }
           <span class="velocity-val fixed-tks">{{ formattedTokensPerSec() }}</span>
           <span class="velocity-unit">tok/s</span>
@@ -145,18 +147,39 @@ export interface StageStepInfo {
     .live-pill {
       font-size: 0.625rem;
       font-weight: 700;
+      border-radius: 3px;
+      padding: 0.1rem 0.4rem;
+      margin-right: 0.25rem;
+      display: inline-flex;
+      align-items: center;
+      letter-spacing: 0.04em;
+      transition: color 0.4s ease, background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .live-pill.active {
       color: #10b981;
       background: rgba(16, 185, 129, 0.15);
       border: 1px solid rgba(16, 185, 129, 0.4);
-      border-radius: 3px;
-      padding: 0 0.35rem;
-      margin-right: 0.25rem;
-      animation: pulse-live 2s infinite ease-in-out;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.25);
+      animation: gentle-live-breathe 2.4s ease-in-out infinite;
     }
 
-    @keyframes pulse-live {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+    .live-pill.paused {
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      animation: none;
+    }
+
+    @keyframes gentle-live-breathe {
+      0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.25);
+      }
+      50% {
+        opacity: 0.8;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.45);
+      }
     }
 
     .velocity-unit {
@@ -253,6 +276,7 @@ export class StageProgressBarComponent {
   public progressPercent = input<number>(0);
   public tokensPerSec = input<number>(0);
   public runTokensPerSec = input<number | undefined>(undefined);
+  public isLive = input<boolean | undefined>(undefined);
   public currentStageNumber = input<number>(1);
   public activeStageLabel = input<string>('Planning');
 
@@ -265,11 +289,17 @@ export class StageProgressBarComponent {
     return run !== undefined ? run.toFixed(1) : null;
   });
 
-  public readonly isLiveMatched = computed(() => {
-    const live = this.tokensPerSec();
-    const run = this.runTokensPerSec();
-    if (!run || live <= 0) return false;
-    return Math.abs(live - run) <= 1.5;
+  public readonly isLiveActive = computed(() => {
+    const explicit = this.isLive();
+    if (explicit !== undefined) return explicit;
+    return (this.tokensPerSec() || 0) > 0.1;
+  });
+
+  // Retain isLiveMatched as alias for backward compatibility
+  public readonly isLiveMatched = computed(() => this.isLiveActive());
+
+  public readonly hasRun = computed(() => {
+    return this.runTokensPerSec() !== undefined || (this.tokensPerSec() || 0) > 0;
   });
 
   public stages = input<StageStepInfo[]>([

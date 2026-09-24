@@ -71,14 +71,13 @@ export class ArenaStateStore {
   // Cumulative Run Token Velocity (total tokens in current task run / elapsed generation seconds)
   public readonly runTokenVelocity = signal<number>(0);
 
-  // Velocity Match Status: true when live instantaneous velocity matches overall run velocity
-  public readonly isVelocityMatched = computed(() => {
-    const live = this.liveTokenVelocity();
-    const run = this.runTokenVelocity();
-    if (live <= 0 || run <= 0) return false;
-    return Math.abs(live - run) <= 1.5;
-  });
+  // Live Stream Activity: true when tokens are actively streaming from the LLM, false when paused or idle
+  public readonly isStreamActive = signal<boolean>(false);
 
+  // Velocity Match Status: reflects active LLM stream activity
+  public readonly isVelocityMatched = computed(() => this.isStreamActive());
+
+  private lastTokenReceivedAt = 0;
   private tokenArrivalTimestamps: number[] = [];
   private velocityDecayTimer: ReturnType<typeof setInterval> | null = null;
   private runTokenCount = 0;
@@ -173,6 +172,8 @@ export class ArenaStateStore {
               this.runTokenVelocity.set(0);
               this.tokenArrivalTimestamps = [];
               this.liveTokenVelocity.set(0);
+              this.lastTokenReceivedAt = 0;
+              this.isStreamActive.set(false);
             }
           }
           if (data.type === 'token') {
@@ -185,6 +186,8 @@ export class ArenaStateStore {
               this.runTokenVelocity.set(0);
               this.tokenArrivalTimestamps = [];
               this.liveTokenVelocity.set(0);
+              this.lastTokenReceivedAt = 0;
+              this.isStreamActive.set(false);
             }
 
             this.liveStreamBuffer.update((prev) => {
@@ -193,6 +196,9 @@ export class ArenaStateStore {
             });
 
             const now = Date.now();
+            this.lastTokenReceivedAt = now;
+            this.isStreamActive.set(true);
+
             if (this.runStartTimestamp === null) {
               this.runStartTimestamp = now;
             }
@@ -214,9 +220,16 @@ export class ArenaStateStore {
         }
       };
 
-      // Velocity decay timer: resets live velocity toward 0 when tokens pause
+      // Velocity decay timer: resets live velocity toward 0 and updates stream activity
       this.velocityDecayTimer = setInterval(() => {
         const now = Date.now();
+        const timeSinceLastToken = now - this.lastTokenReceivedAt;
+        if (this.lastTokenReceivedAt > 0 && timeSinceLastToken < 1200) {
+          this.isStreamActive.set(true);
+        } else {
+          this.isStreamActive.set(false);
+        }
+
         const cutoff = now - 2000;
         this.tokenArrivalTimestamps = this.tokenArrivalTimestamps.filter((t) => t >= cutoff);
         if (this.tokenArrivalTimestamps.length === 0) {
@@ -228,7 +241,7 @@ export class ArenaStateStore {
           const velocity = Number((count / 2.0).toFixed(1));
           this.liveTokenVelocity.set(velocity);
         }
-      }, 250);
+      }, 200);
 
       // Periodic poll every 2.5 seconds to refresh task statuses and process metrics
       setInterval(() => {

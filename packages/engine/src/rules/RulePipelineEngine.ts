@@ -21,6 +21,7 @@ import {
   AstSignatureAlignRule,
   TypeScriptDiagnosticRepairRule,
   AstParameterCorrectionRules,
+  FilePlacementAndNamingConventionRule,
 } from "./catalog/index.js";
 
 /**
@@ -70,6 +71,7 @@ export class RulePipelineEngine {
     this.registerRule(new AstSignatureAlignRule());
     this.registerRule(new TypeScriptDiagnosticRepairRule());
     this.registerRule(new AstParameterCorrectionRules());
+    this.registerRule(new FilePlacementAndNamingConventionRule());
   }
 
   /**
