@@ -666,6 +666,25 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4h. REST API: Database Maintenance & Storage Metrics
+    if (url.pathname === "/api/database/storage" && req.method === "GET") {
+      const maintenance = this.daemon.getMaintenanceService();
+      const metrics = await maintenance.getStorageMetrics();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(metrics));
+      return;
+    }
+
+    if (url.pathname === "/api/database/maintenance" && req.method === "POST") {
+      const maintenance = this.daemon.getMaintenanceService();
+      const compaction = await maintenance.runVacuumAndCompaction();
+      const partition = await maintenance.partitionAndArchiveOldTelemetry();
+      const metrics = await maintenance.getStorageMetrics();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ compaction, partition, metrics }));
+      return;
+    }
+
     // 5. Static Angular Frontend Serving
     if (this.config.frontendDistPath) {
       await this.serveStaticFrontend(url.pathname, res);

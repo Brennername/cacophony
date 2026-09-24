@@ -1,6 +1,7 @@
 export * from "./interfaces/IDatabaseDriver.js";
 export * from "./drivers/PGliteDriver.js";
 export * from "./drivers/SQLiteDriver.js";
+export * from "./drivers/DatabaseDriverFactory.js";
 export * from "./migrations/MigrationRunner.js";
 export * from "./migrations/MigrationRegistry.js";
 export * from "./repositories/TaskRepository.js";
@@ -17,4 +18,4 @@ export * from "./repositories/GitCheckpointRepository.js";
 export * from "./repositories/TestExecutionRepository.js";
 export * from "./repositories/UserSessionRepository.js";
 export * from "./repositories/TaskTelemetryCorrelationRepository.js";
-
+export * from "./services/DatabaseMaintenanceService.js";

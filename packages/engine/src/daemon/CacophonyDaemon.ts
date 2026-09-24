@@ -1,5 +1,7 @@
 import {
-  PGliteDriver,
+  type IDatabaseDriver,
+  DatabaseDriverFactory,
+  DatabaseMaintenanceService,
   MigrationRunner,
   TaskRepository,
   StageRepository,
@@ -41,7 +43,8 @@ export interface DaemonConfig {
  */
 export class CacophonyDaemon {
   private readonly config: DaemonConfig;
-  private readonly driver: PGliteDriver;
+  private readonly driver: IDatabaseDriver;
+  private readonly maintenanceService: DatabaseMaintenanceService;
   private readonly streamTapManager: StreamTapManager;
   private readonly codeScrubber: CodeScrubber;
   private taskRepo!: TaskRepository;
@@ -61,7 +64,15 @@ export class CacophonyDaemon {
 
   constructor(config: DaemonConfig = {}) {
     this.config = config;
-    this.driver = new PGliteDriver(config.dbPath || "data/cacophony_pglite");
+    const dbPath = config.dbPath || "data/cacophony_pglite";
+    this.driver = DatabaseDriverFactory.createDriver({
+      dataDir: dbPath,
+      sqliteDbPath: dbPath.endsWith(".db") || dbPath.endsWith(".sqlite") ? dbPath : undefined
+    });
+    this.maintenanceService = new DatabaseMaintenanceService({
+      driver: this.driver,
+      dataDirPath: dbPath
+    });
     this.streamTapManager = new StreamTapManager();
     this.codeScrubber = new CodeScrubber();
   }
@@ -231,14 +242,18 @@ export class CacophonyDaemon {
       // ignore
     }
 
-    // Prune telemetry older than 14 days every hour
+    // Run periodic database maintenance (VACUUM ANALYZE, WAL compaction, telemetry partitioning) every hour
     this.pruningTimer = setInterval(async () => {
-      if (this.isRunning && this.telemetryRepo) {
-        const fourteenDaysAgo = new Date(Date.now() - 14 * 86400 * 1000).toISOString();
+      if (this.isRunning) {
         try {
-          await this.telemetryRepo.pruneOlderThan(fourteenDaysAgo);
+          await this.maintenanceService.runVacuumAndCompaction();
+          await this.maintenanceService.partitionAndArchiveOldTelemetry();
+          const metrics = await this.maintenanceService.getStorageMetrics();
+          if (metrics.isOverThreshold) {
+            process.stderr.write(`[storage-warning] Database directory size ${metrics.totalSizeMegabytes}MB exceeds threshold ${metrics.thresholdBytes / (1024 * 1024)}MB\n`);
+          }
         } catch {
-          // ignore
+          // ignore transient maintenance lock contention
         }
       }
     }, 3600_000);
@@ -306,6 +321,10 @@ export class CacophonyDaemon {
 
   public getTaskRepository(): TaskRepository {
     return this.taskRepo;
+  }
+
+  public getMaintenanceService(): DatabaseMaintenanceService {
+    return this.maintenanceService;
   }
 
   public getStageRepository(): StageRepository {

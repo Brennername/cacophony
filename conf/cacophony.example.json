@@ -1,6 +1,13 @@
 {
   "system_name": "cacophony",
+  "db_driver": "pglite",
+  "db_connection_string": "data/cacophony_pglite",
   "data_dir": "data/cacophony_pglite",
+  "database_maintenance": {
+    "vacuum_interval_seconds": 86400,
+    "max_storage_threshold_mb": 500,
+    "telemetry_retention_days": 14
+  },
   "workspaces_dir": "workspaces",
   "concurrency_limit": 1,
   "default_session_model": "qwen2.5-coder:7b",

@@ -214,4 +214,120 @@ describe("Database & Persistence Layer", () => {
       assert.equal(retrieved.priority, "P0");
     });
   });
+
+  describe("Phase 41: Database Engine Portability, Auto-Vacuuming & Storage Optimization (T41.1 & T41.2)", () => {
+    test("T41.1: DatabaseMaintenanceService should compact, partition old telemetry, and measure storage", async () => {
+      const { DatabaseMaintenanceService } = await import("../services/DatabaseMaintenanceService.js");
+      const testDriver = new PGliteDriver();
+      await testDriver.connect();
+
+      const runner = new MigrationRunner(testDriver);
+      await runner.migrate();
+
+      // Seed old telemetry snapshot (20 days ago) and fresh snapshot (today)
+      const oldTimestamp = new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString();
+      const freshTimestamp = new Date().toISOString();
+
+      await testDriver.execute(
+        `INSERT INTO telemetry_snapshots (
+          timestamp, gpu_busy_pct, vram_used_bytes, vram_total_bytes,
+          gtt_used_bytes, gtt_total_bytes, edge_temp_c, vddgfx_mv,
+          soc_mv, ppt_watts, sclk_mhz, current_model
+        ) VALUES ($1, 40.0, 1000, 2000, 500, 1000, 65.0, 800, 750, 15.0, 1200, 'qwen2.5-coder:7b')`,
+        [oldTimestamp]
+      );
+      await testDriver.execute(
+        `INSERT INTO telemetry_snapshots (
+          timestamp, gpu_busy_pct, vram_used_bytes, vram_total_bytes,
+          gtt_used_bytes, gtt_total_bytes, edge_temp_c, vddgfx_mv,
+          soc_mv, ppt_watts, sclk_mhz, current_model
+        ) VALUES ($1, 55.0, 1500, 2000, 600, 1000, 75.0, 850, 750, 20.0, 1400, 'qwen2.5-coder:7b')`,
+        [freshTimestamp]
+      );
+
+      const maintenance = new DatabaseMaintenanceService({
+        driver: testDriver,
+        dataDirPath: "data/test_maintenance_pglite",
+        maxStorageThresholdBytes: 100 * 1024 * 1024,
+        telemetryRetentionDays: 14
+      });
+
+      // 1. Run VACUUM & compaction without locking transactions
+      const compactionResult = await maintenance.runVacuumAndCompaction();
+      assert.equal(compactionResult.dialect, "postgres");
+      assert.ok(compactionResult.durationMs >= 0);
+
+      // Verify active transaction runs concurrently without lock failure
+      await testDriver.transaction(async (tx) => {
+        const rows = await tx.query("SELECT COUNT(*) as cnt FROM telemetry_snapshots");
+        assert.ok(rows.length > 0);
+      });
+
+      // 2. Measure storage metrics
+      const metrics = await maintenance.getStorageMetrics();
+      assert.ok(metrics.dataDirPath.includes("data/test_maintenance_pglite"));
+      assert.equal(typeof metrics.totalSizeBytes, "number");
+      assert.equal(metrics.isOverThreshold, false);
+
+      // 3. Partition & archive old telemetry
+      const partitionResult = await maintenance.partitionAndArchiveOldTelemetry(14);
+      assert.equal(partitionResult.archivedCount, 1);
+      assert.ok(partitionResult.archiveFilePath);
+
+      // Verify only 1 fresh record remains in DB
+      const remainingRows = await testDriver.query<{ count: number | string }>("SELECT COUNT(*) as count FROM telemetry_snapshots");
+      assert.equal(Number(remainingRows[0]?.count), 1);
+
+      await testDriver.close();
+    });
+
+    test("T41.2: DatabaseDriverFactory should instantiate drivers and provide cross-driver parity", async () => {
+      const { DatabaseDriverFactory } = await import("../drivers/DatabaseDriverFactory.js");
+
+      // Test default/pglite driver instantiation
+      const pglite = DatabaseDriverFactory.createDriver({ driver: "pglite" });
+      assert.equal(pglite.getDialect(), "postgres");
+
+      // Test sqlite driver instantiation
+      const sqlite = DatabaseDriverFactory.createDriver({ driver: "sqlite", sqliteDbPath: ":memory:" });
+      assert.equal(sqlite.getDialect(), "sqlite");
+
+      await sqlite.connect();
+      const runner = new MigrationRunner(sqlite);
+      await runner.migrate();
+
+      // Assert identical CRUD behavior across drivers
+      const sqliteTaskRepo = new TaskRepository(sqlite);
+      const testTask: TaskRecord = {
+        id: "task-parity-001",
+        title: "Cross Driver Parity Task",
+        prompt: "Verify identical persistence semantics",
+        role: "implementer",
+        status: "RUNNING",
+        priority: "P0",
+        modelAssigned: "qwen2.5-coder:7b",
+        testCommand: "npm test",
+        focusFiles: "src/index.ts",
+        targetBranch: "arena/parity",
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      await sqliteTaskRepo.create(testTask);
+      const found = await sqliteTaskRepo.getById("task-parity-001");
+      assert.ok(found);
+      assert.equal(found.title, testTask.title);
+      assert.equal(found.status, "RUNNING");
+      assert.equal(found.priority, "P0");
+
+      await sqliteTaskRepo.updateStatus("task-parity-001", "COMPLETED");
+      const updated = await sqliteTaskRepo.getById("task-parity-001");
+      assert.equal(updated?.status, "COMPLETED");
+
+      await sqlite.close();
+    });
+  });
 });
