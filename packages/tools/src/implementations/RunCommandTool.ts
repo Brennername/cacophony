@@ -11,7 +11,7 @@ const execAsync = promisify(exec);
 export const RunCommandParamsSchema = z.object({
   command: z.string().min(1).describe("The shell command line string to execute."),
   cwd: z.string().optional().default(".").describe("Working directory relative to workspace root."),
-  timeoutMs: z.number().int().positive().optional().default(60000).describe("Maximum execution time in milliseconds (default: 60000ms).")
+  timeoutMs: z.number().int().positive().optional().default(120000).describe("Maximum execution time in milliseconds (default: 120000ms).")
 });
 
 export type RunCommandParams = z.infer<typeof RunCommandParamsSchema>;
@@ -57,7 +57,7 @@ export class RunCommandTool implements ICacophonyTool<RunCommandParams> {
       // 3. Execute
       const { stdout, stderr } = await execAsync(params.command, {
         cwd: effectiveCwd,
-        timeout: params.timeoutMs ?? 60000,
+        timeout: params.timeoutMs ?? 120000,
         maxBuffer: 10 * 1024 * 1024 // 10MB buffer
       });
 
