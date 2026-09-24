@@ -356,7 +356,7 @@
   - [x] T27.1.2.2: Map detected hardware against known compute backend matrix: Vulkan vs ROCm vs CUDA vs Metal.
   - [x] T27.1.2.3: Identify hardware constraints (e.g. APU compute ring watchdog timeouts, absence of dedicated VRAM, lack of native Flash Attention in older GCN/Vega architectures).
   - [x] T27.1.2.4: Generate typed `HardwareDiscoveryReport` exposing detected devices, recommended hardware profile ID, and risk warnings.
-  - [ ] T27.1.2.5: Document and show in the UI for the user what tools they need to install (`apt install radeontop lm-sensors btop ...`) to enable hardware monitoring and capabilities that were disabled due to missing system tools.
+  - [x] T27.1.2.5: Document and show in the UI for the user what tools they need to install (`apt install radeontop lm-sensors btop ...`) to enable hardware monitoring and capabilities that were disabled due to missing system tools.
 
 ### T27.2: Whitebox Ollama Systemd Configuration & Override Generator (`spec:OllamaWhiteboxTuning`)
 - [x] T27.2.1: Whitebox Override Generator:

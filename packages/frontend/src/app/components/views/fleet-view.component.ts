@@ -74,6 +74,25 @@ export interface FleetNodeView {
           </div>
         }
       </div>
+
+      <div class="cacophony-card diagnostic-tools-card">
+        <div class="tools-header">
+          <div class="tools-title">
+            <h3>Recommended Hardware Diagnostic & Sensor Utilities</h3>
+            <p class="subtitle">Install native Linux monitoring tools to enable live VRAM bus, thermal sensors, and GPU compute ring inspection</p>
+          </div>
+          <button class="copy-btn" (click)="copyInstallCommand()">{{ copyButtonText() }}</button>
+        </div>
+        <div class="code-snippet font-mono">
+          <code>sudo apt update && sudo apt install -y radeontop lm-sensors btop htop mesa-utils vulkan-tools pciutils</code>
+        </div>
+        <div class="tools-pills">
+          <span class="tool-pill"><strong>radeontop:</strong> AMD VRAM & GTT aperture bus monitor</span>
+          <span class="tool-pill"><strong>lm-sensors:</strong> SoC voltage & package thermals</span>
+          <span class="tool-pill"><strong>btop:</strong> Real-time swap, memory & thread monitor</span>
+          <span class="tool-pill"><strong>vulkaninfo:</strong> Compute queue & heap inspector</span>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -227,6 +246,74 @@ export interface FleetNodeView {
       border-radius: var(--radius-full);
       transition: width 0.3s ease;
     }
+
+    .diagnostic-tools-card {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .tools-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .tools-title h3 {
+      font-size: 1.05rem;
+      margin: 0;
+      color: var(--text-primary);
+    }
+
+    .copy-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: var(--radius-sm);
+      background: var(--color-brand);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .copy-btn:hover {
+      opacity: 0.9;
+    }
+
+    .code-snippet {
+      padding: 0.75rem 1rem;
+      background: #090d16;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      overflow-x: auto;
+      font-size: 0.85rem;
+      color: #38bdf8;
+    }
+
+    .tools-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .tool-pill {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .tool-pill strong {
+      color: var(--text-primary);
+    }
   `],
 })
 export class FleetViewComponent implements OnInit {
@@ -256,6 +343,19 @@ export class FleetViewComponent implements OnInit {
       activeTasksCount: 2,
     },
   ]);
+
+  public copyButtonText = signal<string>('Copy Command');
+
+  public async copyInstallCommand(): Promise<void> {
+    const cmd = 'sudo apt update && sudo apt install -y radeontop lm-sensors btop htop mesa-utils vulkan-tools pciutils';
+    try {
+      await navigator.clipboard.writeText(cmd);
+      this.copyButtonText.set('Copied!');
+      setTimeout(() => this.copyButtonText.set('Copy Command'), 2000);
+    } catch {
+      // Fallback
+    }
+  }
 
   public async ngOnInit(): Promise<void> {
     try {
