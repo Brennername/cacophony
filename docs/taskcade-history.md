@@ -1040,3 +1040,14 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T41.2.2: Verify SQLite fallback driver in node:sqlite experimental mode for zero-dependency local runs.
   - [x] T41.2.3: Document DB_DRIVER and DB_CONNECTION_STRING configuration options in conf/cacophony.example.json.
   - [x] T41.2.4: Write cross-driver repository test asserting identical CRUD behavior across PGlite and SQLite drivers.
+
+---
+
+## Archived Phase 42: AST Dependency Slicing & Context Token Minimizer
+*Completed & Verified in Commit: `460780d`*
+
+### T42.1: AST Slicing & Focused Import Skeleton Generator
+  - [x] T42.1.1: Implement AstContextSlicer in packages/engine/src/context/ parsing referenced imports and extracting only utilized function/type signatures.
+  - [x] T42.1.2: Replace full file content of secondary dependencies with compact type skeletons in ContextMinimizer.
+  - [x] T42.1.3: Benchmark token reduction: assert at least 40% reduction in prompt token size on multi-file refactoring tasks.
+  - [x] T42.1.4: Write unit tests verifying generated import skeletons preserve type fidelity without breaking compiler verification.

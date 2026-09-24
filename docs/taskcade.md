@@ -26,19 +26,7 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 41.*
-
----
-
-## Phase 42: AST Dependency Slicing & Context Token Minimizer
-*RDF Category: *
-
-### T42.1: AST Slicing & Focused Import Skeleton Generator
-  - [ ] T42.1.1: Implement AstContextSlicer in packages/engine/src/context/ parsing referenced imports and extracting only utilized function/type signatures.
-  - [ ] T42.1.2: Replace full file content of secondary dependencies with compact type skeletons in ContextMinimizer.
-  - [ ] T42.1.3: Benchmark token reduction: assert at least 40% reduction in prompt token size on multi-file refactoring tasks.
-  - [ ] T42.1.4: Write unit tests verifying generated import skeletons preserve type fidelity without breaking compiler verification.
-
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 42.*
 
 ---
 
