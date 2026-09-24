@@ -56,6 +56,7 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
           <a routerLink="/models" routerLinkActive="active" class="nav-link">Models</a>
           <a routerLink="/repomap" routerLinkActive="active" class="nav-link">Repo Map</a>
           <a routerLink="/processes" routerLinkActive="active" class="nav-link">Processes</a>
+          <a routerLink="/fleet" routerLinkActive="active" class="nav-link">Fleet</a>
           <a routerLink="/settings" routerLinkActive="active" class="nav-link">Settings</a>
         </nav>
 
@@ -125,6 +126,9 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
           </a>
           <a routerLink="/processes" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
             Spawned Processes
+          </a>
+          <a routerLink="/fleet" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
+            Fleet Accelerators
           </a>
           <a routerLink="/settings" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
             System Settings

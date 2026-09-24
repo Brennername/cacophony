@@ -7,6 +7,7 @@ import { ModelsViewComponent } from './components/views/models-view.component';
 import { RepoMapViewComponent } from './components/views/repomap-view.component';
 import { ProcessesViewComponent } from './components/views/processes-view.component';
 import { SettingsViewComponent } from './components/views/settings-view.component';
+import { FleetViewComponent } from './components/views/fleet-view.component';
 
 export const routes: Routes = [
   {
@@ -37,6 +38,10 @@ export const routes: Routes = [
   {
     path: 'processes',
     component: ProcessesViewComponent,
+  },
+  {
+    path: 'fleet',
+    component: FleetViewComponent,
   },
   {
     path: 'settings',

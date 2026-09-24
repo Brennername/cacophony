@@ -284,6 +284,60 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c3. REST API: Fleet Node Registration & Cluster Topology
+    if (url.pathname === "/api/fleet/register" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", () => {
+        try {
+          const payload = JSON.parse(body);
+          const registeredNode = {
+            nodeId: payload.nodeId || `node-${Date.now()}`,
+            hostname: payload.hostname || "remote-worker",
+            ipAddress: payload.ipAddress || "192.168.1.100",
+            port: payload.port || 24074,
+            gpuType: payload.gpuType || "AMD_VEGA",
+            vramTotalMb: payload.vramTotalMb || 16384,
+            vramUsedMb: 0,
+            gpuBusyPercent: 0,
+            temperatureCelsius: 48,
+            status: "ONLINE",
+            activeTasksCount: 0,
+            lastHeartbeat: new Date().toISOString(),
+            tokenHash: "node-auth-token-valid"
+          };
+          res.writeHead(201, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(registeredNode));
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid registration payload" }));
+        }
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/fleet/nodes" && req.method === "GET") {
+      const nodes = [
+        {
+          nodeId: "node-master-vega",
+          hostname: "cacophony-master",
+          ipAddress: "127.0.0.1",
+          port: 24072,
+          gpuType: "AMD_VEGA",
+          vramTotalMb: 16384,
+          vramUsedMb: 2150,
+          gpuBusyPercent: 18,
+          temperatureCelsius: 54,
+          status: "ONLINE",
+          activeTasksCount: 1,
+          lastHeartbeat: new Date().toISOString()
+        }
+      ];
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(nodes));
+      return;
+    }
+
     // 4d. REST API: Processes List
     if (url.pathname === "/api/processes" && req.method === "GET") {
       const processes = [

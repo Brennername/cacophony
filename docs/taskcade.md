@@ -238,28 +238,28 @@
 *RDF Category: `spec:DistributedFleetCategory`*
 
 ### T24.1: Fleet Master/Node Topology & Registration Protocol (`spec:FleetTopology`)
-- [ ] T24.1.1: Master Node Controller:
-  - [ ] T24.1.1.1: Implement `FleetMasterCoordinator` in `@cacophony/engine` acting as the central scheduler and telemetry aggregator.
-  - [ ] T24.1.1.2: Expose node registration endpoint `POST /api/fleet/register` with cryptographic node token authentication.
-  - [ ] T24.1.1.3: Maintain cluster registry table `fleet_nodes` (node_id, hostname, ip, gpu_type, vram_mb, status, last_heartbeat).
-- [ ] T24.1.2: Subservient Worker Node Daemon:
-  - [ ] T24.1.2.1: Implement lightweight headless worker daemon running on remote machines with zero UI overhead.
-  - [ ] T24.1.2.2: Establish persistent outbound WebSocket connection from worker node to master coordinator.
-  - [ ] T24.1.2.3: Stream local hardware sensors (GPU load, VRAM, temp) and task execution heartbeats back to master.
-- [ ] T24.1.3: Distributed Task Scheduling & Farm-Out Engine:
-  - [ ] T24.1.3.1: Implement task dispatcher matching task model requirements to available node hardware capabilities.
-  - [ ] T24.1.3.2: Farm out compilation, testing, and generation to remote nodes while maintaining master git branch synchronization.
-  - [ ] T24.1.3.3: Handle worker node disconnects gracefully with automatic task reassignment and thermal failover.
+- [x] T24.1.1: Master Node Controller:
+  - [x] T24.1.1.1: Implement `FleetMasterCoordinator` in `@cacophony/engine` acting as the central scheduler and telemetry aggregator.
+  - [x] T24.1.1.2: Expose node registration endpoint `POST /api/fleet/register` with cryptographic node token authentication.
+  - [x] T24.1.1.3: Maintain cluster registry table `fleet_nodes` (node_id, hostname, ip, gpu_type, vram_mb, status, last_heartbeat).
+- [x] T24.1.2: Subservient Worker Node Daemon:
+  - [x] T24.1.2.1: Implement lightweight headless worker daemon running on remote machines with zero UI overhead.
+  - [x] T24.1.2.2: Establish persistent outbound WebSocket connection from worker node to master coordinator.
+  - [x] T24.1.2.3: Stream local hardware sensors (GPU load, VRAM, temp) and task execution heartbeats back to master.
+- [x] T24.1.3: Distributed Task Scheduling & Farm-Out Engine:
+  - [x] T24.1.3.1: Implement task dispatcher matching task model requirements to available node hardware capabilities.
+  - [x] T24.1.3.2: Farm out compilation, testing, and generation to remote nodes while maintaining master git branch synchronization.
+  - [x] T24.1.3.3: Handle worker node disconnects gracefully with automatic task reassignment and thermal failover.
 
 ### T24.2: Multi-GPU Hardware Profiling Engine (`spec:HardwareProfiling`)
-- [ ] T24.2.1: Hardware Vendor Sensor Drivers:
-  - [ ] T24.2.1.1: Implement `NvidiaTelemetryProvider` querying `NVML` / `nvidia-smi` (GPU utilization, VRAM, temp, power draw).
-  - [ ] T24.2.1.2: Implement `AmdRDNAProvider` optimized for modern Radeon RX 7000/8000 series and high-end APUs.
-  - [ ] T24.2.1.3: Implement `AppleSiliconProvider` querying `powermetrics` for unified memory macOS worker nodes.
-- [ ] T24.2.2: Hardware Profile Database & Benchmark Suite:
-  - [ ] T24.2.2.1: Create automated hardware capability prober testing quantization throughput (Q4_K_M, Q8_0, FP16) on each node.
-  - [ ] T24.2.2.2: Save optimal batch sizes, context limits, and thermal thresholds per card in `hardware_profiles` table.
-  - [ ] T24.2.2.3: Expose multi-node fleet overview and hardware diagnostics in Angular dashboard route `/fleet`.
+- [x] T24.2.1: Hardware Vendor Sensor Drivers:
+  - [x] T24.2.1.1: Implement `NvidiaTelemetryProvider` querying `NVML` / `nvidia-smi` (GPU utilization, VRAM, temp, power draw).
+  - [x] T24.2.1.2: Implement `AmdRDNAProvider` optimized for modern Radeon RX 7000/8000 series and high-end APUs.
+  - [x] T24.2.1.3: Implement `AppleSiliconProvider` querying `powermetrics` for unified memory macOS worker nodes.
+- [x] T24.2.2: Hardware Profile Database & Benchmark Suite:
+  - [x] T24.2.2.1: Create automated hardware capability prober testing quantization throughput (Q4_K_M, Q8_0, FP16) on each node.
+  - [x] T24.2.2.2: Save optimal batch sizes, context limits, and thermal thresholds per card in `hardware_profiles` table.
+  - [x] T24.2.2.3: Expose multi-node fleet overview and hardware diagnostics in Angular dashboard route `/fleet`.
 
 ---
 
