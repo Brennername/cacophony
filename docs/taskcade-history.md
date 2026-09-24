@@ -843,6 +843,30 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T31.3.1.2: Write unit tests for `SystemToolScanner` verifying accurate detection of present vs missing binaries and installation command generation.
   - [x] T31.3.1.3: Run full monorepo test suite (`npm test`) asserting 100% pass rate.
 
+---
+
+## Archived Phase 32: Autonomous Continuous Arena Engine & Self-Taskcade Database Grooming
+*Completed & Verified in Phase 32 Verification Suite*
+
+### T32.1: Autonomous Taskcade Self-Grooming & In-Database Task Planning (`spec:DatabaseTaskcadeGroomer`)
+- [x] T32.1.1: Database-Native Taskcade Storage & Grooming Engine:
+  - [x] T32.1.1.1: Define `TaskcadePlanningService` in `@cacophony/engine`: parses high-level system objectives and decomposes them directly into `tasks` and `task_stages` tables in PGlite.
+  - [x] T32.1.1.2: Implement autonomous queue replenishment: when active queue drops below threshold, automatically trigger Frontier/Ollama task decomposition from backlog objectives.
+  - [x] T32.1.1.3: Provide database status sync between PGlite and `docs/taskcade.md` tracking execution lifecycle state.
+
+### T32.2: Continuous Autonomous Code Generation & Self-Healing Execution Daemon (`spec:AutonomousExecutionDaemon`)
+- [x] T32.2.1: Continuous Execution Loop Integration:
+  - [x] T32.2.1.1: Connect `TaskScheduler.setExecutionHandler` to an autonomous worker pipeline: Context Minimizer -> Ollama/Frontier Code Generation -> Deterministic Rule Pipeline -> Scoped Test Verification -> Git Checkpoint.
+  - [x] T32.2.1.2: If generation or compilation fails, automatically trigger `ClosedLoopTestRemediator` with compiler/LSP error feedback.
+  - [x] T32.2.1.3: Enable continuous background execution mode capable of running sustained multi-hour task streams safely within Vega APU thermal limits.
+
+### T32.3: Verification & Operational System Startup (`spec:ContinuousOperationalValidation`)
+- [x] T32.3.1: Verification & Startup:
+  - [x] T32.3.1.1: Verify end-to-end task execution loop with synthetic unit tasks.
+  - [x] T32.3.1.2: Run full monorepo test suite (`npm test`).
+  - [x] T32.3.1.3: Start background daemon with initial work queue.
+
+
 
 
 

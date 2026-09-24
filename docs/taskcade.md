@@ -26,30 +26,32 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 31.*
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 32.*
 
 ---
 
-## Phase 32: Autonomous Continuous Arena Engine & Self-Taskcade Database Grooming
-*RDF Category: `spec:AutonomousContinuousExecutionCategory`*
+## Phase 33: Multi-Hour Autonomous Continuous Arena Stream & Multi-Stack Self-Evolution
+*RDF Category: `spec:AutonomousMultiHourArenaCategory`*
 
-### T32.1: Autonomous Taskcade Self-Grooming & In-Database Task Planning (`spec:DatabaseTaskcadeGroomer`)
-- [ ] T32.1.1: Database-Native Taskcade Storage & Grooming Engine:
-  - [ ] T32.1.1.1: Define `TaskcadePlanningService` in `@cacophony/engine`: parses high-level system objectives and decomposes them directly into `tasks` and `task_stages` tables in PGlite.
-  - [ ] T32.1.1.2: Implement autonomous queue replenishment: when active queue drops below threshold, automatically trigger Frontier/Ollama task decomposition from backlog objectives.
-  - [ ] T32.1.1.3: Provide database status sync between PGlite and `docs/taskcade.md` tracking execution lifecycle state.
+### T33.1: Sustained Multi-Hour Autonomous Task Execution Stream (`spec:SustainedTaskStream`)
+- [ ] T33.1.1: Multi-Hour Arena Autonomous Workstream:
+  - [ ] T33.1.1.1: Seed `TaskcadePlanningService` with comprehensive engineering backlog (3+ hours estimated runtime across multi-language benchmarks, AST refactoring, and deterministic scrub tests).
+  - [ ] T33.1.1.2: Enforce ThermalGovernor throttling and Vega APU VRAM headroom preservation during long continuous runs.
+  - [ ] T33.1.1.3: Continuous queue replenishment: autonomously ingest tasks from Gitea issues, internal backlog, and failure retries without manual operator intervention.
 
-### T32.2: Continuous Autonomous Code Generation & Self-Healing Execution Daemon (`spec:AutonomousExecutionDaemon`)
-- [ ] T32.2.1: Continuous Execution Loop Integration:
-  - [ ] T32.2.1.1: Connect `TaskScheduler.setExecutionHandler` to an autonomous worker pipeline: Context Minimizer -> Ollama/Frontier Code Generation -> Deterministic Rule Pipeline -> Scoped Test Verification -> Git Checkpoint.
-  - [ ] T32.2.1.2: If generation or compilation fails, automatically trigger `ClosedLoopTestRemediator` with compiler/LSP error feedback.
-  - [ ] T32.2.1.3: Enable continuous background execution mode capable of running sustained multi-hour task streams safely within Vega APU thermal limits.
+### T33.2: Multi-Stack Profile Expansion & Cross-Language AST Verification (`spec:MultiStackAstVerification`)
+- [ ] T33.2.1: Multi-Stack Benchmark Tasks:
+  - [ ] T33.2.1.1: Java/Maven micro-benchmark task: compile and verify Java AST interface signatures and JUnit test execution.
+  - [ ] T33.2.1.2: Go struct signature harvesting and unit test runner integration.
+  - [ ] T33.2.1.3: TypeScript NodeNext vs Bundler dynamic stack switching verification.
 
-### T32.3: Verification & Operational System Startup (`spec:ContinuousOperationalValidation`)
-- [ ] T32.3.1: Verification & Startup:
-  - [ ] T32.3.1.1: Verify end-to-end task execution loop with synthetic unit tasks.
-  - [ ] T32.3.1.2: Run full monorepo test suite (`npm test`).
-  - [ ] T32.3.1.3: Start background daemon with initial work queue.
+### T33.3: Operational Runbook & Background Process Supervisor (`spec:ProcessSupervisorValidation`)
+- [ ] T33.3.1: Daemon Lifecycle & Live Dashboard Monitoring:
+  - [ ] T33.3.1.1: Launch Cacophony engine background daemon (`bin/cacophony start --daemon`).
+  - [ ] T33.3.1.2: Verify HTTP server listening on port 24161 and serving live Angular dashboard.
+  - [ ] T33.3.1.3: Verify SSE event stream `/api/events` actively broadcasting sensor telemetry and execution stage progress.
+
+
 
 
 

@@ -12,4 +12,6 @@ export * from "./ModelRegistry.js";
 export * from "./OpenAiCompatibleProvider.js";
 export * from "./SessionCompactor.js";
 export * from "./SessionManager.js";
+export * from "./TaskcadePlanningService.js";
+
 

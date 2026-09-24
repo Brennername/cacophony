@@ -7,4 +7,6 @@ export * from "./TaskScheduler.js";
 export * from "./stack/IStackProfile.js";
 export * from "./stack/defaultProfiles.js";
 export * from "./stack/StackDetector.js";
+export * from "./AutonomousWorkerPipeline.js";
+
 

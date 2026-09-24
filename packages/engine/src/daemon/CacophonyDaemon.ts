@@ -93,7 +93,7 @@ export class CacophonyDaemon {
     });
     this.telemetryPoller.start();
 
-    // 4. Single-Concurrency Task Scheduler
+    // 4. Single-Concurrency Task Scheduler & Autonomous Worker Pipeline
     const evictionManager = new ModelEvictionManager(this.healthRepo);
     const governor = new ThermalGovernor();
     const groomer = new QueueGroomer();
@@ -107,7 +107,28 @@ export class CacophonyDaemon {
       governor
     });
 
+    // Wire real worker pipeline with Ollama, ContextMinimizer, SelfHealingParser, and RulePipelineEngine
+    const { OllamaProvider } = await import("../inference/OllamaProvider.js");
+    const { ContextMinimizer } = await import("../inference/ContextMinimizer.js");
+    const { SelfHealingParser } = await import("../inference/SelfHealingParser.js");
+    const { RulePipelineEngine } = await import("../rules/RulePipelineEngine.js");
+    const { AutonomousWorkerPipeline } = await import("../scheduler/AutonomousWorkerPipeline.js");
+
+    const ollama = new OllamaProvider();
+    const minimizer = new ContextMinimizer(process.cwd());
+    const parser = new SelfHealingParser();
+    const ruleEngine = new RulePipelineEngine();
+    const worker = new AutonomousWorkerPipeline({
+      workspaceRoot: process.cwd(),
+      ollamaProvider: ollama,
+      contextMinimizer: minimizer,
+      parser,
+      ruleEngine
+    });
+
+    this.scheduler.setExecutionHandler((groomed, model) => worker.executeTask(groomed, model));
     this.scheduler.start(this.config.pollIntervalMs || 2000);
+
 
     // 5. IPC Server for CLI and Container Control
     this.ipcServer = new DaemonIPCServer({
