@@ -26,43 +26,7 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 38.*
-
----
-
-## Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints
-*RDF Category: *
-
-### T39.1: Autonomous Git Worktree Allocation & Ephemeral Branch Isolation
-  - [ ] T39.1.1: Implement GitWorktreeManager in packages/engine/src/git/ creating isolated git worktrees per task under workspaces/worktree-<taskId>.
-  - [ ] T39.1.2: Enforce branch naming convention: task/<priority>-<taskId>-<slug> branching off targetBranch (default main).
-  - [ ] T39.1.3: Implement automated cleanup: prune worktree directories and branches when task reaches terminal state (COMPLETED or FAILED after retries).
-  - [ ] T39.1.4: Write unit tests verifying clean git worktree creation, commit isolation, and worktree removal.
-
-### T39.2: Gitea Automated PR Creation & Inline Review Remediation Loop
-  - [ ] T39.2.1: Implement AutomatedPrPublisher in packages/engine/src/gitea/ pushing branch to Gitea and creating Pull Request with structured task summary.
-  - [ ] T39.2.2: Implement GiteaWebhookDispatcher handling pull_request and pull_request_review webhooks on port 24161.
-  - [ ] T39.2.3: When PR review request changes is received, automatically dispatch remediation task targeting the existing PR branch.
-  - [ ] T39.2.4: When PR review is APPROVED, trigger automated squash-and-merge via Gitea API and mark task COMPLETED.
-
-
----
-
-## Phase 40: Mobile-First UI Density, Multi-Theme Palettes & Interactive Drill-Downs
-*RDF Category: *
-
-### T40.1: Deep Multi-Level Drill-Down Views for Tasks, History & Telemetry
-  - [ ] T40.1.1: Enhance TaskDetailModalComponent with tabbed sub-views: Overview, Stages & Timings, Code Diffs, Full Stream Log, Test Stderr.
-  - [ ] T40.1.2: Add copy-to-clipboard actions for prompt, diff, test command, and terminal logs.
-  - [ ] T40.1.3: Implement direct task URL routing (/tasks/:id) so any task or history item can be directly bookmarked and shared.
-  - [ ] T40.1.4: Ensure all modal dialogs and drill-down panels have touch-friendly close buttons and escape key listeners complying with mobile-first standards.
-
-### T40.2: Curated Color Theme Palettes & Dynamic Dark/Light Mode
-  - [ ] T40.2.1: Add theme definitions in packages/frontend/src/styles.css for OLED Dark, Nord, Cyberpunk Charcoal, and Minimalist Light.
-  - [ ] T40.2.2: Update ThemeService to store active theme in localStorage and toggle between dark, light, and high-contrast modes.
-  - [ ] T40.2.3: Verify contrast ratios meet WCAG AA standards (> 4.5:1 for body text, > 3:1 for badges and gauges) across all themes.
-  - [ ] T40.2.4: Add visual theme selector in top navigation bar and Settings page.
-
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 40.*
 
 ---
 

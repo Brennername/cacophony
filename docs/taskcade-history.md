@@ -990,5 +990,36 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T38.2.3: Expose REST endpoint GET /api/analytics/failures returning historical failure cause distributions across models and roles.
   - [x] T38.2.4: Feed classified failure context into ClosedLoopTestRemediator prompt for targeted one-shot error repair.
 
+---
 
+## Archived Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints
+*Completed & Verified in Commit: `c7d01a3`*
 
+### T39.1: Autonomous Git Worktree Allocation & Ephemeral Branch Isolation
+  - [x] T39.1.1: Implement GitWorktreeManager in packages/engine/src/git/ creating isolated git worktrees per task under workspaces/worktree-<taskId>.
+  - [x] T39.1.2: Enforce branch naming convention: task/<priority>-<taskId>-<slug> branching off targetBranch (default main).
+  - [x] T39.1.3: Implement automated cleanup: prune worktree directories and branches when task reaches terminal state (COMPLETED or FAILED after retries).
+  - [x] T39.1.4: Write unit tests verifying clean git worktree creation, commit isolation, and worktree removal.
+
+### T39.2: Gitea Automated PR Creation & Inline Review Remediation Loop
+  - [x] T39.2.1: Implement AutomatedPrPublisher in packages/engine/src/gitea/ pushing branch to Gitea and creating Pull Request with structured task summary.
+  - [x] T39.2.2: Implement GiteaWebhookDispatcher handling pull_request and pull_request_review webhooks on port 24161.
+  - [x] T39.2.3: When PR review request changes is received, automatically dispatch remediation task targeting the existing PR branch.
+  - [x] T39.2.4: When PR review is APPROVED, trigger automated squash-and-merge via Gitea API and mark task COMPLETED.
+
+---
+
+## Archived Phase 40: Mobile-First UI Density, Multi-Theme Palettes & Interactive Drill-Downs
+*Completed & Verified in Commit: `ab7712f`*
+
+### T40.1: Deep Multi-Level Drill-Down Views for Tasks, History & Telemetry
+  - [x] T40.1.1: Enhance TaskDetailModalComponent with tabbed sub-views: Overview, Stages & Timings, Code Diffs, Full Stream Log, Test Stderr.
+  - [x] T40.1.2: Add copy-to-clipboard actions for prompt, diff, test command, and terminal logs.
+  - [x] T40.1.3: Implement direct task URL routing (/tasks/:id) so any task or history item can be directly bookmarked and shared.
+  - [x] T40.1.4: Ensure all modal dialogs and drill-down panels have touch-friendly close buttons and escape key listeners complying with mobile-first standards.
+
+### T40.2: Curated Color Theme Palettes & Dynamic Dark/Light Mode
+  - [x] T40.2.1: Add theme definitions in packages/frontend/src/styles.css for OLED Dark, Nord, Cyberpunk Charcoal, and Minimalist Light.
+  - [x] T40.2.2: Update ThemeService to store active theme in localStorage and toggle between dark, light, and high-contrast modes.
+  - [x] T40.2.3: Verify contrast ratios meet WCAG AA standards (> 4.5:1 for body text, > 3:1 for badges and gauges) across all themes.
+  - [x] T40.2.4: Add visual theme selector in top navigation bar and Settings page.
