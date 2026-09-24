@@ -2,6 +2,7 @@ import * as http from "node:http";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type { CacophonyDaemon } from "./CacophonyDaemon.js";
+import { AuthService } from "../auth/AuthService.js";
 
 export interface UnifiedServerConfig {
   readonly httpPort?: number;
@@ -21,10 +22,15 @@ export class CacophonyHttpServer {
   private server: http.Server | null = null;
   private readonly sseClients: Set<http.ServerResponse> = new Set();
   private sseInterval: NodeJS.Timeout | null = null;
+  private untapListener: (() => void) | null = null;
+  private readonly authService: AuthService;
 
   constructor(daemon: CacophonyDaemon, config: UnifiedServerConfig = {}) {
     this.daemon = daemon;
     this.config = config;
+    this.authService = new AuthService({
+      userSessionRepo: daemon.getUserSessionRepository()
+    });
   }
 
   public async start(): Promise<void> {
@@ -41,6 +47,26 @@ export class CacophonyHttpServer {
       });
     });
 
+    // Tap live LLM stream and forward tokens to SSE clients
+    const streamTap = this.daemon.getStreamTapManager();
+    if (streamTap) {
+      this.untapListener = streamTap.tap((event) => {
+        const payload = `data: ${JSON.stringify({
+          type: "token",
+          taskId: event.taskId,
+          token: event.token,
+          timestamp: event.timestamp
+        })}\n\n`;
+        for (const client of this.sseClients) {
+          try {
+            client.write(payload);
+          } catch {
+            this.sseClients.delete(client);
+          }
+        }
+      });
+    }
+
     // Start periodic SSE telemetry broadcast
     this.sseInterval = setInterval(() => {
       this.broadcastTelemetry();
@@ -48,6 +74,11 @@ export class CacophonyHttpServer {
   }
 
   public async stop(): Promise<void> {
+    if (this.untapListener) {
+      this.untapListener();
+      this.untapListener = null;
+    }
+
     if (this.sseInterval) {
       clearInterval(this.sseInterval);
       this.sseInterval = null;
@@ -124,6 +155,21 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 1c2. REST API: Accelerator Device Grid Enumeration
+    if (url.pathname === "/api/system" && req.method === "GET") {
+      try {
+        const { GpuDeviceManager } = await import("../hardware/GpuDeviceManager.js");
+        const manager = new GpuDeviceManager();
+        const devices = await manager.discoverDevices();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ accelerators: devices }));
+      } catch (err: unknown) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ accelerators: [] }));
+      }
+      return;
+    }
+
 
     // 1. SSE Real-Time Stream
     if (url.pathname === "/api/events" && req.method === "GET") {
@@ -138,6 +184,52 @@ export class CacophonyHttpServer {
       req.on("close", () => {
         this.sseClients.delete(res);
       });
+      return;
+    }
+
+    // 1d. REST API: Historical Telemetry Query with Bucketing
+    if (url.pathname === "/api/telemetry/history" && req.method === "GET") {
+      const windowStr = url.searchParams.get("window") || "1h";
+      let windowMs = 3600_000;
+      if (windowStr.endsWith("h")) {
+        windowMs = Number(windowStr.slice(0, -1)) * 3600_000;
+      } else if (windowStr.endsWith("m")) {
+        windowMs = Number(windowStr.slice(0, -1)) * 60_000;
+      } else if (windowStr.endsWith("d")) {
+        windowMs = Number(windowStr.slice(0, -1)) * 86400_000;
+      }
+      const sinceIso = new Date(Date.now() - windowMs).toISOString();
+      const telemetryRepo = (this.daemon as any).telemetryRepo;
+      let history;
+      if (telemetryRepo?.getAggregatedHistory) {
+        history = await telemetryRepo.getAggregatedHistory(sinceIso);
+      } else {
+        history = {
+          count: 0,
+          avgGpuBusy: 0,
+          peakGpuBusy: 0,
+          avgTempC: 0,
+          peakTempC: 0,
+          avgPowerWatts: 0,
+          peakPowerWatts: 0
+        };
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(history));
+      return;
+    }
+
+    // 1e. OpenMetrics / Prometheus Metrics Scraping Endpoint
+    if (url.pathname === "/metrics" && req.method === "GET") {
+      const { PrometheusMetricsExporter } = await import("../telemetry/PrometheusMetricsExporter.js");
+      const exporter = new PrometheusMetricsExporter({
+        telemetryPoller: this.daemon.getTelemetryPoller(),
+        taskRepo: this.daemon.getTaskRepository(),
+        modelHealthRepo: this.daemon.getModelHealthRepository()
+      });
+      const metricsText = await exporter.getMetricsText();
+      res.writeHead(200, { "Content-Type": "text/plain; version=0.0.4; charset=utf-8" });
+      res.end(metricsText);
       return;
     }
 
@@ -179,6 +271,55 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 2c. REST API: OIDC OpenID Configuration Discovery
+    if (url.pathname === "/api/auth/openid-configuration" && req.method === "GET") {
+      const config = await this.authService.getOidcConfiguration();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(config));
+      return;
+    }
+
+    // 2d. REST API: User Session Refresh
+    if (url.pathname === "/api/auth/refresh" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const refreshed = await this.authService.refreshSession(payload.sessionId);
+          if (!refreshed) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Session invalid or expired" }));
+            return;
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(refreshed));
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid refresh payload" }));
+        }
+      });
+      return;
+    }
+
+    // 2e. REST API: User Logout & Revocation
+    if (url.pathname === "/api/auth/logout" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const result = await this.authService.logout(payload.sessionId || "");
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, logoutUrl: result.logoutUrl }));
+        } catch {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+        }
+      });
+      return;
+    }
+
     // 3. REST API: List Tasks
     if (url.pathname === "/api/tasks" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();
@@ -190,6 +331,18 @@ export class CacophonyHttpServer {
 
     // 4. REST API: Enqueue Task
     if (url.pathname === "/api/tasks" && req.method === "POST") {
+      // Check authorization header if auth is active
+      const authHeader = req.headers["authorization"] || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token && process.env["REQUIRE_AUTH"] === "true") {
+        const authCtx = await this.authService.authenticateToken(token);
+        if (!authCtx || !this.authService.isAuthorized(authCtx, "OPERATOR")) {
+          res.writeHead(403, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Forbidden: Mutating tasks requires OPERATOR role" }));
+          return;
+        }
+      }
+
       let body = "";
       req.on("data", (chunk) => {
         body += chunk;
@@ -226,6 +379,24 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4a1. REST API: GET /api/tasks/:id - Detailed Task Record with Stages
+    const taskDetailMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)$/);
+    if (taskDetailMatch && req.method === "GET") {
+      const taskId = taskDetailMatch[1]!;
+      const taskRepo = this.daemon.getTaskRepository();
+      const task = await taskRepo.getById(taskId);
+      if (!task) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: `Task '${taskId}' not found` }));
+        return;
+      }
+      const stageRepo = this.daemon.getStageRepository();
+      const stages = await stageRepo.getStagesForTask(taskId);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ...task, stages }));
+      return;
+    }
+
     // 4a2. REST API: GET /api/tasks/:id/gantt - Stage & Process Gantt Timeline Spans
     const ganttMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/gantt$/);
     if (ganttMatch && req.method === "GET") {
@@ -251,7 +422,7 @@ export class CacophonyHttpServer {
     // 4b. REST API: List Historical Completed/Failed Tasks
     if (url.pathname === "/api/history" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();
-      const allTasks = await taskRepo.listPending();
+      const allTasks = await taskRepo.listRecent(50);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(allTasks));
       return;
@@ -270,6 +441,17 @@ export class CacophonyHttpServer {
       }));
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(leaderboard));
+      return;
+    }
+
+    // 4c1. REST API: Model Telemetry Efficiency Analytics
+    if (url.pathname === "/api/analytics/models" && req.method === "GET") {
+      const { TelemetryCorrelationService } = await import("../telemetry/TelemetryCorrelationService.js");
+      const correlationRepo = (this.daemon as any).correlationRepo;
+      const service = new TelemetryCorrelationService(correlationRepo);
+      const scores = await service.getModelEfficiencyScores();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(scores));
       return;
     }
 
@@ -448,20 +630,31 @@ export class CacophonyHttpServer {
 
   private broadcastTelemetry(): void {
     const latest = this.daemon.getTelemetryPoller()?.getLatest();
+    const gpu = latest?.gpu;
+    const vramUsedMb = gpu ? Math.round(gpu.vramUsedBytes / (1024 * 1024)) : 0;
+    const vramTotalMb = gpu ? Math.round(gpu.vramTotalBytes / (1024 * 1024)) : 0;
+    const vramAvailMb = Math.max(0, vramTotalMb - vramUsedMb);
+    const vramPercent = gpu ? gpu.vramPercent : 0;
+
     const data = JSON.stringify({
       type: "telemetry",
       timestamp: new Date().toISOString(),
-      gpuBusy: latest?.gpu.gpuBusyPercent ?? 18,
-      vramUsedMb: latest?.gpu.vramUsedBytes ? Math.round(latest.gpu.vramUsedBytes / (1024 * 1024)) : 2150,
-      vramTotalMb: latest?.gpu.vramTotalBytes ? Math.round(latest.gpu.vramTotalBytes / (1024 * 1024)) : 16384,
-      gttUsedMb: latest?.gpu.gttUsedBytes ? Math.round(latest.gpu.gttUsedBytes / (1024 * 1024)) : 4120,
-      gttTotalMb: latest?.gpu.gttTotalBytes ? Math.round(latest.gpu.gttTotalBytes / (1024 * 1024)) : 16384,
-      edgeTempCelsius: latest?.gpu.edgeTempCelsius ?? 58.4,
+      gpuBusy: gpu?.gpuBusyPercent ?? 0,
+      vramUsedMb,
+      vramTotalMb,
+      vramAvailMb,
+      vramPercent,
+      gttUsedMb: gpu ? Math.round(gpu.gttUsedBytes / (1024 * 1024)) : 0,
+      gttTotalMb: gpu ? Math.round(gpu.gttTotalBytes / (1024 * 1024)) : 0,
+      edgeTempCelsius: gpu?.edgeTempCelsius ?? 0,
       thermalZone: (latest?.thermalZone ?? "Nominal").toLowerCase(),
-      vddgfxMv: latest?.gpu.vddgfxMilliVolts ?? 785,
-      pptPowerW: latest?.gpu.pptWatts ?? 24.2,
-      sclkMhz: latest?.gpu.sclkMhz ?? 1200,
-      activeModel: latest?.activeModel?.name ?? "qwen2.5-coder:7b"
+      vddgfxMv: gpu?.vddgfxMilliVolts ?? 0,
+      socMv: gpu?.socMilliVolts ?? 0,
+      vddnbMv: gpu?.vddnbMilliVolts ?? gpu?.socMilliVolts ?? 0,
+      pptPowerW: gpu?.pptWatts ?? 0,
+      sclkMhz: gpu?.sclkMhz ?? 0,
+      mclkMhz: gpu?.mclkMhz ?? 0,
+      activeModel: latest?.activeModel?.name ?? "None"
     });
 
     const payload = `data: ${data}\n\n`;

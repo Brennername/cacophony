@@ -17,8 +17,9 @@ import { ArenaStateStore } from '../../services/arena-state.store';
         <div>
           <h2>Task Queue & Scheduling</h2>
           <span class="subtext">{{ pendingCount() }} tasks pending</span>
+          <span class="role-pill">{{ currentUserRole() }}</span>
         </div>
-        <div class="actions">
+        <div class="actions" *ngIf="canMutateTasks()">
           <button
             class="btn"
             [ngClass]="schedulerPaused() ? 'btn-primary' : 'btn-outline'"
@@ -29,8 +30,8 @@ import { ArenaStateStore } from '../../services/arena-state.store';
         </div>
       </div>
 
-      <!-- Add Task Form -->
-      <form class="add-form" (ngSubmit)="submitTask()">
+      <!-- Add Task Form (Restricted to OPERATOR and ADMIN) -->
+      <form class="add-form" *ngIf="canMutateTasks()" (ngSubmit)="submitTask()">
         <input
           type="text"
           class="input-title"
@@ -53,7 +54,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       <!-- Task List -->
       <div class="task-list">
         @for (task of tasks(); track task.id; let idx = $index) {
-          <div class="task-row">
+          <div class="task-row clickable" (click)="drillDown(task)">
             <div class="priority-col">
               <span class="tag" [ngClass]="task.priority">{{ task.priority }}</span>
             </div>
@@ -105,6 +106,18 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     .subtext {
       font-size: 0.8125rem;
       color: var(--text-muted);
+    }
+
+    .role-pill {
+      display: inline-block;
+      margin-left: 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: var(--color-brand);
+      color: var(--color-brand-contrast);
     }
 
     .add-form {
@@ -208,6 +221,16 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       color: var(--text-primary);
     }
 
+    .task-row.clickable {
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .task-row.clickable:hover {
+      background: var(--bg-surface);
+      border-color: var(--color-brand);
+    }
+
     .icon-btn:disabled {
       opacity: 0.3;
       cursor: not-allowed;
@@ -219,9 +242,15 @@ export class QueueManagerComponent {
   public readonly tasks = this.store.tasks;
   public readonly pendingCount = this.store.pendingCount;
   public readonly schedulerPaused = this.store.schedulerPaused;
+  public readonly canMutateTasks = this.store.canMutateTasks;
+  public readonly currentUserRole = this.store.currentUserRole;
 
   public newTitle = signal<string>('');
   public newPriority = signal<'P0' | 'P1' | 'P2'>('P1');
+
+  public drillDown(task: any): void {
+    void this.store.selectTask(task);
+  }
 
   public toggleScheduler(): void {
     this.store.toggleScheduler();

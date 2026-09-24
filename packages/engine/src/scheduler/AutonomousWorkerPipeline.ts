@@ -4,6 +4,7 @@ import type { ContextMinimizer } from "../inference/ContextMinimizer.js";
 import type { SelfHealingParser } from "../inference/SelfHealingParser.js";
 import type { RulePipelineEngine } from "../rules/RulePipelineEngine.js";
 import type { RulePipelineDeclaration } from "@cacophony/shared-types";
+import type { StreamTapManager } from "../inference/StreamTapManager.js";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import fs from "node:fs/promises";
@@ -17,6 +18,7 @@ export interface AutonomousWorkerPipelineOptions {
   readonly contextMinimizer: ContextMinimizer;
   readonly parser: SelfHealingParser;
   readonly ruleEngine: RulePipelineEngine;
+  readonly streamTapManager?: StreamTapManager;
   readonly defaultPipeline?: RulePipelineDeclaration;
 }
 
@@ -25,7 +27,7 @@ export interface AutonomousWorkerPipelineOptions {
  *
  * Implements the concrete autonomous execution handler for TaskScheduler:
  * 1. Minimizes context and prepares prompt payload via ContextMinimizer.
- * 2. Invokes local Ollama model with keep_alive=-1.
+ * 2. Invokes local Ollama model with keep_alive=-1 and live token streaming.
  * 3. Validates and extracts code via SelfHealingParser.
  * 4. Applies deterministic rule repair pipeline (stripping emojis, ESM extensions, whitespace).
  * 5. Writes modifications to disk.
@@ -37,6 +39,7 @@ export class AutonomousWorkerPipeline {
   private readonly minimizer: ContextMinimizer;
   private readonly parser: SelfHealingParser;
   private readonly ruleEngine: RulePipelineEngine;
+  private readonly streamTapManager: StreamTapManager | undefined;
   private readonly defaultPipeline: RulePipelineDeclaration;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
@@ -45,6 +48,7 @@ export class AutonomousWorkerPipeline {
     this.minimizer = options.contextMinimizer;
     this.parser = options.parser;
     this.ruleEngine = options.ruleEngine;
+    this.streamTapManager = options.streamTapManager;
     this.defaultPipeline = options.defaultPipeline ?? {
       id: "pipeline_autonomous_standard",
       name: "Standard Autonomous Code Pipeline",
@@ -52,9 +56,9 @@ export class AutonomousWorkerPipeline {
         {
           hook: "post_generation",
           rules: [
-            { ruleId: "rule_strip_emojis", severity: "silent_repair" },
-            { ruleId: "rule_enforce_esm_js", severity: "silent_repair" },
-            { ruleId: "rule_whitespace_eol", severity: "silent_repair" }
+            { ruleId: "strip_emojis", severity: "silent_repair" },
+            { ruleId: "enforce_esm_js", severity: "silent_repair" },
+            { ruleId: "whitespace_normalizer", severity: "silent_repair" }
           ]
         }
       ]
@@ -66,22 +70,41 @@ export class AutonomousWorkerPipeline {
    */
   public async executeTask(groomed: GroomedTask, selectedModel: string): Promise<boolean> {
     try {
-      // 1. Context Minimization
+      if (this.streamTapManager) {
+        this.streamTapManager.setActiveTask(groomed.task.id);
+      }
+
+      // 1. Context Minimization with adaptive format instruction
       const focusFiles = groomed.focusFiles;
+      const targetRel = focusFiles[0];
+      const formatter = typeof this.parser.getFormatter === "function" ? this.parser.getFormatter() : null;
+      const formatInstruction = formatter
+        ? formatter.getFormatInstruction(true, targetRel)
+        : "[OUTPUT FORMAT REQUIREMENT]: Provide valid code enclosed in markdown code fences.";
+      const directives = [...groomed.stackProfile.directives, formatInstruction];
       const context = this.minimizer.assembleContext(
         groomed.enrichedPrompt,
         focusFiles,
-        groomed.stackProfile.directives
+        directives
       );
 
-      // 2. Generation with Self-Healing Parser
-      const parseResult = await this.parser.executeWithSelfHealing(this.provider, {
-        model: selectedModel,
-        messages: [{ role: "user", content: context.assembledPrompt }],
-        temperature: 0.1
-      });
+      // 2. Generation with Self-Healing Parser and Live Token Emission
+      const parseResult = await this.parser.executeWithSelfHealing(
+        this.provider,
+        {
+          model: selectedModel,
+          messages: [{ role: "user", content: context.assembledPrompt }],
+          temperature: 0.1
+        },
+        (chunk) => {
+          if (this.streamTapManager) {
+            this.streamTapManager.emitToken(groomed.task.id, chunk);
+          }
+        }
+      );
 
       if (!parseResult.code) {
+        console.error(`[AutonomousWorkerPipeline] No code block extracted for task '${groomed.enrichedPrompt.slice(0, 40)}'`);
         return false;
       }
 
@@ -107,6 +130,7 @@ export class AutonomousWorkerPipeline {
         );
 
         if (outcome.hardRejected) {
+          console.error(`[AutonomousWorkerPipeline] Rule engine hard rejected task: ${outcome.rejections.map(r => r.message).join(", ")}`);
           return false;
         }
 
@@ -122,13 +146,15 @@ export class AutonomousWorkerPipeline {
             cwd: this.workspaceRoot,
             timeout: 60000
           });
-        } catch {
+        } catch (testErr) {
+          console.error(`[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}':`, testErr);
           return false;
         }
       }
 
       return true;
-    } catch {
+    } catch (err) {
+      console.error(`[AutonomousWorkerPipeline] Execution error for task '${groomed.enrichedPrompt.slice(0, 40)}':`, err);
       return false;
     }
   }

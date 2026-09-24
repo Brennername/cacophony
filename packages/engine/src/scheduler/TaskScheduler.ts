@@ -117,7 +117,8 @@ export class TaskScheduler {
       return null;
     }
 
-    const pending = await this.taskRepo.listPending();
+    const allPending = await this.taskRepo.listPending();
+    const pending = allPending.filter((t) => t.status !== "RUNNING");
     if (pending.length === 0) {
       if (this.drainMode) {
         this.stop();
@@ -140,10 +141,19 @@ export class TaskScheduler {
       // 4. Groom task (resolve focus files, scope test command, inject architectural directives)
       const groomed = this.groomer.groom(targetTask);
 
-      // 5. Select Model with Eviction & Weighted Random Roulette
-      const candidateList = targetTask.modelAssigned
+      let candidateList = targetTask.modelAssigned
         ? [targetTask.modelAssigned]
-        : ["qwen2.5-coder:7b", "deepseek-r1:8b", "gemma3:4b"];
+        : ["deepseek-r1:8b", "qwen2.5-coder:3b", "qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat"];
+
+      // Telemetry heuristic: If APU temperature is warm or elevated (>= 75C), prefer cooler-running lighter model
+      try {
+        const sample = await this.telemetryProvider.sample();
+        if (sample.edgeTempCelsius >= 75 && !targetTask.modelAssigned) {
+          candidateList = ["qwen2.5-coder:3b", "gemma3:4b-it-qat"];
+        }
+      } catch {
+        // ignore
+      }
 
       const selectedModel = await this.evictionManager.selectModel(
         targetTask.role as AgentRole,
@@ -155,6 +165,7 @@ export class TaskScheduler {
       await this.governor.enforcePacing(this.telemetryProvider);
 
       // 7. Transition task state to RUNNING
+      console.log(`[TaskScheduler] Dispatching task ${targetTask.id} ('${targetTask.title}') to model '${selectedModel}'`);
       await this.taskRepo.updateStatus(targetTask.id, "RUNNING");
       await this.taskRepo.updateModel(targetTask.id, selectedModel);
 
@@ -167,6 +178,7 @@ export class TaskScheduler {
           const success = await this.executionHandler(groomed, selectedModel);
           const durationMs = Date.now() - stageStartMs;
           const finalStatus = success ? "COMPLETED" : "FAILED";
+          console.log(`[TaskScheduler] Task ${targetTask.id} finished with status ${finalStatus} in ${durationMs}ms`);
           await this.taskRepo.updateStatus(targetTask.id, finalStatus);
           await this.stageRepo.recordStageCompletion(
             stageId,
@@ -182,6 +194,7 @@ export class TaskScheduler {
           }
         } catch (err) {
           const durationMs = Date.now() - stageStartMs;
+          console.error(`[TaskScheduler] Task ${targetTask.id} threw error after ${durationMs}ms:`, err);
           await this.taskRepo.updateStatus(targetTask.id, "FAILED");
           await this.taskRepo.incrementFailure(targetTask.id);
           await this.stageRepo.recordStageCompletion(

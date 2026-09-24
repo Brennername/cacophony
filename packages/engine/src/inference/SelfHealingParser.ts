@@ -27,6 +27,10 @@ export class SelfHealingParser {
     this.maxRetries = maxRetries;
   }
 
+  public getFormatter(): AdaptiveOutputFormatter {
+    return this.formatter;
+  }
+
   /**
    * Inspects model output for structural compliance and extracted code.
    */
@@ -99,17 +103,17 @@ export class SelfHealingParser {
    */
   public async executeWithSelfHealing(
     provider: IInferenceProvider,
-    baseRequest: InferenceRequest
+    baseRequest: InferenceRequest,
+    onChunk?: (chunk: string) => void
   ): Promise<{ readonly code: string; readonly attempts: number; readonly rawOutput: string }> {
     const messages: ChatMessage[] = [...baseRequest.messages];
     let attempts = 0;
 
     while (attempts < this.maxRetries) {
       attempts++;
-      const response = await provider.generate({
-        ...baseRequest,
-        messages
-      });
+      const response = onChunk
+        ? await provider.stream({ ...baseRequest, messages }, onChunk)
+        : await provider.generate({ ...baseRequest, messages });
 
       const validation = this.validate(response.content);
       if (validation.valid && validation.code) {

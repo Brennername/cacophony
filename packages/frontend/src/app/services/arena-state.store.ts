@@ -4,14 +4,29 @@ export interface TelemetryMetrics {
   gpuBusyPercent: number;
   vramUsedMb: number;
   vramTotalMb: number;
+  vramAvailMb: number;
+  vramPercent: number;
   gttUsedMb: number;
   gttTotalMb: number;
   edgeTempCelsius: number;
   thermalZone: 'nominal' | 'warm' | 'elevated' | 'danger';
   vddgfxMv: number;
+  socMv: number;
+  vddnbMv: number;
   pptPowerW: number;
   sclkMhz: number;
+  mclkMhz: number;
   activeModel: string;
+}
+
+export interface TaskStageItem {
+  id: string;
+  stageName: string;
+  stageStatus: string;
+  startedAt: string;
+  completedAt: string | null;
+  durationMs: number | null;
+  logOutput?: string | null;
 }
 
 export interface TaskItem {
@@ -20,10 +35,16 @@ export interface TaskItem {
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'REMEDIATED';
   priority: 'P0' | 'P1' | 'P2';
   role: string;
+  prompt?: string;
+  modelAssigned?: string | null;
+  testCommand?: string | null;
+  focusFiles?: string | null;
+  prUrl?: string | null;
   currentStage?: string;
   tokensPerSec?: number;
   logSnippet?: string;
   progressPercent?: number;
+  stages?: TaskStageItem[];
 }
 
 export interface ProcessItem {
@@ -41,18 +62,29 @@ export interface ProcessItem {
   providedIn: 'root',
 })
 export class ArenaStateStore {
+  // Live Terminal Stream Buffer
+  public readonly liveStreamBuffer = signal<string>('');
+
+  // Selected Task for Drill-Down Modal
+  public readonly selectedTask = signal<TaskItem | null>(null);
+
   // Telemetry Signal initialized with zero/clean state
   public readonly telemetry = signal<TelemetryMetrics>({
     gpuBusyPercent: 0,
     vramUsedMb: 0,
     vramTotalMb: 16384,
+    vramAvailMb: 16384,
+    vramPercent: 0,
     gttUsedMb: 0,
     gttTotalMb: 16384,
     edgeTempCelsius: 0,
     thermalZone: 'nominal',
     vddgfxMv: 0,
+    socMv: 0,
+    vddnbMv: 0,
     pptPowerW: 0,
     sclkMhz: 0,
+    mclkMhz: 0,
     activeModel: 'None',
   });
 
@@ -64,6 +96,16 @@ export class ArenaStateStore {
 
   // Scheduler control signal
   public readonly schedulerPaused = signal<boolean>(false);
+
+  // User Role & Permissions (ADMIN, OPERATOR, VIEWER)
+  public readonly currentUserRole = signal<'ADMIN' | 'OPERATOR' | 'VIEWER'>('OPERATOR');
+
+  public readonly canMutateTasks = computed(() => {
+    const role = this.currentUserRole();
+    return role === 'ADMIN' || role === 'OPERATOR';
+  });
+
+  public readonly isAdmin = computed(() => this.currentUserRole() === 'ADMIN');
 
   private eventSource: EventSource | null = null;
 
@@ -85,20 +127,37 @@ export class ArenaStateStore {
               gpuBusyPercent: data.gpuBusy ?? 0,
               vramUsedMb: data.vramUsedMb ?? 0,
               vramTotalMb: data.vramTotalMb ?? 16384,
+              vramAvailMb: data.vramAvailMb ?? Math.max(0, (data.vramTotalMb ?? 16384) - (data.vramUsedMb ?? 0)),
+              vramPercent: data.vramPercent ?? (data.vramTotalMb ? Number(((data.vramUsedMb / data.vramTotalMb) * 100).toFixed(1)) : 0),
               gttUsedMb: data.gttUsedMb ?? 0,
               gttTotalMb: data.gttTotalMb ?? 16384,
               edgeTempCelsius: data.edgeTempCelsius ?? 0,
               thermalZone: data.thermalZone ?? 'nominal',
               vddgfxMv: data.vddgfxMv ?? 0,
+              socMv: data.socMv ?? 0,
+              vddnbMv: data.vddnbMv ?? data.socMv ?? 0,
               pptPowerW: data.pptPowerW ?? 0,
               sclkMhz: data.sclkMhz ?? 0,
+              mclkMhz: data.mclkMhz ?? 0,
               activeModel: data.activeModel ?? 'None',
+            });
+          }
+          if (data.type === 'token') {
+            const token = data.token ?? '';
+            this.liveStreamBuffer.update((prev) => {
+              const updated = prev + token;
+              return updated.length > 10000 ? updated.slice(-10000) : updated;
             });
           }
         } catch {
           // ignore stream parse errors
         }
       };
+
+      // Periodic poll every 2.5 seconds to refresh task statuses and process metrics
+      setInterval(() => {
+        void this.fetchInitialState();
+      }, 2500);
     } catch {
       // offline / mock environment
     }
@@ -108,13 +167,29 @@ export class ArenaStateStore {
     try {
       const res = await fetch('/api/tasks');
       if (res.ok) {
-        const rawTasks = await res.json() as Array<{ id: string; title: string; status: string; priority: string; role: string }>;
+        const rawTasks = await res.json() as Array<{
+          id: string;
+          title: string;
+          status: string;
+          priority: string;
+          role: string;
+          prompt?: string;
+          modelAssigned?: string | null;
+          testCommand?: string | null;
+          focusFiles?: string | null;
+          prUrl?: string | null;
+        }>;
         const items: TaskItem[] = rawTasks.map((t) => ({
           id: t.id,
           title: t.title,
           status: (t.status as TaskItem['status']) || 'PENDING',
           priority: (t.priority as TaskItem['priority']) || 'P1',
           role: t.role || 'implementer',
+          prompt: t.prompt,
+          modelAssigned: t.modelAssigned,
+          testCommand: t.testCommand,
+          focusFiles: t.focusFiles,
+          prUrl: t.prUrl,
         }));
         if (items.length > 0) {
           this.tasks.set(items);
@@ -179,5 +254,30 @@ export class ArenaStateStore {
       role: 'implementer',
     };
     this.tasks.update((items) => [newTask, ...items]);
+  }
+
+  public async selectTask(taskOrId: TaskItem | string): Promise<void> {
+    const taskId = typeof taskOrId === 'string' ? taskOrId : taskOrId.id;
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`);
+      if (res.ok) {
+        const fullTask = await res.json() as TaskItem;
+        this.selectedTask.set(fullTask);
+        return;
+      }
+    } catch {
+      // fallback
+    }
+
+    if (typeof taskOrId !== 'string') {
+      this.selectedTask.set(taskOrId);
+    } else {
+      const found = this.tasks().find((t) => t.id === taskId);
+      this.selectedTask.set(found || null);
+    }
+  }
+
+  public clearSelectedTask(): void {
+    this.selectedTask.set(null);
   }
 }

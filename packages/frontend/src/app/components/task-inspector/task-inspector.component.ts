@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ArenaStateStore } from '../../services/arena-state.store';
+import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 import { StageProgressBarComponent } from '../stage-progress-bar/stage-progress-bar.component';
 import { GanttTransportComponent } from '../gantt-transport/gantt-transport.component';
 
@@ -28,10 +28,11 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       </div>
 
       @if (activeTask(); as task) {
-        <div class="task-info-banner">
+        <div class="task-info-banner clickable" (click)="drillDown(task)" title="Click to drill down into task details">
           <span class="badge priority">{{ task.priority }}</span>
           <span class="task-title">{{ task.title }}</span>
           <span class="badge role">{{ task.role }}</span>
+          <span class="drill-hint">Details ↗</span>
         </div>
 
         <!-- 7-Stage Granular Segmented Progress Bar -->
@@ -87,11 +88,12 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
             <span class="dot yellow"></span>
             <span class="dot green"></span>
             <span class="terminal-title">live-llm-stream (task: {{ task.id }})</span>
+            <button class="expand-btn" (click)="drillDown(task)">Expand Log</button>
           </div>
-          <pre class="terminal-content"><code>{{ task.logSnippet }}</code></pre>
+          <pre class="terminal-content"><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
         </div>
 
-        <!-- Interactive DAW Gantt Transport Timeline -->
+        <!-- Interactive Gantt Transport Timeline -->
         <app-gantt-transport />
       } @else {
         <div class="empty-state">
@@ -283,6 +285,40 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       overflow-y: auto;
     }
 
+    .task-info-banner.clickable {
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .task-info-banner.clickable:hover {
+      background: var(--bg-surface);
+      border-color: var(--color-brand);
+    }
+
+    .drill-hint {
+      font-size: 0.75rem;
+      color: var(--color-brand);
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    .expand-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 0.6875rem;
+      padding: 0.15rem 0.5rem;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .expand-btn:hover {
+      color: var(--color-brand);
+      border-color: var(--color-brand);
+    }
+
     .empty-state {
       padding: 2rem;
       text-align: center;
@@ -293,4 +329,9 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
 export class TaskInspectorComponent {
   private readonly store = inject(ArenaStateStore);
   public readonly activeTask = this.store.activeTask;
+  public readonly liveStreamBuffer = this.store.liveStreamBuffer;
+
+  public drillDown(task: TaskItem): void {
+    void this.store.selectTask(task);
+  }
 }

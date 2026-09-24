@@ -23,7 +23,7 @@ export interface GanttSpan {
     <div class="cacophony-card gantt-card">
       <div class="transport-header">
         <div class="title-group">
-          <h2>DAW Transport Timeline</h2>
+          <h2>Timeline</h2>
           <span class="subtext">Multi-track latency & concurrency breakdown</span>
         </div>
 

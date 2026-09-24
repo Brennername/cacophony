@@ -75,15 +75,23 @@ export class QueueGroomer {
 
     // 2. Resolve & Scope Test Command
     let testCommand = task.testCommand ? task.testCommand.trim() : "";
-    if (!testCommand || testCommand === "npm test" || testCommand.includes("--workspaces")) {
+    if (
+      !testCommand ||
+      testCommand === "npm test" ||
+      testCommand.includes("@pkg") ||
+      testCommand.includes("--workspaces")
+    ) {
       const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
       if (scoped) {
         testCommand = scoped;
         modified = true;
         groomNotes.push(`Scoped test command to: ${testCommand}`);
-      } else if (!testCommand) {
+      } else if (activeProfile.defaultTestRunner && (!testCommand || testCommand.includes("@pkg") || testCommand === "npm test")) {
         testCommand = activeProfile.defaultTestRunner;
-        groomNotes.push(`Applied default stack test runner: ${testCommand}`);
+        modified = true;
+        groomNotes.push(`Defaulted test command from profile to: ${testCommand}`);
+      } else if (!testCommand || testCommand.includes("@pkg")) {
+        testCommand = "";
       }
     }
 

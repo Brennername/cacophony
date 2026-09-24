@@ -4,3 +4,6 @@ export * from "./AutheliaSsoProvider.js";
 export * from "./GiteaSsoAdapter.js";
 export * from "./LocalBypassSsoProvider.js";
 export * from "./SsoProviderFactory.js";
+export * from "./OidcDiscoveryService.js";
+export * from "./JwtValidator.js";
+export * from "./AuthService.js";

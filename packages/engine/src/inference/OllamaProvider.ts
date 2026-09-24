@@ -1,3 +1,4 @@
+import { Agent } from "undici";
 import type {
   InferenceRequest,
   InferenceResponse,
@@ -14,9 +15,15 @@ import type { IInferenceProvider } from "./IInferenceProvider.js";
  */
 export class OllamaProvider implements IInferenceProvider {
   private readonly baseUrl: string;
+  private readonly dispatcher: Agent;
 
   constructor(baseUrl: string = process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434") {
     this.baseUrl = baseUrl;
+    this.dispatcher = new Agent({
+      headersTimeout: 0,
+      bodyTimeout: 0,
+      connectTimeout: 30000
+    });
   }
 
   public getProviderType(): InferenceProviderType {
@@ -34,13 +41,15 @@ export class OllamaProvider implements IInferenceProvider {
       keep_alive: -1,
       options: {
         temperature: request.temperature ?? 0.2,
-        num_predict: request.maxTokens ?? 4096
+        num_predict: request.maxTokens ?? 2048
       }
     };
 
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dispatcher: this.dispatcher as any,
       body: JSON.stringify(body)
     });
 
@@ -50,11 +59,16 @@ export class OllamaProvider implements IInferenceProvider {
     }
 
     const data = (await res.json()) as {
-      readonly message?: { readonly content: string };
+      readonly message?: { readonly content?: string; readonly thinking?: string };
       readonly prompt_eval_count?: number;
       readonly eval_count?: number;
       readonly total_duration?: number;
     };
+
+    // If content is empty but thinking exists (e.g. deepseek-r1 reasoning output), use thinking as content fallback
+    const rawContent = data.message?.content?.trim()
+      ? data.message.content
+      : (data.message?.thinking ?? "");
 
     const latencyMs = Math.max(1, Date.now() - startMs);
     const tokensPrompt = data.prompt_eval_count ?? 0;
@@ -63,7 +77,7 @@ export class OllamaProvider implements IInferenceProvider {
     const tokensPerSec = tokensCompletion > 0 ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2)) : 0;
 
     return {
-      content: data.message?.content ?? "",
+      content: rawContent,
       model: request.model,
       tokensPrompt,
       tokensCompletion,
@@ -87,13 +101,15 @@ export class OllamaProvider implements IInferenceProvider {
       keep_alive: -1,
       options: {
         temperature: request.temperature ?? 0.2,
-        num_predict: request.maxTokens ?? 4096
+        num_predict: request.maxTokens ?? 2048
       }
     };
 
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dispatcher: this.dispatcher as any,
       body: JSON.stringify(body)
     });
 

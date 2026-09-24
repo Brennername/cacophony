@@ -6,7 +6,8 @@ import {
   ModelHealthRepository,
   TelemetryRepository,
   StackProfileRepository,
-  ModelRegistryRepository
+  ModelRegistryRepository,
+  UserSessionRepository
 } from "@cacophony/db";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
@@ -48,10 +49,13 @@ export class CacophonyDaemon {
   private healthRepo!: ModelHealthRepository;
   private telemetryRepo!: TelemetryRepository;
   private stackProfileRepo!: StackProfileRepository;
+  private userSessionRepo!: UserSessionRepository;
   private telemetryPoller!: TelemetryPoller;
   private scheduler!: TaskScheduler;
   private ipcServer!: DaemonIPCServer;
   private httpServer?: CacophonyHttpServer | undefined;
+  private planningTimer: NodeJS.Timeout | null = null;
+  private pruningTimer: NodeJS.Timeout | null = null;
   private startTime = 0;
   private isRunning = false;
 
@@ -80,6 +84,7 @@ export class CacophonyDaemon {
     this.healthRepo = new ModelHealthRepository(this.driver);
     this.telemetryRepo = new TelemetryRepository(this.driver);
     this.stackProfileRepo = new StackProfileRepository(this.driver);
+    this.userSessionRepo = new UserSessionRepository(this.driver);
     new ModelRegistryRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
@@ -123,11 +128,119 @@ export class CacophonyDaemon {
       ollamaProvider: ollama,
       contextMinimizer: minimizer,
       parser,
-      ruleEngine
+      ruleEngine,
+      streamTapManager: this.streamTapManager
     });
 
     this.scheduler.setExecutionHandler((groomed, model) => worker.executeTask(groomed, model));
     this.scheduler.start(this.config.pollIntervalMs || 2000);
+
+    // 4b. Autonomous Taskcade Planning & Self-Grooming Service
+    const { TaskcadePlanningService } = await import("../inference/TaskcadePlanningService.js");
+    const { FrontierTaskDecomposer } = await import("../inference/FrontierTaskDecomposer.js");
+    const decomposer = new FrontierTaskDecomposer(ollama, this.taskRepo);
+    const planningService = new TaskcadePlanningService({
+      taskRepo: this.taskRepo,
+      stageRepo: this.stageRepo,
+      decomposer,
+      initialBacklog: [
+        {
+          id: "backlog-ast-rules",
+          category: "code_quality",
+          title: "Implement AST Parameter Auto-Correction Rules",
+          description: "Enhance rule catalog in packages/engine/src/rules/catalog/ with deterministic parameter inversion repair.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-go-signature",
+          category: "multi_stack",
+          title: "Implement Go Struct Signature Harvester",
+          description: "Add Go interface signature extraction in packages/engine/src/signature/ and test runner.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-sso-oidc",
+          category: "auth",
+          title: "Implement Authentik and Authelia OIDC SSO Provider Discovery",
+          description: "Add discovery endpoint fetcher and metadata validator in packages/engine/src/auth/.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-jwt-validator",
+          category: "auth",
+          title: "Implement Cryptographic JWT Token Signature Verifier",
+          description: "Add JWKS key rotation cache and asymmetric RS256/ES256 signature verification in packages/engine/src/auth/.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-telemetry-analytics",
+          category: "telemetry",
+          title: "Implement Task Telemetry & Token Velocity Analytics Engine",
+          description: "Add time-series statistical aggregator calculating rolling tokens/sec and APU thermal correlation.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-multi-gpu-pool",
+          category: "hardware",
+          title: "Implement Multi-GPU Sysfs Device Discovery & Heterogeneous Pooling",
+          description: "Enumerate multiple DRM cards (/sys/class/drm/card*) and balance model allocation across accelerators.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-heartbeat-monitor",
+          category: "fleet",
+          title: "Implement Cluster Fleet Heartbeat Worker",
+          description: "Add multi-node ping loop to ping cluster nodes over WebSocket and flag offline nodes.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-test-isolation",
+          category: "testing",
+          title: "Implement Sandboxed Subprocess Test Execution Runner",
+          description: "Add memory and timeout guardrails to execAsync test executions with structured stdout/stderr capture.",
+          priority: "P1"
+        },
+        {
+          id: "backlog-pglite-compactor",
+          category: "database",
+          title: "Implement PGlite Vacuum & WAL Auto-Compactor Daemon",
+          description: "Add background maintenance task that runs VACUUM and truncates telemetry snapshots older than 14 days.",
+          priority: "P2"
+        },
+        {
+          id: "backlog-context-slicer",
+          category: "context",
+          title: "Implement AST Context Slicer & Focused Import Skeleton Generator",
+          description: "Prune irrelevant file contents before feeding prompt to model to save context tokens.",
+          priority: "P2"
+        }
+      ]
+    });
+
+    // Run queue replenishment every 5 seconds if pending tasks drop below 3
+    this.planningTimer = setInterval(() => {
+      if (this.isRunning) {
+        void planningService.replenishQueueIfLow({ minQueueDepth: 3, modelName: "qwen2.5-coder:3b" });
+      }
+    }, 5000);
+    // Initial replenishment check
+    try {
+      await planningService.replenishQueueIfLow({ minQueueDepth: 3, modelName: "qwen2.5-coder:3b" });
+    } catch {
+      // ignore
+    }
+
+    // Prune telemetry older than 14 days every hour
+    this.pruningTimer = setInterval(async () => {
+      if (this.isRunning && this.telemetryRepo) {
+        const fourteenDaysAgo = new Date(Date.now() - 14 * 86400 * 1000).toISOString();
+        try {
+          await this.telemetryRepo.pruneOlderThan(fourteenDaysAgo);
+        } catch {
+          // ignore
+        }
+      }
+    }, 3600_000);
 
 
     // 5. IPC Server for CLI and Container Control
@@ -160,6 +273,14 @@ export class CacophonyDaemon {
     if (this.httpServer) {
       await this.httpServer.stop();
       this.httpServer = undefined;
+    }
+    if (this.planningTimer) {
+      clearInterval(this.planningTimer);
+      this.planningTimer = null;
+    }
+    if (this.pruningTimer) {
+      clearInterval(this.pruningTimer);
+      this.pruningTimer = null;
     }
     if (this.scheduler) {
       this.scheduler.stop();
@@ -200,6 +321,10 @@ export class CacophonyDaemon {
 
   public getStackProfileRepository(): StackProfileRepository {
     return this.stackProfileRepo;
+  }
+
+  public getUserSessionRepository(): UserSessionRepository {
+    return this.userSessionRepo;
   }
 
   private async handleCommand(command: string, params?: Record<string, unknown>): Promise<unknown> {

@@ -34,6 +34,11 @@ export class HistoryMetricsService {
 
   constructor() {
     this.fetchHistoryAndLeaderboard();
+    if (typeof window !== 'undefined') {
+      setInterval(() => {
+        void this.fetchHistoryAndLeaderboard();
+      }, 3000);
+    }
   }
 
   public async fetchHistoryAndLeaderboard(): Promise<void> {

@@ -45,14 +45,42 @@ export class AdaptiveOutputFormatter {
    */
   public extractCodeBlocks(rawContent: string): readonly ExtractedCodeBlock[] {
     const blocks: ExtractedCodeBlock[] = [];
+    if (!rawContent) return blocks;
+
+    // Normalize: strip reasoning blocks <think>...</think> if present
+    let cleaned = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    if (!cleaned && rawContent.includes("```")) {
+      // If the content was entirely enclosed in think tags, restore the original
+      cleaned = rawContent;
+    }
+
     const codeBlockRegex = /```([a-zA-Z0-9_-]*)\s*([\s\S]*?)```/g;
 
     let match: RegExpExecArray | null;
-    while ((match = codeBlockRegex.exec(rawContent)) !== null) {
+    while ((match = codeBlockRegex.exec(cleaned)) !== null) {
       const language = match[1]?.trim() || "text";
       const code = match[2]?.trim() || "";
       if (code.length > 0) {
+        // If the extracted block itself contains inner markdown code fences, extract from inner content
+        if (code.includes("```")) {
+          const innerBlocks = this.extractCodeBlocks(code);
+          if (innerBlocks.length > 0) {
+            blocks.push(...innerBlocks);
+            continue;
+          }
+        }
         blocks.push({ language, code });
+      }
+    }
+
+    // Fallback: If no closed ```...``` block was found but a leading ``` fence exists (truncated response)
+    if (blocks.length === 0 && cleaned.includes("```")) {
+      const unclosedMatch = cleaned.match(/```([a-zA-Z0-9_-]*)\s*([\s\S]+)$/);
+      if (unclosedMatch && unclosedMatch[2]?.trim()) {
+        blocks.push({
+          language: unclosedMatch[1]?.trim() || "text",
+          code: unclosedMatch[2].trim()
+        });
       }
     }
 

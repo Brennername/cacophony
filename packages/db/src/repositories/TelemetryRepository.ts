@@ -77,6 +77,73 @@ export class TelemetryRepository {
     return [...rows].reverse().map((r: TelemetryRow) => this.mapRow(r));
   }
 
+  /**
+   * Prunes telemetry snapshots older than a specified ISO date or timestamp.
+   */
+  public async pruneOlderThan(cutoffIso: string): Promise<number> {
+    const res = await this.driver.execute(
+      "DELETE FROM telemetry_snapshots WHERE timestamp < $1",
+      [cutoffIso]
+    );
+    return res.rowsAffected;
+  }
+
+  /**
+   * Retrieves aggregated telemetry buckets (min, avg, max) over a time window.
+   */
+  public async getAggregatedHistory(sinceIso: string): Promise<{
+    readonly count: number;
+    readonly avgGpuBusy: number;
+    readonly peakGpuBusy: number;
+    readonly avgTempC: number;
+    readonly peakTempC: number;
+    readonly avgPowerWatts: number;
+    readonly peakPowerWatts: number;
+  }> {
+    const row = await this.driver.queryOne<{
+      readonly total_count: number | string;
+      readonly avg_busy: number | string;
+      readonly max_busy: number | string;
+      readonly avg_temp: number | string;
+      readonly max_temp: number | string;
+      readonly avg_power: number | string;
+      readonly max_power: number | string;
+    }>(
+      `SELECT
+        COUNT(*) as total_count,
+        COALESCE(AVG(gpu_busy_pct), 0) as avg_busy,
+        COALESCE(MAX(gpu_busy_pct), 0) as max_busy,
+        COALESCE(AVG(edge_temp_c), 0) as avg_temp,
+        COALESCE(MAX(edge_temp_c), 0) as max_temp,
+        COALESCE(AVG(ppt_watts), 0) as avg_power,
+        COALESCE(MAX(ppt_watts), 0) as max_power
+      FROM telemetry_snapshots WHERE timestamp >= $1`,
+      [sinceIso]
+    );
+
+    if (!row) {
+      return {
+        count: 0,
+        avgGpuBusy: 0,
+        peakGpuBusy: 0,
+        avgTempC: 0,
+        peakTempC: 0,
+        avgPowerWatts: 0,
+        peakPowerWatts: 0
+      };
+    }
+
+    return {
+      count: Number(row.total_count),
+      avgGpuBusy: Number(Number(row.avg_busy).toFixed(1)),
+      peakGpuBusy: Number(row.max_busy),
+      avgTempC: Number(Number(row.avg_temp).toFixed(1)),
+      peakTempC: Number(row.max_temp),
+      avgPowerWatts: Number(Number(row.avg_power).toFixed(1)),
+      peakPowerWatts: Number(row.max_power)
+    };
+  }
+
   private mapRow(row: TelemetryRow): HardwareTelemetrySnapshot {
     const vramUsed = Number(row.vram_used_bytes);
     const vramTotal = Number(row.vram_total_bytes);

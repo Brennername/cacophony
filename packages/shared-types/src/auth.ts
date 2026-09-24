@@ -48,6 +48,45 @@ export const AuthConfigSchema = z.object({
 });
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;
 
+export const UserRoleSchema = z.enum(["ADMIN", "OPERATOR", "VIEWER"]);
+export type UserRole = z.infer<typeof UserRoleSchema>;
+
+export interface AuthContext {
+  readonly userId: string;
+  readonly username: string;
+  readonly email: string;
+  readonly role: UserRole;
+  readonly provider: SsoProviderType;
+  readonly groups: readonly string[];
+}
+
+export interface OidcDiscoveryConfig {
+  readonly issuer: string;
+  readonly authorization_endpoint: string;
+  readonly token_endpoint: string;
+  readonly userinfo_endpoint?: string;
+  readonly jwks_uri: string;
+  readonly end_session_endpoint?: string;
+  readonly response_types_supported?: readonly string[];
+  readonly id_token_signing_alg_values_supported?: readonly string[];
+}
+
+export interface JwksKey {
+  readonly kty: string;
+  readonly kid?: string;
+  readonly use?: string;
+  readonly alg?: string;
+  readonly n?: string;
+  readonly e?: string;
+  readonly x?: string;
+  readonly y?: string;
+  readonly crv?: string;
+}
+
+export interface JwksDocument {
+  readonly keys: readonly JwksKey[];
+}
+
 /**
  * Standard user profile representation extracted from any SSO provider.
  */
@@ -72,3 +111,4 @@ export interface SsoSessionPayload {
   readonly provider: SsoProviderType;
   readonly exp: number;
 }
+

@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
+import { ArenaStateStore } from '../../services/arena-state.store';
 
 /**
  * Task History and Metrics component:
@@ -54,14 +55,14 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
           </thead>
           <tbody>
             @for (item of historyItems(); track item.id) {
-              <tr>
+              <tr class="clickable-row" (click)="drillDown(item.id)">
                 <td>
                   <span class="status-badge" [ngClass]="item.status.toLowerCase()">
                     {{ item.status }}
                   </span>
                 </td>
                 <td class="task-cell">
-                  <div class="task-title-text">{{ item.title }}</div>
+                  <div class="task-title-text">{{ item.title }} <span class="drill-tag">Details ↗</span></div>
                   @if (item.failureReason) {
                     <div class="failure-reason">{{ item.failureReason }}</div>
                   }
@@ -216,6 +217,22 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
       margin-top: 0.15rem;
     }
 
+    .clickable-row {
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .clickable-row:hover {
+      background: var(--bg-surface-elevated);
+    }
+
+    .drill-tag {
+      font-size: 0.6875rem;
+      color: var(--color-brand);
+      margin-left: 0.5rem;
+      font-weight: 600;
+    }
+
     .model-cell {
       font-family: var(--font-mono);
       font-size: 0.75rem;
@@ -235,7 +252,12 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
 })
 export class TaskHistoryComponent {
   private readonly metricsService = inject(HistoryMetricsService);
+  private readonly store = inject(ArenaStateStore);
   public readonly historyItems = this.metricsService.historyItems;
   public readonly leaderboard = this.metricsService.leaderboard;
   public readonly successRate = this.metricsService.rollingSuccessRate;
+
+  public drillDown(taskId: string): void {
+    void this.store.selectTask(taskId);
+  }
 }

@@ -19,8 +19,10 @@ export interface GpuMetrics {
   readonly edgeTempCelsius: number;
   readonly vddgfxMilliVolts: number;
   readonly socMilliVolts: number;
+  readonly vddnbMilliVolts?: number;
   readonly pptWatts: number;
   readonly sclkMhz: number;
+  readonly mclkMhz?: number;
 }
 
 /**

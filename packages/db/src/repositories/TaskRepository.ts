@@ -126,13 +126,14 @@ export class TaskRepository {
   }
 
   /**
-   * Lists tasks currently awaiting dispatch, ordered by priority (P0 first) then age.
+   * Lists tasks currently awaiting dispatch or executing, ordered by status (RUNNING first), priority, then age.
    */
   public async listPending(): Promise<readonly TaskRecord[]> {
     const rows = await this.driver.query<TaskRow>(
       `SELECT * FROM tasks 
-       WHERE status IN ('PENDING', 'REMEDIATING')
+       WHERE status IN ('RUNNING', 'PENDING', 'REMEDIATING')
        ORDER BY 
+         CASE status WHEN 'RUNNING' THEN 0 ELSE 1 END ASC,
          CASE priority WHEN 'P0' THEN 1 WHEN 'P1' THEN 2 WHEN 'P2' THEN 3 ELSE 4 END ASC,
          created_at ASC`
     );

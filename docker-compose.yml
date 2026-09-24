@@ -31,8 +31,7 @@ services:
       - ./data:/app/data:rw
       - ./workspaces:/app/workspaces:rw
       - ./.env:/app/.env:ro
-      - /sys/class/drm:/host/sys/class/drm:ro
-      - /sys/class/hwmon:/host/sys/class/hwmon:ro
+      - /sys:/host/sys:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

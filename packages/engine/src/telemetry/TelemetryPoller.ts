@@ -22,6 +22,8 @@ export class TelemetryPoller {
   private isPolling = false;
   private readonly listeners: Set<TelemetryListener> = new Set();
   private latestSnapshot: HardwareTelemetrySnapshot | null = null;
+  private readonly recentBuffer: HardwareTelemetrySnapshot[] = [];
+  private static readonly MAX_BUFFER_SIZE = 300;
 
   constructor(options: {
     readonly provider: IHardwareTelemetryProvider;
@@ -55,6 +57,13 @@ export class TelemetryPoller {
    */
   public getLatest(): HardwareTelemetrySnapshot | null {
     return this.latestSnapshot;
+  }
+
+  /**
+   * Returns the sliding window in-memory circular buffer of snapshots.
+   */
+  public getRecentBuffer(): readonly HardwareTelemetrySnapshot[] {
+    return [...this.recentBuffer];
   }
 
   /**
@@ -101,6 +110,10 @@ export class TelemetryPoller {
       };
 
       this.latestSnapshot = snapshot;
+      this.recentBuffer.push(snapshot);
+      if (this.recentBuffer.length > TelemetryPoller.MAX_BUFFER_SIZE) {
+        this.recentBuffer.shift();
+      }
 
       if (this.repository) {
         try {

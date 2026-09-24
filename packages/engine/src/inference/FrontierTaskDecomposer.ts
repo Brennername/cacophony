@@ -70,8 +70,8 @@ export class FrontierTaskDecomposer {
       '    "prompt": "Detailed step-by-step instructions for the model",',
       '    "role": "implementer | reviewer | architect | test_engineer | doc_writer",',
       '    "priority": "P0 | P1 | P2",',
-      '    "focusFiles": "path/to/file1.ts path/to/file2.ts",',
-      '    "testCommand": "npm test --workspace=@pkg"',
+      '    "focusFiles": "packages/engine/src/rules/catalog/AstRule.ts",',
+      '    "testCommand": "npm test --workspace=@cacophony/engine --if-present"',
       "  }",
       "]",
       "```"

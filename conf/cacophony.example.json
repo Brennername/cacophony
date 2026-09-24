@@ -63,6 +63,17 @@
     "custom_domain": "cacophony.local",
     "trusted_proxies": ["127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
   },
+  "enterprise_sso": {
+    "provider": "authentik",
+    "require_auth": false,
+    "oidc_issuer_url": "http://localhost:9000/application/o/cacophony/",
+    "oidc_client_id": "cacophony-client",
+    "oidc_client_secret": "cacophony-oidc-secret-change-me",
+    "oidc_redirect_uri": "http://localhost:24072/auth/callback",
+    "oidc_jwks_uri": "http://localhost:9000/application/o/cacophony/jwks/",
+    "authelia_portal_url": "http://localhost:9091/",
+    "authelia_forward_auth": true
+  },
   "directives": [
     "Strict TypeScript: Explicit typing required on all parameters and returns. No 'any' or 'unknown'.",
     "ECMAScript Module Resolution (NodeNext): All relative imports must include explicit '.js' extensions.",

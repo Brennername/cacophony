@@ -858,17 +858,95 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
 - [x] T32.2.1: Continuous Execution Loop Integration:
   - [x] T32.2.1.1: Connect `TaskScheduler.setExecutionHandler` to an autonomous worker pipeline: Context Minimizer -> Ollama/Frontier Code Generation -> Deterministic Rule Pipeline -> Scoped Test Verification -> Git Checkpoint.
   - [x] T32.2.1.2: If generation or compilation fails, automatically trigger `ClosedLoopTestRemediator` with compiler/LSP error feedback.
-  - [x] T32.2.1.3: Enable continuous background execution mode capable of running sustained multi-hour task streams safely within Vega APU thermal limits.
+---
 
-### T32.3: Verification & Operational System Startup (`spec:ContinuousOperationalValidation`)
-- [x] T32.3.1: Verification & Startup:
-  - [x] T32.3.1.1: Verify end-to-end task execution loop with synthetic unit tasks.
-  - [x] T32.3.1.2: Run full monorepo test suite (`npm test`).
-  - [x] T32.3.1.3: Start background daemon with initial work queue.
+## Archived Phase 33: Multi-Hour Autonomous Continuous Arena Stream & Multi-Stack Self-Evolution
+*Completed & Verified in Phase 33 Verification Suite*
 
+### T33.1: Sustained Multi-Hour Autonomous Task Execution Stream (`spec:SustainedTaskStream`)
+- [x] T33.1.1: Multi-Hour Arena Autonomous Workstream:
+  - [x] T33.1.1.1: Seed `TaskcadePlanningService` with comprehensive engineering backlog (3+ hours estimated runtime across multi-language benchmarks, AST refactoring, and deterministic scrub tests).
+  - [x] T33.1.1.2: Enforce ThermalGovernor throttling and Vega APU VRAM headroom preservation during long continuous runs.
+  - [x] T33.1.1.3: Continuous queue replenishment: autonomously ingest tasks from Gitea issues, internal backlog, and failure retries without manual operator intervention.
 
+### T33.2: Multi-Stack Profile Expansion & Cross-Language AST Verification (`spec:MultiStackAstVerification`)
+- [x] T33.2.1: Multi-Stack Benchmark Tasks:
+  - [x] T33.2.1.1: Java/Maven micro-benchmark task: compile and verify Java AST interface signatures and JUnit test execution.
+  - [x] T33.2.1.2: Go struct signature harvesting and unit test runner integration.
+  - [x] T33.2.1.3: TypeScript NodeNext vs Bundler dynamic stack switching verification.
 
+### T33.3: Operational Runbook & Background Process Supervisor (`spec:ProcessSupervisorValidation`)
+- [x] T33.3.1: Daemon Lifecycle & Live Dashboard Monitoring:
+  - [x] T33.3.1.1: Launch Cacophony engine background daemon (`bin/cacophony start --daemon`).
+  - [x] T33.3.1.2: Verify HTTP server listening on port 24161 and serving live Angular dashboard.
+  - [x] T33.3.1.3: Verify SSE event stream `/api/events` actively broadcasting sensor telemetry and execution stage progress.
 
+---
 
+## Archived Phase 34: Enterprise SSO & Dynamic Identity Integration (Authentik, Authelia, Gitea OAuth2)
+*Completed & Verified in Phase 34 Enterprise SSO Verification Suite*
 
+### T34.1: Authentik & Authelia OIDC Discovery and Configuration Endpoint Provider
+  - [x] T34.1.1: Implement OidcDiscoveryService in packages/engine/src/auth/ to parse .well-known/openid-configuration from configurable ISSUER_URL with caching.
+  - [x] T34.1.2: Implement JwksKeyManager in packages/engine/src/auth/ to dynamically fetch, parse, and rotate public RSA/ECDSA signing keys from the JWKS URI.
+  - [x] T34.1.3: Add REST endpoint GET /api/config/auth returning dynamic provider status (Gitea OAuth, Authentik, Authelia) with client redirect URLs.
+  - [x] T34.1.4: Add environment configuration schema in conf/cacophony.example.json for OIDC_ISSUER_URL, OIDC_CLIENT_ID, and OIDC_CLIENT_SECRET.
+
+### T34.2: JWT Signature Verification, Claims Decoding & Nonce Protection
+  - [x] T34.2.1: Implement JwtValidator in packages/engine/src/auth/ verifying RS256/ES256 signatures against cached JWKS keys without external Node crypto polyfills.
+  - [x] T34.2.2: Enforce standard claim validations: issuer matching, audience matching, expiration (exp), not-before (nbf), and anti-replay nonce.
+  - [x] T34.2.3: Support fallback HS256 HMAC verification using VAULT_MASTER_KEY for internal daemon session tokens.
+  - [x] T34.2.4: Write unit tests verifying valid token acceptance and rejection of expired, malformed, or altered tokens.
+
+### T34.3: User Session Lifecycle, Refresh Token Flow & Revocation
+  - [x] T34.3.1: Create SQL table user_sessions (session_id, user_id, provider, access_token_enc, refresh_token_enc, expires_at, created_at) in packages/db.
+  - [x] T34.3.2: Implement SessionRepository in packages/db with encryption via SecretVault for persistent tokens.
+  - [x] T34.3.3: Implement POST /api/auth/refresh endpoint exchanging valid refresh tokens for fresh access tokens via upstream IdP.
+  - [x] T34.3.4: Implement POST /api/auth/logout endpoint revoking local session and notifying upstream IdP end_session_endpoint.
+
+### T34.4: Role-Based Access Control (RBAC) & Tiered Authorization
+  - [x] T34.4.1: Define UserRole enum (ADMIN, OPERATOR, VIEWER) and AuthContext in packages/shared-types.
+  - [x] T34.4.2: Implement AuthorizationMiddleware in CacophonyHttpServer enforcing required permission tiers on mutating endpoints (e.g. POST /api/tasks requires OPERATOR+).
+  - [x] T34.4.3: Map upstream IdP group claims (e.g. authentik groups, gitea admin flag) to Cacophony internal roles in AuthService.
+  - [x] T34.4.4: Update Angular frontend navigation to conditionally disable or hide sensitive management controls for read-only VIEWER sessions.
+
+---
+
+## Archived Phase 35: Hardware Telemetry Capture, Prometheus Exporter & Success Analytics
+*Completed & Verified in Phase 35 Telemetry & Analytics Suite*
+
+### T35.1: High-Fidelity Telemetry Persistence & Time-Series Sampling
+  - [x] T35.1.1: Update TelemetryRepository.recordSnapshot to persist full APU metrics: vddgfxMv, socMv, vddnbMv, pptWatts, sclkMhz, mclkMhz, and thermalZone.
+  - [x] T35.1.2: Implement sliding-window circular buffer in TelemetryPoller storing last 300 data points (5 minutes at 1s interval) in memory for instant chart hydration.
+  - [x] T35.1.3: Expose REST endpoint GET /api/telemetry/history?window=1h returning aggregated min/avg/max telemetry buckets for dashboard rendering.
+  - [x] T35.1.4: Add automated pruning cron in CacophonyDaemon deleting telemetry snapshots older than retention limit (default 14 days).
+
+### T35.2: Task Execution Telemetry & Model Pass-Rate Correlation Engine
+  - [x] T35.2.1: Create SQL table task_telemetry_correlations linking taskId to avgGpuBusy, peakEdgeTemp, totalTokens, avgTokensPerSec, and APU thermal throttle events.
+  - [x] T35.2.2: Implement TelemetryCorrelationService calculating thermal impact and inference velocity per model family (qwen vs deepseek vs gemma).
+  - [x] T35.2.3: Expose REST endpoint GET /api/analytics/models returning model efficiency scores (tokens/sec per Watt, failure rate vs temperature).
+  - [x] T35.2.4: Integrate correlation metrics into model selection heuristic in TaskScheduler to prefer cooler-running models when APU is in warm/elevated zone.
+
+### T35.3: Prometheus & OpenMetrics Compatibility Endpoint
+  - [x] T35.3.1: Implement PrometheusMetricsExporter in packages/engine/src/telemetry/ formatting metrics according to OpenMetrics text specification.
+  - [x] T35.3.2: Export gauges: cacophony_gpu_busy_percent, cacophony_vram_used_bytes, cacophony_vram_total_bytes, cacophony_apu_temp_celsius, cacophony_power_watts.
+  - [x] T35.3.3: Export counters: cacophony_tasks_total{status, role, model}, cacophony_tokens_total{direction}, cacophony_scheduler_pacing_delay_seconds_total.
+  - [x] T35.3.4: Expose GET /metrics endpoint in CacophonyHttpServer for scraping by external Prometheus/Grafana instances.
+
+---
+
+## Archived Phase 36: Heterogeneous Multi-Device Accelerator Grid & Remote Fleet Discovery
+*Completed & Verified in Phase 36 Accelerator Grid Suite*
+
+### T36.1: Multi-GPU Card Sysfs Discovery & Device Enumerator
+  - [x] T36.1.1: Expand AmdVegaTelemetryProvider to enumerate all card0, card1, cardN instances in /sys/class/drm and /sys/class/hwmon.
+  - [x] T36.1.2: Implement GpuDeviceManager in packages/engine/src/hardware/ maintaining registry of all detected GPUs/APUs with driver type, VRAM, and PCI bus ID.
+  - [x] T36.1.3: Update GET /api/system to return array of detected accelerators: [{ id, name, pciBus, vramTotal, isPrimaryApu }].
+  - [x] T36.1.4: Update Angular HardwareMonitorComponent to render a responsive device grid card when multiple GPUs are present, with per-card usage/temperature gauges.
+
+### T36.2: Fleet Node WebSocket Communication & Remote Telemetry Feed
+  - [x] T36.2.1: Implement FleetWebSocketClient in packages/engine/src/fleet/ connecting local worker daemon to primary orchestration node.
+  - [x] T36.2.2: Implement bidirectional heartbeat and node capacity reporting: available VRAM, active model, pending task queue count.
+  - [x] T36.2.3: Implement remote task delegation protocol: primary scheduler dispatches task payload to worker node and streams tokens back over WebSocket.
+  - [x] T36.2.4: Add node status monitoring and disconnect handling: automatically re-queue running tasks if remote node heartbeat drops for >15s.
 

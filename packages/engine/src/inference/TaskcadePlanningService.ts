@@ -76,7 +76,7 @@ export class TaskcadePlanningService {
     readonly maxDecomposePerCycle?: number | undefined;
   } = {}): Promise<ReplenishmentResult> {
     const minDepth = options.minQueueDepth ?? 3;
-    const model = options.modelName ?? "qwen2.5-coder:7b";
+    const model = options.modelName ?? "qwen2.5-coder:3b";
     const pending = await this.taskRepo.listPending();
 
     if (pending.length >= minDepth) {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
 
@@ -14,69 +14,114 @@ import { ArenaStateStore } from '../../services/arena-state.store';
   template: `
     <div class="cacophony-card monitor-card">
       <div class="card-header">
-        <div>
-          <h2>Hardware Diagnostics (AMD APU)</h2>
-          <span class="subtext">Direct Linux sysfs sensor telemetry</span>
+        <div class="header-title-group">
+          <div class="device-selector-row">
+            <h2>Hardware Sensors & GPU Telemetry</h2>
+            <div class="device-tags-list">
+              <span class="device-tag primary">AMD Cezanne Vega (Local APU)</span>
+              @for (acc of accelerators(); track acc.id) {
+                @if (!acc.isPrimaryApu) {
+                  <span class="device-tag secondary">{{ acc.name }} ({{ acc.pciBus }})</span>
+                }
+              }
+            </div>
+          </div>
+          <span class="subtext">Direct sysfs kernel telemetry (supports multi-GPU/APU node topology)</span>
         </div>
-        <div class="thermal-badge" [ngClass]="metrics().thermalZone">
-          <span class="dot"></span>
-          <span class="temp-text">{{ metrics().edgeTempCelsius }}°C</span>
-          <span class="zone-label">{{ metrics().thermalZone | uppercase }}</span>
+        <div class="header-badges">
+          <div class="model-badge">
+            <span class="badge-label">Active Model</span>
+            <span class="badge-val">{{ metrics().activeModel }}</span>
+          </div>
+          <div class="thermal-badge" [ngClass]="metrics().thermalZone">
+            <span class="dot"></span>
+            <span class="temp-text">{{ metrics().edgeTempCelsius }}°C</span>
+            <span class="zone-label">{{ metrics().thermalZone | uppercase }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="metrics-grid">
-        <!-- GPU Busy Meter -->
-        <div class="gauge-item">
-          <div class="gauge-header">
-            <span>GPU Load</span>
+      <!-- Compact 2-column or 3-column sensor grid -->
+      <div class="compact-sensors-grid">
+        <!-- VRAM Bar & Stats -->
+        <div class="sensor-block">
+          <div class="sensor-header">
+            <span class="name">VRAM Memory</span>
+            <span class="val">{{ metrics().vramUsedMb }} / {{ metrics().vramTotalMb }} MB ({{ metrics().vramPercent }}%)</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill brand" [style.width.%]="metrics().vramPercent"></div>
+          </div>
+          <div class="sub-stat-row">
+            <span>Avail: {{ metrics().vramAvailMb }} MB</span>
+            <span>Clock: {{ metrics().mclkMhz }} MHz</span>
+          </div>
+        </div>
+
+        <!-- GPU / APU Load & Core Clock -->
+        <div class="sensor-block">
+          <div class="sensor-header">
+            <span class="name">GPU Load</span>
             <span class="val">{{ metrics().gpuBusyPercent }}%</span>
           </div>
           <div class="progress-bar">
             <div class="progress-fill" [style.width.%]="metrics().gpuBusyPercent"></div>
           </div>
-        </div>
-
-        <!-- VRAM Utilization -->
-        <div class="gauge-item">
-          <div class="gauge-header">
-            <span>VRAM Allocation</span>
-            <span class="val">{{ metrics().vramUsedMb }} / {{ metrics().vramTotalMb }} MB</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill brand" [style.width.%]="(metrics().vramUsedMb / metrics().vramTotalMb) * 100"></div>
+          <div class="sub-stat-row">
+            <span>Core: {{ metrics().sclkMhz }} MHz</span>
+            <span>Power: {{ metrics().pptPowerW }} W</span>
           </div>
         </div>
 
-        <!-- GTT Memory -->
-        <div class="gauge-item">
-          <div class="gauge-header">
-            <span>GTT Shared Memory</span>
+        <!-- GTT Shared Memory -->
+        <div class="sensor-block">
+          <div class="sensor-header">
+            <span class="name">GTT Shared Memory</span>
             <span class="val">{{ metrics().gttUsedMb }} / {{ metrics().gttTotalMb }} MB</span>
           </div>
           <div class="progress-bar">
-            <div class="progress-fill cyan" [style.width.%]="(metrics().gttUsedMb / metrics().gttTotalMb) * 100"></div>
+            <div class="progress-fill cyan" [style.width.%]="metrics().gttTotalMb ? (metrics().gttUsedMb / metrics().gttTotalMb) * 100 : 0"></div>
+          </div>
+          <div class="sub-stat-row">
+            <span>VDDGFX: {{ metrics().vddgfxMv }} mV</span>
+            <span>VDDNB/SOC: {{ metrics().vddnbMv }} mV</span>
           </div>
         </div>
       </div>
 
-      <!-- Electrical & Frequency Row -->
-      <div class="electrical-row">
-        <div class="metric-pill">
-          <span class="label">Core Voltage</span>
-          <span class="num">{{ metrics().vddgfxMv }} mV</span>
+      <!-- Quick Metrics Strip -->
+      <div class="metrics-strip">
+        <div class="strip-pill">
+          <span class="strip-label">GPU Load</span>
+          <span class="strip-value">{{ metrics().gpuBusyPercent }}%</span>
         </div>
-        <div class="metric-pill">
-          <span class="label">Package PPT</span>
-          <span class="num">{{ metrics().pptPowerW }} W</span>
+        <div class="strip-pill">
+          <span class="strip-label">APU Core Freq</span>
+          <span class="strip-value">{{ metrics().sclkMhz }} MHz</span>
         </div>
-        <div class="metric-pill">
-          <span class="label">SCLK Frequency</span>
-          <span class="num">{{ metrics().sclkMhz }} MHz</span>
+        <div class="strip-pill">
+          <span class="strip-label">VRAM Freq</span>
+          <span class="strip-value">{{ metrics().mclkMhz }} MHz</span>
         </div>
-        <div class="metric-pill model">
-          <span class="label">VRAM Loaded Model</span>
-          <span class="num highlight">{{ metrics().activeModel }}</span>
+        <div class="strip-pill">
+          <span class="strip-label">Temp</span>
+          <span class="strip-value">{{ metrics().edgeTempCelsius }}°C</span>
+        </div>
+        <div class="strip-pill">
+          <span class="strip-label">Power (PPT)</span>
+          <span class="strip-value">{{ metrics().pptPowerW }} W</span>
+        </div>
+        <div class="strip-pill">
+          <span class="strip-label">VDDGFX</span>
+          <span class="strip-value">{{ metrics().vddgfxMv }} mV</span>
+        </div>
+        <div class="strip-pill">
+          <span class="strip-label">VDDNB (SOC)</span>
+          <span class="strip-value">{{ metrics().vddnbMv }} mV</span>
+        </div>
+        <div class="strip-pill">
+          <span class="strip-label">VRAM Used / Total</span>
+          <span class="strip-value">{{ metrics().vramUsedMb }} / {{ metrics().vramTotalMb }} MB</span>
         </div>
       </div>
     </div>
@@ -85,7 +130,8 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     .monitor-card {
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 0.75rem;
+      padding: 1rem;
     }
 
     .card-header {
@@ -93,29 +139,82 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .device-selector-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .device-tag {
+      font-size: 0.6875rem;
+      font-family: var(--font-mono);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.1rem 0.4rem;
+      color: var(--color-brand);
+      font-weight: 600;
+    }
+
+    .header-title-group h2 {
+      font-size: 1.125rem;
+      margin: 0;
+      color: var(--text-primary);
     }
 
     .subtext {
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.2rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .model-badge .badge-label {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.625rem;
+    }
+
+    .model-badge .badge-val {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--color-accent);
     }
 
     .thermal-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.25rem 0.75rem;
+      gap: 0.375rem;
+      padding: 0.2rem 0.5rem;
       border-radius: var(--radius-full);
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       font-weight: 600;
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
     }
 
     .thermal-badge .dot {
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
     }
 
@@ -125,32 +224,52 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     }
     .thermal-badge.nominal .dot {
       background: var(--status-nominal);
-      box-shadow: 0 0 8px var(--status-nominal);
+      box-shadow: 0 0 6px var(--status-nominal);
     }
 
-    .metrics-grid {
+    .compact-sensors-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.625rem;
+    }
+
+    @media (min-width: 768px) {
+      .compact-sensors-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .sensor-block {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
       display: flex;
       flex-direction: column;
-      gap: 0.875rem;
+      gap: 0.375rem;
     }
 
-    .gauge-header {
+    .sensor-header {
       display: flex;
       justify-content: space-between;
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-      margin-bottom: 0.375rem;
+      align-items: baseline;
+      font-size: 0.75rem;
     }
 
-    .gauge-header .val {
+    .sensor-header .name {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .sensor-header .val {
       font-family: var(--font-mono);
       font-weight: 600;
       color: var(--text-primary);
     }
 
     .progress-bar {
-      height: 8px;
-      background: var(--bg-surface-elevated);
+      height: 6px;
+      background: var(--bg-surface);
       border-radius: var(--radius-full);
       overflow: hidden;
     }
@@ -170,48 +289,77 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       background: var(--color-accent);
     }
 
-    .electrical-row {
+    .sub-stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .metrics-strip {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.625rem;
+      gap: 0.375rem;
     }
 
     @media (min-width: 640px) {
-      .electrical-row {
+      .metrics-strip {
         grid-template-columns: repeat(4, 1fr);
       }
     }
 
-    .metric-pill {
+    @media (min-width: 1024px) {
+      .metrics-strip {
+        grid-template-columns: repeat(8, 1fr);
+      }
+    }
+
+    .strip-pill {
       display: flex;
       flex-direction: column;
-      padding: 0.5rem 0.75rem;
+      padding: 0.375rem 0.5rem;
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
     }
 
-    .metric-pill .label {
-      font-size: 0.6875rem;
+    .strip-label {
+      font-size: 0.5625rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       color: var(--text-muted);
     }
 
-    .metric-pill .num {
+    .strip-value {
       font-family: var(--font-mono);
-      font-size: 0.9375rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: var(--text-primary);
-      margin-top: 0.25rem;
-    }
-
-    .metric-pill .highlight {
-      color: var(--color-accent);
+      margin-top: 0.125rem;
     }
   `],
 })
 export class HardwareMonitorComponent {
   private readonly store = inject(ArenaStateStore);
   public readonly metrics = this.store.telemetry;
+  public readonly accelerators = signal<readonly { id: string; name: string; pciBus: string; isPrimaryApu: boolean }[]>([]);
+
+  constructor() {
+    this.fetchAccelerators();
+  }
+
+  private async fetchAccelerators(): Promise<void> {
+    try {
+      const res = await fetch('/api/system');
+      if (res.ok) {
+        const data = await res.json() as { accelerators?: { id: string; name: string; pciBus: string; isPrimaryApu: boolean }[] };
+        if (Array.isArray(data.accelerators) && data.accelerators.length > 0) {
+          this.accelerators.set(data.accelerators);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
 }

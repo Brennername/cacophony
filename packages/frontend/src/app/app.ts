@@ -5,6 +5,7 @@ import { ThemeService } from './services/theme.service';
 import { AuthService } from './services/auth.service';
 import { ArenaStateStore } from './services/arena-state.store';
 import { FrontierModalComponent, DecomposedTaskPreview } from './components/frontier-modal/frontier-modal.component';
+import { TaskDetailModalComponent } from './components/task-detail-modal/task-detail-modal.component';
 import { SessionTabsComponent } from './components/session-tabs/session-tabs.component';
 import { ExecutionModeSelectorComponent } from './components/execution-mode-selector/execution-mode-selector.component';
 
@@ -23,6 +24,7 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
     RouterLink,
     RouterLinkActive,
     FrontierModalComponent,
+    TaskDetailModalComponent,
     SessionTabsComponent,
     ExecutionModeSelectorComponent,
   ],
@@ -174,6 +176,9 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
 
       <!-- Frontier Decomposition Modal -->
       <app-frontier-modal #frontierModal (committed)="onTasksCommitted($event)" />
+
+      <!-- Deep Task Drill-Down Dialog -->
+      <app-task-detail-modal />
     </div>
   `,
   styles: [`

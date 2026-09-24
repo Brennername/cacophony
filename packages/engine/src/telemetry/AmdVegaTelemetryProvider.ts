@@ -98,6 +98,18 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
       if (rawGttTotal !== null) gttTotal = rawGttTotal;
     }
 
+    // Read active VRAM (mclk) and sclk frequencies from pp_dpm files if available
+    let mclkMhz = 0;
+    if (drmDir) {
+      const activeMclk = this.readActiveDpmFreq(path.join(drmDir, "pp_dpm_mclk"));
+      if (activeMclk !== null) mclkMhz = activeMclk;
+
+      if (sclkMhz === 0) {
+        const activeSclk = this.readActiveDpmFreq(path.join(drmDir, "pp_dpm_sclk"));
+        if (activeSclk !== null) sclkMhz = activeSclk;
+      }
+    }
+
     const vramPercent = vramTotal > 0 ? Number(((vramUsed / vramTotal) * 100).toFixed(1)) : 0.0;
 
     return {
@@ -110,9 +122,34 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
       edgeTempCelsius: edgeTemp,
       vddgfxMilliVolts: vddgfx,
       socMilliVolts: soc,
+      vddnbMilliVolts: soc,
       pptWatts,
-      sclkMhz
+      sclkMhz,
+      mclkMhz
     };
+  }
+
+  /**
+   * Reads the currently selected active frequency level marked with an asterisk '*' from pp_dpm_* files.
+   * e.g., "1: 400Mhz *" or "3: 1600Mhz *" -> 1600
+   */
+  private readActiveDpmFreq(filePath: string): number | null {
+    try {
+      if (!fs.existsSync(filePath)) return null;
+      const content = fs.readFileSync(filePath, "utf-8");
+      const lines = content.split("\n");
+      for (const line of lines) {
+        if (line.includes("*")) {
+          const match = line.match(/([0-9]+)\s*Mhz/i);
+          if (match && match[1]) {
+            return parseInt(match[1], 10);
+          }
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -176,6 +213,38 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
     }
 
     return null;
+  }
+
+  /**
+   * Scans DRM directory tree to locate all card* device directories.
+   */
+  public enumerateAllDevices(): readonly { readonly cardName: string; readonly deviceDir: string; readonly vramTotalBytes: number }[] {
+    const devices: { cardName: string; deviceDir: string; vramTotalBytes: number }[] = [];
+    if (!fs.existsSync(this.drmPath)) {
+      return devices;
+    }
+
+    try {
+      const entries = fs.readdirSync(this.drmPath);
+      for (const entry of entries) {
+        if (/^card[0-9]+$/.test(entry)) {
+          const deviceDir = path.join(this.drmPath, entry, "device");
+          const vramNode = path.join(deviceDir, "mem_info_vram_total");
+          if (fs.existsSync(vramNode)) {
+            const vramTotal = this.readSysfsInt(vramNode) || 0;
+            devices.push({
+              cardName: entry,
+              deviceDir,
+              vramTotalBytes: vramTotal
+            });
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return devices;
   }
 
   private readSysfsInt(filePath: string): number | null {
