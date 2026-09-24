@@ -1,0 +1,60 @@
+{
+  "id": "vega_hardened",
+  "name": "Vega Hardened Deterministic Repair Pipeline",
+  "description": "Optimized deterministic repair pipeline for local AMD Vega architectures running Qwen/DeepSeek",
+  "targetArch": "x86_64-linux-vega",
+  "hooks": [
+    {
+      "hook": "post_generation",
+      "rules": [
+        {
+          "ruleId": "strip_emojis",
+          "severity": "silent_repair"
+        },
+        {
+          "ruleId": "enforce_esm_js",
+          "severity": "silent_repair"
+        },
+        {
+          "ruleId": "whitespace_normalizer",
+          "severity": "silent_repair"
+        },
+        {
+          "ruleId": "ast_signature_align",
+          "severity": "silent_repair"
+        }
+      ]
+    },
+    {
+      "hook": "pre_test",
+      "rules": [
+        {
+          "ruleId": "banned_imports",
+          "severity": "hard_rejection",
+          "options": {
+            "packages": ["conductor", "lodash", "python"]
+          }
+        },
+        {
+          "ruleId": "loose_root_files",
+          "severity": "soft_warning"
+        },
+        {
+          "ruleId": "empty_files",
+          "severity": "hard_rejection"
+        },
+        {
+          "ruleId": "placeholder_stubs",
+          "severity": "soft_warning",
+          "options": {
+            "maxAllowed": 0
+          }
+        },
+        {
+          "ruleId": "typescript_diagnostic_repair",
+          "severity": "silent_repair"
+        }
+      ]
+    }
+  ]
+}

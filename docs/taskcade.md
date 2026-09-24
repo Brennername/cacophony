@@ -267,39 +267,39 @@
 *RDF Category: `spec:RepairRuleDslCategory`*
 
 ### T25.1: Declarative Rule DSL Grammar, AST & Configuration Schemas (`spec:RuleDslArchitecture`)
-- [ ] T25.1.1: Rule Grammar & Schema Definitions:
-  - [ ] T25.1.1.1: Define `@cacophony/shared-types` schemas for `RuleSeverity` (`silent_repair`, `soft_warning`, `hard_rejection`, `disabled`) and `RuleLifecycleHook` (`pre_generation`, `post_generation`, `pre_test`, `post_test`).
-  - [ ] T25.1.1.2: Define core interfaces: `IRepairRule<TContext, TResult>`, `RuleEvaluationContext`, `RuleExecutionResult`, `RuleDiagnostic`, `IRulePipeline`.
-  - [ ] T25.1.1.3: Author JSON Schema / Zod validator for declarative YAML pipeline definitions (`conf/pipelines/*.yml`).
-  - [ ] T25.1.1.4: Implement lightweight DSL parser supporting human-readable rule declarations (e.g. `pipeline "vega_hardened" { hook post_generation { rule strip_emojis [severity=silent_repair]; rule enforce_esm_js [severity=silent_repair]; } hook pre_test { rule banned_imports [severity=hard_rejection, packages=["conductor", "lodash"]]; rule loose_root_files [severity=soft_warning]; } }`).
-  - [ ] T25.1.1.5: Support variable interpolation and environment substitution within rule arguments (e.g. `${PROJECT_ROOT}`, `${TARGET_ARCH}`).
-- [ ] T25.1.2: Pipeline Chaining & Execution Engine:
-  - [ ] T25.1.2.1: Implement `RulePipelineEngine` in `@cacophony/engine` orchestrating rule sequences per lifecycle hook.
-  - [ ] T25.1.2.2: Implement short-circuit logic: when a `hard_rejection` rule triggers, halt subsequent rules unless configured with `continueOnError: true`.
-  - [ ] T25.1.2.3: Implement soft-warning accumulator: rules marked `soft_warning` emit non-fatal warnings preserved in task stage metadata for telemetry without failing the build.
-  - [ ] T25.1.2.4: Implement dry-run execution mode (`simulate: true`) calculating would-be modifications and rejections without altering files on disk.
-  - [ ] T25.1.2.5: Implement execution telemetry recorder persisting rule run durations, modification counts, and diagnostics in `rule_executions` database table.
+- [x] T25.1.1: Rule Grammar & Schema Definitions:
+  - [x] T25.1.1.1: Define `@cacophony/shared-types` schemas for `RuleSeverity` (`silent_repair`, `soft_warning`, `hard_rejection`, `disabled`) and `RuleLifecycleHook` (`pre_generation`, `post_generation`, `pre_test`, `post_test`).
+  - [x] T25.1.1.2: Define core interfaces: `IRepairRule<TContext, TResult>`, `RuleEvaluationContext`, `RuleExecutionResult`, `RuleDiagnostic`, `IRulePipeline`.
+  - [x] T25.1.1.3: Author JSON Schema / Zod validator for declarative YAML pipeline definitions (`conf/pipelines/*.yml`).
+  - [x] T25.1.1.4: Implement lightweight DSL parser supporting human-readable rule declarations (e.g. `pipeline "vega_hardened" { hook post_generation { rule strip_emojis [severity=silent_repair]; rule enforce_esm_js [severity=silent_repair]; } hook pre_test { rule banned_imports [severity=hard_rejection, packages=["conductor", "lodash"]]; rule loose_root_files [severity=soft_warning]; } }`).
+  - [x] T25.1.1.5: Support variable interpolation and environment substitution within rule arguments (e.g. `${PROJECT_ROOT}`, `${TARGET_ARCH}`).
+- [x] T25.1.2: Pipeline Chaining & Execution Engine:
+  - [x] T25.1.2.1: Implement `RulePipelineEngine` in `@cacophony/engine` orchestrating rule sequences per lifecycle hook.
+  - [x] T25.1.2.2: Implement short-circuit logic: when a `hard_rejection` rule triggers, halt subsequent rules unless configured with `continueOnError: true`.
+  - [x] T25.1.2.3: Implement soft-warning accumulator: rules marked `soft_warning` emit non-fatal warnings preserved in task stage metadata for telemetry without failing the build.
+  - [x] T25.1.2.4: Implement dry-run execution mode (`simulate: true`) calculating would-be modifications and rejections without altering files on disk.
+  - [x] T25.1.2.5: Implement execution telemetry recorder persisting rule run durations, modification counts, and diagnostics in `rule_executions` database table.
 
 ### T25.2: Core Deterministic Repair Rule Catalog (`spec:CoreRuleCatalog`)
-- [ ] T25.2.1: Formatting & Token Hygiene Rules:
-  - [ ] T25.2.1.1: Implement `StripEmojisRule`: Scans source files and documentation for unicode emoji ranges (excluding musical notation symbols U+2669 through U+266F), stripping or flagging per severity mode.
-  - [ ] T25.2.1.2: Implement `EnforceEsmJsExtensionRule`: TypeScript compiler/NodeNext ESM relative import scrubber appending missing `.js` extensions on relative module paths (`from './Foo.js'`).
-  - [ ] T25.2.1.3: Implement `WhitespaceAndEolNormalizerRule`: Normalizes CRLF to LF, trims trailing whitespace, and ensures final newline in modified files.
-- [ ] T25.2.2: Structural & Boundary Protection Rules:
-  - [ ] T25.2.2.1: Implement `LooseRootFileGuardRule`: Prevents models from creating loose source or test files in the project root directory; auto-relocates or rejects based on configurable package boundary policies.
-  - [ ] T25.2.2.2: Implement `EmptyFileGuardRule`: Detects 0-byte or whitespace-only files created by models and rejects or removes them.
-  - [ ] T25.2.2.3: Implement `PlaceholderStubDetectorRule`: Scans code for unfulfilled placeholder stubs (e.g. `// TODO: implement later`, `throw new Error("Not implemented")`, `// ... rest of code goes here ...`) and flags per configured tolerance.
-  - [ ] T25.2.2.4: Implement `BannedImportScrubberRule`: Detects hallucinated or blacklisted packages (e.g. legacy imports, forbidden framework dependencies) and strips or alerts.
-- [ ] T25.2.3: Mechanistic AST Alignment Rules:
-  - [ ] T25.2.3.1: Implement `AstSignatureAlignRule`: Cross-references extracted symbol signatures from Phase 23, mechanistically aligning inverted argument order, parameter name typos, and optional argument gaps.
-  - [ ] T25.2.3.2: Implement `TypeScriptDiagnosticRepairRule`: Consumes TypeScript compiler diagnostics (`tsc --noEmit`), attempting deterministic AST rewrites for trivial errors (e.g. missing type imports, unused variable prefixes `_`).
+- [x] T25.2.1: Formatting & Token Hygiene Rules:
+  - [x] T25.2.1.1: Implement `StripEmojisRule`: Scans source files and documentation for unicode emoji ranges (excluding musical notation symbols U+2669 through U+266F), stripping or flagging per severity mode.
+  - [x] T25.2.1.2: Implement `EnforceEsmJsExtensionRule`: TypeScript compiler/NodeNext ESM relative import scrubber appending missing `.js` extensions on relative module paths (`from './Foo.js'`).
+  - [x] T25.2.1.3: Implement `WhitespaceAndEolNormalizerRule`: Normalizes CRLF to LF, trims trailing whitespace, and ensures final newline in modified files.
+- [x] T25.2.2: Structural & Boundary Protection Rules:
+  - [x] T25.2.2.1: Implement `LooseRootFileGuardRule`: Prevents models from creating loose source or test files in the project root directory; auto-relocates or rejects based on configurable package boundary policies.
+  - [x] T25.2.2.2: Implement `EmptyFileGuardRule`: Detects 0-byte or whitespace-only files created by models and rejects or removes them.
+  - [x] T25.2.2.3: Implement `PlaceholderStubDetectorRule`: Scans code for unfulfilled placeholder stubs (e.g. `// TODO: implement later`, `throw new Error("Not implemented")`, `// ... rest of code goes here ...`) and flags per configured tolerance.
+  - [x] T25.2.2.4: Implement `BannedImportScrubberRule`: Detects hallucinated or blacklisted packages (e.g. legacy imports, forbidden framework dependencies) and strips or alerts.
+- [x] T25.2.3: Mechanistic AST Alignment Rules:
+  - [x] T25.2.3.1: Implement `AstSignatureAlignRule`: Cross-references extracted symbol signatures from Phase 23, mechanistically aligning inverted argument order, parameter name typos, and optional argument gaps.
+  - [x] T25.2.3.2: Implement `TypeScriptDiagnosticRepairRule`: Consumes TypeScript compiler diagnostics (`tsc --noEmit`), attempting deterministic AST rewrites for trivial errors (e.g. missing type imports, unused variable prefixes `_`).
 
 ### T25.3: Verification, Profiling & Unit Testing (`spec:RuleDslVerification`)
-- [ ] T25.3.1: Unit & Regression Tests:
-  - [ ] T25.3.1.1: Write unit tests for DSL parser validating grammar syntax errors, nested block scoping, and parameter parsing.
-  - [ ] T25.3.1.2: Write unit tests for each core rule validating idempotency, modification detection, and diagnostic reporting.
-  - [ ] T25.3.1.3: Write integration tests validating pipeline chaining, short-circuiting on hard rejections, and accumulation of soft warnings.
-  - [ ] T25.3.1.4: Benchmark rule execution overhead verifying total pipeline run latency remains under 50ms for typical source changes.
+- [x] T25.3.1: Unit & Regression Tests:
+  - [x] T25.3.1.1: Write unit tests for DSL parser validating grammar syntax errors, nested block scoping, and parameter parsing.
+  - [x] T25.3.1.2: Write unit tests for each core rule validating idempotency, modification detection, and diagnostic reporting.
+  - [x] T25.3.1.3: Write integration tests validating pipeline chaining, short-circuiting on hard rejections, and accumulation of soft warnings.
+  - [x] T25.3.1.4: Benchmark rule execution overhead verifying total pipeline run latency remains under 50ms for typical source changes.
 
 ---
 
