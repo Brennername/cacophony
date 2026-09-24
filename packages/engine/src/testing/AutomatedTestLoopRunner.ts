@@ -10,7 +10,7 @@ export interface TestExecutionOptions {
   readonly taskId?: string | undefined;
   readonly sessionId?: string | undefined;
   readonly changedFiles?: readonly string[] | undefined;
-  readonly timeoutMs?: number | undefined; // default 60000 (60s)
+  readonly timeoutMs?: number | undefined; // default 120000 (60s)
   readonly commandOverride?: string | undefined;
   readonly attemptNumber?: number | undefined;
 }
@@ -55,7 +55,7 @@ export class AutomatedTestLoopRunner {
   ): Promise<TestRunResult> {
     const startTime = Date.now();
     const runId = `test-run-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const timeoutMs = options.timeoutMs ?? 60000;
+    const timeoutMs = options.timeoutMs ?? 120000;
     const attempt = options.attemptNumber ?? 1;
 
     let detected: DetectedTestSuite;

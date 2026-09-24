@@ -75,7 +75,7 @@ describe("Phase 27: Autonomous Hardware Feature Discovery & Whitebox Ollama Tuni
       assert.equal(config.environmentVars["OLLAMA_NUM_PARALLEL"], "1");
       assert.ok(config.systemdOverrideContent.includes('Environment="OLLAMA_VULKAN=1"'));
       assert.ok(config.modprobeContent);
-      assert.ok(config.modprobeContent.includes("lockup_timeout=60000"));
+      assert.ok(config.modprobeContent.includes("lockup_timeout=120000"));
     });
   });
 

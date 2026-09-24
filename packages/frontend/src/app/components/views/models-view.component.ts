@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
+import { ExplorationControlComponent } from '../exploration-control/exploration-control.component';
 
 /**
  * Model Leaderboard & Health Analytics route view:
@@ -10,7 +11,7 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
 @Component({
   selector: 'app-models-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ExplorationControlComponent],
   template: `
     <div class="view-container">
       <div class="view-header">
@@ -23,6 +24,8 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
           <span class="stat-label">Overall Fleet Pass Rate</span>
         </div>
       </div>
+
+      <app-exploration-control />
 
       <div class="models-grid">
         @for (entry of metricsService.leaderboard(); track entry.modelId) {

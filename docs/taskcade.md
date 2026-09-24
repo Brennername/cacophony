@@ -356,13 +356,14 @@
   - [x] T27.1.2.2: Map detected hardware against known compute backend matrix: Vulkan vs ROCm vs CUDA vs Metal.
   - [x] T27.1.2.3: Identify hardware constraints (e.g. APU compute ring watchdog timeouts, absence of dedicated VRAM, lack of native Flash Attention in older GCN/Vega architectures).
   - [x] T27.1.2.4: Generate typed `HardwareDiscoveryReport` exposing detected devices, recommended hardware profile ID, and risk warnings.
+  - [ ] T27.1.2.5: Document and show in the UI for the user what tools they need to install (`apt install radeontop lm-sensors btop ...`) to enable hardware monitoring and capabilities that were disabled due to missing system tools.
 
 ### T27.2: Whitebox Ollama Systemd Configuration & Override Generator (`spec:OllamaWhiteboxTuning`)
 - [x] T27.2.1: Whitebox Override Generator:
   - [x] T27.2.1.1: Implement `OllamaSystemdGenerator` producing service drop-in configuration (`/etc/systemd/system/ollama.service.d/override.conf`) and environment definitions.
   - [x] T27.2.1.2: Default AMD Vega Profile Generator:
     - Generate `OLLAMA_IGPU_ENABLE=1`, `OLLAMA_VULKAN=1`, `OLLAMA_FLASH_ATTENTION=0`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_KEEP_ALIVE=-1`, `OLLAMA_DEBUG=1`, `OLLAMA_HOST=0.0.0.0`.
-    - Generate kernel module parameter configuration `/etc/modprobe.d/amdgpu.conf` with `options amdgpu lockup_timeout=60000` to prevent compute ring resets.
+    - Generate kernel module parameter configuration `/etc/modprobe.d/amdgpu.conf` with `options amdgpu lockup_timeout=120000` to prevent compute ring resets.
   - [x] T27.2.1.3: AMD RDNA2/3 Profile Generator:
     - Generate `HSA_OVERRIDE_GFX_VERSION=10.3.0` (or `11.0.0`), `OLLAMA_FLASH_ATTENTION=1`, ROCm backend enablement.
   - [x] T27.2.1.4: NVIDIA CUDA Profile Generator:
@@ -393,43 +394,43 @@
 *RDF Category: `spec:StochasticSchedulingCategory`*
 
 ### T28.1: Multi-Armed Bandit Scheduling & Epsilon-Greedy Dispatcher (`spec:BanditScheduler`)
-- [ ] T28.1.1: Bandit Policy Engine:
-  - [ ] T28.1.1.1: Implement `BanditTaskScheduler` in `@cacophony/engine` wrapping the single-concurrency queue dispatcher.
-  - [ ] T28.1.1.2: Implement Epsilon-Greedy Policy ($\epsilon \in [0.05, 0.25]$, configurable via `.env` `SCHEDULER_EXPLORATION_RATE=0.15`):
+- [x] T28.1.1: Bandit Policy Engine:
+  - [x] T28.1.1.1: Implement `BanditTaskScheduler` in `@cacophony/engine` wrapping the single-concurrency queue dispatcher.
+  - [x] T28.1.1.2: Implement Epsilon-Greedy Policy ($\epsilon \in [0.05, 0.25]$, configurable via `.env` `SCHEDULER_EXPLORATION_RATE=0.15`):
     - With probability $1 - \epsilon$: Exploit the highest-rated model for the requested role based on historical win rate.
     - With probability $\epsilon$: Explore a randomly sampled qualified candidate model or expanded configuration.
-  - [ ] T28.1.1.3: Implement Upper Confidence Bound (UCB-1) Policy calculating uncertainty bonus: $\text{score}_i = \bar{X}_i + c \sqrt{\frac{\ln N}{n_i}}$.
-  - [ ] T28.1.1.4: Implement Thompson Sampling Policy sampling from posterior Beta distribution $Beta(\alpha_i, \beta_i)$ for each candidate arm.
-  - [ ] T28.1.1.5: Ensure exploration never violates active hardware safety constraints (e.g. never exceeds hardware profile context or VRAM ceiling).
-- [ ] T28.1.2: Multi-Dimensional Exploration Spaces:
-  - [ ] T28.1.2.1: Model Architecture Exploration: Randomly trial non-primary models (e.g. give a code task to `deepseek-r1:8b`, `phi4-mini`, or `llama3.1` instead of default `qwen2.5-coder`).
-  - [ ] T28.1.2.2: Context Window Tier Exploration: Dynamically test larger context windows (e.g. 8k or 16k instead of standard 4k) when VRAM headroom permits.
-  - [ ] T28.1.2.3: Sampling Hyperparameter Exploration: Vary temperature ($\pm 0.15$), top_p, and repetition penalties to gather empirical generation diversity.
-  - [ ] T28.1.2.4: Log every exploration event with explicit tag `task.is_exploratory = true` and `task.exploration_rationale`.
+  - [x] T28.1.1.3: Implement Upper Confidence Bound (UCB-1) Policy calculating uncertainty bonus: $\text{score}_i = \bar{X}_i + c \sqrt{\frac{\ln N}{n_i}}$.
+  - [x] T28.1.1.4: Implement Thompson Sampling Policy sampling from posterior Beta distribution $Beta(\alpha_i, \beta_i)$ for each candidate arm.
+  - [x] T28.1.1.5: Ensure exploration never violates active hardware safety constraints (e.g. never exceeds hardware profile context or VRAM ceiling).
+- [x] T28.1.2: Multi-Dimensional Exploration Spaces:
+  - [x] T28.1.2.1: Model Architecture Exploration: Randomly trial non-primary models (e.g. give a code task to `deepseek-r1:8b`, `phi4-mini`, or `llama3.1` instead of default `qwen2.5-coder`).
+  - [x] T28.1.2.2: Context Window Tier Exploration: Dynamically test larger context windows (e.g. 8k or 16k instead of standard 4k) when VRAM headroom permits.
+  - [x] T28.1.2.3: Sampling Hyperparameter Exploration: Vary temperature ($\pm 0.15$), top_p, and repetition penalties to gather empirical generation diversity.
+  - [x] T28.1.2.4: Log every exploration event with explicit tag `task.is_exploratory = true` and `task.exploration_rationale`.
 
 ### T28.2: Empirical Reward Function & Dynamic Promotion Engine (`spec:DynamicPromotionEngine`)
-- [ ] T28.2.1: Multi-Factor Reward Formulation:
-  - [ ] T28.2.1.1: Calculate empirical reward $R \in [-1.0, 1.0]$ upon task stage completion:
+- [x] T28.2.1: Multi-Factor Reward Formulation:
+  - [x] T28.2.1.1: Calculate empirical reward $R \in [-1.0, 1.0]$ upon task stage completion:
     - $+1.0$: Tests pass cleanly on first attempt without remediation.
     - $+0.8$: Tests pass after deterministic rule remediation (e.g. ESM `.js` import fix).
     - $+0.3$: Code generates syntactically valid AST but fails unit test assertion.
     - $-0.2$: Code rejected by deterministic validation rules.
     - $-0.5$: Code produces syntax error or compiler fatal error.
     - $-1.0$: Inference triggers GPU crash, driver timeout, or thermal abort.
-  - [ ] T28.2.1.2: Update model posterior parameters ($\alpha, \beta$) and rolling Elo ratings in `model_registry` table.
-- [ ] T28.2.2: Dynamic Retry Escalation & Role Promotion:
-  - [ ] T28.2.2.1: When a primary model fails a task stage, query the bandit policy for the highest-potential alternative candidate rather than a hardcoded static fallback.
-  - [ ] T28.2.2.2: Implement dynamic role promotion: when an exploratory model's empirical win rate significantly exceeds the primary model ($p < 0.05$ binomial test), propose or automatically update the default role assignment in `conf/cacophony.json`.
-  - [ ] T28.2.2.3: Persist dynamic promotion history in `model_promotions` table with statistical justification.
+  - [x] T28.2.1.2: Update model posterior parameters ($\alpha, \beta$) and rolling Elo ratings in `model_registry` table.
+- [x] T28.2.2: Dynamic Retry Escalation & Role Promotion:
+  - [x] T28.2.2.1: When a primary model fails a task stage, query the bandit policy for the highest-potential alternative candidate rather than a hardcoded static fallback.
+  - [x] T28.2.2.2: Implement dynamic role promotion: when an exploratory model's empirical win rate significantly exceeds the primary model ($p < 0.05$ binomial test), propose or automatically update the default role assignment in `conf/cacophony.json`.
+  - [x] T28.2.2.3: Persist dynamic promotion history in `model_promotions` table with statistical justification.
 
 ### T28.3: Mobile-First Frontend Telemetry & Stochastic Control Dashboard (`spec:StochasticUiDashboard`)
-- [ ] T28.3.1: Angular Telemetry & Exploration UI:
-  - [ ] T28.3.1.1: Create `ExplorationControlComponent` (standalone) in `/models` route displaying live exploration rate slider ($\epsilon$), active policy (Epsilon-Greedy vs UCB vs Thompson), and current exploration trials count.
-  - [ ] T28.3.1.2: Render interactive Beta distribution curve visualizations showing uncertainty and confidence intervals per model.
-  - [ ] T28.3.1.3: Render 2D Pareto-Frontier scatter plot (Success Rate % vs Tokens/Second vs VRAM footprint) with model comparison overlays.
-  - [ ] T28.3.1.4: Add "Exploratory Run" badge to Task Card and Gantt Transport timeline for all tasks executed under exploration policy.
-  - [ ] T28.3.1.5: Implement Rule Pipeline Visualizer in `/settings` route allowing operators to toggle individual rules on/off, adjust severities, and view counterfactual pass rates.
-- [ ] T28.3.2: Automated Verification:
-  - [ ] T28.3.2.1: Write unit tests verifying epsilon-greedy probabilistic distribution and random seed reproducibility.
-  - [ ] T28.3.2.2: Write integration tests verifying UCB-1 and Thompson sampling convergence towards optimal models on synthetic task series.
-  - [ ] T28.3.2.3: Write e2e tests asserting telemetry updates and live UI signal synchronization on the Angular dashboard.
+- [x] T28.3.1: Angular Telemetry & Exploration UI:
+  - [x] T28.3.1.1: Create `ExplorationControlComponent` (standalone) in `/models` route displaying live exploration rate slider ($\epsilon$), active policy (Epsilon-Greedy vs UCB vs Thompson), and current exploration trials count.
+  - [x] T28.3.1.2: Render interactive Beta distribution curve visualizations showing uncertainty and confidence intervals per model.
+  - [x] T28.3.1.3: Render 2D Pareto-Frontier scatter plot (Success Rate % vs Tokens/Second vs VRAM footprint) with model comparison overlays.
+  - [x] T28.3.1.4: Add "Exploratory Run" badge to Task Card and Gantt Transport timeline for all tasks executed under exploration policy.
+  - [x] T28.3.1.5: Implement Rule Pipeline Visualizer in `/settings` route allowing operators to toggle individual rules on/off, adjust severities, and view counterfactual pass rates.
+- [x] T28.3.2: Automated Verification:
+  - [x] T28.3.2.1: Write unit tests verifying epsilon-greedy probabilistic distribution and random seed reproducibility.
+  - [x] T28.3.2.2: Write integration tests verifying UCB-1 and Thompson sampling convergence towards optimal models on synthetic task series.
+  - [x] T28.3.2.3: Write e2e tests asserting telemetry updates and live UI signal synchronization on the Angular dashboard.
