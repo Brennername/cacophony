@@ -13,3 +13,4 @@ export * from "./rules.js";
 export * from "./optimization.js";
 export * from "./hardware.js";
 export * from "./bandit.js";
+export * from "./gitea.js";

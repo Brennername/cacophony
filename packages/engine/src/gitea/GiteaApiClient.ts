@@ -7,31 +7,41 @@ import type {
   SubmitReviewRequest,
   MergePullRequestRequest,
   OAuthTokenResponse,
-  GiteaUser
+  GiteaUser,
+  GiteaIssue,
+  CreateIssueCommentRequest,
+  GiteaComment,
+  GiteaPackage
 } from "./giteaTypes.js";
+import { GiteaPermissionGuard } from "./GiteaPermissionGuard.js";
 
 export interface GiteaClientConfig {
   readonly baseUrl: string;
   readonly apiToken?: string;
+  readonly guard?: GiteaPermissionGuard;
 }
 
 /**
  * Robust HTTP client interfacing with Gitea REST API.
- * Supports repository inspection, branch creation, diff querying, PR workflows, and reviews.
+ * Supports repository inspection, branch creation, diff querying, PR workflows, and reviews,
+ * with enforced least-privilege permission guardrails.
  */
 export class GiteaApiClient {
   private readonly baseUrl: string;
   private readonly apiToken: string | undefined;
+  private readonly guard: GiteaPermissionGuard | undefined;
 
   constructor(config: GiteaClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/+$/, "");
     this.apiToken = config.apiToken;
+    this.guard = config.guard;
   }
 
   /**
    * Retrieves repository metadata.
    */
   public async getRepository(owner: string, repo: string): Promise<GiteaRepository> {
+    this.guard?.assertScope("repository", "read");
     return this.request<GiteaRepository>(`/api/v1/repos/${owner}/${repo}`);
   }
 
@@ -39,6 +49,7 @@ export class GiteaApiClient {
    * Lists branches for a repository.
    */
   public async listBranches(owner: string, repo: string): Promise<GiteaBranch[]> {
+    this.guard?.assertScope("repository", "read");
     return this.request<GiteaBranch[]>(`/api/v1/repos/${owner}/${repo}/branches`);
   }
 
@@ -46,6 +57,8 @@ export class GiteaApiClient {
    * Creates a new branch from an existing base branch.
    */
   public async createBranch(owner: string, repo: string, req: CreateBranchRequest): Promise<GiteaBranch> {
+    this.guard?.assertScope("repository", "write");
+    this.guard?.assertBranchModificationPermitted(req.new_branch_name);
     return this.request<GiteaBranch>(`/api/v1/repos/${owner}/${repo}/branches`, {
       method: "POST",
       body: JSON.stringify(req)
@@ -53,9 +66,55 @@ export class GiteaApiClient {
   }
 
   /**
+   * Lists issues for a repository.
+   */
+  public async listIssues(
+    owner: string,
+    repo: string,
+    state: "open" | "closed" | "all" = "open"
+  ): Promise<GiteaIssue[]> {
+    this.guard?.assertScope("issue", "read");
+    return this.request<GiteaIssue[]>(`/api/v1/repos/${owner}/${repo}/issues?state=${state}`);
+  }
+
+  /**
+   * Retrieves a single issue by number.
+   */
+  public async getIssue(owner: string, repo: string, issueNumber: number): Promise<GiteaIssue> {
+    this.guard?.assertScope("issue", "read");
+    return this.request<GiteaIssue>(`/api/v1/repos/${owner}/${repo}/issues/${issueNumber}`);
+  }
+
+  /**
+   * Creates a comment on an issue or PR.
+   */
+  public async createIssueComment(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    comment: CreateIssueCommentRequest
+  ): Promise<GiteaComment> {
+    this.guard?.assertScope("issue", "write");
+    return this.request<GiteaComment>(`/api/v1/repos/${owner}/${repo}/issues/${issueNumber}/comments`, {
+      method: "POST",
+      body: JSON.stringify(comment)
+    });
+  }
+
+  /**
+   * Lists packages for an owner/organization.
+   */
+  public async listPackages(owner: string): Promise<GiteaPackage[]> {
+    this.guard?.assertScope("package", "read");
+    return this.request<GiteaPackage[]>(`/api/v1/packages/${owner}`);
+  }
+
+  /**
    * Opens a new Pull Request.
    */
   public async createPullRequest(owner: string, repo: string, req: CreatePullRequestRequest): Promise<GiteaPullRequest> {
+    this.guard?.assertScope("repository", "write");
+    this.guard?.assertBranchModificationPermitted(req.head);
     return this.request<GiteaPullRequest>(`/api/v1/repos/${owner}/${repo}/pulls`, {
       method: "POST",
       body: JSON.stringify(req)
@@ -66,6 +125,7 @@ export class GiteaApiClient {
    * Fetches unified diff for a Pull Request.
    */
   public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {
+    this.guard?.assertScope("repository", "read");
     const url = `${this.baseUrl}/api/v1/repos/${owner}/${repo}/pulls/${prNumber}.diff`;
     const headers: Record<string, string> = {};
     if (this.apiToken) {
@@ -88,6 +148,7 @@ export class GiteaApiClient {
     prNumber: number,
     review: SubmitReviewRequest
   ): Promise<void> {
+    this.guard?.assertScope("repository", "write");
     await this.request<void>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/reviews`, {
       method: "POST",
       body: JSON.stringify(review)
@@ -103,6 +164,7 @@ export class GiteaApiClient {
     prNumber: number,
     mergeReq: MergePullRequestRequest
   ): Promise<void> {
+    this.guard?.assertScope("repository", "write");
     await this.request<void>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
       method: "POST",
       body: JSON.stringify(mergeReq)

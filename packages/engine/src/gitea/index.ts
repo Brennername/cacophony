@@ -5,3 +5,6 @@ export * from "./AutomatedPrWorkflow.js";
 export * from "./AutomatedPrReviewLoop.js";
 export * from "./GiteaWebhookReceiver.js";
 export * from "./GiteaOAuthProvider.js";
+export * from "./GiteaPermissionGuard.js";
+export * from "./GiteaIssueIngestionWorker.js";
+export * from "./GiteaPackageClient.js";

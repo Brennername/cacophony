@@ -15,6 +15,13 @@ export interface GiteaWebhookPayload {
     readonly body: string;
     readonly labels?: Array<{ name: string }>;
   };
+  readonly comment?: {
+    readonly id: number;
+    readonly body: string;
+    readonly user?: {
+      readonly login: string;
+    };
+  };
   readonly pull_request?: {
     readonly number: number;
     readonly title: string;
@@ -28,11 +35,12 @@ export interface GiteaWebhookPayload {
 export interface WebhookProcessingResult {
   readonly processed: boolean;
   readonly taskId?: string;
+  readonly actionTriggered?: string;
   readonly reason?: string;
 }
 
 /**
- * Webhook receiver processing Gitea issue and PR events,
+ * Webhook receiver processing Gitea issue, comment, and PR events,
  * transforming them asynchronously into Cacophony arena tasks.
  */
 export class GiteaWebhookReceiver {
@@ -60,10 +68,14 @@ export class GiteaWebhookReceiver {
       .update(payloadBody)
       .digest("hex");
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signatureHeader.toLowerCase()),
-      Buffer.from(expectedSignature.toLowerCase())
-    );
+    const expectedBuf = Buffer.from(expectedSignature.toLowerCase());
+    const signatureBuf = Buffer.from(signatureHeader.toLowerCase());
+
+    if (expectedBuf.byteLength !== signatureBuf.byteLength) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(signatureBuf, expectedBuf);
   }
 
   /**
@@ -99,11 +111,51 @@ export class GiteaWebhookReceiver {
 
       return {
         processed: true,
-        taskId
+        taskId,
+        actionTriggered: "issue_enqueued"
       };
     }
 
-    if (event === "pull_request" && payload.action === "opened") {
+    if (event === "issue_comment" && payload.action === "created") {
+      if (!payload.comment || !payload.issue || !payload.repository) {
+        return { processed: false, reason: "Missing comment, issue, or repository in payload." };
+      }
+
+      const commentBody = payload.comment.body.trim();
+      if (commentBody.startsWith("/cacophony run") || commentBody.startsWith("/cacophony retry")) {
+        const taskId = `gitea-comment-cmd-${payload.issue.number}-${Date.now()}`;
+        await this.taskRepo.create({
+          id: taskId,
+          title: `[Triggered via Comment] Issue #${payload.issue.number}: ${payload.issue.title}`,
+          prompt: `User command in comment: ${commentBody}\n\nContext Issue #${payload.issue.number}:\n${payload.issue.title}\n${payload.issue.body || ""}`,
+          role: "implementer",
+          status: "PENDING",
+          priority: "P0",
+          modelAssigned: null,
+          testCommand: null,
+          focusFiles: null,
+          targetBranch: payload.repository.default_branch || "main",
+          prUrl: null,
+          failureCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          completedAt: null
+        });
+
+        return {
+          processed: true,
+          taskId,
+          actionTriggered: "command_task_enqueued"
+        };
+      }
+
+      return {
+        processed: false,
+        reason: "Comment does not contain actionable /cacophony directive."
+      };
+    }
+
+    if (event === "pull_request" && (payload.action === "opened" || payload.action === "synchronized")) {
       if (!payload.pull_request) {
         return { processed: false, reason: "Missing pull_request object in payload." };
       }
@@ -129,7 +181,8 @@ export class GiteaWebhookReceiver {
 
       return {
         processed: true,
-        taskId
+        taskId,
+        actionTriggered: "pr_review_enqueued"
       };
     }
 

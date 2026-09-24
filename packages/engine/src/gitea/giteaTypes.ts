@@ -84,3 +84,36 @@ export interface OAuthTokenResponse {
   readonly expires_in?: number;
   readonly refresh_token?: string;
 }
+
+export interface GiteaIssue {
+  readonly id: number;
+  readonly number: number;
+  readonly title: string;
+  readonly body: string;
+  readonly state: "open" | "closed";
+  readonly labels?: readonly { readonly id: number; readonly name: string }[];
+  readonly assignee?: GiteaUser | null;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
+export interface CreateIssueCommentRequest {
+  readonly body: string;
+}
+
+export interface GiteaComment {
+  readonly id: number;
+  readonly html_url: string;
+  readonly body: string;
+  readonly user: GiteaUser;
+  readonly created_at: string;
+}
+
+export interface GiteaPackage {
+  readonly id: number;
+  readonly owner: GiteaUser;
+  readonly type: string;
+  readonly name: string;
+  readonly version: string;
+  readonly created_at: string;
+}
