@@ -1051,3 +1051,14 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T42.1.2: Replace full file content of secondary dependencies with compact type skeletons in ContextMinimizer.
   - [x] T42.1.3: Benchmark token reduction: assert at least 40% reduction in prompt token size on multi-file refactoring tasks.
   - [x] T42.1.4: Write unit tests verifying generated import skeletons preserve type fidelity without breaking compiler verification.
+
+---
+
+## Archived Phase 43: Frontier Fallback Router, Circuit Breaker & Quota Tracking
+*Completed & Verified in Commit: `85f194b`*
+
+### T43.1: Frontier Fallback Router with Provider Circuit Breakers
+  - [x] T43.1.1: Implement CircuitBreaker in packages/engine/src/inference/ tracking 429 rate-limits and 5xx errors per external provider (OpenAI, Anthropic, Gemini).
+  - [x] T43.1.2: Automatically fall back to secondary provider or high-reasoning local model (deepseek-r1:8b) when circuit opens.
+  - [x] T43.1.3: Implement TokenQuotaTracker recording daily and monthly token consumption and estimated dollar cost per provider.
+  - [x] T43.1.4: Expose GET /api/config/quotas endpoint returning remaining token budget and circuit breaker health statuses.

@@ -26,15 +26,26 @@
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 42.*
+*See [`docs/taskcade-history.md`](file:///home/nexen/projects/cacophony/docs/taskcade-history.md) for archived Phases 1 through 43.*
 
 ---
 
-## Phase 43: Frontier Fallback Router, Circuit Breaker & Quota Tracking
-*RDF Category: *
+## Phase 44: Cross-Workspace Sandboxing, Dynamic IPC Channels & Multi-Session Isolation
+*RDF Category: isolation*
 
-### T43.1: Frontier Fallback Router with Provider Circuit Breakers
-  - [ ] T43.1.1: Implement CircuitBreaker in packages/engine/src/inference/ tracking 429 rate-limits and 5xx errors per external provider (OpenAI, Anthropic, Gemini).
-  - [ ] T43.1.2: Automatically fall back to secondary provider or high-reasoning local model (deepseek-r1:8b) when circuit opens.
-  - [ ] T43.1.3: Implement TokenQuotaTracker recording daily and monthly token consumption and estimated dollar cost per provider.
-  - [ ] T43.1.4: Expose GET /api/config/quotas endpoint returning remaining token budget and circuit breaker health statuses.
+### T44.1: Multi-Workspace Sandbox Isolation & Subprocess Limits
+  - [ ] T44.1.1: Implement WorkspaceIsolationManager in packages/engine/src/isolation/ managing per-workspace temporary roots, permissions, and environment sandboxing.
+  - [ ] T44.1.2: Add memory limits and process group cgroup isolation controls to prevent external compiler subprocesses from destabilizing the host system.
+  - [ ] T44.1.3: Provide automated cleanup of stale temporary workspaces when sessions terminate or reach idle timeout.
+  - [ ] T44.1.4: Write unit and integration tests verifying concurrent task execution across isolated workspace sandboxes without path collisions.
+
+---
+
+## Phase 45: Real-Time Stream Tap Filtering, Telemetry HUD Metrics & Visual Pacing Alerts
+*RDF Category: telemetry*
+
+### T45.1: Real-Time Telemetry HUD Stream Filtering & Visual Pacing Alerts
+  - [ ] T45.1.1: Implement TelemetryHudBridge in packages/engine/src/telemetry/ streaming high-frequency AMD Vega sensor readouts (VRAM, APU frequency, edge temp, PPT watts) to WebSocket/SSE clients.
+  - [ ] T45.1.2: Add visual thermal pacing alert thresholds in frontend TelemetryBar for Nominal (<70C), Warm (70-79C), Elevated (80-89C), and Danger (>=90C).
+  - [ ] T45.1.3: Integrate automated pacing status in DashboardViewComponent showing active model pacing delays (0s, 5s, 15s).
+  - [ ] T45.1.4: Write frontend unit tests verifying reactive signal updates on telemetry threshold crossings.
