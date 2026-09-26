@@ -25,6 +25,17 @@ Built specifically to conquer the thermal and VRAM constraints of unified-memory
 
 ![Cacophony Real-Time Dashboard Preview](assets/screenshots/dashboard_preview.png)
 
+### Live Interactive Demo
+
+Experience the full mobile-first Angular dashboard and live SSE streaming interface online:
+
+**Live Demo**: [https://cacophony-demo-7e5f0ecead13.herokuapp.com/](https://cacophony-demo-7e5f0ecead13.herokuapp.com/)
+
+> [!NOTE]
+> **Mock Demonstration Notice**: This is running with mock data, currently only one specialized APU is supported, with future plans for other TPUs, APUs, GPUs, and a CPU only mode.
+>
+> **Cold Start Advisory**: Because the demo is hosted on a cloud Eco dyno, please allow 10–20 seconds for the container to wake up if no one has visited the demo recently.
+
 ---
 
 ## Architectural Topology
