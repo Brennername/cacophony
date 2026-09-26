@@ -3,7 +3,7 @@ import { Injectable, signal, computed } from '@angular/core';
 export interface HistoryItem {
   id: string;
   title: string;
-  status: 'PASSED' | 'FAILED' | 'REMEDIATED';
+  status: 'PASSED' | 'FAILED' | 'REMEDIATED' | 'RUNNING' | 'PENDING';
   durationMs: number;
   model: string;
   role?: string;
@@ -65,10 +65,26 @@ export class HistoryMetricsService {
           completedAt?: string | null;
           prUrl?: string | null;
         }>;
+        const mapStatus = (rawStatus: string): HistoryItem['status'] => {
+          switch (rawStatus) {
+            case 'COMPLETED':
+              return 'PASSED';
+            case 'FAILED':
+              return 'FAILED';
+            case 'REMEDIATING':
+            case 'REMEDIATED':
+              return 'REMEDIATED';
+            case 'RUNNING':
+              return 'RUNNING';
+            default:
+              return 'PENDING';
+          }
+        };
+
         const items: HistoryItem[] = tasks.map((t) => ({
           id: t.id,
           title: t.title,
-          status: t.status === 'COMPLETED' ? 'PASSED' : t.status === 'FAILED' ? 'FAILED' : 'REMEDIATED',
+          status: mapStatus(t.status),
           durationMs: 3500,
           model: t.modelAssigned || 'Auto',
           role: t.role || 'implementer',
@@ -103,7 +119,12 @@ export class HistoryMetricsService {
   public readonly rollingSuccessRate = computed(() => {
     const items = this.historyItems();
     if (items.length === 0) return 100;
-    const passed = items.filter((i) => i.status === 'PASSED').length;
-    return Math.round((passed / items.length) * 100);
+    // Calculate success rate over concluded tasks (PASSED, FAILED, REMEDIATED)
+    const finishedItems = items.filter(
+      (i) => i.status === 'PASSED' || i.status === 'FAILED' || i.status === 'REMEDIATED'
+    );
+    if (finishedItems.length === 0) return 100;
+    const passed = finishedItems.filter((i) => i.status === 'PASSED' || i.status === 'REMEDIATED').length;
+    return Math.round((passed / finishedItems.length) * 100);
   });
 }

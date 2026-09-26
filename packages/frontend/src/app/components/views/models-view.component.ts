@@ -597,6 +597,8 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
     .status-pill.passed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
     .status-pill.failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
     .status-pill.remediated { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-pill.running { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .status-pill.pending { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
 
     .run-meta {
       display: flex;
@@ -955,10 +957,26 @@ export class ModelsViewComponent {
   });
 
   public drillDownTask(item: HistoryItem): void {
+    const mapTaskStatus = (s: HistoryItem['status']): TaskItem['status'] => {
+      switch (s) {
+        case 'PASSED':
+          return 'COMPLETED';
+        case 'FAILED':
+          return 'FAILED';
+        case 'RUNNING':
+          return 'RUNNING';
+        case 'PENDING':
+          return 'PENDING';
+        case 'REMEDIATED':
+        default:
+          return 'REMEDIATED';
+      }
+    };
+
     const taskItem: TaskItem = {
       id: item.id,
       title: item.title,
-      status: item.status === 'PASSED' ? 'COMPLETED' : item.status === 'FAILED' ? 'FAILED' : 'REMEDIATED',
+      status: mapTaskStatus(item.status),
       priority: (item.priority as any) || 'P1',
       role: item.role || 'implementer',
       modelAssigned: item.model,
