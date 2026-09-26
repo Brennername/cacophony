@@ -15,8 +15,7 @@ Security updates are applied to the active development branch (`master`) and the
 
 If you discover a security vulnerability within Cacophony, please do NOT file a public issue on GitHub.
 
-Instead, please send an email to:
-**security@cacophony-project.org**
+Instead, please send a private message to the project maintainer directly on GitHub.
 
 Please include in your report:
 
