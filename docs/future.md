@@ -5,7 +5,7 @@
 > This document serves as the high-level conceptual repository for uncommitted future features, aspirational ideas, and exploratory capabilities.
 > When updating this document, the AI assistant must **synthesize and distill** raw user ideas into clear, cohesive, and logically structured architectural specifications.
 > **Do NOT copy verbatim or reproduce incoherent prompt phrasing.** Reorganize, categorize, and logically design the content so it cleanly articulates the features envisioned for the future, without prematurely committing them to the active implementation roadmap.
-> Once specific features are selected and approved for active architectural design, they transition from this document to [`docs/planning.md`](file:///home/nexen/projects/cacophony/docs/planning.md), where they will be broken down into concrete phases to form the next taskcade.
+> Once specific features are selected and approved for active architectural design, they transition from this document to [`docs/planning.md`](planning.md), where they will be broken down into concrete phases to form the next taskcade.
 
 ---
 

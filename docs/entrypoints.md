@@ -50,7 +50,7 @@ All CLI entrypoints are accessible via npm scripts or the root executable binary
   npm run tui -w @cacophony/engine
   # Or: cacophony tui
   ```
-  *Entrypoint*: [`packages/engine/src/tui/TerminalApp.ts`](file:///home/nexen/projects/cacophony/packages/engine/src/tui/TerminalApp.ts)
+  *Entrypoint*: [`packages/engine/src/tui/TerminalApp.ts`](../packages/engine/src/tui/TerminalApp.ts)
   *Description*: Fullscreen curses-style terminal developer environment featuring ConversationPane, TelemetryBar, ContextInspectorPane, and live command palette.
 
 ### 2.3 Hardware Probing & Ollama Override Provisioning
@@ -59,7 +59,7 @@ All CLI entrypoints are accessible via npm scripts or the root executable binary
   npm run cli -w @cacophony/engine -- hardware inspect
   # Or: cacophony hardware inspect
   ```
-  *Entrypoint*: [`packages/engine/src/cli/hardwareCommand.ts`](file:///home/nexen/projects/cacophony/packages/engine/src/cli/hardwareCommand.ts)
+  *Entrypoint*: [`packages/engine/src/cli/hardwareCommand.ts`](../packages/engine/src/cli/hardwareCommand.ts)
   *Description*: Probes sysfs, `/sys/class/drm`, and `/sys/class/kfd`, printing detected APUs, discrete GPUs, RAM/VRAM allocations, and missing monitoring packages.
 
 - **Generate Ollama Systemd & Kernel Overrides**:
@@ -73,7 +73,7 @@ All CLI entrypoints are accessible via npm scripts or the root executable binary
   ```bash
   npm run cli -w @cacophony/engine -- rules optimize --dataset=/path/to/arena/data --strategy=genetic --generations=50
   ```
-  *Entrypoint*: [`packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts`](file:///home/nexen/projects/cacophony/packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts)
+  *Entrypoint*: [`packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts`](../packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts)
   *Description*: Runs Genetic or Bayesian hyperparameter optimization against versioned arena dataset archives (defaults to `ARENA_DATASET_DIR` or `./data/arena/`) and exports optimized configurations to `conf/pipelines/optimized/`. Supports dataset schema versions (e.g. `v1.0.0` legacy and `v2.0.0` standard).
 
 ### 2.5 Authentik Automated Bootstrapper
@@ -155,7 +155,7 @@ Base URL: `http://<host>:24072` (or root `/` when served via unified server on p
 ## 5. Headless JSON-RPC 2.0 & WebSocket Protocol
 
 - **Protocol**: JSON-RPC 2.0 over WebSockets or Headless HTTP.
-- **Specification**: [`packages/engine/src/daemon/HeadlessServerProtocol.ts`](file:///home/nexen/projects/cacophony/packages/engine/src/daemon/HeadlessServerProtocol.ts).
+- **Specification**: [`packages/engine/src/daemon/HeadlessServerProtocol.ts`](../packages/engine/src/daemon/HeadlessServerProtocol.ts).
 - **Available Methods**:
   - `cacophony.submitPrompt`: Submit follow-up steering prompt mid-stream.
   - `cacophony.interrupt`: Send abort signal to active model generation.

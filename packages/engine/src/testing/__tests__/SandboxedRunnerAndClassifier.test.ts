@@ -66,8 +66,8 @@ describe("Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failu
     // Vitest/Jest
     const jsTrace = `
       Error: test failure
-        at Object.<anonymous> (/home/nexen/projects/cacophony/packages/engine/src/foo.ts:42:15)
-        at runTest (/home/nexen/projects/cacophony/packages/engine/src/bar.ts:88:5)
+        at Object.<anonymous> (/app/packages/engine/src/foo.ts:42:15)
+        at runTest (/app/packages/engine/src/bar.ts:88:5)
     `;
     const jsLocs = FailureClassifier.extractStackLocations(jsTrace);
     assert.ok(jsLocs.length >= 2);

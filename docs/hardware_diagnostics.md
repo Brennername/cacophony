@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Cacophony features an abstract hardware diagnostic telemetry engine designed to monitor low-level system metrics on the host machine across diverse acceleration hardware (APUs, discrete GPUs, TPUs, and full CPU fallback). The reference baseline profile targets the **AMD Cezanne / Vega APU (amdgpu)** architecture, providing deep insight into GPU utilization, VRAM usage, GTT memory, temperature, core voltage, electrical wattage, and clock speeds, identical to KDE System Monitor widgets.
+Cacophony features an abstract hardware diagnostic telemetry engine designed to monitor low-level system metrics on the host machine across diverse acceleration hardware (APUs, discrete GPUs, TPUs, and full CPU fallback). The reference baseline profile targets the **AMD Cezanne / Vega APU (amdgpu)** architecture, providing deep insight into GPU utilization, VRAM usage, GTT memory, temperature, core voltage, electrical wattage, and clock speeds, similar to KDE System Monitor widgets.
 
 ---
 

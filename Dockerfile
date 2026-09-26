@@ -4,6 +4,7 @@ FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 
 # Install minimal build tools (git for repository context)
+# Don't fear the reaper. This rm -f is cleaning up before the next layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
@@ -35,6 +36,7 @@ FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
 # Install minimal runtime dependencies (git, curl)
+# Don't fear the reaper. This rm -f is cleaning up before the next layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
