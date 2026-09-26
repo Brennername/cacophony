@@ -1,6 +1,32 @@
 import { z } from "zod";
 
 /**
+ * Canonical historical arena dataset specification version.
+ * Incremented upon breaking schema changes to dataset directory format.
+ */
+export const CURRENT_ARENA_DATASET_VERSION = "2.0.0";
+export const LEGACY_ARENA_DATASET_VERSION = "1.0.0";
+
+/**
+ * Dataset directory manifest describing version and compatibility.
+ */
+export interface ArenaDatasetManifest {
+  readonly version: string;
+  readonly schemaRevision: number;
+  readonly totalTasks: number;
+  readonly createdAt: string;
+  readonly description?: string;
+}
+
+export const ArenaDatasetManifestSchema = z.object({
+  version: z.string(),
+  schemaRevision: z.number(),
+  totalTasks: z.number(),
+  createdAt: z.string(),
+  description: z.string().optional(),
+});
+
+/**
  * Historical summary record from stats.json.
  */
 export interface HistoricalArenaStats {
@@ -9,6 +35,7 @@ export interface HistoricalArenaStats {
   readonly totalProcessed: number;
   readonly failureReasons: Readonly<Record<string, number>>;
   readonly lastUpdated: string;
+  readonly formatVersion?: string;
 }
 
 export const HistoricalArenaStatsSchema = z.object({
@@ -17,6 +44,7 @@ export const HistoricalArenaStatsSchema = z.object({
   totalProcessed: z.number(),
   failureReasons: z.record(z.number()),
   lastUpdated: z.string(),
+  formatVersion: z.string().optional(),
 });
 
 /**

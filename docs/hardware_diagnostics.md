@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Cacophony features a dedicated hardware diagnostic telemetry engine designed to monitor low-level system metrics on the host machine. The primary implementation targets the **AMD Cezanne / Vega APU (amdgpu)** architecture, providing deep insight into GPU utilization, VRAM usage, GTT memory, temperature, core voltage, electrical wattage, and clock speeds, identical to KDE System Monitor widgets.
+Cacophony features an abstract hardware diagnostic telemetry engine designed to monitor low-level system metrics on the host machine across diverse acceleration hardware (APUs, discrete GPUs, TPUs, and full CPU fallback). The reference baseline profile targets the **AMD Cezanne / Vega APU (amdgpu)** architecture, providing deep insight into GPU utilization, VRAM usage, GTT memory, temperature, core voltage, electrical wattage, and clock speeds, identical to KDE System Monitor widgets.
 
 ---
 
@@ -37,9 +37,9 @@ The telemetry provider scans `/sys/class/hwmon/hwmon*` to dynamically locate the
 
 ---
 
-## 3. Ollama VRAM Telemetry Integration
+## 3. Inference Engine Telemetry Integration (Ollama & OpenAI-Compatible)
 
-In addition to hardware sensors, the telemetry engine correlates hardware consumption with Ollama's active model state by polling the Ollama local HTTP API:
+In addition to hardware sensors, the telemetry engine correlates hardware consumption with the active model state by polling the inference runtime. While Ollama is configured as the default local runtime, the telemetry provider interface is architected for generic OpenAI-compatible inference backends as well:
 
 - Endpoint: `GET http://<host>:11434/api/ps`
 - Response Payload Structure:

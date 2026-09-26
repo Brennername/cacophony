@@ -22,10 +22,10 @@ A critical deficiency in previous iterations was scattering shell scripts, ad-ho
 │   AMD Sysfs & DRM Nodes (/sys/class/drm, /sys/class/hwmon)             │
 │                                                                        │
 │   Host Directories:                                                    │
-│   ├── /home/nexen/projects/cacophony/conf       (Bind Mount)           │
-│   ├── /home/nexen/projects/cacophony/data       (Bind Mount)           │
-│   ├── /home/nexen/projects/cacophony/workspaces (Bind Mount)           │
-│   └── /home/nexen/projects/cacophony/.env       (Bind Mount)           │
+│   ├── ./conf                                    (Bind Mount)           │
+│   ├── ./data                                    (Bind Mount)           │
+│   ├── ./workspaces                              (Bind Mount)           │
+│   └── ./.env                                    (Bind Mount)           │
 │                                                                        │
 │   ┌────────────────────────────────────────────────────────────────┐   │
 │   │                      DOCKER BRIDGE NETWORK                     │   │

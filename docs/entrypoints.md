@@ -71,10 +71,10 @@ All CLI entrypoints are accessible via npm scripts or the root executable binary
 ### 2.4 Composable Repair Rules & Hyperparameter Optimization
 - **Execute Stochastic Rule Pipeline Search**:
   ```bash
-  npm run cli -w @cacophony/engine -- rules optimize --dataset=historical-arena --strategy=genetic --generations=50
+  npm run cli -w @cacophony/engine -- rules optimize --dataset=/path/to/arena/data --strategy=genetic --generations=50
   ```
   *Entrypoint*: [`packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts`](file:///home/nexen/projects/cacophony/packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts)
-  *Description*: Runs Genetic or Bayesian hyperparameter optimization against the 3,584 historical arena patches in `~/projects/drumalyzer/data/arena/` and exports optimized configurations to `conf/pipelines/optimized/`.
+  *Description*: Runs Genetic or Bayesian hyperparameter optimization against versioned arena dataset archives (defaults to `ARENA_DATASET_DIR` or `./data/arena/`) and exports optimized configurations to `conf/pipelines/optimized/`. Supports dataset schema versions (e.g. `v1.0.0` legacy and `v2.0.0` standard).
 
 ### 2.5 Authentik Automated Bootstrapper
 - **Bootstrap Authentik OIDC Application**:

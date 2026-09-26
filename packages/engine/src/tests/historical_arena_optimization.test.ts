@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
-import os from "node:os";
+import fs from "node:fs";
 import {
   HistoricalArenaIngestionAdapter,
   RuleBacktestRunner,
@@ -11,13 +11,23 @@ import { RulePipelineEngine } from "../rules/RulePipelineEngine.js";
 import { HistoricalTaskRecord, RulePipelineDeclaration } from "@cacophony/shared-types";
 
 describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparameter Optimization", () => {
-  const arenaBasePath = path.join(os.homedir(), "projects/drumalyzer/data/arena");
+  const arenaBasePath =
+    process.env["ARENA_DATASET_DIR"] ||
+    path.resolve(process.cwd(), "data/arena");
+
+  const hasLiveDataset = fs.existsSync(path.join(arenaBasePath, "stats.json"));
 
   describe("T26.1: Historical Arena Telemetry Ingestion & Mitigation Paradox", () => {
-    it("should parse drumalyzer stats.json and produce Mitigation Paradox Report", async () => {
+    it("should parse arena dataset stats.json and produce Mitigation Paradox Report", async (t) => {
+      if (!hasLiveDataset) {
+        t.skip("Skipping live arena dataset assertions: stats.json not found at " + arenaBasePath);
+        return;
+      }
       const adapter = new HistoricalArenaIngestionAdapter(arenaBasePath);
       const stats = await adapter.loadStats();
+      const version = await adapter.getDatasetVersion();
 
+      assert.ok(version, "Dataset version should be detected");
       assert.equal(stats.totalProcessed, 3584);
       assert.equal(stats.totalCompleted, 624);
       assert.equal(stats.totalFailed, 2960);
@@ -33,7 +43,11 @@ describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparam
       assert.ok(paradox.counterfactualPassRatePct > paradox.rawPassRatePct, "Counterfactual pass rate should exceed raw baseline");
     });
 
-    it("should load task records from historical arena completed and failed folders", async () => {
+    it("should load task records from historical arena completed and failed folders", async (t) => {
+      if (!hasLiveDataset) {
+        t.skip("Skipping live arena dataset assertions: stats.json not found at " + arenaBasePath);
+        return;
+      }
       const adapter = new HistoricalArenaIngestionAdapter(arenaBasePath);
       const tasks = await adapter.loadTasks("completed", 5);
 
@@ -42,7 +56,11 @@ describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparam
       assert.ok(tasks[0]!.model);
     });
 
-    it("should load postmortems from historical arena", async () => {
+    it("should load postmortems from historical arena", async (t) => {
+      if (!hasLiveDataset) {
+        t.skip("Skipping live arena dataset assertions: stats.json not found at " + arenaBasePath);
+        return;
+      }
       const adapter = new HistoricalArenaIngestionAdapter(arenaBasePath);
       const postmortems = await adapter.loadPostmortems(5);
 

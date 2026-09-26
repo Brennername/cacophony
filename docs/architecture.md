@@ -7,7 +7,7 @@ Cacophony is an autonomous multi-agent code orchestration platform and local mod
 The system replaces ad-hoc shell scripts and brittle file-based message passing with:
 1. Strict TypeScript backend engine adhering to SOLID principles.
 2. In-process SQL persistence via PGlite (with modular adapters for SQLite, PostgreSQL, and MariaDB).
-3. Single-concurrency task scheduler tailored for AMD Vega APU hardware constraints, featuring model-affinity batching to minimize model swapping, thermal pacing, and consecutive-failure model eviction with weighted random roulette fallback.
+3. Pluggable compute execution scheduling tailored for edge acceleration (APUs, discrete GPUs, TPUs, and CPU fallback), featuring model-affinity batching to minimize model swapping, thermal pacing, and consecutive-failure model eviction with weighted random roulette fallback (calibrated on the reference AMD Vega APU).
 4. Deterministic code scrubbing layer (ESM relative imports, zero emojis, banned imports).
 5. Comprehensive Gemini/Codex-style tool execution suite exposed via local runner and Model Context Protocol (MCP).
 6. Mobile-first Angular v20+ dashboard providing real-time hardware telemetry (KDE System Monitor aesthetic), live queue inspection, test runner monitoring, and direct Gitea PR tracking.
@@ -135,10 +135,12 @@ Previous iterations scattered JSON files across `data/arena/queue/`, `completed/
 
 ### 3.2 Single-Concurrency Scheduler & Model Governor
 
-Due to physical memory and compute constraints on the AMD Vega APU, only one active inference session or heavy compilation can safely execute without triggering driver watchdog resets or severe memory thrashing.
+Cacophony features an abstract hardware telemetry and pacing engine architected to support edge accelerators, discrete GPUs, TPUs, and full CPU fallback. Because tight memory and thermal constraints exist on edge devices, the execution engine enforces strict concurrency control and active thermal pacing. 
+
+Detailed hardware calibration in this release is tuned against our first reference hardware profile: the unified-memory AMD Vega APU.
 
 #### Scheduling Invariants & Features:
-1. **Single-Concurrency Mutex**: An asynchronous execution lock ensures jobs run sequentially through their lifecycle stages.
+1. **Single-Concurrency Mutex**: An asynchronous execution lock ensures jobs run sequentially through their lifecycle stages to prevent memory thrashing or device watchdog trips.
 2. **Model-Affinity Batching**:
    - Querying Ollama's active model via `GET http://<host>:11434/api/ps`.
    - The scheduler scans `PENDING` tasks and groups tasks assigned to the currently loaded model first.

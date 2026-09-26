@@ -1087,4 +1087,20 @@
   - [ ] T70.4.3: Implement rolling eviction of .cacophony/diagnostics/ keeping maximum 100 recent failed task diagnostic dumps to prevent disk bloat. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: cleanOldDiagnostics] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
   - [ ] T70.4.4: Write unit and frontend tests validating dynamic diagnostic toggling and failure post-mortem rendering. [File: packages/engine/src/tests/diagnostics_config.test.ts] [Test: npm test -- packages/engine/src/tests/diagnostics_config.test.ts]
 
+---
+
+## Phase 71: Dataset Schema Versioning & Pluggable Compute / Inference Profiles
+*RDF Category: orchestration*
+
+### T71.1: Dataset Schema Versioning & Data Directory Compatibility Migration
+  - [ ] T71.1.1: Implement dataset migration utility in packages/engine/src/optimization/DatasetVersionMigrator.ts upgrading legacy v1.0.0 arena data directories to v2.0.0 by generating ArenaDatasetManifest and standardizing task record schemas. [File: packages/engine/src/optimization/DatasetVersionMigrator.ts] [Class: DatasetVersionMigrator] [Test: npm test -- packages/engine/src/tests/historical_arena_optimization.test.ts]
+  - [ ] T71.1.2: Enforce version compatibility checks in HistoricalArenaIngestionAdapter rejecting unsupported future versions and providing informative error diagnostics. [File: packages/engine/src/optimization/HistoricalArenaIngestionAdapter.ts] [Method: assertCompatibleVersion] [Test: npm test -- packages/engine/src/tests/historical_arena_optimization.test.ts]
+  - [ ] T71.1.3: Add CLI subcommand cacophony dataset migrate --dir=<path> to execute non-destructive inplace schema migrations for historical datasets. [File: packages/engine/src/cli/datasetCommand.ts] [Function: runDatasetMigrateCommand] [Test: npm test -- packages/engine/src/tests/dataset_cli.test.ts]
+
+### T71.2: Pluggable Compute Hardware & Inference Provider Profiles
+  - [ ] T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, TPUs, APUs, and pure CPU scheduling profiles. [File: packages/engine/src/hardware/ComputeHardwareProfile.ts] [Interface: ComputeHardwareProfile] [Test: npm test -- packages/engine/src/tests/hardware_profiles.test.ts]
+  - [ ] T71.2.2: Add generic OpenAI-compatible HTTP inference provider alongside native Ollama adapter to support arbitrary OpenAI-compatible server endpoints. [File: packages/engine/src/inference/OpenAICompatibleInferenceProvider.ts] [Class: OpenAICompatibleInferenceProvider] [Test: npm test -- packages/engine/src/tests/openai_inference_provider.test.ts]
+  - [ ] T71.2.3: Wire dynamic provider configuration via environment variables and settings (INFERENCE_PROVIDER=ollama|openai_compatible, INFERENCE_BASE_URL, INFERENCE_API_KEY). [File: packages/engine/src/inference/InferenceProviderFactory.ts] [Class: InferenceProviderFactory] [Test: npm test -- packages/engine/src/tests/inference_factory.test.ts]
+
+
 

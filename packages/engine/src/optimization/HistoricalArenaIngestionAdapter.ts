@@ -1,24 +1,58 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import os from "node:os";
 import {
   HistoricalArenaStats,
   HistoricalTaskRecord,
   HistoricalPostmortemRecord,
   MitigationParadoxReport,
+  ArenaDatasetManifest,
+  CURRENT_ARENA_DATASET_VERSION,
+  LEGACY_ARENA_DATASET_VERSION,
 } from "@cacophony/shared-types";
 
 /**
  * HistoricalArenaIngestionAdapter
  *
- * Ingests external historical run data from legacy arena executions (e.g. ~/projects/drumalyzer/data/arena)
+ * Ingests external historical run data and empirical benchmarks from any versioned arena dataset directory
  * without depending on legacy shell scripts or runners.
  */
 export class HistoricalArenaIngestionAdapter {
   private readonly defaultBasePath: string;
 
   constructor(basePath?: string) {
-    this.defaultBasePath = basePath || path.join(os.homedir(), "projects/drumalyzer/data/arena");
+    this.defaultBasePath =
+      basePath ||
+      process.env["ARENA_DATASET_DIR"] ||
+      path.resolve(process.cwd(), "data/arena");
+  }
+
+  /**
+   * Discovers and returns the version of the dataset directory.
+   * Reads manifest.json if present; falls back to stats.json inspection or legacy v1.0.0.
+   */
+  public async getDatasetVersion(basePath = this.defaultBasePath): Promise<string> {
+    try {
+      const manifestPath = path.join(basePath, "manifest.json");
+      const raw = await fs.readFile(manifestPath, "utf-8");
+      const parsed = JSON.parse(raw) as Partial<ArenaDatasetManifest>;
+      if (parsed.version) {
+        return parsed.version;
+      }
+    } catch {
+      // Manifest not present, inspect stats.json
+    }
+
+    try {
+      const statsPath = path.join(basePath, "stats.json");
+      const raw = await fs.readFile(statsPath, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed.format_version) {
+        return String(parsed.format_version);
+      }
+      return LEGACY_ARENA_DATASET_VERSION;
+    } catch {
+      return CURRENT_ARENA_DATASET_VERSION;
+    }
   }
 
   /**
@@ -28,6 +62,7 @@ export class HistoricalArenaIngestionAdapter {
     const statsPath = path.join(basePath, "stats.json");
     const raw = await fs.readFile(statsPath, "utf-8");
     const parsed = JSON.parse(raw);
+    const version = await this.getDatasetVersion(basePath);
 
     return {
       totalCompleted: parsed.total_completed,
@@ -35,6 +70,7 @@ export class HistoricalArenaIngestionAdapter {
       totalProcessed: parsed.total_processed,
       failureReasons: parsed.failure_reasons || {},
       lastUpdated: parsed.last_updated,
+      formatVersion: version,
     };
   }
 

@@ -628,7 +628,7 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
 
 ### T26.1: Historical Arena Telemetry Ingestion & Dataset Normalization (`spec:HistoricalArenaIngestion`)
 - [x] T26.1.1: Decoupled Data Extraction Adapter:
-  - [x] T26.1.1.1: Implement `HistoricalArenaIngestionAdapter` in `@cacophony/engine` reading external telemetry from `~/projects/drumalyzer/data/arena/` without relying on legacy bash or JS runners.
+  - [x] T26.1.1.1: Implement `HistoricalArenaIngestionAdapter` in `@cacophony/engine` reading empirical telemetry from versioned arena datasets (`data/arena/` or `ARENA_DATASET_DIR`) across format revisions without relying on legacy scripts.
   - [x] T26.1.1.2: Ingest summary telemetry from `stats.json` (3,584 total tasks: 624 completed, 2,960 failed) into `historical_arenas` table.
   - [x] T26.1.1.3: Parse individual task records from `data/arena/completed/`, `data/arena/failed/`, and `data/arena/exhausted/` directories.
   - [x] T26.1.1.4: Ingest failure postmortems and error stack traces from `data/arena/postmortems/` into `historical_postmortems` table.
