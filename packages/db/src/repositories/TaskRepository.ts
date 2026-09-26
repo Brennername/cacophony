@@ -181,6 +181,7 @@ export class TaskRepository {
 
   /**
    * Lists recent tasks with optional filtering for history tables.
+   * If no specific status is requested, defaults to completed/concluded historical runs (not pending).
    */
   public async listRecent(limit = 50, filter?: { status?: TaskStatus }): Promise<readonly TaskRecord[]> {
     if (filter?.status) {
@@ -191,7 +192,7 @@ export class TaskRepository {
       return rows.map((r) => this.mapRow(r));
     }
     const rows = await this.driver.query<TaskRow>(
-      "SELECT * FROM tasks ORDER BY updated_at DESC LIMIT $1",
+      "SELECT * FROM tasks WHERE status IN ('COMPLETED', 'FAILED', 'REMEDIATING', 'CANCELLED') ORDER BY COALESCE(completed_at, updated_at) DESC LIMIT $1",
       [limit]
     );
     return rows.map((r) => this.mapRow(r));

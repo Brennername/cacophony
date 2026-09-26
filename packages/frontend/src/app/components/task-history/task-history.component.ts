@@ -257,8 +257,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     .status-badge.passed { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .status-badge.remediated { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
     .status-badge.failed { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-    .status-badge.running { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-    .status-badge.pending { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+    .status-badge.cancelled { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
 
     .task-title-text {
       font-weight: 500;

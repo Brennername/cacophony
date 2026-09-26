@@ -3,7 +3,7 @@ import { Injectable, signal, computed } from '@angular/core';
 export interface HistoryItem {
   id: string;
   title: string;
-  status: 'PASSED' | 'FAILED' | 'REMEDIATED' | 'RUNNING' | 'PENDING';
+  status: 'PASSED' | 'FAILED' | 'REMEDIATED' | 'CANCELLED';
   durationMs: number;
   model: string;
   role?: string;
@@ -52,7 +52,7 @@ export class HistoryMetricsService {
 
   public async fetchHistoryAndLeaderboard(): Promise<void> {
     try {
-      const historyRes = await fetch('/api/history?limit=100');
+      const historyRes = await fetch('/api/history?limit=1000');
       if (historyRes.ok) {
         const tasks = (await historyRes.json()) as Array<{
           id: string;
@@ -74,10 +74,9 @@ export class HistoryMetricsService {
             case 'REMEDIATING':
             case 'REMEDIATED':
               return 'REMEDIATED';
-            case 'RUNNING':
-              return 'RUNNING';
+            case 'CANCELLED':
             default:
-              return 'PENDING';
+              return 'CANCELLED';
           }
         };
 
@@ -124,7 +123,9 @@ export class HistoryMetricsService {
       (i) => i.status === 'PASSED' || i.status === 'FAILED' || i.status === 'REMEDIATED'
     );
     if (finishedItems.length === 0) return 100;
-    const passed = finishedItems.filter((i) => i.status === 'PASSED' || i.status === 'REMEDIATED').length;
-    return Math.round((passed / finishedItems.length) * 100);
+    // Sliding window of the last 100 concluded runs
+    const windowItems = finishedItems.slice(0, 100);
+    const passed = windowItems.filter((i) => i.status === 'PASSED' || i.status === 'REMEDIATED').length;
+    return Math.round((passed / windowItems.length) * 100);
   });
 }
