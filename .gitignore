@@ -42,6 +42,5 @@ Thumbs.db
 *.swp
 *~
 
-# Trash folder (deprecated source code preserved per project rule)
-.trash/*
-!.trash/README.md
+# Trash folder (deprecated source code preserved locally per project rule)
+.trash/
