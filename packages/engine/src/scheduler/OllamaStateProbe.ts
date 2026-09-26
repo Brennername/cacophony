@@ -5,15 +5,23 @@
  */
 export class OllamaStateProbe {
   private readonly baseUrl: string;
+  private simulatedModel: string | null = null;
 
   constructor(baseUrl: string = process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434") {
     this.baseUrl = baseUrl;
+  }
+
+  public setSimulatedModel(model: string | null): void {
+    this.simulatedModel = model;
   }
 
   /**
    * Retrieves the normalized model name currently resident in VRAM, or null if idle.
    */
   public async getLoadedModel(): Promise<string | null> {
+    if (this.simulatedModel) {
+      return this.simulatedModel;
+    }
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 1000);

@@ -59,7 +59,7 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
 
     return {
       content,
-      model: request.model || "qwen2.5-coder:7b (demo)",
+      model: request.model || "qwen2.5-coder:7b",
       tokensPrompt: 128,
       tokensCompletion: totalTokens,
       totalTokens: 128 + totalTokens,
@@ -91,7 +91,7 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
 
     return {
       content,
-      model: request.model || "qwen2.5-coder:7b (demo)",
+      model: request.model || "qwen2.5-coder:7b",
       tokensPrompt: 128,
       tokensCompletion: tokensGenerated,
       totalTokens: 128 + tokensGenerated,

@@ -96,6 +96,7 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
         <!-- Interactive Gantt Transport Timeline -->
         <app-gantt-transport
           [taskId]="activeTask()?.id ?? null"
+          [modelName]="activeTaskModel()"
           [spans]="activeTaskSpans()"
           [totalDurationMs]="activeTaskTotalDuration()"
           [isRunning]="isStreamActive() || activeTask()?.status === 'RUNNING'"

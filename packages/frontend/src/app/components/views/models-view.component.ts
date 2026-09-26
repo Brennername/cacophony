@@ -136,7 +136,7 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
             </div>
 
             <div class="runs-list">
-              @for (task of selectedModelTasks(); track task.id) {
+              @for (task of paginatedModelTasks(); track task.id) {
                 <div class="run-row" (click)="drillDownTask(task)">
                   <div class="run-left">
                     <span class="status-pill" [ngClass]="task.status.toLowerCase()">
@@ -159,6 +159,28 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
               } @empty {
                 <div class="empty-runs">
                   <span>No completed tasks for this candidate yet. Active tasks are executing in the arena.</span>
+                </div>
+              }
+
+              @if (totalModelTaskPages() > 1) {
+                <div class="pagination-bar">
+                  <button
+                    class="page-btn"
+                    [disabled]="modelTaskPage() === 1"
+                    (click)="setModelTaskPage(modelTaskPage() - 1)"
+                  >
+                    Previous
+                  </button>
+                  <span class="page-info font-mono">
+                    Page {{ modelTaskPage() }} of {{ totalModelTaskPages() }} ({{ selectedModelTasks().length }} tasks)
+                  </span>
+                  <button
+                    class="page-btn"
+                    [disabled]="modelTaskPage() === totalModelTaskPages()"
+                    (click)="setModelTaskPage(modelTaskPage() + 1)"
+                  >
+                    Next
+                  </button>
                 </div>
               }
             </div>
@@ -617,6 +639,41 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
       border-radius: var(--radius-sm);
     }
 
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0.25rem 0.25rem 0.25rem;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 0.5rem;
+    }
+
+    .page-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--color-brand);
+      color: var(--color-brand);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .page-info {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
     /* Leaderboard Grid */
     .models-grid {
       display: grid;
@@ -816,6 +873,27 @@ export class ModelsViewComponent {
     if (!modelId) return [];
     return this.metricsService.historyItems().filter((h) => h.model === modelId);
   });
+
+  public readonly modelTaskPageSize = 25;
+  public readonly modelTaskPage = signal<number>(1);
+
+  public readonly totalModelTaskPages = computed(() => {
+    const count = this.selectedModelTasks().length;
+    return Math.max(1, Math.ceil(count / this.modelTaskPageSize));
+  });
+
+  public readonly paginatedModelTasks = computed(() => {
+    const tasks = this.selectedModelTasks();
+    const page = Math.min(this.modelTaskPage(), this.totalModelTaskPages());
+    const start = (page - 1) * this.modelTaskPageSize;
+    return tasks.slice(start, start + this.modelTaskPageSize);
+  });
+
+  public setModelTaskPage(page: number): void {
+    if (page >= 1 && page <= this.totalModelTaskPages()) {
+      this.modelTaskPage.set(page);
+    }
+  }
 
   public readonly selectedSuccessCount = computed<number>(() => {
     const entry = this.selectedModelEntry();

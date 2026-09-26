@@ -218,6 +218,18 @@ export class TaskScheduler {
           if (!success) {
             await this.taskRepo.incrementFailure(targetTask.id);
           }
+
+          // Record run telemetry in ModelHealthRepository for consistent win rate and leaderboard metrics
+          try {
+            await this.evictionManager.recordRunOutcome(
+              selectedModel,
+              success,
+              durationMs,
+              30.0
+            );
+          } catch {
+            // ignore non-critical health recording errors
+          }
         } catch (err) {
           const durationMs = Date.now() - stageStartMs;
           console.error(`[TaskScheduler] Task ${targetTask.id} threw error after ${durationMs}ms:`, err);
@@ -231,6 +243,17 @@ export class TaskScheduler {
             0,
             durationMs
           );
+
+          try {
+            await this.evictionManager.recordRunOutcome(
+              selectedModel,
+              false,
+              durationMs,
+              0.0
+            );
+          } catch {
+            // ignore
+          }
         }
       }
 

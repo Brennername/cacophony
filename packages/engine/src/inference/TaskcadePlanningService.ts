@@ -9,6 +9,8 @@ export interface TaskcadeBacklogObjective {
   readonly description: string;
   readonly targetWorkspacePkg?: string;
   readonly priority: TaskPriority;
+  readonly role?: AgentRole;
+  readonly modelAssigned?: string | null;
 }
 
 export interface ReplenishmentResult {
@@ -134,10 +136,10 @@ export class TaskcadePlanningService {
       id: `task-${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       title: objective.title,
       prompt: objective.description,
-      role: "implementer" as AgentRole,
+      role: objective.role || ("implementer" as AgentRole),
       status: "PENDING",
       priority: objective.priority,
-      modelAssigned: null,
+      modelAssigned: objective.modelAssigned ?? null,
       testCommand: "npm test",
       focusFiles: null,
       targetBranch: null,

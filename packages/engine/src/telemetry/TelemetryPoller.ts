@@ -24,6 +24,7 @@ export class TelemetryPoller {
   private latestSnapshot: HardwareTelemetrySnapshot | null = null;
   private readonly recentBuffer: HardwareTelemetrySnapshot[] = [];
   private static readonly MAX_BUFFER_SIZE = 300;
+  private simulatedActiveModel: string | null = null;
 
   constructor(options: {
     readonly provider: IHardwareTelemetryProvider;
@@ -37,6 +38,10 @@ export class TelemetryPoller {
     this.governor = options.governor ?? new ThermalGovernor();
     this.pollIntervalMs = options.pollIntervalMs ?? 1000;
     this.ollamaBaseUrl = options.ollamaBaseUrl ?? (process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434");
+  }
+
+  public setSimulatedActiveModel(modelName: string | null): void {
+    this.simulatedActiveModel = modelName;
   }
 
   /**
@@ -141,6 +146,15 @@ export class TelemetryPoller {
    * Queries Ollama host HTTP /api/ps to retrieve loaded VRAM model details.
    */
   private async queryOllamaActiveModel(): Promise<OllamaModelInfo | null> {
+    if (this.simulatedActiveModel) {
+      return {
+        name: this.simulatedActiveModel,
+        model: this.simulatedActiveModel,
+        sizeBytes: 4294967296,
+        vramSizeBytes: 3221225472,
+        details: { format: "gguf", family: "qwen2" }
+      };
+    }
     try {
       const url = `${this.ollamaBaseUrl}/api/ps`;
       const controller = new AbortController();

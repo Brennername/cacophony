@@ -35,6 +35,18 @@ export class ModelEvictionManager {
   }
 
   /**
+   * Records execution outcome in the health repository to maintain live win rates and degradation states.
+   */
+  public async recordRunOutcome(
+    modelId: string,
+    success: boolean,
+    durationMs: number,
+    tokensPerSec: number = 30.0
+  ): Promise<void> {
+    await this.healthRepo.recordRun(modelId, "ollama", success, durationMs, tokensPerSec);
+  }
+
+  /**
    * Selects the most optimal model for a role among candidates.
    *
    * 1. Prioritizes the currently loaded model (Affinity) while allowing controlled

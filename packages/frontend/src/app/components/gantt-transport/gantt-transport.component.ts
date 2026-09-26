@@ -41,6 +41,9 @@ export interface GanttSpan {
           <h2>Execution Timeline</h2>
           <span class="subtext">
             {{ isRunning() ? 'LIVE STREAMING' : (effectiveTotalMs() > 0 ? 'COMPLETED' : 'IDLE') }}
+            @if (modelName()) {
+              • <span class="font-mono text-brand">{{ modelName() }}</span>
+            }
             • {{ formatTime(currentPlayheadMs()) }} elapsed / {{ formatTime(effectiveTotalMs()) }} total
           </span>
         </div>
@@ -112,7 +115,12 @@ export interface GanttSpan {
           @for (track of trackDefinitions; track track.category) {
             <div class="track-row">
               <div class="track-label-col">
-                <span class="track-name">{{ track.label }}</span>
+                <span class="track-name">
+                  {{ track.label }}
+                  @if (track.category === 'inference' && modelName()) {
+                    <span class="track-model-name font-mono">[{{ modelName() }}]</span>
+                  }
+                </span>
                 <span class="track-sub">{{ track.category | uppercase }}</span>
               </div>
 
@@ -459,10 +467,18 @@ export interface GanttSpan {
     .span-label {
       font-weight: 500;
     }
+
+    .track-model-name {
+      font-size: 0.6875rem;
+      color: var(--color-brand, #38bdf8);
+      font-weight: 600;
+      margin-left: 0.25rem;
+    }
   `],
 })
 export class GanttTransportComponent implements OnDestroy {
   public taskId = input<string | null>(null);
+  public modelName = input<string | null>(null);
   public spans = input<readonly GanttSpan[]>([]);
   public totalDurationMs = input<number>(0);
   public isRunning = input<boolean>(false);

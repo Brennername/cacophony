@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
 import { ArenaStateStore } from '../../services/arena-state.store';
@@ -54,7 +54,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
             </tr>
           </thead>
           <tbody>
-            @for (item of historyItems(); track item.id) {
+            @for (item of paginatedHistoryItems(); track item.id) {
               <tr class="clickable-row" (click)="drillDown(item.id)">
                 <td>
                   <span class="status-badge" [ngClass]="item.status.toLowerCase()">
@@ -83,6 +83,29 @@ import { ArenaStateStore } from '../../services/arena-state.store';
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Footer -->
+      @if (totalPages() > 1) {
+        <div class="pagination-bar">
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === 1"
+            (click)="setPage(currentPage() - 1)"
+          >
+            Previous
+          </button>
+          <span class="page-info font-mono">
+            Page {{ currentPage() }} of {{ totalPages() }} ({{ historyItems().length }} records)
+          </span>
+          <button
+            class="page-btn"
+            [disabled]="currentPage() === totalPages()"
+            (click)="setPage(currentPage() + 1)"
+          >
+            Next
+          </button>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -277,6 +300,41 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     .gitea-link:hover {
       text-decoration: underline;
     }
+
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0.25rem 0.25rem 0.25rem;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 0.5rem;
+    }
+
+    .page-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--color-brand);
+      color: var(--color-brand);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .page-info {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
   `],
 })
 export class TaskHistoryComponent {
@@ -285,6 +343,27 @@ export class TaskHistoryComponent {
   public readonly historyItems = this.metricsService.historyItems;
   public readonly leaderboard = this.metricsService.leaderboard;
   public readonly successRate = this.metricsService.rollingSuccessRate;
+
+  public readonly pageSize = 25;
+  public readonly currentPage = signal<number>(1);
+
+  public readonly totalPages = computed(() => {
+    const count = this.historyItems().length;
+    return Math.max(1, Math.ceil(count / this.pageSize));
+  });
+
+  public readonly paginatedHistoryItems = computed(() => {
+    const list = this.historyItems();
+    const page = Math.min(this.currentPage(), this.totalPages());
+    const start = (page - 1) * this.pageSize;
+    return list.slice(start, start + this.pageSize);
+  });
+
+  public setPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
 
   public formatTks(val: number | null | undefined): string {
     return (Number(val) || 0).toFixed(1);

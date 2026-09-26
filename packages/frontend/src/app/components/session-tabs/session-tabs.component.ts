@@ -1,5 +1,6 @@
-import { Component, signal, model, output } from '@angular/core';
+import { Component, signal, model, output, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ArenaStateStore } from '../../services/arena-state.store';
 
 export interface SessionTab {
   readonly id: string;
@@ -31,6 +32,9 @@ export interface SessionTab {
             <div class="tab-content">
               <span class="tab-title">{{ tab.title }}</span>
               <span class="tab-branch">[{{ tab.branch }}]</span>
+              @if (tab.activeModel) {
+                <span class="tab-model font-mono">{{ tab.activeModel }}</span>
+              }
               @if (tab.isModified) {
                 <span class="tab-dot" aria-label="Modified">•</span>
               }
@@ -115,6 +119,14 @@ export interface SessionTab {
       opacity: 0.75;
       font-family: monospace;
     }
+    .tab-model {
+      font-size: 0.6875rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      background: var(--bg-surface, #1e293b);
+      color: var(--color-primary, #38bdf8);
+      border: 1px solid var(--border-color, #475569);
+    }
     .tab-dot {
       color: var(--color-warning, #f59e0b);
       font-weight: bold;
@@ -149,6 +161,8 @@ export interface SessionTab {
   `]
 })
 export class SessionTabsComponent {
+  private readonly store = inject(ArenaStateStore);
+
   public readonly tabs = signal<SessionTab[]>([
     { id: 'tab-1', title: 'Main Session', branch: 'master', activeModel: 'qwen2.5-coder:7b' }
   ]);
@@ -156,6 +170,17 @@ export class SessionTabsComponent {
 
   public readonly tabCreated = output<SessionTab>();
   public readonly tabClosed = output<string>();
+
+  constructor() {
+    effect(() => {
+      const activeModel = this.store.telemetry().activeModel;
+      if (activeModel && activeModel !== 'None') {
+        this.tabs.update((curr) =>
+          curr.map((tab, idx) => (idx === 0 ? { ...tab, activeModel } : tab))
+        );
+      }
+    });
+  }
 
   public selectTab(id: string): void {
     this.activeTabId.set(id);
