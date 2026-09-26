@@ -21,7 +21,7 @@ Built specifically to conquer the thermal and VRAM constraints of unified-memory
 - Single-concurrency task scheduling with model-affinity batching, continuous thermal pacing, consecutive failure eviction, and weighted roulette fallback.
 - Deterministic code scrubbing enforcing ESM compliance, relative path correctness, and absolute zero-emoji purity.
 - A full Gemini/Codex-style deterministic tool suite exposed locally and via the Model Context Protocol (MCP).
-- A mobile-first Angular v20+ dashboard offering real-time hardware telemetry, live queue management, stage inspectors, DAW-style Gantt timeline execution tracking, and Gitea pull request tracking.
+- A mobile-first Angular v20+ dashboard offering real-time hardware telemetry, live queue management, stage inspectors, Gantt timeline execution tracking, and Gitea pull request tracking.
 
 ---
 
@@ -33,7 +33,7 @@ Built specifically to conquer the thermal and VRAM constraints of unified-memory
 |                                                                               |
 |   +-----------------------------------------------------------------------+   |
 |   |                  Angular v20+ Mobile-First Frontend                   |   |
-|   |     (DAW Gantt Timeline, Hardware Gauges, Stage Steppers, Models)     |   |
+|   |     (Gantt Timeline, Hardware Gauges, Stage Steppers, Models)     |   |
 |   +-----------------------------------------------------------------------+   |
 |                                      | SSE / REST                             |
 |                                      v                                        |
@@ -78,7 +78,7 @@ The workspace is organized as an npm workspace monorepo under `packages/`:
 | `@cacophony/db`           | `packages/db`           | Database abstraction layer with PGlite in-process WASM/Node PostgreSQL and automated migration runners.          |
 | `@cacophony/tools`        | `packages/tools`        | Deterministic file manipulation, safe shell execution, git worktree management, and MCP tool handlers.           |
 | `@cacophony/engine`       | `packages/engine`       | Core autonomous worker pipeline, model affinity scheduler, thermal governor, and SSE/REST server.                |
-| `@cacophony/frontend`     | `packages/frontend`     | Responsive Angular v20+ SPA featuring Zoneless change detection, Signals, DAW Gantt transport, and hardware HUD. |
+| `@cacophony/frontend`     | `packages/frontend`     | Responsive Angular v20+ SPA featuring Zoneless change detection, Signals, Gantt transport, and hardware HUD. |
 
 ---
 
@@ -166,9 +166,9 @@ Sysfs hardware telemetry directly monitors GPU edge temperature, core clock freq
 - **Elevated (80-89 C)**: 15-second pacing delay injected; logs warning to telemetry stream.
 - **Danger (>=90 C)**: Pipeline paused until cooling occurs.
 
-### DAW Gantt Transport & Telemetry HUD
+### Gantt Transport & Telemetry HUD
 
-The frontend interface mirrors professional digital audio workstations (DAW):
+The frontend interface has:
 
 - Continuous transport scrubber tracking live stage durations.
 - Zoom in/out timeline controls with viewport fit toggle.

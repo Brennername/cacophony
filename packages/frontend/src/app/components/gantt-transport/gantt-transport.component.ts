@@ -20,7 +20,7 @@ export interface GanttSpan {
 }
 
 /**
- * DAW-style Real-time Task Pipeline Gantt Timeline:
+ * Real-time Task Pipeline Gantt Timeline:
  * 1. Live playhead that advances continuously during task execution (does not track mouse).
  * 2. Center-anchored playhead: playhead moves from 0 to center line (50%), then stays locked
  *    in the center while the timeline tracks and ruler scroll smoothly underneath it.

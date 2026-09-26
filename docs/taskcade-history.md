@@ -490,7 +490,7 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T21.2.1.1: Persist high-precision timestamps (`started_at`, `completed_at`, `duration_ms`) for each task stage in `task_stages` table.
   - [x] T21.2.1.2: Implement `GET /api/tasks/:id/gantt` returning timeline spans for all stages and spawned subprocesses.
 - [x] T21.2.2: Interactive Gantt Transport Component:
-  - [x] T21.2.2.1: Create `GanttTransportComponent` (standalone): Audio DAW-inspired horizontal timeline with moving playhead scrub bar.
+  - [x] T21.2.2.1: Create `GanttTransportComponent` (standalone): Horizontal timeline with moving transport head scrub bar.
   - [x] T21.2.2.2: Render concurrent operations (model token streaming, background compiler test runs, git commit creation) on stacked swimlanes.
   - [x] T21.2.2.3: Interactive zoom (`Ctrl + Scroll`) and time scrubber allowing post-mortem inspection of latency bottlenecks.
   - [x] T21.2.2.4: Write unit tests validating progress calculation algorithms and timeline bounds.

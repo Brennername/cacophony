@@ -46,7 +46,7 @@
 - **Assigned Taskcade Phase**: Phase 20 (`spec:AngularRouting`, `spec:DesktopGridOptimization`).
 
 ### 1.5 Real-Time Task Progress, Granular Stages & Gantt Transport
-- **Objective**: Granular multi-stage progress tracking (`1/7 Planning` through `7/7 PR Review`) with progress bars, intra-stage token velocity, and audio DAW-inspired interactive Gantt timeline.
+- **Objective**: Granular multi-stage progress tracking (`1/7 Planning` through `7/7 PR Review`) with progress bars, intra-stage token velocity, and Gantt timeline.
 - **Architectural Scope**:
   - Segmented progress bar components and intra-stage token velocity gauges.
   - `GanttTransportComponent` rendering concurrent model inference, background test runs, and git operations on stacked swimlanes.
