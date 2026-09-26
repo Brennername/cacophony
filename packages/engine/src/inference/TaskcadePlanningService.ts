@@ -35,16 +35,19 @@ export class TaskcadePlanningService {
   private readonly stageRepo?: StageRepository | undefined;
   private readonly decomposer?: FrontierTaskDecomposer | undefined;
   private readonly backlog: TaskcadeBacklogObjective[] = [];
+  private readonly recycleBacklog: boolean;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
     readonly stageRepo?: StageRepository | undefined;
     readonly decomposer?: FrontierTaskDecomposer | undefined;
     readonly initialBacklog?: readonly TaskcadeBacklogObjective[] | undefined;
+    readonly recycleBacklog?: boolean | undefined;
   }) {
     this.taskRepo = options.taskRepo;
     this.stageRepo = options.stageRepo;
     this.decomposer = options.decomposer;
+    this.recycleBacklog = options.recycleBacklog ?? false;
     if (options.initialBacklog) {
       this.backlog.push(...options.initialBacklog);
     }
@@ -100,6 +103,9 @@ export class TaskcadePlanningService {
     }
 
     const nextObjective = this.backlog.shift()!;
+    if (this.recycleBacklog) {
+      this.backlog.push(nextObjective);
+    }
     const created: TaskRecord[] = [];
 
     if (this.decomposer) {

@@ -273,7 +273,8 @@ export class CacophonyDaemon {
               modelAssigned: "deepseek-r1:8b"
             }
           ]
-        : []
+        : [],
+      recycleBacklog: isDemoMode
     });
 
     // In demo mode, run queue replenishment every 5 seconds to keep live tasks active across diverse models
