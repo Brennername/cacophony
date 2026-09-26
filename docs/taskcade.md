@@ -16,6 +16,7 @@
   2. Never execute destructive bypasses (e.g. dropping database tables or deleting configuration to avoid schema migrations or typing mismatches). Always author backward-compatible migrations and robust type unions.
   3. Transactional Integrity: When a task fails verification or remediation, all modified files must be safely rolled back to their pre-task snapshot so the repository remains pristine.
   4. Genuine Problem Resolution: Always resolve root causes rather than masking symptoms or bypassing guardrails.
+- Showcase / Demo Mode Mock Preservation: Mock elimination tasks (such as Phase 48) apply to production paths, component stubs, and UI mocks, but must NEVER eliminate or break `MockInferenceStreamProvider` or `FallbackTelemetryProvider` when running under `DEMO_MODE=true` / `SIMULATION_MODE=true` (T71.3). The visual showcase and simulated zero-hardware demonstration mode must remain fully preserved and operational.
 - Always commit changes, keep workspace clean, and ensure work is production ready.
 
 ---
@@ -106,6 +107,7 @@
 
 ## Phase 48: UI Mock Elimination & Full-Stack Service Wiring
 *RDF Category: frontend*
+*Note: Targets production UI and component stub mocks only. Preserves `MockInferenceStreamProvider` and `FallbackTelemetryProvider` for `DEMO_MODE=true` / `SIMULATION_MODE=true` visual showcase functionality.*
 
 ### T48.1: Eliminate Mock in FrontierModalComponent via Real Decomposition API
   - [ ] T48.1.1: Add backend endpoint POST /api/tasks/decompose invoking FrontierTaskDecomposer.decomposeEpic(). [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/decompose] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
