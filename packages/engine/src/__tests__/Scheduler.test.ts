@@ -98,20 +98,30 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       await runner.migrate();
 
       healthRepo = new ModelHealthRepository(driver);
-      evictionManager = new ModelEvictionManager(healthRepo, 3);
+      evictionManager = new ModelEvictionManager(healthRepo, 3, 0);
     });
 
     after(async () => {
       await driver.close();
     });
 
-    test("should select loaded model when active and among candidates", async () => {
+    test("should select loaded model when active and among candidates with zero exploration", async () => {
       const selected = await evictionManager.selectModel(
         "implementer",
         ["qwen2.5-coder:7b", "gemma3:4b"],
         "qwen2.5-coder:7b"
       );
       assert.equal(selected, "qwen2.5-coder:7b");
+    });
+
+    test("should support multi-model exploration when explorationRate is enabled", async () => {
+      const exploratoryManager = new ModelEvictionManager(healthRepo, 3, 1.0);
+      const selected = await exploratoryManager.selectModel(
+        "implementer",
+        ["qwen2.5-coder:7b", "gemma3:4b"],
+        "qwen2.5-coder:7b"
+      );
+      assert.ok(["qwen2.5-coder:7b", "gemma3:4b"].includes(selected));
     });
 
     test("should exclude evicted model and select alternate candidate", async () => {
@@ -208,6 +218,55 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task, { allowEmojis: true });
       assert.ok(groomed.enrichedPrompt.includes("Feature Exemption: Emojis permitted"));
       assert.ok(!groomed.enrichedPrompt.includes("Zero Emojis: Strictly NO emojis"));
+    });
+
+    test("should scope explicit test file commands and strip quotes from focus files", () => {
+      const task: TaskRecord = {
+        id: "task-groom-worktree",
+        title: "T50.1.1: Worktree test",
+        prompt: "Implement worktree allocation",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: "npm test -- packages/engine/src/tests/gitea_integration.test.ts",
+        focusFiles: '"packages/engine/src/gitea/GitWorktreeManager.ts"',
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      const groomed = groomer.groom(task);
+      assert.equal(groomed.focusFiles[0], "packages/engine/src/gitea/GitWorktreeManager.ts");
+      assert.equal(groomed.scopedTestCommand, "node --test packages/engine/dist/tests/gitea_integration.test.js");
+      assert.ok(groomed.enrichedPrompt.includes("Integrity Rule: Always work and test with genuine integrity"));
+      assert.ok(groomed.enrichedPrompt.includes("Module Imports: Import only from valid installed workspace packages"));
+    });
+
+    test("should scope to node --check syntax verification when target test file does not exist yet", () => {
+      const task: TaskRecord = {
+        id: "task-groom-missing-test",
+        title: "T50.1.2: Missing test suite",
+        prompt: "Implement worktree allocation",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: "npm test -- packages/engine/src/tests/non_existent_future.test.ts",
+        focusFiles: "packages/engine/src/gitea/GitWorktreeManager.ts",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      const groomed = groomer.groom(task);
+      assert.equal(groomed.scopedTestCommand, "node --check packages/engine/src/gitea/GitWorktreeManager.ts");
     });
   });
 

@@ -18,22 +18,29 @@ export interface ModelCandidateWeight {
 export class ModelEvictionManager {
   private readonly healthRepo: ModelHealthRepository;
   private readonly evictionThreshold: number;
+  private readonly explorationRate: number;
 
-  constructor(healthRepo: ModelHealthRepository, evictionThreshold = 3) {
+  constructor(healthRepo: ModelHealthRepository, evictionThreshold = 3, explorationRate = 0.25) {
     this.healthRepo = healthRepo;
     this.evictionThreshold = evictionThreshold;
+    this.explorationRate = explorationRate;
   }
 
   public getEvictionThreshold(): number {
     return this.evictionThreshold;
   }
 
+  public getExplorationRate(): number {
+    return this.explorationRate;
+  }
+
   /**
    * Selects the most optimal model for a role among candidates.
    *
-   * 1. Prioritizes the currently loaded model if it is active and among candidate options (Affinity).
+   * 1. Prioritizes the currently loaded model (Affinity) while allowing controlled
+   *    exploration so diverse models gather empirical statistics in the arena.
    * 2. Excludes any models that have been EJECTED (consecutive failures >= threshold).
-   * 3. Selects among remaining candidates using empirical weighted random roulette.
+   * 3. Selects among remaining candidates using empirical weighted Bayesian roulette.
    */
   public async selectModel(
     _role: AgentRole,
@@ -49,8 +56,13 @@ export class ModelEvictionManager {
       candidateModels.map((m) => this.healthRepo.getProfile(m))
     );
 
-    // 1. Model Affinity Check
-    if (currentlyLoadedModel) {
+    // 1. Model Affinity & Fleet Exploration
+    // If candidates have 0 runs, or with 25% exploration probability, explore alternate models
+    // to build empirical statistics across all models on the leaderboard.
+    const underSampled = profiles.filter((p) => p.status === "ACTIVE" && p.totalTasks === 0 && p.modelId !== currentlyLoadedModel);
+    const shouldExplore = this.explorationRate > 0 && (underSampled.length > 0 || Math.random() < this.explorationRate);
+
+    if (currentlyLoadedModel && !shouldExplore) {
       const activeMatch = profiles.find(
         (p) => p.modelId === currentlyLoadedModel && p.status === "ACTIVE"
       );

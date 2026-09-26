@@ -21,7 +21,8 @@
     "ensure-start": "bin/cacophony ensure-start",
     "status": "bin/cacophony status",
     "stop": "bin/cacophony stop",
-    "dev": "npm run --workspace=@cacophony/engine dev"
+    "dev": "npm run --workspace=@cacophony/engine dev",
+    "rebuild": "./bin/rebuild-all.sh"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

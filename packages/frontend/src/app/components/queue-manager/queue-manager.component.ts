@@ -60,7 +60,10 @@ import { ArenaStateStore } from '../../services/arena-state.store';
             </div>
             <div class="info-col">
               <span class="title">{{ task.title }}</span>
-              <span class="role-badge">{{ task.role }}</span>
+              <div class="meta-row">
+                <span class="role-badge">{{ task.role }}</span>
+                <span class="model-tag font-mono">{{ task.modelAssigned || 'Auto' }}</span>
+              </div>
             </div>
             <div class="status-col">
               <span class="status-pill" [ngClass]="task.status.toLowerCase()">
@@ -89,10 +92,22 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     .queue-card {
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .card-header {
@@ -124,11 +139,13 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .input-title {
-      flex: 1;
-      min-width: 180px;
+      flex: 1 1 140px;
+      min-width: 0;
       padding: 0.5rem 0.75rem;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
@@ -150,6 +167,8 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .task-row {
@@ -160,6 +179,9 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .tag {
@@ -176,18 +198,37 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 0.125rem;
+      gap: 0.2rem;
+      min-width: 0;
     }
 
     .info-col .title {
       font-size: 0.875rem;
       font-weight: 500;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .role-badge {
       font-size: 0.6875rem;
       color: var(--text-muted);
       text-transform: uppercase;
+    }
+
+    .model-tag {
+      font-size: 0.625rem;
+      color: var(--color-accent);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 3px;
+      padding: 0.05rem 0.35rem;
     }
 
     .status-pill {

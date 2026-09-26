@@ -73,6 +73,7 @@ export interface TaskRecord {
   readonly prUrl: string | null;
   readonly failureCount: number;
   readonly progressPercent?: number;
+  readonly logSnippet?: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly completedAt: string | null;

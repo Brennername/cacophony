@@ -174,13 +174,15 @@ export interface FleetNodeView {
 
     .fleet-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       gap: 1.25rem;
+      min-width: 0;
+      max-width: 100%;
     }
 
     @media (min-width: 768px) {
       .fleet-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
@@ -188,6 +190,10 @@ export interface FleetNodeView {
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .node-header {
@@ -196,6 +202,8 @@ export interface FleetNodeView {
       align-items: center;
       flex-wrap: wrap;
       gap: 0.5rem;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .node-title {
@@ -203,6 +211,8 @@ export interface FleetNodeView {
       align-items: center;
       gap: 0.5rem;
       font-size: 1rem;
+      min-width: 0;
+      flex-wrap: wrap;
     }
 
     .node-ip {
@@ -228,16 +238,26 @@ export interface FleetNodeView {
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       color: var(--color-accent);
+      white-space: nowrap;
     }
 
     .node-stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.5rem;
       background: var(--bg-surface-elevated);
       padding: 0.625rem;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 640px) {
+      .node-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
     }
 
     .stat-col {
@@ -245,6 +265,7 @@ export interface FleetNodeView {
       flex-direction: column;
       align-items: center;
       text-align: center;
+      min-width: 0;
     }
 
     .label {

@@ -6,6 +6,9 @@ export interface HistoryItem {
   status: 'PASSED' | 'FAILED' | 'REMEDIATED';
   durationMs: number;
   model: string;
+  role?: string;
+  priority?: string;
+  failureCount?: number;
   prNumber: number;
   prUrl: string;
   commitDiffUrl: string;
@@ -15,10 +18,16 @@ export interface HistoryItem {
 
 export interface ModelLeaderboardEntry {
   modelId: string;
+  provider?: string;
   successRate: number;
   totalRuns: number;
+  totalSuccess?: number;
+  totalFailures?: number;
+  consecutiveFailures?: number;
+  avgLatencyMs?: number;
   avgTokensPerSec: number;
   status: 'HEALTHY' | 'DEGRADED' | 'EVICTED';
+  lastUsedAt?: string | null;
 }
 
 /**
@@ -43,15 +52,28 @@ export class HistoryMetricsService {
 
   public async fetchHistoryAndLeaderboard(): Promise<void> {
     try {
-      const historyRes = await fetch('/api/history');
+      const historyRes = await fetch('/api/history?limit=100');
       if (historyRes.ok) {
-        const tasks = await historyRes.json() as Array<{ id: string; title: string; status: string; completedAt?: string; prUrl?: string }>;
+        const tasks = (await historyRes.json()) as Array<{
+          id: string;
+          title: string;
+          status: string;
+          modelAssigned?: string | null;
+          role?: string;
+          priority?: string;
+          failureCount?: number;
+          completedAt?: string | null;
+          prUrl?: string | null;
+        }>;
         const items: HistoryItem[] = tasks.map((t) => ({
           id: t.id,
           title: t.title,
           status: t.status === 'COMPLETED' ? 'PASSED' : t.status === 'FAILED' ? 'FAILED' : 'REMEDIATED',
           durationMs: 3500,
-          model: 'qwen2.5-coder:7b',
+          model: t.modelAssigned || 'Auto',
+          role: t.role || 'implementer',
+          priority: t.priority || 'P1',
+          failureCount: t.failureCount || 0,
           prNumber: 1,
           prUrl: t.prUrl || 'http://localhost:19634/cacophony/core/pulls/1',
           commitDiffUrl: 'http://localhost:19634/cacophony/core/commit/main',

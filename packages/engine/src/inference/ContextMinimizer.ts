@@ -126,7 +126,12 @@ export class ContextMinimizer {
       prompt,
       "",
       "=== WORKSPACE OVERVIEW ===",
-      compactFileTree
+      compactFileTree,
+      "",
+      "=== WORKSPACE MODULE RESOLUTION SCHEMA ===",
+      "- Valid Monorepo Packages: @cacophony/shared-types, @cacophony/db, @cacophony/tools.",
+      "- Internal Engine Files: Always use valid relative imports (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js', '../telemetry/ThermalGovernor.js').",
+      "- NEVER invent non-existent package names like '@cacophony/git-worktrees', '@cacophony/scheduler', or '@cacophony/pipeline'."
     ];
 
     if (customDirectives.length > 0) {

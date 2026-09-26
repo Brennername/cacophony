@@ -72,9 +72,28 @@ export class TaskScheduler {
     this.isPaused = false;
     this.drainMode = false;
 
+    // Recover any tasks left orphaned in RUNNING status from previous daemon sessions
+    void this.recoverOrphanedTasks();
+
     this.loopTimer = setInterval(() => {
       void this.tick();
     }, pollIntervalMs);
+  }
+
+  /**
+   * Resets any orphaned RUNNING tasks from prior interrupted daemon sessions to PENDING.
+   */
+  public async recoverOrphanedTasks(): Promise<number> {
+    try {
+      const allPending = await this.taskRepo.listPending();
+      const orphaned = allPending.filter((t) => t.status === "RUNNING");
+      for (const task of orphaned) {
+        await this.taskRepo.updateStatus(task.id, "PENDING");
+      }
+      return orphaned.length;
+    } catch {
+      return 0;
+    }
   }
 
   /**
@@ -162,7 +181,14 @@ export class TaskScheduler {
       );
 
       // 6. Check & Apply Thermal Governor Pacing
-      await this.governor.enforcePacing(this.telemetryProvider);
+      const thermalEval = await this.governor.enforcePacing(this.telemetryProvider);
+      if (thermalEval.emergencyHalt) {
+        console.error(
+          `[TaskScheduler] OUCH! THERMAL CUTOFF (${thermalEval.tempCelsius}C >= ${this.governor.emergencyShutdownTemp}C). Halting task queue immediately.`
+        );
+        this.isPaused = true;
+        return null;
+      }
 
       // 7. Transition task state to RUNNING
       console.log(`[TaskScheduler] Dispatching task ${targetTask.id} ('${targetTask.title}') to model '${selectedModel}'`);

@@ -65,7 +65,7 @@ export class CacophonyDaemon {
 
   constructor(config: DaemonConfig = {}) {
     this.config = config;
-    const dbPath = config.dbPath || "data/cacophony_pglite";
+    const dbPath = config.dbPath || process.env.DB_PATH || "data/cacophony_pglite";
     this.driver = DatabaseDriverFactory.createDriver({
       dataDir: dbPath,
       sqliteDbPath: dbPath.endsWith(".db") || dbPath.endsWith(".sqlite") ? dbPath : undefined
@@ -150,7 +150,8 @@ export class CacophonyDaemon {
       parser,
       ruleEngine,
       streamTapManager: this.streamTapManager,
-      stageRepository: this.stageRepo
+      stageRepository: this.stageRepo,
+      taskRepository: this.taskRepo
     });
 
     this.scheduler.setExecutionHandler((groomed, model) => worker.executeTask(groomed, model));

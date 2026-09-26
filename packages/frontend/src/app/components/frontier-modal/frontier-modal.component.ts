@@ -92,6 +92,11 @@ export interface DecomposedTaskPreview {
     .modal-content {
       width: 100%;
       max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-sizing: border-box;
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       gap: 1.25rem;

@@ -24,7 +24,7 @@ export interface StageStepInfo {
       <div class="header-row">
         <div class="stage-info">
           <span class="active-badge">{{ activeStageLabel() }}</span>
-          <span class="step-counter">Stage {{ currentStageNumber() }} / 7</span>
+          <span class="step-counter">Stage {{ currentStageNumber() }} / {{ stages().length }}</span>
         </div>
         <div class="velocity-meter">
           @if (isLiveActive()) {
@@ -72,6 +72,14 @@ export interface StageStepInfo {
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     .stage-progress-container {
       display: flex;
       flex-direction: column;
@@ -80,19 +88,28 @@ export interface StageStepInfo {
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       padding: 0.75rem;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
       font-size: 0.8125rem;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .stage-info {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      flex-wrap: wrap;
+      min-width: 0;
     }
 
     .active-badge {
@@ -101,12 +118,14 @@ export interface StageStepInfo {
       text-transform: uppercase;
       font-size: 0.75rem;
       letter-spacing: 0.05em;
+      white-space: nowrap;
     }
 
     .step-counter {
       color: var(--text-muted);
       font-size: 0.75rem;
       font-family: var(--font-mono);
+      white-space: nowrap;
     }
 
     .velocity-meter {
@@ -114,7 +133,8 @@ export interface StageStepInfo {
       align-items: baseline;
       gap: 0.25rem;
       font-family: var(--font-mono);
-      white-space: nowrap;
+      flex-wrap: wrap;
+      min-width: 0;
     }
 
     .velocity-val {

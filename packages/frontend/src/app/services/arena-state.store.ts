@@ -2,6 +2,10 @@ import { Injectable, signal, computed } from '@angular/core';
 
 export interface TelemetryMetrics {
   gpuBusyPercent: number;
+  cpuBusyPercent: number;
+  systemMemoryUsedMb: number;
+  systemMemoryTotalMb: number;
+  systemMemoryPercent: number;
   vramUsedMb: number;
   vramTotalMb: number;
   vramAvailMb: number;
@@ -84,12 +88,37 @@ export class ArenaStateStore {
   private runStartTimestamp: number | null = null;
   private currentTaskIdForRun: string | null = null;
 
+  // Rolling Telemetry History for real-time sparkline graphs (up to 30 data points)
+  public readonly tempHistory = signal<number[]>([35, 36, 38, 40, 42, 45, 47, 50, 52, 54]);
+  public readonly gpuLoadHistory = signal<number[]>([0, 5, 12, 25, 40, 60, 75, 80, 85, 90]);
+  public readonly vramHistory = signal<number[]>([15, 20, 25, 30, 35, 40, 45, 50, 52, 55]);
+  public readonly gttHistory = signal<number[]>([5, 8, 10, 12, 15, 18, 20, 22, 25, 26]);
+  public readonly cpuLoadHistory = signal<number[]>([10, 15, 22, 35, 45, 50, 40, 35, 30, 28]);
+  public readonly sysMemHistory = signal<number[]>([30, 31, 32, 33, 34, 35, 36, 37, 38, 38]);
+
+  // Model High-Water Mark and Velocity Statistics
+  public readonly modelHighWaterMarks = signal<Record<string, number>>({});
+  private readonly modelVelocitySamples = new Map<string, number[]>();
+
+  public readonly activeModelHighWaterMark = computed(() => {
+    const model = this.telemetry().activeModel;
+    const recorded = this.modelHighWaterMarks()[model];
+    if (recorded && recorded > 0) return recorded;
+    const live = this.liveTokenVelocity();
+    const run = this.runTokenVelocity();
+    return Math.max(35.0, live * 1.25, run * 1.25);
+  });
+
   // Selected Task for Drill-Down Modal
   public readonly selectedTask = signal<TaskItem | null>(null);
 
   // Telemetry Signal initialized with zero/clean state
   public readonly telemetry = signal<TelemetryMetrics>({
     gpuBusyPercent: 0,
+    cpuBusyPercent: 0,
+    systemMemoryUsedMb: 0,
+    systemMemoryTotalMb: 16384,
+    systemMemoryPercent: 0,
     vramUsedMb: 0,
     vramTotalMb: 16384,
     vramAvailMb: 16384,
@@ -133,6 +162,40 @@ export class ArenaStateStore {
     this.fetchInitialState();
   }
 
+  private appendHistory(sig: { update: (fn: (v: number[]) => number[]) => void }, val: number): void {
+    sig.update((prev) => {
+      const next = [...prev, val];
+      return next.length > 30 ? next.slice(-30) : next;
+    });
+  }
+
+  public recordModelVelocity(model: string, velocity: number): void {
+    if (!model || model === 'None' || velocity <= 0) return;
+    const samples = this.modelVelocitySamples.get(model) ?? [];
+    samples.push(velocity);
+    if (samples.length > 50) samples.shift();
+    this.modelVelocitySamples.set(model, samples);
+
+    const mean = samples.reduce((acc, v) => acc + v, 0) / samples.length;
+    const variance = samples.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / samples.length;
+    const stdDev = Math.sqrt(variance);
+
+    // Filter outliers greater than 2 standard deviations from mean
+    let effectiveVal = velocity;
+    if (samples.length >= 10 && stdDev > 0 && velocity > mean + 2 * stdDev) {
+      const validSamples = samples.filter((s) => s <= mean + 2 * stdDev);
+      effectiveVal = validSamples.length > 0 ? Math.max(...validSamples) : mean;
+    }
+
+    const currentHwm = this.modelHighWaterMarks()[model] ?? 0;
+    if (effectiveVal > currentHwm) {
+      this.modelHighWaterMarks.update((prev) => ({
+        ...prev,
+        [model]: Number(effectiveVal.toFixed(1))
+      }));
+    }
+  }
+
   private connectLiveStreams(): void {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
 
@@ -142,15 +205,26 @@ export class ArenaStateStore {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'telemetry') {
+            const gpuBusy = data.gpuBusy ?? 0;
+            const cpuBusy = data.cpuBusyPercent ?? 0;
+            const temp = data.edgeTempCelsius ?? 0;
+            const vramPct = data.vramPercent ?? (data.vramTotalMb ? Number(((data.vramUsedMb / data.vramTotalMb) * 100).toFixed(1)) : 0);
+            const gttPct = data.gttTotalMb ? Number(((data.gttUsedMb / data.gttTotalMb) * 100).toFixed(1)) : 0;
+            const sysMemPct = data.systemMemoryPercent ?? 0;
+
             this.telemetry.set({
-              gpuBusyPercent: data.gpuBusy ?? 0,
+              gpuBusyPercent: gpuBusy,
+              cpuBusyPercent: cpuBusy,
+              systemMemoryUsedMb: data.systemMemoryUsedMb ?? 0,
+              systemMemoryTotalMb: data.systemMemoryTotalMb ?? 16384,
+              systemMemoryPercent: sysMemPct,
               vramUsedMb: data.vramUsedMb ?? 0,
               vramTotalMb: data.vramTotalMb ?? 16384,
               vramAvailMb: data.vramAvailMb ?? Math.max(0, (data.vramTotalMb ?? 16384) - (data.vramUsedMb ?? 0)),
-              vramPercent: data.vramPercent ?? (data.vramTotalMb ? Number(((data.vramUsedMb / data.vramTotalMb) * 100).toFixed(1)) : 0),
+              vramPercent: vramPct,
               gttUsedMb: data.gttUsedMb ?? 0,
               gttTotalMb: data.gttTotalMb ?? 16384,
-              edgeTempCelsius: data.edgeTempCelsius ?? 0,
+              edgeTempCelsius: temp,
               thermalZone: data.thermalZone ?? 'nominal',
               vddgfxMv: data.vddgfxMv ?? 0,
               socMv: data.socMv ?? 0,
@@ -160,6 +234,13 @@ export class ArenaStateStore {
               mclkMhz: data.mclkMhz ?? 0,
               activeModel: data.activeModel ?? 'None',
             });
+
+            this.appendHistory(this.tempHistory, temp);
+            this.appendHistory(this.gpuLoadHistory, gpuBusy);
+            this.appendHistory(this.cpuLoadHistory, cpuBusy);
+            this.appendHistory(this.vramHistory, vramPct);
+            this.appendHistory(this.gttHistory, gttPct);
+            this.appendHistory(this.sysMemHistory, sysMemPct);
           }
           if (data.type === 'stream_init') {
             if (data.buffer) {
@@ -181,6 +262,7 @@ export class ArenaStateStore {
             const taskId = data.taskId ?? this.activeTask()?.id ?? null;
             if (taskId && taskId !== this.currentTaskIdForRun) {
               this.currentTaskIdForRun = taskId;
+              this.liveStreamBuffer.set('');
               this.runTokenCount = 0;
               this.runStartTimestamp = null;
               this.runTokenVelocity.set(0);
@@ -199,6 +281,59 @@ export class ArenaStateStore {
             this.lastTokenReceivedAt = now;
             this.isStreamActive.set(true);
 
+            // Active streaming tokens guarantee that the task has advanced past planning into generation
+            if (taskId) {
+              this.tasks.update((currentTasks) =>
+                currentTasks.map((t) => {
+                  if (t.id !== taskId) return t;
+                  if (t.currentStage !== 'generation') {
+                    const existingStages = t.stages ? [...t.stages] : [];
+                    const planIdx = existingStages.findIndex((s) => s.stageName === 'planning');
+                    if (planIdx >= 0) {
+                      existingStages[planIdx] = {
+                        ...existingStages[planIdx]!,
+                        stageStatus: 'SUCCESS',
+                        completedAt: existingStages[planIdx]!.completedAt || new Date().toISOString()
+                      };
+                    } else {
+                      existingStages.push({
+                        id: `${taskId}-planning`,
+                        stageName: 'planning',
+                        stageStatus: 'SUCCESS',
+                        startedAt: new Date().toISOString(),
+                        completedAt: new Date().toISOString(),
+                        durationMs: 500
+                      });
+                    }
+
+                    const genIdx = existingStages.findIndex((s) => s.stageName === 'generation');
+                    if (genIdx >= 0) {
+                      existingStages[genIdx] = {
+                        ...existingStages[genIdx]!,
+                        stageStatus: 'RUNNING'
+                      };
+                    } else {
+                      existingStages.push({
+                        id: `${taskId}-generation`,
+                        stageName: 'generation',
+                        stageStatus: 'RUNNING',
+                        startedAt: new Date().toISOString(),
+                        completedAt: null,
+                        durationMs: null
+                      });
+                    }
+
+                    return {
+                      ...t,
+                      currentStage: 'generation',
+                      stages: existingStages
+                    };
+                  }
+                  return t;
+                })
+              );
+            }
+
             if (this.runStartTimestamp === null) {
               this.runStartTimestamp = now;
             }
@@ -214,6 +349,44 @@ export class ArenaStateStore {
             const count = this.tokenArrivalTimestamps.length;
             const velocity = count > 1 ? Number((count / 2.0).toFixed(1)) : (count === 1 ? 1.0 : 0.0);
             this.liveTokenVelocity.set(velocity);
+            this.recordModelVelocity(this.telemetry().activeModel, velocity);
+          }
+          if (data.type === 'stage_transition') {
+            const taskId = data.taskId;
+            const stageName = data.stageName;
+            const stageStatus = data.stageStatus;
+            const durationMs = data.durationMs ?? null;
+
+            this.tasks.update((currentTasks) =>
+              currentTasks.map((t) => {
+                if (t.id !== taskId) return t;
+                const existingStages = t.stages ? [...t.stages] : [];
+                const stageIndex = existingStages.findIndex((s) => s.stageName === stageName);
+                if (stageIndex >= 0) {
+                  existingStages[stageIndex] = {
+                    ...existingStages[stageIndex]!,
+                    stageStatus,
+                    durationMs: durationMs ?? existingStages[stageIndex]!.durationMs,
+                    completedAt: stageStatus === 'SUCCESS' || stageStatus === 'FAILURE' ? new Date().toISOString() : null,
+                  };
+                } else {
+                  existingStages.push({
+                    id: `${taskId}-${stageName}`,
+                    stageName,
+                    stageStatus,
+                    startedAt: new Date().toISOString(),
+                    completedAt: stageStatus === 'SUCCESS' || stageStatus === 'FAILURE' ? new Date().toISOString() : null,
+                    durationMs,
+                  });
+                }
+
+                return {
+                  ...t,
+                  currentStage: stageStatus === 'RUNNING' ? stageName : (t.currentStage || stageName),
+                  stages: existingStages,
+                };
+              })
+            );
           }
         } catch {
           // ignore stream parse errors
@@ -281,11 +454,51 @@ export class ArenaStateStore {
           prUrl: t.prUrl,
         }));
         if (items.length > 0) {
-          this.tasks.set(items);
+          this.tasks.update((existingList) => {
+            const existingMap = new Map(existingList.map((e) => [e.id, e]));
+            return items.map((newItem) => {
+              const old = existingMap.get(newItem.id);
+              return {
+                ...newItem,
+                currentStage: old?.currentStage,
+                stages: old?.stages ?? [],
+                progressPercent: old?.progressPercent
+              };
+            });
+          });
         }
       }
     } catch {
       // offline
+    }
+
+    // Hydrate real stages for active running task from /api/tasks/:id
+    const active = this.tasks().find((t) => t.status === 'RUNNING');
+    if (active) {
+      try {
+        const detailRes = await fetch(`/api/tasks/${active.id}`);
+        if (detailRes.ok) {
+          const detail = (await detailRes.json()) as { stages?: TaskStageItem[] };
+          if (detail.stages && detail.stages.length > 0) {
+            const runningStage = detail.stages.slice().reverse().find((s) => s.stageStatus === 'RUNNING');
+            const lastStage = detail.stages[detail.stages.length - 1];
+            const activeStageName = runningStage?.stageName || lastStage?.stageName;
+
+            this.tasks.update((list) =>
+              list.map((t) => {
+                if (t.id !== active.id) return t;
+                return {
+                  ...t,
+                  currentStage: activeStageName || t.currentStage,
+                  stages: detail.stages,
+                };
+              })
+            );
+          }
+        }
+      } catch {
+        // ignore
+      }
     }
 
     try {

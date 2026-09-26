@@ -1,6 +1,7 @@
 import * as http from "node:http";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import * as os from "node:os";
 import type { CacophonyDaemon } from "./CacophonyDaemon.js";
 import { AuthService } from "../auth/AuthService.js";
 
@@ -23,6 +24,7 @@ export class CacophonyHttpServer {
   private readonly sseClients: Set<http.ServerResponse> = new Set();
   private sseInterval: NodeJS.Timeout | null = null;
   private untapListener: (() => void) | null = null;
+  private untapStageListener: (() => void) | null = null;
   private readonly authService: AuthService;
 
   constructor(daemon: CacophonyDaemon, config: UnifiedServerConfig = {}) {
@@ -47,7 +49,7 @@ export class CacophonyHttpServer {
       });
     });
 
-    // Tap live LLM stream and forward tokens to SSE clients
+    // Tap live LLM stream and forward tokens and stage transitions to SSE clients
     const streamTap = this.daemon.getStreamTapManager();
     if (streamTap) {
       this.untapListener = streamTap.tap((event) => {
@@ -55,6 +57,24 @@ export class CacophonyHttpServer {
           type: "token",
           taskId: event.taskId,
           token: event.token,
+          timestamp: event.timestamp
+        })}\n\n`;
+        for (const client of this.sseClients) {
+          try {
+            client.write(payload);
+          } catch {
+            this.sseClients.delete(client);
+          }
+        }
+      });
+
+      this.untapStageListener = streamTap.tapStageTransitions((event) => {
+        const payload = `data: ${JSON.stringify({
+          type: "stage_transition",
+          taskId: event.taskId,
+          stageName: event.stageName,
+          stageStatus: event.stageStatus,
+          durationMs: event.durationMs ?? 0,
           timestamp: event.timestamp
         })}\n\n`;
         for (const client of this.sseClients) {
@@ -77,6 +97,10 @@ export class CacophonyHttpServer {
     if (this.untapListener) {
       this.untapListener();
       this.untapListener = null;
+    }
+    if (this.untapStageListener) {
+      this.untapStageListener();
+      this.untapStageListener = null;
     }
 
     if (this.sseInterval) {
@@ -351,6 +375,14 @@ export class CacophonyHttpServer {
     // 3. REST API: List Tasks
     if (url.pathname === "/api/tasks" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();
+      const statusParam = url.searchParams.get("status") as any;
+      if (statusParam) {
+        const limitParam = parseInt(url.searchParams.get("limit") || "100", 10);
+        const tasks = await taskRepo.listRecent(limitParam, { status: statusParam });
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(tasks));
+        return;
+      }
       const pending = await taskRepo.listPending();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(pending));
@@ -380,7 +412,7 @@ export class CacophonyHttpServer {
           const payload = JSON.parse(body);
           const taskRepo = this.daemon.getTaskRepository();
           const task = await taskRepo.create({
-            id: `task-${Date.now()}`,
+            id: payload.id || `task-${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
             title: payload.title || "Manual Task",
             prompt: payload.prompt || payload.title || "",
             role: payload.role || "implementer",
@@ -388,7 +420,13 @@ export class CacophonyHttpServer {
             priority: payload.priority || "P1",
             modelAssigned: null,
             testCommand: payload.testCommand || null,
-            focusFiles: payload.focusFiles ? JSON.stringify(payload.focusFiles) : null,
+            focusFiles: payload.focusFiles
+              ? (typeof payload.focusFiles === "string"
+                  ? payload.focusFiles.replace(/^["']|["']$/g, "").trim()
+                  : Array.isArray(payload.focusFiles)
+                    ? payload.focusFiles.join(" ")
+                    : JSON.stringify(payload.focusFiles))
+              : null,
             targetBranch: payload.targetBranch || "main",
             prUrl: null,
             failureCount: 0,
@@ -414,6 +452,16 @@ export class CacophonyHttpServer {
       const deletedCount = await taskRepo.purgePendingTasks(pattern);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: true, deletedCount }));
+      return;
+    }
+
+    // 4a0b. REST API: POST /api/tasks/requeue - Requeue failed tasks back to PENDING (supports ?pattern=query)
+    if (url.pathname === "/api/tasks/requeue" && req.method === "POST") {
+      const taskRepo = this.daemon.getTaskRepository();
+      const pattern = url.searchParams.get("pattern") || undefined;
+      const requeuedCount = await taskRepo.retryFailedTasks(pattern);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, requeuedCount }));
       return;
     }
 
@@ -468,7 +516,9 @@ export class CacophonyHttpServer {
     // 4b. REST API: List Historical Completed/Failed Tasks
     if (url.pathname === "/api/history" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();
-      const allTasks = await taskRepo.listRecent(50);
+      const statusParam = url.searchParams.get("status") as any;
+      const limitParam = parseInt(url.searchParams.get("limit") || "100", 10);
+      const allTasks = await taskRepo.listRecent(limitParam, statusParam ? { status: statusParam } : undefined);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(allTasks));
       return;
@@ -480,10 +530,16 @@ export class CacophonyHttpServer {
       const profiles = await healthRepo.listProfiles();
       const leaderboard = profiles.map((p) => ({
         modelId: p.modelId,
+        provider: p.provider,
         successRate: p.totalTasks > 0 ? (p.totalSuccess / p.totalTasks) * 100 : 100,
         totalRuns: p.totalTasks,
+        totalSuccess: p.totalSuccess,
+        totalFailures: p.totalFailures,
+        consecutiveFailures: p.consecutiveFailures,
+        avgLatencyMs: p.avgLatencyMs,
         avgTokensPerSec: p.avgTokensPerSec || 35.0,
-        status: p.status === "EJECTED" ? "EVICTED" : p.consecutiveFailures > 0 ? "DEGRADED" : "HEALTHY"
+        status: p.status === "EJECTED" ? "EVICTED" : p.consecutiveFailures > 0 ? "DEGRADED" : "HEALTHY",
+        lastUsedAt: p.lastUsedAt
       }));
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(leaderboard));
@@ -799,10 +855,23 @@ export class CacophonyHttpServer {
     const vramAvailMb = Math.max(0, vramTotalMb - vramUsedMb);
     const vramPercent = gpu ? gpu.vramPercent : 0;
 
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const systemMemoryUsedMb = Math.round((totalMem - freeMem) / (1024 * 1024));
+    const systemMemoryTotalMb = Math.round(totalMem / (1024 * 1024));
+    const systemMemoryPercent = totalMem > 0 ? Number((((totalMem - freeMem) / totalMem) * 100).toFixed(1)) : 0;
+    const loadAvg = (os.loadavg && os.loadavg()[0]) || 0;
+    const cpuCount = (os.cpus && os.cpus().length) || 1;
+    const cpuBusyPercent = Math.min(100, Number(((loadAvg / cpuCount) * 100).toFixed(1)));
+
     const data = JSON.stringify({
       type: "telemetry",
       timestamp: new Date().toISOString(),
       gpuBusy: gpu?.gpuBusyPercent ?? 0,
+      cpuBusyPercent,
+      systemMemoryUsedMb,
+      systemMemoryTotalMb,
+      systemMemoryPercent,
       vramUsedMb,
       vramTotalMb,
       vramAvailMb,

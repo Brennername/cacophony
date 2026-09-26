@@ -86,10 +86,22 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     .history-card {
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .card-header {
@@ -126,13 +138,15 @@ import { ArenaStateStore } from '../../services/arena-state.store';
 
     .leaderboard-grid {
       display: grid;
-      grid-template-columns: repeat(1, 1fr);
+      grid-template-columns: minmax(0, 1fr);
       gap: 0.625rem;
+      min-width: 0;
+      max-width: 100%;
     }
 
     @media (min-width: 640px) {
       .leaderboard-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
 
@@ -181,7 +195,12 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     }
 
     .table-container {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
     }
 
     .history-table {

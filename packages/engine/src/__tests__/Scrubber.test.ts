@@ -6,6 +6,7 @@ import { ExtensionHeuristicScrubberRule } from "../scrubber/rules/ExtensionHeuri
 import { BannedImportsScrubberRule } from "../scrubber/rules/BannedImportsScrubberRule.js";
 import { JavaPackageScrubberRule } from "../scrubber/rules/JavaPackageScrubberRule.js";
 import { PrettierFormattingScrubberRule } from "../scrubber/rules/PrettierFormattingScrubberRule.js";
+import { WorkspacePackageImportScrubberRule } from "../scrubber/rules/WorkspacePackageImportScrubberRule.js";
 import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { AstValidator } from "../scrubber/AstValidator.js";
 
@@ -177,6 +178,50 @@ describe("Deterministic Code Scrubber & AST Validation", () => {
     test("should skip when disabled in options", () => {
       const code = "const a = 1;   \r\n";
       const result = rule.scrub(code, "test.ts", { disabledRules: ["PrettierFormattingScrubberRule"] });
+      assert.equal(result.modified, false);
+      assert.equal(result.content, code);
+      assert.ok(result.issuesDetected[0]?.includes("skipped via rule disable flag"));
+    });
+  });
+
+  describe("WorkspacePackageImportScrubberRule", () => {
+    const rule = new WorkspacePackageImportScrubberRule();
+
+    test("should rewrite hallucinated @cacophony/git-worktrees import to relative path", () => {
+      const code = 'import { GitWorktreeManager } from "@cacophony/git-worktrees";\n';
+      const result = rule.scrub(code, "packages/engine/src/scheduler/TaskScheduler.ts");
+      assert.equal(result.modified, true);
+      assert.ok(result.content.includes('from "../gitea/GitWorktreeManager.js"'));
+      assert.ok(result.issuesFixed.some((i) => i.includes("GitWorktreeManager")));
+    });
+
+    test("should rewrite hallucinated @cacophony/types import to @cacophony/shared-types", () => {
+      const code = 'import { TaskStatus } from "@cacophony/types";\n';
+      const result = rule.scrub(code, "packages/engine/src/scheduler/QueueGroomer.ts");
+      assert.equal(result.modified, true);
+      assert.ok(result.content.includes('from "@cacophony/shared-types"'));
+    });
+
+    test("should rewrite hallucinated @cacophony/scheduler import to relative internal path", () => {
+      const code = 'import { TaskScheduler } from "@cacophony/scheduler";\n';
+      const result = rule.scrub(code, "packages/engine/src/pipeline/Pipeline.ts");
+      assert.equal(result.modified, true);
+      assert.ok(result.content.includes('from "../scheduler/TaskScheduler.js"'));
+    });
+
+    test("should migrate chai import to node:assert/strict in test files", () => {
+      const code = 'import { expect } from "chai";\n';
+      const result = rule.scrub(code, "packages/engine/src/tests/Feature.test.ts");
+      assert.equal(result.modified, true);
+      assert.ok(result.content.includes('import assert from "node:assert/strict";'));
+      assert.ok(result.issuesFixed.some((i) => i.includes("node:assert/strict")));
+    });
+
+    test("should respect disabledRules configuration", () => {
+      const code = 'import { GitWorktreeManager } from "@cacophony/git-worktrees";\n';
+      const result = rule.scrub(code, "packages/engine/src/scheduler/TaskScheduler.ts", {
+        disabledRules: ["WorkspacePackageImportScrubberRule"]
+      });
       assert.equal(result.modified, false);
       assert.equal(result.content, code);
       assert.ok(result.issuesDetected[0]?.includes("skipped via rule disable flag"));

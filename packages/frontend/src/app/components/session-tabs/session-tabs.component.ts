@@ -53,6 +53,13 @@ export interface SessionTab {
     </nav>
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
     .tabs-container {
       display: flex;
       align-items: center;
@@ -62,11 +69,17 @@ export interface SessionTab {
       overflow-x: auto;
       white-space: nowrap;
       scrollbar-width: thin;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      -webkit-overflow-scrolling: touch;
     }
     .tabs-scroll-area {
       display: flex;
       gap: 0.35rem;
       align-items: center;
+      min-width: 0;
     }
     .tab-item {
       display: inline-flex;

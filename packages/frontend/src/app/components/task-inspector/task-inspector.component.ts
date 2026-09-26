@@ -1,12 +1,12 @@
 import { Component, inject, effect, viewChild, ElementRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
-import { StageProgressBarComponent } from '../stage-progress-bar/stage-progress-bar.component';
-import { GanttTransportComponent } from '../gantt-transport/gantt-transport.component';
+import { StageProgressBarComponent, type StageStepInfo } from '../stage-progress-bar/stage-progress-bar.component';
+import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gantt-transport.component';
 
 /**
  * Visual stepper and Gantt transport tracking task pipeline progression:
- * 1/7 Planning through 7/7 PR Review with intra-stage token velocity.
+ * 1/6 Planning through 6/6 PR Review with intra-stage token velocity.
  */
 @Component({
   selector: 'app-task-inspector',
@@ -44,56 +44,41 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
         <div class="task-info-banner clickable" (click)="drillDown(task)" title="Click to drill down into task details">
           <span class="badge priority">{{ task.priority }}</span>
           <span class="task-title">{{ task.title }}</span>
+          <span class="badge model-badge font-mono">{{ activeTaskModel() }}</span>
           <span class="badge role">{{ task.role }}</span>
           <span class="drill-hint">Details ↗</span>
         </div>
 
-        <!-- 7-Stage Granular Segmented Progress Bar -->
+        <!-- 6-Stage Granular Segmented Progress Bar -->
         <app-stage-progress-bar
-          [progressPercent]="task.progressPercent ?? 42"
+          [progressPercent]="taskProgressPercent()"
           [tokensPerSec]="liveVelocity() > 0 ? liveVelocity() : runVelocity()"
           [runTokensPerSec]="runVelocity()"
           [isLive]="isStreamActive()"
-          [currentStageNumber]="3"
-          activeStageLabel="3/7 Generation"
+          [currentStageNumber]="currentStageIndex() + 1"
+          [activeStageLabel]="activeStageDisplayLabel()"
+          [stages]="stageProgressBarItems()"
         />
 
         <!-- Stage Stepper Pipeline -->
         <div class="stepper-container">
-          <div class="step done">
-            <div class="circle">1</div>
-            <span>Planning</span>
-          </div>
-          <div class="line done"></div>
-
-          <div class="step active">
-            <div class="circle">2</div>
-            <span>Generation</span>
-          </div>
-          <div class="line"></div>
-
-          <div class="step">
-            <div class="circle">3</div>
-            <span>Scrub</span>
-          </div>
-          <div class="line"></div>
-
-          <div class="step">
-            <div class="circle">4</div>
-            <span>Test</span>
-          </div>
-          <div class="line"></div>
-
-          <div class="step">
-            <div class="circle">5</div>
-            <span>Review</span>
-          </div>
-          <div class="line"></div>
-
-          <div class="step">
-            <div class="circle">6</div>
-            <span>Merge</span>
-          </div>
+          @for (step of pipelineSteps(); track step.name; let idx = $index; let last = $last) {
+            <div
+              class="step"
+              [class.done]="step.status === 'SUCCESS'"
+              [class.active]="step.status === 'RUNNING'"
+              [class.failed]="step.status === 'FAILURE'"
+            >
+              <div class="circle">{{ idx + 1 }}</div>
+              <span>{{ step.label }}</span>
+            </div>
+            @if (!last) {
+              <div
+                class="line"
+                [class.done]="step.status === 'SUCCESS'"
+              ></div>
+            }
+          }
         </div>
 
         <!-- Live Terminal Stream Preview -->
@@ -109,7 +94,12 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
         </div>
 
         <!-- Interactive Gantt Transport Timeline -->
-        <app-gantt-transport />
+        <app-gantt-transport
+          [taskId]="activeTask()?.id ?? null"
+          [spans]="activeTaskSpans()"
+          [totalDurationMs]="activeTaskTotalDuration()"
+          [isRunning]="isStreamActive() || activeTask()?.status === 'RUNNING'"
+        />
       } @else {
         <div class="empty-state">
           <p>No active tasks currently executing in the arena.</p>
@@ -119,16 +109,32 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     .inspector-card {
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .subtext {
@@ -240,17 +246,22 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
     .task-info-banner {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
       padding: 0.75rem;
       background: var(--bg-surface-elevated);
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .task-title {
       font-weight: 600;
-      flex: 1;
-      font-size: 0.9375rem;
+      flex: 1 1 180px;
+      font-size: 0.875rem;
+      min-width: 0;
+      word-break: break-word;
     }
 
     .badge {
@@ -258,6 +269,7 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       border-radius: var(--radius-sm);
       font-size: 0.75rem;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .badge.priority {
@@ -270,6 +282,13 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       color: var(--text-primary);
     }
 
+    .badge.model-badge {
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid var(--color-accent);
+      color: var(--color-accent);
+      font-size: 0.6875rem;
+    }
+
     /* Stepper */
     .stepper-container {
       display: flex;
@@ -277,6 +296,10 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       justify-content: space-between;
       padding: 0.5rem 0;
       overflow-x: auto;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      -webkit-overflow-scrolling: touch;
     }
 
     .step {
@@ -324,6 +347,18 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       font-weight: 600;
     }
 
+    .step.failed .circle {
+      border-color: var(--status-danger);
+      background: var(--status-danger);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+
+    .step.failed span {
+      color: var(--status-danger);
+      font-weight: 600;
+    }
+
     .line {
       flex: 1;
       height: 2px;
@@ -341,6 +376,9 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       border-radius: var(--radius-sm);
       overflow: hidden;
       background: #000000;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .terminal-bar {
@@ -375,8 +413,12 @@ import { GanttTransportComponent } from '../gantt-transport/gantt-transport.comp
       font-size: 0.8125rem;
       color: #38bdf8;
       white-space: pre-wrap;
+      word-break: break-all;
+      overflow-wrap: anywhere;
       max-height: 140px;
       overflow-y: auto;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .task-info-banner.clickable {
@@ -446,6 +488,162 @@ export class TaskInspectorComponent {
     const liveVel = this.liveVelocity();
     if (liveVel > 0) return liveVel;
     return this.runVelocity();
+  });
+
+  public readonly activeTaskModel = computed(() => {
+    return this.activeTask()?.modelAssigned || this.store.telemetry().activeModel || 'Auto-Assigned';
+  });
+
+  // Dynamic 6-stage pipeline stepper mapping
+  public readonly pipelineSteps = computed(() => {
+    const task = this.activeTask();
+    const stageRecords = task?.stages ?? [];
+    const isStreaming = this.isStreamActive() || (this.liveStreamBuffer().length > 0 && task?.status === 'RUNNING');
+
+    const baseStages: Array<{ name: string; label: string }> = [
+      { name: 'planning', label: 'Planning' },
+      { name: 'generation', label: 'Generation' },
+      { name: 'deterministic_scrub', label: 'Scrub' },
+      { name: 'test_execution', label: 'Test' },
+      { name: 'remediation', label: 'Review' },
+      { name: 'pr_review', label: 'Merge' },
+    ];
+
+    return baseStages.map((stage) => {
+      // Find the latest stage record for retried or multi-stage executions
+      const match = stageRecords.slice().reverse().find((s) => s.stageName === stage.name);
+      let status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILURE' = 'PENDING';
+      let durationMs = match?.durationMs ?? null;
+
+      if (match) {
+        status = (match.stageStatus as 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILURE') || 'PENDING';
+      }
+
+      // If active token streaming is happening right now, we know for certain:
+      // 1. Planning stage has finished with SUCCESS
+      // 2. Generation stage is RUNNING
+      if (isStreaming) {
+        if (stage.name === 'planning') {
+          status = 'SUCCESS';
+          if (!durationMs || durationMs === 0) durationMs = 120;
+        } else if (stage.name === 'generation') {
+          status = 'RUNNING';
+        }
+      } else if (task?.currentStage === stage.name && status === 'PENDING') {
+        status = 'RUNNING';
+      }
+
+      return {
+        ...stage,
+        status,
+        durationMs,
+      };
+    });
+  });
+
+  public readonly currentStageIndex = computed(() => {
+    const isStreaming = this.isStreamActive() || (this.liveStreamBuffer().length > 0 && this.activeTask()?.status === 'RUNNING');
+    if (isStreaming) {
+      return 1; // Stage 2: Generation
+    }
+    const steps = this.pipelineSteps();
+    const activeIdx = steps.findIndex((s) => s.status === 'RUNNING');
+    if (activeIdx >= 0) return activeIdx;
+    const lastDoneIdx = steps.map((s) => s.status === 'SUCCESS').lastIndexOf(true);
+    if (lastDoneIdx >= 0 && lastDoneIdx < steps.length - 1) return lastDoneIdx + 1;
+    return Math.max(0, lastDoneIdx);
+  });
+
+  public readonly stageProgressBarItems = computed<StageStepInfo[]>(() => {
+    const steps = this.pipelineSteps();
+    return steps.map((step, idx) => ({
+      index: idx + 1,
+      name: step.name,
+      label: `${idx + 1}/${steps.length} ${step.label}`,
+      status: step.status,
+      durationMs: step.durationMs ?? undefined,
+    }));
+  });
+
+  public readonly activeStageDisplayLabel = computed(() => {
+    const steps = this.pipelineSteps();
+    const idx = this.currentStageIndex();
+    const current = steps[idx];
+    return current ? `${idx + 1}/${steps.length} ${current.label}` : '1/6 Planning';
+  });
+
+  public readonly taskProgressPercent = computed(() => {
+    const task = this.activeTask();
+    if (task?.progressPercent !== undefined) return task.progressPercent;
+    const steps = this.pipelineSteps();
+    const completed = steps.filter((s) => s.status === 'SUCCESS').length;
+    if (completed === 0) return 10;
+    return Math.min(100, Math.round((completed / steps.length) * 100));
+  });
+
+  public readonly activeTaskSpans = computed<GanttSpan[]>(() => {
+    const task = this.activeTask();
+    if (!task) return [];
+    const steps = this.pipelineSteps();
+    const isStreaming = this.isStreamActive() || (this.liveStreamBuffer().length > 0 && task?.status === 'RUNNING');
+
+    const catMap: Record<string, GanttSpan['category']> = {
+      planning: 'planning',
+      generation: 'inference',
+      deterministic_scrub: 'scrub',
+      test_execution: 'test',
+      remediation: 'review',
+      pr_review: 'git',
+    };
+
+    let offset = 0;
+    const spans: GanttSpan[] = [];
+
+    for (const step of steps) {
+      if (step.status === 'PENDING') continue;
+      const cat = catMap[step.name] || 'inference';
+      const dur = step.durationMs && step.durationMs > 0 ? step.durationMs : 1500;
+      spans.push({
+        id: `${task.id}-${step.name}`,
+        name: step.label,
+        category: cat,
+        startOffsetMs: offset,
+        durationMs: dur,
+        status: step.status,
+      });
+      offset += dur;
+    }
+
+    if (spans.length === 0 || (spans.length === 1 && spans[0]?.category === 'planning' && isStreaming)) {
+      const planDur = spans[0]?.durationMs || 500;
+      return [
+        {
+          id: `${task.id}-planning`,
+          name: 'Planning',
+          category: 'planning',
+          startOffsetMs: 0,
+          durationMs: planDur,
+          status: 'SUCCESS',
+        },
+        {
+          id: `${task.id}-generation`,
+          name: 'Generation',
+          category: 'inference',
+          startOffsetMs: planDur,
+          durationMs: 3000,
+          status: 'RUNNING',
+        },
+      ];
+    }
+
+    return spans;
+  });
+
+  public readonly activeTaskTotalDuration = computed<number>(() => {
+    const spans = this.activeTaskSpans();
+    if (spans.length === 0) return 3000;
+    const last = spans[spans.length - 1];
+    return Math.max(3000, last.startOffsetMs + last.durationMs);
   });
 
   private terminalContentEl = viewChild<ElementRef<HTMLElement>>('terminalContent');

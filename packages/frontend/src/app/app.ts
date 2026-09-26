@@ -186,10 +186,13 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      width: 100%;
       max-width: 1440px;
       margin: 0 auto;
       padding: 0.75rem;
       padding-bottom: 5rem; /* Space for mobile bottom nav */
+      box-sizing: border-box;
+      overflow-x: hidden;
     }
 
     @media (min-width: 768px) {
@@ -203,35 +206,50 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 0.5rem;
       padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border-subtle);
       margin-bottom: 1rem;
       position: sticky;
       top: 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       background: var(--bg-primary);
       z-index: 40;
+    }
+
+    .main-content {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .brand-group {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
+      min-width: 0;
+      flex-shrink: 1;
     }
 
     .brand-link {
       display: flex;
       align-items: baseline;
-      gap: 0.5rem;
+      gap: 0.35rem;
       text-decoration: none;
+      min-width: 0;
     }
 
     .brand-logo {
-      font-size: 1.375rem;
+      font-size: 1.25rem;
       font-weight: 800;
       letter-spacing: -0.04em;
       color: var(--color-brand);
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .arena-tag {
@@ -345,6 +363,10 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
       flex-direction: column;
       gap: 0.75rem;
       margin-bottom: 1.25rem;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     @media (min-width: 768px) {
@@ -353,6 +375,11 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
         justify-content: space-between;
         align-items: center;
       }
+    }
+
+    .session-control-bar > * {
+      min-width: 0;
+      max-width: 100%;
     }
 
     .main-content {

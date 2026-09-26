@@ -37,6 +37,8 @@ export class QueueGroomer {
     this.stackDetector = stackDetector ?? new StackDetector();
     this.defaultDirectives = defaultDirectives ?? [
       "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented.",
+      "Integrity Rule: Always work and test with genuine integrity. Never fake test passes (e.g. adding dummy print statements, removing assertions, or mocking tests to artificially report 100%). Never drop databases or tables; write explicit, backward-compatible migrations.",
+      "Module Imports: Import only from valid installed workspace packages (@cacophony/shared-types, @cacophony/db, @cacophony/tools) or valid relative paths within the package (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js'). Never hallucinate non-existent package names like '@cacophony/git-worktrees'.",
       "Quality Standards: Adhere strictly to SOLID principles, modularity, and explicit typing.",
       "Documentation: Comment code thoroughly explaining how and why functionality is structured."
     ];
@@ -63,7 +65,12 @@ export class QueueGroomer {
     // 1. Resolve Focus Files
     let focusFilesList: string[] = [];
     if (task.focusFiles && task.focusFiles.trim().length > 0) {
-      focusFilesList = task.focusFiles.trim().split(/\s+/).filter(Boolean);
+      focusFilesList = task.focusFiles
+        .trim()
+        .replace(/^["']|["']$/g, "")
+        .split(/\s+/)
+        .map((f) => f.replace(/^["']|["']$/g, "").trim())
+        .filter(Boolean);
     } else {
       const resolved = this.detectFocusFiles(task.prompt);
       if (resolved.length > 0) {
@@ -75,17 +82,48 @@ export class QueueGroomer {
 
     // 2. Resolve & Scope Test Command
     let testCommand = task.testCommand ? task.testCommand.trim() : "";
-    if (
+    const repoRoot = this.getRepoRoot();
+
+    const testArgMatch = testCommand.match(/npm\s+test(?:\s+--)?\s+([^\s]+)/);
+    if (testArgMatch && testArgMatch[1]) {
+      const candidateTest = testArgMatch[1].replace(/^["']|["']$/g, "").trim();
+      const testSrc = path.resolve(repoRoot, candidateTest);
+      const testDist = candidateTest.replace("/src/", "/dist/").replace(/\.ts$/, ".js");
+      const fullDist = path.resolve(repoRoot, testDist);
+
+      if (fs.existsSync(fullDist) || fs.existsSync(path.resolve(this.projectDir, testDist))) {
+        testCommand = `node --test ${testDist}`;
+        modified = true;
+        groomNotes.push(`Scoped test command to compiled test file: ${testCommand}`);
+      } else if (fs.existsSync(testSrc) || fs.existsSync(path.resolve(this.projectDir, candidateTest))) {
+        testCommand = `node --test ${candidateTest}`;
+        modified = true;
+        groomNotes.push(`Scoped test command to source test file: ${testCommand}`);
+      } else if (focusFilesList.length > 0) {
+        const focus = focusFilesList[0]!;
+        testCommand = `node --check ${focus}`;
+        modified = true;
+        groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk; scoped to focus file verification: ${testCommand}`);
+      } else {
+        testCommand = "";
+      }
+    } else if (
       !testCommand ||
       testCommand === "npm test" ||
+      testCommand.startsWith("npm test") ||
       testCommand.includes("@pkg") ||
-      testCommand.includes("--workspaces")
+      testCommand.includes("--workspaces") ||
+      testCommand.includes("--workspace=@cacophony/engine")
     ) {
       const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
       if (scoped) {
         testCommand = scoped;
         modified = true;
         groomNotes.push(`Scoped test command to: ${testCommand}`);
+      } else if (activeProfile.defaultTestRunner) {
+        testCommand = activeProfile.defaultTestRunner;
+        modified = true;
+        groomNotes.push(`Defaulted test command to stack runner: ${testCommand}`);
       } else {
         testCommand = "";
       }
@@ -167,17 +205,45 @@ export class QueueGroomer {
 
 
   /**
+   * Resolves the monorepo root directory dynamically by searching upward for markers.
+   */
+  private getRepoRoot(): string {
+    let cur = this.projectDir;
+    while (cur !== path.dirname(cur)) {
+      if (
+        fs.existsSync(path.join(cur, "docs/taskcade.md")) ||
+        fs.existsSync(path.join(cur, "pnpm-workspace.yaml"))
+      ) {
+        return cur;
+      }
+      const pkgJson = path.join(cur, "package.json");
+      if (fs.existsSync(pkgJson)) {
+        try {
+          const pkg = JSON.parse(fs.readFileSync(pkgJson, "utf8"));
+          if (pkg.workspaces) return cur;
+        } catch {
+          // ignore
+        }
+      }
+      cur = path.dirname(cur);
+    }
+    return this.projectDir;
+  }
+
+  /**
    * Scans prompt text for file path mentions that exist within the workspace.
    */
   private detectFocusFiles(promptText: string): string[] {
     const matches: string[] = [];
     const pathRegex = /(?:[a-zA-Z0-9_-]+\/)+[a-zA-Z0-9_.-]+\.(?:ts|js|json|html|css|java)/g;
+    const repoRoot = this.getRepoRoot();
 
     let match: RegExpExecArray | null;
     while ((match = pathRegex.exec(promptText)) !== null) {
       const candidate = match[0];
-      const fullPath = path.resolve(this.projectDir, candidate);
-      if (fs.existsSync(fullPath)) {
+      const fullPath = path.resolve(repoRoot, candidate);
+      const localPath = path.resolve(this.projectDir, candidate);
+      if (fs.existsSync(fullPath) || fs.existsSync(localPath)) {
         matches.push(candidate);
       }
     }
@@ -191,11 +257,23 @@ export class QueueGroomer {
   private scopeTestCommand(focusFiles: readonly string[], profile?: IStackProfile): string | null {
     if (focusFiles.length === 0) return null;
     const firstFile = focusFiles[0]!;
+    const repoRoot = this.getRepoRoot();
 
     if (firstFile.startsWith("packages/")) {
       const parts = firstFile.split("/");
       if (parts.length >= 2 && parts[1]) {
         const pkgName = parts[1];
+        if (pkgName === "engine") {
+          const baseName = path.basename(firstFile, path.extname(firstFile));
+          const candidateDistTest = path.resolve(repoRoot, `packages/${pkgName}/dist/tests/${baseName}.test.js`);
+          const candidateSrcTest = path.resolve(repoRoot, `packages/${pkgName}/src/tests/${baseName}.test.ts`);
+          if (fs.existsSync(candidateDistTest) || fs.existsSync(candidateSrcTest)) {
+            return `node --test packages/${pkgName}/dist/tests/${baseName}.test.js`;
+          }
+          if (firstFile.endsWith(".ts") || firstFile.endsWith(".js")) {
+            return `node --check ${firstFile}`;
+          }
+        }
         return `npm test --workspace=@cacophony/${pkgName} --if-present`;
       }
     }

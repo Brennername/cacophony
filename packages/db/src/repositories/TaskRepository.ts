@@ -17,6 +17,7 @@ interface TaskRow {
   readonly target_branch: string | null;
   readonly pr_url: string | null;
   readonly failure_count: number;
+  readonly log_snippet?: string | null;
   readonly created_at: string;
   readonly updated_at: string;
   readonly completed_at: string | null;
@@ -78,6 +79,33 @@ export class TaskRepository {
   }
 
   /**
+   * Retrieves a task by its exact title.
+   */
+  public async getByTitle(title: string): Promise<TaskRecord | null> {
+    const row = await this.driver.queryOne<TaskRow>(
+      "SELECT * FROM tasks WHERE title = $1 LIMIT 1",
+      [title]
+    );
+    return row ? this.mapRow(row) : null;
+  }
+
+  /**
+   * Persists a task if no task with the same ID or title already exists in the database.
+   */
+  public async createIfNotExists(task: TaskRecord): Promise<{ created: boolean; task: TaskRecord }> {
+    const existingById = await this.getById(task.id);
+    if (existingById) {
+      return { created: false, task: existingById };
+    }
+    const existingByTitle = await this.getByTitle(task.title);
+    if (existingByTitle) {
+      return { created: false, task: existingByTitle };
+    }
+    const created = await this.create(task);
+    return { created: true, task: created };
+  }
+
+  /**
    * Updates task execution status and timestamp.
    */
   public async updateStatus(id: string, status: TaskStatus): Promise<void> {
@@ -109,6 +137,17 @@ export class TaskRepository {
     await this.driver.execute(
       "UPDATE tasks SET target_branch = $1, pr_url = $2, updated_at = $3 WHERE id = $4",
       [targetBranch, prUrl, now, id]
+    );
+  }
+
+  /**
+   * Updates the code diff log snippet for a task.
+   */
+  public async updateLogSnippet(id: string, logSnippet: string): Promise<void> {
+    const now = new Date().toISOString();
+    await this.driver.execute(
+      "UPDATE tasks SET log_snippet = $1, updated_at = $2 WHERE id = $3",
+      [logSnippet, now, id]
     );
   }
 
@@ -181,6 +220,25 @@ export class TaskRepository {
     return (res as any)?.affectedRows ?? 0;
   }
 
+  /**
+   * Resets failed tasks back to PENDING status with failure count zeroed out.
+   */
+  public async retryFailedTasks(pattern?: string): Promise<number> {
+    const now = new Date().toISOString();
+    if (pattern) {
+      const res = await this.driver.execute(
+        "UPDATE tasks SET status = 'PENDING', failure_count = 0, updated_at = $1, completed_at = NULL WHERE status = 'FAILED' AND (id LIKE $2 OR title LIKE $2)",
+        [now, pattern]
+      );
+      return (res as any)?.affectedRows ?? 0;
+    }
+    const res = await this.driver.execute(
+      "UPDATE tasks SET status = 'PENDING', failure_count = 0, updated_at = $1, completed_at = NULL WHERE status = 'FAILED'",
+      [now]
+    );
+    return (res as any)?.affectedRows ?? 0;
+  }
+
   private mapRow(row: TaskRow): TaskRecord {
     return {
       id: row.id,
@@ -195,6 +253,7 @@ export class TaskRepository {
       targetBranch: row.target_branch,
       prUrl: row.pr_url,
       failureCount: Number(row.failure_count),
+      logSnippet: row.log_snippet ? String(row.log_snippet) : null,
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
       completedAt: row.completed_at ? String(row.completed_at) : null
