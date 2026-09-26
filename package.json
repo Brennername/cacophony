@@ -22,6 +22,7 @@
     "status": "bin/cacophony status",
     "stop": "bin/cacophony stop",
     "dev": "npm run --workspace=@cacophony/engine dev",
+    "tui": "bin/cacophony tui",
     "rebuild": "./bin/rebuild-all.sh"
   },
   "devDependencies": {

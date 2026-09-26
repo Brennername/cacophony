@@ -76,6 +76,10 @@ export class CacophonyCli {
         case "scrub":
           return await this.handleScrub(rest);
 
+        // Terminal User Interface
+        case "tui":
+          return await this.handleTui();
+
         // Command Palette execution
         case "run":
           return await this.handleCommandPalette(rest);
@@ -389,10 +393,16 @@ export class CacophonyCli {
     return 0;
   }
 
+  private async handleTui(): Promise<number> {
+    const { runInteractiveTui } = await import("./runTui.js");
+    await runInteractiveTui(this.socketPath);
+    return 0;
+  }
+
   private async handleCommandPalette(args: readonly string[]): Promise<number> {
     const action = args[0];
     if (!action) {
-      console.log("Command Palette: Available actions: status, pause, resume, drain, kill, telemetry, models, scrub");
+      console.log("Command Palette: Available actions: status, pause, resume, drain, kill, telemetry, models, scrub, tui");
       return 0;
     }
 
@@ -432,6 +442,9 @@ Lifecycle Commands:
   shutdown-after-task       Alias for stop
   shutdown-now              Immediately terminate daemon and active task
   kill                      Alias for shutdown-now
+
+Interactive Developer Environments:
+  tui                       Launch fullscreen interactive Terminal User Interface
 
 Task & History Commands:
   tasks list [--status=...] List pending or active tasks

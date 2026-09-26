@@ -15,7 +15,9 @@
   "scripts": {
     "build": "tsc -b",
     "test": "node --test dist/**/*.test.js",
-    "dev": "node dist/index.js"
+    "dev": "node dist/index.js",
+    "cli": "node dist/cli/runCli.js",
+    "tui": "node dist/cli/runCli.js tui"
   },
   "dependencies": {
     "@cacophony/shared-types": "*",
