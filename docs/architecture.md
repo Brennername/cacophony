@@ -226,7 +226,7 @@ For complex epics requiring high-level reasoning:
 
 ### 3.7 Modern Angular Dashboard & System Monitor
 
-The frontend is an Angular v20+ standalone, zoneless application built mobile-first (zoneless, signals, use the angular skills if you can find it):
+The frontend is an Angular v20+ standalone, zoneless application built mobile-first using reactive Signals, SVG visualizations, and modular routing:
 
 1. **Theming Engine**:
    - Dark Mode (default: low-eye-strain slate and obsidian palette with subtle borders).

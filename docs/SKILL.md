@@ -146,12 +146,12 @@ export class ContainerComponent {
 
 | Use Case                | Signals         | RxJS                             |
 | ----------------------- | --------------- | -------------------------------- |
-| Local component state   | ✅ Preferred    | Overkill                         |
-| Derived/computed values | ✅ `computed()` | `combineLatest` works            |
-| Side effects            | ✅ `effect()`   | `tap` operator                   |
-| HTTP requests           | ❌              | ✅ HttpClient returns Observable |
-| Event streams           | ❌              | ✅ `fromEvent`, operators        |
-| Complex async flows     | ❌              | ✅ `switchMap`, `mergeMap`       |
+| Local component state   | Preferred       | Overkill                         |
+| Derived/computed values | `computed()`    | `combineLatest` works            |
+| Side effects            | `effect()`      | `tap` operator                   |
+| HTTP requests           | No              | HttpClient returns Observable    |
+| Event streams           | No              | `fromEvent`, operators           |
+| Complex async flows     | No              | `switchMap`, `mergeMap`          |
 
 ---
 
@@ -785,7 +785,7 @@ describe("UserCardComponent", () => {
 
 ## Best Practices Summary
 
-| Pattern              | ✅ Do                          | ❌ Don't                        |
+| Pattern              | Do                             | Avoid                           |
 | -------------------- | ------------------------------ | ------------------------------- |
 | **State**            | Use Signals for local state    | Overuse RxJS for simple state   |
 | **Components**       | Standalone with direct imports | Bloated SharedModules           |

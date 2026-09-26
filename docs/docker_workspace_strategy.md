@@ -33,10 +33,10 @@ A critical deficiency in previous iterations was scattering shell scripts, ad-ho
 │   │   ┌─────────────────────────┐      ┌───────────────────────┐   │   │
 │   │   │ cacophony-engine        │      │ cacophony-gitea       │   │   │
 │   │   │                         │      │                       │   │   │
-│   │   │ Ports:                  │      │ Ports:                │   │   │
-│   │   │ - 3000 (Angular UI)     │ <──> │ - 3001 (Web & REST)   │   │   │
-│   │   │ - 3002 (API & SSE)      │      │ - 2222 (SSH Git)      │   │   │
-│   │   │ - 3003 (MCP Stdio/SSE)  │      │                       │   │   │
+│   │   │ Host / Container Ports: │      │ Host / Container:     │   │   │
+│   │   │ - 24072 (Angular UI)    │ <──> │ - 19634 (Web & REST)  │   │   │
+│   │   │ - 24161 (API & SSE)     │      │ - 17883 (SSH Git)     │   │   │
+│   │   │ - 21264 (MCP Stdio/SSE) │      │                       │   │   │
 │   │   └─────────────────────────┘      └───────────────────────┘   │   │
 │   └────────────────────────────────────────────────────────────────┘   │
 └────────────────────────────────────────────────────────────────────────┘

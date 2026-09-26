@@ -62,6 +62,39 @@ Enqueues a new autonomous unit of work.
 }
 ```
 
+### GET `/api/tasks/:id`
+Retrieves detailed status, logs, diffs, and execution steps for a specific task.
+
+### DELETE `/api/tasks/:id`
+Cancels or removes an enqueued task from the active queue.
+
+### GET `/api/tasks/:id/gantt`
+Returns stage durations and timeline spans for Gantt transport visualization.
+
+### GET `/api/history`
+Returns paginated historical task records, stage execution durations, and model win rates.
+
+### GET `/api/models/leaderboard`
+Returns dynamic model leaderboard metrics, win rates, tokens/second, and eviction counts.
+
+### GET `/api/analytics/failures`
+Returns rolling failure taxonomy distribution across configurable time windows (24h, 7d, 30d).
+
+### GET `/api/repomap`
+Returns dynamic AST symbol graph with PageRank centrality ranking.
+
+### GET `/api/checkpoints`
+Returns shadow git micro-checkpoints for undo/redo state tracking.
+
+### GET `/api/diagnostics`
+Returns live TypeScript and language server compiler diagnostics.
+
+### GET `/api/hardware/tools`
+Returns host hardware diagnostic utilities status (`radeontop`, `sensors`, `btop`) and missing package commands.
+
+### GET `/api/config/network`
+Returns resolved client origin URL and network accessibility profile (`lan_shared`, `local_only`).
+
 ---
 
 ## 2. Server-Sent Events (SSE) Stream
