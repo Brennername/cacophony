@@ -33,7 +33,7 @@ Built specifically to conquer the thermal and VRAM constraints of unified-memory
 |                                                                               |
 |   +-----------------------------------------------------------------------+   |
 |   |                  Angular v20+ Mobile-First Frontend                   |   |
-|   |     (Gantt Timeline, Hardware Gauges, Stage Steppers, Models)     |   |
+|   |     (Gantt Timeline, Hardware Gauges, Stage Steppers, Models)         |   |
 |   +-----------------------------------------------------------------------+   |
 |                                      | SSE / REST                             |
 |                                      v                                        |
