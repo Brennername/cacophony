@@ -418,7 +418,7 @@ export class CacophonyHttpServer {
             role: payload.role || "implementer",
             status: "PENDING",
             priority: payload.priority || "P1",
-            modelAssigned: null,
+            modelAssigned: payload.modelAssigned || null,
             testCommand: payload.testCommand || null,
             focusFiles: payload.focusFiles
               ? (typeof payload.focusFiles === "string"

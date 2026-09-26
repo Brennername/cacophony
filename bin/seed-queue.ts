@@ -41,11 +41,22 @@ async function main() {
     console.log(`[seed-queue] Filtering by phase: ${phaseFilter}`);
   }
 
+  const fleetModels = [
+    "qwen2.5-coder:7b-instruct-q4_K_M",
+    "deepseek-r1:8b",
+    "gemma3:4b-it-qat-4k",
+    "qwen2.5-coder:3b",
+    "deepseek-r1:8b-4k",
+    "gemma3:4b-it-qat",
+    "qwen2.5-coder:7b-4k"
+  ];
+
   const loader = new TaskcadeSeedLoader();
   const tasks = await loader.loadTasks({
     includeCompleted: false,
     phaseFilter,
-    limit
+    limit,
+    fleetModels
   });
 
   console.log(`[seed-queue] Parsed ${tasks.length} uncompleted tasks from taskcade.`);
@@ -53,7 +64,7 @@ async function main() {
   if (isDryRun) {
     console.log(`[seed-queue] --dry-run specified. Previewing first 5 tasks:`);
     for (const t of tasks.slice(0, 5)) {
-      console.log(`  - [${t.priority}] ${t.id}: ${t.title} (${t.role})`);
+      console.log(`  - [${t.priority}] ${t.id}: ${t.title} (${t.role}) -> ${t.modelAssigned}`);
       if (t.focusFiles) console.log(`      Focus: ${t.focusFiles}`);
       if (t.testCommand) console.log(`      Test:  ${t.testCommand}`);
     }
@@ -75,6 +86,7 @@ async function main() {
           prompt: task.prompt,
           role: task.role,
           priority: task.priority,
+          modelAssigned: task.modelAssigned,
           focusFiles: task.focusFiles,
           testCommand: task.testCommand
         })

@@ -162,13 +162,21 @@ export class TaskScheduler {
 
       let candidateList = targetTask.modelAssigned
         ? [targetTask.modelAssigned]
-        : ["deepseek-r1:8b", "qwen2.5-coder:3b", "qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat"];
+        : [
+            "qwen2.5-coder:7b-instruct-q4_K_M",
+            "deepseek-r1:8b",
+            "gemma3:4b-it-qat-4k",
+            "qwen2.5-coder:3b",
+            "deepseek-r1:8b-4k",
+            "gemma3:4b-it-qat",
+            "qwen2.5-coder:7b-4k"
+          ];
 
       // Telemetry heuristic: If APU temperature is warm or elevated (>= 75C), prefer cooler-running lighter model
       try {
         const sample = await this.telemetryProvider.sample();
         if (sample.edgeTempCelsius >= 75 && !targetTask.modelAssigned) {
-          candidateList = ["qwen2.5-coder:3b", "gemma3:4b-it-qat"];
+          candidateList = ["qwen2.5-coder:3b", "gemma3:4b-it-qat-4k", "gemma3:4b-it-qat"];
         }
       } catch {
         // ignore

@@ -44,6 +44,7 @@ export class TaskcadeSeedLoader {
     readonly includeCompleted?: boolean | undefined;
     readonly phaseFilter?: string | undefined;
     readonly limit?: number | undefined;
+    readonly fleetModels?: readonly string[] | undefined;
   }): Promise<readonly TaskRecord[]> {
     const content = await fs.readFile(this.taskcadeFilePath, "utf-8");
     const parsedItems = this.parseMarkdown(content);
@@ -60,7 +61,11 @@ export class TaskcadeSeedLoader {
       filtered = filtered.slice(0, options.limit);
     }
 
-    return filtered.map((item) => this.toTaskRecord(item));
+    const fleet = options?.fleetModels && options.fleetModels.length > 0 ? options.fleetModels : null;
+    return filtered.map((item, idx) => {
+      const modelAssigned = fleet ? fleet[idx % fleet.length]! : null;
+      return this.toTaskRecord(item, modelAssigned);
+    });
   }
 
   /**
@@ -150,7 +155,7 @@ export class TaskcadeSeedLoader {
     return items;
   }
 
-  private toTaskRecord(item: ParsedTaskcadeItem): TaskRecord {
+  private toTaskRecord(item: ParsedTaskcadeItem, modelAssigned: string | null = null): TaskRecord {
     const now = new Date().toISOString();
     return {
       id: item.taskId,
@@ -159,7 +164,7 @@ export class TaskcadeSeedLoader {
       role: item.role,
       status: "PENDING",
       priority: item.priority,
-      modelAssigned: null,
+      modelAssigned,
       testCommand: item.testCommand,
       focusFiles: item.focusFiles,
       targetBranch: null,
