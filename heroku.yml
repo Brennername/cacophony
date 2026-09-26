@@ -1,0 +1,7 @@
+setup:
+  addons: []
+build:
+  docker:
+    web: Dockerfile
+run:
+  web: node packages/engine/dist/cli/runDaemon.js
