@@ -23,6 +23,8 @@ Built specifically to conquer the thermal and VRAM constraints of unified-memory
 - A full Gemini/Codex-style deterministic tool suite exposed locally and via the Model Context Protocol (MCP).
 - A mobile-first Angular v20+ dashboard offering real-time hardware telemetry, live queue management, stage inspectors, Gantt timeline execution tracking, and Gitea pull request tracking.
 
+![Cacophony Real-Time Dashboard Preview](assets/screenshots/dashboard_preview.png)
+
 ---
 
 ## Architectural Topology

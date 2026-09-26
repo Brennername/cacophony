@@ -100,9 +100,15 @@ export class CacophonyDaemon {
     new ModelRegistryRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
-    const vegaProvider = new AmdVegaTelemetryProvider();
-    const isVegaAvailable = await vegaProvider.isAvailable();
-    const telemetryProvider = isVegaAvailable ? vegaProvider : new FallbackTelemetryProvider();
+    const isDemoMode = process.env.DEMO_MODE === "true" || process.env.SIMULATION_MODE === "true";
+    let telemetryProvider;
+    if (isDemoMode) {
+      telemetryProvider = new FallbackTelemetryProvider(true);
+    } else {
+      const vegaProvider = new AmdVegaTelemetryProvider();
+      const isVegaAvailable = await vegaProvider.isAvailable();
+      telemetryProvider = isVegaAvailable ? vegaProvider : new FallbackTelemetryProvider();
+    }
     this.telemetryPoller = new TelemetryPoller({
       provider: telemetryProvider,
       repository: this.telemetryRepo,
@@ -124,19 +130,23 @@ export class CacophonyDaemon {
       governor
     });
 
-    // Wire real worker pipeline with Ollama, ContextMinimizer, SelfHealingParser, and RulePipelineEngine
+    // Wire real or simulated worker pipeline
     const { OllamaProvider } = await import("../inference/OllamaProvider.js");
+    const { MockInferenceStreamProvider } = await import("../inference/MockInferenceStreamProvider.js");
     const { ContextMinimizer } = await import("../inference/ContextMinimizer.js");
     const { SelfHealingParser } = await import("../inference/SelfHealingParser.js");
     const { RulePipelineEngine } = await import("../rules/RulePipelineEngine.js");
     const { AutonomousWorkerPipeline } = await import("../scheduler/AutonomousWorkerPipeline.js");
 
-    const ollama = new OllamaProvider();
+    const primaryInferenceProvider = isDemoMode
+      ? new MockInferenceStreamProvider(28)
+      : new OllamaProvider();
+
     const { FrontierFallbackRouter } = await import("../inference/FrontierFallbackRouter.js");
     this.fallbackRouter = new FrontierFallbackRouter("deepseek-r1:8b");
     this.fallbackRouter.registerProvider({
       providerType: "ollama",
-      provider: ollama,
+      provider: primaryInferenceProvider,
       priority: 0
     });
 
@@ -145,7 +155,7 @@ export class CacophonyDaemon {
     const ruleEngine = new RulePipelineEngine();
     const worker = new AutonomousWorkerPipeline({
       workspaceRoot: process.cwd(),
-      ollamaProvider: ollama,
+      ollamaProvider: primaryInferenceProvider as any,
       contextMinimizer: minimizer,
       parser,
       ruleEngine,
@@ -160,7 +170,7 @@ export class CacophonyDaemon {
     // 4b. Autonomous Taskcade Planning & Self-Grooming Service
     const { TaskcadePlanningService } = await import("../inference/TaskcadePlanningService.js");
     const { FrontierTaskDecomposer } = await import("../inference/FrontierTaskDecomposer.js");
-    const decomposer = new FrontierTaskDecomposer(ollama, this.taskRepo);
+    const decomposer = new FrontierTaskDecomposer(primaryInferenceProvider as any, this.taskRepo);
     const planningService = new TaskcadePlanningService({
       taskRepo: this.taskRepo,
       stageRepo: this.stageRepo,
