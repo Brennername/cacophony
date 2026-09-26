@@ -13,7 +13,7 @@
 
 ### 1.1 Gitea API Scopes & Access Control Matrix
 
-Selected token permissions limit authorization strictly to the corresponding [API](http://localhost:19634/api/swagger) routes. Reference: [Gitea OAuth2 Provider Documentation](https://docs.gitea.com/development/oauth2-provider#scopes).
+Selected token permissions limit authorization strictly to the corresponding local API Swagger routes (`http://localhost:19634/api/swagger`). Reference: [Gitea Documentation](https://docs.gitea.com).
 
 | Scope | Available Levels | Intended Cacophony Role / Subsystem | Permission Guardrail Policy |
 | :--- | :--- | :--- | :--- |
