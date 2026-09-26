@@ -1102,5 +1102,11 @@
   - [ ] T71.2.2: Add generic OpenAI-compatible HTTP inference provider alongside native Ollama adapter to support arbitrary OpenAI-compatible server endpoints. [File: packages/engine/src/inference/OpenAICompatibleInferenceProvider.ts] [Class: OpenAICompatibleInferenceProvider] [Test: npm test -- packages/engine/src/tests/openai_inference_provider.test.ts]
   - [ ] T71.2.3: Wire dynamic provider configuration via environment variables and settings (INFERENCE_PROVIDER=ollama|openai_compatible, INFERENCE_BASE_URL, INFERENCE_API_KEY). [File: packages/engine/src/inference/InferenceProviderFactory.ts] [Class: InferenceProviderFactory] [Test: npm test -- packages/engine/src/tests/inference_factory.test.ts]
 
+### T71.3: Visual Showcase Mock Mode & Synthetic Token Streaming Engine
+  - [ ] T71.3.1: Implement MockInferenceStreamProvider emitting synthetic typed code streams with realistic token-per-second cadence and variable chunk sizes without requiring local GPU or Ollama daemon. [File: packages/engine/src/inference/MockInferenceStreamProvider.ts] [Class: MockInferenceStreamProvider] [Test: npm test -- packages/engine/src/tests/mock_inference_stream.test.ts]
+  - [ ] T71.3.2: Add DEMO_MODE=true environment toggle to CacophonyHttpServer and FallbackTelemetryProvider to serve pre-seeded animated tasks, live simulated hardware gauges, and autonomous stage transitions for public web showcase hosting (e.g. Heroku, Render, Fly.io). [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: configureDemoMode] [Test: npm test -- packages/engine/src/tests/demo_mode.test.ts]
+  - [ ] T71.3.3: Provide heroku.yml and container deployment recipe in docs/deployment_showcase.md documenting how to host the zero-hardware interactive visual showcase for online viewers. [File: docs/deployment_showcase.md] [Section: Public Demonstration Hosting] [Test: npm test]
+
+
 
 
