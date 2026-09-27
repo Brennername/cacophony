@@ -1137,3 +1137,28 @@
   - [ ] T72.3.2: Extend POST /api/tasks REST endpoint to validate and accept full metadataHints object (role, model, temperature, bypassRules, customDirectives). [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
   - [ ] T72.3.3: Document markdown task metadata syntax and hint conventions in docs/taskcade_metadata_spec.md for human developers and autonomous groomer agents. [File: docs/taskcade_metadata_spec.md] [Section: Specification Syntax] [Test: npm test]
   - [ ] T72.3.4: Write unit tests verifying that agents calling the MCP tool successfully register tasks with all metadata specifiers preserved. [File: packages/tools/src/tests/EnqueueTaskcadeTaskTool.test.ts] [Test: npm test -- packages/tools/dist/tests/*.test.js]
+
+---
+
+## Phase 73: Task Runtime Metrics, Model Velocity Tracking & History Efficiency View
+*RDF Category: telemetry*
+*Note: Preserves MockInferenceStreamProvider and FallbackTelemetryProvider for demo/showcase mode. Model-calibrated pacing rates (3B=54, 4B=38, 7B=28, 8B=16 tok/s) ensure meaningful leaderboard differentiation without hardware.*
+
+### T73.1: Database Schema & Repository: duration_ms and tokens_per_sec Columns
+  - [x] T73.1.1: Author migration 012_task_runtime_metrics.ts adding duration_ms INTEGER DEFAULT 0 and tokens_per_sec REAL DEFAULT 0.0 columns to tasks table via IF NOT EXISTS guards. [File: packages/db/src/migrations/012_task_runtime_metrics.ts] [Test: npm test -- packages/db]
+  - [x] T73.1.2: Register migration012 in MigrationRegistry in correct chronological slot after migration011. [File: packages/db/src/migrations/MigrationRegistry.ts] [Test: npm test -- packages/db]
+  - [x] T73.1.3: Extend TaskRecord in @cacophony/shared-types with optional readonly durationMs and tokensPerSec fields with full JSDoc documentation. [File: packages/shared-types/src/task.ts] [Test: npm test -- packages/shared-types]
+  - [x] T73.1.4: Update TaskRepository.updateStatus to accept durationMs and tokensPerSec optional parameters and persist them in a single conditional UPDATE; update mapRow to read both columns with exactOptionalPropertyTypes-safe spread pattern. [File: packages/db/src/repositories/TaskRepository.ts] [Test: npm test -- packages/db]
+
+### T73.2: Engine Execution: Real Token Velocity Measurement & Propagation
+  - [x] T73.2.1: Update MockInferenceStreamProvider to implement getTokensPerSecondForModel() deriving per-model-family realistic velocities (3B: 54, 4B: 38, 7B: 28, 8B: 16 tok/s) keyed from model name substring. [File: packages/engine/src/inference/MockInferenceStreamProvider.ts] [Test: npm test -- packages/engine]
+  - [x] T73.2.2: Update AutonomousWorkerPipeline.executeTask return type from Promise<boolean> to Promise<{ success: boolean; tokensPerSec: number }> and capture parseResult.tokensPerSec into measuredTps after generation stage. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T73.2.3: Update TaskExecutionHandler type in TaskScheduler to Promise<TaskExecutionResult> and thread actualTps into taskRepo.updateStatus and evictionManager.recordRunOutcome; remove hardcoded 30.0 tok/s. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm test -- packages/engine]
+  - [x] T73.2.4: Remove hardcoded 35.0 tok/s fallback from CacophonyHttpServer /api/models/leaderboard endpoint; pass p.avgTokensPerSec || 0.0 for honest zero-value display. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: curl http://localhost:24072/api/models/leaderboard]
+
+### T73.3: Frontend History View: Runtime & Velocity Columns
+  - [x] T73.3.1: Add tokensPerSec to HistoryItem interface and update HistoryMetricsService API payload type to include createdAt, durationMs, tokensPerSec; replace durationMs:3500 dummy with real stored value plus timestamp-delta fallback for pre-migration records. [File: packages/frontend/src/app/services/history-metrics.service.ts] [Test: npm test]
+  - [x] T73.3.2: Add Runtime and Velocity table columns to task-history.component with formatDuration helper (ms/s/m+s display), and conditional tok/s cell showing '--' when no data is present. [File: packages/frontend/src/app/components/task-history/task-history.component.ts] [Test: npm test]
+  - [x] T73.3.3: Add formatDuration method to models-view.component replacing raw {{ task.durationMs }}ms display with clean time strings; remove 35.0 fallback from selectedModelHwm computed. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Test: npm test]
+  - [x] T73.3.4: Fix test assertions in autonomous_continuous_arena.test.ts and stage_telemetry.test.ts to check result.success instead of direct boolean equality after executeTask return type change. [File: packages/engine/src/tests/autonomous_continuous_arena.test.ts, packages/engine/src/tests/stage_telemetry.test.ts] [Test: npm test -- packages/engine]
+
