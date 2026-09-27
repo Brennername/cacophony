@@ -5,6 +5,7 @@ export interface HistoryItem {
   title: string;
   status: 'PASSED' | 'FAILED' | 'REMEDIATED' | 'CANCELLED';
   durationMs: number;
+  tokensPerSec: number;
   model: string;
   role?: string;
   priority?: string;
@@ -63,7 +64,10 @@ export class HistoryMetricsService {
           priority?: string;
           failureCount?: number;
           completedAt?: string | null;
+          createdAt?: string | null;
           prUrl?: string | null;
+          durationMs?: number | null;
+          tokensPerSec?: number | null;
         }>;
         const mapStatus = (rawStatus: string): HistoryItem['status'] => {
           switch (rawStatus) {
@@ -80,20 +84,29 @@ export class HistoryMetricsService {
           }
         };
 
-        const items: HistoryItem[] = tasks.map((t) => ({
-          id: t.id,
-          title: t.title,
-          status: mapStatus(t.status),
-          durationMs: 3500,
-          model: t.modelAssigned || 'Auto',
-          role: t.role || 'implementer',
-          priority: t.priority || 'P1',
-          failureCount: t.failureCount || 0,
-          prNumber: 1,
-          prUrl: t.prUrl || 'http://localhost:19634/cacophony/core/pulls/1',
-          commitDiffUrl: 'http://localhost:19634/cacophony/core/commit/main',
-          timestamp: t.completedAt || 'Recently',
-        }));
+        const items: HistoryItem[] = tasks.map((t) => {
+          // Use stored duration_ms if present, otherwise fall back to epoch delta from timestamps
+          const storedDuration = t.durationMs != null ? Number(t.durationMs) : null;
+          const computedDuration =
+            t.completedAt && t.createdAt
+              ? Math.max(0, new Date(t.completedAt).getTime() - new Date(t.createdAt).getTime())
+              : 0;
+          return {
+            id: t.id,
+            title: t.title,
+            status: mapStatus(t.status),
+            durationMs: storedDuration !== null ? storedDuration : computedDuration,
+            tokensPerSec: t.tokensPerSec != null ? Number(t.tokensPerSec) : 0,
+            model: t.modelAssigned || 'Auto',
+            role: t.role || 'implementer',
+            priority: t.priority || 'P1',
+            failureCount: t.failureCount || 0,
+            prNumber: 0,
+            prUrl: t.prUrl || '',
+            commitDiffUrl: '',
+            timestamp: t.completedAt || 'Recently',
+          };
+        });
         if (items.length > 0) {
           this.historyItems.set(items);
         }

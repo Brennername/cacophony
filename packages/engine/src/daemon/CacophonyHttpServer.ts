@@ -537,7 +537,7 @@ export class CacophonyHttpServer {
         totalFailures: p.totalFailures,
         consecutiveFailures: p.consecutiveFailures,
         avgLatencyMs: p.avgLatencyMs,
-        avgTokensPerSec: p.avgTokensPerSec || 35.0,
+        avgTokensPerSec: p.avgTokensPerSec || 0.0,
         status: p.status === "EJECTED" ? "EVICTED" : p.consecutiveFailures > 0 ? "DEGRADED" : "HEALTHY",
         lastUsedAt: p.lastUsedAt
       }));

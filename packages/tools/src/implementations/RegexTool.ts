@@ -5,11 +5,16 @@ import type { ICacophonyTool, ToolExecutionContext } from "../ICacophonyTool.js"
 import { resolveSafePath } from "../utils/pathSecurity.js";
 
 export const RegexToolParamsSchema = z.object({
-  path: z.string().describe("Relative or absolute path to the file to process."),
-  pattern: z.string().min(1).describe("Regular expression pattern to find."),
-  replacement: z.string().optional().describe("Replacement string if performing a substitution. Can reference capture groups ($1, $2)."),
-  flags: z.string().optional().describe("Regex flags (default: 'g')."),
-  dryRun: z.boolean().optional().describe("If true, previews matches/replacements without modifying the file.")
+  path: z.string()
+    .describe("Relative or absolute path to the file to process."),
+  pattern: z.string().min(1)
+    .describe("Regular expression pattern to find."),
+  replacement: z.string().optional()
+    .describe("Replacement string if performing a substitution. Can reference capture groups ($1, $2)."),
+  flags: z.string().optional()
+    .describe("Regex flags (default: 'g')."),
+  dryRun: z.boolean().optional()
+    .describe("If true, previews matches/replacements without modifying the file.")
 });
 
 export type RegexToolParams = z.infer<typeof RegexToolParamsSchema>;

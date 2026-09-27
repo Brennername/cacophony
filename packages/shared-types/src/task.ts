@@ -77,7 +77,18 @@ export interface TaskRecord {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly completedAt: string | null;
+  /**
+   * Total wall-clock execution time in milliseconds for this task run.
+   * Populated by the scheduler upon task finalization.
+   */
+  readonly durationMs?: number;
+  /**
+   * Average inference velocity measured during the generation stage (tokens per second).
+   * Used to compare model efficiency in history and leaderboard views.
+   */
+  readonly tokensPerSec?: number;
 }
+
 
 /**
  * Detailed step execution log and telemetry within an active task run.

@@ -160,7 +160,7 @@ test("Phase 32: Autonomous Continuous Arena Engine & Self-Taskcade Grooming", as
       "qwen2.5-coder:7b"
     );
 
-    assert.strictEqual(success, true);
+    assert.strictEqual(success.success, true);
     assert.strictEqual(contextAssembled, true);
     assert.strictEqual(ruleHookExecuted, false); // No focus files provided, skipped file write
   });

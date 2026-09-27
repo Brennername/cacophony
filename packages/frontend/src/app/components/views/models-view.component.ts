@@ -152,7 +152,7 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
                     @if (task.priority) {
                       <span class="meta-tag priority">{{ task.priority }}</span>
                     }
-                    <span class="meta-tag time font-mono tabular">{{ task.durationMs }}ms</span>
+                    <span class="meta-tag time font-mono tabular">{{ formatDuration(task.durationMs) }}</span>
                     <button class="inspect-btn" title="Inspect task details">Details ↗</button>
                   </div>
                 </div>
@@ -932,7 +932,7 @@ export class ModelsViewComponent {
     const recorded = this.store.modelHighWaterMarks()[modelId];
     if (recorded && recorded > 0) return recorded;
     const entry = this.selectedModelEntry();
-    return entry ? entry.avgTokensPerSec * 1.3 : 35.0;
+    return entry ? entry.avgTokensPerSec * 1.3 : 0;
   });
 
   public readonly roleBreakdown = computed<Array<{ role: string; count: number }>>(() => {
@@ -984,5 +984,19 @@ export class ModelsViewComponent {
 
   public formatTks(val: number | null | undefined): string {
     return (Number(val) || 0).toFixed(1);
+  }
+
+  /**
+   * Formats a millisecond duration into a human-readable string for run rows.
+   * Renders as ms for sub-second, seconds for short runs, and m/s for long inference.
+   */
+  public formatDuration(ms: number | null | undefined): string {
+    const v = Number(ms) || 0;
+    if (v <= 0) return '--';
+    if (v < 1000) return `${v}ms`;
+    if (v < 60000) return `${(v / 1000).toFixed(1)}s`;
+    const mins = Math.floor(v / 60000);
+    const secs = Math.round((v % 60000) / 1000);
+    return `${mins}m ${secs}s`;
   }
 }

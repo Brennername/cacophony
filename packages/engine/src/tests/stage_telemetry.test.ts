@@ -168,7 +168,7 @@ test("T46.1: Stage Transition Telemetry & Broadcast Suite", async (t) => {
       "qwen2.5-coder:7b"
     );
 
-    assert.strictEqual(success, true);
+    assert.strictEqual(success.success, true);
 
     // Verify stage transition events were broadcast over SSE stream tap
     const stageNames = recordedEvents.map((e) => e.stageName);

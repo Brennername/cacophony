@@ -6,11 +6,16 @@ import type { ICacophonyTool, ToolExecutionContext } from "../ICacophonyTool.js"
 import { resolveSafePath } from "../utils/pathSecurity.js";
 
 export const GrepSearchParamsSchema = z.object({
-  path: z.string().default(".").describe("Directory or file path to search."),
-  pattern: z.string().min(1).describe("Search query string or regex pattern."),
-  isRegex: z.boolean().optional().default(false).describe("Whether pattern should be evaluated as a regular expression."),
-  caseInsensitive: z.boolean().optional().default(false).describe("Whether search should be case-insensitive."),
-  includes: z.array(z.string()).optional().describe("Glob extensions or file patterns to filter (e.g. ['.ts', '.json']).")
+  path: z.string().default(".")
+    .describe("Directory or file path to search."),
+  pattern: z.string().min(1)
+    .describe("Search query string or regex pattern."),
+  isRegex: z.boolean().optional().default(false)
+    .describe("Whether pattern should be evaluated as a regular expression."),
+  caseInsensitive: z.boolean().optional().default(false)
+    .describe("Whether search should be case-insensitive."),
+  includes: z.array(z.string()).optional()
+    .describe("Glob extensions or file patterns to filter (e.g. ['.ts', '.json']).")
 });
 
 export type GrepSearchParams = z.infer<typeof GrepSearchParamsSchema>;

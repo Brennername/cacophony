@@ -49,8 +49,9 @@ import { ArenaStateStore } from '../../services/arena-state.store';
               <th>Status</th>
               <th>Task</th>
               <th>Model</th>
+              <th>Runtime</th>
+              <th>Velocity</th>
               <th>Gitea PR</th>
-              <th>Commit Diff</th>
             </tr>
           </thead>
           <tbody>
@@ -62,21 +63,30 @@ import { ArenaStateStore } from '../../services/arena-state.store';
                   </span>
                 </td>
                 <td class="task-cell">
-                  <div class="task-title-text">{{ item.title }} <span class="drill-tag">Details ↗</span></div>
+                  <div class="task-title-text">{{ item.title }} <span class="drill-tag">Details &nearr;</span></div>
                   @if (item.failureReason) {
                     <div class="failure-reason">{{ item.failureReason }}</div>
                   }
                 </td>
                 <td class="model-cell">{{ item.model }}</td>
-                <td class="link-cell">
-                  <a [href]="item.prUrl" target="_blank" rel="noopener" class="gitea-link">
-                    PR #{{ item.prNumber }}
-                  </a>
+                <td class="runtime-cell font-mono tabular">
+                  {{ formatDuration(item.durationMs) }}
+                </td>
+                <td class="velocity-cell font-mono tabular">
+                  @if (item.tokensPerSec > 0) {
+                    <span>{{ formatTks(item.tokensPerSec) }} tok/s</span>
+                  } @else {
+                    <span class="text-muted">--</span>
+                  }
                 </td>
                 <td class="link-cell">
-                  <a [href]="item.commitDiffUrl" target="_blank" rel="noopener" class="gitea-link font-mono">
-                    View Diff
-                  </a>
+                  @if (item.prUrl) {
+                    <a [href]="item.prUrl" target="_blank" rel="noopener" class="gitea-link">
+                      PR #{{ item.prNumber || 'View' }}
+                    </a>
+                  } @else {
+                    <span class="text-muted">--</span>
+                  }
                 </td>
               </tr>
             }
@@ -292,6 +302,22 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       color: var(--text-secondary);
     }
 
+    .runtime-cell {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .velocity-cell {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .text-muted {
+      color: var(--text-muted);
+    }
+
     .gitea-link {
       color: var(--color-brand);
       text-decoration: none;
@@ -368,6 +394,20 @@ export class TaskHistoryComponent {
 
   public formatTks(val: number | null | undefined): string {
     return (Number(val) || 0).toFixed(1);
+  }
+
+  /**
+   * Formats a millisecond duration into a human-readable string for the runtime column.
+   * Renders as ms for sub-second runs, seconds for short runs, and m/s for long inference.
+   */
+  public formatDuration(ms: number | null | undefined): string {
+    const v = Number(ms) || 0;
+    if (v <= 0) return '--';
+    if (v < 1000) return `${v}ms`;
+    if (v < 60000) return `${(v / 1000).toFixed(1)}s`;
+    const mins = Math.floor(v / 60000);
+    const secs = Math.round((v % 60000) / 1000);
+    return `${mins}m ${secs}s`;
   }
 
   public drillDown(taskId: string): void {

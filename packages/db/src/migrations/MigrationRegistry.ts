@@ -10,6 +10,7 @@ import { migration008 } from "./008_test_execution_runs.js";
 import { migration009 } from "./009_user_sessions.js";
 import { migration010 } from "./010_task_telemetry_correlations.js";
 import { migration011 } from "./011_task_log_snippet.js";
+import { migration012 } from "./012_task_runtime_metrics.js";
 
 /**
  * MigrationRegistry
@@ -29,7 +30,8 @@ export class MigrationRegistry {
     migration008,
     migration009,
     migration010,
-    migration011
+    migration011,
+    migration012
   ];
 
   /**

@@ -8,7 +8,8 @@ import { QueueGroomer, type GroomedTask } from "./QueueGroomer.js";
 import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
 
-export type TaskExecutionHandler = (groomed: GroomedTask, selectedModel: string) => Promise<boolean>;
+export type TaskExecutionResult = { success: boolean; tokensPerSec: number };
+export type TaskExecutionHandler = (groomed: GroomedTask, selectedModel: string) => Promise<TaskExecutionResult>;
 
 /**
  * TaskScheduler
@@ -209,31 +210,32 @@ export class TaskScheduler {
         const stageId = await this.stageRepo.recordStageStart(targetTask.id, "generation");
 
         try {
-          const success = await this.executionHandler(groomed, selectedModel);
+          const result = await this.executionHandler(groomed, selectedModel);
           const durationMs = Date.now() - stageStartMs;
-          const finalStatus = success ? "COMPLETED" : "FAILED";
-          console.log(`[TaskScheduler] Task ${targetTask.id} finished with status ${finalStatus} in ${durationMs}ms`);
-          await this.taskRepo.updateStatus(targetTask.id, finalStatus);
+          const finalStatus = result.success ? "COMPLETED" : "FAILED";
+          const actualTps = result.tokensPerSec;
+          console.log(`[TaskScheduler] Task ${targetTask.id} finished with status ${finalStatus} in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`);
+          await this.taskRepo.updateStatus(targetTask.id, finalStatus, durationMs, actualTps);
           await this.stageRepo.recordStageCompletion(
             stageId,
-            success ? "SUCCESS" : "FAILURE",
-            success ? "Stage completed successfully" : "Stage failed verification",
+            result.success ? "SUCCESS" : "FAILURE",
+            result.success ? "Stage completed successfully" : "Stage failed verification",
             0,
             0,
             durationMs
           );
 
-          if (!success) {
+          if (!result.success) {
             await this.taskRepo.incrementFailure(targetTask.id);
           }
 
-          // Record run telemetry in ModelHealthRepository for consistent win rate and leaderboard metrics
+          // Record run telemetry in ModelHealthRepository for leaderboard metrics
           try {
             await this.evictionManager.recordRunOutcome(
               selectedModel,
-              success,
+              result.success,
               durationMs,
-              30.0
+              actualTps
             );
           } catch {
             // ignore non-critical health recording errors

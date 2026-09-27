@@ -124,9 +124,12 @@ export class AutonomousWorkerPipeline {
 
   /**
    * The execution handler passed into TaskScheduler.setExecutionHandler.
+   * Returns success flag and measured inference velocity so the scheduler can
+   * persist both into the task record and leaderboard without additional coupling.
    */
-  public async executeTask(groomed: GroomedTask, selectedModel: string): Promise<boolean> {
+  public async executeTask(groomed: GroomedTask, selectedModel: string): Promise<{ success: boolean; tokensPerSec: number }> {
     const taskId = groomed.task.id;
+    let measuredTps = 0;
     try {
       if (this.streamTapManager) {
         this.streamTapManager.setActiveTask(taskId);
@@ -186,7 +189,7 @@ export class AutonomousWorkerPipeline {
           generationDuration,
           "Self-healing parser failed to extract valid code block"
         );
-        return false;
+        return { success: false, tokensPerSec: measuredTps };
       }
 
       await this.recordAndEmitStage(
@@ -198,6 +201,8 @@ export class AutonomousWorkerPipeline {
         parseResult.tokensPrompt || 0,
         parseResult.tokensCompletion || 0
       );
+      // Capture measured inference velocity for the scheduler to persist
+      measuredTps = parseResult.tokensPerSec || 0;
 
       // STAGE 3: Deterministic Scrub & Rule Pipeline Execution
       const scrubStart = Date.now();
@@ -241,7 +246,7 @@ export class AutonomousWorkerPipeline {
             scrubDuration,
             `Rule rejection: ${rejectionMsg}`
           );
-          return false;
+          return { success: false, tokensPerSec: measuredTps };
         }
 
         const finalCode = fileContentsMap.get(targetAbs) || parseResult.code;
@@ -365,7 +370,7 @@ export class AutonomousWorkerPipeline {
                   retryStderr: retryResult.stderr,
                   retryStdout: retryResult.stdout
                 });
-                return false;
+                return { success: false, tokensPerSec: measuredTps };
               }
             } else {
               await this.recordAndEmitStage(
@@ -376,7 +381,7 @@ export class AutonomousWorkerPipeline {
                 "Remediation produced no code"
               );
               await this.rollbackWorkspace(targetAbs, originalExistingContent);
-              return false;
+              return { success: false, tokensPerSec: measuredTps };
             }
           } catch (remediationErr) {
             await this.recordAndEmitStage(
@@ -387,7 +392,7 @@ export class AutonomousWorkerPipeline {
               String(remediationErr)
             );
             await this.rollbackWorkspace(targetAbs, originalExistingContent);
-            return false;
+            return { success: false, tokensPerSec: measuredTps };
           }
         } else {
           await this.recordAndEmitStage(
@@ -432,10 +437,10 @@ export class AutonomousWorkerPipeline {
         "Code modifications merged"
       );
 
-      return true;
+      return { success: true, tokensPerSec: measuredTps };
     } catch (err) {
       console.error(`[AutonomousWorkerPipeline] Execution error for task '${groomed.enrichedPrompt.slice(0, 40)}':`, err);
-      return false;
+      return { success: false, tokensPerSec: measuredTps };
     }
   }
 

@@ -21,6 +21,8 @@ interface TaskRow {
   readonly created_at: string;
   readonly updated_at: string;
   readonly completed_at: string | null;
+  readonly duration_ms?: number | null;
+  readonly tokens_per_sec?: number | null;
 }
 
 /**
@@ -106,16 +108,34 @@ export class TaskRepository {
   }
 
   /**
-   * Updates task execution status and timestamp.
+   * Updates task execution status, timestamp, and optional runtime metrics.
+   * Pass durationMs and tokensPerSec on finalization to persist efficiency data.
    */
-  public async updateStatus(id: string, status: TaskStatus): Promise<void> {
+  public async updateStatus(
+    id: string,
+    status: TaskStatus,
+    durationMs?: number,
+    tokensPerSec?: number
+  ): Promise<void> {
     const now = new Date().toISOString();
     const completedAt = (status === "COMPLETED" || status === "FAILED" || status === "CANCELLED") ? now : null;
 
-    await this.driver.execute(
-      "UPDATE tasks SET status = $1, updated_at = $2, completed_at = COALESCE($3, completed_at) WHERE id = $4",
-      [status, now, completedAt, id]
-    );
+    if (durationMs !== undefined && tokensPerSec !== undefined) {
+      await this.driver.execute(
+        "UPDATE tasks SET status = $1, updated_at = $2, completed_at = COALESCE($3, completed_at), duration_ms = $4, tokens_per_sec = $5 WHERE id = $6",
+        [status, now, completedAt, durationMs, tokensPerSec, id]
+      );
+    } else if (durationMs !== undefined) {
+      await this.driver.execute(
+        "UPDATE tasks SET status = $1, updated_at = $2, completed_at = COALESCE($3, completed_at), duration_ms = $4 WHERE id = $5",
+        [status, now, completedAt, durationMs, id]
+      );
+    } else {
+      await this.driver.execute(
+        "UPDATE tasks SET status = $1, updated_at = $2, completed_at = COALESCE($3, completed_at) WHERE id = $4",
+        [status, now, completedAt, id]
+      );
+    }
   }
 
   /**
@@ -241,6 +261,13 @@ export class TaskRepository {
   }
 
   private mapRow(row: TaskRow): TaskRecord {
+    // Spread optional runtime metrics only when present; exactOptionalPropertyTypes
+    // disallows assigning undefined to optional fields that have no undefined in their type.
+    // Use a mutable intermediate object so readonly fields can be set before freezing.
+    const runtimeMetrics: { durationMs?: number; tokensPerSec?: number } = {};
+    if (row.duration_ms != null) runtimeMetrics.durationMs = Number(row.duration_ms);
+    if (row.tokens_per_sec != null) runtimeMetrics.tokensPerSec = Number(row.tokens_per_sec);
+
     return {
       id: row.id,
       title: row.title,
@@ -257,7 +284,8 @@ export class TaskRepository {
       logSnippet: row.log_snippet ? String(row.log_snippet) : null,
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
-      completedAt: row.completed_at ? String(row.completed_at) : null
+      completedAt: row.completed_at ? String(row.completed_at) : null,
+      ...runtimeMetrics
     };
   }
 }

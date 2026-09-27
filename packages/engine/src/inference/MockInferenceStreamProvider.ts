@@ -11,13 +11,17 @@ import type { IInferenceProvider } from "./IInferenceProvider.js";
  * Simulates an authentic streaming LLM code generation session with realistic
  * tokens-per-second pacing, multi-chunk emits, and syntactically valid code blocks.
  * Enables zero-GPU demo showcases and cloud deployments (e.g. Render, Fly.io, Heroku).
+ *
+ * Token velocity is derived from model family size when the request carries a model
+ * name, so the leaderboard and history show meaningfully different efficiency ratings
+ * (e.g. qwen2.5-coder:3b runs fast, deepseek-r1:8b reasons slowly).
  */
 export class MockInferenceStreamProvider implements IInferenceProvider {
   private readonly defaultSnippet: string;
-  private readonly tokensPerSecond: number;
+  private readonly defaultTokensPerSecond: number;
 
   constructor(tokensPerSecond: number = 32) {
-    this.tokensPerSecond = tokensPerSecond;
+    this.defaultTokensPerSecond = tokensPerSecond;
     this.defaultSnippet = [
       "// Autonomous Worker Pipeline: Synthetic Implementation",
       "import { Injectable, signal, computed } from '@angular/core';",
@@ -48,14 +52,35 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
     ].join("\n");
   }
 
+  /**
+   * Derives a realistic tokens-per-second rate from the model name.
+   * Calibrated to typical AMD APU Vega throughput per model family size:
+   *   - 3B  (fast coder): ~54 tok/s
+   *   - 4B  (balanced):   ~38 tok/s
+   *   - 7B  (larger):     ~28 tok/s
+   *   - 8B  (reasoning):  ~16 tok/s
+   * Falls back to the constructor default for unknown model names.
+   */
+  private getTokensPerSecondForModel(modelName?: string): number {
+    if (!modelName) return this.defaultTokensPerSecond;
+    const lower = modelName.toLowerCase();
+    if (lower.includes(":3b") || lower.includes("-3b")) return 54.0;
+    if (lower.includes(":4b") || lower.includes("-4b")) return 38.0;
+    if (lower.includes(":7b") || lower.includes("-7b")) return 28.5;
+    if (lower.includes(":8b") || lower.includes("-8b")) return 16.5;
+    if (lower.includes("deepseek-r1")) return 16.5;
+    return this.defaultTokensPerSecond;
+  }
+
   public getProviderType(): InferenceProviderType {
     return "ollama";
   }
 
   public async generate(request: InferenceRequest): Promise<InferenceResponse> {
+    const tokensPerSecond = this.getTokensPerSecondForModel(request.model);
     const content = this.defaultSnippet;
     const totalTokens = Math.round(content.length / 4);
-    const durationMs = (totalTokens / this.tokensPerSecond) * 1000;
+    const durationMs = (totalTokens / tokensPerSecond) * 1000;
 
     return {
       content,
@@ -64,7 +89,7 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
       tokensCompletion: totalTokens,
       totalTokens: 128 + totalTokens,
       latencyMs: Math.max(10, Math.round(durationMs)),
-      tokensPerSec: this.tokensPerSecond
+      tokensPerSec: tokensPerSecond
     };
   }
 
@@ -72,12 +97,13 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
     request: InferenceRequest,
     onChunk: (chunk: string) => void
   ): Promise<InferenceResponse> {
+    const tokensPerSecond = this.getTokensPerSecondForModel(request.model);
     const startMs = Date.now();
     const content = this.defaultSnippet;
 
     // Divide snippet into small code tokens/words
     const tokens = content.match(/(\s+|\w+|[^\s\w]+)/g) || [content];
-    const delayPerChunkMs = Math.max(15, Math.round(1000 / this.tokensPerSecond));
+    const delayPerChunkMs = Math.max(15, Math.round(1000 / tokensPerSecond));
 
     for (const chunk of tokens) {
       onChunk(chunk);
@@ -87,7 +113,7 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
 
     const durationMs = Date.now() - startMs;
     const tokensGenerated = tokens.length;
-    const tokensPerSec = Number(((tokensGenerated / (durationMs / 1000)) || this.tokensPerSecond).toFixed(1));
+    const measuredTps = Number(((tokensGenerated / (durationMs / 1000)) || tokensPerSecond).toFixed(1));
 
     return {
       content,
@@ -96,7 +122,7 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
       tokensCompletion: tokensGenerated,
       totalTokens: 128 + tokensGenerated,
       latencyMs: durationMs,
-      tokensPerSec
+      tokensPerSec: measuredTps
     };
   }
 }

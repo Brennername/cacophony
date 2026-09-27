@@ -329,7 +329,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         assert.equal(groomedTask.task.id, "task-sched-01");
         assert.equal(selectedModel, "qwen2.5-coder:7b");
         executed = true;
-        return true; // Success
+        return { success: true, tokensPerSec: 28.5 }; // Success
       });
 
       scheduler.start(5000);
