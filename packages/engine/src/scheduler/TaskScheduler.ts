@@ -164,13 +164,15 @@ export class TaskScheduler {
       let candidateList = targetTask.modelAssigned
         ? [targetTask.modelAssigned]
         : [
+            // Preferred coding models ordered by VRAM efficiency and historical pass rate.
+            // deepseek-r1 variants are excluded: reasoning chain-of-thought output causes
+            // context bloat and frequent assertion mismatches in this pipeline. Re-enable
+            // via explicit task modelAssigned assignment once prompting is tuned.
             "qwen2.5-coder:7b-instruct-q4_K_M",
-            "deepseek-r1:8b",
+            "qwen2.5-coder:7b-4k",
             "gemma3:4b-it-qat-4k",
-            "qwen2.5-coder:3b",
-            "deepseek-r1:8b-4k",
             "gemma3:4b-it-qat",
-            "qwen2.5-coder:7b-4k"
+            "qwen2.5-coder:3b"
           ];
 
       // Telemetry heuristic: If APU temperature is warm or elevated (>= 75C), prefer cooler-running lighter model

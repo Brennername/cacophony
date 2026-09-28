@@ -15,17 +15,18 @@
   "role_models": {
     "implementer": "qwen2.5-coder:7b",
     "reviewer": "qwen2.5-coder:7b",
-    "architect": "deepseek-r1:8b",
-    "planner": "deepseek-r1:8b",
+    "architect": "qwen2.5-coder:7b-instruct-q4_K_M",
+    "planner": "qwen2.5-coder:7b-instruct-q4_K_M",
     "test_engineer": "qwen2.5-coder:7b",
     "doc_writer": "gemma3:4b",
     "type_specialist": "qwen2.5-coder:7b",
     "security_auditor": "qwen2.5-coder:7b"
   },
   "candidate_models": [
-    "qwen2.5-coder:7b",
-    "deepseek-r1:8b",
-    "gemma3:4b",
+    "qwen2.5-coder:7b-instruct-q4_K_M",
+    "qwen2.5-coder:7b-4k",
+    "gemma3:4b-it-qat-4k",
+    "gemma3:4b-it-qat",
     "qwen2.5-coder:3b"
   ],
   "eviction_thresholds": {
