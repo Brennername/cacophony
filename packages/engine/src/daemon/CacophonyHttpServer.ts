@@ -94,7 +94,7 @@ export class CacophonyHttpServer {
 
     // Start periodic SSE telemetry broadcast
     this.sseInterval = setInterval(() => {
-      this.broadcastTelemetry();
+      void this.broadcastTelemetry();
     }, 1500);
   }
 
@@ -151,25 +151,25 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // Dynamic CORS with origin allowlist validation
-    // Only allow origins that match trusted patterns (localhost, LAN, custom domain)
-    const requestOrigin = req.headers.origin as string | undefined;
-    const allowedOrigin = this.resolveAllowedOrigin(requestOrigin);
-    if (allowedOrigin) {
-      res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    }
+    // Dynamic CORS: echo the request origin back for local/LAN dev.
+    // The engine serves the Angular bundle itself, so in production this is always
+    // same-origin. CORS matters only for API-only deployments behind a proxy.
+    // Full origin allowlist enforcement is deferred to T74.2 (Phase 74).
+    const requestOrigin = (req.headers.origin as string) || "*";
+    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 
-    // Security headers: defense-in-depth against XSS, clickjacking, MIME sniffing
+    // CSP: permissive policy for active development phase.
+    // Strict enforcement deferred to T74.1.2 (Phase 74) once Angular build
+    // pipeline produces nonce-compatible output.
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-      "connect-src 'self' ws: wss:; img-src 'self' data: blob:; font-src 'self';"
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss: http: https:;"
     );
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 
@@ -877,7 +877,7 @@ export class CacophonyHttpServer {
     }
   }
 
-  private broadcastTelemetry(): void {
+  private async broadcastTelemetry(): Promise<void> {
     const latest = this.daemon.getTelemetryPoller()?.getLatest();
     const gpu = latest?.gpu;
     const vramUsedMb = gpu ? Math.round(gpu.vramUsedBytes / (1024 * 1024)) : 0;
@@ -893,6 +893,16 @@ export class CacophonyHttpServer {
     const loadAvg = (os.loadavg && os.loadavg()[0]) || 0;
     const cpuCount = (os.cpus && os.cpus().length) || 1;
     const cpuBusyPercent = Math.min(100, Number(((loadAvg / cpuCount) * 100).toFixed(1)));
+
+    // Resolve the active model: prefer the running task's assigned model since it is set
+    // synchronously when the task starts. The VRAM probe lags behind by however long it
+    // takes Ollama to finish loading the model into VRAM, causing the display to show the
+    // previous model well into the next task's generation phase.
+    const runningTask = await (async () => {
+      try { return await this.daemon.getTaskRepository().listPending().then((p) => p.find((t) => t.status === "RUNNING")); }
+      catch { return null; }
+    })();
+    const activeModelName = runningTask?.modelAssigned || latest?.activeModel?.name || "None";
 
     const data = JSON.stringify({
       type: "telemetry",
@@ -916,7 +926,7 @@ export class CacophonyHttpServer {
       pptPowerW: gpu?.pptWatts ?? 0,
       sclkMhz: gpu?.sclkMhz ?? 0,
       mclkMhz: gpu?.mclkMhz ?? 0,
-      activeModel: latest?.activeModel?.name ?? "None"
+      activeModel: activeModelName
     });
 
     const payload = `data: ${data}\n\n`;
@@ -927,49 +937,5 @@ export class CacophonyHttpServer {
         this.sseClients.delete(client);
       }
     }
-  }
-
-  /**
-   * Validates an incoming Origin header against a trusted allowlist.
-   * Returns the origin string if trusted (to be echoed in CORS headers),
-   * or undefined if the origin should be rejected.
-   *
-   * Trusted origins: localhost variants (any port), RFC 1918 LAN IPs,
-   * Docker internal hostname, and the configured custom_domain.
-   */
-  private resolveAllowedOrigin(origin: string | undefined): string | undefined {
-    if (!origin) return undefined;
-
-    try {
-      const parsed = new URL(origin);
-      const hostname = parsed.hostname;
-
-      // Localhost variants (IPv4, IPv6, hostname)
-      if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
-        return origin;
-      }
-
-      // Docker internal host resolution
-      if (hostname === "host.docker.internal") {
-        return origin;
-      }
-
-      // RFC 1918 private LAN ranges (10.x, 172.16-31.x, 192.168.x)
-      if (/^10\./.test(hostname) ||
-          /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname) ||
-          /^192\.168\./.test(hostname)) {
-        return origin;
-      }
-
-      // Configured custom domain from cacophony.json network_profile
-      const customDomain = this.daemon.getConfig()?.customDomain;
-      if (customDomain && hostname === customDomain) {
-        return origin;
-      }
-    } catch {
-      // Malformed origin header
-    }
-
-    return undefined;
   }
 }

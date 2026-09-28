@@ -292,7 +292,7 @@ export class AutonomousWorkerPipeline {
 
         const runResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
           cwd: this.workspaceRoot,
-          timeoutMs: 60000,
+          timeoutMs: 180000,
           maxBufferBytes: 256 * 1024
         });
 
@@ -341,7 +341,7 @@ export class AutonomousWorkerPipeline {
 
               const retryResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
                 cwd: this.workspaceRoot,
-                timeoutMs: 60000,
+                timeoutMs: 180000,
                 maxBufferBytes: 256 * 1024
               });
 

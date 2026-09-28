@@ -71,7 +71,7 @@ export class ModelEvictionManager {
     // 1. Model Affinity & Fleet Exploration
     // If candidates have 0 runs, or with 25% exploration probability, explore alternate models
     // to build empirical statistics across all models on the leaderboard.
-    const underSampled = profiles.filter((p) => p.status === "ACTIVE" && p.totalTasks === 0 && p.modelId !== currentlyLoadedModel);
+    const underSampled = profiles.filter((p) => p.status !== "EJECTED" && p.totalTasks === 0 && p.modelId !== currentlyLoadedModel);
     const shouldExplore = this.explorationRate > 0 && (underSampled.length > 0 || Math.random() < this.explorationRate);
 
     if (currentlyLoadedModel && !shouldExplore) {
@@ -83,10 +83,14 @@ export class ModelEvictionManager {
       }
     }
 
-    // 2. Filter Active Models
-    let activeCandidates = profiles.filter((p) => p.status === "ACTIVE");
+    // 2. Filter Runnable Models: any model that is not EJECTED is eligible for dispatch.
+    // ACTIVE models with consecutive failures below the eviction threshold are still ACTIVE
+    // in the DB -- the DEGRADED label is only a display-time annotation in the leaderboard.
+    // Only genuinely EJECTED models (consecutiveFailures >= evictionThreshold) are excluded.
+    let activeCandidates = profiles.filter((p) => p.status !== "EJECTED");
 
-    // Deadlock Prevention: If all models are ejected, revive the one with lowest consecutive failures
+    // Deadlock Prevention: If every candidate has been evicted, revive the one with lowest
+    // consecutive failures so the queue doesn't stall permanently.
     if (activeCandidates.length === 0) {
       const sortedByFailures = [...profiles].sort(
         (a, b) => a.consecutiveFailures - b.consecutiveFailures
