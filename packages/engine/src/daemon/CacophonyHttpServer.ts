@@ -132,16 +132,27 @@ export class CacophonyHttpServer {
     const clientOrigin = `${forwardedProto}://${forwardedHost}`;
     const url = new URL(req.url ?? "/", clientOrigin);
 
-    // Dynamic CORS & CSP headers
-    const requestOrigin = (req.headers.origin as string) || "*";
-    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    // Dynamic CORS with origin allowlist validation
+    // Only allow origins that match trusted patterns (localhost, LAN, custom domain)
+    const requestOrigin = req.headers.origin as string | undefined;
+    const allowedOrigin = this.resolveAllowedOrigin(requestOrigin);
+    if (allowedOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+
+    // Security headers: defense-in-depth against XSS, clickjacking, MIME sniffing
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss: http: https:;"
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+      "connect-src 'self' ws: wss:; img-src 'self' data: blob:; font-src 'self';"
     );
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 
     if (req.method === "OPTIONS") {
       res.writeHead(204);
@@ -897,5 +908,49 @@ export class CacophonyHttpServer {
         this.sseClients.delete(client);
       }
     }
+  }
+
+  /**
+   * Validates an incoming Origin header against a trusted allowlist.
+   * Returns the origin string if trusted (to be echoed in CORS headers),
+   * or undefined if the origin should be rejected.
+   *
+   * Trusted origins: localhost variants (any port), RFC 1918 LAN IPs,
+   * Docker internal hostname, and the configured custom_domain.
+   */
+  private resolveAllowedOrigin(origin: string | undefined): string | undefined {
+    if (!origin) return undefined;
+
+    try {
+      const parsed = new URL(origin);
+      const hostname = parsed.hostname;
+
+      // Localhost variants (IPv4, IPv6, hostname)
+      if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+        return origin;
+      }
+
+      // Docker internal host resolution
+      if (hostname === "host.docker.internal") {
+        return origin;
+      }
+
+      // RFC 1918 private LAN ranges (10.x, 172.16-31.x, 192.168.x)
+      if (/^10\./.test(hostname) ||
+          /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname) ||
+          /^192\.168\./.test(hostname)) {
+        return origin;
+      }
+
+      // Configured custom domain from cacophony.json network_profile
+      const customDomain = this.daemon.getConfig()?.customDomain;
+      if (customDomain && hostname === customDomain) {
+        return origin;
+      }
+    } catch {
+      // Malformed origin header
+    }
+
+    return undefined;
   }
 }

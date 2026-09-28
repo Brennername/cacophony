@@ -75,7 +75,7 @@
     "require_auth": false,
     "oidc_issuer_url": "http://localhost:9000/application/o/cacophony/",
     "oidc_client_id": "cacophony-client",
-    "oidc_client_secret": "cacophony-oidc-secret-change-me",
+    "oidc_client_secret": "",
     "oidc_redirect_uri": "http://localhost:24072/auth/callback",
     "oidc_jwks_uri": "http://localhost:9000/application/o/cacophony/jwks/",
     "authelia_portal_url": "http://localhost:9091/",

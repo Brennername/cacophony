@@ -33,6 +33,8 @@ export interface DaemonConfig {
   readonly httpPort?: number;
   readonly httpHost?: string;
   readonly frontendDistPath?: string;
+  /** Custom domain for CORS origin allowlist (e.g. "cacophony.local") */
+  readonly customDomain?: string;
 }
 
 /**
@@ -84,6 +86,19 @@ export class CacophonyDaemon {
   public async start(): Promise<void> {
     if (this.isRunning) return;
     this.startTime = Date.now();
+
+    // 0. Vault key safety check: reject the default all-zeros placeholder key
+    // to prevent encrypted secrets from being trivially decryptable
+    const vaultKey = process.env.VAULT_MASTER_KEY || "";
+    const isDefaultKey = /^0{64}$/.test(vaultKey);
+    const isDemoStartup = process.env.DEMO_MODE === "true" || process.env.SIMULATION_MODE === "true";
+    if (isDefaultKey && !isDemoStartup) {
+      console.error(
+        "[CacophonyDaemon] FATAL: VAULT_MASTER_KEY is set to the default all-zeros placeholder. " +
+        "Generate a real key with: openssl rand -hex 32"
+      );
+      process.exit(1);
+    }
 
     // 1. Database Connection and Migrations
     await this.driver.connect();
@@ -398,6 +413,10 @@ export class CacophonyDaemon {
 
   public getUserSessionRepository(): UserSessionRepository {
     return this.userSessionRepo;
+  }
+
+  public getConfig(): DaemonConfig {
+    return this.config;
   }
 
   public getFallbackRouter(): import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter | undefined {
