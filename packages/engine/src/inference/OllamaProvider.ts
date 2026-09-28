@@ -38,7 +38,11 @@ export class OllamaProvider implements IInferenceProvider {
       model: request.model,
       messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
       stream: false,
-      keep_alive: -1,
+      // 300s keep-alive: holds the model in VRAM for 5 minutes after the request
+      // completes. -1 (never evict) was causing cross-task VRAM conflicts when the
+      // scheduler switched models -- Ollama had to synchronously evict the previous
+      // model before loading the next one, freezing throughput for 30-60s.
+      keep_alive: 300,
       options: {
         temperature: request.temperature ?? 0.2,
         num_predict: request.maxTokens ?? 2048
@@ -98,7 +102,7 @@ export class OllamaProvider implements IInferenceProvider {
       model: request.model,
       messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
       stream: true,
-      keep_alive: -1,
+      keep_alive: 300,
       options: {
         temperature: request.temperature ?? 0.2,
         num_predict: request.maxTokens ?? 2048
