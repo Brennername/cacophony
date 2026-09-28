@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import type { CacophonyDaemon } from "./CacophonyDaemon.js";
 import { AuthService } from "../auth/AuthService.js";
+import { RateLimiter } from "./RateLimiter.js";
 
 export interface UnifiedServerConfig {
   readonly httpPort?: number;
@@ -26,6 +27,7 @@ export class CacophonyHttpServer {
   private untapListener: (() => void) | null = null;
   private untapStageListener: (() => void) | null = null;
   private readonly authService: AuthService;
+  private readonly rateLimiter: RateLimiter;
 
   constructor(daemon: CacophonyDaemon, config: UnifiedServerConfig = {}) {
     this.daemon = daemon;
@@ -33,6 +35,7 @@ export class CacophonyHttpServer {
     this.authService = new AuthService({
       userSessionRepo: daemon.getUserSessionRepository()
     });
+    this.rateLimiter = new RateLimiter();
   }
 
   public async start(): Promise<void> {
@@ -48,6 +51,8 @@ export class CacophonyHttpServer {
         resolve();
       });
     });
+
+    this.rateLimiter.start();
 
     // Tap live LLM stream and forward tokens and stage transitions to SSE clients
     const streamTap = this.daemon.getStreamTapManager();
@@ -123,6 +128,7 @@ export class CacophonyHttpServer {
       });
       this.server = null;
     }
+    this.rateLimiter.stop();
   }
 
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
@@ -131,6 +137,19 @@ export class CacophonyHttpServer {
     const forwardedHost = (req.headers["x-forwarded-host"] as string) || req.headers.host || "localhost:24161";
     const clientOrigin = `${forwardedProto}://${forwardedHost}`;
     const url = new URL(req.url ?? "/", clientOrigin);
+
+    // Rate limiting gate: reject excessive requests before any processing.
+    // SSE endpoint is exempt since it is a long-lived single connection.
+    const isSseEndpoint = url.pathname === "/api/events";
+    if (!isSseEndpoint && req.method !== "OPTIONS" && !this.rateLimiter.allowRequest(req)) {
+      const retryAfter = this.rateLimiter.getRetryAfterSeconds(req);
+      res.writeHead(429, {
+        "Content-Type": "application/json",
+        "Retry-After": String(retryAfter)
+      });
+      res.end(JSON.stringify({ error: "Too Many Requests", retryAfterSeconds: retryAfter }));
+      return;
+    }
 
     // Dynamic CORS with origin allowlist validation
     // Only allow origins that match trusted patterns (localhost, LAN, custom domain)

@@ -66,5 +66,9 @@ RUN mkdir -p /app/data /app/workspaces /app/conf
 # Expose HTTP API + Frontend (24161) and MCP (21264)
 EXPOSE 24161 21264
 
+# Health verification: ensures the API is responsive before routing traffic
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD curl -sf http://localhost:24161/api/status || exit 1
+
 # Default start command launches Cacophony daemon via compiled CLI entrypoint
 CMD ["node", "packages/engine/dist/cli/runDaemon.js"]

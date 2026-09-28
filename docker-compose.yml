@@ -38,6 +38,12 @@ services:
       - cacophony-gitea
     networks:
       - cacophony-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:24161/api/status"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
 
   cacophony-gitea:
     image: gitea/gitea:1.22-rootless
@@ -70,6 +76,12 @@ services:
       - gitea-config:/etc/gitea
     networks:
       - cacophony-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/api/v1/version"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
 
   cacophony-mailpit:
     image: axllent/mailpit:latest
@@ -80,6 +92,11 @@ services:
       - "${PORT_MAILPIT_SMTP:-18860}:1025"
     networks:
       - cacophony-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8025/api/v1/messages?limit=1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   cacophony-redis:
     image: docker.io/library/redis:alpine
@@ -90,6 +107,11 @@ services:
       - redis-data:/data
     networks:
       - cacophony-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
 
   cacophony-authentik-server:
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2024.8.3}
