@@ -42,13 +42,10 @@ async function main() {
   }
 
   const fleetModels = [
-    "qwen2.5-coder:7b-instruct-q4_K_M",
     "deepseek-r1:8b",
-    "gemma3:4b-it-qat-4k",
-    "qwen2.5-coder:3b",
-    "deepseek-r1:8b-4k",
+    "qwen2.5-coder:7b-instruct-q4_K_M",
     "gemma3:4b-it-qat",
-    "qwen2.5-coder:7b-4k"
+    "qwen2.5-coder:3b"
   ];
 
   const loader = new TaskcadeSeedLoader();

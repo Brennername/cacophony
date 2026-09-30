@@ -143,7 +143,7 @@ export class CacophonyDaemon {
     this.modelManager = new OllamaModelManager();
     this.tenancyGuard = new ModelTenancyGuard({
       managedModelsEnabled: process.env["MANAGED_MODELS_ENABLED"] !== "false",
-      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-r1:8b-4k,qwen2.5-coder:7b-instruct-q4_K_M")
+      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat,qwen2.5-coder:3b")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
@@ -241,94 +241,58 @@ export class CacophonyDaemon {
       initialBacklog: isDemoMode
         ? [
             {
-              id: "backlog-ast-rules",
-              category: "code_quality",
-              title: "Implement AST Parameter Auto-Correction Rules",
-              description: "Enhance rule catalog in packages/engine/src/rules/catalog/ with deterministic parameter inversion repair.",
-              priority: "P1",
-              role: "implementer",
-              modelAssigned: "qwen2.5-coder:7b"
-            },
-            {
-              id: "backlog-go-signature",
-              category: "multi_stack",
-              title: "Implement Go Struct Signature Harvester",
-              description: "Add Go interface signature extraction in packages/engine/src/signature/ and test runner.",
+              id: "backlog-git-provider",
+              category: "git_lifecycle",
+              title: "Implement IGitPlatformProvider Abstraction Interface",
+              description: "Create IGitPlatformProvider interface declaring createBranch, openPullRequest, submitReview, and mergePullRequest with Gitea and GitHub compatibility.",
               priority: "P1",
               role: "architect",
               modelAssigned: "deepseek-r1:8b"
             },
             {
-              id: "backlog-sso-oidc",
-              category: "auth",
-              title: "Implement Authentik and Authelia OIDC SSO Provider Discovery",
-              description: "Add discovery endpoint fetcher and metadata validator in packages/engine/src/auth/.",
+              id: "backlog-gitea-platform",
+              category: "git_lifecycle",
+              title: "Implement GiteaPlatformProvider REST Client",
+              description: "Implement GiteaPlatformProvider communicating with local Gitea instance via Swagger REST API in packages/engine/src/gitea/.",
               priority: "P1",
-              role: "reviewer",
-              modelAssigned: "gemma3:4b-it-qat"
+              role: "implementer",
+              modelAssigned: "qwen2.5-coder:7b"
             },
             {
-              id: "backlog-jwt-validator",
-              category: "auth",
-              title: "Implement Cryptographic JWT Token Signature Verifier",
-              description: "Add JWKS key rotation cache and asymmetric RS256/ES256 signature verification in packages/engine/src/auth/.",
+              id: "backlog-github-platform",
+              category: "git_lifecycle",
+              title: "Implement GitHubPlatformProvider REST Client",
+              description: "Implement GitHubPlatformProvider communicating with GitHub REST API using configured GITHUB_TOKEN in packages/engine/src/gitea/.",
               priority: "P1",
               role: "implementer",
               modelAssigned: "qwen2.5-coder:3b"
             },
             {
-              id: "backlog-telemetry-analytics",
-              category: "telemetry",
-              title: "Implement Task Telemetry & Token Velocity Analytics Engine",
-              description: "Add time-series statistical aggregator calculating rolling tokens/sec and APU thermal correlation.",
+              id: "backlog-worktree-isolation",
+              category: "git_lifecycle",
+              title: "Enhance GitWorktreeManager with Ephemeral Worktree Isolation",
+              description: "Create isolated ephemeral worktrees under workspaces/worktree-<taskId> and safe branch cleanup in packages/engine/src/gitea/GitWorktreeManager.ts.",
               priority: "P1",
               role: "implementer",
               modelAssigned: "qwen2.5-coder:7b"
             },
             {
-              id: "backlog-multi-gpu-pool",
-              category: "hardware",
-              title: "Implement Multi-GPU Sysfs Device Discovery & Heterogeneous Pooling",
-              description: "Enumerate multiple DRM cards (/sys/class/drm/card*) and balance model allocation across accelerators.",
-              priority: "P1",
-              role: "architect",
-              modelAssigned: "deepseek-r1:8b"
-            },
-            {
-              id: "backlog-heartbeat-monitor",
-              category: "fleet",
-              title: "Implement Cluster Fleet Heartbeat Worker",
-              description: "Add multi-node ping loop to ping cluster nodes over WebSocket and flag offline nodes.",
+              id: "backlog-review-stage",
+              category: "review_pipeline",
+              title: "Automate Structured Stage 5 Code Review Checklist",
+              description: "Wire Stage 5 Review in AutonomousWorkerPipeline to evaluate SOLID principles, test coverage, and security boundaries.",
               priority: "P1",
               role: "reviewer",
               modelAssigned: "gemma3:4b-it-qat"
             },
             {
-              id: "backlog-test-isolation",
-              category: "testing",
-              title: "Implement Sandboxed Subprocess Test Execution Runner",
-              description: "Add memory and timeout guardrails to execAsync test executions with structured stdout/stderr capture.",
+              id: "backlog-auto-merge",
+              category: "git_lifecycle",
+              title: "Wire Automated Stage 6 Merge Gate",
+              description: "Merge pull request into target branch when auto-merge is configured and verification stages pass in AutonomousWorkerPipeline.",
               priority: "P1",
               role: "implementer",
-              modelAssigned: "qwen2.5-coder:3b"
-            },
-            {
-              id: "backlog-pglite-compactor",
-              category: "database",
-              title: "Implement PGlite Vacuum & WAL Auto-Compactor Daemon",
-              description: "Add background maintenance task that runs VACUUM and truncates telemetry snapshots older than 14 days.",
-              priority: "P2",
-              role: "implementer",
               modelAssigned: "qwen2.5-coder:7b"
-            },
-            {
-              id: "backlog-context-slicer",
-              category: "context",
-              title: "Implement AST Context Slicer & Focused Import Skeleton Generator",
-              description: "Prune irrelevant file contents before feeding prompt to model to save context tokens.",
-              priority: "P2",
-              role: "architect",
-              modelAssigned: "deepseek-r1:8b"
             }
           ]
         : [],

@@ -108,25 +108,34 @@ export class QueueGroomer {
       } else {
         testCommand = "";
       }
-    } else if (
-      !testCommand ||
-      testCommand === "npm test" ||
-      testCommand.startsWith("npm test") ||
-      testCommand.includes("@pkg") ||
-      testCommand.includes("--workspaces") ||
-      testCommand.includes("--workspace=@cacophony/engine")
-    ) {
-      const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
-      if (scoped) {
-        testCommand = scoped;
-        modified = true;
-        groomNotes.push(`Scoped test command to: ${testCommand}`);
-      } else if (activeProfile.defaultTestRunner) {
-        testCommand = activeProfile.defaultTestRunner;
-        modified = true;
-        groomNotes.push(`Defaulted test command to stack runner: ${testCommand}`);
-      } else {
-        testCommand = "";
+    } else {
+      const lowerTest = testCommand.toLowerCase();
+      const isNonRunnable =
+        !testCommand ||
+        testCommand === "npm test" ||
+        testCommand.startsWith("npm test") ||
+        testCommand.includes("@pkg") ||
+        testCommand.includes("--workspaces") ||
+        testCommand.includes("--workspace=@cacophony/engine") ||
+        lowerTest.includes("push to branch") ||
+        lowerTest.includes("docker compose") ||
+        lowerTest.includes("curl ") ||
+        lowerTest.includes("verify ci") ||
+        lowerTest.includes("bin/cacophony");
+
+      if (isNonRunnable) {
+        const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
+        if (scoped) {
+          testCommand = scoped;
+          modified = true;
+          groomNotes.push(`Scoped test command to: ${testCommand}`);
+        } else if (activeProfile.defaultTestRunner) {
+          testCommand = activeProfile.defaultTestRunner;
+          modified = true;
+          groomNotes.push(`Defaulted test command to stack runner: ${testCommand}`);
+        } else {
+          testCommand = "";
+        }
       }
     }
 

@@ -62,6 +62,12 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}\$"; then
     echo "Database distribution synchronized to /app/packages/db/dist/"
   fi
 
+  # Copy docs directory (ensures taskcade.md is synchronized for seeding)
+  if [ -d "${REPO_ROOT}/docs" ]; then
+    docker cp "${REPO_ROOT}/docs/." "${CONTAINER_NAME}:/app/docs/"
+    echo "Documentation synchronized to /app/docs/"
+  fi
+
   echo "Restarting '${CONTAINER_NAME}' to reload daemon with latest builds..."
   docker restart "${CONTAINER_NAME}" > /dev/null
   echo "Container '${CONTAINER_NAME}' successfully restarted."

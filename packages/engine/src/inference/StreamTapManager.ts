@@ -35,7 +35,8 @@ export class StreamTapManager {
 
   private readonly taskBuffers = new Map<string, string>();
   private readonly taskDemuxers = new Map<string, ReasoningStreamDemuxer>();
-  private readonly maxBufferSize = 25000;
+  public readonly maxBufferSize = 100000;
+  private readonly bufferTimestamps = new Map<string, number>();
 
   constructor() {
     this.emitter.setMaxListeners(100);
@@ -56,13 +57,40 @@ export class StreamTapManager {
   }
 
   /**
+   * Enforces FIFO rolling truncation: slices oldest characters when buffer exceeds max limit
+   * to prevent node process heap bloat.
+   */
+  public enforceBufferLimit(taskId: string, chunk: string): string {
+    const current = this.taskBuffers.get(taskId) || "";
+    const updated = (current + chunk).slice(-this.maxBufferSize);
+    this.taskBuffers.set(taskId, updated);
+    this.bufferTimestamps.set(taskId, Date.now());
+    return updated;
+  }
+
+  /**
+   * Evicts buffers for tasks whose last activity was more than maxAgeMs ago (default 30 mins)
+   * during periodic garbage collection sweeps.
+   */
+  public sweepStaleBuffers(maxAgeMs: number = 30 * 60 * 1000): number {
+    const now = Date.now();
+    let evictedCount = 0;
+    for (const [taskId, lastActive] of this.bufferTimestamps.entries()) {
+      if (now - lastActive >= maxAgeMs) {
+        this.clearBuffer(taskId);
+        this.bufferTimestamps.delete(taskId);
+        evictedCount++;
+      }
+    }
+    return evictedCount;
+  }
+
+  /**
    * Emits a generated token to all active stream tap listeners, updates the ring buffer,
    * and runs through ReasoningStreamDemuxer to emit dual reasoning_chunk and code_chunk events.
    */
   public emitToken(taskId: string, token: string): void {
-    const current = this.taskBuffers.get(taskId) || "";
-    const updated = (current + token).slice(-this.maxBufferSize);
-    this.taskBuffers.set(taskId, updated);
+    this.enforceBufferLimit(taskId, token);
 
     const now = Date.now();
     const event: StreamTokenEvent = {

@@ -13,19 +13,18 @@
   "default_session_model": "qwen2.5-coder:7b",
   "default_context_tokens": 8192,
   "role_models": {
-    "implementer": "qwen2.5-coder:7b",
-    "reviewer": "qwen2.5-coder:7b",
-    "architect": "qwen2.5-coder:7b-instruct-q4_K_M",
-    "planner": "qwen2.5-coder:7b-instruct-q4_K_M",
-    "test_engineer": "qwen2.5-coder:7b",
-    "doc_writer": "gemma3:4b",
-    "type_specialist": "qwen2.5-coder:7b",
-    "security_auditor": "qwen2.5-coder:7b"
+    "implementer": "qwen2.5-coder:7b-instruct-q4_K_M",
+    "reviewer": "gemma3:4b-it-qat",
+    "architect": "deepseek-r1:8b",
+    "planner": "deepseek-r1:8b",
+    "test_engineer": "qwen2.5-coder:7b-instruct-q4_K_M",
+    "doc_writer": "qwen2.5-coder:3b",
+    "type_specialist": "qwen2.5-coder:7b-instruct-q4_K_M",
+    "security_auditor": "deepseek-r1:8b"
   },
   "candidate_models": [
+    "deepseek-r1:8b",
     "qwen2.5-coder:7b-instruct-q4_K_M",
-    "qwen2.5-coder:7b-4k",
-    "gemma3:4b-it-qat-4k",
     "gemma3:4b-it-qat",
     "qwen2.5-coder:3b"
   ],

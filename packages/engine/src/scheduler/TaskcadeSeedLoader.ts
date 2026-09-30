@@ -114,7 +114,21 @@ export class TaskcadeSeedLoader {
         .trim();
 
       const focusFiles = fileMatch && fileMatch[1] ? fileMatch[1].replace(/^["']|["']$/g, "").trim() : null;
-      const testCommand = testMatch && testMatch[1] ? testMatch[1].replace(/^["']|["']$/g, "").trim() : null;
+      let testCommand = testMatch && testMatch[1] ? testMatch[1].replace(/^["']|["']$/g, "").trim() : null;
+
+      // Filter out non-runnable or CI-only test commands from arena execution
+      if (testCommand) {
+        const lowerTest = testCommand.toLowerCase();
+        if (
+          lowerTest.includes("push to branch") ||
+          lowerTest.includes("docker compose") ||
+          lowerTest.includes("curl ") ||
+          lowerTest.includes("verify ci") ||
+          lowerTest.includes("bin/cacophony")
+        ) {
+          testCommand = focusFiles ? `node --check ${focusFiles.split(/\s+/)[0]}` : "npm test";
+        }
+      }
 
       // Assign agent role based on task nature
       let role: AgentRole = "implementer";
