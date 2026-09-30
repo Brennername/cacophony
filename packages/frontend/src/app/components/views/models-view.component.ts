@@ -4,6 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HistoryMetricsService, type HistoryItem, type ModelLeaderboardEntry } from '../../services/history-metrics.service';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 import { ExplorationControlComponent } from '../exploration-control/exploration-control.component';
+import { TenancyConfigPanelComponent } from '../tenancy-config-panel/tenancy-config-panel.component';
+import { ModelPullModalComponent } from '../model-pull-modal/model-pull-modal.component';
+import { ModelFleetService } from '../../services/model-fleet.service';
 
 /**
  * Model Leaderboard & Health Analytics route view:
@@ -13,25 +16,129 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
 @Component({
   selector: 'app-models-view',
   standalone: true,
-  imports: [CommonModule, ExplorationControlComponent],
+  imports: [
+    CommonModule,
+    ExplorationControlComponent,
+    TenancyConfigPanelComponent,
+    ModelPullModalComponent
+  ],
   template: `
     <div class="view-container">
       <div class="view-header">
         <div>
-          <h1>Candidate Model Leaderboard & Health</h1>
-          <p class="subtitle">Empirical win rates, tokens/second velocity, and execution circumstances</p>
+          <h1>Candidate Model Leaderboard & Fleet Management</h1>
+          <p class="subtitle">Empirical win rates, hardware memory footprints, and multi-tenant eviction controls</p>
+        </div>
+        <div class="header-actions-group">
+          <button class="action-btn-primary" (click)="showPullModal.set(true)">
+            + Pull Model
+          </button>
+          <button class="action-btn-secondary" (click)="showTenancyPanel.set(!showTenancyPanel())">
+            {{ showTenancyPanel() ? 'Hide Guardrails' : 'Tenancy Rules' }}
+          </button>
         </div>
         <div class="header-stats-group">
+          <div class="header-stat">
+            <span class="stat-num tabular">{{ fleetService.installedModels().length }}</span>
+            <span class="stat-label">Installed Models</span>
+          </div>
+          <div class="header-stat">
+            <span class="stat-num tabular">{{ fleetService.protectedCount() }}</span>
+            <span class="stat-label">Protected Whitelisted</span>
+          </div>
           <div class="header-stat">
             <span class="stat-num tabular">{{ metricsService.rollingSuccessRate() }}%</span>
             <span class="stat-label">Fleet Pass Rate</span>
           </div>
-          <div class="header-stat">
-            <span class="stat-num tabular">{{ metricsService.leaderboard().length }}</span>
-            <span class="stat-label">Tracked Models</span>
-          </div>
         </div>
       </div>
+
+      <!-- Tenancy Configuration Panel (Collapsible) -->
+      @if (showTenancyPanel()) {
+        <app-tenancy-config-panel
+          [config]="fleetService.config()"
+          (onUpdateConfig)="onUpdateTenancyConfig($event)"
+        />
+      }
+
+      <!-- Installed Local Models Hardware Fleet Section -->
+      @if (fleetService.installedModels().length > 0) {
+        <div class="installed-fleet-section">
+          <div class="section-title-row">
+            <h2 class="section-title">Installed Hardware Model Fleet</h2>
+            <button class="refresh-fleet-btn" (click)="fleetService.fetchInstalledModels()" title="Refresh models">
+              ↻ Refresh Fleet
+            </button>
+          </div>
+
+          <div class="fleet-cards-grid">
+            @for (model of fleetService.installedModels(); track model.name) {
+              <div class="cacophony-card fleet-card" [class.warm]="model.isLoadedInVram">
+                <div class="fleet-card-header">
+                  <div class="model-tag-group">
+                    <span class="fleet-model-name font-mono">{{ model.name }}</span>
+                    @if (model.isLoadedInVram) {
+                      <span class="badge-warm">WARM IN VRAM</span>
+                    }
+                    @if (model.isProtected) {
+                      <span class="badge-protected" title="Protected from automated deletion">PROTECTED</span>
+                    }
+                  </div>
+                  <span class="fleet-size tabular">{{ formatBytes(model.sizeBytes) }}</span>
+                </div>
+
+                <div class="fleet-details-row">
+                  @if (model.details.parameterSize) {
+                    <span class="detail-pill">Params: {{ model.details.parameterSize }}</span>
+                  }
+                  @if (model.details.quantizationLevel) {
+                    <span class="detail-pill">Quant: {{ model.details.quantizationLevel }}</span>
+                  }
+                  @if (model.details.family) {
+                    <span class="detail-pill">Arch: {{ model.details.family }}</span>
+                  }
+                </div>
+
+                <div class="fleet-actions-row">
+                  <button
+                    class="card-btn benchmark"
+                    [disabled]="fleetService.loading()"
+                    (click)="benchmarkModel(model.name)"
+                  >
+                    Benchmark
+                  </button>
+                  <button
+                    class="card-btn inspect"
+                    (click)="selectModel(model.name)"
+                  >
+                    Inspect
+                  </button>
+                  <button
+                    class="card-btn delete"
+                    [disabled]="model.isProtected"
+                    [title]="model.isProtected ? 'Protected model cannot be deleted' : 'Delete model from local storage'"
+                    (click)="deleteModel(model.name)"
+                  >
+                    {{ model.isProtected ? 'Protected' : 'Delete' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Pull Model Modal -->
+      @if (showPullModal()) {
+        <app-model-pull-modal
+          [isPulling]="fleetService.pullingModelName() !== null"
+          [progress]="fleetService.pullProgress()"
+          [terminalLogs]="fleetService.pullTerminalLogs()"
+          (onPull)="startPullModel($event)"
+          (onClose)="showPullModal.set(false)"
+          (onClearLogs)="fleetService.pullTerminalLogs.set([])"
+        />
+      }
 
       <app-exploration-control />
 
@@ -302,9 +409,237 @@ import { ExplorationControlComponent } from '../exploration-control/exploration-
       letter-spacing: 0.05em;
     }
 
-    .tabular {
-      font-variant-numeric: tabular-nums;
-      font-feature-settings: "tnum";
+    .header-actions-group {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .action-btn-primary {
+      background: var(--color-brand, #3b82f6);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-sm, 6px);
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .action-btn-primary:hover {
+      background: var(--color-brand-hover, #2563eb);
+      transform: translateY(-1px);
+    }
+
+    .action-btn-secondary {
+      background: var(--bg-surface-elevated, #1e293b);
+      color: var(--text-primary, #f8fafc);
+      border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+      border-radius: var(--radius-sm, 6px);
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .action-btn-secondary:hover {
+      border-color: var(--color-brand, #3b82f6);
+    }
+
+    .installed-fleet-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .refresh-fleet-btn {
+      background: transparent;
+      border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm, 4px);
+      padding: 0.25rem 0.625rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .refresh-fleet-btn:hover {
+      color: var(--color-brand, #3b82f6);
+      border-color: var(--color-brand, #3b82f6);
+    }
+
+    .fleet-cards-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .fleet-cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .fleet-cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .fleet-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md, 8px);
+      padding: 1rem;
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .fleet-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+    }
+
+    .fleet-card.warm {
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+    }
+
+    .fleet-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .model-tag-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .fleet-model-name {
+      font-weight: 700;
+      font-size: 0.9375rem;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .badge-warm {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      border-radius: var(--radius-full, 9999px);
+      padding: 0.125rem 0.375rem;
+      width: fit-content;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-protected {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: #3b82f6;
+      background: rgba(59, 130, 246, 0.15);
+      border-radius: var(--radius-full, 9999px);
+      padding: 0.125rem 0.375rem;
+      width: fit-content;
+      letter-spacing: 0.05em;
+    }
+
+    .fleet-size {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .fleet-details-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+
+    .detail-pill {
+      font-size: 0.6875rem;
+      background: var(--bg-surface-elevated, rgba(255, 255, 255, 0.05));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm, 4px);
+      padding: 0.125rem 0.375rem;
+      color: var(--text-secondary);
+    }
+
+    .fleet-actions-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: auto;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .card-btn {
+      flex: 1;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.375rem 0.5rem;
+      border-radius: var(--radius-sm, 4px);
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+
+    .card-btn.benchmark {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .card-btn.benchmark:hover:not(:disabled) {
+      background: rgba(245, 158, 11, 0.25);
+    }
+
+    .card-btn.inspect {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .card-btn.inspect:hover {
+      background: rgba(59, 130, 246, 0.25);
+    }
+
+    .card-btn.delete {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .card-btn.delete:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .card-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     /* Selected Model Deep Profile Panel */
@@ -831,8 +1166,11 @@ export class ModelsViewComponent {
   public readonly router = inject(Router);
   public readonly store = inject(ArenaStateStore);
   public readonly metricsService = inject(HistoryMetricsService);
+  public readonly fleetService = inject(ModelFleetService);
 
   public readonly selectedModelId = signal<string | null>(null);
+  public readonly showPullModal = signal<boolean>(false);
+  public readonly showTenancyPanel = signal<boolean>(false);
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
@@ -998,5 +1336,28 @@ export class ModelsViewComponent {
     const mins = Math.floor(v / 60000);
     const secs = Math.round((v % 60000) / 1000);
     return `${mins}m ${secs}s`;
+  }
+
+  public formatBytes(bytes: number): string {
+    return this.fleetService.formatBytes(bytes);
+  }
+
+  public async startPullModel(modelTag: string): Promise<void> {
+    await this.fleetService.pullModel(modelTag);
+  }
+
+  public async deleteModel(modelTag: string): Promise<void> {
+    if (!confirm(`Are you sure you want to delete model ${modelTag} from disk?`)) {
+      return;
+    }
+    await this.fleetService.deleteModel(modelTag);
+  }
+
+  public async benchmarkModel(modelTag: string): Promise<void> {
+    await this.fleetService.benchmarkModel(modelTag);
+  }
+
+  public async onUpdateTenancyConfig(partial: Parameters<ModelFleetService['updateConfig']>[0]): Promise<void> {
+    await this.fleetService.updateConfig(partial);
   }
 }

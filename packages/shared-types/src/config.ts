@@ -41,3 +41,53 @@ export const CacophonySystemConfigSchema = z.object({
 });
 
 export type CacophonySystemConfig = z.infer<typeof CacophonySystemConfigSchema>;
+
+/**
+ * Configuration schema for dynamic multi-tenant Ollama model management.
+ */
+export const ModelManagementConfigSchema = z.object({
+  managedModelsEnabled: z.boolean().default(true),
+  protectedModels: z.array(z.string()).default([
+    "deepseek-r1:8b-4k",
+    "qwen2.5-coder:7b-instruct-q4_K_M"
+  ]),
+  maxDiskStorageGb: z.number().positive().default(50),
+  autoEvictionEnabled: z.boolean().default(true),
+  minimumSuccessRateThreshold: z.number().min(0).max(1).default(0.4),
+  maxConsecutiveFailuresBeforeEviction: z.number().int().min(1).default(3)
+});
+
+export type ModelManagementConfig = z.infer<typeof ModelManagementConfigSchema>;
+
+/**
+ * Installed model details retrieved from Ollama.
+ */
+export interface OllamaInstalledModel {
+  readonly name: string;
+  readonly model: string;
+  readonly modifiedAt: string;
+  readonly sizeBytes: number;
+  readonly digest: string;
+  readonly details: {
+    readonly parentModel: string;
+    readonly format: string;
+    readonly family: string;
+    readonly families: readonly string[];
+    readonly parameterSize: string;
+    readonly quantizationLevel: string;
+  };
+  readonly isProtected: boolean;
+  readonly isLoadedInVram: boolean;
+}
+
+/**
+ * Progress event emitted during Ollama pull operations.
+ */
+export interface OllamaPullProgressEvent {
+  readonly status: string;
+  readonly digest?: string;
+  readonly total?: number;
+  readonly completed?: number;
+  readonly percent?: number;
+}
+

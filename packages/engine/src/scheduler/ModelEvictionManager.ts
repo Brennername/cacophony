@@ -1,5 +1,7 @@
 import type { ModelHealthRepository } from "@cacophony/db";
 import type { AgentRole } from "@cacophony/shared-types";
+import type { ModelTenancyGuard } from "./ModelTenancyGuard.js";
+import type { OllamaModelManager } from "../inference/OllamaModelManager.js";
 
 export interface ModelCandidateWeight {
   readonly modelId: string;
@@ -13,17 +15,35 @@ export interface ModelCandidateWeight {
  * ModelEvictionManager
  *
  * Enforces dynamic model selection, automated consecutive-failure eviction,
- * and weighted random roulette routing based on empirical historical success rates.
+ * tenancy protection checking, and weighted random roulette routing based on empirical historical success rates.
  */
 export class ModelEvictionManager {
   private readonly healthRepo: ModelHealthRepository;
   private readonly evictionThreshold: number;
   private readonly explorationRate: number;
+  private tenancyGuard: ModelTenancyGuard | undefined;
+  private modelManager: OllamaModelManager | undefined;
 
-  constructor(healthRepo: ModelHealthRepository, evictionThreshold = 3, explorationRate = 0.25) {
+  constructor(
+    healthRepo: ModelHealthRepository,
+    evictionThreshold = 3,
+    explorationRate = 0.25,
+    tenancyGuard?: ModelTenancyGuard,
+    modelManager?: OllamaModelManager
+  ) {
     this.healthRepo = healthRepo;
     this.evictionThreshold = evictionThreshold;
     this.explorationRate = explorationRate;
+    this.tenancyGuard = tenancyGuard;
+    this.modelManager = modelManager;
+  }
+
+  public setTenancyGuard(guard: ModelTenancyGuard): void {
+    this.tenancyGuard = guard;
+  }
+
+  public setModelManager(manager: OllamaModelManager): void {
+    this.modelManager = manager;
   }
 
   public getEvictionThreshold(): number {
@@ -35,7 +55,7 @@ export class ModelEvictionManager {
   }
 
   /**
-   * Records execution outcome in the health repository to maintain live win rates and degradation states.
+   * Records execution outcome in the health repository and evaluates automated eviction.
    */
   public async recordRunOutcome(
     modelId: string,
@@ -44,6 +64,46 @@ export class ModelEvictionManager {
     tokensPerSec: number = 30.0
   ): Promise<void> {
     await this.healthRepo.recordRun(modelId, "ollama", success, durationMs, tokensPerSec);
+
+    // Evaluate automated eviction if consecutive failures reach threshold
+    if (!success) {
+      await this.evaluateModelEviction(modelId);
+    }
+  }
+
+  /**
+   * Evaluates if a model should be evicted, verifying tenancy rules and calling OllamaModelManager.
+   */
+  public async evaluateModelEviction(modelId: string): Promise<{ evicted: boolean; reason?: string }> {
+    const profile = await this.healthRepo.getProfile(modelId);
+    if (profile.consecutiveFailures < this.evictionThreshold) {
+      return { evicted: false };
+    }
+
+    if (this.tenancyGuard) {
+      const check = this.tenancyGuard.canEvict(modelId);
+      if (!check.allowed) {
+        return {
+          evicted: false,
+          ...(check.reason ? { reason: check.reason } : {})
+        };
+      }
+    }
+
+    // Update status in DB
+    await this.healthRepo.updateStatus(modelId, "EJECTED");
+
+    // If model manager is attached, delete the model from local Ollama storage
+    if (this.modelManager) {
+      try {
+        await this.modelManager.deleteModel(modelId);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        return { evicted: true, reason: `Marked EJECTED but deletion failed: ${errorMsg}` };
+      }
+    }
+
+    return { evicted: true };
   }
 
   /**

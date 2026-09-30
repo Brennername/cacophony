@@ -60,6 +60,9 @@ export class CacophonyDaemon {
   private ipcServer!: DaemonIPCServer;
   private httpServer?: CacophonyHttpServer | undefined;
   private fallbackRouter?: import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter | undefined;
+  private modelManager?: import("../inference/OllamaModelManager.js").OllamaModelManager | undefined;
+  private tenancyGuard?: import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined;
+  private benchmarkRunner?: import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined;
   private planningTimer: NodeJS.Timeout | null = null;
   private pruningTimer: NodeJS.Timeout | null = null;
   private startTime = 0;
@@ -132,7 +135,30 @@ export class CacophonyDaemon {
     this.telemetryPoller.start();
 
     // 4. Single-Concurrency Task Scheduler & Autonomous Worker Pipeline
-    const evictionManager = new ModelEvictionManager(this.healthRepo);
+    const { OllamaModelManager } = await import("../inference/OllamaModelManager.js");
+    const { ModelTenancyGuard } = await import("../scheduler/ModelTenancyGuard.js");
+    const { ModelBenchmarkRunner } = await import("../scheduler/ModelBenchmarkRunner.js");
+
+    this.modelManager = new OllamaModelManager();
+    this.tenancyGuard = new ModelTenancyGuard({
+      managedModelsEnabled: process.env["MANAGED_MODELS_ENABLED"] !== "false",
+      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-r1:8b-4k,qwen2.5-coder:7b-instruct-q4_K_M")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      maxDiskStorageGb: Number(process.env["MAX_DISK_STORAGE_GB"] || 50),
+      autoEvictionEnabled: process.env["AUTO_EVICTION_ENABLED"] !== "false",
+      minimumSuccessRateThreshold: Number(process.env["MIN_SUCCESS_RATE_THRESHOLD"] || 0.4),
+      maxConsecutiveFailuresBeforeEviction: Number(process.env["MAX_CONSECUTIVE_FAILURES"] || 3)
+    });
+
+    const evictionManager = new ModelEvictionManager(
+      this.healthRepo,
+      3,
+      0.25,
+      this.tenancyGuard,
+      this.modelManager
+    );
     const governor = new ThermalGovernor();
     const groomer = new QueueGroomer();
 
@@ -156,6 +182,8 @@ export class CacophonyDaemon {
     const primaryInferenceProvider = isDemoMode
       ? new MockInferenceStreamProvider(28)
       : new OllamaProvider();
+
+    this.benchmarkRunner = new ModelBenchmarkRunner(primaryInferenceProvider as any, this.healthRepo);
 
     const { FrontierFallbackRouter } = await import("../inference/FrontierFallbackRouter.js");
     this.fallbackRouter = new FrontierFallbackRouter("deepseek-r1:8b");
@@ -432,6 +460,18 @@ export class CacophonyDaemon {
 
   public getFallbackRouter(): import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter | undefined {
     return this.fallbackRouter;
+  }
+
+  public getModelManager(): import("../inference/OllamaModelManager.js").OllamaModelManager | undefined {
+    return this.modelManager;
+  }
+
+  public getTenancyGuard(): import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined {
+    return this.tenancyGuard;
+  }
+
+  public getBenchmarkRunner(): import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined {
+    return this.benchmarkRunner;
   }
 
   private async handleCommand(command: string, params?: Record<string, unknown>): Promise<unknown> {

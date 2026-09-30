@@ -604,6 +604,179 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c0a. REST API: GET /api/models/installed - List Installed Models Annotated with Tenancy Guard
+    if (url.pathname === "/api/models/installed" && req.method === "GET") {
+      const modelManager = this.daemon.getModelManager() || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+      const tenancyGuard = this.daemon.getTenancyGuard();
+      const protectedModels = tenancyGuard ? tenancyGuard.getConfig().protectedModels : [];
+      try {
+        const models = await modelManager.listInstalledModels(protectedModels);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(models));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: message }));
+      }
+      return;
+    }
+
+    // 4c0b. REST API: POST /api/models/pull - Pull New Ollama Model with SSE Progress Streaming
+    if (url.pathname === "/api/models/pull" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const modelName = payload.model;
+          if (!modelName || typeof modelName !== "string") {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter 'model'" }));
+            return;
+          }
+
+          const tenancyGuard = this.daemon.getTenancyGuard();
+          if (tenancyGuard) {
+            const headroom = await tenancyGuard.checkDiskHeadroom();
+            if (!headroom.hasHeadroom) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: headroom.reason || "Insufficient disk headroom" }));
+              return;
+            }
+          }
+
+          const modelManager = this.daemon.getModelManager() || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+
+          // Stream progress events over SSE clients
+          const onProgress = (event: import("@cacophony/shared-types").OllamaPullProgressEvent) => {
+            const sseData = `event: model_pull_progress\ndata: ${JSON.stringify({ model: modelName, ...event })}\n\n`;
+            for (const client of this.sseClients) {
+              try { client.write(sseData); } catch { /* ignore */ }
+            }
+          };
+
+          // Run pull asynchronously, respond immediately with accepted status
+          res.writeHead(202, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ status: "pulling", model: modelName }));
+
+          void modelManager.pullModel(modelName, onProgress).catch((err) => {
+            const sseError = `event: model_pull_progress\ndata: ${JSON.stringify({
+              model: modelName,
+              status: "error",
+              error: err instanceof Error ? err.message : String(err)
+            })}\n\n`;
+            for (const client of this.sseClients) {
+              try { client.write(sseError); } catch { /* ignore */ }
+            }
+          });
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid pull payload" }));
+        }
+      });
+      return;
+    }
+
+    // 4c0c. REST API: DELETE /api/models/:modelId - Evict / Delete Model
+    const modelDeleteMatch = url.pathname.match(/^\/api\/models\/([^/]+)$/);
+    if (modelDeleteMatch && req.method === "DELETE") {
+      const modelId = decodeURIComponent(modelDeleteMatch[1]!);
+      const tenancyGuard = this.daemon.getTenancyGuard();
+      if (tenancyGuard) {
+        const check = tenancyGuard.canEvict(modelId);
+        if (!check.allowed) {
+          res.writeHead(403, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: check.reason }));
+          return;
+        }
+      }
+
+      const modelManager = this.daemon.getModelManager() || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+      try {
+        await modelManager.deleteModel(modelId);
+        const healthRepo = this.daemon.getModelHealthRepository();
+        await healthRepo.updateStatus(modelId, "EJECTED");
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, modelId, status: "EVICTED" }));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: message }));
+      }
+      return;
+    }
+
+    // 4c0d. REST API: GET & PUT /api/models/config - Read/Update Model Tenancy Configuration
+    if (url.pathname === "/api/models/config" && req.method === "GET") {
+      const tenancyGuard = this.daemon.getTenancyGuard();
+      const config = tenancyGuard ? tenancyGuard.getConfig() : {
+        managedModelsEnabled: true,
+        protectedModels: ["deepseek-r1:8b-4k", "qwen2.5-coder:7b-instruct-q4_K_M"],
+        maxDiskStorageGb: 50,
+        autoEvictionEnabled: true,
+        minimumSuccessRateThreshold: 0.4,
+        maxConsecutiveFailuresBeforeEviction: 3
+      };
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(config));
+      return;
+    }
+    if (url.pathname === "/api/models/config" && req.method === "PUT") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const tenancyGuard = this.daemon.getTenancyGuard();
+          if (tenancyGuard) {
+            tenancyGuard.updateConfig(payload);
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true, config: tenancyGuard.getConfig() }));
+          } else {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true, config: payload }));
+          }
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid config payload" }));
+        }
+      });
+      return;
+    }
+
+    // 4c0e. REST API: POST /api/models/benchmark - Benchmark Model
+    if (url.pathname === "/api/models/benchmark" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const modelName = payload.model;
+          if (!modelName) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter 'model'" }));
+            return;
+          }
+
+          const runner = this.daemon.getBenchmarkRunner();
+          if (!runner) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "BenchmarkRunner is not initialized on this daemon" }));
+            return;
+          }
+
+          const result = await runner.benchmark(modelName);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+      return;
+    }
+
     // 4c1. REST API: Model Telemetry Efficiency Analytics
     if (url.pathname === "/api/analytics/models" && req.method === "GET") {
       const { TelemetryCorrelationService } = await import("../telemetry/TelemetryCorrelationService.js");
