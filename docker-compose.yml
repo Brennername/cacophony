@@ -32,6 +32,7 @@ services:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw
       - ./workspaces:/app/workspaces:rw
+      - ./.git:/app/.git:ro
       - ./.env:/app/.env:ro
       - /sys:/host/sys:ro
     extra_hosts:

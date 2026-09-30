@@ -28,7 +28,7 @@ export class AdaptiveOutputFormatter {
         `Provide the COMPLETE, fully working file content${fileTarget}.`,
         "Do NOT use diffs, search/replace blocks, ellipses, or placeholder comments (e.g. '// ... existing code ...').",
         "Enclose the entire code inside a single standard markdown code block: ```<language> ... ```.",
-        "Your response should be only the code block or brief explanation followed by the code block."
+        "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the complete implementation."
       ].join("\n");
     }
 
@@ -47,14 +47,18 @@ export class AdaptiveOutputFormatter {
     const blocks: ExtractedCodeBlock[] = [];
     if (!rawContent) return blocks;
 
-    // Normalize: strip reasoning blocks <think>...</think> if present
+    // Normalize: strip all closed reasoning blocks <think>...</think>
     let cleaned = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-    // Also strip unclosed <think>... if the model stopped mid-reasoning
-    if (cleaned.includes("<think>")) {
-      cleaned = cleaned.replace(/<think>[\s\S]*$/gi, "").trim();
+
+    // If an unclosed <think> tag remains (e.g. model truncated or emitted another <think>),
+    // strip the unclosed trailing block while preserving any prior generated text
+    const unclosedThinkIdx = cleaned.indexOf("<think>");
+    if (unclosedThinkIdx !== -1) {
+      cleaned = cleaned.slice(0, unclosedThinkIdx).trim();
     }
+
+    // If all content was inside think tags but code fences exist inside, extract from rawContent
     if (!cleaned && rawContent.includes("```")) {
-      // If the content was entirely enclosed in think tags, restore the original
       cleaned = rawContent;
     }
 
