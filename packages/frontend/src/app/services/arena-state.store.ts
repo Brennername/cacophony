@@ -49,6 +49,9 @@ export interface TaskItem {
   logSnippet?: string;
   progressPercent?: number;
   stages?: TaskStageItem[];
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  completedAt?: string | null;
 }
 
 export interface ProcessItem {
@@ -466,6 +469,9 @@ export class ArenaStateStore {
           testCommand?: string | null;
           focusFiles?: string | null;
           prUrl?: string | null;
+          createdAt?: string | null;
+          updatedAt?: string | null;
+          completedAt?: string | null;
         }>;
         const items: TaskItem[] = rawTasks.map((t) => ({
           id: t.id,
@@ -478,6 +484,9 @@ export class ArenaStateStore {
           testCommand: t.testCommand,
           focusFiles: t.focusFiles,
           prUrl: t.prUrl,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+          completedAt: t.completedAt,
         }));
         if (items.length > 0) {
           this.tasks.update((existingList) => {

@@ -63,6 +63,9 @@ import { ArenaStateStore } from '../../services/arena-state.store';
               <div class="meta-row">
                 <span class="role-badge">{{ task.role }}</span>
                 <span class="model-tag font-mono">{{ task.modelAssigned || 'Auto' }}</span>
+                @if (task.createdAt) {
+                  <span class="time-tag font-mono tabular">{{ formatCreatedTime(task.createdAt) }}</span>
+                }
               </div>
             </div>
             <div class="status-col">
@@ -254,6 +257,15 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       padding: 0.05rem 0.35rem;
     }
 
+    .time-tag {
+      font-size: 0.625rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 3px;
+      padding: 0.05rem 0.35rem;
+    }
+
     .status-pill {
       font-size: 0.6875rem;
       font-weight: 600;
@@ -385,5 +397,16 @@ export class QueueManagerComponent {
     if (!title) return;
     this.store.addTask(title, this.newPriority());
     this.newTitle.set('');
+  }
+
+  public formatCreatedTime(isoStr: string | null | undefined): string {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    } catch {
+      return '';
+    }
   }
 }

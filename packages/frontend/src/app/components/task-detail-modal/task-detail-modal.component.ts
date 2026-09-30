@@ -107,6 +107,14 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
                   <span class="meta-val font-mono">{{ task.focusFiles || 'All workspace' }}</span>
                 </div>
                 <div class="meta-item">
+                  <span class="meta-label">Created At</span>
+                  <span class="meta-val font-mono">{{ formatModalTimestamp(task.createdAt) }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Completed At</span>
+                  <span class="meta-val font-mono">{{ formatModalTimestamp(task.completedAt) }}</span>
+                </div>
+                <div class="meta-item">
                   <span class="meta-label">Pull Request</span>
                   @if (task.prUrl) {
                     <a [href]="task.prUrl" target="_blank" rel="noopener" class="pr-link">View in Gitea ↗</a>
@@ -139,6 +147,9 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
                       <div class="stage-item" [ngClass]="st.stageStatus.toLowerCase()">
                         <div class="stage-top">
                           <span class="stage-name">{{ st.stageName | uppercase }}</span>
+                          @if (st.startedAt) {
+                            <span class="stage-time font-mono">{{ formatStageTime(st.startedAt) }}</span>
+                          }
                           <span class="stage-status">{{ st.stageStatus }}</span>
                           <span class="stage-duration font-mono">{{ st.durationMs ? st.durationMs + 'ms' : 'Active' }}</span>
                         </div>
@@ -602,6 +613,14 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
       color: var(--text-primary);
     }
 
+    .stage-time {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+    }
+
     .stage-status {
       font-size: 0.6875rem;
       color: var(--text-muted);
@@ -917,5 +936,39 @@ export class TaskDetailModalComponent {
       return testStage.logOutput;
     }
     return '// No test execution errors or stderr captured.';
+  }
+
+  public formatModalTimestamp(iso: string | null | undefined): string {
+    if (!iso) return 'None';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+    } catch {
+      return iso;
+    }
+  }
+
+  public formatStageTime(iso: string | null | undefined): string {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+    } catch {
+      return '';
+    }
   }
 }

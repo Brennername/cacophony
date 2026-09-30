@@ -51,6 +51,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
               <th>Model</th>
               <th>Runtime</th>
               <th>Velocity</th>
+              <th>Completed</th>
               <th>Gitea PR</th>
             </tr>
           </thead>
@@ -78,6 +79,9 @@ import { ArenaStateStore } from '../../services/arena-state.store';
                   } @else {
                     <span class="text-muted">--</span>
                   }
+                </td>
+                <td class="timestamp-cell font-mono tabular">
+                  {{ formatTimestamp(item.timestamp) }}
                 </td>
                 <td class="link-cell">
                   @if (item.prUrl) {
@@ -408,6 +412,17 @@ export class TaskHistoryComponent {
     const mins = Math.floor(v / 60000);
     const secs = Math.round((v % 60000) / 1000);
     return `${mins}m ${secs}s`;
+  }
+
+  public formatTimestamp(isoStr: string | null | undefined): string {
+    if (!isoStr || isoStr === 'Recently') return 'Recently';
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    } catch {
+      return isoStr;
+    }
   }
 
   public drillDown(taskId: string): void {
