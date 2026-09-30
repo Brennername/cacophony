@@ -36,6 +36,19 @@
 
 ---
 
+## Active Sprint Priority Queue & Immediate Execution Order
+
+> [!IMPORTANT]
+> **Execution Directives for Next Frontier Model Implementer:**
+> The following four phases constitute the highest-priority implementation pipeline, ordered strictly by dependency and user mandate:
+> 1. **Priority 1: Phase 75 (Dynamic Ollama Model Lifecycle Management & Multi-Tenant Hardware Adaptation)**: Backend engine controlling Ollama model installation, automated hardware benchmarking, download streaming, and safe eviction with protected tenancy whitelists.
+> 2. **Priority 2: Phase 76 (Frontend Model Fleet Manager, Download Terminal & Tenancy Controls)**: High-density interactive UI on `/models` allowing operators to view installed models, trigger new downloads with real-time piped terminal logs, manage eviction policies, and configure tenancy protections.
+> 3. **Priority 3: Phase 77 (Reasoning Model `<think>` Stream Separation, Distillation & Opinion Synthesis)**: Token demuxer separating `<think>` cognitive traces from code, persisting distilled architectural opinions for MoE consensus, and providing differentiated UI views per model archetype.
+> 4. **Priority 4: Phase 78 (End-to-End In-House Pull Request Lifecycle & Review Pipeline)**: Provider-agnostic git PR integration (Gitea default + GitHub compatible) with ephemeral git worktree isolation (`workspaces/worktree-<taskId>`) and automated PR code reviews.
+
+---
+
+
 ## Phase 45: Real-Time Stream Tap Filtering, Telemetry HUD Metrics & Visual Pacing Alerts
 *RDF Category: telemetry*
 
@@ -1217,3 +1230,122 @@
   - [ ] T74.8.2: Replace `: any` mock types in closed_loop_pr_and_tools.test.ts with properly typed mock interfaces. [File: packages/engine/src/tests/closed_loop_pr_and_tools.test.ts] [Test: npm test -- packages/engine/src/tests/closed_loop_pr_and_tools.test.ts]
   - [ ] T74.8.3: Replace `: any` mock types in autonomous_continuous_arena.test.ts and gitea_integration.test.ts. [File: packages/engine/src/tests/autonomous_continuous_arena.test.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
   - [ ] T74.8.4: Replace `: any` mock types in GitWorktreeAndWebhook.test.ts and Inference.test.ts. [File: packages/engine/src/gitea/__tests__/GitWorktreeAndWebhook.test.ts] [Test: npm test]
+
+---
+
+## Phase 75: Dynamic Ollama Model Lifecycle Management & Multi-Tenant Hardware Adaptation
+*RDF Category: hardware*
+*Priority: SPRINT PRIORITY 1*
+
+### T75.1: Ollama Model Client & Lifecycle Controller
+  - [ ] T75.1.1: Create OllamaModelManager in packages/engine/src/inference/OllamaModelManager.ts implementing listInstalledModels() querying Ollama GET /api/tags and mapping sizes, digests, and modified timestamps. [File: packages/engine/src/inference/OllamaModelManager.ts] [Class: OllamaModelManager] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [ ] T75.1.2: Implement pullModel(modelName: string, onProgress: (event: OllamaPullProgressEvent) => void) in OllamaModelManager parsing ndjson streaming chunks from Ollama POST /api/pull. [File: packages/engine/src/inference/OllamaModelManager.ts] [Method: pullModel] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [ ] T75.1.3: Implement deleteModel(modelName: string) in OllamaModelManager issuing DELETE /api/delete with JSON body { model: modelName } and verifying eviction. [File: packages/engine/src/inference/OllamaModelManager.ts] [Method: deleteModel] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [ ] T75.1.4: Implement showModelInfo(modelName: string) in OllamaModelManager querying POST /api/show to extract parameter_size, quantization_level, and architecture family. [File: packages/engine/src/inference/OllamaModelManager.ts] [Method: showModelInfo] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [ ] T75.1.5: Write unit tests with mocked fetch verifying listInstalledModels, pullModel progress demuxing, deleteModel, and showModelInfo. [File: packages/engine/src/tests/ollama_model_manager.test.ts] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+
+### T75.2: Multi-Tenant Model Protection & Tenancy Guardrail Engine
+  - [ ] T75.2.1: Define ModelManagementConfig in packages/shared-types/src/config.ts with managedModelsEnabled, protectedModels whitelist, maxDiskStorageGb, autoEvictionEnabled, minimumSuccessRateThreshold, and maxConsecutiveFailuresBeforeEviction. [File: packages/shared-types/src/config.ts] [Interface: ModelManagementConfig] [Test: npm test -- packages/shared-types]
+  - [ ] T75.2.2: Implement ModelTenancyGuard in packages/engine/src/scheduler/ModelTenancyGuard.ts verifying whether a model tag matches protectedModels wildcard patterns before any deletion is permitted. [File: packages/engine/src/scheduler/ModelTenancyGuard.ts] [Class: ModelTenancyGuard] [Test: npm test -- packages/engine/src/tests/model_tenancy_guard.test.ts]
+  - [ ] T75.2.3: Add disk capacity evaluation in ModelTenancyGuard checking available host disk space via statfs before initiating model download to prevent disk exhaustion. [File: packages/engine/src/scheduler/ModelTenancyGuard.ts] [Method: checkDiskHeadroom] [Test: npm test -- packages/engine/src/tests/model_tenancy_guard.test.ts]
+  - [ ] T75.2.4: Write unit tests verifying that protected models are strictly rejected from eviction calls and that disk quota limits reject excessive downloads. [File: packages/engine/src/tests/model_tenancy_guard.test.ts] [Test: npm test -- packages/engine/src/tests/model_tenancy_guard.test.ts]
+
+### T75.3: Automated Hardware-Model Benchmark & Eviction Governor
+  - [ ] T75.3.1: Implement ModelBenchmarkRunner in packages/engine/src/scheduler/ModelBenchmarkRunner.ts executing a fixed synthetic prompt and evaluating syntax correctness, tokens/sec, and latency. [File: packages/engine/src/scheduler/ModelBenchmarkRunner.ts] [Class: ModelBenchmarkRunner] [Test: npm test -- packages/engine/src/tests/model_benchmark_runner.test.ts]
+  - [ ] T75.3.2: Connect ModelBenchmarkRunner results to ModelHealthRepository to seed initial success rates and velocity metrics for newly downloaded models. [File: packages/engine/src/scheduler/ModelBenchmarkRunner.ts] [Method: recordBenchmark] [Test: npm test -- packages/engine/src/tests/model_benchmark_runner.test.ts]
+  - [ ] T75.3.3: Update ModelEvictionManager in packages/engine/src/scheduler/ModelEvictionManager.ts to check ModelTenancyGuard and invoke OllamaModelManager.deleteModel when autoEvictionEnabled is true and consecutive failures reach threshold. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: evaluateModelEviction] [Test: npm test -- packages/engine/src/tests/model_eviction_manager.test.ts]
+  - [ ] T75.3.4: Write unit tests validating that degraded non-protected models are automatically deleted while protected models remain intact and marked degraded. [File: packages/engine/src/tests/model_eviction_manager.test.ts] [Test: npm test -- packages/engine/src/tests/model_eviction_manager.test.ts]
+
+### T75.4: Model Management HTTP REST Endpoints & SSE Streaming
+  - [ ] T75.4.1: Add GET /api/models/installed route in CacophonyHttpServer returning installed models annotated with protected tenancy status and VRAM residency. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/models/installed] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [ ] T75.4.2: Add POST /api/models/pull route streaming Ollama pull progress events over SSE event channel 'model_pull_progress'. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/pull] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [ ] T75.4.3: Add DELETE /api/models/:modelId route validating tenancy rules through ModelTenancyGuard and deleting model via OllamaModelManager. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: DELETE /api/models/:modelId] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [ ] T75.4.4: Add GET and PUT /api/models/config routes reading and updating runtime ModelManagementConfig in memory and persisting to conf/cacophony.json. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: /api/models/config] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [ ] T75.4.5: Add POST /api/models/benchmark route triggering ModelBenchmarkRunner on specified model tag and returning empirical metrics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/benchmark] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [ ] T75.4.6: Write unit tests covering all model management REST endpoints, verifying permission guards and error handling for invalid models. [File: packages/engine/src/tests/models_http_api.test.ts] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+
+---
+
+## Phase 76: Frontend Model Fleet Manager, Download Terminal & Tenancy Controls
+*RDF Category: frontend*
+*Priority: SPRINT PRIORITY 2*
+
+### T76.1: Model Fleet Console & Installed Model Grid
+  - [ ] T76.1.1: Create ModelFleetService in packages/frontend/src/app/services/model-fleet.service.ts wrapping GET /api/models/installed, POST /api/models/pull, DELETE /api/models/:id, and config APIs with Angular Signals. [File: packages/frontend/src/app/services/model-fleet.service.ts] [Class: ModelFleetService] [Test: npm test]
+  - [ ] T76.1.2: Redesign ModelsViewComponent in packages/frontend/src/app/components/views/models-view.component.ts to include an Installed Fleet Card Grid with parameter size, quantization, memory footprint, and protected tenancy pills. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Template: installed-fleet-grid] [Test: npm test]
+  - [ ] T76.1.3: Add active memory indicator distinguishing models currently warm in VRAM from models dormant on disk. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Signal: warmModelId] [Test: npm test]
+  - [ ] T76.1.4: Add action triggers per card: Benchmark Model button, Delete/Evict button (disabled with tooltip for protected models), and View Telemetry link. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Test: npm test]
+
+### T76.2: Model Download Modal & Piped Terminal Progress Log
+  - [ ] T76.2.1: Create ModelPullModalComponent in packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.ts with searchable curated catalog (qwen2.5-coder, gemma3, deepseek-coder) and custom tag input. [File: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.ts] [Class: ModelPullModalComponent] [Test: npm test]
+  - [ ] T76.2.2: Implement reactive download progress bar computing total downloaded bytes versus total layer size from model_pull_progress SSE stream. [File: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.ts] [Signal: pullProgressPercent] [Test: npm test]
+  - [ ] T76.2.3: Build embedded TerminalLogViewer component rendering piped monospace log output from Ollama pull stream with auto-scroll and status indicators. [File: packages/frontend/src/app/components/terminal-log-viewer/terminal-log-viewer.component.ts] [Class: TerminalLogViewerComponent] [Test: npm test]
+  - [ ] T76.2.4: Write frontend unit tests verifying modal open/close, SSE event binding, and terminal log appending during simulated downloads. [File: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.spec.ts] [Test: npm test]
+
+### T76.3: Tenancy Configuration & Whitelist Management Panel
+  - [ ] T76.3.1: Build TenancyConfigPanelComponent in packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts with toggles for managedModelsEnabled and autoEvictionEnabled. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts] [Class: TenancyConfigPanelComponent] [Test: npm test]
+  - [ ] T76.3.2: Implement interactive chip tag list for protectedModels whitelist, allowing operators to add and remove protected model wildcards. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts] [Signal: protectedModelsList] [Test: npm test]
+  - [ ] T76.3.3: Add storage quota slider configuring maxDiskStorageGb with visual gauge indicating current disk usage vs quota. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts] [Test: npm test]
+  - [ ] T76.3.4: Write frontend unit tests validating form bindings, validation rules, and PUT /api/models/config payload generation. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.spec.ts] [Test: npm test]
+
+---
+
+## Phase 77: Reasoning Model `<think>` Stream Separation, Distillation & Opinion Synthesis
+*RDF Category: inference*
+*Priority: SPRINT PRIORITY 3*
+
+### T77.1: Real-Time Cognitive Stream Token Demuxer
+  - [ ] T77.1.1: Create ReasoningStreamDemuxer in packages/engine/src/inference/ReasoningStreamDemuxer.ts statefully scanning streaming token deltas for <think> and </think> boundaries. [File: packages/engine/src/inference/ReasoningStreamDemuxer.ts] [Class: ReasoningStreamDemuxer] [Test: npm test -- packages/engine/src/tests/reasoning_stream_demuxer.test.ts]
+  - [ ] T77.1.2: Wire ReasoningStreamDemuxer into StreamTapManager emitting dual SSE events: 'reasoning_chunk' for cognitive trace and 'code_chunk' for generated artifacts. [File: packages/engine/src/telemetry/StreamTapManager.ts] [Method: handleTokenStream] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T77.1.3: Measure intra-reasoning token velocity and duration separately from code generation velocity in AutonomousWorkerPipeline. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeGenerationStage] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
+  - [ ] T77.1.4: Write unit tests verifying that code fences inside thinking tags are not prematurely parsed as executable code and that the demuxer handles split tag boundaries across chunks. [File: packages/engine/src/tests/reasoning_stream_demuxer.test.ts] [Test: npm test -- packages/engine/src/tests/reasoning_stream_demuxer.test.ts]
+
+### T77.2: Reasoning Trace Persistence & Stage Schema Migration
+  - [ ] T77.2.1: Author database migration 013_reasoning_transcripts.ts adding reasoning_transcript TEXT and distilled_opinion TEXT columns to task_stages table with SQLite and Postgres cross-dialect compatibility. [File: packages/db/src/migrations/013_reasoning_transcripts.ts] [Test: npm test -- packages/db]
+  - [ ] T77.2.2: Update StageRecord in packages/shared-types/src/stage.ts to include optional reasoningTranscript, distilledOpinion, and thinkingDurationMs fields. [File: packages/shared-types/src/stage.ts] [Interface: StageRecord] [Test: npm test -- packages/shared-types]
+  - [ ] T77.2.3: Update StageRepository in packages/db/src/repositories/StageRepository.ts to persist reasoning transcripts and distilled opinions in recordStageCompletion. [File: packages/db/src/repositories/StageRepository.ts] [Method: recordStageCompletion] [Test: npm test -- packages/db]
+  - [ ] T77.2.4: Write integration tests verifying database migration executes cleanly on both SQLite and PGlite drivers and stores full reasoning strings. [File: packages/db/src/tests/reasoning_persistence.test.ts] [Test: npm test -- packages/db/src/tests/reasoning_persistence.test.ts]
+
+### T77.3: Reasoning Distillation & Consensus Opinion Extractor
+  - [ ] T77.3.1: Create ReasoningDistillationService in packages/engine/src/inference/ReasoningDistillationService.ts taking raw <think> traces and passing them through a lightweight summarizer prompt. [File: packages/engine/src/inference/ReasoningDistillationService.ts] [Class: ReasoningDistillationService] [Test: npm test -- packages/engine/src/tests/reasoning_distillation.test.ts]
+  - [ ] T77.3.2: Format distilled output into typed ModelOpinionRecord containing summary, keyDecisions, identifiedRisks, and confidenceScore. [File: packages/engine/src/inference/ReasoningDistillationService.ts] [Interface: ModelOpinionRecord] [Test: npm test -- packages/engine/src/tests/reasoning_distillation.test.ts]
+  - [ ] T77.3.3: Expose GET /api/tasks/:id/opinion endpoint returning distilled architectural opinion and reasoning metrics for the specified task. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/tasks/:id/opinion] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T77.3.4: Write unit tests verifying that ReasoningDistillationService extracts structured decisions from messy reasoning traces and handles empty traces gracefully. [File: packages/engine/src/tests/reasoning_distillation.test.ts] [Test: npm test -- packages/engine/src/tests/reasoning_distillation.test.ts]
+
+### T77.4: Differentiated Frontend Model Views & Archetype-Specific UI
+  - [ ] T77.4.1: Update TaskDetailModalComponent in packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts adding a dedicated 'Cognitive Trace' tab for reasoning models (DeepSeek R1, Qwen Thinking). [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: cognitive-trace-tab] [Test: npm test]
+  - [ ] T77.4.2: Render collapsible thoughts panel with live thinking velocity gauge and formatted markdown distilled opinion card. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: thoughts-panel] [Test: npm test]
+  - [ ] T77.4.3: Provide dense syntax diff view for direct coder models (Qwen 2.5 Coder, Gemma 3) omitting empty reasoning sections and focusing on file tree and AST mutations. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: code-diff-view] [Test: npm test]
+  - [ ] T77.4.4: Inject archetype-specific prompt directives in QueueGroomer instructing reasoning models to enclose analysis in <think> tags and direct coder models to output code fences immediately. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Method: formatPromptForModelArchetype] [Test: npm test -- packages/engine/src/tests/queue_groomer.test.ts]
+
+---
+
+## Phase 78: End-to-End In-House Pull Request Lifecycle & Review Pipeline (Gitea + GitHub Compatibility)
+*RDF Category: orchestration*
+*Priority: SPRINT PRIORITY 4*
+
+### T78.1: Unified Git Platform Provider Abstraction (Gitea & GitHub)
+  - [ ] T78.1.1: Create IGitPlatformProvider interface in packages/engine/src/gitea/IGitPlatformProvider.ts declaring createBranch, openPullRequest, submitReview, and mergePullRequest. [File: packages/engine/src/gitea/IGitPlatformProvider.ts] [Interface: IGitPlatformProvider] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [ ] T78.1.2: Implement GiteaPlatformProvider in packages/engine/src/gitea/GiteaPlatformProvider.ts communicating with local Gitea instance via Swagger REST API. [File: packages/engine/src/gitea/GiteaPlatformProvider.ts] [Class: GiteaPlatformProvider] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [ ] T78.1.3: Implement GitHubPlatformProvider in packages/engine/src/gitea/GitHubPlatformProvider.ts communicating with GitHub REST API using configured GITHUB_TOKEN. [File: packages/engine/src/gitea/GitHubPlatformProvider.ts] [Class: GitHubPlatformProvider] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [ ] T78.1.4: Create GitPlatformProviderFactory in packages/engine/src/gitea/GitPlatformProviderFactory.ts instantiating provider based on GIT_PLATFORM_PROVIDER environment setting (defaulting to gitea). [File: packages/engine/src/gitea/GitPlatformProviderFactory.ts] [Class: GitPlatformProviderFactory] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [ ] T78.1.5: Write unit tests verifying that both providers correctly format pull request payloads and handle API error responses. [File: packages/engine/src/tests/git_platform_provider.test.ts] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+
+### T78.2: Ephemeral Git Worktree Isolation per Task Execution
+  - [ ] T78.2.1: Enhance GitWorktreeManager in packages/engine/src/gitea/GitWorktreeManager.ts to create isolated worktrees at workspaces/worktree-<taskId> on ephemeral branch task/<priority>-<taskId>. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: createWorktree] [Test: npm test -- packages/engine/src/tests/git_worktree_isolation.test.ts]
+  - [ ] T78.2.2: Ensure AutonomousWorkerPipeline executes file modifications, scrubbing, and test commands strictly inside the isolated worktree directory without modifying the main repository checkout. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T78.2.3: Implement cleanWorktree(taskId: string) in GitWorktreeManager safely removing the ephemeral directory and pruning the git worktree entry upon task completion or rollback. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: cleanWorktree] [Test: npm test -- packages/engine/src/tests/git_worktree_isolation.test.ts]
+  - [ ] T78.2.4: Write integration tests verifying that concurrent tasks modify separate worktrees without file conflicts and that cleanup leaves the git status clean. [File: packages/engine/src/tests/git_worktree_isolation.test.ts] [Test: npm test -- packages/engine/src/tests/git_worktree_isolation.test.ts]
+
+### T78.3: Automated Multi-Stage Review & Merge Gate
+  - [ ] T78.3.1: Wire Stage 5 (Review) in AutonomousWorkerPipeline to generate a structured review checklist evaluating SOLID principles, test coverage, and security boundaries. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeReviewStage] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
+  - [ ] T78.3.2: Add optional Frontier Model Reviewer integration: when FRONTIER_REVIEW_API_KEY is configured, dispatch the patch diff and review prompt to the frontier model for high-rigor evaluation. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: evaluateReview] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
+  - [ ] T78.3.3: Automatically open pull request via IGitPlatformProvider.openPullRequest upon passing review and submit review verdict. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: publishPullRequest] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [ ] T78.3.4: Wire Stage 6 (Merge) to merge pull request into target branch when auto-merge is configured and all verification stages pass. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeMergeStage] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+
+### T78.4: Frontend PR Inspector & Review Timeline Badge
+  - [ ] T78.4.1: Update TaskDetailModalComponent to display Pull Request banner with clickable link (prUrl), branch name, and review status badge (APPROVED, CHANGES_REQUESTED). [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: pr-banner] [Test: npm test]
+  - [ ] T78.4.2: Add PR reviews tab in TaskDetailModalComponent displaying reviewer verdict, line-level comments, and SOLID compliance score. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: pr-reviews-tab] [Test: npm test]
+  - [ ] T78.4.3: Add PR indicator icon and branch pill to TaskInspectorComponent stage progression bar during Stage 5 and Stage 6. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Template: stage-pr-indicator] [Test: npm test]
+  - [ ] T78.4.4: Write frontend unit tests verifying PR badge rendering and link target formatting for both Gitea and GitHub URL patterns. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm test]
+

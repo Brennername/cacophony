@@ -122,9 +122,43 @@
   - Bayesian Win-Rate Updater: Continuously adjusts posterior distribution $Beta(\alpha + \text{wins}, \beta + \text{losses})$ per model-role pair, rewarding verified code generation (+1.0) and penalizing crash/timeout (-1.0).
   - Dynamic Retry Routing: Escalates failed tasks along an empirical decision tree informed by bandit affinity scores rather than hardcoded fallbacks.
   - Mobile-First Telemetry UI: Angular widgets displaying exploration rate controls, Thompson sampling confidence intervals, and Pareto-frontier scatter plots.
-- **Assigned Taskcade Phase**: Phase 28 (`spec:BanditScheduler`, `spec:ContextAndRoleExploration`, `spec:DynamicPromotionEngine`, `spec:StochasticUiDashboard`).
+### 1.14 Dynamic Ollama Model Lifecycle Management & Multi-Tenant Hardware Adaptation
+- **Objective**: Provide automated control of Ollama model selection, benchmarking candidate models, pulling new models, and evicting underperforming models based on hardware profile, while strictly enforcing user tenancy guardrails and whitelist protections.
+- **Architectural Scope**:
+  - `OllamaModelManager`: Communicates directly with the Ollama REST engine (`/api/tags`, `/api/pull`, `/api/delete`, `/api/show`).
+  - `ModelTenancyGuard`: Protects external-use models (whitelisted via `protectedModels`) from automated deletion, enforces disk quotas, and allows disabling automated management altogether (`managedModelsEnabled: false`).
+  - `ModelBenchmarkRunner`: Standardized synthetic coding benchmark assessing real tok/s and AST validity on the host hardware profile.
+  - Automated Eviction Governor: Safely purges non-whitelisted degraded models when disk space or consecutive failure limits are exceeded.
+- **Assigned Taskcade Phase**: Phase 75 (`spec:OllamaModelManager`, `spec:ModelTenancyGuard`, `spec:ModelBenchmarkRunner`).
+
+### 1.15 Frontend Model Fleet Manager, Download Terminal & Tenancy Controls
+- **Objective**: Transform the models view (`/models`) into an interactive Fleet Management Console allowing operators to inspect installed models, trigger new downloads with real-time piped terminal logs, manage eviction policies, and configure tenancy protections.
+- **Architectural Scope**:
+  - Installed Model Grid: Hardware suitability badges, parameter count, quantization, memory footprint, and protected tenancy pills.
+  - `ModelPullModalComponent`: Searchable catalog with curated tags and a piped terminal log viewer streaming server stdout/stderr (`model_pull_progress`).
+  - Tenancy Settings Panel: Interactive protected model whitelist tags, storage quota limits, and automated eviction toggles.
+- **Assigned Taskcade Phase**: Phase 76 (`spec:ModelFleetConsole`, `spec:ModelPullTerminal`, `spec:TenancyConfigPanel`).
+
+### 1.16 Reasoning Model `<think>` Stream Separation, Distillation & Opinion Synthesis
+- **Objective**: Segregate raw `<think>...</think>` cognitive traces from executable code output in real-time, distill the reasoning into atomic opinions, and provide differentiated frontend views and prompt engineering tailored per model archetype.
+- **Architectural Scope**:
+  - `ReasoningStreamDemuxer`: Dual-channel stateful parser demuxing streaming tokens into `reasoning_chunk` and `code_chunk` events.
+  - `ReasoningDistillationService`: Distills verbose thought transcripts into an atomic `ModelOpinionRecord` for Mixture of Experts (MoE) consensus planning.
+  - Differentiated Model Views: Collapsible Cognitive Trace with thinking velocity for reasoning models (R1, o-series, thinking Qwen) vs. dense syntax/diff views for direct coders.
+  - Database schema expansion: Persisting reasoning transcripts and distilled opinions in `task_stages`.
+- **Assigned Taskcade Phase**: Phase 77 (`spec:ReasoningStreamDemuxer`, `spec:ReasoningDistillation`, `spec:DifferentiatedModelViews`).
+
+### 1.17 End-to-End In-House Pull Request Lifecycle & Review Pipeline (Gitea + GitHub Compatibility)
+- **Objective**: Establish a complete in-house pull request and review workflow operating in ephemeral git worktrees with cross-platform support for both Gitea (local self-hosted) and GitHub (remote/enterprise), complete with automated PR code reviews and merge gates.
+- **Architectural Scope**:
+  - `IGitPlatformProvider`: Unified abstraction supporting branch creation, pull request publication, review submission, and automated merging across Gitea and GitHub.
+  - `GitWorktreeManager`: Ephemeral worktree isolation per task (`workspaces/worktree-<taskId>`) preventing working tree collisions.
+  - Automated PR Reviewer: Analyzes generated diffs against specifications, SOLID principles, and test outputs with optional frontier model escalation (`FRONTIER_REVIEW_API_KEY`).
+  - Frontend PR Inspector: Displays pull request status, diff comments, and review badges in task detail modals.
+- **Assigned Taskcade Phase**: Phase 78 (`spec:GitPlatformProvider`, `spec:WorktreeIsolation`, `spec:AutomatedPrReviewPipeline`).
 
 ---
+
 
 ## 2. Core Architectural Interfaces & Contracts
 
@@ -301,4 +335,80 @@ export interface NuusTelemetryReport {
   readonly policyComplianceStatus: "COMPLIANT" | "REMEDIATION_REQUIRED" | "GUARDRAIL_BLOCKED";
 }
 ```
+
+### 2.5 Model Management, Reasoning Demuxer & Git Platform Contracts
+
+```typescript
+export interface ModelManagementConfig {
+  readonly managedModelsEnabled: boolean;
+  readonly protectedModels: readonly string[];
+  readonly maxDiskStorageGb: number;
+  readonly autoEvictionEnabled: boolean;
+  readonly minimumSuccessRateThreshold: number;
+  readonly maxConsecutiveFailuresBeforeEviction: number;
+}
+
+export interface OllamaInstalledModel {
+  readonly name: string;
+  readonly model: string;
+  readonly modifiedAt: string;
+  readonly sizeBytes: number;
+  readonly digest: string;
+  readonly details: {
+    readonly parentModel: string;
+    readonly format: string;
+    readonly family: string;
+    readonly families: readonly string[];
+    readonly parameterSize: string;
+    readonly quantizationLevel: string;
+  };
+  readonly isProtected: boolean;
+  readonly isLoadedInVram: boolean;
+}
+
+export interface OllamaPullProgressEvent {
+  readonly status: string;
+  readonly digest?: string;
+  readonly total?: number;
+  readonly completed?: number;
+  readonly percent?: number;
+}
+
+export interface ReasoningDemuxResult {
+  readonly reasoningTokens: string;
+  readonly executableCode: string;
+  readonly containsThinking: boolean;
+  readonly thinkingDurationMs?: number;
+}
+
+export interface ModelOpinionRecord {
+  readonly taskId: string;
+  readonly modelId: string;
+  readonly summary: string;
+  readonly keyDecisions: readonly string[];
+  readonly tradeOffs: readonly string[];
+  readonly confidenceScore: number; // [0.0, 1.0]
+  readonly rawThinkingLength: number;
+}
+
+export interface PullRequestRecord {
+  readonly id: string | number;
+  readonly number: number;
+  readonly title: string;
+  readonly htmlUrl: string;
+  readonly state: "open" | "closed";
+  readonly headBranch: string;
+  readonly baseBranch: string;
+  readonly reviewStatus: "PENDING" | "APPROVED" | "CHANGES_REQUESTED";
+}
+
+export interface IGitPlatformProvider {
+  readonly providerName: "gitea" | "github";
+  createBranch(branchName: string, baseSha: string): Promise<void>;
+  openPullRequest(title: string, body: string, headBranch: string, baseBranch: string): Promise<PullRequestRecord>;
+  submitReview(prNumber: number, verdict: "APPROVE" | "REQUEST_CHANGES" | "COMMENT", commentBody: string): Promise<void>;
+  mergePullRequest(prNumber: number, method: "merge" | "squash" | "rebase"): Promise<boolean>;
+}
+```
+
 
