@@ -90,3 +90,30 @@ When running in environments where direct `/sys/class/drm` or `/sys/class/hwmon`
 2. **RadeonTop CLI**: If `radeontop -d - -l 1` is present on the path, parses live GPU busy percentage and VRAM.
 3. **NVIDIA `nvidia-smi`**: If NVIDIA GPU is detected, executes `nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits`.
 4. **Mock / Containerized Fallback**: When running inside an isolated CI container without hardware device pass-through, emits simulated telemetry metrics to ensure all dashboard meters and charts render reliably during testing.
+
+---
+
+## 6. UMA VRAM Profiles & Model Fleet Allocation (Ryzen 9 5900HX / Vega APU)
+
+### 6.1 VRAM Allocation Profiles (8GB vs 10GB vs 16GB UMA)
+
+On AMD APU architectures with Unified Memory Architecture (UMA), the VRAM envelope allocated in BIOS dictates both the viable model parameter class and the available KV-cache headroom:
+
+| Allocation Profile | Usable Model VRAM | Reserved System RAM | Recommended Active Models | Operational Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **8GB UMA** | ~6.0 GB | ~2.0 GB OS / Services | `qwen2.5-coder:3b` (1.9 GB)<br>`gemma3:4b-it-qat-4k` (4.0 GB) | High-speed lightweight execution; avoids VRAM swap to system RAM. |
+| **10GB UMA** | ~8.0 GB | ~2.0 GB OS / Services | `qwen2.5-coder:7b-instruct-q4_K_M` (4.7 GB)<br>`phi4-mini:latest` (2.5 GB) | Standard sweet spot for 7B coding models with smooth desktop operation. |
+| **16GB UMA** | ~13.5 GB | ~2.5 GB OS / Services | `qwen2.5-coder:7b-instruct-q4_K_M` (4.7 GB)<br>`deepseek-r1:8b-4k` (5.2 GB) | **Dual-Model Co-Residency**: Both models pinned simultaneously via `keep_alive: -1`. |
+
+### 6.2 The 14B Parameter Class Math & APU Bandwidth Limits
+Dense 14B models (e.g. `qwen2.5-coder:14b`, `phi4:latest`, or `deepseek-r1:14b`) require **9.0 GB to 9.5 GB** for quantized weights alone. On a 16GB UMA configuration:
+1. Model weights occupy ~9.5 GB, leaving < 6.5 GB for KV-cache and system memory.
+2. Context windows extending past 8,192 tokens balloon KV-cache allocations, triggering system page swapping.
+3. Due to shared DDR4 system memory bandwidth on mobile APUs, memory swapping collapses generation throughput from 8-10 tok/s down to 2-3 tok/s.
+4. **Guideline**: Coder models in the automated worker loop should be constrained to 3B-7B parameter classes or dense 14B models with strict 4k context limits (`-4k`).
+
+### 6.3 Strategic Role Tiering vs. Unified Dense Execution
+- **Unified Dense Worker Loop (Primary)**: Use `qwen2.5-coder:7b-instruct-q4_K_M` and `qwen2.5-coder:3b` for automated code generation. They output formatted code blocks directly without verbose `<think>` internal monologues, easily finishing inside 180s timeouts.
+- **Segregated Reasoning (Phase 77)**: Restrict reasoning models (`deepseek-r1:8b-4k`) strictly to Stage 1 (Planning) or manual debugging via the UI. Isolate cognitive traces from Stage 2 (Generation) to prevent parser collisions.
+- **Model Pruning Invariant**: Always prioritize `-4k` variants (e.g. `deepseek-r1:8b-4k`, `gemma3:4b-it-qat-4k`) over unconstrained context variants to eliminate memory fragmentation on Vega APU architectures.
+
