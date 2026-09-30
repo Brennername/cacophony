@@ -64,7 +64,10 @@ export class ContextMinimizer {
         try {
           const stat = fs.statSync(fullPath);
           if (stat.size <= this.maxFileSizeBytes) {
-            const content = fs.readFileSync(fullPath, "utf-8");
+            let content = fs.readFileSync(fullPath, "utf-8");
+            if (compressPrompt && (relPath.endsWith(".ts") || relPath.endsWith(".js") || relPath.endsWith(".tsx"))) {
+              content = this.compressor.compress(content, true).compressed;
+            }
             fileContents.set(relPath, content);
           } else {
             fileContents.set(relPath, `[File exceeds size limit: ${stat.size} bytes]`);

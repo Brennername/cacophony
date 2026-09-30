@@ -41,7 +41,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --global --add safe.directory "*"
 
 ENV NODE_ENV=production
 ENV DB_DRIVER=pglite

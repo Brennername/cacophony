@@ -55,6 +55,11 @@ export class GitWorktreeManager {
    */
   public async initialize(): Promise<void> {
     await fs.mkdir(this.workspacesRoot, { recursive: true });
+    try {
+      await execAsync('git config --global --add safe.directory "*"');
+    } catch {
+      // non-fatal
+    }
   }
 
   /**
