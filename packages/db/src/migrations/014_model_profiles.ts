@@ -28,9 +28,13 @@ export const migration014: Migration = {
           is_active BOOLEAN NOT NULL DEFAULT TRUE,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
-        CREATE INDEX IF NOT EXISTS idx_model_tuning_profiles_name ON model_tuning_profiles(model_name);
-        CREATE INDEX IF NOT EXISTS idx_model_tuning_profiles_role ON model_tuning_profiles(role);
+        )
+      `);
+      await driver.execute(`
+        CREATE INDEX IF NOT EXISTS idx_model_tuning_profiles_name ON model_tuning_profiles(model_name)
+      `);
+      await driver.execute(`
+        CREATE INDEX IF NOT EXISTS idx_model_tuning_profiles_role ON model_tuning_profiles(role)
       `);
     } else {
       await driver.execute(`
