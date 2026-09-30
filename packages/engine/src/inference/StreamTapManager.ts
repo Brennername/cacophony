@@ -1,9 +1,17 @@
 import { EventEmitter } from "node:events";
 import type { StageName, StageStatus } from "@cacophony/shared-types";
+import { ReasoningStreamDemuxer } from "./ReasoningStreamDemuxer.js";
 
 export interface StreamTokenEvent {
   readonly taskId: string;
   readonly token: string;
+  readonly timestamp: number;
+}
+
+export interface DemuxedTokenEvent {
+  readonly taskId: string;
+  readonly chunk: string;
+  readonly type: "reasoning" | "code";
   readonly timestamp: number;
 }
 
@@ -26,6 +34,7 @@ export class StreamTapManager {
   private activeTaskId: string | null = null;
 
   private readonly taskBuffers = new Map<string, string>();
+  private readonly taskDemuxers = new Map<string, ReasoningStreamDemuxer>();
   private readonly maxBufferSize = 25000;
 
   constructor() {
@@ -47,20 +56,60 @@ export class StreamTapManager {
   }
 
   /**
-   * Emits a generated token to all active stream tap listeners and stores in ring buffer.
+   * Emits a generated token to all active stream tap listeners, updates the ring buffer,
+   * and runs through ReasoningStreamDemuxer to emit dual reasoning_chunk and code_chunk events.
    */
   public emitToken(taskId: string, token: string): void {
     const current = this.taskBuffers.get(taskId) || "";
     const updated = (current + token).slice(-this.maxBufferSize);
     this.taskBuffers.set(taskId, updated);
 
+    const now = Date.now();
     const event: StreamTokenEvent = {
       taskId,
       token,
-      timestamp: Date.now()
+      timestamp: now
     };
     this.emitter.emit("token", event);
     this.emitter.emit(`token:${taskId}`, event);
+
+    // Run token through the task's demuxer
+    let demuxer = this.taskDemuxers.get(taskId);
+    if (!demuxer) {
+      demuxer = new ReasoningStreamDemuxer();
+      this.taskDemuxers.set(taskId, demuxer);
+    }
+
+    const chunks = demuxer.feed(token);
+    for (const chunk of chunks) {
+      const eventName = chunk.type === "reasoning" ? "reasoning_chunk" : "code_chunk";
+      const demuxedEvent: DemuxedTokenEvent = {
+        taskId,
+        chunk: chunk.content,
+        type: chunk.type,
+        timestamp: now
+      };
+      this.emitter.emit(eventName, demuxedEvent);
+      this.emitter.emit(`${eventName}:${taskId}`, demuxedEvent);
+    }
+  }
+
+  /**
+   * Returns the task's accumulated reasoning transcript from demuxer.
+   */
+  public getReasoningTranscript(taskId?: string): string {
+    const target = taskId || this.activeTaskId;
+    if (!target) return "";
+    return this.taskDemuxers.get(target)?.getAccumulatedReasoning() || "";
+  }
+
+  /**
+   * Returns the task's accumulated executable code from demuxer.
+   */
+  public getDemuxedCode(taskId?: string): string {
+    const target = taskId || this.activeTaskId;
+    if (!target) return "";
+    return this.taskDemuxers.get(target)?.getAccumulatedCode() || "";
   }
 
   /**
@@ -72,14 +121,14 @@ export class StreamTapManager {
     return this.taskBuffers.get(target) || "";
   }
 
-
   /**
-   * Clears the buffer for a task.
+   * Clears the buffer and demuxer state for a task.
    */
   public clearBuffer(taskId?: string): void {
     const target = taskId || this.activeTaskId;
     if (!target) return;
     this.taskBuffers.delete(target);
+    this.taskDemuxers.delete(target);
   }
 
   /**
@@ -88,6 +137,28 @@ export class StreamTapManager {
    */
   public tap(listener: (event: StreamTokenEvent) => void, taskId?: string): () => void {
     const eventName = taskId ? `token:${taskId}` : "token";
+    this.emitter.on(eventName, listener);
+    return () => {
+      this.emitter.off(eventName, listener);
+    };
+  }
+
+  /**
+   * Subscribes a listener to live reasoning chunk events.
+   */
+  public tapReasoning(listener: (event: DemuxedTokenEvent) => void, taskId?: string): () => void {
+    const eventName = taskId ? `reasoning_chunk:${taskId}` : "reasoning_chunk";
+    this.emitter.on(eventName, listener);
+    return () => {
+      this.emitter.off(eventName, listener);
+    };
+  }
+
+  /**
+   * Subscribes a listener to live code chunk events.
+   */
+  public tapCode(listener: (event: DemuxedTokenEvent) => void, taskId?: string): () => void {
+    const eventName = taskId ? `code_chunk:${taskId}` : "code_chunk";
     this.emitter.on(eventName, listener);
     return () => {
       this.emitter.off(eventName, listener);

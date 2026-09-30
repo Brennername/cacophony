@@ -2,7 +2,7 @@ import { Component, inject, signal, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
 
-export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'stderr';
+export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cognitive' | 'stderr';
 
 /**
  * Mobile-first comprehensive Task Drill-Down Modal dialog:
@@ -64,6 +64,13 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'stderr'
               (click)="activeTab.set('stream')"
             >
               Stream Log
+            </button>
+            <button
+              class="tab-btn touch-target"
+              [class.active]="activeTab() === 'cognitive'"
+              (click)="activeTab.set('cognitive')"
+            >
+              Cognitive Trace
             </button>
             <button
               class="tab-btn touch-target"
@@ -179,7 +186,64 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'stderr'
               </div>
             }
 
-            <!-- 5. TEST STDERR TAB -->
+            <!-- 5. COGNITIVE TRACE TAB (Reasoning & Consensus Distillation) -->
+            @if (activeTab() === 'cognitive') {
+              <div class="section-block">
+                @if (opinionData(); as op) {
+                  <!-- Distilled Opinion Card -->
+                  <div class="distilled-opinion-card">
+                    <div class="opinion-header">
+                      <div class="opinion-title-row">
+                        <span class="opinion-tag">DISTILLED ARCHITECTURAL OPINION</span>
+                        <span class="confidence-badge font-mono">Confidence: {{ Math.round(op.opinion.confidenceScore * 100) }}%</span>
+                      </div>
+                      <p class="opinion-summary">{{ op.opinion.summary }}</p>
+                    </div>
+
+                    @if (op.opinion.keyDecisions.length > 0) {
+                      <div class="opinion-section">
+                        <span class="opinion-subhead">Key Decisions</span>
+                        <ul class="opinion-list">
+                          @for (decision of op.opinion.keyDecisions; track decision) {
+                            <li>{{ decision }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+
+                    @if (op.opinion.identifiedRisks.length > 0) {
+                      <div class="opinion-section risks">
+                        <span class="opinion-subhead">Identified Risks & Edge Cases</span>
+                        <ul class="opinion-list">
+                          @for (risk of op.opinion.identifiedRisks; track risk) {
+                            <li>{{ risk }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Raw <think> Stream Output -->
+                  <div class="cognitive-trace-container">
+                    <div class="header-with-action">
+                      <h4 class="section-title">Raw &lt;think&gt; Cognitive Trace</h4>
+                      @if (op.reasoningTranscript) {
+                        <button class="copy-action-btn" (click)="copyText(op.reasoningTranscript, 'Cognitive trace copied!')">Copy Thoughts</button>
+                      }
+                    </div>
+                    <div class="thoughts-terminal-box">
+                      <pre class="thoughts-content font-mono"><code>{{ op.reasoningTranscript || '// No internal reasoning emitted for this model.' }}</code></pre>
+                    </div>
+                  </div>
+                } @else if (loadingOpinion()) {
+                  <div class="empty-tab-state">Distilling model cognitive trace and opinion...</div>
+                } @else {
+                  <div class="empty-tab-state">No cognitive trace or reasoning data recorded for this task.</div>
+                }
+              </div>
+            }
+
+            <!-- 6. TEST STDERR TAB -->
             @if (activeTab() === 'stderr') {
               <div class="section-block">
                 <div class="header-with-action">
@@ -592,6 +656,97 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'stderr'
       line-height: 1.4;
     }
 
+    /* Cognitive Trace & Distilled Opinion Styles */
+    .distilled-opinion-card {
+      background: rgba(14, 165, 233, 0.08);
+      border: 1px solid rgba(14, 165, 233, 0.3);
+      border-radius: var(--radius-md, 8px);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .opinion-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .opinion-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .opinion-tag {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #38bdf8;
+    }
+
+    .confidence-badge {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      border-radius: var(--radius-full, 9999px);
+      padding: 0.125rem 0.5rem;
+    }
+
+    .opinion-summary {
+      font-size: 0.875rem;
+      line-height: 1.4;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .opinion-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .opinion-subhead {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    .opinion-list {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.8125rem;
+      line-height: 1.4;
+      color: var(--text-secondary);
+    }
+
+    .opinion-section.risks .opinion-subhead {
+      color: #f59e0b;
+    }
+
+    .thoughts-terminal-box {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm, 6px);
+      background: #090d16;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .thoughts-content {
+      margin: 0;
+      padding: 0.875rem;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: #a5b4fc;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+
     .modal-footer {
       display: flex;
       justify-content: flex-end;
@@ -636,22 +791,39 @@ export class TaskDetailModalComponent {
   // Task-specific stream buffer fetched from backend
   public readonly taskStreamBuffer = signal<string | null>(null);
 
+  // Cognitive trace and distilled opinion state
+  public readonly opinionData = signal<{
+    taskId: string;
+    hasReasoning: boolean;
+    reasoningTranscript: string;
+    thinkingDurationMs: number;
+    opinion: {
+      summary: string;
+      keyDecisions: string[];
+      identifiedRisks: string[];
+      confidenceScore: number;
+    };
+  } | null>(null);
+  public readonly loadingOpinion = signal<boolean>(false);
+  public readonly Math = Math;
+
   constructor() {
     effect(() => {
       const task = this.store.selectedTask();
       if (!task) {
         this.taskStreamBuffer.set(null);
+        this.opinionData.set(null);
         return;
       }
 
       // If selected task is the active RUNNING task, liveStreamBuffer reflects it live
       if (task.status === 'RUNNING') {
         this.taskStreamBuffer.set(null);
-        return;
+      } else {
+        void this.fetchHistoricalBuffer(task.id);
       }
 
-      // Otherwise fetch historical token buffer for this specific task
-      void this.fetchHistoricalBuffer(task.id);
+      void this.fetchOpinion(task.id);
     });
   }
 
@@ -664,6 +836,23 @@ export class TaskDetailModalComponent {
       }
     } catch {
       this.taskStreamBuffer.set(null);
+    }
+  }
+
+  private async fetchOpinion(taskId: string): Promise<void> {
+    this.loadingOpinion.set(true);
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/opinion`);
+      if (res.ok) {
+        const data = await res.json();
+        this.opinionData.set(data);
+      } else {
+        this.opinionData.set(null);
+      }
+    } catch {
+      this.opinionData.set(null);
+    } finally {
+      this.loadingOpinion.set(false);
     }
   }
 

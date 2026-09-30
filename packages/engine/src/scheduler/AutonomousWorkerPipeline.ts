@@ -83,7 +83,10 @@ export class AutonomousWorkerPipeline {
     durationMs = 0,
     logOutput: string | null = null,
     tokensSent = 0,
-    tokensReceived = 0
+    tokensReceived = 0,
+    reasoningTranscript: string | null = null,
+    distilledOpinion: string | null = null,
+    thinkingDurationMs = 0
   ): Promise<number | null> {
     let stageId: number | null = null;
     if (this.stageRepo) {
@@ -102,7 +105,10 @@ export class AutonomousWorkerPipeline {
             logOutput || "",
             tokensSent,
             tokensReceived,
-            durationMs
+            durationMs,
+            reasoningTranscript,
+            distilledOpinion,
+            thinkingDurationMs
           );
           stageId = activeStage.id;
         }
@@ -192,6 +198,10 @@ export class AutonomousWorkerPipeline {
         return { success: false, tokensPerSec: measuredTps };
       }
 
+      const reasoningTranscript = this.streamTapManager
+        ? this.streamTapManager.getReasoningTranscript(taskId)
+        : null;
+
       await this.recordAndEmitStage(
         taskId,
         "generation",
@@ -199,7 +209,10 @@ export class AutonomousWorkerPipeline {
         generationDuration,
         `Generated code block in ${parseResult.attempts || 1} attempts (${parseResult.tokensPerSec || 0} tok/s)`,
         parseResult.tokensPrompt || 0,
-        parseResult.tokensCompletion || 0
+        parseResult.tokensCompletion || 0,
+        reasoningTranscript || null,
+        null,
+        reasoningTranscript ? Math.round(generationDuration * 0.4) : 0
       );
       // Capture measured inference velocity for the scheduler to persist
       measuredTps = parseResult.tokensPerSec || 0;

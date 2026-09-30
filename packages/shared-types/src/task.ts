@@ -104,6 +104,9 @@ export interface TaskStageRecord {
   readonly durationMs: number;
   readonly startedAt: string;
   readonly completedAt: string | null;
+  readonly reasoningTranscript?: string | null | undefined;
+  readonly distilledOpinion?: string | null | undefined;
+  readonly thinkingDurationMs?: number | undefined;
 }
 
 /**

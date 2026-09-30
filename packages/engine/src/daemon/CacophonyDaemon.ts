@@ -63,6 +63,7 @@ export class CacophonyDaemon {
   private modelManager?: import("../inference/OllamaModelManager.js").OllamaModelManager | undefined;
   private tenancyGuard?: import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined;
   private benchmarkRunner?: import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined;
+  private distillationService?: import("../inference/ReasoningDistillationService.js").ReasoningDistillationService | undefined;
   private planningTimer: NodeJS.Timeout | null = null;
   private pruningTimer: NodeJS.Timeout | null = null;
   private startTime = 0;
@@ -184,6 +185,9 @@ export class CacophonyDaemon {
       : new OllamaProvider();
 
     this.benchmarkRunner = new ModelBenchmarkRunner(primaryInferenceProvider as any, this.healthRepo);
+
+    const { ReasoningDistillationService } = await import("../inference/ReasoningDistillationService.js");
+    this.distillationService = new ReasoningDistillationService(primaryInferenceProvider as any);
 
     const { FrontierFallbackRouter } = await import("../inference/FrontierFallbackRouter.js");
     this.fallbackRouter = new FrontierFallbackRouter("deepseek-r1:8b");
@@ -472,6 +476,10 @@ export class CacophonyDaemon {
 
   public getBenchmarkRunner(): import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined {
     return this.benchmarkRunner;
+  }
+
+  public getDistillationService(): import("../inference/ReasoningDistillationService.js").ReasoningDistillationService | undefined {
+    return this.distillationService;
   }
 
   private async handleCommand(command: string, params?: Record<string, unknown>): Promise<unknown> {

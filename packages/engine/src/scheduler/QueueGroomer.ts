@@ -177,6 +177,14 @@ export class QueueGroomer {
       }
     }
 
+    // 3b. Inject Archetype-Specific Directives (Reasoning vs Direct Coder)
+    const modelTag = task.modelAssigned || "";
+    const archetypeDirective = this.formatPromptForModelArchetype(modelTag);
+    if (archetypeDirective) {
+      taskDirectives.push(archetypeDirective);
+      groomNotes.push(`Injected archetype directive for model: ${modelTag}`);
+    }
+
     const missingDirectives = taskDirectives.filter(
       (d) => !enrichedPrompt.includes(d.split(":")[0]!)
     );
@@ -202,6 +210,26 @@ export class QueueGroomer {
       groomNotes,
       stackProfile: activeProfile
     };
+  }
+
+  /**
+   * Formats archetype-specific guidance based on the assigned model family:
+   * - Reasoning models (DeepSeek R1, Qwen Thinking) are instructed to enclose reasoning in <think> tags.
+   * - Direct coder models (Qwen 2.5 Coder, Gemma, CodeLlama) are instructed to output markdown code blocks immediately.
+   */
+  public formatPromptForModelArchetype(modelTag: string): string | null {
+    if (!modelTag) return null;
+    const lower = modelTag.toLowerCase();
+
+    if (lower.includes("r1") || lower.includes("think") || lower.includes("reasoning")) {
+      return "Cognitive Reasoning Directive: Enclose your complete strategic thought process, trade-off evaluations, and architectural edge cases inside <think>...</think> tags before emitting the final markdown code block.";
+    }
+
+    if (lower.includes("coder") || lower.includes("gemma") || lower.includes("instruct")) {
+      return "Direct Coder Directive: Do not output verbose internal monologues. Jump immediately to synthesized TypeScript code enclosed in markdown code fences.";
+    }
+
+    return null;
   }
 
 

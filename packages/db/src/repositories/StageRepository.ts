@@ -12,13 +12,17 @@ interface StageRow {
   readonly duration_ms: number;
   readonly started_at: string;
   readonly completed_at: string | null;
+  readonly reasoning_transcript?: string | null;
+  readonly distilled_opinion?: string | null;
+  readonly thinking_duration_ms?: number | null;
 }
 
 /**
  * StageRepository
  *
  * Manages fine-grained execution steps within active tasks,
- * capturing stage duration, token accounting, and streaming logs.
+ * capturing stage duration, token accounting, streaming logs,
+ * reasoning transcripts, and distilled opinions.
  */
 export class StageRepository {
   private readonly driver: IDatabaseDriver;
@@ -56,7 +60,8 @@ export class StageRepository {
   }
 
   /**
-   * Completes a task stage with final verdict, output logs, token statistics, and duration.
+   * Completes a task stage with final verdict, output logs, token statistics, duration,
+   * and optional cognitive reasoning trace / distilled opinion metrics.
    */
   public async recordStageCompletion(
     id: number,
@@ -64,15 +69,30 @@ export class StageRepository {
     logOutput: string,
     tokensSent: number,
     tokensReceived: number,
-    durationMs: number
+    durationMs: number,
+    reasoningTranscript?: string | null,
+    distilledOpinion?: string | null,
+    thinkingDurationMs?: number
   ): Promise<void> {
     const completedAt = new Date().toISOString();
     await this.driver.execute(
       `UPDATE task_stages SET 
         stage_status = $1, log_output = $2, tokens_sent = $3,
-        tokens_received = $4, duration_ms = $5, completed_at = $6
-       WHERE id = $7`,
-      [status, logOutput, tokensSent, tokensReceived, durationMs, completedAt, id]
+        tokens_received = $4, duration_ms = $5, completed_at = $6,
+        reasoning_transcript = $7, distilled_opinion = $8, thinking_duration_ms = $9
+       WHERE id = $10`,
+      [
+        status,
+        logOutput,
+        tokensSent,
+        tokensReceived,
+        durationMs,
+        completedAt,
+        reasoningTranscript ?? null,
+        distilledOpinion ?? null,
+        thinkingDurationMs ?? 0,
+        id
+      ]
     );
   }
 
@@ -98,7 +118,10 @@ export class StageRepository {
       tokensReceived: Number(row.tokens_received),
       durationMs: Number(row.duration_ms),
       startedAt: String(row.started_at),
-      completedAt: row.completed_at ? String(row.completed_at) : null
+      completedAt: row.completed_at ? String(row.completed_at) : null,
+      ...(row.reasoning_transcript !== undefined ? { reasoningTranscript: row.reasoning_transcript } : {}),
+      ...(row.distilled_opinion !== undefined ? { distilledOpinion: row.distilled_opinion } : {}),
+      ...(row.thinking_duration_ms !== undefined && row.thinking_duration_ms !== null ? { thinkingDurationMs: Number(row.thinking_duration_ms) } : {})
     };
   }
 }

@@ -73,6 +73,38 @@ export class CacophonyHttpServer {
         }
       });
 
+      streamTap.tapReasoning((event) => {
+        const payload = `data: ${JSON.stringify({
+          type: "reasoning_chunk",
+          taskId: event.taskId,
+          chunk: event.chunk,
+          timestamp: event.timestamp
+        })}\n\n`;
+        for (const client of this.sseClients) {
+          try {
+            client.write(payload);
+          } catch {
+            this.sseClients.delete(client);
+          }
+        }
+      });
+
+      streamTap.tapCode((event) => {
+        const payload = `data: ${JSON.stringify({
+          type: "code_chunk",
+          taskId: event.taskId,
+          chunk: event.chunk,
+          timestamp: event.timestamp
+        })}\n\n`;
+        for (const client of this.sseClients) {
+          try {
+            client.write(payload);
+          } catch {
+            this.sseClients.delete(client);
+          }
+        }
+      });
+
       this.untapStageListener = streamTap.tapStageTransitions((event) => {
         const payload = `data: ${JSON.stringify({
           type: "stage_transition",
@@ -568,6 +600,37 @@ export class CacophonyHttpServer {
       }));
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ taskId, stages: spans }));
+      return;
+    }
+
+    // 4a2. REST API: GET /api/tasks/:id/opinion - Distilled Cognitive Opinion & Reasoning Metrics
+    const opinionMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/opinion$/);
+    if (opinionMatch && req.method === "GET") {
+      const taskId = opinionMatch[1]!;
+      const stageRepo = this.daemon.getStageRepository();
+      const stages = await stageRepo.getStagesForTask(taskId);
+      const genStage = stages.find((s) => s.stageName === "generation");
+      const reasoningTranscript = genStage?.reasoningTranscript || "";
+      const thinkingDurationMs = genStage?.thinkingDurationMs || 0;
+
+      const distiller = this.daemon.getDistillationService();
+      const opinion = distiller
+        ? await distiller.distillOpinion(reasoningTranscript)
+        : {
+            summary: reasoningTranscript ? "Extracted reasoning transcript." : "No cognitive trace available.",
+            keyDecisions: [],
+            identifiedRisks: [],
+            confidenceScore: 0.8
+          };
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        taskId,
+        hasReasoning: Boolean(reasoningTranscript),
+        reasoningTranscript,
+        thinkingDurationMs,
+        opinion
+      }));
       return;
     }
 
