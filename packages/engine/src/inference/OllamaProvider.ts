@@ -70,10 +70,13 @@ export class OllamaProvider implements IInferenceProvider {
       readonly total_duration?: number;
     };
 
-    // If content is empty but thinking exists (e.g. deepseek-r1 reasoning output), use thinking as content fallback
-    const rawContent = data.message?.content?.trim()
-      ? data.message.content
-      : (data.message?.thinking ?? "");
+    // If thinking exists (e.g. deepseek-r1 reasoning output), enclose in <think> tags so downstream demuxers and parsers preserve reasoning
+    const thinking = data.message?.thinking?.trim();
+    const content = data.message?.content?.trim() || "";
+    let rawContent = content;
+    if (thinking) {
+      rawContent = `<think>\n${thinking}\n</think>\n${content}`;
+    }
 
     const latencyMs = Math.max(1, Date.now() - startMs);
     const tokensPrompt = data.prompt_eval_count ?? 0;
@@ -131,6 +134,8 @@ export class OllamaProvider implements IInferenceProvider {
     let tokensCompletion = 0;
 
     let buffer = "";
+    let inThinkingChunkMode = false;
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -148,17 +153,39 @@ export class OllamaProvider implements IInferenceProvider {
             readonly eval_count?: number;
             readonly done?: boolean;
           };
-          const chunkText = parsed.message?.content || parsed.message?.thinking || "";
-          if (chunkText) {
-            accumulatedContent += chunkText;
-            onChunk(chunkText);
+
+          const thinking = parsed.message?.thinking;
+          const content = parsed.message?.content;
+
+          if (thinking) {
+            if (!inThinkingChunkMode) {
+              inThinkingChunkMode = true;
+              accumulatedContent += "<think>";
+              onChunk("<think>");
+            }
+            accumulatedContent += thinking;
+            onChunk(thinking);
+          } else if (content) {
+            if (inThinkingChunkMode) {
+              inThinkingChunkMode = false;
+              accumulatedContent += "</think>";
+              onChunk("</think>");
+            }
+            accumulatedContent += content;
+            onChunk(content);
           }
+
           if (parsed.prompt_eval_count) tokensPrompt = parsed.prompt_eval_count;
           if (parsed.eval_count) tokensCompletion = parsed.eval_count;
         } catch {
           // Ignore JSON chunk parse error
         }
       }
+    }
+
+    if (inThinkingChunkMode) {
+      accumulatedContent += "</think>";
+      onChunk("</think>");
     }
 
     const latencyMs = Math.max(1, Date.now() - startMs);

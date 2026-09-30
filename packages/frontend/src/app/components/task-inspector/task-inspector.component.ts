@@ -1,4 +1,4 @@
-import { Component, inject, effect, viewChild, ElementRef, computed } from '@angular/core';
+import { Component, inject, effect, viewChild, ElementRef, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 import { StageProgressBarComponent, type StageStepInfo } from '../stage-progress-bar/stage-progress-bar.component';
@@ -81,16 +81,33 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
           }
         </div>
 
-        <!-- Live Terminal Stream Preview -->
+        <!-- Live Terminal Stream Preview (Dual Channel: Code vs Cognitive Trace) -->
         <div class="terminal-box">
           <div class="terminal-bar">
-            <span class="dot red"></span>
-            <span class="dot yellow"></span>
-            <span class="dot green"></span>
-            <span class="terminal-title">live-llm-stream (task: {{ task.id }})</span>
+            <div class="stream-channel-tabs">
+              <button
+                class="stream-tab-btn"
+                [class.active]="activeStreamChannel() === 'combined'"
+                (click)="activeStreamChannel.set('combined')"
+              >
+                Output Stream
+              </button>
+              <button
+                class="stream-tab-btn cognitive"
+                [class.active]="activeStreamChannel() === 'cognitive'"
+                (click)="activeStreamChannel.set('cognitive')"
+              >
+                Cognitive Trace @if (liveReasoningBuffer().length > 0) { <span class="trace-indicator">●</span> }
+              </button>
+            </div>
+            <span class="terminal-title">task: {{ task.id }}</span>
             <button class="expand-btn" (click)="drillDown(task)">Expand Log</button>
           </div>
-          <pre #terminalContent class="terminal-content"><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+          @if (activeStreamChannel() === 'cognitive') {
+            <pre #terminalContent class="terminal-content cognitive-content"><code>{{ liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...' }}</code></pre>
+          } @else {
+            <pre #terminalContent class="terminal-content"><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+          }
         </div>
 
         <!-- Interactive Gantt Transport Timeline -->
@@ -385,27 +402,67 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
     .terminal-bar {
       display: flex;
       align-items: center;
-      gap: 0.375rem;
-      padding: 0.5rem 0.75rem;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
       background: #11141c;
       border-bottom: 1px solid var(--border-subtle);
     }
 
-    .terminal-bar .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
+    .stream-channel-tabs {
+      display: flex;
+      gap: 0.25rem;
     }
 
-    .terminal-bar .dot.red { background: #ef4444; }
-    .terminal-bar .dot.yellow { background: #f59e0b; }
-    .terminal-bar .dot.green { background: #10b981; }
+    .stream-tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm, 4px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+
+    .stream-tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .stream-tab-btn.active {
+      color: var(--color-brand);
+      background: rgba(14, 165, 233, 0.15);
+      border-color: rgba(14, 165, 233, 0.4);
+    }
+
+    .stream-tab-btn.cognitive.active {
+      color: #a5b4fc;
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .trace-indicator {
+      color: #818cf8;
+      font-size: 0.6rem;
+      animation: pulse-glow 1.5s infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
 
     .terminal-title {
       font-family: var(--font-mono);
       font-size: 0.75rem;
       color: var(--text-secondary);
-      margin-left: 0.5rem;
+      margin-left: auto;
+      margin-right: 0.5rem;
     }
 
     .terminal-content {
@@ -420,6 +477,11 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
       overflow-y: auto;
       max-width: 100%;
       box-sizing: border-box;
+    }
+
+    .terminal-content.cognitive-content {
+      color: #a5b4fc;
+      background: #090d16;
     }
 
     .task-info-banner.clickable {
@@ -467,6 +529,8 @@ export class TaskInspectorComponent {
   private readonly store = inject(ArenaStateStore);
   public readonly activeTask = this.store.activeTask;
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
+  public readonly liveReasoningBuffer = this.store.liveReasoningBuffer;
+  public readonly activeStreamChannel = signal<'combined' | 'cognitive'>('combined');
 
   public readonly liveVelocity = computed(() => this.store.liveTokenVelocity());
   public readonly runVelocity = computed(() => {

@@ -189,7 +189,21 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
             <!-- 5. COGNITIVE TRACE TAB (Reasoning & Consensus Distillation) -->
             @if (activeTab() === 'cognitive') {
               <div class="section-block">
-                @if (opinionData(); as op) {
+                @if (task.status === 'RUNNING' && store.liveReasoningBuffer(); as liveThoughts) {
+                  <!-- Live Streaming Cognitive Trace -->
+                  <div class="cognitive-trace-container">
+                    <div class="header-with-action">
+                      <div class="opinion-title-row">
+                        <span class="opinion-tag">LIVE STREAMING COGNITIVE TRACE</span>
+                        <span class="confidence-badge font-mono">LIVE IN VRAM</span>
+                      </div>
+                      <button class="copy-action-btn" (click)="copyText(liveThoughts, 'Cognitive trace copied!')">Copy Thoughts</button>
+                    </div>
+                    <div class="thoughts-terminal-box">
+                      <pre class="thoughts-content font-mono"><code>{{ liveThoughts }}</code></pre>
+                    </div>
+                  </div>
+                } @else if (opinionData(); as op) {
                   <!-- Distilled Opinion Card -->
                   <div class="distilled-opinion-card">
                     <div class="opinion-header">

@@ -66,8 +66,14 @@ export interface ProcessItem {
   providedIn: 'root',
 })
 export class ArenaStateStore {
-  // Live Terminal Stream Buffer
+  // Live Terminal Stream Buffer (Raw combined output)
   public readonly liveStreamBuffer = signal<string>('');
+
+  // Live Cognitive Trace (<think> tokens demuxed in real time)
+  public readonly liveReasoningBuffer = signal<string>('');
+
+  // Live Code Generation Stream (demuxed code and markdown artifacts)
+  public readonly liveCodeBuffer = signal<string>('');
 
   // Live Instantaneous Token Velocity (tokens per second over rolling 2s window)
   public readonly liveTokenVelocity = signal<number>(0);
@@ -263,6 +269,8 @@ export class ArenaStateStore {
             if (taskId && taskId !== this.currentTaskIdForRun) {
               this.currentTaskIdForRun = taskId;
               this.liveStreamBuffer.set('');
+              this.liveReasoningBuffer.set('');
+              this.liveCodeBuffer.set('');
               this.runTokenCount = 0;
               this.runStartTimestamp = null;
               this.runTokenVelocity.set(0);
@@ -350,6 +358,24 @@ export class ArenaStateStore {
             const velocity = count > 1 ? Number((count / 2.0).toFixed(1)) : (count === 1 ? 1.0 : 0.0);
             this.liveTokenVelocity.set(velocity);
             this.recordModelVelocity(this.telemetry().activeModel, velocity);
+          }
+          if (data.type === 'reasoning_chunk') {
+            const chunk = data.chunk ?? '';
+            if (chunk) {
+              this.liveReasoningBuffer.update((prev) => {
+                const updated = prev + chunk;
+                return updated.length > 25000 ? updated.slice(-25000) : updated;
+              });
+            }
+          }
+          if (data.type === 'code_chunk') {
+            const chunk = data.chunk ?? '';
+            if (chunk) {
+              this.liveCodeBuffer.update((prev) => {
+                const updated = prev + chunk;
+                return updated.length > 25000 ? updated.slice(-25000) : updated;
+              });
+            }
           }
           if (data.type === 'stage_transition') {
             const taskId = data.taskId;
