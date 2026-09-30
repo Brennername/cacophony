@@ -260,3 +260,45 @@ export interface ExplorationDecision {
   readonly candidatePoolSize: number;
 }
 ```
+
+### 2.4 Continuous Observability, AST Surface & Air-Gapped Telemetry Contracts
+
+```typescript
+export interface CompoundCompletionMetrics {
+  readonly windowStart: string;
+  readonly windowEnd: string;
+  readonly totalTasksSampled: number;
+  readonly syntacticYieldRate: number; // Accepted lines / generated lines [0.0, 1.0]
+  readonly effectiveTokenVelocity: number; // Raw tok/s * passRate
+  readonly defectHalfLifeMs: number; // Mean ms to self-heal or resolve failures
+  readonly astMutationDensity: number; // Functional AST mutations / raw byte diff
+  readonly thermalThrottlingIncidents: number;
+}
+
+export interface SymbolCallSignature {
+  readonly identifier: string;
+  readonly containingFile: string;
+  readonly kind: "method" | "function" | "class" | "interface" | "type_alias";
+  readonly signatureHash: string;
+  readonly isThirdParty: boolean;
+}
+
+export interface AstSurfaceCoverageMap {
+  readonly targetPackage: string;
+  readonly totalExposedSymbols: readonly SymbolCallSignature[];
+  readonly exercisedSymbols: readonly SymbolCallSignature[];
+  readonly unexercisedBlindspots: readonly SymbolCallSignature[];
+  readonly coverageRatio: number; // exercised / total [0.0, 1.0]
+}
+
+export interface NuusTelemetryReport {
+  readonly reportId: string;
+  readonly timestamp: string;
+  readonly interactionFrictionScore: number; // Computed from navigation drop-offs & latency [0.0, 1.0]
+  readonly affectedComponentRoute: string;
+  readonly correlatedAstNode?: string;
+  readonly anonymizedActionPattern: readonly string[];
+  readonly policyComplianceStatus: "COMPLIANT" | "REMEDIATION_REQUIRED" | "GUARDRAIL_BLOCKED";
+}
+```
+
