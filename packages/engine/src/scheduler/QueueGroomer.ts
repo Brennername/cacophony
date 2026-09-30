@@ -102,9 +102,16 @@ export class QueueGroomer {
         groomNotes.push(`Scoped test command to source test file: ${testCommand}`);
       } else if (focusFilesList.length > 0) {
         const focus = focusFilesList[0]!;
-        testCommand = `node --check ${focus}`;
-        modified = true;
-        groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk; scoped to focus file verification: ${testCommand}`);
+        const isJsTs = /\.(?:ts|js|mjs|cjs)$/i.test(focus);
+        if (isJsTs) {
+          testCommand = `node --check ${focus}`;
+          modified = true;
+          groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk; scoped to focus file verification: ${testCommand}`);
+        } else {
+          testCommand = "";
+          modified = true;
+          groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk and focus file is non-executable; cleared test command`);
+        }
       } else {
         testCommand = "";
       }
@@ -311,6 +318,14 @@ export class QueueGroomer {
           if (firstFile.endsWith(".ts") || firstFile.endsWith(".js")) {
             return `node --check ${firstFile}`;
           }
+        }
+        if (pkgName === "frontend") {
+          // Frontend test execution uses karma/headless browser which requires display environment
+          // If firstFile is TypeScript, scope to syntax verification instead of full browser test
+          if (firstFile.endsWith(".ts")) {
+            return `node --check ${firstFile}`;
+          }
+          return null;
         }
         return `npm test --workspace=@cacophony/${pkgName} --if-present`;
       }

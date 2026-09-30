@@ -268,6 +268,52 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(groomed.scopedTestCommand, "node --check packages/engine/src/gitea/GitWorktreeManager.ts");
     });
+
+    test("should clear test command for non-executable markdown files when test suite does not exist", () => {
+      const task: TaskRecord = {
+        id: "task-groom-md",
+        title: "T50.1.3: Architecture documentation",
+        prompt: "Update architecture doc",
+        role: "doc_writer",
+        status: "PENDING",
+        priority: "P2",
+        modelAssigned: null,
+        testCommand: "npm test -- packages/engine/src/tests/non_existent_doc.test.ts",
+        focusFiles: "docs/architecture/overview.md",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      const groomed = groomer.groom(task);
+      assert.equal(groomed.scopedTestCommand, "");
+    });
+
+    test("should scope frontend focus file to syntax check instead of headless karma test", () => {
+      const task: TaskRecord = {
+        id: "task-groom-frontend",
+        title: "T50.1.4: Frontend component",
+        prompt: "Update dashboard component",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: "npm test",
+        focusFiles: "packages/frontend/src/app/dashboard.component.ts",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      const groomed = groomer.groom(task);
+      assert.equal(groomed.scopedTestCommand, "node --check packages/frontend/src/app/dashboard.component.ts");
+    });
   });
 
 

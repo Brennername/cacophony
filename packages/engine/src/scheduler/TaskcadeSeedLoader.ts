@@ -126,7 +126,9 @@ export class TaskcadeSeedLoader {
           lowerTest.includes("verify ci") ||
           lowerTest.includes("bin/cacophony")
         ) {
-          testCommand = focusFiles ? `node --check ${focusFiles.split(/\s+/)[0]}` : "npm test";
+          const firstFocus = focusFiles ? focusFiles.split(/\s+/)[0] : null;
+          const isJsTs = firstFocus ? /\.(?:ts|js|mjs|cjs)$/i.test(firstFocus) : false;
+          testCommand = isJsTs ? `node --check ${firstFocus}` : "";
         }
       }
 
