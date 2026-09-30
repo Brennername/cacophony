@@ -19,6 +19,9 @@ services:
       - GITEA_BASE_URL=${GITEA_BASE_URL:-http://cacophony-gitea:3000}
       - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
       - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
+      - GIT_REMOTE=${GIT_REMOTE:-gitea}
       - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
       - GITEA_OAUTH_CLIENT_SECRET=${GITEA_OAUTH_CLIENT_SECRET:-}
       - GITEA_OAUTH_REDIRECT_URI=${GITEA_OAUTH_REDIRECT_URI:-http://localhost:24072/auth/callback}
@@ -32,7 +35,7 @@ services:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw
       - ./workspaces:/app/workspaces:rw
-      - ./.git:/app/.git:ro
+      - ./.git:/app/.git:rw
       - ./.env:/app/.env:ro
       - /sys:/host/sys:ro
     extra_hosts:

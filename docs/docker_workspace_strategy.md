@@ -53,6 +53,7 @@ To balance durability, local configurability, and container sandboxing:
 | `./conf` | `/app/conf` | `ro` (Read-Only) | JSON runtime configuration defining model assignments, thresholds, and directives. |
 | `./data` | `/app/data` | `rw` (Read-Write) | PGlite embedded database files (`/app/data/cacophony_pglite`) and job logs. |
 | `./workspaces` | `/app/workspaces` | `rw` (Read-Write) | Sandboxed Git clones and ephemeral worktrees where agents perform work. |
+| `./.git` | `/app/.git` | `rw` (Read-Write) | Host Git metadata for branch locking and ephemeral worktrees. |
 | `./.env` | `/app/.env` | `ro` (Read-Only) | Secret environment variables (Gitea tokens, master vault keys, provider keys). |
 | `/sys/class/drm` | `/host/sys/class/drm` | `ro` (Read-Only) | Hardware GPU load and VRAM sysfs nodes passed to telemetry provider. |
 | `/sys/class/hwmon`| `/host/sys/class/hwmon`| `ro` (Read-Only) | Hardware thermal, voltage, and wattage sysfs nodes. |
