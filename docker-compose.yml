@@ -14,6 +14,8 @@ services:
       - DB_DRIVER=${DB_DRIVER:-pglite}
       - DB_PATH=/app/data/cacophony_pglite
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-16384}
+      - OLLAMA_NUM_PREDICT=${OLLAMA_NUM_PREDICT:-8192}
       - GITEA_BASE_URL=${GITEA_BASE_URL:-http://cacophony-gitea:3000}
       - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
       - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}

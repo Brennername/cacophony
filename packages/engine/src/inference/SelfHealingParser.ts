@@ -46,6 +46,25 @@ export class SelfHealingParser {
 
     const blocks = this.formatter.extractCodeBlocks(rawOutput);
     if (blocks.length === 0) {
+      // Check if output was truncated inside or immediately following a think block
+      if (rawOutput.includes("<think>") && !rawOutput.includes("</think>")) {
+        return {
+          valid: false,
+          code: null,
+          error: "Output was truncated inside the thinking block (<think>) before completing the analysis and writing code. Please continue immediately and emit the complete code inside markdown code fences (```).",
+          blocks: []
+        };
+      }
+
+      if (rawOutput.includes("</think>") && !rawOutput.includes("```")) {
+        return {
+          valid: false,
+          code: null,
+          error: "Thinking block completed, but response was truncated before emitting the code block. Provide the complete code implementation inside markdown code fences (```) now.",
+          blocks: []
+        };
+      }
+
       return {
         valid: false,
         code: null,

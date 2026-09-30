@@ -45,6 +45,7 @@
 > 2. **Priority 2: Phase 76 (Frontend Model Fleet Manager, Download Terminal & Tenancy Controls)**: High-density interactive UI on `/models` allowing operators to view installed models, trigger new downloads with real-time piped terminal logs, manage eviction policies, and configure tenancy protections.
 > 3. **Priority 3: Phase 77 (Reasoning Model `<think>` Stream Separation, Distillation & Opinion Synthesis)**: Token demuxer separating `<think>` cognitive traces from code, persisting distilled architectural opinions for MoE consensus, and providing differentiated UI views per model archetype.
 > 4. **Priority 4: Phase 78 (End-to-End In-House Pull Request Lifecycle & Review Pipeline)**: Provider-agnostic git PR integration (Gitea default + GitHub compatible) with ephemeral git worktree isolation (`workspaces/worktree-<taskId>`) and automated PR code reviews.
+> 5. **Priority 5: Phase 79 (Dynamic Model Profile Tuning, Multi-Model Cognitive Handoff & Prompt Compression)**: Whitebox per-model tuning (ctx, predict, temp), autonomous auto-tuning based on VRAM/throughput, cognitive handoff from reasoners to coders, and prompt compression.
 
 ---
 
@@ -1348,4 +1349,41 @@
   - [ ] T78.4.2: Add PR reviews tab in TaskDetailModalComponent displaying reviewer verdict, line-level comments, and SOLID compliance score. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: pr-reviews-tab] [Test: npm test]
   - [ ] T78.4.3: Add PR indicator icon and branch pill to TaskInspectorComponent stage progression bar during Stage 5 and Stage 6. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Template: stage-pr-indicator] [Test: npm test]
   - [ ] T78.4.4: Write frontend unit tests verifying PR badge rendering and link target formatting for both Gitea and GitHub URL patterns. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm test]
+
+---
+
+## Phase 79: Dynamic Model Profile Tuning, Multi-Model Cognitive Handoff & Prompt Compression
+*RDF Category: optimization*
+*Priority: SPRINT PRIORITY 5*
+
+### T79.1: Whitebox Model Tuning Configuration & Profile Persistence
+  - [ ] T79.1.1: Author database migration `014_model_profiles.ts` creating `model_tuning_profiles` table with columns: `id`, `model_name`, `role`, `num_predict`, `num_ctx`, `temperature`, `top_k`, `top_p`, `repeat_penalty`, `auto_tuned`, `is_active`, `created_at`, `updated_at`. [File: packages/db/src/migrations/014_model_profiles.ts] [Test: npm test -- packages/db]
+  - [ ] T79.1.2: Implement `ModelProfileRepository` in `packages/db/src/repositories/ModelProfileRepository.ts` with methods to fetch active profile by model/role, upsert custom profiles, and query auto-tuning metrics. [File: packages/db/src/repositories/ModelProfileRepository.ts] [Class: ModelProfileRepository] [Test: npm test -- packages/db]
+  - [ ] T79.1.3: Expose REST API routes `GET /api/models/profiles`, `PUT /api/models/profiles/:id`, and `POST /api/models/profiles/auto-tune` in `CacophonyHttpServer.ts`. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T79.1.4: Update `OllamaProvider.ts` to dynamically resolve model options (`num_predict`, `num_ctx`, `temperature`) from the matched active tuning profile before falling back to environment defaults. [File: packages/engine/src/inference/OllamaProvider.ts] [Method: resolveModelOptions] [Test: npm test -- packages/engine/src/tests/model_tuning.test.ts]
+
+### T79.2: Multi-Model Cognitive Handoff (Architect Reasoner to Implementer Coder)
+  - [ ] T79.2.1: Implement `CognitiveHandoffCoordinator` in `packages/engine/src/inference/CognitiveHandoffCoordinator.ts` extracting cognitive `<think>` trace from architect models and formatting as actionable implementation briefs. [File: packages/engine/src/inference/CognitiveHandoffCoordinator.ts] [Class: CognitiveHandoffCoordinator] [Test: npm test -- packages/engine/src/tests/cognitive_handoff.test.ts]
+  - [ ] T79.2.2: Wire `AutonomousWorkerPipeline` multi-model execution path: when architect model (DeepSeek R1) completes thinking without full code output, immediately hand off the distilled plan to the configured implementer model (Qwen 2.5 Coder) without failing the task. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeGenerationStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T79.2.3: Persist handoff chain telemetry in `task_stages` recording primary reasoner model, secondary coder model, and token transfer counts. [File: packages/db/src/repositories/StageRepository.ts] [Test: npm test -- packages/db]
+  - [ ] T79.2.4: Write unit tests verifying that truncated reasoning outputs trigger graceful handoff rather than burning retries. [File: packages/engine/src/tests/cognitive_handoff.test.ts] [Test: npm test -- packages/engine/src/tests/cognitive_handoff.test.ts]
+
+### T79.3: Prompt Compression & Context Token Budget Maximizer
+  - [ ] T79.3.1: Create `PromptCompressor` in `packages/engine/src/inference/PromptCompressor.ts` stripping redundant comment blocks, collapsing whitespace, and omitting unreferenced interface declarations. [File: packages/engine/src/inference/PromptCompressor.ts] [Class: PromptCompressor] [Test: npm test -- packages/engine/src/tests/prompt_compression.test.ts]
+  - [ ] T79.3.2: Integrate `PromptCompressor` into `ContextMinimizer.ts` reporting measured compression ratio and token savings in `ContextBundle.tokenSavingsEstimate`. [File: packages/engine/src/inference/ContextMinimizer.ts] [Method: assembleContext] [Test: npm test -- packages/engine/src/tests/context_minimizer.test.ts]
+  - [ ] T79.3.3: Implement intelligent fallback compression triggers when prompt tokens exceed 75% of active `num_ctx`. [File: packages/engine/src/inference/ContextMinimizer.ts] [Test: npm test -- packages/engine/src/tests/context_minimizer.test.ts]
+  - [ ] T79.3.4: Write unit tests verifying AST-level semantic preservation during prompt compression. [File: packages/engine/src/tests/prompt_compression.test.ts] [Test: npm test -- packages/engine/src/tests/prompt_compression.test.ts]
+
+### T79.4: Autonomous Engine Auto-Tuner & Best Profile Matcher
+  - [ ] T79.4.1: Build `EngineAutoTuner` in `packages/engine/src/scheduler/EngineAutoTuner.ts` analyzing historical token velocities (tok/s), stage pass rates, and truncation frequency across installed models. [File: packages/engine/src/scheduler/EngineAutoTuner.ts] [Class: EngineAutoTuner] [Test: npm test -- packages/engine/src/tests/engine_auto_tuner.test.ts]
+  - [ ] T79.4.2: Implement heuristic hardware profile matcher mapping available host VRAM (e.g. 16GB) to optimal `num_ctx` (16384) and `num_predict` (8192) limits per quantization level. [File: packages/engine/src/scheduler/EngineAutoTuner.ts] [Method: computeOptimalProfile] [Test: npm test -- packages/engine/src/tests/engine_auto_tuner.test.ts]
+  - [ ] T79.4.3: Add scheduled background job or manual button to trigger profile auto-optimization. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [ ] T79.4.4: Write unit tests verifying that `EngineAutoTuner` automatically raises completion limits for models experiencing truncation. [File: packages/engine/src/tests/engine_auto_tuner.test.ts] [Test: npm test -- packages/engine/src/tests/engine_auto_tuner.test.ts]
+
+### T79.5: Frontend Model Tuning & Profile Configuration UI
+  - [ ] T79.5.1: Create `ModelTuningPanelComponent` in `packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.ts` allowing operators to configure `num_predict`, `num_ctx`, temperature, and active model roles. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.ts] [Class: ModelTuningPanelComponent] [Test: npm test]
+  - [ ] T79.5.2: Add 'Auto-Tune Profiles' action button triggering `POST /api/models/profiles/auto-tune` with toast feedback and visual diff of adjusted parameters. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.ts] [Test: npm test]
+  - [ ] T79.5.3: Integrate tuning controls into `/models` route alongside installed fleet and download terminal. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Test: npm test]
+  - [ ] T79.5.4: Write frontend unit tests validating form inputs, dirty state tracking, and profile update payload dispatch. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.spec.ts] [Test: npm test]
+
 

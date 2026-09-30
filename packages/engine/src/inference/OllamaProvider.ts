@@ -45,8 +45,8 @@ export class OllamaProvider implements IInferenceProvider {
       keep_alive: 300,
       options: {
         temperature: request.temperature ?? 0.2,
-        num_predict: request.maxTokens ?? 2048,
-        num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 8192)
+        num_predict: request.maxTokens ?? (process.env["OLLAMA_NUM_PREDICT"] ? Number(process.env["OLLAMA_NUM_PREDICT"]) : 4096),
+        num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384)
       }
     };
 
@@ -109,8 +109,8 @@ export class OllamaProvider implements IInferenceProvider {
       keep_alive: 300,
       options: {
         temperature: request.temperature ?? 0.2,
-        num_predict: request.maxTokens ?? 2048,
-        num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 8192)
+        num_predict: request.maxTokens ?? (process.env["OLLAMA_NUM_PREDICT"] ? Number(process.env["OLLAMA_NUM_PREDICT"]) : 4096),
+        num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384)
       }
     };
 

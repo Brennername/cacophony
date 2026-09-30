@@ -49,6 +49,10 @@ export class AdaptiveOutputFormatter {
 
     // Normalize: strip reasoning blocks <think>...</think> if present
     let cleaned = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    // Also strip unclosed <think>... if the model stopped mid-reasoning
+    if (cleaned.includes("<think>")) {
+      cleaned = cleaned.replace(/<think>[\s\S]*$/gi, "").trim();
+    }
     if (!cleaned && rawContent.includes("```")) {
       // If the content was entirely enclosed in think tags, restore the original
       cleaned = rawContent;
