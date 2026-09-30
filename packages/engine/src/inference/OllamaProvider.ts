@@ -5,20 +5,33 @@ import type {
   InferenceProviderType
 } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
+import type { ModelProfileRepository } from "@cacophony/db";
+
+export interface OllamaProviderOptions {
+  readonly baseUrl?: string | undefined;
+  readonly profileRepository?: ModelProfileRepository | undefined;
+}
 
 /**
  * OllamaProvider
  *
  * Dispatches inference requests to local Ollama instance via HTTP API.
- * Configured with keep_alive=-1 to prevent model eviction on consumer APUs,
- * capturing prompt evaluation counts and real-time generation speed (tokens/sec).
+ * Dynamically resolves model options (num_predict, num_ctx, temperature)
+ * from matched active tuning profiles before falling back to environment defaults.
  */
 export class OllamaProvider implements IInferenceProvider {
   private readonly baseUrl: string;
   private readonly dispatcher: Agent;
+  private readonly profileRepo?: ModelProfileRepository | undefined;
 
-  constructor(baseUrl: string = process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434") {
-    this.baseUrl = baseUrl;
+  constructor(options?: string | OllamaProviderOptions) {
+    if (typeof options === "string") {
+      this.baseUrl = options;
+      this.profileRepo = undefined;
+    } else {
+      this.baseUrl = options?.baseUrl || process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434";
+      this.profileRepo = options?.profileRepository;
+    }
     this.dispatcher = new Agent({
       headersTimeout: 0,
       bodyTimeout: 0,
@@ -30,24 +43,66 @@ export class OllamaProvider implements IInferenceProvider {
     return "ollama";
   }
 
+  /**
+   * Dynamically resolves model options from the matched active tuning profile before falling back to defaults.
+   */
+  public async resolveModelOptions(
+    model: string,
+    role?: string,
+    requestedTemperature?: number,
+    requestedMaxTokens?: number
+  ): Promise<{
+    temperature: number;
+    num_predict: number;
+    num_ctx: number;
+    top_k?: number;
+    top_p?: number;
+    repeat_penalty?: number;
+  }> {
+    let activeProfile = null;
+    if (this.profileRepo) {
+      try {
+        activeProfile = await this.profileRepo.getActiveProfile(model, role);
+      } catch {
+        // fallback to defaults
+      }
+    }
+
+    if (activeProfile && activeProfile.isActive) {
+      return {
+        temperature: requestedTemperature ?? activeProfile.temperature,
+        num_predict: requestedMaxTokens ?? activeProfile.numPredict,
+        num_ctx: activeProfile.numCtx,
+        top_k: activeProfile.topK,
+        top_p: activeProfile.topP,
+        repeat_penalty: activeProfile.repeatPenalty
+      };
+    }
+
+    return {
+      temperature: requestedTemperature ?? 0.2,
+      num_predict: requestedMaxTokens ?? (process.env["OLLAMA_NUM_PREDICT"] ? Number(process.env["OLLAMA_NUM_PREDICT"]) : 4096),
+      num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384)
+    };
+  }
+
   public async generate(request: InferenceRequest): Promise<InferenceResponse> {
     const startMs = Date.now();
     const url = `${this.baseUrl}/api/chat`;
+
+    const options = await this.resolveModelOptions(
+      request.model,
+      undefined,
+      request.temperature,
+      request.maxTokens
+    );
 
     const body = {
       model: request.model,
       messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
       stream: false,
-      // 300s keep-alive: holds the model in VRAM for 5 minutes after the request
-      // completes. -1 (never evict) was causing cross-task VRAM conflicts when the
-      // scheduler switched models -- Ollama had to synchronously evict the previous
-      // model before loading the next one, freezing throughput for 30-60s.
       keep_alive: 300,
-      options: {
-        temperature: request.temperature ?? 0.2,
-        num_predict: request.maxTokens ?? (process.env["OLLAMA_NUM_PREDICT"] ? Number(process.env["OLLAMA_NUM_PREDICT"]) : 4096),
-        num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384)
-      }
+      options
     };
 
     const res = await fetch(url, {
@@ -102,16 +157,19 @@ export class OllamaProvider implements IInferenceProvider {
     const startMs = Date.now();
     const url = `${this.baseUrl}/api/chat`;
 
+    const options = await this.resolveModelOptions(
+      request.model,
+      undefined,
+      request.temperature,
+      request.maxTokens
+    );
+
     const body = {
       model: request.model,
       messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
       stream: true,
       keep_alive: 300,
-      options: {
-        temperature: request.temperature ?? 0.2,
-        num_predict: request.maxTokens ?? (process.env["OLLAMA_NUM_PREDICT"] ? Number(process.env["OLLAMA_NUM_PREDICT"]) : 4096),
-        num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384)
-      }
+      options
     };
 
     const res = await fetch(url, {

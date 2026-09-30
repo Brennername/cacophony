@@ -37,4 +37,8 @@ export class GitPlatformProviderFactory {
 
     return new GiteaPlatformProvider(client);
   }
+
+  public static createFromEnv(): IGitPlatformProvider {
+    return GitPlatformProviderFactory.create();
+  }
 }

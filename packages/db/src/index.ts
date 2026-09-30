@@ -18,4 +18,5 @@ export * from "./repositories/GitCheckpointRepository.js";
 export * from "./repositories/TestExecutionRepository.js";
 export * from "./repositories/UserSessionRepository.js";
 export * from "./repositories/TaskTelemetryCorrelationRepository.js";
+export * from "./repositories/ModelProfileRepository.js";
 export * from "./services/DatabaseMaintenanceService.js";

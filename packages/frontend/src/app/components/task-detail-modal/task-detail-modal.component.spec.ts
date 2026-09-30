@@ -56,6 +56,14 @@ describe('TaskDetailModalComponent', () => {
     expect(comp.activeTab()).toBe('stderr');
     expect(comp.extractTestStderr(store.selectedTask())).toContain('AssertionError');
 
+    comp.activeTab.set('reviews');
+    expect(comp.activeTab()).toBe('reviews');
+
+    // Test PR link text formatting
+    expect(comp.formatPrLinkText('http://localhost:3000/repos/cacophony/core/pulls/42')).toBe('Gitea PR #42');
+    expect(comp.formatPrLinkText('https://github.com/my-org/cacophony/pull/108')).toBe('GitHub PR #108');
+    expect(comp.formatPrLinkText('')).toBe('View PR');
+
     comp.copyText('npm run test:fast', 'Copied!');
     expect(comp.copiedMessage()).toBe('Copied!');
 

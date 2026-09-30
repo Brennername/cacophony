@@ -44,6 +44,7 @@ export interface TaskItem {
   testCommand?: string | null;
   focusFiles?: string | null;
   prUrl?: string | null;
+  targetBranch?: string | null;
   currentStage?: string;
   tokensPerSec?: number;
   logSnippet?: string;

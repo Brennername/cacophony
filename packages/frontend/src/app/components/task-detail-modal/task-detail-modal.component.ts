@@ -2,15 +2,31 @@ import { Component, inject, signal, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
 
-export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cognitive' | 'stderr';
+export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cognitive' | 'reviews' | 'stderr';
+
+export interface PrReviewData {
+  readonly taskId: string;
+  readonly prUrl?: string | null;
+  readonly targetBranch?: string | null;
+  readonly verdict: 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECT';
+  readonly solidComplianceScore: number;
+  readonly reviewNotes: string;
+  readonly comments: Array<{
+    readonly path: string;
+    readonly lineNumber: number;
+    readonly comment: string;
+    readonly severity: 'info' | 'warning' | 'blocker';
+  }>;
+  readonly merged: boolean;
+}
 
 /**
  * Mobile-first comprehensive Task Drill-Down Modal dialog:
  * Displays complete task metadata, prompt, assigned model, focus files,
- * test commands, execution stages timeline, diffs, stderr, and full scrollable LLM terminal stream.
+ * test commands, execution stages timeline, diffs, stderr, PR reviews, and full scrollable LLM terminal stream.
  *
  * Implements:
- * - Tabbed sub-views: Overview, Stages & Timings, Code Diffs, Full Stream Log, Test Stderr.
+ * - Tabbed sub-views: Overview, Stages & Timings, Code Diffs, Full Stream Log, PR Reviews, Test Stderr.
  * - Copy-to-clipboard actions for prompt, diff, test command, and terminal logs.
  * - Touch-friendly close buttons and Escape key listener complying with mobile-first standards.
  */
@@ -34,6 +50,34 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
             </div>
             <button class="close-btn touch-target" (click)="close()" aria-label="Close dialog">✕</button>
           </div>
+
+          <!-- Pull Request Notification Banner -->
+          @if (task.prUrl || prReviewData(); as review) {
+            <div class="pr-banner" [ngClass]="(prReviewData()?.verdict || 'APPROVED').toLowerCase()">
+              <div class="pr-banner-left">
+                <span class="pr-banner-icon">PR</span>
+                <div class="pr-banner-info">
+                  <span class="pr-branch-pill font-mono">{{ task.targetBranch || prReviewData()?.targetBranch || 'main' }}</span>
+                  @if (task.prUrl || prReviewData()?.prUrl; as url) {
+                    <a [href]="url" target="_blank" rel="noopener" class="pr-banner-link font-mono">
+                      {{ formatPrLinkText(url) }} ↗
+                    </a>
+                  }
+                </div>
+              </div>
+              <div class="pr-banner-right">
+                <span
+                  class="pr-verdict-badge font-mono"
+                  [ngClass]="(prReviewData()?.verdict || 'APPROVED').toLowerCase()"
+                >
+                  {{ prReviewData()?.verdict || 'APPROVED' }}
+                </span>
+                @if (prReviewData()?.solidComplianceScore; as score) {
+                  <span class="solid-pill font-mono">SOLID: {{ score }}/100</span>
+                }
+              </div>
+            </div>
+          }
 
           <!-- Tab Bar Navigation (Mobile-first horizontal scroll) -->
           <div class="tab-bar">
@@ -71,6 +115,13 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
               (click)="activeTab.set('cognitive')"
             >
               Cognitive Trace
+            </button>
+            <button
+              class="tab-btn touch-target"
+              [class.active]="activeTab() === 'reviews'"
+              (click)="activeTab.set('reviews')"
+            >
+              PR Reviews
             </button>
             <button
               class="tab-btn touch-target"
@@ -268,7 +319,48 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
               </div>
             }
 
-            <!-- 6. TEST STDERR TAB -->
+            <!-- 6. PR REVIEWS TAB -->
+            @if (activeTab() === 'reviews') {
+              <div class="section-block">
+                @if (prReviewData(); as review) {
+                  <div class="pr-reviews-container">
+                    <div class="review-header-card" [ngClass]="review.verdict.toLowerCase()">
+                      <div class="review-summary-row">
+                        <span class="verdict-tag font-mono">{{ review.verdict }}</span>
+                        <span class="score-badge font-mono">SOLID Adherence: {{ review.solidComplianceScore }}/100</span>
+                        @if (review.merged) {
+                          <span class="merged-badge font-mono">MERGED</span>
+                        }
+                      </div>
+                      <p class="review-notes-text">{{ review.reviewNotes }}</p>
+                    </div>
+
+                    @if (review.comments && review.comments.length > 0) {
+                      <div class="review-comments-section">
+                        <h4 class="section-title">Line-Level Architectural Feedback ({{ review.comments.length }})</h4>
+                        <div class="comments-list">
+                          @for (comment of review.comments; track comment.path + comment.lineNumber) {
+                            <div class="comment-item" [ngClass]="comment.severity">
+                              <div class="comment-item-header">
+                                <span class="comment-path font-mono">{{ comment.path }}:{{ comment.lineNumber }}</span>
+                                <span class="comment-severity font-mono">{{ comment.severity | uppercase }}</span>
+                              </div>
+                              <p class="comment-body">{{ comment.comment }}</p>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else if (loadingReview()) {
+                  <div class="empty-tab-state">Fetching automated PR review and SOLID compliance evaluation...</div>
+                } @else {
+                  <div class="empty-tab-state">No automated Pull Request review recorded for this task.</div>
+                }
+              </div>
+            }
+
+            <!-- 7. TEST STDERR TAB -->
             @if (activeTab() === 'stderr') {
               <div class="section-block">
                 <div class="header-with-action">
@@ -488,6 +580,208 @@ export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cogniti
       flex-direction: column;
       gap: 1.25rem;
       overflow-y: auto;
+    }
+
+    .pr-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.625rem 1rem;
+      background: rgba(56, 189, 248, 0.08);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+      flex-wrap: wrap;
+    }
+
+    .pr-banner.approved {
+      background: rgba(34, 197, 94, 0.08);
+      border-bottom-color: rgba(34, 197, 94, 0.25);
+    }
+
+    .pr-banner.changes_requested, .pr-banner.reject {
+      background: rgba(239, 68, 68, 0.08);
+      border-bottom-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .pr-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .pr-banner-icon {
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--radius-sm);
+      background: var(--color-brand);
+      color: #ffffff;
+    }
+
+    .pr-banner-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pr-branch-pill {
+      font-size: 0.75rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .pr-banner-link {
+      font-size: 0.75rem;
+      color: var(--color-brand);
+      text-decoration: underline;
+    }
+
+    .pr-banner-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pr-verdict-badge {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+    }
+
+    .pr-verdict-badge.approved {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .pr-verdict-badge.changes_requested, .pr-verdict-badge.reject {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .solid-pill {
+      font-size: 0.6875rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .pr-reviews-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .review-header-card {
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .review-header-card.approved {
+      border-left: 4px solid #4ade80;
+    }
+
+    .review-header-card.changes_requested, .review-header-card.reject {
+      border-left: 4px solid #f87171;
+    }
+
+    .review-summary-row {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .verdict-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+    }
+
+    .score-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .merged-badge {
+      font-size: 0.6875rem;
+      padding: 0.125rem 0.4rem;
+      border-radius: var(--radius-sm);
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+
+    .review-notes-text {
+      margin: 0;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .comment-item {
+      padding: 0.625rem 0.875rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    .comment-item.blocker {
+      border-left: 3px solid #f87171;
+    }
+
+    .comment-item.warning {
+      border-left: 3px solid #fbbf24;
+    }
+
+    .comment-item.info {
+      border-left: 3px solid #38bdf8;
+    }
+
+    .comment-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+
+    .comment-path {
+      font-size: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .comment-severity {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .comment-body {
+      margin: 0;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
     }
 
     .meta-grid {
@@ -824,6 +1118,10 @@ export class TaskDetailModalComponent {
   // Task-specific stream buffer fetched from backend
   public readonly taskStreamBuffer = signal<string | null>(null);
 
+  // PR Review state
+  public readonly prReviewData = signal<PrReviewData | null>(null);
+  public readonly loadingReview = signal<boolean>(false);
+
   // Cognitive trace and distilled opinion state
   public readonly opinionData = signal<{
     taskId: string;
@@ -846,6 +1144,7 @@ export class TaskDetailModalComponent {
       if (!task) {
         this.taskStreamBuffer.set(null);
         this.opinionData.set(null);
+        this.prReviewData.set(null);
         return;
       }
 
@@ -857,7 +1156,41 @@ export class TaskDetailModalComponent {
       }
 
       void this.fetchOpinion(task.id);
+      void this.fetchPrReview(task.id);
     });
+  }
+
+  public async fetchPrReview(taskId: string): Promise<void> {
+    this.loadingReview.set(true);
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/pr-review`);
+      if (res.ok) {
+        const data = (await res.json()) as PrReviewData;
+        this.prReviewData.set(data);
+      } else {
+        this.prReviewData.set(null);
+      }
+    } catch {
+      this.prReviewData.set(null);
+    } finally {
+      this.loadingReview.set(false);
+    }
+  }
+
+  public formatPrLinkText(url: string): string {
+    if (!url) return 'View PR';
+    if (url.includes('github.com')) {
+      const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+      if (match) {
+        return `GitHub PR #${match[3]}`;
+      }
+      return 'GitHub PR';
+    }
+    const match = url.match(/\/pulls\/(\d+)/);
+    if (match) {
+      return `Gitea PR #${match[1]}`;
+    }
+    return 'Gitea PR';
   }
 
   private async fetchHistoricalBuffer(taskId: string): Promise<void> {

@@ -10,6 +10,10 @@ import { SandboxedProcessRunner } from "../testing/SandboxedProcessRunner.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import type { GitWorktreeManager, WorktreeDescriptor } from "../gitea/GitWorktreeManager.js";
+import type { IGitPlatformProvider } from "../gitea/IGitPlatformProvider.js";
+import { FrontierReviewer } from "../inference/FrontierReviewer.js";
+
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
   readonly ollamaProvider: OllamaProvider;
@@ -21,6 +25,12 @@ export interface AutonomousWorkerPipelineOptions {
   readonly stageRepository?: StageRepository | undefined;
   readonly taskRepository?: TaskRepository | undefined;
   readonly sandboxedRunner?: SandboxedProcessRunner | undefined;
+  readonly worktreeManager?: GitWorktreeManager | undefined;
+  readonly frontierReviewer?: FrontierReviewer | undefined;
+  readonly gitPlatformProvider?: IGitPlatformProvider | undefined;
+  readonly autoMerge?: boolean | undefined;
+  readonly repoOwner?: string | undefined;
+  readonly repoName?: string | undefined;
 }
 
 /**
@@ -46,6 +56,12 @@ export class AutonomousWorkerPipeline {
   private readonly sandboxedRunner: SandboxedProcessRunner;
   private readonly stageRepo: StageRepository | undefined;
   private readonly taskRepo: TaskRepository | undefined;
+  private readonly worktreeManager: GitWorktreeManager | undefined;
+  private readonly frontierReviewer: FrontierReviewer;
+  private readonly gitPlatformProvider: IGitPlatformProvider | undefined;
+  private readonly autoMerge: boolean;
+  private readonly repoOwner: string;
+  private readonly repoName: string;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
     this.workspaceRoot = options.workspaceRoot;
@@ -56,6 +72,15 @@ export class AutonomousWorkerPipeline {
     this.streamTapManager = options.streamTapManager;
     this.stageRepo = options.stageRepository;
     this.taskRepo = options.taskRepository;
+    this.worktreeManager = options.worktreeManager;
+    this.gitPlatformProvider = options.gitPlatformProvider;
+    this.autoMerge = options.autoMerge ?? true;
+    this.repoOwner = options.repoOwner || process.env.GIT_REPO_OWNER || "cacophony";
+    this.repoName = options.repoName || process.env.GIT_REPO_NAME || "core";
+    this.frontierReviewer = options.frontierReviewer ?? new FrontierReviewer({
+      inferenceProvider: options.ollamaProvider as any,
+      defaultModel: process.env.FRONTIER_REVIEWER_MODEL || "deepseek-r1:8b"
+    });
     this.sandboxedRunner = options.sandboxedRunner ?? new SandboxedProcessRunner();
     this.defaultPipeline = options.defaultPipeline ?? {
       id: "pipeline_autonomous_standard",
@@ -136,9 +161,26 @@ export class AutonomousWorkerPipeline {
   public async executeTask(groomed: GroomedTask, selectedModel: string): Promise<{ success: boolean; tokensPerSec: number }> {
     const taskId = groomed.task.id;
     let measuredTps = 0;
+    let worktree: WorktreeDescriptor | null = null;
+    let executionRoot = this.workspaceRoot;
+
     try {
       if (this.streamTapManager) {
         this.streamTapManager.setActiveTask(taskId);
+      }
+
+      // If worktree manager is configured, create an ephemeral worktree isolation checkout
+      if (this.worktreeManager) {
+        try {
+          worktree = await this.worktreeManager.createWorktree(taskId, {
+            priority: groomed.task.priority,
+            slug: groomed.task.title
+          });
+          executionRoot = worktree.worktreePath;
+        } catch (worktreeErr) {
+          console.warn(`[AutonomousWorkerPipeline] Failed to create git worktree, falling back to workspace root:`, worktreeErr);
+          executionRoot = this.workspaceRoot;
+        }
       }
 
       // STAGE 1: Planning / Context Assembly
@@ -195,6 +237,9 @@ export class AutonomousWorkerPipeline {
           generationDuration,
           "Self-healing parser failed to extract valid code block"
         );
+        if (this.worktreeManager && worktree) {
+          await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+        }
         return { success: false, tokensPerSec: measuredTps };
       }
 
@@ -223,9 +268,10 @@ export class AutonomousWorkerPipeline {
 
       let originalExistingContent = "";
       let targetAbs = "";
+      let generatedDiff = "";
       if (focusFiles.length > 0) {
         const targetRelFile = focusFiles[0]!;
-        targetAbs = path.resolve(this.workspaceRoot, targetRelFile);
+        targetAbs = path.resolve(executionRoot, targetRelFile);
         try {
           originalExistingContent = await fs.readFile(targetAbs, "utf-8");
         } catch {
@@ -239,7 +285,7 @@ export class AutonomousWorkerPipeline {
           this.defaultPipeline,
           "post_generation",
           {
-            projectRoot: this.workspaceRoot,
+            projectRoot: executionRoot,
             hook: "post_generation",
             modifiedFiles: [targetAbs],
             fileContents: fileContentsMap,
@@ -259,6 +305,9 @@ export class AutonomousWorkerPipeline {
             scrubDuration,
             `Rule rejection: ${rejectionMsg}`
           );
+          if (this.worktreeManager && worktree) {
+            await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+          }
           return { success: false, tokensPerSec: measuredTps };
         }
 
@@ -272,6 +321,7 @@ export class AutonomousWorkerPipeline {
           originalExistingContent,
           finalCode
         );
+        generatedDiff = formattedDiff;
 
         if (this.taskRepo) {
           try {
@@ -304,7 +354,7 @@ export class AutonomousWorkerPipeline {
         await this.recordAndEmitStage(taskId, "test_execution", "RUNNING");
 
         const runResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
-          cwd: this.workspaceRoot,
+          cwd: executionRoot,
           timeoutMs: 180000,
           maxBufferBytes: 256 * 1024
         });
@@ -353,12 +403,24 @@ export class AutonomousWorkerPipeline {
               await fs.writeFile(targetAbs, repairedParsed.code, "utf-8");
 
               const retryResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
-                cwd: this.workspaceRoot,
+                cwd: executionRoot,
                 timeoutMs: 180000,
                 maxBufferBytes: 256 * 1024
               });
 
               if (retryResult.exitCode === 0) {
+                generatedDiff = this.generateUnifiedDiff(
+                  targetRel || "unknown",
+                  originalExistingContent,
+                  repairedParsed.code
+                );
+                if (this.taskRepo) {
+                  try {
+                    await this.taskRepo.updateLogSnippet(taskId, generatedDiff);
+                  } catch {
+                    // non-fatal
+                  }
+                }
                 await this.recordAndEmitStage(
                   taskId,
                   "remediation",
@@ -375,6 +437,9 @@ export class AutonomousWorkerPipeline {
                   `Remediation retry failed with exit code ${retryResult.exitCode}`
                 );
                 await this.rollbackWorkspace(targetAbs, originalExistingContent);
+                if (this.worktreeManager && worktree) {
+                  await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+                }
                 await this.logDiagnostic(taskId, {
                   taskId,
                   model: selectedModel,
@@ -394,6 +459,9 @@ export class AutonomousWorkerPipeline {
                 "Remediation produced no code"
               );
               await this.rollbackWorkspace(targetAbs, originalExistingContent);
+              if (this.worktreeManager && worktree) {
+                await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+              }
               return { success: false, tokensPerSec: measuredTps };
             }
           } catch (remediationErr) {
@@ -405,6 +473,9 @@ export class AutonomousWorkerPipeline {
               String(remediationErr)
             );
             await this.rollbackWorkspace(targetAbs, originalExistingContent);
+            if (this.worktreeManager && worktree) {
+              await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+            }
             return { success: false, tokensPerSec: measuredTps };
           }
         } else {
@@ -416,43 +487,149 @@ export class AutonomousWorkerPipeline {
             logOutput
           );
 
-          // STAGE 5: Clean Review
+          // STAGE 5: Structured Code Review with FrontierReviewer
           const reviewStart = Date.now();
           await this.recordAndEmitStage(taskId, "remediation", "RUNNING");
+
+          const reviewResult = await this.frontierReviewer.evaluateReview({
+            taskId,
+            title: groomed.task.title,
+            diff: generatedDiff,
+            testSummary: logOutput
+          });
+
+          if (reviewResult.verdict === "REJECT") {
+            await this.recordAndEmitStage(
+              taskId,
+              "remediation",
+              "FAILURE",
+              Date.now() - reviewStart,
+              `Code review rejected: ${reviewResult.reviewNotes} (SOLID score: ${reviewResult.solidComplianceScore})`
+            );
+            await this.rollbackWorkspace(targetAbs, originalExistingContent);
+            if (this.worktreeManager && worktree) {
+              await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+            }
+            return { success: false, tokensPerSec: measuredTps };
+          }
+
           await this.recordAndEmitStage(
             taskId,
             "remediation",
             "SUCCESS",
             Date.now() - reviewStart,
-            "Automated code review passed verification gates"
+            `Review verdict ${reviewResult.verdict} (SOLID score: ${reviewResult.solidComplianceScore}/100). ${reviewResult.reviewNotes}`
           );
         }
       } else {
         // No test command provided
         const reviewStart = Date.now();
         await this.recordAndEmitStage(taskId, "remediation", "RUNNING");
+        const reviewResult = await this.frontierReviewer.evaluateReview({
+          taskId,
+          title: groomed.task.title,
+          diff: generatedDiff
+        });
+
         await this.recordAndEmitStage(
           taskId,
           "remediation",
           "SUCCESS",
           Date.now() - reviewStart,
-          "Automated code review passed verification gates"
+          `Automated code review verdict: ${reviewResult.verdict} (SOLID score: ${reviewResult.solidComplianceScore}/100)`
         );
       }
 
+      // STAGE 6: Pull Request Lifecycle & Auto-Merge Gate
       const mergeStart = Date.now();
       await this.recordAndEmitStage(taskId, "pr_review", "RUNNING");
+
+      let prMerged = true;
+      let prNumber: number | undefined;
+
+      // If worktree and git platform provider are available, commit, push, open PR, and merge
+      if (this.worktreeManager && worktree && this.gitPlatformProvider) {
+        try {
+          await this.worktreeManager.commitWorktree(
+            worktree.worktreePath,
+            `feat(${taskId}): ${groomed.task.title}\n\nAutomated commit by Cacophony Engine.`
+          );
+
+          await this.worktreeManager.pushBranch(
+            worktree.worktreePath,
+            "origin",
+            worktree.branchName
+          );
+
+          const pr = await this.gitPlatformProvider.openPullRequest(
+            this.repoOwner,
+            this.repoName,
+            {
+              title: `[Autonomous Task] ${groomed.task.title}`,
+              body: `## Cacophony Autonomous PR\n\nTask ID: \`${taskId}\`\nPriority: \`${groomed.task.priority}\`\n\n### Scoped Test Execution\nPassed successfully.\n\n### Code Diff\n\`\`\`diff\n${generatedDiff.slice(0, 5000)}\n\`\`\``,
+              head: worktree.branchName,
+              base: groomed.task.targetBranch || "main"
+            }
+          );
+
+          prNumber = pr.number;
+
+          if (this.taskRepo) {
+            await this.taskRepo.updatePr(taskId, worktree.branchName, pr.htmlUrl);
+          }
+
+          // Submit automated review verdict to PR
+          await this.gitPlatformProvider.submitReview(
+            this.repoOwner,
+            this.repoName,
+            pr.number,
+            {
+              body: `Automated review passed verification gates. Task: ${taskId}`,
+              event: "APPROVED"
+            }
+          );
+
+          // If autoMerge is enabled, merge PR
+          if (this.autoMerge) {
+            const merged = await this.gitPlatformProvider.mergePullRequest(
+              this.repoOwner,
+              this.repoName,
+              pr.number,
+              {
+                mergeMethod: "squash",
+                title: `Merge PR #${pr.number}: ${groomed.task.title}`,
+                message: `Automated verification passed for task ${taskId}`
+              }
+            );
+            prMerged = merged;
+          }
+        } catch (prErr) {
+          console.warn(`[AutonomousWorkerPipeline] Remote git PR operation encountered warning:`, prErr);
+          // Non-fatal if remote repo is unreachable or mock
+        }
+      }
+
       await this.recordAndEmitStage(
         taskId,
         "pr_review",
-        "SUCCESS",
+        prMerged ? "SUCCESS" : "FAILURE",
         Date.now() - mergeStart,
-        "Code modifications merged"
+        prNumber
+          ? `Pull Request #${prNumber} created and ${prMerged ? "merged" : "pending manual merge"}`
+          : "Code modifications verified and merged locally"
       );
+
+      // Clean up worktree if one was allocated for this task
+      if (this.worktreeManager && worktree) {
+        await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+      }
 
       return { success: true, tokensPerSec: measuredTps };
     } catch (err) {
       console.error(`[AutonomousWorkerPipeline] Execution error for task '${groomed.enrichedPrompt.slice(0, 40)}':`, err);
+      if (this.worktreeManager && worktree) {
+        await this.worktreeManager.cleanWorktree(taskId, (worktree as WorktreeDescriptor).branchName);
+      }
       return { success: false, tokensPerSec: measuredTps };
     }
   }

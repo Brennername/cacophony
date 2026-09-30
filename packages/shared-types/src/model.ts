@@ -71,3 +71,23 @@ export interface InferenceResponse {
   readonly latencyMs: number;
   readonly tokensPerSec: number;
 }
+
+/**
+ * Whitebox per-model tuning profile with context, token prediction limits, and sampling options.
+ */
+export interface ModelTuningProfile {
+  readonly id: string;
+  readonly modelName: string;
+  readonly role: string;
+  readonly numPredict: number;
+  readonly numCtx: number;
+  readonly temperature: number;
+  readonly topK: number;
+  readonly topP: number;
+  readonly repeatPenalty: number;
+  readonly autoTuned: boolean;
+  readonly isActive: boolean;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+

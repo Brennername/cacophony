@@ -9,7 +9,8 @@ import {
   TelemetryRepository,
   StackProfileRepository,
   ModelRegistryRepository,
-  UserSessionRepository
+  UserSessionRepository,
+  ModelProfileRepository
 } from "@cacophony/db";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
@@ -23,6 +24,7 @@ import { StreamTapManager } from "../inference/StreamTapManager.js";
 import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { DaemonIPCServer } from "./DaemonIPC.js";
 import { CacophonyHttpServer } from "./CacophonyHttpServer.js";
+import * as path from "node:path";
 
 
 
@@ -55,6 +57,7 @@ export class CacophonyDaemon {
   private telemetryRepo!: TelemetryRepository;
   private stackProfileRepo!: StackProfileRepository;
   private userSessionRepo!: UserSessionRepository;
+  private modelProfileRepo!: ModelProfileRepository;
   private telemetryPoller!: TelemetryPoller;
   private scheduler!: TaskScheduler;
   private ipcServer!: DaemonIPCServer;
@@ -116,6 +119,7 @@ export class CacophonyDaemon {
     this.telemetryRepo = new TelemetryRepository(this.driver);
     this.stackProfileRepo = new StackProfileRepository(this.driver);
     this.userSessionRepo = new UserSessionRepository(this.driver);
+    this.modelProfileRepo = new ModelProfileRepository(this.driver);
     new ModelRegistryRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
@@ -182,7 +186,7 @@ export class CacophonyDaemon {
 
     const primaryInferenceProvider = isDemoMode
       ? new MockInferenceStreamProvider(28)
-      : new OllamaProvider();
+      : new OllamaProvider({ profileRepository: this.modelProfileRepo });
 
     this.benchmarkRunner = new ModelBenchmarkRunner(primaryInferenceProvider as any, this.healthRepo);
 
@@ -200,6 +204,21 @@ export class CacophonyDaemon {
     const minimizer = new ContextMinimizer(process.cwd());
     const parser = new SelfHealingParser();
     const ruleEngine = new RulePipelineEngine();
+    const { GitWorktreeManager } = await import("../gitea/GitWorktreeManager.js");
+    const worktreeManager = new GitWorktreeManager(
+      process.cwd(),
+      path.resolve(process.cwd(), "workspaces")
+    );
+
+    const { GitPlatformProviderFactory } = await import("../gitea/GitPlatformProviderFactory.js");
+    const { FrontierReviewer } = await import("../inference/FrontierReviewer.js");
+
+    const gitProvider = GitPlatformProviderFactory.createFromEnv();
+    const frontierReviewer = new FrontierReviewer({
+      inferenceProvider: (this.fallbackRouter ?? primaryInferenceProvider) as any,
+      defaultModel: process.env.FRONTIER_REVIEWER_MODEL || "deepseek-r1:8b"
+    });
+
     const worker = new AutonomousWorkerPipeline({
       workspaceRoot: process.cwd(),
       ollamaProvider: primaryInferenceProvider as any,
@@ -208,7 +227,11 @@ export class CacophonyDaemon {
       ruleEngine,
       streamTapManager: this.streamTapManager,
       stageRepository: this.stageRepo,
-      taskRepository: this.taskRepo
+      taskRepository: this.taskRepo,
+      worktreeManager,
+      gitPlatformProvider: gitProvider,
+      frontierReviewer,
+      autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false"
     });
 
     this.scheduler.setExecutionHandler(async (groomed, model) => {
@@ -420,6 +443,10 @@ export class CacophonyDaemon {
 
   public getUserSessionRepository(): UserSessionRepository {
     return this.userSessionRepo;
+  }
+
+  public getModelProfileRepository(): ModelProfileRepository {
+    return this.modelProfileRepo;
   }
 
   public getConfig(): DaemonConfig {

@@ -71,6 +71,14 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
             >
               <div class="circle">{{ idx + 1 }}</div>
               <span>{{ step.label }}</span>
+              @if ((step.name === 'remediation' || step.name === 'pr_review') && (step.status === 'RUNNING' || step.status === 'SUCCESS')) {
+                <span class="stage-pr-indicator" title="Pull Request Gate">
+                  PR
+                  @if (task.targetBranch) {
+                    <span class="branch-pill font-mono">{{ task.targetBranch }}</span>
+                  }
+                </span>
+              }
             </div>
             @if (!last) {
               <div
@@ -386,6 +394,29 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
 
     .line.done {
       background: var(--status-nominal);
+    }
+
+    .stage-pr-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 0.05rem 0.3rem;
+      border-radius: var(--radius-sm, 4px);
+      margin-top: 0.15rem;
+    }
+
+    .stage-pr-indicator .branch-pill {
+      font-size: 0.5625rem;
+      color: var(--text-muted);
+      max-width: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Terminal Box */
