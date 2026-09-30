@@ -143,7 +143,7 @@ export class CacophonyDaemon {
     this.modelManager = new OllamaModelManager();
     this.tenancyGuard = new ModelTenancyGuard({
       managedModelsEnabled: process.env["MANAGED_MODELS_ENABLED"] !== "false",
-      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat,qwen2.5-coder:3b")
+      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-coder-v2:16b,qwen2.5-coder:14b,deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat,qwen2.5-coder:3b")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),

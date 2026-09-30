@@ -45,6 +45,8 @@ MODELS_TO_EVICT=(
 
 # Models to verify / pull
 TARGET_MODELS=(
+  "deepseek-coder-v2:16b"
+  "qwen2.5-coder:14b"
   "deepseek-r1:8b"
   "qwen2.5-coder:7b-instruct-q4_K_M"
   "gemma3:4b-it-qat"

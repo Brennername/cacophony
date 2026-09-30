@@ -13,18 +13,20 @@
   "default_session_model": "qwen2.5-coder:7b",
   "default_context_tokens": 8192,
   "role_models": {
-    "implementer": "qwen2.5-coder:7b-instruct-q4_K_M",
-    "reviewer": "gemma3:4b-it-qat",
+    "implementer": "qwen2.5-coder:14b",
+    "reviewer": "deepseek-coder-v2:16b",
     "architect": "deepseek-r1:8b",
     "planner": "deepseek-r1:8b",
     "test_engineer": "qwen2.5-coder:7b-instruct-q4_K_M",
     "doc_writer": "qwen2.5-coder:3b",
-    "type_specialist": "qwen2.5-coder:7b-instruct-q4_K_M",
+    "type_specialist": "deepseek-coder-v2:16b",
     "security_auditor": "deepseek-r1:8b"
   },
   "candidate_models": [
-    "deepseek-r1:8b",
+    "deepseek-coder-v2:16b",
+    "qwen2.5-coder:14b",
     "qwen2.5-coder:7b-instruct-q4_K_M",
+    "deepseek-r1:8b",
     "gemma3:4b-it-qat",
     "qwen2.5-coder:3b"
   ],

@@ -42,8 +42,10 @@ async function main() {
   }
 
   const fleetModels = [
-    "deepseek-r1:8b",
+    "deepseek-coder-v2:16b",
+    "qwen2.5-coder:14b",
     "qwen2.5-coder:7b-instruct-q4_K_M",
+    "deepseek-r1:8b",
     "gemma3:4b-it-qat",
     "qwen2.5-coder:3b"
   ];
