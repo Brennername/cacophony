@@ -52,12 +52,13 @@ ENV PORT_MCP=21264
 
 # Copy built distribution bundles, node_modules, and binaries
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/bin ./bin
 COPY --from=builder /app/packages/shared-types ./packages/shared-types
 COPY --from=builder /app/packages/db ./packages/db
 COPY --from=builder /app/packages/tools ./packages/tools
-COPY --from=builder /app/packages/frontend/dist ./packages/frontend/dist
+COPY --from=builder /app/packages/frontend ./packages/frontend
 COPY --from=builder /app/packages/engine ./packages/engine
 
 # Create persistent storage directories

@@ -260,6 +260,61 @@ export class TaskRepository {
     return (res as any)?.affectedRows ?? 0;
   }
 
+  /**
+   * Reclaims tasks stranded in RUNNING status back to PENDING if elapsed time exceeds timeoutMinutes.
+   */
+  public async reclaimStaleRunningTasks(timeoutMinutes = 15): Promise<number> {
+    const cutoff = new Date(Date.now() - timeoutMinutes * 60 * 1000).toISOString();
+    const res = await this.driver.execute(
+      "UPDATE tasks SET status = 'PENDING', failure_count = failure_count + 1, updated_at = $1 WHERE status = 'RUNNING' AND updated_at < $2",
+      [new Date().toISOString(), cutoff]
+    );
+    return (res as any)?.affectedRows ?? 0;
+  }
+
+  /**
+   * Retrieves rolling success rate for the last N finished tasks.
+   */
+  public async getRollingSuccessStats(sampleSize = 100): Promise<{
+    sampleSize: number;
+    successRate: number;
+    completedCount: number;
+    failedCount: number;
+    trendDirection: "improving" | "declining" | "stable";
+  }> {
+    const rows = await this.driver.query<TaskRow>(
+      "SELECT status FROM tasks WHERE status IN ('COMPLETED', 'FAILED') ORDER BY completed_at DESC LIMIT $1",
+      [sampleSize]
+    );
+    const total = rows.length;
+    if (total === 0) {
+      return { sampleSize: 0, successRate: 100, completedCount: 0, failedCount: 0, trendDirection: "stable" };
+    }
+    const completed = rows.filter((r) => r.status === "COMPLETED").length;
+    const failed = total - completed;
+    const successRate = (completed / total) * 100;
+
+    // Trend comparison: compare first half (older) vs second half (newer)
+    const mid = Math.floor(total / 2);
+    let trendDirection: "improving" | "declining" | "stable" = "stable";
+    if (mid > 0) {
+      const older = rows.slice(mid);
+      const newer = rows.slice(0, mid);
+      const olderRate = older.filter((r) => r.status === "COMPLETED").length / older.length;
+      const newerRate = newer.filter((r) => r.status === "COMPLETED").length / newer.length;
+      if (newerRate > olderRate + 0.05) trendDirection = "improving";
+      else if (newerRate < olderRate - 0.05) trendDirection = "declining";
+    }
+
+    return {
+      sampleSize: total,
+      successRate,
+      completedCount: completed,
+      failedCount: failed,
+      trendDirection
+    };
+  }
+
   private mapRow(row: TaskRow): TaskRecord {
     // Spread optional runtime metrics only when present; exactOptionalPropertyTypes
     // disallows assigning undefined to optional fields that have no undefined in their type.

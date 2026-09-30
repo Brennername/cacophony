@@ -40,6 +40,7 @@ export class QueueGroomer {
       "Integrity Rule: Always work and test with genuine integrity. Never fake test passes (e.g. adding dummy print statements, removing assertions, or mocking tests to artificially report 100%). Never drop databases or tables; write explicit, backward-compatible migrations.",
       "Module Imports: Import only from valid installed workspace packages (@cacophony/shared-types, @cacophony/db, @cacophony/tools) or valid relative paths within the package (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js'). Never hallucinate non-existent package names like '@cacophony/git-worktrees'.",
       "Quality Standards: Adhere strictly to SOLID principles, modularity, and explicit typing.",
+      "Incremental Preservation: Preserve all existing methods, functions, interfaces, properties, and imports in the target file. Never wipe out, truncate, or overwrite existing implementation methods when adding new functionality.",
       "Documentation: Comment code thoroughly explaining how and why functionality is structured."
     ];
   }
