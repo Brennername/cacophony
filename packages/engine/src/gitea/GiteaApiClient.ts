@@ -17,8 +17,8 @@ import { GiteaPermissionGuard } from "./GiteaPermissionGuard.js";
 
 export interface GiteaClientConfig {
   readonly baseUrl: string;
-  readonly apiToken?: string;
-  readonly guard?: GiteaPermissionGuard;
+  readonly apiToken?: string | undefined;
+  readonly guard?: GiteaPermissionGuard | undefined;
 }
 
 /**

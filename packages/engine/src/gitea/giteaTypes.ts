@@ -31,7 +31,7 @@ export interface GiteaBranch {
 
 export interface CreateBranchRequest {
   readonly new_branch_name: string;
-  readonly old_branch_name?: string;
+  readonly old_branch_name?: string | undefined;
 }
 
 export interface CreatePullRequestRequest {
@@ -62,20 +62,20 @@ export interface GiteaPullRequest {
 
 export interface CreateReviewCommentRequest {
   readonly body: string;
-  readonly path?: string;
-  readonly line?: number;
+  readonly path?: string | undefined;
+  readonly line?: number | undefined;
 }
 
 export interface SubmitReviewRequest {
   readonly event: "APPROVED" | "REQUEST_CHANGES" | "COMMENT";
-  readonly body?: string;
-  readonly comments?: readonly CreateReviewCommentRequest[];
+  readonly body?: string | undefined;
+  readonly comments?: readonly CreateReviewCommentRequest[] | undefined;
 }
 
 export interface MergePullRequestRequest {
   readonly Do: "merge" | "rebase" | "rebase-merge" | "squash" | "manually-merged";
-  readonly MergeTitleField?: string;
-  readonly MergeMessageField?: string;
+  readonly MergeTitleField?: string | undefined;
+  readonly MergeMessageField?: string | undefined;
 }
 
 export interface OAuthTokenResponse {

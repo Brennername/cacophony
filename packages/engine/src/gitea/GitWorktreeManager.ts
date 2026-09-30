@@ -170,4 +170,11 @@ export class GitWorktreeManager {
       branchName
     });
   }
+
+  /**
+   * Alias for safely removing an ephemeral worktree directory and pruning the git worktree entry.
+   */
+  public async cleanWorktree(taskId: string, branchName?: string): Promise<void> {
+    return this.cleanupTerminalTask(taskId, branchName);
+  }
 }
