@@ -55,7 +55,7 @@ describe("Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failu
     const missingDep = FailureClassifier.classify("Error: Cannot find module '@cacophony/nonexistent'");
     assert.equal(missingDep.category, "MISSING_DEPENDENCY");
 
-    const timeoutErr = FailureClassifier.classify("Command failed with timeout after 60000ms", { exitCode: 124 });
+    const timeoutErr = FailureClassifier.classify("Command failed with timeout after 180000ms", { exitCode: 124 });
     assert.equal(timeoutErr.category, "TIMEOUT");
 
     const assertionErr = FailureClassifier.classify("AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n+ 1\n- 2");

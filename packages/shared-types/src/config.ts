@@ -30,7 +30,7 @@ export const CacophonySystemConfigSchema = z.object({
   }),
   execution_guards: z.object({
     blacklisted_commands: z.array(z.string()),
-    max_command_timeout_ms: z.number().int().default(300000)
+    max_command_timeout_ms: z.number().int().default(180000)
   }),
   deterministic_scrubbing: z.object({
     enforce_js_extension_on_relative_ts_imports: z.boolean().default(true),

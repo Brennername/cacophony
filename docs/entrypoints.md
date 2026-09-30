@@ -66,7 +66,7 @@ All CLI entrypoints are accessible via npm scripts or the root executable binary
   ```bash
   npm run cli -w @cacophony/engine -- hardware generate-overrides [--apply]
   ```
-  *Description*: Displays diffs or provisions `/etc/systemd/system/ollama.service.d/override.conf` and `/etc/modprobe.d/amdgpu.conf` (`lockup_timeout=120000`).
+  *Description*: Displays diffs or provisions `/etc/systemd/system/ollama.service.d/override.conf` and `/etc/modprobe.d/amdgpu.conf` (`lockup_timeout=180000`).
 
 ### 2.4 Composable Repair Rules & Hyperparameter Optimization
 - **Execute Stochastic Rule Pipeline Search**:

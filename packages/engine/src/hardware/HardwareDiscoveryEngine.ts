@@ -47,7 +47,7 @@ export class HardwareDiscoveryEngine {
         optimalContextWindow = 4096;
         maxLoadedModels = 1;
         warnings.push("APU shared memory: Flash Attention is disabled on Vega/Cezanne GFX900 to prevent driver lockups.");
-        warnings.push("Recommend setting amdgpu lockup_timeout=120000 in kernel parameters.");
+        warnings.push("Recommend setting amdgpu lockup_timeout=180000 in kernel parameters.");
       } else if (primary.category === "AMD_DISCRETE_RDNA") {
         recommendedProfileId = "amd_rdna_rocm";
         flashAttentionSupported = true;

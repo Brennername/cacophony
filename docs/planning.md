@@ -107,7 +107,7 @@
   - Multi-tier hardware scanner probing `/sys/class/drm`, `/sys/class/kfd`, `/proc/cpuinfo`, PCI vendor IDs (`0x1002` AMD, `0x10de` NVIDIA, `0x8086` Intel), unified memory aperture, and compute ring watchdog timeouts.
   - Ollama systemd override generator emitting `/etc/systemd/system/ollama.service.d/override.conf` and `modprobe.d/amdgpu.conf` with transparent diff preview and safety checks.
   - Pre-calibrated hardware profiles:
-    - AMD Vega APU (Default): `OLLAMA_IGPU_ENABLE=1`, `OLLAMA_VULKAN=1`, `OLLAMA_FLASH_ATTENTION=0`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_KEEP_ALIVE=-1`, `HSA_OVERRIDE_GFX_VERSION=9.0.0`, kernel `amdgpu.lockup_timeout=120000`.
+    - AMD Vega APU (Default): `OLLAMA_IGPU_ENABLE=1`, `OLLAMA_VULKAN=1`, `OLLAMA_FLASH_ATTENTION=0`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_KEEP_ALIVE=-1`, `HSA_OVERRIDE_GFX_VERSION=9.0.0`, kernel `amdgpu.lockup_timeout=180000`.
     - AMD RDNA2/3: Native ROCm 6.x, `HSA_OVERRIDE_GFX_VERSION=10.3.0`/`11.0.0`, flash attention enabled.
     - NVIDIA CUDA: `CUDA_VISIBLE_DEVICES`, flash attention enabled, multi-model concurrency.
     - Apple Silicon & CPU: Metal acceleration, thread pool affinity matching P-cores/E-cores.

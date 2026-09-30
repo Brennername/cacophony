@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 
 export interface SandboxedProcessOptions {
   readonly cwd: string;
-  readonly timeoutMs?: number | undefined; // default 60000 (60s)
+  readonly timeoutMs?: number | undefined; 
   readonly maxBufferBytes?: number | undefined; // default 256 * 1024 (256KB)
   readonly env?: NodeJS.ProcessEnv | undefined;
 }
@@ -30,7 +30,7 @@ export class SandboxedProcessRunner {
   private readonly defaultMaxBufferBytes: number;
 
   constructor(options?: { defaultTimeoutMs?: number; defaultMaxBufferBytes?: number }) {
-    this.defaultTimeoutMs = options?.defaultTimeoutMs ?? 60000;
+    this.defaultTimeoutMs = options?.defaultTimeoutMs ?? 180000;
     this.defaultMaxBufferBytes = options?.defaultMaxBufferBytes ?? 256 * 1024;
   }
 

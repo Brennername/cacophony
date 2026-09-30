@@ -40,7 +40,7 @@ export class OllamaSystemdGenerator {
       modprobePath = "/etc/modprobe.d/amdgpu.conf";
       modprobeContent = `# Cacophony Vega APU Hardening Configuration
 # Extends GPU compute ring watchdog timeout to prevent resets during long prompt evaluations
-options amdgpu lockup_timeout=120000
+options amdgpu lockup_timeout=180000
 options amdgpu vm_update_mode=0
 `;
     } else if (isRdna) {
