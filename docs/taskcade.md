@@ -88,10 +88,10 @@
   - [ ] T47.1.4: Write unit tests verifying that stranded RUNNING tasks are cleanly requeued with failure counts preserved. [File: packages/db/src/tests/reclaim_tasks.test.ts] [Test: npm test -- packages/db/src/tests/reclaim_tasks.test.ts]
 
 ### T47.2: Task Execution Timeout & Deadlock Watchdog
-  - [ ] T47.2.1: Add watchdog timer in TaskScheduler aborting tasks exceeding per-model max execution timeout. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Class: TaskScheduler] [Test: npm test -- packages/engine/src/tests/scheduler_timeout.test.ts]
-  - [ ] T47.2.2: Add ExecutionTimeoutError classification to FailureClassifier tagging tasks aborted by watchdog. [File: packages/engine/src/analytics/FailureClassifier.ts] [Class: FailureClassifier] [Test: npm test -- packages/engine/src/tests/failure_classifier.test.ts]
-  - [ ] T47.2.3: Record TIMEOUT stage failure in StageRepository with elapsed duration and partial output log. [File: packages/db/src/repositories/StageRepository.ts] [Method: StageRepository.recordStageCompletion] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
-  - [ ] T47.2.4: Write unit tests simulating stalled LLM stream triggers watchdog timeout and transitions task to FAILED. [File: packages/engine/src/tests/scheduler_watchdog.test.ts] [Test: npm test -- packages/engine/src/tests/scheduler_watchdog.test.ts]
+  - [x] T47.2.1: Add watchdog timer in TaskScheduler aborting tasks exceeding per-model max execution timeout. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Class: TaskScheduler] [Test: npm test -- packages/engine/src/tests/scheduler_timeout.test.ts]
+  - [x] T47.2.2: Add ExecutionTimeoutError classification to FailureClassifier tagging tasks aborted by watchdog. [File: packages/engine/src/analytics/FailureClassifier.ts] [Class: FailureClassifier] [Test: npm test -- packages/engine/src/tests/failure_classifier.test.ts]
+  - [x] T47.2.3: Record TIMEOUT stage failure in StageRepository with elapsed duration and partial output log. [File: packages/db/src/repositories/StageRepository.ts] [Method: StageRepository.recordStageCompletion] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
+  - [x] T47.2.4: Write unit tests simulating stalled LLM stream triggers watchdog timeout and transitions task to FAILED. [File: packages/engine/src/tests/scheduler_timeout.test.ts] [Test: npm test -- packages/engine/src/tests/scheduler_timeout.test.ts]
 
 ### T47.3: Scheduler Task Dispatch Backpressure & APU Temperature Governor
   - [x] T47.3.1: Implement thermal backpressure check in TaskScheduler.tick() delaying dispatch when edge temp exceeds 85C with emergency shutdown cutoff at 105C. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: TaskScheduler.tick] [Test: npm test -- packages/engine/src/tests/thermal_governor.test.ts]

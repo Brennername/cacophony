@@ -9,22 +9,22 @@ Thank you for your interest in contributing to Cacophony. We welcome bug reports
 Before authoring code or submitting a pull request, ensure you adhere to the following project standards:
 
 1. **Zero Emojis**:
-   - Strictly no emojis in code, docstrings, commit messages, comments, issues, or documentation (unless a feature is explicitly dedicated to emoji processing).
+   - Strictly no emojis in code, docstrings, commit messages, comments, issues, or documentation (unless a feature is explicitly dedicated to emoji processing). Be aware of arena configuration to allow emoji related features and disable scrubbing .
 2. **SOLID Principles**:
    - Write decoupled, modular code adhering to Single Responsibility, Open-Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion.
 3. **Strict Typing**:
    - TypeScript is required throughout the codebase. Any new model, payload, or API interface must be explicitly typed under `@cacophony/shared-types`.
    - Strictly no Python scripts or untyped JavaScript.
 4. **Mobile-First Design**:
-   - Frontend components must be designed mobile-first with defensive viewport scaling, overflow clipping, and responsive flex/grid layouts.
+   - Design front end components to be mobile-first with defensive viewport scaling, overflow clipping, and responsive flex/grid layouts.
 5. **Security & Secrets**:
    - Never commit API keys, tokens, passwords, or credentials. All secrets belong in `.env` files and must be accessed via configuration objects.
 6. **Integrity Rule**:
    - Never stub, fake, or artificially bypass test passes. Tests must authentically assert system behavior and invariants.
 7. **Test-Driven Development (TDD)**:
-   - Feature development must be driven by tests. Define the contract, inputs, outputs, and invariants through automated test suites prior to writing production implementations.
-8. **Regression Shielding & MRE Standard**:
-   - No bug is resolved without a reproduction test. Every defect requires a Minimal Reproducible Example (MRE) codified into a failing automated test before any fix is applied.
+   - Drive feature developmen with tests. Define the contract, inputs, outputs, and invariants through automated test suites prior to writing production implementations.
+8. **Regression & MRE**:
+   - Resolve bugs with reproducion tests. Every defect requires a Minimal Reproducible Example (MRE) codified into a failing automated test before any fix is applied.
 
 ---
 

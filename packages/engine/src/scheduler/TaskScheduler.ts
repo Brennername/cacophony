@@ -7,6 +7,7 @@ import { ModelAffinityTaskSorter } from "./ModelAffinityTaskSorter.js";
 import { QueueGroomer, type GroomedTask } from "./QueueGroomer.js";
 import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
+import { FailureClassifier, ExecutionTimeoutError } from "../analytics/FailureClassifier.js";
 
 export type TaskExecutionResult = { success: boolean; tokensPerSec: number };
 export type TaskExecutionHandler = (groomed: GroomedTask, selectedModel: string) => Promise<TaskExecutionResult>;
@@ -35,6 +36,9 @@ export class TaskScheduler {
   private loopTimer: NodeJS.Timeout | null = null;
   private executionHandler: TaskExecutionHandler | null = null;
 
+  private readonly perModelTimeoutMs: Readonly<Record<string, number>>;
+  private readonly defaultTimeoutMs: number;
+
   constructor(options: {
     readonly taskRepo: TaskRepository;
     readonly stageRepo: StageRepository;
@@ -44,17 +48,35 @@ export class TaskScheduler {
     readonly groomer?: QueueGroomer;
     readonly governor?: ThermalGovernor;
     readonly sorter?: ModelAffinityTaskSorter;
+    readonly defaultTimeoutMs?: number;
+    readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
   }) {
     this.taskRepo = options.taskRepo;
     this.stageRepo = options.stageRepo;
     this.evictionManager = options.evictionManager;
     this.telemetryProvider = options.telemetryProvider;
+    this.defaultTimeoutMs = options.defaultTimeoutMs ?? 300_000; // 5 minutes default
+    this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
+      "qwen2.5-coder:3b": 120_000,
+      "gemma3:4b-it-qat": 180_000,
+      "qwen2.5-coder:7b-instruct-q4_K_M": 240_000,
+      "deepseek-r1:8b": 420_000,
+      "qwen2.5-coder:14b": 360_000,
+      "deepseek-coder-v2:16b": 480_000
+    };
 
     this.mutex = new ExecutionMutex();
     this.probe = options.probe ?? new OllamaStateProbe();
     this.groomer = options.groomer ?? new QueueGroomer();
     this.governor = options.governor ?? new ThermalGovernor();
     this.sorter = options.sorter ?? new ModelAffinityTaskSorter();
+  }
+
+  /**
+   * Resolves maximum execution timeout in milliseconds for the given model.
+   */
+  public resolveModelTimeout(model: string): number {
+    return this.perModelTimeoutMs[model] ?? this.defaultTimeoutMs;
   }
 
   /**
@@ -203,13 +225,31 @@ export class TaskScheduler {
       await this.taskRepo.updateStatus(targetTask.id, "RUNNING");
       await this.taskRepo.updateModel(targetTask.id, selectedModel);
 
-      // 8. Dispatch Execution Handler (if registered)
+      // 8. Dispatch Execution Handler with Per-Model Watchdog Timer
       if (this.executionHandler) {
         const stageStartMs = Date.now();
         const stageId = await this.stageRepo.recordStageStart(targetTask.id, "generation");
+        const modelTimeoutMs = this.resolveModelTimeout(selectedModel);
+
+        let watchdogTimer: NodeJS.Timeout | null = null;
+        const watchdogPromise = new Promise<never>((_, reject) => {
+          watchdogTimer = setTimeout(() => {
+            reject(
+              new ExecutionTimeoutError(
+                `Task execution exceeded allocated timeout of ${modelTimeoutMs}ms for model '${selectedModel}'`,
+                modelTimeoutMs,
+                targetTask.id,
+                selectedModel
+              )
+            );
+          }, modelTimeoutMs);
+        });
 
         try {
-          const result = await this.executionHandler(groomed, selectedModel);
+          const handlerPromise = this.executionHandler(groomed, selectedModel);
+          const result = await Promise.race([handlerPromise, watchdogPromise]);
+          if (watchdogTimer) clearTimeout(watchdogTimer);
+
           const durationMs = Date.now() - stageStartMs;
           const finalStatus = result.success ? "COMPLETED" : "FAILED";
           const actualTps = result.tokensPerSec;
@@ -240,14 +280,24 @@ export class TaskScheduler {
             // ignore non-critical health recording errors
           }
         } catch (err) {
+          if (watchdogTimer) clearTimeout(watchdogTimer);
           const durationMs = Date.now() - stageStartMs;
-          console.error(`[TaskScheduler] Task ${targetTask.id} threw error after ${durationMs}ms:`, err);
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          const classification = FailureClassifier.classify(errorMsg);
+          const isTimeout = classification.category === "TIMEOUT" || err instanceof ExecutionTimeoutError;
+
+          console.error(
+            `[TaskScheduler] Task ${targetTask.id} threw error [${classification.category}] after ${durationMs}ms:`,
+            err
+          );
           await this.taskRepo.updateStatus(targetTask.id, "FAILED");
           await this.taskRepo.incrementFailure(targetTask.id);
           await this.stageRepo.recordStageCompletion(
             stageId,
             "FAILURE",
-            err instanceof Error ? err.message : String(err),
+            isTimeout
+              ? `[TIMEOUT]: Execution exceeded maximum watchdog limit of ${modelTimeoutMs}ms. ${errorMsg}`
+              : `[${classification.category}]: ${errorMsg}`,
             0,
             0,
             durationMs

@@ -45,13 +45,44 @@ export interface ModelRoleFailureStats {
   readonly distributions: readonly ModelFailureDistribution[];
 }
 
+export class ExecutionTimeoutError extends Error {
+  public readonly timeoutMs: number;
+  public readonly taskId?: string | undefined;
+  public readonly model?: string | undefined;
+
+  constructor(message: string, timeoutMs: number, taskId?: string, model?: string) {
+    super(message);
+    this.name = "ExecutionTimeoutError";
+    this.timeoutMs = timeoutMs;
+    this.taskId = taskId;
+    this.model = model;
+    Object.setPrototypeOf(this, ExecutionTimeoutError.prototype);
+  }
+}
+
 export class FailureClassifier {
   /**
    * Classifies error output, stack traces, compiler outputs or test failures into a normalized category.
    */
-  public static classify(errorMessage: string, context?: { exitCode?: number; logOutput?: string }): ClassificationResult {
-    const text = `${errorMessage}\n${context?.logOutput ?? ""}`.trim();
+  public static classify(errorOrMessage: Error | string, context?: { exitCode?: number; logOutput?: string }): ClassificationResult {
+    let text = "";
+    if (errorOrMessage instanceof Error) {
+      text = `${errorOrMessage.name}: ${errorOrMessage.message}\n${errorOrMessage.stack || ""}\n${context?.logOutput ?? ""}`.trim();
+    } else {
+      text = `${errorOrMessage}\n${context?.logOutput ?? ""}`.trim();
+    }
     const locations = this.extractStackLocations(text);
+
+    // 0. Explicit ExecutionTimeoutError instance
+    if (errorOrMessage instanceof ExecutionTimeoutError) {
+      return {
+        category: "TIMEOUT",
+        confidence: 1.0,
+        matchedPattern: "execution_timeout_error",
+        rootCauseSnippet: errorOrMessage.message,
+        locations
+      };
+    }
 
     // 1. Thermal throttle
     if (/thermal|throttle|overheat|danger zone|gpu temp exceeded/i.test(text)) {
@@ -75,13 +106,18 @@ export class FailureClassifier {
       };
     }
 
-    // 3. Command timeout
-    if (/timeout|timed out|exceeded maximum command duration/i.test(text) || context?.exitCode === 124) {
+    // 3. Command timeout & Execution Watchdog
+    if (
+      /timeout|timed out|exceeded maximum command duration|executiontimeouterror|watchdog.*timeout|aborted by watchdog/i.test(
+        text
+      ) ||
+      context?.exitCode === 124
+    ) {
       return {
         category: "TIMEOUT",
-        confidence: 0.9,
+        confidence: 0.95,
         matchedPattern: "timeout_signal",
-        rootCauseSnippet: "Execution exceeded allocated runtime timeout",
+        rootCauseSnippet: "Execution exceeded allocated runtime timeout or aborted by watchdog timer",
         locations
       };
     }
