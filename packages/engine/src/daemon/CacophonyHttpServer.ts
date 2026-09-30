@@ -950,29 +950,18 @@ export class CacophonyHttpServer {
           const installed = await modelManager.listInstalledModels([]);
 
           const targetModels = payload.models || installed.map((m) => m.name);
-          const autoTunedProfiles = [];
+          const autoTuner = this.daemon.getAutoTuner();
 
-          for (const model of targetModels) {
-            // Profile heuristic:
-            // Reasoners (e.g. DeepSeek R1) get 16k context and 8k predictions for extensive thinking
-            // Coders (e.g. Qwen 2.5 Coder) get 16k context and 4k predictions with temperature 0.05
-            const isReasoner = model.includes("r1") || model.includes("reasoning");
-            const profileId = `profile-${model.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
-
-            const tuned = await profileRepo.upsertProfile({
-              id: profileId,
-              modelName: model,
-              role: isReasoner ? "architect" : "implementer",
-              numPredict: isReasoner ? 8192 : 4096,
-              numCtx: 16384,
-              temperature: isReasoner ? 0.6 : 0.05,
-              topK: 40,
-              topP: 0.95,
-              repeatPenalty: 1.1,
-              autoTuned: true,
-              isActive: true
+          let autoTunedProfiles;
+          if (autoTuner) {
+            autoTunedProfiles = await autoTuner.autoTuneModels(targetModels);
+          } else {
+            const { EngineAutoTuner } = await import("../scheduler/EngineAutoTuner.js");
+            const tuner = new EngineAutoTuner({
+              profileRepo,
+              healthRepo: this.daemon.getModelHealthRepository()
             });
-            autoTunedProfiles.push(tuned);
+            autoTunedProfiles = await tuner.autoTuneModels(targetModels);
           }
 
           res.writeHead(200, { "Content-Type": "application/json" });

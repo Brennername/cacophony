@@ -6,6 +6,7 @@ import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store
 import { ExplorationControlComponent } from '../exploration-control/exploration-control.component';
 import { TenancyConfigPanelComponent } from '../tenancy-config-panel/tenancy-config-panel.component';
 import { ModelPullModalComponent } from '../model-pull-modal/model-pull-modal.component';
+import { ModelTuningPanelComponent } from '../model-tuning-panel/model-tuning-panel.component';
 import { ModelFleetService } from '../../services/model-fleet.service';
 
 /**
@@ -20,7 +21,8 @@ import { ModelFleetService } from '../../services/model-fleet.service';
     CommonModule,
     ExplorationControlComponent,
     TenancyConfigPanelComponent,
-    ModelPullModalComponent
+    ModelPullModalComponent,
+    ModelTuningPanelComponent
   ],
   template: `
     <div class="view-container">
@@ -32,6 +34,9 @@ import { ModelFleetService } from '../../services/model-fleet.service';
         <div class="header-actions-group">
           <button class="action-btn-primary" (click)="showPullModal.set(true)">
             + Pull Model
+          </button>
+          <button class="action-btn-secondary" (click)="showTuningPanel.set(!showTuningPanel())">
+            {{ showTuningPanel() ? 'Hide Tuning' : 'Model Tuning' }}
           </button>
           <button class="action-btn-secondary" (click)="showTenancyPanel.set(!showTenancyPanel())">
             {{ showTenancyPanel() ? 'Hide Guardrails' : 'Tenancy Rules' }}
@@ -52,6 +57,15 @@ import { ModelFleetService } from '../../services/model-fleet.service';
           </div>
         </div>
       </div>
+
+      <!-- Model Tuning Profile Configuration Panel (Collapsible) -->
+      @if (showTuningPanel()) {
+        <app-model-tuning-panel
+          [profiles]="fleetService.profiles()"
+          (onSaveProfile)="fleetService.saveProfile($event)"
+          (onAutoTune)="fleetService.autoTuneProfiles()"
+        />
+      }
 
       <!-- Tenancy Configuration Panel (Collapsible) -->
       @if (showTenancyPanel()) {
@@ -1171,6 +1185,7 @@ export class ModelsViewComponent {
   public readonly selectedModelId = signal<string | null>(null);
   public readonly showPullModal = signal<boolean>(false);
   public readonly showTenancyPanel = signal<boolean>(false);
+  public readonly showTuningPanel = signal<boolean>(false);
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {

@@ -141,6 +141,15 @@ export class StreamTapManager {
   }
 
   /**
+   * Returns true if the demuxer for the given task is currently inside a <think> block.
+   */
+  public isInsideThinkBlock(taskId?: string): boolean {
+    const target = taskId || this.activeTaskId;
+    if (!target) return false;
+    return this.taskDemuxers.get(target)?.isInsideThinkBlock() || false;
+  }
+
+  /**
    * Gets the buffered tokens for a task or the active task.
    */
   public getBuffer(taskId?: string): string {

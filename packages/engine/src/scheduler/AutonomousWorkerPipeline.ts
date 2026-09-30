@@ -13,6 +13,7 @@ import path from "node:path";
 import type { GitWorktreeManager, WorktreeDescriptor } from "../gitea/GitWorktreeManager.js";
 import type { IGitPlatformProvider } from "../gitea/IGitPlatformProvider.js";
 import { FrontierReviewer } from "../inference/FrontierReviewer.js";
+import { CognitiveHandoffCoordinator } from "../inference/CognitiveHandoffCoordinator.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -27,6 +28,8 @@ export interface AutonomousWorkerPipelineOptions {
   readonly sandboxedRunner?: SandboxedProcessRunner | undefined;
   readonly worktreeManager?: GitWorktreeManager | undefined;
   readonly frontierReviewer?: FrontierReviewer | undefined;
+  readonly cognitiveHandoffCoordinator?: CognitiveHandoffCoordinator | undefined;
+  readonly implementerModel?: string | undefined;
   readonly gitPlatformProvider?: IGitPlatformProvider | undefined;
   readonly autoMerge?: boolean | undefined;
   readonly repoOwner?: string | undefined;
@@ -59,6 +62,8 @@ export class AutonomousWorkerPipeline {
   private readonly worktreeManager: GitWorktreeManager | undefined;
   private readonly frontierReviewer: FrontierReviewer;
   private readonly gitPlatformProvider: IGitPlatformProvider | undefined;
+  private readonly cognitiveHandoffCoordinator: CognitiveHandoffCoordinator;
+  private readonly implementerModel: string;
   private readonly autoMerge: boolean;
   private readonly repoOwner: string;
   private readonly repoName: string;
@@ -74,6 +79,8 @@ export class AutonomousWorkerPipeline {
     this.taskRepo = options.taskRepository;
     this.worktreeManager = options.worktreeManager;
     this.gitPlatformProvider = options.gitPlatformProvider;
+    this.cognitiveHandoffCoordinator = options.cognitiveHandoffCoordinator ?? new CognitiveHandoffCoordinator(options.ollamaProvider as any);
+    this.implementerModel = options.implementerModel || process.env.DEFAULT_IMPLEMENTER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M";
     this.autoMerge = options.autoMerge ?? true;
     this.repoOwner = options.repoOwner || process.env.GIT_REPO_OWNER || "cacophony";
     this.repoName = options.repoName || process.env.GIT_REPO_NAME || "core";
@@ -226,9 +233,57 @@ export class AutonomousWorkerPipeline {
         }
       );
 
-      const generationDuration = Date.now() - generationStart;
+      let generationDuration = Date.now() - generationStart;
+      let finalCode = parseResult.code;
+      let finalAttempts = parseResult.attempts || 1;
+      let finalPromptTokens = parseResult.tokensPrompt || 0;
+      let finalCompletionTokens = parseResult.tokensCompletion || 0;
+      let finalTps = parseResult.tokensPerSec || 0;
+      let handoffOpinionSummary: string | null = null;
 
-      if (!parseResult.code) {
+      const reasoningTranscript = this.streamTapManager
+        ? this.streamTapManager.getReasoningTranscript(taskId)
+        : null;
+
+      // MULTI-MODEL COGNITIVE HANDOFF:
+      // If code was not generated or truncated, but the model produced an internal reasoning trace,
+      // hand off the distilled plan to the configured implementer model (e.g. Qwen 2.5 Coder)
+      // rather than failing the task and exhausting retry budgets.
+      if (!finalCode && reasoningTranscript && reasoningTranscript.trim().length > 0) {
+        console.log(`[AutonomousWorkerPipeline] Cognitive handoff triggered for task '${taskId}': handoff from '${selectedModel}' to '${this.implementerModel}'`);
+        try {
+          const handoffResult = await this.cognitiveHandoffCoordinator.executeHandoff({
+            reasonerModel: selectedModel,
+            implementerModel: this.implementerModel,
+            rawReasoningTranscript: reasoningTranscript,
+            originalTaskPrompt: groomed.enrichedPrompt,
+            focusFiles,
+            directives,
+            onChunk: (chunk) => {
+              if (this.streamTapManager) {
+                this.streamTapManager.emitToken(taskId, chunk);
+              }
+            }
+          });
+
+          // Validate or parse handoff result with self-healing parser
+          const handoffValidation = this.parser.validate(handoffResult.code);
+          if (handoffValidation.valid && handoffValidation.code) {
+            finalCode = handoffValidation.code;
+            finalPromptTokens += handoffResult.tokensPrompt;
+            finalCompletionTokens += handoffResult.tokensCompletion;
+            finalTps = handoffResult.tokensPerSec || finalTps;
+            handoffOpinionSummary = handoffResult.opinion.summary;
+            console.log(`[AutonomousWorkerPipeline] Cognitive handoff succeeded for task '${taskId}' via '${this.implementerModel}'`);
+          }
+        } catch (handoffErr) {
+          console.error(`[AutonomousWorkerPipeline] Cognitive handoff failed for task '${taskId}':`, handoffErr);
+        }
+      }
+
+      generationDuration = Date.now() - generationStart;
+
+      if (!finalCode) {
         console.error(`[AutonomousWorkerPipeline] No code block extracted for task '${groomed.enrichedPrompt.slice(0, 40)}'`);
         await this.recordAndEmitStage(
           taskId,
@@ -243,24 +298,22 @@ export class AutonomousWorkerPipeline {
         return { success: false, tokensPerSec: measuredTps };
       }
 
-      const reasoningTranscript = this.streamTapManager
-        ? this.streamTapManager.getReasoningTranscript(taskId)
-        : null;
-
       await this.recordAndEmitStage(
         taskId,
         "generation",
         "SUCCESS",
         generationDuration,
-        `Generated code block in ${parseResult.attempts || 1} attempts (${parseResult.tokensPerSec || 0} tok/s)`,
-        parseResult.tokensPrompt || 0,
-        parseResult.tokensCompletion || 0,
+        handoffOpinionSummary
+          ? `Generated code block via cognitive handoff [${selectedModel} -> ${this.implementerModel}] (${finalTps} tok/s)`
+          : `Generated code block in ${finalAttempts} attempts (${finalTps} tok/s)`,
+        finalPromptTokens,
+        finalCompletionTokens,
         reasoningTranscript || null,
-        null,
+        handoffOpinionSummary || null,
         reasoningTranscript ? Math.round(generationDuration * 0.4) : 0
       );
       // Capture measured inference velocity for the scheduler to persist
-      measuredTps = parseResult.tokensPerSec || 0;
+      measuredTps = finalTps;
 
       // STAGE 3: Deterministic Scrub & Rule Pipeline Execution
       const scrubStart = Date.now();
@@ -279,7 +332,7 @@ export class AutonomousWorkerPipeline {
         }
 
         const fileContentsMap = new Map<string, string>();
-        fileContentsMap.set(targetAbs, parseResult.code);
+        fileContentsMap.set(targetAbs, finalCode);
 
         const outcome = await this.ruleEngine.executePipelineHook(
           this.defaultPipeline,
@@ -311,15 +364,15 @@ export class AutonomousWorkerPipeline {
           return { success: false, tokensPerSec: measuredTps };
         }
 
-        const finalCode = fileContentsMap.get(targetAbs) || parseResult.code;
+        const scrubbedCode = fileContentsMap.get(targetAbs) || finalCode;
         await fs.mkdir(path.dirname(targetAbs), { recursive: true });
-        await fs.writeFile(targetAbs, finalCode, "utf-8");
+        await fs.writeFile(targetAbs, scrubbedCode, "utf-8");
 
         // Format unified code diff and persist directly into task.logSnippet
         const formattedDiff = this.generateUnifiedDiff(
           targetRelFile,
           originalExistingContent,
-          finalCode
+          scrubbedCode
         );
         generatedDiff = formattedDiff;
 

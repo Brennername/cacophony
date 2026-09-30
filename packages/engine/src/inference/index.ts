@@ -14,6 +14,9 @@ export * from "./SessionCompactor.js";
 export * from "./SessionManager.js";
 export * from "./TaskcadePlanningService.js";
 export * from "./MockInferenceStreamProvider.js";
-
+export * from "./ReasoningStreamDemuxer.js";
+export * from "./ReasoningDistillationService.js";
+export * from "./CognitiveHandoffCoordinator.js";
+export * from "./PromptCompressor.js";
 
 

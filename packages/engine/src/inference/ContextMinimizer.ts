@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { AstContextSlicer } from "../context/AstContextSlicer.js";
+import { PromptCompressor } from "./PromptCompressor.js";
 
 export interface ContextBundle {
   readonly prompt: string;
@@ -12,6 +13,7 @@ export interface ContextBundle {
     readonly originalBytes: number;
     readonly minimizedBytes: number;
     readonly savingsPercent: number;
+    readonly compressionRatio?: number | undefined;
   } | undefined;
 }
 
@@ -28,23 +30,27 @@ export class ContextMinimizer {
   private readonly projectDir: string;
   private readonly maxFileSizeBytes: number;
   private readonly slicer: AstContextSlicer;
+  private readonly compressor: PromptCompressor;
 
   constructor(projectDir: string = process.cwd(), maxFileSizeBytes = 65536) {
     this.projectDir = projectDir;
     this.maxFileSizeBytes = maxFileSizeBytes;
     this.slicer = new AstContextSlicer(projectDir);
+    this.compressor = new PromptCompressor();
   }
 
   /**
    * Assembles a minimal, scoped context bundle for a task.
    * If enableAstSlicing is true, parses imports from primary focus files and injects
    * lightweight type skeletons for referenced secondary dependencies instead of full files.
+   * If compressPrompt is true, strips non-essential comments and collapses whitespace.
    */
   public assembleContext(
     prompt: string,
     focusFiles: readonly string[],
     customDirectives: readonly string[] = [],
-    enableAstSlicing = true
+    enableAstSlicing = true,
+    compressPrompt = true
   ): ContextBundle {
     const fileContents = new Map<string, string>();
     const dependencySkeletons = new Map<string, string>();
@@ -158,10 +164,19 @@ export class ContextMinimizer {
       }
     }
 
-    const assembledPrompt = sections.join("\n");
+    let assembledPrompt = sections.join("\n");
+    let compressionRatio = 1.0;
+
+    if (compressPrompt) {
+      const compression = this.compressor.compress(assembledPrompt, false);
+      assembledPrompt = compression.compressed;
+      compressionRatio = compression.compressionRatio;
+    }
+
+    const totalOriginalBytes = originalDepBytes + assembledPrompt.length;
     const savingsPercent = originalDepBytes > 0
       ? Number((((originalDepBytes - skeletonDepBytes) / originalDepBytes) * 100).toFixed(1))
-      : 0;
+      : Number(((1.0 - compressionRatio) * 100).toFixed(1));
 
     return {
       prompt,
@@ -169,11 +184,12 @@ export class ContextMinimizer {
       dependencySkeletons,
       compactFileTree,
       assembledPrompt,
-      tokenSavingsEstimate: originalDepBytes > 0 ? {
-        originalBytes: originalDepBytes,
-        minimizedBytes: skeletonDepBytes,
-        savingsPercent
-      } : undefined
+      tokenSavingsEstimate: {
+        originalBytes: totalOriginalBytes,
+        minimizedBytes: skeletonDepBytes + assembledPrompt.length,
+        savingsPercent,
+        compressionRatio
+      }
     };
   }
 

@@ -67,6 +67,8 @@ export class CacophonyDaemon {
   private tenancyGuard?: import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined;
   private benchmarkRunner?: import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined;
   private distillationService?: import("../inference/ReasoningDistillationService.js").ReasoningDistillationService | undefined;
+  private autoTuner?: import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined;
+  private autoTuneTimer: NodeJS.Timeout | null = null;
   private planningTimer: NodeJS.Timeout | null = null;
   private pruningTimer: NodeJS.Timeout | null = null;
   private startTime = 0;
@@ -340,6 +342,28 @@ export class CacophonyDaemon {
       }
     }
 
+    // 4c. Autonomous Engine Auto-Tuner & Profile Optimization
+    const { EngineAutoTuner } = await import("../scheduler/EngineAutoTuner.js");
+    this.autoTuner = new EngineAutoTuner({
+      profileRepo: this.modelProfileRepo,
+      healthRepo: this.healthRepo
+    });
+
+    // Run autonomous model profile optimization periodically every 30 minutes
+    this.autoTuneTimer = setInterval(async () => {
+      if (this.isRunning && this.autoTuner) {
+        try {
+          const modelManager = this.modelManager || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+          const installed = await modelManager.listInstalledModels([]);
+          if (installed.length > 0) {
+            await this.autoTuner.autoTuneModels(installed.map((m) => m.name));
+          }
+        } catch {
+          // ignore transient auto-tune errors
+        }
+      }
+    }, 1800_000);
+
     // Run periodic database maintenance (VACUUM ANALYZE, WAL compaction, telemetry partitioning) every hour
     this.pruningTimer = setInterval(async () => {
       if (this.isRunning) {
@@ -391,6 +415,10 @@ export class CacophonyDaemon {
     if (this.planningTimer) {
       clearInterval(this.planningTimer);
       this.planningTimer = null;
+    }
+    if (this.autoTuneTimer) {
+      clearInterval(this.autoTuneTimer);
+      this.autoTuneTimer = null;
     }
     if (this.pruningTimer) {
       clearInterval(this.pruningTimer);
@@ -471,6 +499,10 @@ export class CacophonyDaemon {
 
   public getDistillationService(): import("../inference/ReasoningDistillationService.js").ReasoningDistillationService | undefined {
     return this.distillationService;
+  }
+
+  public getAutoTuner(): import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined {
+    return this.autoTuner;
   }
 
   private async handleCommand(command: string, params?: Record<string, unknown>): Promise<unknown> {

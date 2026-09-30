@@ -42,6 +42,7 @@ export class ModelFleetService {
     this.setupSseListener();
     void this.fetchInstalledModels();
     void this.fetchConfig();
+    void this.fetchProfiles();
   }
 
   /**
@@ -220,6 +221,59 @@ export class ModelFleetService {
           // ignore
         }
       });
+    } catch {
+      // ignore
+    }
+  }
+
+  public readonly profiles = signal<readonly import('@cacophony/shared-types').ModelTuningProfile[]>([]);
+
+  /**
+   * Fetches active model tuning profiles from GET /api/models/profiles.
+   */
+  public async fetchProfiles(): Promise<void> {
+    try {
+      const res = await fetch('/api/models/profiles');
+      if (res.ok) {
+        const data = await res.json();
+        this.profiles.set(data);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Updates an existing profile via PUT /api/models/profiles/:id.
+   */
+  public async saveProfile(profile: import('@cacophony/shared-types').ModelTuningProfile): Promise<void> {
+    try {
+      const res = await fetch(`/api/models/profiles/${encodeURIComponent(profile.id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile)
+      });
+      if (res.ok) {
+        await this.fetchProfiles();
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Triggers autonomous auto-tuning via POST /api/models/profiles/auto-tune.
+   */
+  public async autoTuneProfiles(): Promise<void> {
+    try {
+      const res = await fetch('/api/models/profiles/auto-tune', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (res.ok) {
+        await this.fetchProfiles();
+      }
     } catch {
       // ignore
     }
