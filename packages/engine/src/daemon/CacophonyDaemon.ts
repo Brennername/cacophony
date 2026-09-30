@@ -185,6 +185,17 @@ export class CacophonyDaemon {
       }
       return await worker.executeTask(groomed, model);
     });
+    if (this.taskRepo && typeof this.taskRepo.reclaimStaleRunningTasks === "function") {
+      try {
+        const reclaimed = await this.taskRepo.reclaimStaleRunningTasks(15);
+        if (reclaimed > 0) {
+          console.log(`[CacophonyDaemon] Reclaimed ${reclaimed} stale RUNNING tasks on startup`);
+        }
+      } catch {
+        // non-fatal
+      }
+    }
+
     this.scheduler.start(this.config.pollIntervalMs || 2000);
 
     // 4b. Autonomous Taskcade Planning & Self-Grooming Service

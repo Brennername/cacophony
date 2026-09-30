@@ -513,6 +513,16 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4a0d. REST API: POST /api/tasks/reclaim - Reclaim stale running tasks back to PENDING
+    if (url.pathname === "/api/tasks/reclaim" && req.method === "POST") {
+      const taskRepo = this.daemon.getTaskRepository();
+      const timeoutMinutes = parseInt(url.searchParams.get("timeoutMinutes") || "15", 10);
+      const reclaimedCount = await taskRepo.reclaimStaleRunningTasks(timeoutMinutes);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, reclaimedCount }));
+      return;
+    }
+
     // 4a1. REST API: GET or DELETE /api/tasks/:id - Detailed Task Record with Stages or Deletion
     const taskDetailMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)$/);
     if (taskDetailMatch && req.method === "DELETE") {
