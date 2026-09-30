@@ -3,10 +3,10 @@
   "hostname": "auto",
   "primaryCategory": "AMD_APU_VEGA",
   "backend": "Vulkan",
-  "maxStableContext": 4096,
+  "maxStableContext": 8192,
   "recommendedConcurrency": 1,
   "flashAttention": false,
-  "vramApertureMb": 8192,
+  "vramApertureMb": 16384,
   "hostRamMb": 16384,
   "environment": {
     "OLLAMA_IGPU_ENABLE": "1",

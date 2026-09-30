@@ -21,6 +21,8 @@ async function main() {
   const limitArg = args.find((a) => a.startsWith("--limit="));
   const limit = limitArg ? parseInt(limitArg.split("=")[1] || "50", 10) : 50;
 
+  const forceReenqueue = args.includes("--force") || args.includes("--replace");
+
   const apiArg = args.find((a) => a.startsWith("--api="));
   const apiUrl = apiArg ? apiArg.split("=")[1] : (process.env.CACOPHONY_API_URL || "http://127.0.0.1:24161");
 
@@ -76,6 +78,10 @@ async function main() {
 
   for (const task of tasks) {
     try {
+      if (forceReenqueue) {
+        await fetch(`${apiUrl}/api/tasks/${task.id}`, { method: "DELETE" }).catch(() => {});
+      }
+
       const response = await fetch(`${apiUrl}/api/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
