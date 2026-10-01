@@ -96,12 +96,27 @@ export class ModelEvictionManager {
       }
     }
 
-    this.cooldownTimer[modelId] = setTimeout(() => {
+    const timer = setTimeout(() => {
       delete this.cooldownTimer[modelId];
       void this.healthRepo.updateStatus(modelId, "ACTIVE");
     }, 5 * 60 * 1000);
 
+    if (typeof timer.unref === "function") {
+      timer.unref();
+    }
+    this.cooldownTimer[modelId] = timer;
+
     return { evicted: true };
+  }
+
+  /**
+   * Cleans up all active cooldown timers to permit immediate clean process exit.
+   */
+  public dispose(): void {
+    for (const modelId of Object.keys(this.cooldownTimer)) {
+      clearTimeout(this.cooldownTimer[modelId]);
+      delete this.cooldownTimer[modelId];
+    }
   }
 
   public async selectModel(

@@ -63,6 +63,7 @@ export class TaskScheduler {
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
       "qwen2.5-coder:3b": 360_000,
       "gemma3:4b-it-qat": 420_000,
+      "qwen2.5-coder:7b": 600_000,
       "qwen2.5-coder:7b-instruct-q4_K_M": 600_000,
       "deepseek-r1:8b": 840_000,
       "qwen2.5-coder:14b": 780_000,
@@ -87,8 +88,7 @@ export class TaskScheduler {
       "gemma3:4b-it-qat-4k": "gemma3:4b-it-qat",
       "gemma3:4b": "gemma3:4b-it-qat",
       "qwen2.5-coder:3b-4k": "qwen2.5-coder:3b",
-      "qwen2.5-coder:7b-4k": "qwen2.5-coder:7b-instruct-q4_K_M",
-      "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "qwen2.5-coder:7b-4k": "qwen2.5-coder:7b",
       "qwen2.5-coder:14b-4k": "qwen2.5-coder:14b",
       "deepseek-coder-v2:16b-4k": "deepseek-coder-v2:16b"
     };

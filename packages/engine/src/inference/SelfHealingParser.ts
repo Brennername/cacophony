@@ -92,7 +92,7 @@ export class SelfHealingParser {
       return {
         valid: false,
         code: null,
-        error: "Forbidden placeholder comment or incomplete stub detected (e.g. '// ... existing code ...' or 'TODO: implement'). You must rewrite the FULL file with all imports, functions, classes, and complete implementations included without placeholders.",
+        error: "Forbidden placeholder comment detected (e.g. '// ... existing code ...' or incomplete stub). You must rewrite the FULL file with all imports, functions, classes, and complete implementations included without placeholders.",
         blocks
       };
     }
