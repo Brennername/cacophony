@@ -8,6 +8,7 @@ import { RepoMapViewComponent } from './components/views/repomap-view.component'
 import { ProcessesViewComponent } from './components/views/processes-view.component';
 import { SettingsViewComponent } from './components/views/settings-view.component';
 import { FleetViewComponent } from './components/views/fleet-view.component';
+import { TestingViewComponent } from './components/views/testing-view.component';
 
 export const routes: Routes = [
   {
@@ -54,6 +55,10 @@ export const routes: Routes = [
   {
     path: 'auth/callback',
     component: AuthCallbackComponent,
+  },
+  {
+    path: 'testing',
+    component: TestingViewComponent,
   },
   {
     path: '**',
