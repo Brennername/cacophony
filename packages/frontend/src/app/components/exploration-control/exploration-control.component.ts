@@ -13,12 +13,6 @@ export interface BanditArmUi {
   readonly vramMb: number;
 }
 
-/**
- * ExplorationControlComponent
- *
- * Visualizes Multi-Armed Bandit exploration policies, live epsilon rate slider,
- * Beta posterior distribution confidence intervals, and 2D Pareto frontiers.
- */
 @Component({
   selector: 'app-exploration-control',
   standalone: true,
