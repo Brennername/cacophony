@@ -266,10 +266,10 @@ export class TaskRepository {
   public async reclaimStaleRunningTasks(timeoutMinutes = 15): Promise<number> {
     const cutoff = new Date(Date.now() - timeoutMinutes * 60 * 1000).toISOString();
     const res = await this.driver.execute(
-      "UPDATE tasks SET status = 'PENDING', failure_count = failure_count + 1, updated_at = $1 WHERE status = 'RUNNING' AND updated_at < $2",
+      "UPDATE tasks SET status = 'PENDING', updated_at = $1 WHERE status = 'RUNNING' AND updated_at < $2",
       [new Date().toISOString(), cutoff]
     );
-    return (res as any)?.affectedRows ?? 0;
+    return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
   /**
