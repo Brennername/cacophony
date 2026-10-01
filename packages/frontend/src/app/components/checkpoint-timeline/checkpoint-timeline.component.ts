@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CheckpointRecord {
@@ -9,9 +9,6 @@ export interface CheckpointRecord {
   readonly filesChanged: number;
 }
 
-/**
- * Visual timeline of git micro-checkpoints with one-click Undo and Redo operations.
- */
 @Component({
   selector: 'app-checkpoint-timeline',
   standalone: true,
@@ -167,27 +164,24 @@ export interface CheckpointRecord {
   `]
 })
 export class CheckpointTimelineComponent {
-  public readonly checkpoints = input<CheckpointRecord[]>([
-    { id: 'cp-1', hash: 'a1b2c3d4e5f6', message: 'Pre-edit: SessionTabs implementation', createdAt: '10:15:20', filesChanged: 2 },
-    { id: 'cp-2', hash: 'b2c3d4e5f6a1', message: 'Pre-edit: RepoMapViewer node calculation', createdAt: '10:22:15', filesChanged: 1 }
-  ]);
-  public readonly canUndo = input<boolean>(true);
-  public readonly canRedo = input<boolean>(false);
+  @Input() public readonly checkpoints: CheckpointRecord[] = [];
+  @Input() public readonly canUndo: boolean = true;
+  @Input() public readonly canRedo: boolean = false;
 
-  public readonly undo = output<void>();
-  public readonly redo = output<void>();
-  public readonly checkpointSelected = output<string>();
+  @Output() public readonly undo: EventEmitter<void> = new EventEmitter();
+  @Output() public readonly redo: EventEmitter<void> = new EventEmitter();
+  @Output() public readonly checkpointSelected: EventEmitter<string> = new EventEmitter();
 
-  public readonly activeCheckpointId = signal<string | null>(null);
+  private activeCheckpointId: Signal<string | null> = signal(null);
 
   public triggerUndo(): void {
-    if (this.canUndo()) {
+    if (this.canUndo) {
       this.undo.emit();
     }
   }
 
   public triggerRedo(): void {
-    if (this.canRedo()) {
+    if (this.canRedo) {
       this.redo.emit();
     }
   }
