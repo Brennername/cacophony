@@ -104,8 +104,8 @@ export class AutonomousWorkerPipeline {
             { ruleId: "enforce_esm_js", severity: "silent_repair" },
             { ruleId: "whitespace_normalizer", severity: "silent_repair" },
             { ruleId: "placeholder_stubs", severity: "hard_rejection" },
-            { ruleId: "empty_file_guard", severity: "hard_rejection" },
-            { ruleId: "banned_import_scrubber", severity: "silent_repair" }
+            { ruleId: "empty_files", severity: "hard_rejection" },
+            { ruleId: "banned_imports", severity: "silent_repair" }
           ]
         }
       ]
@@ -234,21 +234,57 @@ export class AutonomousWorkerPipeline {
       const generationStart = Date.now();
       await this.recordAndEmitStage(taskId, "generation", "RUNNING");
 
-      const parseResult = await this.parser.executeWithSelfHealing(
-        this.provider,
-        {
-          model: selectedModel,
-          messages: [{ role: "user", content: context.assembledPrompt }],
-          temperature: 0.1,
-          maxTokens: 4096
-        },
-        (chunk) => {
-          if (this.streamTapManager) {
-            this.streamTapManager.emitToken(taskId, chunk);
+      let requestedMaxTokens = 4096;
+      if (focusFiles.length > 0) {
+        const targetRelFile = focusFiles[0]!;
+        const targetAbsFile = path.resolve(executionRoot, targetRelFile);
+        try {
+          const fileStat = await fs.stat(targetAbsFile);
+          if (fileStat.size > 8 * 1024) {
+            requestedMaxTokens = 8192;
           }
-        },
-        signal
-      );
+        } catch {
+          // File does not exist yet (creating new file)
+        }
+      }
+
+      let parseResult: {
+        readonly code: string;
+        readonly attempts: number;
+        readonly rawOutput: string;
+        readonly tokensPerSec: number;
+        readonly tokensPrompt: number;
+        readonly tokensCompletion: number;
+      };
+
+      try {
+        parseResult = await this.parser.executeWithSelfHealing(
+          this.provider,
+          {
+            model: selectedModel,
+            messages: [{ role: "user", content: context.assembledPrompt }],
+            temperature: 0.1,
+            maxTokens: requestedMaxTokens
+          },
+          (chunk) => {
+            if (this.streamTapManager) {
+              this.streamTapManager.emitToken(taskId, chunk);
+            }
+          },
+          signal
+        );
+      } catch (parseErr) {
+        if (signal?.aborted) throw parseErr;
+        console.warn(`[AutonomousWorkerPipeline] Initial generation parse failed or emitted reasoning trace:`, parseErr);
+        parseResult = {
+          code: "",
+          attempts: 1,
+          rawOutput: "",
+          tokensPerSec: 0,
+          tokensPrompt: 0,
+          tokensCompletion: 0
+        };
+      }
 
       let generationDuration = Date.now() - generationStart;
       let finalCode = parseResult.code;

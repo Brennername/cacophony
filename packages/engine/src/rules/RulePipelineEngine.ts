@@ -51,10 +51,26 @@ export class RulePipelineEngine {
   }
 
   /**
-   * Gets a registered rule by id.
+   * Gets a registered rule by id or known alias.
    */
   public getRule(ruleId: string): IRepairRule | undefined {
-    return this.rules.get(ruleId);
+    const direct = this.rules.get(ruleId);
+    if (direct) return direct;
+
+    const aliasMap: Record<string, string> = {
+      "empty_file_guard": "empty_files",
+      "banned_import_scrubber": "banned_imports",
+      "placeholder_stub_detector": "placeholder_stubs",
+      "whitespace_and_eol_normalizer": "whitespace_normalizer",
+      "loose_root_file_guard": "loose_root_files",
+      "signature_align": "ast_signature_align",
+      "parameter_inversion_repair": "ast_parameter_correction",
+      "ast_param_align": "ast_parameter_correction",
+      "file_placement": "file_placement_and_naming"
+    };
+
+    const mapped = aliasMap[ruleId];
+    return mapped ? this.rules.get(mapped) : undefined;
   }
 
   /**

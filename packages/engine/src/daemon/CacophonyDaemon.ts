@@ -330,7 +330,7 @@ export class CacophonyDaemon {
 
     // In demo mode, run queue replenishment every 5 seconds to keep live tasks active across diverse models
     if (isDemoMode) {
-      const fleetModels = ["qwen2.5-coder:7b", "deepseek-r1:8b", "gemma3:4b-it-qat", "qwen2.5-coder:3b"];
+      const fleetModels = ["qwen2.5-coder:7b", "gemma3:4b-it-qat", "qwen2.5-coder:3b"];
       let replenishIdx = 0;
       this.planningTimer = setInterval(() => {
         if (this.isRunning) {

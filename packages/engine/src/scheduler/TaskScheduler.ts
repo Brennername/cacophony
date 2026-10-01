@@ -221,16 +221,32 @@ export class TaskScheduler {
         ? TaskScheduler.normalizeModelName(targetTask.modelAssigned)
         : null;
 
-      let candidateList = normalizedAssigned
-        ? [normalizedAssigned]
-        : [
-            "deepseek-coder-v2:16b",
-            "qwen2.5-coder:14b",
-            "qwen2.5-coder:7b-instruct-q4_K_M",
-            "deepseek-r1:8b",
-            "gemma3:4b-it-qat",
-            "qwen2.5-coder:3b"
-          ];
+      const role = targetTask.role as AgentRole;
+      let candidateList: string[];
+
+      if (normalizedAssigned) {
+        // Guard against assigning a pure reasoning model (deepseek-r1) to non-architect tasks
+        if (normalizedAssigned.includes("r1") && role !== "architect" && role !== "reviewer") {
+          candidateList = ["qwen2.5-coder:7b", "qwen2.5-coder:14b", "gemma3:4b-it-qat"];
+        } else {
+          candidateList = [normalizedAssigned];
+        }
+      } else if (role === "architect" || role === "reviewer") {
+        candidateList = [
+          "deepseek-r1:8b",
+          "qwen2.5-coder:14b",
+          "qwen2.5-coder:7b"
+        ];
+      } else {
+        // Implementer, coder, test_engineer: dispatch strictly to coding models
+        candidateList = [
+          "qwen2.5-coder:7b",
+          "qwen2.5-coder:14b",
+          "gemma3:4b-it-qat",
+          "qwen2.5-coder:3b",
+          "deepseek-coder-v2:16b"
+        ];
+      }
 
       // Telemetry heuristic: If APU temperature is warm or elevated (>= 75C), prefer cooler-running lighter model
       try {

@@ -138,9 +138,11 @@ export class SelfHealingParser {
     readonly tokensCompletion: number;
   }> {
     const messages: ChatMessage[] = [...baseRequest.messages];
+    const isReasoner = baseRequest.model.includes("r1") || baseRequest.model.includes("reasoner");
+    const allowedRetries = isReasoner ? 1 : this.maxRetries;
     let attempts = 0;
 
-    while (attempts < this.maxRetries) {
+    while (attempts < allowedRetries) {
       if (signal?.aborted) {
         throw new Error("Self-healing execution aborted by watchdog signal");
       }
