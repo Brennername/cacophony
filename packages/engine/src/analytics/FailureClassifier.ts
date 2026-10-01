@@ -1,9 +1,3 @@
-/**
- * Failure Mode Taxonomy and Classification Engine.
- * Normalizes execution and test errors into structured categories:
- * SYNTAX_ERROR, TYPE_MISMATCH, ASSERTION_FAILURE, TIMEOUT, MISSING_DEPENDENCY,
- * TYPE_CHECK_ERROR, TEST_ASSERTION_FAILURE, BANNED_IMPORT, THERMAL_THROTTLE, CONTEXT_OVERFLOW, UNKNOWN.
- */
 export type FailureCategory =
   | "SYNTAX_ERROR"
   | "TYPE_MISMATCH"
@@ -61,9 +55,7 @@ export class ExecutionTimeoutError extends Error {
 }
 
 export class FailureClassifier {
-  /**
-   * Classifies error output, stack traces, compiler outputs or test failures into a normalized category.
-   */
+
   public static classify(errorOrMessage: Error | string, context?: { exitCode?: number; logOutput?: string }): ClassificationResult {
     let text = "";
     if (errorOrMessage instanceof Error) {
@@ -73,7 +65,6 @@ export class FailureClassifier {
     }
     const locations = this.extractStackLocations(text);
 
-    // 0. Explicit ExecutionTimeoutError instance
     if (errorOrMessage instanceof ExecutionTimeoutError) {
       return {
         category: "TIMEOUT",
@@ -84,7 +75,6 @@ export class FailureClassifier {
       };
     }
 
-    // 1. Thermal throttle
     if (/thermal|throttle|overheat|danger zone|gpu temp exceeded/i.test(text)) {
       return {
         category: "THERMAL_THROTTLE",
@@ -95,7 +85,6 @@ export class FailureClassifier {
       };
     }
 
-    // 2. Context window overflow / memory
     if (/context.*overflow|token.*limit exceeded|out of memory|oom|vram exhausted/i.test(text)) {
       return {
         category: "CONTEXT_OVERFLOW",
@@ -106,7 +95,6 @@ export class FailureClassifier {
       };
     }
 
-    // 3. Command timeout & Execution Watchdog
     if (
       /timeout|timed out|exceeded maximum command duration|executiontimeouterror|watchdog.*timeout|aborted by watchdog/i.test(
         text
@@ -122,7 +110,6 @@ export class FailureClassifier {
       };
     }
 
-    // 4. Missing dependency (npm/cargo/go/maven module not found)
     if (
       /cannot find module|module not found|no such package|package .* not found|unresolved import|could not find crate|dependency.*not found/i.test(
         text
@@ -138,7 +125,6 @@ export class FailureClassifier {
       };
     }
 
-    // 5. Banned imports or deterministic policy rejections
     if (/banned import|disallowed root file|forbidden command|security guardrail/i.test(text)) {
       return {
         category: "BANNED_IMPORT",
@@ -149,7 +135,6 @@ export class FailureClassifier {
       };
     }
 
-    // 6. Type mismatch / TypeScript / LSP type checking errors
     if (/error TS\d+:|type.*not assignable|property.*does not exist on type|cannot find name|mismatched types|type mismatch/i.test(text)) {
       const match = text.match(/(?:error TS\d+:[^\n]+|mismatched types:[^\n]+|type mismatch:[^\n]+)/i);
       return {
@@ -161,7 +146,6 @@ export class FailureClassifier {
       };
     }
 
-    // 7. Syntax error (JS/TS, Rust, Go, Java)
     if (/SyntaxError:|unexpected token|parse error|parsing error|syntax error|expected `.*`, found/i.test(text)) {
       const match = text.match(/(?:SyntaxError:[^\n]+|syntax error:[^\n]+|expected `[^`]+`, found[^\n]+)/i);
       return {
@@ -173,7 +157,6 @@ export class FailureClassifier {
       };
     }
 
-    // 8. Test assertion failure (Jest, Vitest, cargo test, go test, mvn test)
     if (
       /AssertionError|assert\.|expect\(.*fail|fail\s+\d+|ERR_ASSERTION|assertion `left == right` failed|--- FAIL:|FAILURE!/i.test(
         text
@@ -197,14 +180,9 @@ export class FailureClassifier {
     };
   }
 
-  /**
-   * Extracts specific failure line numbers and error messages across stack trace formats:
-   * Jest/Vitest, cargo test, go test, mvn test.
-   */
   public static extractStackLocations(text: string): readonly StackTraceLocation[] {
     const locations: StackTraceLocation[] = [];
 
-    // 1. Jest / Vitest / Node: at file:///path/file.ts:42:15 or at Object.<anonymous> (/path/file.ts:42:15)
     const nodeRegex = /(?:at\s+(?:[^\s()]+\s+)?\(?(?:file:\/\/)?([^\s():]+):(\d+):?(\d+)?\)?)/g;
     let match: RegExpExecArray | null;
     while ((match = nodeRegex.exec(text)) !== null) {
@@ -216,7 +194,6 @@ export class FailureClassifier {
       }
     }
 
-    // 2. Cargo test: --> src/lib.rs:14:5
     const cargoRegex = /-->\s+([^\s:]+\.rs):(\d+):(\d+)/g;
     while ((match = cargoRegex.exec(text)) !== null) {
       const file = match[1];
@@ -227,7 +204,6 @@ export class FailureClassifier {
       }
     }
 
-    // 3. Go test: file_test.go:28: assertion failed
     const goRegex = /([a-zA-Z0-9_\-./]+\.go):(\d+)(?::\s*(.+))?/g;
     while ((match = goRegex.exec(text)) !== null) {
       const file = match[1];
@@ -238,7 +214,6 @@ export class FailureClassifier {
       }
     }
 
-    // 4. Maven test: [ERROR] /path/to/File.java:[42,15] error message
     const mvnRegex = /\[ERROR\]\s+([^\s:]+\.java):\[(\d+),(\d+)\](?:\s*(.+))?/g;
     while ((match = mvnRegex.exec(text)) !== null) {
       const file = match[1];
