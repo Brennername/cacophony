@@ -63,32 +63,23 @@ export interface ProcessItem {
   status: 'RUNNING' | 'SUCCESS' | 'FAILED';
 }
 
-/**
- * State store managing real-time arena diagnostics, task queues, and process telemetry with Signals.
- */
 @Injectable({
   providedIn: 'root',
 })
 export class ArenaStateStore {
-  // Live Terminal Stream Buffer (Raw combined output)
+
   public readonly liveStreamBuffer = signal<string>('');
 
-  // Live Cognitive Trace (<think> tokens demuxed in real time)
   public readonly liveReasoningBuffer = signal<string>('');
 
-  // Live Code Generation Stream (demuxed code and markdown artifacts)
   public readonly liveCodeBuffer = signal<string>('');
 
-  // Live Instantaneous Token Velocity (tokens per second over rolling 2s window)
   public readonly liveTokenVelocity = signal<number>(0);
 
-  // Cumulative Run Token Velocity (total tokens in current task run / elapsed generation seconds)
   public readonly runTokenVelocity = signal<number>(0);
 
-  // Live Stream Activity: true when tokens are actively streaming from the LLM, false when paused or idle
   public readonly isStreamActive = signal<boolean>(false);
 
-  // Velocity Match Status: reflects active LLM stream activity
   public readonly isVelocityMatched = computed(() => this.isStreamActive());
 
   private lastTokenReceivedAt = 0;
@@ -98,7 +89,6 @@ export class ArenaStateStore {
   private runStartTimestamp: number | null = null;
   private currentTaskIdForRun: string | null = null;
 
-  // Rolling Telemetry History for real-time sparkline graphs (up to 30 data points)
   public readonly tempHistory = signal<number[]>([35, 36, 38, 40, 42, 45, 47, 50, 52, 54]);
   public readonly gpuLoadHistory = signal<number[]>([0, 5, 12, 25, 40, 60, 75, 80, 85, 90]);
   public readonly vramHistory = signal<number[]>([15, 20, 25, 30, 35, 40, 45, 50, 52, 55]);
@@ -106,7 +96,6 @@ export class ArenaStateStore {
   public readonly cpuLoadHistory = signal<number[]>([10, 15, 22, 35, 45, 50, 40, 35, 30, 28]);
   public readonly sysMemHistory = signal<number[]>([30, 31, 32, 33, 34, 35, 36, 37, 38, 38]);
 
-  // Model High-Water Mark and Velocity Statistics
   public readonly modelHighWaterMarks = signal<Record<string, number>>({});
   private readonly modelVelocitySamples = new Map<string, number[]>();
 
@@ -119,10 +108,8 @@ export class ArenaStateStore {
     return Math.max(35.0, live * 1.25, run * 1.25);
   });
 
-  // Selected Task for Drill-Down Modal
   public readonly selectedTask = signal<TaskItem | null>(null);
 
-  // Telemetry Signal initialized with zero/clean state
   public readonly telemetry = signal<TelemetryMetrics>({
     gpuBusyPercent: 0,
     cpuBusyPercent: 0,
@@ -146,16 +133,12 @@ export class ArenaStateStore {
     activeModel: 'None',
   });
 
-  // Task Queue Signals initialized empty from real backend
   public readonly tasks = signal<TaskItem[]>([]);
 
-  // Process Monitor Signals initialized empty
   public readonly processes = signal<ProcessItem[]>([]);
 
-  // Scheduler control signal
   public readonly schedulerPaused = signal<boolean>(false);
 
-  // User Role & Permissions (ADMIN, OPERATOR, VIEWER)
   public readonly currentUserRole = signal<'ADMIN' | 'OPERATOR' | 'VIEWER'>('OPERATOR');
 
   public readonly canMutateTasks = computed(() => {
@@ -190,7 +173,6 @@ export class ArenaStateStore {
     const variance = samples.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / samples.length;
     const stdDev = Math.sqrt(variance);
 
-    // Filter outliers greater than 2 standard deviations from mean
     let effectiveVal = velocity;
     if (samples.length >= 10 && stdDev > 0 && velocity > mean + 2 * stdDev) {
       const validSamples = samples.filter((s) => s <= mean + 2 * stdDev);
@@ -293,7 +275,6 @@ export class ArenaStateStore {
             this.lastTokenReceivedAt = now;
             this.isStreamActive.set(true);
 
-            // Active streaming tokens guarantee that the task has advanced past planning into generation
             if (taskId) {
               this.tasks.update((currentTasks) =>
                 currentTasks.map((t) => {
@@ -354,7 +335,6 @@ export class ArenaStateStore {
             const runVelocity = Number((this.runTokenCount / elapsedRunSec).toFixed(1));
             this.runTokenVelocity.set(runVelocity);
 
-            // Calculate rolling token velocity over a 2-second sliding window
             this.tokenArrivalTimestamps.push(now);
             const cutoff = now - 2000;
             this.tokenArrivalTimestamps = this.tokenArrivalTimestamps.filter((t) => t >= cutoff);
@@ -419,11 +399,10 @@ export class ArenaStateStore {
             );
           }
         } catch {
-          // ignore stream parse errors
+
         }
       };
 
-      // Velocity decay timer: resets live velocity toward 0 and updates stream activity
       this.velocityDecayTimer = setInterval(() => {
         const now = Date.now();
         const timeSinceLastToken = now - this.lastTokenReceivedAt;
@@ -446,12 +425,11 @@ export class ArenaStateStore {
         }
       }, 200);
 
-      // Periodic poll every 2.5 seconds to refresh task statuses and process metrics
       setInterval(() => {
         void this.fetchInitialState();
       }, 2500);
     } catch {
-      // offline / mock environment
+
     }
   }
 
@@ -505,10 +483,9 @@ export class ArenaStateStore {
         }
       }
     } catch {
-      // offline
+
     }
 
-    // Hydrate real stages for active running task from /api/tasks/:id
     const active = this.tasks().find((t) => t.status === 'RUNNING');
     if (active) {
       try {
@@ -533,7 +510,7 @@ export class ArenaStateStore {
           }
         }
       } catch {
-        // ignore
+
       }
     }
 
@@ -546,11 +523,10 @@ export class ArenaStateStore {
         }
       }
     } catch {
-      // offline
+
     }
   }
 
-  // Computed Selectors
   public readonly activeTask = computed(() =>
     this.tasks().find((t) => t.status === 'RUNNING')
   );
@@ -563,7 +539,6 @@ export class ArenaStateStore {
     () => this.tasks().filter((t) => t.status === 'COMPLETED').length
   );
 
-  // Actions
   public toggleScheduler(): void {
     this.schedulerPaused.update((paused) => !paused);
   }
@@ -604,7 +579,7 @@ export class ArenaStateStore {
         return;
       }
     } catch {
-      // fallback
+
     }
 
     if (typeof taskOrId !== 'string') {
