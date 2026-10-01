@@ -1,13 +1,12 @@
-import { Component, Input, Output, EventEmitter, signal, WritableSignal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CheckpointRecord {
   readonly id: string;
-  readonly hash?: string;
-  readonly message?: string;
-  readonly text?: string;
-  readonly createdAt?: string;
-  readonly filesChanged?: number;
+  readonly hash: string;
+  readonly message: string;
+  readonly createdAt: string;
+  readonly filesChanged: number;
 }
 
 @Component({
@@ -21,7 +20,7 @@ export interface CheckpointRecord {
         <div class="actions-group">
           <button
             class="action-btn undo-btn"
-            [disabled]="!canUndo"
+            [disabled]="!canUndo()"
             (click)="triggerUndo()"
             aria-label="Undo to previous checkpoint"
           >
@@ -29,7 +28,7 @@ export interface CheckpointRecord {
           </button>
           <button
             class="action-btn redo-btn"
-            [disabled]="!canRedo"
+            [disabled]="!canRedo()"
             (click)="triggerRedo()"
             aria-label="Redo to next checkpoint"
           >
@@ -39,7 +38,7 @@ export interface CheckpointRecord {
       </div>
 
       <div class="checkpoints-list">
-        @for (cp of checkpoints; track cp.id; let idx = $index) {
+        @for (cp of checkpoints(); track cp.id; let idx = $index) {
           <div
             class="checkpoint-row"
             [class.active]="activeCheckpointId() === cp.id"
@@ -49,9 +48,9 @@ export interface CheckpointRecord {
           >
             <div class="checkpoint-bullet"></div>
             <div class="checkpoint-info">
-              <span class="checkpoint-hash">{{ (cp.hash || cp.id).slice(0, 7) }}</span>
-              <span class="checkpoint-msg">{{ cp.message || cp.text }}</span>
-              <span class="checkpoint-meta">{{ cp.filesChanged ?? 1 }} files • {{ cp.createdAt || 'Just now' }}</span>
+              <span class="checkpoint-hash">{{ cp.hash.slice(0, 7) }}</span>
+              <span class="checkpoint-msg">{{ cp.message }}</span>
+              <span class="checkpoint-meta">{{ cp.filesChanged }} files • {{ cp.createdAt }}</span>
             </div>
           </div>
         } @empty {
@@ -165,40 +164,40 @@ export interface CheckpointRecord {
   `]
 })
 export class CheckpointTimelineComponent {
-  @Input() public checkpoints: CheckpointRecord[] = [];
-  @Input() public canUndo: boolean = true;
-  @Input() public canRedo: boolean = false;
+  public readonly checkpoints = input<CheckpointRecord[]>([
+    { id: 'cp-1', hash: 'a1b2c3d4e5f6', message: 'Pre-edit: SessionTabs implementation', createdAt: '10:15:20', filesChanged: 2 },
+    { id: 'cp-2', hash: 'b2c3d4e5f6a1', message: 'Pre-edit: RepoMapViewer node calculation', createdAt: '10:22:15', filesChanged: 1 }
+  ]);
+  public readonly activeCheckpointId = signal<string | null>(null);
 
-  @Output() public readonly undo: EventEmitter<void> = new EventEmitter();
-  @Output() public readonly redo: EventEmitter<void> = new EventEmitter();
-  @Output() public readonly checkpointSelected: EventEmitter<string> = new EventEmitter();
+  constructor(private readonly checkpointService: CheckpointService) {}
 
-  public readonly activeCheckpointId: WritableSignal<string | null> = signal(null);
-  public diffDrawerOpen: boolean = false;
-  public diffText: string = '';
+  get canUndo(): boolean {
+    return this.activeCheckpointId() !== null && this.checkpointService.canUndo(this.activeCheckpointId());
+  }
 
-  public triggerUndo(): void {
-    if (this.canUndo) {
-      this.undo.emit();
+  get canRedo(): boolean {
+    return this.activeCheckpointId() !== null && this.checkpointService.canRedo(this.activeCheckpointId());
+  }
+
+  triggerUndo(): void {
+    if (this.canUndo()) {
+      this.checkpointService.undo().subscribe(() => {
+        this.selectCheckpoint(this.checkpointService.getPreviousCheckpointId(this.activeCheckpointId()));
+      });
     }
   }
 
-  public triggerRedo(): void {
-    if (this.canRedo) {
-      this.redo.emit();
+  triggerRedo(): void {
+    if (this.canRedo()) {
+      this.checkpointService.redo().subscribe(() => {
+        this.selectCheckpoint(this.checkpointService.getNextCheckpointId(this.activeCheckpointId()));
+      });
     }
   }
 
-  public selectCheckpoint(id: string): void {
+  selectCheckpoint(id: string): void {
     this.activeCheckpointId.set(id);
-    this.diffDrawerOpen = true;
-    const selected = this.checkpoints.find((c) => c.id === id);
-    const initial = this.checkpoints[0];
-    if (selected && initial && selected !== initial) {
-      this.diffText = `${selected.text || selected.message}\n- ${initial.text || initial.message}`;
-    } else if (selected) {
-      this.diffText = selected.text || selected.message || '';
-    }
     this.checkpointSelected.emit(id);
   }
 }
