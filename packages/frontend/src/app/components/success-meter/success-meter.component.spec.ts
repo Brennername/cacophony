@@ -1,25 +1,25 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SuccessMeterComponent } from './success-meter.component';
-import { ReactiveSignalService } from '../services/reactive-signal.service';
+import { ReactiveSignalService } from '../../services/reactive-signal.service';
 
 describe('SuccessMeterComponent', () => {
   let component: SuccessMeterComponent;
   let fixture: ComponentFixture<SuccessMeterComponent>;
-  let reactiveSignalService: jasmine.SpyObj<ReactiveSignalService>;
+  let mockReactiveService: { getSignalValue: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    reactiveSignalService = jasmine.createSpyObj('ReactiveSignalService', ['getSignalValue']);
+    mockReactiveService = {
+      getSignalValue: vi.fn().mockReturnValue(0.85)
+    };
 
     await TestBed.configureTestingModule({
-      declarations: [ SuccessMeterComponent ],
+      imports: [SuccessMeterComponent],
       providers: [
-        { provide: ReactiveSignalService, useValue: reactiveSignalService }
+        { provide: ReactiveSignalService, useValue: mockReactiveService }
       ]
-    })
-    .compileComponents();
-  });
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(SuccessMeterComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -31,7 +31,7 @@ describe('SuccessMeterComponent', () => {
 
   it('should update SVG dashoffset based on signal value', () => {
     const signalValue = 0.5;
-    reactiveSignalService.getSignalValue.and.returnValue(signalValue);
+    mockReactiveService.getSignalValue.mockReturnValue(signalValue);
 
     component.ngOnInit();
 
@@ -40,7 +40,7 @@ describe('SuccessMeterComponent', () => {
 
   it('should apply color threshold classes based on signal value', () => {
     const signalValue = 0.3;
-    reactiveSignalService.getSignalValue.and.returnValue(signalValue);
+    mockReactiveService.getSignalValue.mockReturnValue(signalValue);
 
     component.ngOnInit();
 

@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CheckpointRecord {
@@ -169,35 +169,62 @@ export class CheckpointTimelineComponent {
     { id: 'cp-2', hash: 'b2c3d4e5f6a1', message: 'Pre-edit: RepoMapViewer node calculation', createdAt: '10:22:15', filesChanged: 1 }
   ]);
   public readonly activeCheckpointId = signal<string | null>(null);
+  public diffDrawerOpen: boolean = false;
+  public diffText: string = '';
 
-  constructor(private readonly checkpointService: CheckpointService) {}
+  public readonly undo = output<void>();
+  public readonly redo = output<void>();
+  public readonly checkpointSelected = output<string>();
 
-  get canUndo(): boolean {
-    return this.activeCheckpointId() !== null && this.checkpointService.canUndo(this.activeCheckpointId());
-  }
+  public readonly canUndo = computed<boolean>(() => {
+    const cps = this.checkpoints();
+    const active = this.activeCheckpointId();
+    if (!active || cps.length <= 1) return false;
+    const idx = cps.findIndex((c) => c.id === active);
+    return idx > 0;
+  });
 
-  get canRedo(): boolean {
-    return this.activeCheckpointId() !== null && this.checkpointService.canRedo(this.activeCheckpointId());
-  }
+  public readonly canRedo = computed<boolean>(() => {
+    const cps = this.checkpoints();
+    const active = this.activeCheckpointId();
+    if (!active || cps.length <= 1) return false;
+    const idx = cps.findIndex((c) => c.id === active);
+    return idx >= 0 && idx < cps.length - 1;
+  });
 
-  triggerUndo(): void {
+  public triggerUndo(): void {
     if (this.canUndo()) {
-      this.checkpointService.undo().subscribe(() => {
-        this.selectCheckpoint(this.checkpointService.getPreviousCheckpointId(this.activeCheckpointId()));
-      });
+      const cps = this.checkpoints();
+      const idx = cps.findIndex((c) => c.id === this.activeCheckpointId());
+      if (idx > 0) {
+        this.selectCheckpoint(cps[idx - 1]!.id);
+      }
+      this.undo.emit();
     }
   }
 
-  triggerRedo(): void {
+  public triggerRedo(): void {
     if (this.canRedo()) {
-      this.checkpointService.redo().subscribe(() => {
-        this.selectCheckpoint(this.checkpointService.getNextCheckpointId(this.activeCheckpointId()));
-      });
+      const cps = this.checkpoints();
+      const idx = cps.findIndex((c) => c.id === this.activeCheckpointId());
+      if (idx >= 0 && idx < cps.length - 1) {
+        this.selectCheckpoint(cps[idx + 1]!.id);
+      }
+      this.redo.emit();
     }
   }
 
-  selectCheckpoint(id: string): void {
+  public selectCheckpoint(id: string): void {
     this.activeCheckpointId.set(id);
+    this.diffDrawerOpen = true;
+    const cps = this.checkpoints();
+    const selected = cps.find((c) => c.id === id);
+    const initial = cps[0];
+    if (selected && initial && selected !== initial) {
+      this.diffText = `${selected.message}\n- ${initial.message}`;
+    } else if (selected) {
+      this.diffText = selected.message;
+    }
     this.checkpointSelected.emit(id);
   }
 }

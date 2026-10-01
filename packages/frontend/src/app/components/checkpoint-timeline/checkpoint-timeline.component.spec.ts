@@ -1,25 +1,29 @@
-import { describe, it, expect } from 'vitest';
-import { TestBed } from '@angular/core/testing';
-import { CheckpointTimelineComponent } from './checkpoint-timeline.component';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { CheckpointTimelineComponent, CheckpointRecord } from './checkpoint-timeline.component';
 
 describe('CheckpointTimelineComponent', () => {
   let component: CheckpointTimelineComponent;
-  let fixture;
+  let fixture: ComponentFixture<CheckpointTimelineComponent>;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [CheckpointTimelineComponent],
-    });
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CheckpointTimelineComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(CheckpointTimelineComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   it('should render checkpoint entries and trigger undo', () => {
-    // Mock the checkpoints data
-    component.checkpoints = [
-      { id: '1', text: 'Initial state' },
-      { id: '2', text: 'State after change' }
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 },
+      { id: '2', hash: '2222222', message: 'State after change', createdAt: '10:05:00', filesChanged: 2 }
     ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
 
     // Trigger a checkpoint selection
     component.selectCheckpoint('2');
@@ -35,11 +39,13 @@ describe('CheckpointTimelineComponent', () => {
   });
 
   it('should render diff text on checkpoint selection', () => {
-    // Mock the checkpoints data
-    component.checkpoints = [
-      { id: '1', text: 'Initial state' },
-      { id: '2', text: 'State after change' }
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 },
+      { id: '2', hash: '2222222', message: 'State after change', createdAt: '10:05:00', filesChanged: 2 }
     ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
 
     // Trigger a checkpoint selection
     component.selectCheckpoint('2');
