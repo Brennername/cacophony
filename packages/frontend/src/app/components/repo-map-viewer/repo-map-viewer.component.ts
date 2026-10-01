@@ -9,9 +9,6 @@ export interface RepoSymbolNode {
   readonly centrality: number;
 }
 
-/**
- * Interactive SVG repository map viewer with node zooming, symbol centrality, and cluster selection.
- */
 @Component({
   selector: 'app-repo-map-viewer',
   standalone: true,
