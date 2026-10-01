@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Optional } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveSignalService } from '../../services/reactive-signal.service';
 
@@ -27,12 +27,17 @@ import { ReactiveSignalService } from '../../services/reactive-signal.service';
         />
       </svg>
       <div class="meter-text">
-        <span class="percentage">{{ successPercentage }}%</span>
+        <span class="percentage">{{ displayPercentage }}%</span>
         <span class="label">Success Rate</span>
       </div>
     </div>
   `,
   styles: [`
+    :host {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
     .success-meter-wrapper {
       display: flex;
       flex-direction: column;
@@ -48,13 +53,13 @@ import { ReactiveSignalService } from '../../services/reactive-signal.service';
     }
     .gauge-progress {
       fill: none;
-      stroke: var(--accent-success, #10b981);
+      stroke: var(--status-nominal, #10b981);
       stroke-linecap: round;
       transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
     }
-    .low .gauge-progress { stroke: var(--accent-danger, #ef4444); }
-    .medium .gauge-progress { stroke: var(--accent-warning, #f59e0b); }
-    .high .gauge-progress { stroke: var(--accent-success, #10b981); }
+    .low .gauge-progress { stroke: var(--status-danger, #ef4444); }
+    .medium .gauge-progress { stroke: var(--status-warm, #f59e0b); }
+    .high .gauge-progress { stroke: var(--status-nominal, #10b981); }
     .meter-text {
       position: absolute;
       top: 50%;
@@ -77,7 +82,7 @@ import { ReactiveSignalService } from '../../services/reactive-signal.service';
     }
   `]
 })
-export class SuccessMeterComponent implements OnInit {
+export class SuccessMeterComponent implements OnInit, OnChanges {
   @Input() public successPercentage: number = 0;
 
   public readonly maxSuccessPercentage = 100;
@@ -92,9 +97,27 @@ export class SuccessMeterComponent implements OnInit {
   public dashoffset: number = 0;
   public colorClass: 'low' | 'medium' | 'high' = 'high';
 
+  public get displayPercentage(): number {
+    if (this.reactiveSignalService && typeof this.reactiveSignalService.getSignalValue === 'function') {
+      const val = this.reactiveSignalService.getSignalValue();
+      if (typeof val === 'number') {
+        return Math.round(val * 100);
+      }
+    }
+    return Math.round(this.successPercentage);
+  }
+
   constructor(@Optional() private reactiveSignalService?: ReactiveSignalService) {}
 
   public ngOnInit(): void {
+    this.refreshMetrics();
+  }
+
+  public ngOnChanges(): void {
+    this.refreshMetrics();
+  }
+
+  private refreshMetrics(): void {
     if (this.reactiveSignalService && typeof this.reactiveSignalService.getSignalValue === 'function') {
       const val = this.reactiveSignalService.getSignalValue();
       if (typeof val === 'number') {
