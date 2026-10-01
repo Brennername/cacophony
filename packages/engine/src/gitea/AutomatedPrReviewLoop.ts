@@ -18,14 +18,6 @@ export interface ReviewLoopResult {
   readonly remediationRequired: boolean;
 }
 
-/**
- * Executes automated model code review loops on Gitea Pull Requests:
- * 1. Pulls diff from Gitea.
- * 2. LLM evaluates diff for architectural boundaries, types, and bugs.
- * 3. LLM returns structured verdict (APPROVE, REQUEST_CHANGES, REJECT).
- * 4. Submits review to Gitea PR.
- * 5. Automatically triggers merge if approved, or flags remediation if changes requested.
- */
 export class AutomatedPrReviewLoop {
   private readonly giteaClient: GiteaApiClient;
   private readonly inferenceProvider: OllamaProvider;
@@ -36,10 +28,9 @@ export class AutomatedPrReviewLoop {
   }
 
   public async evaluatePullRequest(options: ReviewLoopOptions): Promise<ReviewLoopResult> {
-    // 1. Fetch diff from Gitea
+
     const diff = await this.giteaClient.getPullRequestDiff(options.owner, options.repo, options.prNumber);
 
-    // 2. Query reviewer LLM
     const reviewPrompt = this.buildPrompt(diff);
     const response = await this.inferenceProvider.generate({
       model: options.reviewerModel,
@@ -58,7 +49,6 @@ export class AutomatedPrReviewLoop {
 
     const parsed = this.parseReviewResponse(response.content);
 
-    // 3. Post review back to Gitea PR
     await this.giteaClient.submitPullRequestReview(options.owner, options.repo, options.prNumber, {
       event: parsed.verdict === "APPROVE" ? "APPROVED" : parsed.verdict === "REQUEST_CHANGES" ? "REQUEST_CHANGES" : "COMMENT",
       body: parsed.reviewNotes,
@@ -70,7 +60,7 @@ export class AutomatedPrReviewLoop {
     });
 
     let merged = false;
-    // 4. Auto-merge if approved
+
     if (parsed.verdict === "APPROVE" && (options.autoMergeOnApproval ?? true)) {
       try {
         await this.giteaClient.mergePullRequest(options.owner, options.repo, options.prNumber, {
@@ -141,7 +131,7 @@ export class AutomatedPrReviewLoop {
         };
       }
     } catch {
-      // Fallback
+
     }
 
     if (llmText.toUpperCase().includes("APPROVE")) {
