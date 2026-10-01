@@ -61,12 +61,12 @@ export class TaskScheduler {
     this.streamTapManager = options.streamTapManager;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 300_000; // 5 minutes default
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
-      "qwen2.5-coder:3b": 180_000,
-      "gemma3:4b-it-qat": 240_000,
-      "qwen2.5-coder:7b-instruct-q4_K_M": 420_000,
-      "deepseek-r1:8b": 600_000,
-      "qwen2.5-coder:14b": 540_000,
-      "deepseek-coder-v2:16b": 660_000
+      "qwen2.5-coder:3b": 240_000,
+      "gemma3:4b-it-qat": 300_000,
+      "qwen2.5-coder:7b-instruct-q4_K_M": 450_000,
+      "deepseek-r1:8b": 720_000,
+      "qwen2.5-coder:14b": 600_000,
+      "deepseek-coder-v2:16b": 720_000
     };
 
     this.mutex = new ExecutionMutex();

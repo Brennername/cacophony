@@ -1,48 +1,123 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Optional } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveSignalService } from '../../services/reactive-signal.service';
 
 @Component({
   selector: 'app-success-meter',
-  templateUrl: './success-meter.component.html',
-  styleUrls: ['./success-meter.component.css']
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="success-meter-wrapper" [class]="colorClass">
+      <svg class="radial-gauge" [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight" [attr.width]="svgWidth" [attr.height]="svgHeight">
+        <circle
+          class="gauge-bg"
+          [attr.cx]="centerX"
+          [attr.cy]="centerY"
+          [attr.r]="radius"
+          [attr.stroke-width]="strokeWidth"
+        />
+        <circle
+          class="gauge-progress"
+          [attr.cx]="centerX"
+          [attr.cy]="centerY"
+          [attr.r]="radius"
+          [attr.stroke-width]="strokeWidth"
+          [attr.stroke-dasharray]="circumference"
+          [attr.stroke-dashoffset]="dashoffset"
+        />
+      </svg>
+      <div class="meter-text">
+        <span class="percentage">{{ successPercentage }}%</span>
+        <span class="label">Success Rate</span>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .success-meter-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .radial-gauge {
+      transform: rotate(-90deg);
+    }
+    .gauge-bg {
+      fill: none;
+      stroke: var(--surface-border, rgba(255, 255, 255, 0.1));
+    }
+    .gauge-progress {
+      fill: none;
+      stroke: var(--accent-success, #10b981);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+    }
+    .low .gauge-progress { stroke: var(--accent-danger, #ef4444); }
+    .medium .gauge-progress { stroke: var(--accent-warning, #f59e0b); }
+    .high .gauge-progress { stroke: var(--accent-success, #10b981); }
+    .meter-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .percentage {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  `]
 })
 export class SuccessMeterComponent implements OnInit {
-  @Input() successPercentage: number = 0;
-  private readonly maxSuccessPercentage = 100;
-  private readonly svgWidth = 200;
-  private readonly svgHeight = 200;
-  private readonly radius = 90;
-  private readonly strokeWidth = 10;
-  private readonly centerX = this.svgWidth / 2;
-  private readonly centerY = this.svgHeight / 2;
-  private readonly circumference = 2 * Math.PI * this.radius;
+  @Input() public successPercentage: number = 0;
 
-  constructor() {}
+  public readonly maxSuccessPercentage = 100;
+  public readonly svgWidth = 100;
+  public readonly svgHeight = 100;
+  public readonly radius = 40;
+  public readonly strokeWidth = 8;
+  public readonly centerX = 50;
+  public readonly centerY = 50;
+  public readonly circumference = 2 * Math.PI * 40;
 
-  ngOnInit(): void {
-    if (this.successPercentage < 0 || this.successPercentage > this.maxSuccessPercentage) {
-      throw new Error('Success percentage must be between 0 and 100');
+  public dashoffset: number = 0;
+  public colorClass: 'low' | 'medium' | 'high' = 'high';
+
+  constructor(@Optional() private reactiveSignalService?: ReactiveSignalService) {}
+
+  public ngOnInit(): void {
+    if (this.reactiveSignalService && typeof this.reactiveSignalService.getSignalValue === 'function') {
+      const val = this.reactiveSignalService.getSignalValue();
+      if (typeof val === 'number') {
+        this.dashoffset = 100 - (val * 200);
+        this.colorClass = val < 0.4 ? 'low' : val < 0.7 ? 'medium' : 'high';
+        return;
+      }
     }
+
+    const pct = Math.max(0, Math.min(100, this.successPercentage));
+    this.dashoffset = (1 - pct / 100) * this.circumference;
+    this.colorClass = pct < 40 ? 'low' : pct < 70 ? 'medium' : 'high';
   }
 
-  getTransform(): string {
+  public getTransform(): string {
     return `translate(${this.centerX}, ${this.centerY})`;
   }
 
-  getStrokeDasharray(): number {
+  public getStrokeDasharray(): number {
     return this.circumference;
   }
 
-  getStrokeDashoffset(): number {
-    const offset = (1 - this.successPercentage / this.maxSuccessPercentage) * this.circumference;
-    return offset;
-  }
-
-  getCircleStyle(): any {
-    return {
-      fill: 'none',
-      stroke: '#4CAF50', // Green color for success
-      strokeWidth: this.strokeWidth,
-      transform: `rotate(-90deg) translate(${this.radius}px)`
-    };
+  public getStrokeDashoffset(): number {
+    return this.dashoffset;
   }
 }

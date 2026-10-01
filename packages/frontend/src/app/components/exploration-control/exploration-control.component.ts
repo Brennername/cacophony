@@ -267,9 +267,15 @@ export class ExplorationControlComponent implements OnInit {
 
   private async fetchArmsAndPolicy(): Promise<void> {
     try {
-      const response = await this.http.get<{ arms: BanditArmUi[], policy: string }>('/api/bandit/arms').toPromise();
-      this.arms.set(response.arms);
-      this.activePolicy.set(response.policy);
+      const response = await this.http.get<{ arms?: BanditArmUi[]; policy?: 'epsilon_greedy' | 'ucb1' | 'thompson_sampling' }>('/api/bandit/arms').toPromise();
+      if (response) {
+        if (response.arms) {
+          this.arms.set(response.arms);
+        }
+        if (response.policy) {
+          this.activePolicy.set(response.policy);
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch arms and policy:', error);
     }

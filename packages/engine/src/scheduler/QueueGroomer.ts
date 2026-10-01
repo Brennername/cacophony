@@ -102,7 +102,7 @@ export class QueueGroomer {
         groomNotes.push(`Scoped test command to source test file: ${testCommand}`);
       } else if (focusFilesList.length > 0) {
         const focus = focusFilesList[0]!;
-        const isJsTs = /\.(?:ts|js|mjs|cjs)$/i.test(focus);
+        const isJsTs = /\.(?:[cm]?[jt]sx?)$/i.test(focus);
         if (isJsTs) {
           testCommand = `node --check ${focus}`;
           modified = true;
@@ -110,7 +110,7 @@ export class QueueGroomer {
         } else {
           testCommand = "";
           modified = true;
-          groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk and focus file is non-executable; cleared test command`);
+          groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk and focus file is non-executable; cleared test command to allow review verification`);
         }
       } else {
         testCommand = "";
@@ -136,12 +136,14 @@ export class QueueGroomer {
           testCommand = scoped;
           modified = true;
           groomNotes.push(`Scoped test command to: ${testCommand}`);
-        } else if (activeProfile.defaultTestRunner) {
+        } else if (activeProfile.defaultTestRunner && !activeProfile.id.startsWith("typescript")) {
           testCommand = activeProfile.defaultTestRunner;
           modified = true;
           groomNotes.push(`Defaulted test command to stack runner: ${testCommand}`);
         } else {
           testCommand = "";
+          modified = true;
+          groomNotes.push(`No scoped test suite found for focus files; cleared test command to allow review verification`);
         }
       }
     }
@@ -238,7 +240,7 @@ export class QueueGroomer {
     const lower = modelTag.toLowerCase();
 
     if (lower.includes("r1") || lower.includes("think") || lower.includes("reasoning")) {
-      return "Cognitive Reasoning Directive: Enclose your complete strategic thought process, trade-off evaluations, and architectural edge cases inside <think>...</think> tags before emitting the final markdown code block.";
+      return "Cognitive Reasoning Directive: Enclose your complete strategic thought process, trade-off evaluations, and architectural edge cases inside <think>...</think> tags. Keep internal reasoning concise and under 1,500 tokens before emitting the final markdown code block.";
     }
 
     if (lower.includes("coder") || lower.includes("gemma") || lower.includes("instruct")) {
@@ -315,14 +317,15 @@ export class QueueGroomer {
           if (fs.existsSync(candidateDistTest) || fs.existsSync(candidateSrcTest)) {
             return `node --test packages/${pkgName}/dist/tests/${baseName}.test.js`;
           }
-          if (firstFile.endsWith(".ts") || firstFile.endsWith(".js")) {
+          if (/\.(?:[cm]?[jt]sx?)$/i.test(firstFile)) {
             return `node --check ${firstFile}`;
           }
+          return null;
         }
         if (pkgName === "frontend") {
           // Frontend test execution uses karma/headless browser which requires display environment
-          // If firstFile is TypeScript, scope to syntax verification instead of full browser test
-          if (firstFile.endsWith(".ts")) {
+          // If firstFile is TypeScript/JavaScript, scope to syntax verification instead of full browser test
+          if (/\.(?:[cm]?[jt]sx?)$/i.test(firstFile)) {
             return `node --check ${firstFile}`;
           }
           return null;

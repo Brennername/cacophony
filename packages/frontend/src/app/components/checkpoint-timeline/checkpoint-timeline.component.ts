@@ -1,12 +1,13 @@
-import { Component, Input, Output, EventEmitter, Signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CheckpointRecord {
   readonly id: string;
-  readonly hash: string;
-  readonly message: string;
-  readonly createdAt: string;
-  readonly filesChanged: number;
+  readonly hash?: string;
+  readonly message?: string;
+  readonly text?: string;
+  readonly createdAt?: string;
+  readonly filesChanged?: number;
 }
 
 @Component({
@@ -20,7 +21,7 @@ export interface CheckpointRecord {
         <div class="actions-group">
           <button
             class="action-btn undo-btn"
-            [disabled]="!canUndo()"
+            [disabled]="!canUndo"
             (click)="triggerUndo()"
             aria-label="Undo to previous checkpoint"
           >
@@ -28,7 +29,7 @@ export interface CheckpointRecord {
           </button>
           <button
             class="action-btn redo-btn"
-            [disabled]="!canRedo()"
+            [disabled]="!canRedo"
             (click)="triggerRedo()"
             aria-label="Redo to next checkpoint"
           >
@@ -38,7 +39,7 @@ export interface CheckpointRecord {
       </div>
 
       <div class="checkpoints-list">
-        @for (cp of checkpoints(); track cp.id; let idx = $index) {
+        @for (cp of checkpoints; track cp.id; let idx = $index) {
           <div
             class="checkpoint-row"
             [class.active]="activeCheckpointId() === cp.id"
@@ -48,9 +49,9 @@ export interface CheckpointRecord {
           >
             <div class="checkpoint-bullet"></div>
             <div class="checkpoint-info">
-              <span class="checkpoint-hash">{{ cp.hash.slice(0, 7) }}</span>
-              <span class="checkpoint-msg">{{ cp.message }}</span>
-              <span class="checkpoint-meta">{{ cp.filesChanged }} files • {{ cp.createdAt }}</span>
+              <span class="checkpoint-hash">{{ (cp.hash || cp.id).slice(0, 7) }}</span>
+              <span class="checkpoint-msg">{{ cp.message || cp.text }}</span>
+              <span class="checkpoint-meta">{{ cp.filesChanged ?? 1 }} files • {{ cp.createdAt || 'Just now' }}</span>
             </div>
           </div>
         } @empty {
@@ -164,15 +165,17 @@ export interface CheckpointRecord {
   `]
 })
 export class CheckpointTimelineComponent {
-  @Input() public readonly checkpoints: CheckpointRecord[] = [];
-  @Input() public readonly canUndo: boolean = true;
-  @Input() public readonly canRedo: boolean = false;
+  @Input() public checkpoints: CheckpointRecord[] = [];
+  @Input() public canUndo: boolean = true;
+  @Input() public canRedo: boolean = false;
 
   @Output() public readonly undo: EventEmitter<void> = new EventEmitter();
   @Output() public readonly redo: EventEmitter<void> = new EventEmitter();
   @Output() public readonly checkpointSelected: EventEmitter<string> = new EventEmitter();
 
-  private activeCheckpointId: Signal<string | null> = signal(null);
+  public readonly activeCheckpointId: WritableSignal<string | null> = signal(null);
+  public diffDrawerOpen: boolean = false;
+  public diffText: string = '';
 
   public triggerUndo(): void {
     if (this.canUndo) {
@@ -188,6 +191,14 @@ export class CheckpointTimelineComponent {
 
   public selectCheckpoint(id: string): void {
     this.activeCheckpointId.set(id);
+    this.diffDrawerOpen = true;
+    const selected = this.checkpoints.find((c) => c.id === id);
+    const initial = this.checkpoints[0];
+    if (selected && initial && selected !== initial) {
+      this.diffText = `${selected.text || selected.message}\n- ${initial.text || initial.message}`;
+    } else if (selected) {
+      this.diffText = selected.text || selected.message || '';
+    }
     this.checkpointSelected.emit(id);
   }
 }
