@@ -290,7 +290,20 @@ export class TaskScheduler {
             `[TaskScheduler] Task ${targetTask.id} threw error [${classification.category}] after ${durationMs}ms:`,
             err
           );
-          await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, 0.0);
+
+          // Retrieve any measured tokensPerSec from completed stages (e.g. Stage 2 Generation)
+          let recordedTps = 0.0;
+          try {
+            const recordedStages = await this.stageRepo.getStagesForTask(targetTask.id);
+            const genStage = recordedStages.find((s) => s.stageName === "generation" && s.tokensReceived > 0);
+            if (genStage && genStage.durationMs > 0) {
+              recordedTps = Number(((genStage.tokensReceived / genStage.durationMs) * 1000).toFixed(2));
+            }
+          } catch {
+            // non-fatal
+          }
+
+          await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, recordedTps);
           await this.taskRepo.incrementFailure(targetTask.id);
           await this.stageRepo.recordStageCompletion(
             stageId,
@@ -308,7 +321,7 @@ export class TaskScheduler {
               selectedModel,
               false,
               durationMs,
-              0.0
+              recordedTps
             );
           } catch {
             // ignore

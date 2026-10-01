@@ -135,6 +135,21 @@ export class GitWorktreeManager {
    * Pushes the task branch to remote (Gitea).
    */
   public async pushBranch(worktreePath: string, remote = "origin", branchName: string): Promise<void> {
+    // If running in docker container where gitea host is cacophony-gitea:3000 but remote was saved as localhost:19634,
+    // rewrite remote URL to use the container-internal reachable hostname
+    try {
+      const giteaBase = process.env["GITEA_BASE_URL"];
+      if (giteaBase) {
+        const { stdout: currentRemoteUrl } = await execAsync(`git remote get-url "${remote}"`, { cwd: worktreePath }).catch(() => ({ stdout: "" }));
+        if (currentRemoteUrl.includes("localhost:19634") || currentRemoteUrl.includes("127.0.0.1:19634")) {
+          const updatedUrl = currentRemoteUrl.trim().replace(/localhost:19634|127\.0\.0\.1:19634/, giteaBase.replace(/^https?:\/\//, ""));
+          await execAsync(`git remote set-url "${remote}" "${updatedUrl}"`, { cwd: worktreePath }).catch(() => {});
+        }
+      }
+    } catch {
+      // non-fatal remote check
+    }
+
     await execAsync(`git push -u "${remote}" "${branchName}"`, { cwd: worktreePath });
   }
 

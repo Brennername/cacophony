@@ -32,13 +32,16 @@ export interface ReviewPromptContext {
 export class FrontierReviewer {
   private readonly inferenceProvider?: IInferenceProvider | undefined;
   private readonly defaultModel: string;
+  private readonly reviewTimeoutMs: number;
 
   constructor(options?: {
     readonly inferenceProvider?: IInferenceProvider | undefined;
     readonly defaultModel?: string | undefined;
+    readonly reviewTimeoutMs?: number | undefined;
   }) {
     this.inferenceProvider = options?.inferenceProvider;
     this.defaultModel = options?.defaultModel || "deepseek-r1:8b";
+    this.reviewTimeoutMs = options?.reviewTimeoutMs ?? 25_000;
   }
 
   /**
@@ -52,7 +55,7 @@ export class FrontierReviewer {
     if (this.inferenceProvider) {
       try {
         const prompt = this.buildReviewPrompt(context.title, diffText, testSummary);
-        const reviewTimeoutMs = 120_000;
+        const reviewTimeoutMs = this.reviewTimeoutMs;
         let timeoutHandle: NodeJS.Timeout | null = null;
         const timeoutPromise = new Promise<never>((_, reject) => {
           timeoutHandle = setTimeout(() => {
