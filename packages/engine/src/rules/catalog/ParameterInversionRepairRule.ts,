@@ -1,0 +1,55 @@
+/**
+ * @file ParameterInversionRepairRule.ts
+ * @description This rule identifies and repairs parameter inversion errors in the engine's catalog.
+ */
+
+import { IParameterInversionError } from '@cacophony/shared-types';
+import { CatalogItem } from '../models/CatalogItem'; // Valid relative import
+import { TaskContext } from '@cacophony/tools'; // Valid relative import
+
+export class ParameterInversionRepairRule {
+  /**
+   * Checks if a catalog item has a parameter inversion error.
+   * @param item The catalog item to check.
+   * @param context The task context for logging and potential external operations.
+   * @returns True if an inversion error is found, false otherwise.
+   */
+  public static hasInversionError(item: CatalogItem, context: TaskContext): boolean {
+    if (!item || !item.parameters) {
+      return false; // Handle null or undefined item and parameters gracefully
+    }
+
+    for (const parameterName in item.parameters) {
+      if (item.parameters.hasOwnProperty(parameterName)) {
+        const parameterValue = item.parameters[parameterName];
+        if (typeof parameterValue === 'object' && parameterValue !== null && !Array.isArray(parameterValue)) {
+          // Check if the parameter value is an object and has a property that might be inverted.
+          for (const prop in parameterValue) {
+            if (parameterValue.hasOwnProperty(prop)) {
+              if (typeof parameterValue[prop] === 'function') {
+                // Potential inversion: Function as a parameter value.  This is a common scenario.
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Repairs a parameter inversion error by replacing the function with its original type.
+   * This is a placeholder for more sophisticated repair logic. Currently, it simply returns the item as is.
+   * @param item The catalog item with an inversion error.
+   * @param context The task context for logging and potential external operations.
+   * @returns The repaired catalog item (or the original if no repair is possible).
+   */
+  public static repairInversionError(item: CatalogItem, context: TaskContext): CatalogItem {
+    // In a real implementation, this would analyze the function's type and replace it with the correct type.
+    // For now, we simply return the original item.
+    console.warn('Parameter inversion repair rule - placeholder implementation.'); // Log for debugging
+    return item;
+  }
+}
