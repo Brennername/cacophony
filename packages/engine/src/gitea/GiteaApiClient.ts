@@ -165,10 +165,24 @@ export class GiteaApiClient {
     mergeReq: MergePullRequestRequest
   ): Promise<void> {
     this.guard?.assertScope("repository", "write");
-    await this.request<void>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
-      method: "POST",
-      body: JSON.stringify(mergeReq)
-    });
+    const maxRetries = 5;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.request<void>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
+          method: "POST",
+          body: JSON.stringify(mergeReq)
+        });
+        return;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        // Gitea returns 405 Method Not Allowed ("Please try again later") while conflict checking is in progress
+        if (errMsg.includes("405") && errMsg.includes("Please try again later") && attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+          continue;
+        }
+        throw err;
+      }
+    }
   }
 
   /**
@@ -248,6 +262,11 @@ export class GiteaApiClient {
       return undefined as unknown as T;
     }
 
-    return (await response.json()) as T;
+    const text = await response.text();
+    if (!text || !text.trim()) {
+      return undefined as unknown as T;
+    }
+
+    return JSON.parse(text) as T;
   }
 }

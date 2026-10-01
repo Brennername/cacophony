@@ -235,10 +235,10 @@ export class TaskRepository {
         "DELETE FROM tasks WHERE status = 'PENDING' AND title LIKE $1",
         [titlePattern]
       );
-      return (res as any)?.affectedRows ?? 0;
+      return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
     }
     const res = await this.driver.execute("DELETE FROM tasks WHERE status = 'PENDING'");
-    return (res as any)?.affectedRows ?? 0;
+    return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
   /**
@@ -251,13 +251,13 @@ export class TaskRepository {
         "UPDATE tasks SET status = 'PENDING', failure_count = 0, updated_at = $1, completed_at = NULL WHERE status = 'FAILED' AND (id LIKE $2 OR title LIKE $2)",
         [now, pattern]
       );
-      return (res as any)?.affectedRows ?? 0;
+      return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
     }
     const res = await this.driver.execute(
       "UPDATE tasks SET status = 'PENDING', failure_count = 0, updated_at = $1, completed_at = NULL WHERE status = 'FAILED'",
       [now]
     );
-    return (res as any)?.affectedRows ?? 0;
+    return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
   /**

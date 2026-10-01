@@ -168,7 +168,11 @@ export class AutonomousWorkerPipeline {
    * Returns success flag and measured inference velocity so the scheduler can
    * persist both into the task record and leaderboard without additional coupling.
    */
-  public async executeTask(groomed: GroomedTask, selectedModel: string): Promise<{ success: boolean; tokensPerSec: number }> {
+  public async executeTask(
+    groomed: GroomedTask,
+    selectedModel: string,
+    signal?: AbortSignal
+  ): Promise<{ success: boolean; tokensPerSec: number }> {
     const taskId = groomed.task.id;
     let measuredTps = 0;
     let worktree: WorktreeDescriptor | null = null;
@@ -218,6 +222,10 @@ export class AutonomousWorkerPipeline {
         `Context assembled: ${focusFiles.length} focus files, ${directives.length} directives`
       );
 
+      if (signal?.aborted) {
+        throw new Error("Task execution aborted by watchdog signal");
+      }
+
       // STAGE 2: Generation with Self-Healing Parser and Live Token Emission
       const generationStart = Date.now();
       await this.recordAndEmitStage(taskId, "generation", "RUNNING");
@@ -227,13 +235,15 @@ export class AutonomousWorkerPipeline {
         {
           model: selectedModel,
           messages: [{ role: "user", content: context.assembledPrompt }],
-          temperature: 0.1
+          temperature: 0.1,
+          maxTokens: 4096
         },
         (chunk) => {
           if (this.streamTapManager) {
             this.streamTapManager.emitToken(taskId, chunk);
           }
-        }
+        },
+        signal
       );
 
       let generationDuration = Date.now() - generationStart;
@@ -684,18 +694,18 @@ export class AutonomousWorkerPipeline {
           : "Code modifications verified and merged locally"
       );
 
-      // Clean up worktree if one was allocated for this task
-      if (this.worktreeManager && worktree) {
-        await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
-      }
-
       return { success: true, tokensPerSec: measuredTps };
     } catch (err) {
       console.error(`[AutonomousWorkerPipeline] Execution error for task '${groomed.enrichedPrompt.slice(0, 40)}':`, err);
-      if (this.worktreeManager && worktree) {
-        await this.worktreeManager.cleanWorktree(taskId, (worktree as WorktreeDescriptor).branchName);
-      }
       return { success: false, tokensPerSec: measuredTps };
+    } finally {
+      if (this.worktreeManager && worktree) {
+        try {
+          await this.worktreeManager.cleanWorktree(taskId, (worktree as WorktreeDescriptor).branchName);
+        } catch {
+          // non-fatal cleanup
+        }
+      }
     }
   }
 

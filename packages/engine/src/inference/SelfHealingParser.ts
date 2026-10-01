@@ -22,7 +22,7 @@ export class SelfHealingParser {
   private readonly formatter: AdaptiveOutputFormatter;
   private readonly maxRetries: number;
 
-  constructor(formatter: AdaptiveOutputFormatter = new AdaptiveOutputFormatter(), maxRetries = 3) {
+  constructor(formatter: AdaptiveOutputFormatter = new AdaptiveOutputFormatter(), maxRetries = 2) {
     this.formatter = formatter;
     this.maxRetries = maxRetries;
   }
@@ -127,7 +127,8 @@ export class SelfHealingParser {
   public async executeWithSelfHealing(
     provider: IInferenceProvider,
     baseRequest: InferenceRequest,
-    onChunk?: (chunk: string) => void
+    onChunk?: (chunk: string) => void,
+    signal?: AbortSignal
   ): Promise<{
     readonly code: string;
     readonly attempts: number;
@@ -140,10 +141,18 @@ export class SelfHealingParser {
     let attempts = 0;
 
     while (attempts < this.maxRetries) {
+      if (signal?.aborted) {
+        throw new Error("Self-healing execution aborted by watchdog signal");
+      }
       attempts++;
+      const req: InferenceRequest = {
+        ...baseRequest,
+        messages,
+        ...(signal ? { signal } : {})
+      };
       const response = onChunk
-        ? await provider.stream({ ...baseRequest, messages }, onChunk)
-        : await provider.generate({ ...baseRequest, messages });
+        ? await provider.stream(req, onChunk)
+        : await provider.generate(req);
 
       const validation = this.validate(response.content);
       if (validation.valid && validation.code) {
@@ -155,6 +164,10 @@ export class SelfHealingParser {
           tokensPrompt: response.tokensPrompt,
           tokensCompletion: response.tokensCompletion
         };
+      }
+
+      if (signal?.aborted) {
+        throw new Error("Self-healing execution aborted by watchdog signal");
       }
 
       // Append assistant invalid output and corrective user feedback

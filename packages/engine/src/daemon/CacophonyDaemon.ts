@@ -174,6 +174,7 @@ export class CacophonyDaemon {
       stageRepo: this.stageRepo,
       evictionManager,
       telemetryProvider,
+      streamTapManager: this.streamTapManager,
       groomer,
       governor
     });
@@ -239,11 +240,11 @@ export class CacophonyDaemon {
       gitRemote: process.env.GIT_REMOTE || "gitea"
     });
 
-    this.scheduler.setExecutionHandler(async (groomed, model) => {
+    this.scheduler.setExecutionHandler(async (groomed, model, signal) => {
       if (isDemoMode && this.telemetryPoller) {
         this.telemetryPoller.setSimulatedActiveModel(model);
       }
-      return await worker.executeTask(groomed, model);
+      return await worker.executeTask(groomed, model, signal);
     });
     if (this.taskRepo && typeof this.taskRepo.reclaimStaleRunningTasks === "function") {
       try {

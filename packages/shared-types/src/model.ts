@@ -57,6 +57,7 @@ export interface InferenceRequest {
   readonly maxTokens?: number;
   readonly stopSequences?: readonly string[];
   readonly stream?: boolean;
+  readonly signal?: AbortSignal;
 }
 
 /**

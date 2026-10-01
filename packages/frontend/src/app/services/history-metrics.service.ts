@@ -101,7 +101,7 @@ export class HistoryMetricsService {
             role: t.role || 'implementer',
             priority: t.priority || 'P1',
             failureCount: t.failureCount || 0,
-            prNumber: 0,
+            prNumber: t.prUrl ? (parseInt(t.prUrl.match(/\/pulls\/(\d+)/)?.[1] || '0', 10) || 0) : 0,
             prUrl: t.prUrl || '',
             commitDiffUrl: '',
             timestamp: t.completedAt || 'Recently',

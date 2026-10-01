@@ -108,6 +108,7 @@ export class OllamaProvider implements IInferenceProvider {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      ...(request.signal ? { signal: request.signal } : {}),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dispatcher: this.dispatcher as any,
       body: JSON.stringify(body)
@@ -175,6 +176,7 @@ export class OllamaProvider implements IInferenceProvider {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      ...(request.signal ? { signal: request.signal } : {}),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dispatcher: this.dispatcher as any,
       body: JSON.stringify(body)
@@ -195,6 +197,10 @@ export class OllamaProvider implements IInferenceProvider {
     let inThinkingChunkMode = false;
 
     while (true) {
+      if (request.signal?.aborted) {
+        reader.cancel().catch(() => {});
+        throw new Error("Ollama inference streaming aborted by watchdog signal");
+      }
       const { done, value } = await reader.read();
       if (done) break;
 

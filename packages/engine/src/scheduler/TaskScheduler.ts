@@ -8,9 +8,10 @@ import { QueueGroomer, type GroomedTask } from "./QueueGroomer.js";
 import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
 import { FailureClassifier, ExecutionTimeoutError } from "../analytics/FailureClassifier.js";
+import type { StreamTapManager } from "../inference/StreamTapManager.js";
 
 export type TaskExecutionResult = { success: boolean; tokensPerSec: number };
-export type TaskExecutionHandler = (groomed: GroomedTask, selectedModel: string) => Promise<TaskExecutionResult>;
+export type TaskExecutionHandler = (groomed: GroomedTask, selectedModel: string, signal?: AbortSignal) => Promise<TaskExecutionResult>;
 
 /**
  * TaskScheduler
@@ -29,6 +30,7 @@ export class TaskScheduler {
   private readonly groomer: QueueGroomer;
   private readonly governor: ThermalGovernor;
   private readonly telemetryProvider: IHardwareTelemetryProvider;
+  private readonly streamTapManager?: StreamTapManager | undefined;
 
   private isRunning = false;
   private isPaused = false;
@@ -44,6 +46,7 @@ export class TaskScheduler {
     readonly stageRepo: StageRepository;
     readonly evictionManager: ModelEvictionManager;
     readonly telemetryProvider: IHardwareTelemetryProvider;
+    readonly streamTapManager?: StreamTapManager;
     readonly probe?: OllamaStateProbe;
     readonly groomer?: QueueGroomer;
     readonly governor?: ThermalGovernor;
@@ -55,6 +58,7 @@ export class TaskScheduler {
     this.stageRepo = options.stageRepo;
     this.evictionManager = options.evictionManager;
     this.telemetryProvider = options.telemetryProvider;
+    this.streamTapManager = options.streamTapManager;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 300_000; // 5 minutes default
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
       "qwen2.5-coder:3b": 180_000,
@@ -231,9 +235,11 @@ export class TaskScheduler {
         const stageId = await this.stageRepo.recordStageStart(targetTask.id, "generation");
         const modelTimeoutMs = this.resolveModelTimeout(selectedModel);
 
+        const abortController = new AbortController();
         let watchdogTimer: NodeJS.Timeout | null = null;
         const watchdogPromise = new Promise<never>((_, reject) => {
           watchdogTimer = setTimeout(() => {
+            abortController.abort();
             reject(
               new ExecutionTimeoutError(
                 `Task execution exceeded allocated timeout of ${modelTimeoutMs}ms for model '${selectedModel}'`,
@@ -246,7 +252,7 @@ export class TaskScheduler {
         });
 
         try {
-          const handlerPromise = this.executionHandler(groomed, selectedModel);
+          const handlerPromise = this.executionHandler(groomed, selectedModel, abortController.signal);
           const result = await Promise.race([handlerPromise, watchdogPromise]);
           if (watchdogTimer) clearTimeout(watchdogTimer);
 
@@ -281,6 +287,7 @@ export class TaskScheduler {
           }
         } catch (err) {
           if (watchdogTimer) clearTimeout(watchdogTimer);
+          abortController.abort();
           const durationMs = Date.now() - stageStartMs;
           const errorMsg = err instanceof Error ? err.message : String(err);
           const classification = FailureClassifier.classify(errorMsg);
@@ -291,13 +298,19 @@ export class TaskScheduler {
             err
           );
 
-          // Retrieve any measured tokensPerSec from completed stages (e.g. Stage 2 Generation)
+          // Retrieve any measured tokensPerSec from completed stages (e.g. Stage 2 Generation) or live stream buffer
           let recordedTps = 0.0;
           try {
             const recordedStages = await this.stageRepo.getStagesForTask(targetTask.id);
             const genStage = recordedStages.find((s) => s.stageName === "generation" && s.tokensReceived > 0);
             if (genStage && genStage.durationMs > 0) {
               recordedTps = Number(((genStage.tokensReceived / genStage.durationMs) * 1000).toFixed(2));
+            } else if (this.streamTapManager) {
+              const buffer = this.streamTapManager.getBuffer(targetTask.id);
+              if (buffer.length > 0 && durationMs > 0) {
+                const estimatedTokens = Math.max(1, Math.round(buffer.length / 3.8));
+                recordedTps = Number(((estimatedTokens / durationMs) * 1000).toFixed(2));
+              }
             }
           } catch {
             // non-fatal
