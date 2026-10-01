@@ -135,21 +135,20 @@ export class GitWorktreeManager {
    * Pushes the task branch to remote (Gitea).
    */
   public async pushBranch(worktreePath: string, remote = "origin", branchName: string): Promise<void> {
-    let pushCommand = `git push -u "${remote}" "${branchName}"`;
+    let target = remote;
     try {
       const giteaBase = process.env["GITEA_BASE_URL"];
       if (giteaBase) {
         const { stdout: currentRemoteUrl } = await execAsync(`git remote get-url "${remote}"`, { cwd: worktreePath }).catch(() => ({ stdout: "" }));
         if (currentRemoteUrl.includes("localhost:19634") || currentRemoteUrl.includes("127.0.0.1:19634")) {
-          const updatedUrl = currentRemoteUrl.trim().replace(/localhost:19634|127\.0\.0\.1:19634/, giteaBase.replace(/^https?:\/\//, ""));
-          pushCommand = `git -c remote.${remote}.url="${updatedUrl}" push -u "${remote}" "${branchName}"`;
+          target = currentRemoteUrl.trim().replace(/localhost:19634|127\.0\.0\.1:19634/, giteaBase.replace(/^https?:\/\//, ""));
         }
       }
     } catch {
       // non-fatal remote check
     }
 
-    await execAsync(pushCommand, { cwd: worktreePath });
+    await execAsync(`git push -u "${target}" "${branchName}"`, { cwd: worktreePath });
   }
 
   /**
