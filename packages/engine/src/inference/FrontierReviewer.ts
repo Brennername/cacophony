@@ -40,8 +40,8 @@ export class FrontierReviewer {
     readonly reviewTimeoutMs?: number | undefined;
   }) {
     this.inferenceProvider = options?.inferenceProvider;
-    this.defaultModel = options?.defaultModel || "deepseek-r1:8b";
-    this.reviewTimeoutMs = options?.reviewTimeoutMs ?? 25_000;
+    this.defaultModel = options?.defaultModel || process.env.FRONTIER_REVIEWER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M";
+    this.reviewTimeoutMs = options?.reviewTimeoutMs ?? 45_000;
   }
 
   /**

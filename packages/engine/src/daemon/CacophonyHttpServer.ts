@@ -5,6 +5,7 @@ import * as os from "node:os";
 import type { CacophonyDaemon } from "./CacophonyDaemon.js";
 import { AuthService } from "../auth/AuthService.js";
 import { RateLimiter } from "./RateLimiter.js";
+import { TaskScheduler } from "../scheduler/TaskScheduler.js";
 
 export interface UnifiedServerConfig {
   readonly httpPort?: number;
@@ -552,6 +553,78 @@ export class CacophonyHttpServer {
       const reclaimedCount = await taskRepo.reclaimStaleRunningTasks(timeoutMinutes);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: true, reclaimedCount }));
+      return;
+    }
+
+    // 4a0e. REST API: POST /api/tasks/groom - Groom task queue: reconcile with merged PRs and normalize model assignments
+    if (url.pathname === "/api/tasks/groom" && req.method === "POST") {
+      const taskRepo = this.daemon.getTaskRepository();
+      const allPending = await taskRepo.listPending();
+
+      let reconciledPrCount = 0;
+      let normalizedModelCount = 0;
+
+      // 1. Fetch merged PRs from Gitea
+      const giteaUrl = process.env.GITEA_BASE_URL || "http://cacophony-gitea:3000";
+      const giteaToken = process.env.GITEA_API_TOKEN || "";
+      const repoOwner = process.env.GIT_REPO_OWNER || "NeXeN";
+      const repoName = process.env.GIT_REPO_NAME || "cacophony";
+
+      let mergedPrs: any[] = [];
+      try {
+        const prRes = await fetch(`${giteaUrl}/api/v1/repos/${repoOwner}/${repoName}/pulls?state=closed`, {
+          headers: giteaToken ? { Authorization: `token ${giteaToken}` } : {}
+        });
+        if (prRes.ok) {
+          mergedPrs = (await prRes.json()) as any[];
+        }
+      } catch {
+        // Gitea fetch non-fatal
+      }
+
+      const mergedPrMap = new Map<string, any>();
+      for (const pr of mergedPrs) {
+        if (!pr.merged) continue;
+        const head = pr.head?.ref || "";
+        const body = pr.body || "";
+        mergedPrMap.set(head, pr);
+        const taskIdMatch = body.match(/Task ID:\s*`([^`]+)`/i) || head.match(/(taskcade-t[0-9.]+|task-[0-9_]+)/i);
+        if (taskIdMatch && taskIdMatch[1]) {
+          mergedPrMap.set(taskIdMatch[1], pr);
+        }
+      }
+
+      for (const task of allPending) {
+        // Check if task already has a merged PR in Gitea
+        const matchingPr = mergedPrMap.get(task.id) ||
+          (task.prUrl && mergedPrs.find((p) => p.merged && task.prUrl?.includes(`/pulls/${p.number}`)));
+
+        if (matchingPr) {
+          const prHtmlUrl = matchingPr.html_url || `${process.env.GITEA_PUBLIC_URL || "http://localhost:19634"}/${repoOwner}/${repoName}/pulls/${matchingPr.number}`;
+          await taskRepo.updatePr(task.id, matchingPr.base?.ref || "main", prHtmlUrl);
+          await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 5.0);
+          reconciledPrCount++;
+          continue;
+        }
+
+        // Normalize model assignments if invalid alias
+        if (task.modelAssigned) {
+          const normalized = TaskScheduler.normalizeModelName(task.modelAssigned);
+          if (normalized !== task.modelAssigned) {
+            await taskRepo.updateModel(task.id, normalized);
+            normalizedModelCount++;
+          }
+        }
+      }
+
+      const remainingPending = await taskRepo.listPending();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        success: true,
+        reconciledPrCount,
+        normalizedModelCount,
+        pendingRemaining: remainingPending.length
+      }));
       return;
     }
 

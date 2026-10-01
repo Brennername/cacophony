@@ -89,7 +89,8 @@ export class AutonomousWorkerPipeline {
     this.gitRemote = options.gitRemote || process.env.GIT_REMOTE || "gitea";
     this.frontierReviewer = options.frontierReviewer ?? new FrontierReviewer({
       inferenceProvider: options.ollamaProvider as any,
-      defaultModel: process.env.FRONTIER_REVIEWER_MODEL || "deepseek-r1:8b"
+      defaultModel: process.env.FRONTIER_REVIEWER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M",
+      reviewTimeoutMs: 45_000
     });
     this.sandboxedRunner = options.sandboxedRunner ?? new SandboxedProcessRunner();
     this.defaultPipeline = options.defaultPipeline ?? {
@@ -101,7 +102,10 @@ export class AutonomousWorkerPipeline {
           rules: [
             { ruleId: "strip_emojis", severity: "silent_repair" },
             { ruleId: "enforce_esm_js", severity: "silent_repair" },
-            { ruleId: "whitespace_normalizer", severity: "silent_repair" }
+            { ruleId: "whitespace_normalizer", severity: "silent_repair" },
+            { ruleId: "placeholder_stubs", severity: "hard_rejection" },
+            { ruleId: "empty_file_guard", severity: "hard_rejection" },
+            { ruleId: "banned_import_scrubber", severity: "silent_repair" }
           ]
         }
       ]

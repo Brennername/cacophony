@@ -86,13 +86,13 @@ export class SelfHealingParser {
       };
     }
 
-    // Detect placeholder comments that local models frequently use when lazy
-    const placeholderRegex = /(\/\/\s*\.\.\.\s*existing\s*code|\/\*\s*\.\.\.\s*existing|\/\/\s*rest\s*of\s*code)/i;
+    // Detect placeholder comments and lazy stubs that local models frequently emit when incomplete
+    const placeholderRegex = /(\/\/\s*\.\.\.\s*existing\s*code|\/\*\s*\.\.\.\s*existing|\/\/\s*rest\s*of\s*code|\/\/\s*\.\.\.\s*rest\s*of\s*code|\/\/\s*TODO:\s*(?:implement|fill|add|later)|throw\s+new\s+Error\(\s*["'](?:Not implemented|TODO)["']\s*\))/i;
     if (placeholderRegex.test(primary)) {
       return {
         valid: false,
         code: null,
-        error: "Forbidden placeholder comment detected (e.g. '// ... existing code ...'). You must rewrite the FULL file with all imports, functions, and classes included.",
+        error: "Forbidden placeholder comment or incomplete stub detected (e.g. '// ... existing code ...' or 'TODO: implement'). You must rewrite the FULL file with all imports, functions, classes, and complete implementations included without placeholders.",
         blocks
       };
     }

@@ -59,14 +59,14 @@ export class TaskScheduler {
     this.evictionManager = options.evictionManager;
     this.telemetryProvider = options.telemetryProvider;
     this.streamTapManager = options.streamTapManager;
-    this.defaultTimeoutMs = options.defaultTimeoutMs ?? 300_000; // 5 minutes default
+    this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
-      "qwen2.5-coder:3b": 240_000,
-      "gemma3:4b-it-qat": 300_000,
-      "qwen2.5-coder:7b-instruct-q4_K_M": 450_000,
-      "deepseek-r1:8b": 720_000,
-      "qwen2.5-coder:14b": 600_000,
-      "deepseek-coder-v2:16b": 720_000
+      "qwen2.5-coder:3b": 360_000,
+      "gemma3:4b-it-qat": 420_000,
+      "qwen2.5-coder:7b-instruct-q4_K_M": 600_000,
+      "deepseek-r1:8b": 840_000,
+      "qwen2.5-coder:14b": 780_000,
+      "deepseek-coder-v2:16b": 840_000
     };
 
     this.mutex = new ExecutionMutex();
@@ -77,10 +77,40 @@ export class TaskScheduler {
   }
 
   /**
+   * Normalizes model aliases, tags with context suffixes, and maps to installed host models.
+   * Prevents HTTP 404 errors when tasks specify model tag variations.
+   */
+  public static normalizeModelName(rawModel: string): string {
+    const trimmed = rawModel.trim();
+    const aliasMap: Record<string, string> = {
+      "deepseek-r1:8b-4k": "deepseek-r1:8b",
+      "gemma3:4b-it-qat-4k": "gemma3:4b-it-qat",
+      "gemma3:4b": "gemma3:4b-it-qat",
+      "qwen2.5-coder:3b-4k": "qwen2.5-coder:3b",
+      "qwen2.5-coder:7b-4k": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "qwen2.5-coder:14b-4k": "qwen2.5-coder:14b",
+      "deepseek-coder-v2:16b-4k": "deepseek-coder-v2:16b"
+    };
+
+    if (aliasMap[trimmed]) {
+      return aliasMap[trimmed];
+    }
+
+    const stripped = trimmed.replace(/-(?:4|8|16|32)k$/i, "");
+    if (aliasMap[stripped]) {
+      return aliasMap[stripped];
+    }
+
+    return trimmed;
+  }
+
+  /**
    * Resolves maximum execution timeout in milliseconds for the given model.
    */
   public resolveModelTimeout(model: string): number {
-    return this.perModelTimeoutMs[model] ?? this.defaultTimeoutMs;
+    const normalized = TaskScheduler.normalizeModelName(model);
+    return this.perModelTimeoutMs[normalized] ?? this.perModelTimeoutMs[model] ?? this.defaultTimeoutMs;
   }
 
   /**
@@ -187,8 +217,12 @@ export class TaskScheduler {
       // 4. Groom task (resolve focus files, scope test command, inject architectural directives)
       const groomed = this.groomer.groom(targetTask);
 
-      let candidateList = targetTask.modelAssigned
-        ? [targetTask.modelAssigned]
+      const normalizedAssigned = targetTask.modelAssigned
+        ? TaskScheduler.normalizeModelName(targetTask.modelAssigned)
+        : null;
+
+      let candidateList = normalizedAssigned
+        ? [normalizedAssigned]
         : [
             "deepseek-coder-v2:16b",
             "qwen2.5-coder:14b",
@@ -201,7 +235,7 @@ export class TaskScheduler {
       // Telemetry heuristic: If APU temperature is warm or elevated (>= 75C), prefer cooler-running lighter model
       try {
         const sample = await this.telemetryProvider.sample();
-        if (sample.edgeTempCelsius >= 75 && !targetTask.modelAssigned) {
+        if (sample.edgeTempCelsius >= 75 && !normalizedAssigned) {
           candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat", "qwen2.5-coder:3b"];
         }
       } catch {
