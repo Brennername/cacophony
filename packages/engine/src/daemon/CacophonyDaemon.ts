@@ -233,7 +233,10 @@ export class CacophonyDaemon {
       worktreeManager,
       gitPlatformProvider: gitProvider,
       frontierReviewer,
-      autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false"
+      autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
+      repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
+      repoName: process.env.GIT_REPO_NAME || "cacophony",
+      gitRemote: process.env.GIT_REMOTE || "gitea"
     });
 
     this.scheduler.setExecutionHandler(async (groomed, model) => {

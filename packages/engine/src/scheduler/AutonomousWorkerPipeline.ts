@@ -34,6 +34,7 @@ export interface AutonomousWorkerPipelineOptions {
   readonly autoMerge?: boolean | undefined;
   readonly repoOwner?: string | undefined;
   readonly repoName?: string | undefined;
+  readonly gitRemote?: string | undefined;
 }
 
 /**
@@ -67,6 +68,7 @@ export class AutonomousWorkerPipeline {
   private readonly autoMerge: boolean;
   private readonly repoOwner: string;
   private readonly repoName: string;
+  private readonly gitRemote: string;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
     this.workspaceRoot = options.workspaceRoot;
@@ -84,6 +86,7 @@ export class AutonomousWorkerPipeline {
     this.autoMerge = options.autoMerge ?? true;
     this.repoOwner = options.repoOwner || process.env.GIT_REPO_OWNER || "cacophony";
     this.repoName = options.repoName || process.env.GIT_REPO_NAME || "core";
+    this.gitRemote = options.gitRemote || process.env.GIT_REMOTE || "gitea";
     this.frontierReviewer = options.frontierReviewer ?? new FrontierReviewer({
       inferenceProvider: options.ollamaProvider as any,
       defaultModel: process.env.FRONTIER_REVIEWER_MODEL || "deepseek-r1:8b"
@@ -282,6 +285,7 @@ export class AutonomousWorkerPipeline {
       }
 
       generationDuration = Date.now() - generationStart;
+      measuredTps = finalTps;
 
       if (!finalCode) {
         console.error(`[AutonomousWorkerPipeline] No code block extracted for task '${groomed.enrichedPrompt.slice(0, 40)}'`);
@@ -610,7 +614,7 @@ export class AutonomousWorkerPipeline {
 
           await this.worktreeManager.pushBranch(
             worktree.worktreePath,
-            "origin",
+            this.gitRemote,
             worktree.branchName
           );
 

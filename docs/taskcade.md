@@ -71,10 +71,10 @@
   - [x] T46.1.4: Write unit tests verifying stage transition broadcasts and stage timing telemetry. [File: packages/engine/src/tests/stage_telemetry.test.ts] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
 
 ### T46.2: Git Worktree Branch Isolation & Autonomous Gitea PR Publication
-  - [ ] T46.2.1: Integrate GitWorktreeManager with AutonomousWorkerPipeline: create ephemeral branch `task/<priority>-<taskId>` per task execution. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
-  - [ ] T46.2.2: Commit verified code modifications to task branch using git worktree without touching main workspace. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
-  - [ ] T46.2.3: Wire AutomatedPrPublisher to open pull requests in Gitea automatically upon test passing. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
-  - [ ] T46.2.4: Write integration tests verifying automated branch creation, commit creation, and PR publication workflow. [File: packages/engine/src/tests/gitea_integration.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T46.2.1: Integrate GitWorktreeManager with AutonomousWorkerPipeline: create ephemeral branch `task/<priority>-<taskId>` per task execution. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T46.2.2: Commit verified code modifications to task branch using git worktree without touching main workspace. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T46.2.3: Wire AutomatedPrPublisher to open pull requests in Gitea automatically upon test passing. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T46.2.4: Write integration tests verifying automated branch creation, commit creation, and PR publication workflow. [File: packages/engine/src/tests/gitea_integration.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
 
 ---
 
@@ -85,7 +85,7 @@
   - [x] T47.1.1: Implement TaskRepository.reclaimStaleRunningTasks(timeoutMinutes: number) transitioning tasks stranded in RUNNING state back to PENDING. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.reclaimStaleRunningTasks] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
   - [x] T47.1.2: Invoke reclaimStaleRunningTasks during CacophonyDaemon startup sequence before TaskScheduler.start(). [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: CacophonyDaemon.start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
   - [x] T47.1.3: Add REST endpoint POST /api/tasks/reclaim to trigger manual or scheduled reclamation of orphan running tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/reclaim] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T47.1.4: Write unit tests verifying that stranded RUNNING tasks are cleanly requeued with failure counts preserved. [File: packages/db/src/tests/reclaim_tasks.test.ts] [Test: npm test -- packages/db/src/tests/reclaim_tasks.test.ts]
+  - [x] T47.1.4: Write unit tests verifying that stranded RUNNING tasks are cleanly requeued with failure counts preserved. [File: packages/db/src/__tests__/Database.test.ts] [Test: npm test --workspace=@cacophony/db dist/__tests__/Database.test.js]
 
 ### T47.2: Task Execution Timeout & Deadlock Watchdog
   - [x] T47.2.1: Add watchdog timer in TaskScheduler aborting tasks exceeding per-model max execution timeout. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Class: TaskScheduler] [Test: npm test -- packages/engine/src/tests/scheduler_timeout.test.ts]

@@ -95,6 +95,12 @@ export class GitWorktreeManager {
       // ignore
     }
 
+    try {
+      await execAsync("git worktree prune", { cwd: this.repositoryRoot });
+    } catch {
+      // non-fatal
+    }
+
     // Ensure branch exists or create from baseBranch
     try {
       await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" "${targetBase}"`, {

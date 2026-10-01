@@ -329,5 +329,45 @@ describe("Database & Persistence Layer", () => {
 
       await sqlite.close();
     });
+
+    test("T47.1.4: should cleanly reclaim stranded RUNNING tasks to PENDING while preserving failure counts", async () => {
+      const pglite = new PGliteDriver();
+      await pglite.connect();
+      const runner = new MigrationRunner(pglite);
+      await runner.migrate();
+      const repo = new TaskRepository(pglite);
+
+      const staleTask: TaskRecord = {
+        id: "task-stale-001",
+        title: "Stranded Task",
+        prompt: "Stalled in running",
+        role: "implementer",
+        status: "RUNNING",
+        priority: "P1",
+        modelAssigned: "qwen2.5-coder:7b",
+        testCommand: "npm test",
+        focusFiles: "src/index.ts",
+        targetBranch: "main",
+        prUrl: null,
+        failureCount: 2,
+        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+        completedAt: null
+      };
+
+      await repo.create(staleTask);
+      const beforeReclaim = await repo.getById("task-stale-001");
+      assert.equal(beforeReclaim?.status, "RUNNING");
+      assert.equal(beforeReclaim?.failureCount, 2);
+
+      const reclaimedCount = await repo.reclaimStaleRunningTasks(15);
+      assert.equal(reclaimedCount, 1);
+
+      const afterReclaim = await repo.getById("task-stale-001");
+      assert.equal(afterReclaim?.status, "PENDING");
+      assert.equal(afterReclaim?.failureCount, 2);
+
+      await pglite.close();
+    });
   });
 });

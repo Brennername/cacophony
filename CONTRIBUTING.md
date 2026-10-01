@@ -1,7 +1,6 @@
 # Contributing to Cacophony
 
-Thank you for your interest in contributing to Cacophony. We welcome bug reports, feature proposals, and pull requests to help advance autonomous multi-agent orchestration and local model arenas.
-
+Thank you for your interest in contributing to Cacophony. We welcome bug reports, feature proposals, and pull requests.
 ---
 
 ## Architectural Directives & Guidelines

@@ -290,7 +290,7 @@ export class TaskScheduler {
             `[TaskScheduler] Task ${targetTask.id} threw error [${classification.category}] after ${durationMs}ms:`,
             err
           );
-          await this.taskRepo.updateStatus(targetTask.id, "FAILED");
+          await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, 0.0);
           await this.taskRepo.incrementFailure(targetTask.id);
           await this.stageRepo.recordStageCompletion(
             stageId,
