@@ -57,12 +57,12 @@ export class TaskScheduler {
     this.telemetryProvider = options.telemetryProvider;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 300_000; // 5 minutes default
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
-      "qwen2.5-coder:3b": 120_000,
-      "gemma3:4b-it-qat": 180_000,
-      "qwen2.5-coder:7b-instruct-q4_K_M": 240_000,
-      "deepseek-r1:8b": 420_000,
-      "qwen2.5-coder:14b": 360_000,
-      "deepseek-coder-v2:16b": 480_000
+      "qwen2.5-coder:3b": 180_000,
+      "gemma3:4b-it-qat": 240_000,
+      "qwen2.5-coder:7b-instruct-q4_K_M": 420_000,
+      "deepseek-r1:8b": 600_000,
+      "qwen2.5-coder:14b": 540_000,
+      "deepseek-coder-v2:16b": 660_000
     };
 
     this.mutex = new ExecutionMutex();

@@ -1,1 +1,20 @@
-<!-- Empty template since template is inline in app.ts -->
+<!-- Navigation Bar -->
+<nav>
+  <ul>
+    <li><a href="/dashboard" [class.active]="isActive('/dashboard')">Dashboard</a></li>
+    <li><a href="/testing" [class.active]="isActive('/testing')">Testing</a></li> <!-- Updated label and route -->
+    <li><a href="/reports" [class.active]="isActive('/reports')">Reports</a></li>
+  </ul>
+</nav>
+
+<!-- Main Content Area -->
+<div class="content">
+  <router-outlet></router-outlet>
+</div>
+
+<script>
+  // Function to check if the current route is active
+  function isActive(path) {
+    return window.location.pathname === path;
+  }
+</script>
