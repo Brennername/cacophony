@@ -4,13 +4,9 @@ import { ActivatedRoute } from '@angular/router';
 import { HardwareMonitorComponent } from '../hardware-monitor/hardware-monitor.component';
 import { TaskInspectorComponent } from '../task-inspector/task-inspector.component';
 import { QueueManagerComponent } from '../queue-manager/queue-manager.component';
+import { SuccessMeterComponent } from '../success-meter/success-meter.component'; // Import the SuccessMeterComponent
 import { ArenaStateStore } from '../../services/arena-state.store';
 
-/**
- * Dashboard Overview route view:
- * Shows hardware diagnostics, active task inspector, and compact queue snapshot.
- * Supports direct task bookmarking via /tasks/:id routing.
- */
 @Component({
   selector: 'app-dashboard-view',
   standalone: true,
@@ -19,6 +15,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     HardwareMonitorComponent,
     TaskInspectorComponent,
     QueueManagerComponent,
+    SuccessMeterComponent, // Add SuccessMeterComponent to the imports
   ],
   template: `
     <div class="dashboard-grid">
@@ -35,6 +32,11 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       <!-- Compact Queue Snapshot -->
       <section class="grid-card-wrapper full-width">
         <app-queue-manager />
+      </section>
+
+      <!-- Success Meter Component adjacent to Active Task Inspector -->
+      <section class="grid-card-wrapper">
+        <app-success-meter /> <!-- Add the SuccessMeterComponent here -->
       </section>
     </div>
   `,
@@ -61,11 +63,11 @@ import { ArenaStateStore } from '../../services/arena-state.store';
 
     @media (min-width: 1024px) {
       .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
       .full-width {
-        grid-column: span 2;
+        grid-column: span 3;
       }
     }
 
