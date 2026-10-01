@@ -52,7 +52,15 @@ export class FrontierReviewer {
     if (this.inferenceProvider) {
       try {
         const prompt = this.buildReviewPrompt(context.title, diffText, testSummary);
-        const response = await this.inferenceProvider.generate({
+        const reviewTimeoutMs = 120_000;
+        let timeoutHandle: NodeJS.Timeout | null = null;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutHandle = setTimeout(() => {
+            reject(new Error(`Frontier review generation timed out after ${reviewTimeoutMs}ms`));
+          }, reviewTimeoutMs);
+        });
+
+        const generatePromise = this.inferenceProvider.generate({
           model: this.defaultModel,
           messages: [
             {
@@ -66,6 +74,9 @@ export class FrontierReviewer {
           ],
           temperature: 0.1
         });
+
+        const response = await Promise.race([generatePromise, timeoutPromise]);
+        if (timeoutHandle) clearTimeout(timeoutHandle);
 
         return this.parseReviewResponse(response.content, diffText);
       } catch (err) {

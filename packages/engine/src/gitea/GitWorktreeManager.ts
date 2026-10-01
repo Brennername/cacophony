@@ -57,6 +57,8 @@ export class GitWorktreeManager {
     await fs.mkdir(this.workspacesRoot, { recursive: true });
     try {
       await execAsync('git config --global --add safe.directory "*"');
+      await execAsync('git config --global user.name "Cacophony Engine"');
+      await execAsync('git config --global user.email "cacophony@engine.local"');
     } catch {
       // non-fatal
     }
