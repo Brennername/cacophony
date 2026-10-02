@@ -25,13 +25,10 @@ describe('CheckpointTimelineComponent', () => {
     fixture.componentRef.setInput('checkpoints', mockCheckpoints);
     fixture.detectChanges();
 
-    // Trigger a checkpoint selection
     component.selectCheckpoint('2');
 
-    // Check if the diff drawer opens
     expect(component.diffDrawerOpen).toBe(true);
 
-    // Mock the undo functionality
     let undoEmitted = false;
     component.undo.subscribe(() => { undoEmitted = true; });
     component.triggerUndo();
@@ -47,10 +44,107 @@ describe('CheckpointTimelineComponent', () => {
     fixture.componentRef.setInput('checkpoints', mockCheckpoints);
     fixture.detectChanges();
 
-    // Trigger a checkpoint selection
     component.selectCheckpoint('2');
 
-    // Check if the diff text is rendered correctly
     expect(component.diffText).toBe('State after change\n- Initial state');
+  });
+
+  it('should disable undo button at initial state', () => {
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 }
+    ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
+
+    expect(component.canUndo).toBe(false);
+  });
+
+  it('should enable undo button after selecting a checkpoint', () => {
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 },
+      { id: '2', hash: '2222222', message: 'State after change', createdAt: '10:05:00', filesChanged: 2 }
+    ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
+
+    component.selectCheckpoint('2');
+
+    expect(component.canUndo).toBe(true);
+  });
+
+  it('should disable redo button at initial state', () => {
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 }
+    ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
+
+    expect(component.canRedo).toBe(false);
+  });
+
+  it('should enable redo button after triggering undo', () => {
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 },
+      { id: '2', hash: '2222222', message: 'State after change', createdAt: '10:05:00', filesChanged: 2 }
+    ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
+
+    component.selectCheckpoint('2');
+    component.triggerUndo();
+
+    expect(component.canRedo).toBe(true);
+  });
+
+  it('should trigger API call on undo', () => {
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 },
+      { id: '2', hash: '2222222', message: 'State after change', createdAt: '10:05:00', filesChanged: 2 }
+    ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
+
+    component.selectCheckpoint('2');
+    const apiCallSpy = vi.spyOn(component, 'triggerApiCall');
+
+    component.triggerUndo();
+    expect(apiCallSpy).toHaveBeenCalledWith('undo');
+  });
+
+  it('should trigger API call on redo', () => {
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 },
+      { id: '2', hash: '2222222', message: 'State after change', createdAt: '10:05:00', filesChanged: 2 }
+    ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
+
+    component.selectCheckpoint('2');
+    component.triggerUndo();
+    const apiCallSpy = vi.spyOn(component, 'triggerApiCall');
+
+    component.triggerRedo();
+    expect(apiCallSpy).toHaveBeenCalledWith('redo');
+  });
+
+  it('should emit checkpointSelected event on checkpoint selection', () => {
+    const mockCheckpoints: CheckpointRecord[] = [
+      { id: '1', hash: '1111111', message: 'Initial state', createdAt: '10:00:00', filesChanged: 1 },
+      { id: '2', hash: '2222222', message: 'State after change', createdAt: '10:05:00', filesChanged: 2 }
+    ];
+
+    fixture.componentRef.setInput('checkpoints', mockCheckpoints);
+    fixture.detectChanges();
+
+    const checkpointSelectedSpy = vi.spyOn(component.checkpointSelected, 'emit');
+
+    component.selectCheckpoint('2');
+    expect(checkpointSelectedSpy).toHaveBeenCalledWith('2');
   });
 });
