@@ -1,40 +1,62 @@
 import { TestBed } from '@angular/core/testing';
 import { ExplorationControlComponent } from './exploration-control.component';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { MockBackendService } from '../services/mock-backend.service';
 import { of } from 'rxjs';
 
 describe('ExplorationControlComponent', () => {
   let component: ExplorationControlComponent;
-  let httpMock: HttpTestingController;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      declarations: [ExplorationControlComponent]
-    }).compileComponents();
-  });
+  let mockBackendService: MockBackendService;
 
   beforeEach(() => {
-    component = TestBed.inject(ExplorationControlComponent);
-    httpMock = TestBed.inject(HttpTestingController);
+    mockBackendService = new MockBackendService();
+    TestBed.configureTestingModule({
+      declarations: [ExplorationControlComponent],
+      providers: [
+        { provide: MockBackendService, useValue: mockBackendService }
+      ]
+    });
+    component = TestBed.createComponent(ExplorationControlComponent);
   });
 
-  afterEach(() => {
-    httpMock.verify();
+  it('should create ExplorationControlComponent', () => {
+    expect(component).toBeTruthy();
   });
 
-  it('should trigger API PUT and update local activePolicy signal on policy change', () => {
-    const newPolicy = { id: 'new-policy-id', name: 'New Policy' };
-    component.activePolicy$.subscribe(policy => {
-      expect(policy).toEqual(newPolicy);
+  describe('getDominantModels', () => {
+    it('should return the dominant model when only one is present', () => {
+      const mockData = [{ model: 'ModelA', score: 90 }, { model: 'ModelB', score: 80 }];
+      mockBackendService.mockGetResponse(
+        '/api/pareto-frontier',
+        of(mockData)
+      );
+
+      component.getDominantModels();
+      expect(component.dominantModel).toEqual('ModelA');
     });
 
-    component.changePolicy(newPolicy);
+    it('should return the dominant model when multiple models have similar scores', () => {
+      const mockData = [
+        { model: 'ModelA', score: 90 },
+        { model: 'ModelB', score: 85 },
+        { model: 'ModelC', score: 85 }
+      ];
+      mockBackendService.mockGetResponse(
+        '/api/pareto-frontier',
+        of(mockData)
+      );
 
-    const req = httpMock.expectOne('api/policy');
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual(newPolicy);
+      component.getDominantModels();
+      expect(component.dominantModel).toEqual('ModelA');
+    });
 
-    req.flush(newPolicy);
+    it('should return null if no models are present', () => {
+      mockBackendService.mockGetResponse(
+        '/api/pareto-frontier',
+        of([])
+      );
+
+      component.getDominantModels();
+      expect(component.dominantModel).toBeNull();
+    });
   });
 });
