@@ -69,6 +69,10 @@ export interface BanditArmUi {
         />
       </div>
 
+      <svg width="800" height="600" viewBox="0 0 800 600">
+        <g id="scatter-plot"></g>
+      </svg>
+
       <div class="arms-grid">
         @for (arm of arms(); track arm.armId) {
           <div class="arm-item">
@@ -169,6 +173,11 @@ export interface BanditArmUi {
     .slider-input {
       width: 100%;
       accent-color: var(--primary, #3b82f6);
+    }
+
+    svg {
+      border: 1px solid var(--border-color, #334155);
+      background: var(--bg-surface, #1e293b);
     }
 
     .arms-grid {
@@ -279,6 +288,8 @@ export class ExplorationControlComponent implements OnInit {
     } catch (error) {
       console.error('Failed to fetch arms and policy:', error);
     }
+
+    this.renderScatterPlot();
   }
 
   public setPolicy(policy: 'epsilon_greedy' | 'ucb1' | 'thompson_sampling'): void {
@@ -292,5 +303,38 @@ export class ExplorationControlComponent implements OnInit {
 
   public formatTks(val: number | null | undefined): string {
     return (Number(val) || 0).toFixed(1);
+  }
+
+  private renderScatterPlot(): void {
+    const svg = document.querySelector<SVGElement>('#scatter-plot');
+    if (!svg) return;
+
+    const arms = this.arms();
+    const width = 800;
+    const height = 600;
+    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+    const xMax = Math.max(...arms.map(arm => arm.tokensPerSec));
+    const yMax = Math.max(...arms.map(arm => arm.winRatePct));
+
+    const xScale = d3.scaleLinear().domain([0, xMax]).range([margin.left, width - margin.right]);
+    const yScale = d3.scaleLinear().domain([0, yMax]).range([height - margin.bottom, margin.top]);
+
+    svg.selectAll('.dot').remove();
+    svg.append('g')
+      .attr('transform', `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(xScale));
+
+    svg.append('g')
+      .attr('transform', `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yScale));
+
+    svg.selectAll('.dot')
+      .data(arms)
+      .enter()
+      .append('circle')
+      .attr('class', 'dot')
+      .attr('cx', arm => xScale(arm.tokensPerSec))
+      .attr('cy', arm => yScale(arm.winRatePct))
+      .attr('r', 5);
   }
 }
