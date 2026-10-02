@@ -113,6 +113,26 @@ export class GitWorktreeManager {
       });
     }
 
+    // Symlink root node_modules into worktree so dependencies resolve
+    try {
+      const rootModules = path.join(this.repositoryRoot, "node_modules");
+      const worktreeModules = path.join(worktreePath, "node_modules");
+      await fs.symlink(rootModules, worktreeModules, "dir").catch(() => {});
+
+      // Symlink built dist directories for sibling packages so cross-package imports resolve
+      const packages = ["shared-types", "db", "tools", "engine", "frontend"];
+      for (const pkg of packages) {
+        const rootDist = path.join(this.repositoryRoot, "packages", pkg, "dist");
+        const worktreeDist = path.join(worktreePath, "packages", pkg, "dist");
+        const exists = await fs.stat(rootDist).then(() => true).catch(() => false);
+        if (exists) {
+          await fs.symlink(rootDist, worktreeDist, "dir").catch(() => {});
+        }
+      }
+    } catch {
+      // non-fatal
+    }
+
     return {
       taskId,
       branchName,

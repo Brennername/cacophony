@@ -411,4 +411,57 @@ export interface IGitPlatformProvider {
 }
 ```
 
+---
+
+### 1.13 Multi-Stage Staging (Gitea) to Production (GitHub) Promotion Gate & Batched Promotion Pipeline
+- **Objective**: Establish an automated quarantine gate and release promotion pipeline that bridges local Gitea (staging/testing) to public GitHub (production). Replaces fragmented single-file PR pushes with cohesive, semantically versioned milestone releases and verified bug fix PRs.
+- **Architectural Scope**:
+  - Full Monorepo Compilation Gate: Validates `@cacophony/shared-types`, `@cacophony/db`, `@cacophony/tools`, `@cacophony/engine`, and `@cacophony/frontend` build cleanly without errors before any upstream push.
+  - Full Test Suite Gate: Validates 100% test pass rate across engine and frontend before promotion.
+  - Secret & Policy Scrubber: Verifies zero leaked `.env` keys, zero emojis, and compliance with SOLID typing.
+  - Batched Release Promotion Engine (`GitHubPromotionPipeline`): Batches completed staging tasks into versioned release PRs (e.g. `release/v1.1.0`) with automated markdown changelogs.
+- **Assigned Taskcade Phase**: Phase 80 (`spec:GitHubPromotionGate`, `spec:BatchedReleaseBundler`).
+
+---
+
+### 1.14 Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine
+- **Objective**: Implement the Autonomous Software Factory pipeline allowing operators to drop in raw project specification files (`docs/spec.md`, `README.md`, or architecture diagrams) and have the system autonomously derive data schemas, SOLID architectural contracts, acceptance criteria, and atomic taskcade task lists.
+- **Architectural Scope**:
+  - `ProjectSpecIngestionService`: Ingests markdown, OpenAPI, and code files to build functional requirement models.
+  - `FrontierTaskDecomposer` expansion: Automatically specifies concrete acceptance criteria, explicit focus files, and machine-executable test commands per task.
+  - Topological Dependency Sorter: Orders tasks so interfaces and migrations precede implementations and UI views.
+- **Assigned Taskcade Phase**: Phase 81 (`spec:SpecIngestionReader`, `spec:AcceptanceCriteriaDerivation`).
+
+---
+
+### 1.15 Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine
+- **Objective**: Provide a mathematical epoching system separating dirty bootstrap failure statistics from active operational telemetry. Allows resetting model health counters to clean baselines while preserving all historical trials for postmortems and bandit retraining.
+- **Architectural Scope**:
+  - Migration 015 (`015_arena_epochs.ts`): Tables `arena_epochs` and `model_health_epoch_history`.
+  - `ModelHealthRepository` expansion: `advanceEpoch()`, `resetAllStats()`, and `getCurrentEpoch()`.
+  - REST API routes: `POST /api/models/epoch`, `POST /api/models/reset-stats`, and `GET /api/arena/epochs`.
+  - Frontend UI Epoch Selector on `/models` allowing operators to view stats per epoch or all-time.
+- **Assigned Taskcade Phase**: Phase 82 (`spec:ArenaEpochSchema`, `spec:CleanSlateResetApi`).
+
+---
+
+### 1.16 Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine
+- **Objective**: Enable decentralized community contributors with diverse GPU hardware (NVIDIA CUDA, Apple Silicon Metal, AMD ROCm, Intel Arc, and CPU-only) to run Cacophony out-of-the-box with auto-sized contexts and quantization profiles.
+- **Architectural Scope**:
+  - Universal `IHardwareTelemetryProvider` abstraction: Vendor-specific detectors for NVML, ROCm SMI, macOS `powermetrics`, and Level-Zero.
+  - Zero-Config Hyperparameter Auto-Sizer: Allocates context windows (4k, 8k, 16k) and model sizes (3B, 7B, 14B, 32B) based on discovered VRAM and thermal envelopes.
+  - Contributor Onboarding Script (`bin/setup-hardware.sh`) and Docker compose profiles (`nvidia`, `amd`, `cpu`).
+- **Assigned Taskcade Phase**: Phase 83 (`spec:UniversalHardwareDetector`, `spec:HyperparameterAutoSizer`).
+
+---
+
+### 1.17 Auto-Mode Sovereign Loop Hardening & Bi-Directional GitHub Issue Sync
+- **Objective**: Defocus manual Build and Plan modes and harden sovereign Auto Mode so the arena operates 24/7 autonomously without human intervention. Synchronizes public GitHub issues directly into the local execution queue and returns verified pull requests.
+- **Architectural Scope**:
+  - Sovereign Loop Supervisor: Recovers from unhandled process exceptions, monitors thermal limits, and re-enqueues stalled tasks automatically.
+  - GitHub Issue Sync Daemon: Periodically polls `GET /repos/{owner}/{repo}/issues`, parses `arena:auto` issues into taskcade items, and posts status updates.
+  - Worktree Pre-Commit Gate: Verifies modified worktrees build cleanly prior to commit, preventing corrupted code from entering staging `main`.
+- **Assigned Taskcade Phase**: Phase 84 (`spec:SovereignLoopSupervisor`, `spec:GitHubIssueSyncDaemon`).
+
+
 

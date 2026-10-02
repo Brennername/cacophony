@@ -640,6 +640,21 @@ export class AutonomousWorkerPipeline {
           diff: generatedDiff
         });
 
+        if (reviewResult.verdict === "REJECT") {
+          await this.recordAndEmitStage(
+            taskId,
+            "remediation",
+            "FAILURE",
+            Date.now() - reviewStart,
+            `Code review rejected: ${reviewResult.reviewNotes} (SOLID score: ${reviewResult.solidComplianceScore})`
+          );
+          await this.rollbackWorkspace(targetAbs, originalExistingContent);
+          if (this.worktreeManager && worktree) {
+            await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+          }
+          return { success: false, tokensPerSec: measuredTps };
+        }
+
         await this.recordAndEmitStage(
           taskId,
           "remediation",
@@ -653,7 +668,7 @@ export class AutonomousWorkerPipeline {
       const mergeStart = Date.now();
       await this.recordAndEmitStage(taskId, "pr_review", "RUNNING");
 
-      let prMerged = true;
+      let prMerged = !this.gitPlatformProvider;
       let prNumber: number | undefined;
 
       // If worktree and git platform provider are available, commit, push, open PR, and merge
@@ -722,7 +737,7 @@ export class AutonomousWorkerPipeline {
           }
         } catch (prErr) {
           console.warn(`[AutonomousWorkerPipeline] Remote git PR operation encountered warning:`, prErr);
-          // Non-fatal if remote repo is unreachable or mock
+          prMerged = false;
         }
       }
 
@@ -733,10 +748,10 @@ export class AutonomousWorkerPipeline {
         Date.now() - mergeStart,
         prNumber
           ? `Pull Request #${prNumber} created and ${prMerged ? "merged" : "pending manual merge"}`
-          : "Code modifications verified and merged locally"
+          : (prMerged ? "Code modifications verified and merged locally" : "Git promotion failed")
       );
 
-      return { success: true, tokensPerSec: measuredTps };
+      return { success: prMerged, tokensPerSec: measuredTps };
     } catch (err) {
       console.error(`[AutonomousWorkerPipeline] Execution error for task '${groomed.enrichedPrompt.slice(0, 40)}':`, err);
       return { success: false, tokensPerSec: measuredTps };

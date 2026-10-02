@@ -178,3 +178,107 @@ To continuously assess local arena performance:
   - Identifies prompt degradation and context saturation patterns.
   - Correlates sudden error clusters with hardware events (thermal throttling, driver memory leaks).
   - Generates recommended hyperparameter adjustments for local model dispatching.
+
+---
+
+## 8. Staging (Gitea) to Production (GitHub) Promotion Gate & Batched Feature Releases
+
+### 8.1 The Dev/Staging/Production Multi-Tier Lifecycle
+Autonomous local models require an active development playground where they can rapidly experiment, generate micro-branches, run automated test suites, and merge iterative progress without polluting public-facing release branches or spamming external contributors.
+Cacophony formalizes a three-tier lifecycle:
+1. **Local Worktree (Dev Sandbox)**: Ephemeral directories (`workspaces/worktree-<taskId>`) where local models generate diffs, execute deterministic repairs, and run unit test commands in isolation.
+2. **Internal Gitea (Staging Arena)**: The continuous integration hub hosted on the developer machine (`http://localhost:19634`). Tasks that pass scoped tests are committed, pushed, and reviewed via autonomous pull requests. Merges into Gitea `main` represent verified staging milestones.
+3. **Public GitHub (Production / Upstream)**: The public source repository. Code is never pushed to GitHub as fragmented micro-PRs for every single modified file. Instead, an automated Quarantine and Promotion Layer aggregates verified bodies of work into cohesive, semantically versioned milestone releases and targeted bug-fix PRs.
+
+### 8.2 The Automated Quarantine & Promotion Layer
+Before any code generated in local Gitea staging can be promoted upstream to GitHub, it must pass through an automated validation gauntlet:
+1. **Full Monorepo Compilation Gate**: All workspace packages (`@cacophony/shared-types`, `@cacophony/db`, `@cacophony/tools`, `@cacophony/engine`, `@cacophony/frontend`) must compile cleanly with zero TypeScript diagnostic errors (`tsc -b` and `ng build`).
+2. **Full Monorepo Test Gate**: The entire end-to-end test suite (unit tests, integration tests, Angular component specs) must pass 100% with zero regressions.
+3. **Security & Leaked Secrets Scanner**: Scans git commit ranges for accidental secrets, API tokens, `.env` values, or private keys prior to push.
+4. **Deterministic Hygiene & Rule Enforcement**:
+   - Zero emojis across all code, docstrings, commit messages, and UI text.
+   - Enforce explicit TypeScript typing with no loose `any` types.
+   - Prohibit banned imports, loose root files, and uncommitted build artifacts.
+   - Check license and author attribution.
+5. **Batched Feature Promotion (Release Bundler)**:
+   - Aggregates multiple closed Gitea staging tasks into a unified release branch (e.g. `release/v1.2.0` or `feature/taskcade-phase-XX`).
+   - Generates comprehensive architectural changelogs documenting changed interfaces, data models, and migration guides.
+   - Opens a single, pristine pull request on GitHub or pushes directly to production release tags.
+
+### 8.3 Bi-Directional Issue Sync: Public Roadmap to Local Queue
+The public GitHub issue tracker serves as the high-level roadmap interface for human users and external contributors:
+- An issue sync daemon periodically queries the GitHub Issues API (`GET /repos/{owner}/{repo}/issues`).
+- Bugs and feature requests labeled `arena:auto` are ingested into Cacophony's local database as P0/P1 tasks.
+- Once local models resolve the issue and the patch passes the Gitea staging gauntlet, Cacophony automatically links the GitHub issue, posts verification telemetry, and opens the upstream resolution PR.
+
+---
+
+## 9. Heterogeneous Hardware Contributor Architecture & Dynamic Zero-Config Profiling
+
+### 9.1 Crowdsourced Local Compute & Contributor Onboarding
+To enable community members and decentralized contributors to participate in the Cacophony arena without possessing identical hardware (such as AMD APUs):
+- **Universal Hardware Abstraction**: A pluggable `IHardwareTelemetryProvider` interface detects the host system's hardware topology at runtime:
+  - **NVIDIA (CUDA / NVML)**: Detects GPU compute capability, VRAM size, active SM utilization, and power draw via `nvidia-smi` and NVML bindings.
+  - **AMD Discrete & APU (ROCm / sysfs)**: Reads VRAM and GTT limits, core clocks, and temperatures via `/sys/class/drm` and ROCm SMI.
+  - **Apple Silicon (Metal / Unified Memory)**: Measures unified memory allocations, thermal states, and neural engine activity via macOS `powermetrics`.
+  - **Intel Arc (Level-Zero / oneAPI)**: Queries GPU memory and frequency via Intel management interfaces.
+  - **CPU Only (AVX-512 / llama.cpp Threads)**: Automatically falls back to multi-threaded CPU inference when no discrete or integrated accelerator is detected.
+
+### 9.2 Dynamic Zero-Config Hyperparameter Auto-Sizing
+When a user downloads and boots Cacophony, the engine automatically profiles the system and selects optimal execution parameters:
+- **VRAM < 8 GB**: Restricts model fleet to 3B and 7B quantized models (Q4_K_M) with 4k context limits (`num_ctx = 4096`).
+- **VRAM 8 GB - 16 GB**: Enables 7B and 8B reasoning models (`deepseek-r1:8b`, `qwen2.5-coder:7b`) with 8k context limits (`num_ctx = 8192`).
+- **VRAM 16 GB - 32 GB**: Enables 14B models (`qwen2.5-coder:14b`) and concurrent dual-model pipelines (reasoner + coder) with 16k context limits (`num_ctx = 16384`).
+- **VRAM > 32 GB / Apple Silicon Unified**: Enables 32B models and full-context multi-agent debate pipelines.
+
+### 9.3 Contributor Node Pairing Protocol
+External contributors can connect their local Cacophony instance as a worker node to an upstream coordinator:
+- Encrypted WebSocket transport with mutual TLS authentication.
+- Decentralized task dispatching based on verified hardware capability benchmarks.
+- Privacy-preserving task packaging stripping proprietary organization paths and data shapes.
+
+---
+
+## 10. Drop-In Project File Ingestion & Autonomous Architectural Decomposition Engine
+
+### 10.1 The Autonomous Software Factory Concept
+The ultimate operational objective of Cacophony is to eliminate the conventional manual "generate code, human reviews code, human fixes syntax error" cycle. Instead, an operator drops raw project specification files into a directory (e.g. `docs/spec.md`, `README.md`, or OpenAPI specs), and Cacophony autonomously:
+1. Ingests and parses the high-level specification.
+2. Formulates data schemas, architectural contracts, and dependency graphs.
+3. Automatically derives acceptance criteria and executable test specifications.
+4. Decomposes the epic into an ordered, atomic taskcade of subtasks.
+5. Feeds the subtasks directly to local models in Auto Mode, validating every step in git worktrees until the entire system is fully implemented and tested.
+
+### 10.2 Architectural Components of the Decomposing Engine
+- **Spec Ingestion Reader**: Ingests markdown files, OpenAPI schemas, GraphQL types, and legacy codebases, summarizing functional requirements and non-functional constraints.
+- **Architectural Decision Synthesizer (Frontier Model)**: Synthesizes system architecture adhering to SOLID principles, selecting appropriate data stores, directory structures, and type definitions.
+- **Acceptance Criteria Derivation Engine**: For each functional capability, derives concrete, machine-verifiable acceptance criteria (e.g. "Endpoint returns 200 with schema X when input Y is provided; returns 400 when missing field Z").
+- **Atomic Task Generator**: Emits typed `TaskRecord` items with explicit focus files, role assignments, priority ratings, and scoped test commands (`npm test -- ...`).
+- **Dependency DAG Sequencer**: Arranges subtasks into a topological dependency graph (interfaces and database migrations first, followed by repositories, business logic, API routes, and frontend views).
+
+---
+
+## 11. Statistical Epoching & Bootstrap Resiliency Architecture
+
+### 11.1 The Dirty Stats Dilemma in Self-Bootstrapping Systems
+In an autonomous system that dogfoods itself, early bootstrapping iterations inevitably encounter systemic defects:
+- An uninstalled dependency or typo in a core server route causes dozens of consecutive tasks to fail.
+- Database connection locks or lockfile collisions artificially fail every subsequent task.
+- Because the system tracks rolling success rates and triggers automated eviction on consecutive failures, local models get severely and unfairly penalized.
+- Once the underlying bug is resolved, the models remain marked as `EJECTED` or carry artificially depressed success percentages, poisoning multi-armed bandit sampling and model routing.
+
+### 11.2 The Epoching Mechanism
+To guarantee bootstrap resiliency and preserve statistical integrity over months of continuous operation, Cacophony establishes a formal **Arena Epoch Protocol**:
+1. **Epoch Boundaries (`arena_epochs`)**:
+   - An epoch represents a continuous operational era with a stable codebase and invariant environment.
+   - When a major bug fix, schema migration, or infrastructural repair is deployed, an epoch transition can be triggered (`POST /api/models/epoch` or CLI `cacophony epoch advance`).
+2. **Historical Preservation Without Deletion**:
+   - All completed and failed runs from past epochs remain permanently preserved in historical tables (`tasks`, `task_stages`, `model_health_epoch_history`).
+   - Data is never deleted or falsified; past epochs provide empirical datasets for hyperparameter tuning, regression postmortems, and failure trend analyses.
+3. **Clean-Slate Metric Initialization**:
+   - Upon advancing to a new epoch, active model health counters (`total_tasks`, `total_success`, `total_failures`, `consecutive_failures`) are reset to clean baseline values.
+   - All evicted models are restored to `ACTIVE` status, allowing the entire model fleet to compete fairly on the freshly repaired codebase.
+   - Multi-armed bandit exploration restarts with refreshed exploration budgets.
+4. **Epoch-Aware Leaderboard & Analytics**:
+   - The UI dashboard displays model leaderboard metrics filtered by current epoch by default, with an epoch selector allowing operators to compare performance trends across historical epochs.
+

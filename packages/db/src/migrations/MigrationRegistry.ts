@@ -13,6 +13,7 @@ import { migration011 } from "./011_task_log_snippet.js";
 import { migration012 } from "./012_task_runtime_metrics.js";
 import { migration013 } from "./013_reasoning_transcripts.js";
 import { migration014 } from "./014_model_profiles.js";
+import { migration015 } from "./015_arena_epochs.js";
 
 /**
  * MigrationRegistry
@@ -35,7 +36,8 @@ export class MigrationRegistry {
     migration011,
     migration012,
     migration013,
-    migration014
+    migration014,
+    migration015
   ];
 
   /**

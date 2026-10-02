@@ -38,6 +38,22 @@ export interface ModelHealthProfile {
 }
 
 /**
+ * Arena epoch demarcation record separating continuous bootstrap eras.
+ */
+export interface ArenaEpochRecord {
+  readonly epochId: number;
+  readonly name: string;
+  readonly reason: string;
+  readonly startedAt: string;
+  readonly endedAt: string | null;
+  readonly isActive: boolean;
+  readonly taskCount: number;
+  readonly successCount: number;
+  readonly failureCount: number;
+  readonly notes: string | null;
+}
+
+/**
  * Unified inference chat message representation.
  */
 export interface ChatMessage {

@@ -40,12 +40,13 @@
 
 > [!IMPORTANT]
 > **Execution Directives for Next Frontier Model Implementer:**
-> The following four phases constitute the highest-priority implementation pipeline, ordered strictly by dependency and user mandate:
-> 1. **Priority 1: Phase 75 (Dynamic Ollama Model Lifecycle Management & Multi-Tenant Hardware Adaptation)**: Backend engine controlling Ollama model installation, automated hardware benchmarking, download streaming, and safe eviction with protected tenancy whitelists.
-> 2. **Priority 2: Phase 76 (Frontend Model Fleet Manager, Download Terminal & Tenancy Controls)**: High-density interactive UI on `/models` allowing operators to view installed models, trigger new downloads with real-time piped terminal logs, manage eviction policies, and configure tenancy protections.
-> 3. **Priority 3: Phase 77 (Reasoning Model `<think>` Stream Separation, Distillation & Opinion Synthesis)**: Token demuxer separating `<think>` cognitive traces from code, persisting distilled architectural opinions for MoE consensus, and providing differentiated UI views per model archetype.
-> 4. **Priority 4: Phase 78 (End-to-End In-House Pull Request Lifecycle & Review Pipeline)**: Provider-agnostic git PR integration (Gitea default + GitHub compatible) with ephemeral git worktree isolation (`workspaces/worktree-<taskId>`) and automated PR code reviews.
-> 5. **Priority 5: Phase 79 (Dynamic Model Profile Tuning, Multi-Model Cognitive Handoff & Prompt Compression)**: Whitebox per-model tuning (ctx, predict, temp), autonomous auto-tuning based on VRAM/throughput, cognitive handoff from reasoners to coders, and prompt compression.
+> The following phases constitute the highest-priority implementation pipeline, aligned with sovereign Auto Mode, Staging-to-Production promotion, and hardware democratized contribution:
+> 1. **Priority 1: Phase 82 (Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine)**: Clear dirty bootstrap failure-cascade statistics, advance to Epoch 2, reset model eviction counters to 0, restore all evicted models (`gemma3:4b-it-qat`) to `ACTIVE`, and establish epoch-aware rolling metrics.
+> 2. **Priority 2: Phase 80 (Multi-Stage Staging to Production Promotion Gate & Batched Promotion Pipeline)**: Implement the quarantine gauntlet between Gitea staging and public GitHub: full monorepo build verification (`npm run build`), 100% test gate, secret/hygiene scrubber, and batched release milestone PR bundling.
+> 3. **Priority 3: Phase 84 (Auto-Mode Sovereign Loop Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 sovereign Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
+> 4. **Priority 4: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
+> 5. **Priority 5: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
+
 
 ---
 
@@ -1392,6 +1393,182 @@
   - [x] T79.6.2: Configure EngineAutoTuner hardwareSpec for 8GB UMA APU architecture, clamp context window to OLLAMA_NUM_CTX, and disallow non-truncation failure inflation. [File: packages/engine/src/scheduler/EngineAutoTuner.ts] [Class: EngineAutoTuner] [Test: npm --prefix packages/engine test]
   - [x] T79.6.3: Implement dynamic lightweight model fallback in TaskScheduler for previously failed tasks (qwen2.5-coder:3b, gemma3:4b-it-qat). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Class: TaskScheduler] [Test: npm --prefix packages/engine test]
   - [x] T79.6.4: Increase GiteaApiClient mergePullRequest retry budget to 10 attempts with arithmetic backoff to eliminate 405 async race conditions. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Class: GiteaApiClient] [Test: npm --prefix packages/engine test]
+
+---
+
+## Phase 80: Multi-Stage Staging (Gitea) to Production (GitHub) Release Gate & Batched Promotion Pipeline
+*RDF Category: devops_orchestration*
+
+### T80.1: Monorepo Compilation & Clean Build Verification Gate
+  - [ ] T80.1.1: Create `MonorepoBuildGate` in `packages/engine/src/gitea/MonorepoBuildGate.ts` executing `npm run build` across all packages in isolated worktrees. [File: packages/engine/src/gitea/MonorepoBuildGate.ts] [Class: MonorepoBuildGate] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
+  - [ ] T80.1.2: Capture standard error and compiler diagnostic codes (e.g. TS2304, TS2305, NG2008), rejecting broken commits before staging promotion. [File: packages/engine/src/gitea/MonorepoBuildGate.ts] [Method: verifyBuild] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
+  - [ ] T80.1.3: Wire build verification into `AutonomousWorkerPipeline` Stage 6 preventing broken tasks from merging into Gitea `main`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T80.1.4: Write unit tests verifying that build failures abort PR creation and trigger remediation feedback. [File: packages/engine/src/tests/monorepo_build_gate.test.ts] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
+
+### T80.2: Secret Leak & Deterministic Hygiene Scanner
+  - [ ] T80.2.1: Implement `PromotionSanitizer` in `packages/engine/src/gitea/PromotionSanitizer.ts` scanning git diffs for API keys, tokens, and private keys. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Class: PromotionSanitizer] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+  - [ ] T80.2.2: Scan git diffs for prohibited unicode emojis or dingbats per project rules, rejecting dirty diffs prior to upstream promotion. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Method: scanEmojis] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+  - [ ] T80.2.3: Check for banned imports (`acorn`, `eventsource`, etc.) and ensure no loose root files outside permitted list. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Method: scanHygiene] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+  - [ ] T80.2.4: Write unit tests verifying sanitizer detects simulated leaked secrets and unicode emojis. [File: packages/engine/src/tests/promotion_sanitizer.test.ts] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+
+### T80.3: Milestone Release Bundler & Changelog Generator
+  - [ ] T80.3.1: Create `ReleaseBundlerService` in `packages/engine/src/gitea/ReleaseBundlerService.ts` bundling closed Gitea staging tasks into a unified release. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Class: ReleaseBundlerService] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+  - [ ] T80.3.2: Generate structured markdown changelogs categorizing features, bug fixes, refactors, and test coverage metrics. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Method: generateChangelog] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+  - [ ] T80.3.3: Implement semantic version bump (`major`, `minor`, `patch`) based on task metadata and breaking change annotations. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Method: computeNextVersion] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+  - [ ] T80.3.4: Write unit tests verifying changelog formatting and clean release bundle aggregation across multiple tasks. [File: packages/engine/src/tests/release_bundler.test.ts] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+
+### T80.4: GitHub API Platform Provider & Pull Request Promotion
+  - [ ] T80.4.1: Extend `GitHubPlatformProvider` in `packages/engine/src/gitea/GitHubPlatformProvider.ts` to support authenticated push and PR creation to public upstream. [File: packages/engine/src/gitea/GitHubPlatformProvider.ts] [Class: GitHubPlatformProvider] [Test: npm test -- packages/engine/src/tests/github_platform_provider.test.ts]
+  - [ ] T80.4.2: Implement `promoteMilestoneToGitHub(releaseBranch: string, milestoneTitle: string, changelog: string)` pushing verified release branches to GitHub. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: promoteMilestoneToGitHub] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [ ] T80.4.3: Open a single, cohesive Pull Request on GitHub against `main` containing the full milestone body of work and test verification badge. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [ ] T80.4.4: Write unit tests simulating GitHub promotion with mock Octokit/REST API responses. [File: packages/engine/src/tests/github_promotion.test.ts] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+
+### T80.5: Automated Promotion CLI & REST API
+  - [ ] T80.5.1: Expose `POST /api/promotion/release` in `CacophonyHttpServer.ts` triggering the quarantine gauntlet and staging promotion. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/promotion/release] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T80.5.2: Expose `GET /api/promotion/status` returning current staging vs upstream GitHub divergence and pending release candidates. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/promotion/status] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T80.5.3: Add CLI command `bin/cacophony promote [--dry-run] [--target=github]` to trigger automated verification and upstream release. [File: bin/cacophony.ts] [Subcommand: promote] [Test: node bin/cacophony.ts promote --dry-run]
+  - [ ] T80.5.4: Write integration tests verifying REST API and CLI endpoints validate build and test gates before pushing. [File: packages/engine/src/tests/promotion_api.test.ts] [Test: npm test -- packages/engine/src/tests/promotion_api.test.ts]
+
+---
+
+## Phase 81: Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine
+*RDF Category: architectural_synthesis*
+
+### T81.1: Spec & Project Document Ingestion Engine
+  - [ ] T81.1.1: Create `ProjectSpecIngestionService` in `packages/engine/src/inference/ProjectSpecIngestionService.ts` reading dropped specification files (`docs/spec.md`, `README.md`, OpenAPI JSON). [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Class: ProjectSpecIngestionService] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [ ] T81.1.2: Parse markdown headings, bulleted requirement lists, and API endpoint definitions into structured `RequirementNode` objects. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: parseRequirements] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [ ] T81.1.3: Extract explicit technical constraints (languages, frameworks, database drivers, coding rules) from ingested documents. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: extractConstraints] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [ ] T81.1.4: Write unit tests verifying parser extracts functional and non-functional requirements from diverse document formats. [File: packages/engine/src/tests/spec_ingestion.test.ts] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+
+### T81.2: Structured Acceptance Criteria Derivation Engine
+  - [ ] T81.2.1: Implement `AcceptanceCriteriaEngine` in `packages/engine/src/inference/AcceptanceCriteriaEngine.ts` utilizing high-reasoning models to formulate testable criteria. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Class: AcceptanceCriteriaEngine] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [ ] T81.2.2: Convert ambiguous user directives into explicit Given/When/Then scenarios with expected HTTP status codes, error models, and return shapes. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: deriveCriteria] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [ ] T81.2.3: Generate concrete test assertion templates (native `node:test` and `node:assert/strict` for backend, Angular component spec for frontend). [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: generateTestTemplate] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [ ] T81.2.4: Write unit tests verifying that acceptance criteria strictly adhere to SOLID principles and mobile-first rules. [File: packages/engine/src/tests/acceptance_criteria.test.ts] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+
+### T81.3: Architectural Contract & Type Schema Generator
+  - [ ] T81.3.1: Create `ContractSynthesizer` in `packages/engine/src/inference/ContractSynthesizer.ts` defining TypeScript interfaces and Zod validation schemas. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Class: ContractSynthesizer] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [ ] T81.3.2: Synthesize database migration definitions with primary keys, indexes, foreign keys, and dialect-agnostic column types. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: synthesizeMigration] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [ ] T81.3.3: Verify synthesized schemas against existing project types to prevent namespace collisions and circular references. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: validateAgainstWorkspace] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [ ] T81.3.4: Write unit tests verifying generated contracts compile cleanly with `tsc`. [File: packages/engine/src/tests/contract_synthesizer.test.ts] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+
+### T81.4: Topological Dependency Graph Task Sequencer
+  - [ ] T81.4.1: Build `DependencyGraphSequencer` in `packages/engine/src/inference/DependencyGraphSequencer.ts` arranging decomposed tasks in dependency order. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Class: DependencyGraphSequencer] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [ ] T81.4.2: Enforce architectural sequencing: Shared Types & Migrations -> Repositories -> Services -> HTTP Routes -> UI Components -> E2E Tests. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: sequenceTasks] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [ ] T81.4.3: Detect and break circular task dependencies by splitting interfaces from concrete implementations. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: resolveCircularDependencies] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [ ] T81.4.4: Write unit tests validating topological sort ordering for complex multi-module feature epics. [File: packages/engine/src/tests/dependency_sequencer.test.ts] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+
+### T81.5: REST API & Drop-In Ingestion CLI
+  - [ ] T81.5.1: Expose `POST /api/tasks/decompose-spec` in `CacophonyHttpServer.ts` ingesting uploaded spec files and persisting atomic tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/decompose-spec] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T81.5.2: Create CLI entrypoint `bin/decompose-spec.ts` allowing operators to run `node bin/decompose-spec.ts path/to/spec.md`. [File: bin/decompose-spec.ts] [Test: node bin/decompose-spec.ts --dry-run]
+  - [ ] T81.5.3: Add file-watcher daemon monitoring `docs/inbox/` for dropped project specifications and auto-decomposing them into the active queue. [File: packages/engine/src/daemon/SpecInboxWatcher.ts] [Class: SpecInboxWatcher] [Test: npm test -- packages/engine/src/tests/inbox_watcher.test.ts]
+  - [ ] T81.5.4: Write integration tests verifying spec decomposition pipeline creates valid `TaskRecord` rows in database. [File: packages/engine/src/tests/spec_decomposition_pipeline.test.ts] [Test: npm test -- packages/engine/src/tests/spec_decomposition_pipeline.test.ts]
+
+---
+
+## Phase 82: Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine
+*RDF Category: empirical_metrics*
+
+### T82.1: Database Migration `015_arena_epochs.ts`
+  - [ ] T82.1.1: Author database migration `015_arena_epochs.ts` creating `arena_epochs` table (`epoch_id`, `name`, `reason`, `started_at`, `ended_at`, `is_active`, `task_count`, `success_count`, `failure_count`, `notes`). [File: packages/db/src/migrations/015_arena_epochs.ts] [Test: npm test -- packages/db]
+  - [ ] T82.1.2: Create `model_health_epoch_history` table capturing point-in-time snapshots of model health profiles per epoch. [File: packages/db/src/migrations/015_arena_epochs.ts] [Table: model_health_epoch_history] [Test: npm test -- packages/db]
+  - [ ] T82.1.3: Register migration in `MigrationRegistry.ts` ensuring clean execution on startup across PostgreSQL and SQLite dialects. [File: packages/db/src/migrations/MigrationRegistry.ts] [Test: npm test -- packages/db]
+  - [ ] T82.1.4: Write unit tests verifying migration executes idempotently and initial baseline Epoch 1 is seeded. [File: packages/db/src/tests/arena_epoch.test.ts] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
+
+### T82.2: `ModelHealthRepository` Epoch Methods
+  - [ ] T82.2.1: Implement `resetAllStats()` in `ModelHealthRepository.ts` resetting `total_tasks`, `total_success`, `total_failures`, `consecutive_failures` to 0, and restoring status to `ACTIVE`. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: resetAllStats] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
+  - [ ] T82.2.2: Implement `advanceEpoch(name: string, reason: string, notes?: string)` archiving current model metrics to history table and initializing a fresh epoch. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: advanceEpoch] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
+  - [ ] T82.2.3: Implement `getCurrentEpoch()` and `listEpochs()` returning historical epoch records and metadata. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: getCurrentEpoch] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
+  - [ ] T82.2.4: Write unit tests verifying that advancing an epoch un-ejects all evicted models and snapshots historical metrics cleanly. [File: packages/db/src/tests/arena_epoch.test.ts] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
+
+### T82.3: REST API Routes for Epoch Management
+  - [ ] T82.3.1: Expose `POST /api/models/epoch` in `CacophonyHttpServer.ts` advancing the active arena epoch and resetting model counters. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/epoch] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T82.3.2: Expose `POST /api/models/reset-stats` in `CacophonyHttpServer.ts` clearing dirty stats for the current epoch without advancing epoch counter. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/reset-stats] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T82.3.3: Expose `GET /api/arena/epochs` returning all historical epochs with their start/end dates and aggregate pass rates. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/arena/epochs] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T82.3.4: Write integration tests verifying REST API routes validate authentication and return expected JSON payloads. [File: packages/engine/src/tests/epoch_api.test.ts] [Test: npm test -- packages/engine/src/tests/epoch_api.test.ts]
+
+### T82.4: Multi-Armed Bandit Policy State Reset on Epoch Advancement
+  - [ ] T82.4.1: Connect `advanceEpoch` trigger to `BanditPolicy` resetting arms' alpha/beta parameters in Thompson Sampling to uniform priors. [File: packages/engine/src/bandit/ThompsonSamplingPolicy.ts] [Method: resetArms] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T82.4.2: Reset exploration budget in `EpsilonGreedyPolicy` to `initialEpsilon`, allowing models to be re-explored in the new epoch. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Method: resetExploration] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [ ] T82.4.3: Broadcast `arena_epoch_advanced` SSE event over `StreamTapManager` alerting all connected UI clients. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: broadcastEpochAdvanced] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [ ] T82.4.4: Write unit tests verifying bandit policies cleanly re-explore candidate models following an epoch reset. [File: packages/engine/src/tests/epoch_bandit_reset.test.ts] [Test: npm test -- packages/engine/src/tests/epoch_bandit_reset.test.ts]
+
+### T82.5: Frontend UI Epoch Selector & Reset Control on `/models`
+  - [ ] T82.5.1: Add epoch selector dropdown to `ModelsViewComponent` on `/models` allowing operators to toggle between 'Current Epoch', historical epochs, and 'All Time'. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Signal: selectedEpoch] [Test: npm test]
+  - [ ] T82.5.2: Add 'Start New Epoch' button in UI opening a confirmation modal to record epoch name, reason, and reset dirty metrics. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Method: openEpochModal] [Test: npm test]
+  - [ ] T82.5.3: Display visual epoch badge and current epoch run count in `TelemetryBarComponent`. [File: packages/frontend/src/app/components/telemetry-bar/telemetry-bar.component.ts] [Test: npm test]
+  - [ ] T82.5.4: Write frontend unit tests validating epoch dropdown filtering and epoch advancement modal lifecycle. [File: packages/frontend/src/app/components/views/models-view.component.spec.ts] [Test: npm test]
+
+---
+
+## Phase 83: Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine
+*RDF Category: hardware_telemetry*
+
+### T83.1: Pluggable `IHardwareTelemetryProvider` Abstraction
+  - [ ] T83.1.1: Define `IHardwareTelemetryProvider` interface in `packages/shared-types/src/hardware.ts` declaring vendor detection, VRAM measurement, thermal polling, and utilization metrics. [File: packages/shared-types/src/hardware.ts] [Interface: IHardwareTelemetryProvider] [Test: npm test -- packages/shared-types]
+  - [ ] T83.1.2: Implement `HardwareProviderFactory` in `packages/engine/src/telemetry/HardwareProviderFactory.ts` dynamically detecting host GPU vendor (NVIDIA, AMD, Apple Silicon, Intel, CPU fallback). [File: packages/engine/src/telemetry/HardwareProviderFactory.ts] [Class: HardwareProviderFactory] [Test: npm test -- packages/engine/src/tests/hardware_factory.test.ts]
+  - [ ] T83.1.3: Provide CPU fallback provider computing memory and CPU core utilization via Node.js `os` module when no accelerator is present. [File: packages/engine/src/telemetry/CpuFallbackProvider.ts] [Class: CpuFallbackProvider] [Test: npm test -- packages/engine/src/tests/hardware_factory.test.ts]
+  - [ ] T83.1.4: Write unit tests verifying provider factory selects correct provider based on simulated sysfs and CLI outputs. [File: packages/engine/src/tests/hardware_factory.test.ts] [Test: npm test -- packages/engine/src/tests/hardware_factory.test.ts]
+
+### T83.2: NVML / NVIDIA CUDA Hardware Telemetry Provider
+  - [ ] T83.2.1: Implement `NvidiaNvmlProvider` in `packages/engine/src/telemetry/NvidiaNvmlProvider.ts` querying `nvidia-smi --query-gpu=... --format=csv`. [File: packages/engine/src/telemetry/NvidiaNvmlProvider.ts] [Class: NvidiaNvmlProvider] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+  - [ ] T83.2.2: Parse VRAM total/used/free, GPU temperature, power draw in Watts, and SM compute engine utilization. [File: packages/engine/src/telemetry/NvidiaNvmlProvider.ts] [Method: pollSnapshot] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+  - [ ] T83.2.3: Support multi-GPU setups reporting aggregated and per-GPU metrics. [File: packages/engine/src/telemetry/NvidiaNvmlProvider.ts] [Method: listDevices] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+  - [ ] T83.2.4: Write unit tests validating CSV parsing and error handling when `nvidia-smi` is unavailable. [File: packages/engine/src/tests/nvidia_provider.test.ts] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+
+### T83.3: Apple Silicon Metal / `powermetrics` Telemetry Provider
+  - [ ] T83.3.1: Implement `AppleSiliconProvider` in `packages/engine/src/telemetry/AppleSiliconProvider.ts` detecting M-series chips and unified RAM. [File: packages/engine/src/telemetry/AppleSiliconProvider.ts] [Class: AppleSiliconProvider] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+  - [ ] T83.3.2: Measure unified memory allocations, thermal pressure states (`Nominal`, `Fair`, `Serious`, `Critical`), and GPU power. [File: packages/engine/src/telemetry/AppleSiliconProvider.ts] [Method: pollSnapshot] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+  - [ ] T83.3.3: Map macOS thermal pressure directly to `ThermalGovernor` backpressure thresholds to prevent thermal throttling. [File: packages/engine/src/telemetry/AppleSiliconProvider.ts] [Method: getThermalState] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+  - [ ] T83.3.4: Write unit tests verifying Apple Silicon telemetry parsing and thermal state mapping. [File: packages/engine/src/tests/apple_silicon_provider.test.ts] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+
+### T83.4: Dynamic Zero-Config Context & Quantization Auto-Sizer
+  - [ ] T83.4.1: Build `HardwareHyperparameterAutoSizer` in `packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts` computing optimal model profiles from hardware profile. [File: packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts] [Class: HardwareHyperparameterAutoSizer] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+  - [ ] T83.4.2: Enforce VRAM safety thresholds: allocate 70% of available VRAM to context buffers, reserving 30% for OS and framebuffers. [File: packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts] [Method: computeSafeAllocation] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+  - [ ] T83.4.3: Automatically configure Ollama environment variables (`OLLAMA_NUM_PARALLEL`, `OLLAMA_FLASH_ATTENTION`) based on detected card compute capability. [File: packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts] [Method: generateOllamaEnv] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+  - [ ] T83.4.4: Write unit tests validating hyperparameter sizing across 6GB, 8GB, 12GB, 16GB, 24GB, and 64GB hardware configurations. [File: packages/engine/src/tests/auto_sizer.test.ts] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+
+### T83.5: Contributor Hardware Setup Script & Docker Profiles
+  - [ ] T83.5.1: Create interactive/automated onboarding script `bin/setup-hardware.sh` detecting host hardware and printing detected configuration. [File: bin/setup-hardware.sh] [Test: bash bin/setup-hardware.sh --dry-run]
+  - [ ] T83.5.2: Update `docker-compose.yml` with compose profiles: `default` (standard), `nvidia` (with GPU device reservation), `amd` (with `/dev/kfd` and `/dev/dri`), and `cpu` (lightweight). [File: docker-compose.yml] [Profiles: nvidia, amd, cpu] [Test: docker compose config]
+  - [ ] T83.5.3: Document contributor onboarding instructions in `docs/contributing_hardware.md` explaining how external contributors can run the arena. [File: docs/contributing_hardware.md] [Test: markdown-lint]
+  - [ ] T83.5.4: Validate that `docker compose --profile nvidia up` properly exposes NVIDIA GPU to container. [File: docker-compose.yml] [Test: docker compose config]
+
+---
+
+## Phase 84: Auto-Mode Sovereign Loop Hardening & Bi-Directional GitHub Issue Sync
+*RDF Category: sovereign_autonomy*
+
+### T84.1: Sovereign Auto-Mode Loop Supervisor
+  - [ ] T84.1.1: Create `SovereignLoopSupervisor` in `packages/engine/src/daemon/SovereignLoopSupervisor.ts` keeping the autonomous loop running 24/7. [File: packages/engine/src/daemon/SovereignLoopSupervisor.ts] [Class: SovereignLoopSupervisor] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
+  - [ ] T84.1.2: Implement unhandled error containment: if an unhandled promise rejection occurs during task execution, isolate the error, rollback worktree, and resume queue. [File: packages/engine/src/daemon/SovereignLoopSupervisor.ts] [Method: handleWorkerError] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
+  - [ ] T84.1.3: Automatically detect empty queue conditions and trigger internal vacancy tasks (test coverage expansion, dead code elimination, AST grooming). [File: packages/engine/src/daemon/SovereignLoopSupervisor.ts] [Method: fillVacancy] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
+  - [ ] T84.1.4: Write unit tests verifying supervisor survives simulated worker crashes and resumes task processing. [File: packages/engine/src/tests/sovereign_supervisor.test.ts] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
+
+### T84.2: Worktree Pre-Commit Monorepo Build Gate in Pipeline
+  - [ ] T84.2.1: Add `verifyCleanBuild(worktreePath: string)` call in `AutonomousWorkerPipeline.ts` Stage 6 before `commitWorktree`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T84.2.2: Ensure tasks failing pre-commit build verification return `success: false` and do NOT merge into Gitea `main`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T84.2.3: Forward compiler error outputs from failed build verification to active remediation stage. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeRemediationStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T84.2.4: Write unit tests verifying that non-compiling worktree changes are blocked from committing to staging `main`. [File: packages/engine/src/tests/worktree_build_gate.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_build_gate.test.ts]
+
+### T84.3: Bi-Directional GitHub Issue Poller & Task Ingestion Daemon
+  - [ ] T84.3.1: Implement `GitHubIssueSyncDaemon` in `packages/engine/src/gitea/GitHubIssueSyncDaemon.ts` polling public GitHub issues every 5 minutes. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Class: GitHubIssueSyncDaemon] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [ ] T84.3.2: Filter issues with label `arena:auto`, extracting title, body, and linked focus files into atomic `TaskRecord` rows. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: ingestIssues] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [ ] T84.3.3: Add duplicate detection avoiding re-ingesting issues that already have active or completed tasks in database. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: isDuplicate] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [ ] T84.3.4: Write unit tests verifying GitHub issue ingestion parses labels, bodies, and priorities accurately into database tasks. [File: packages/engine/src/tests/github_issue_sync.test.ts] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+
+### T84.4: Autonomous Issue Resolution & Verification PR Linker
+  - [ ] T84.4.1: Link resolved GitHub issue number in commit message (`Fixes #123`) when promoting milestone releases to GitHub. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: linkResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [ ] T84.4.2: Post automated verification comment on GitHub issue once staging verification passes in Gitea, providing transparency before public release. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: postVerificationStatus] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [ ] T84.4.3: Close GitHub issue automatically when the promoted release PR is merged into upstream `main`. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: closeResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [ ] T84.4.4: Write unit tests simulating full issue ingestion -> local execution -> staging merge -> GitHub PR resolution lifecycle. [File: packages/engine/src/tests/issue_resolution_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/issue_resolution_lifecycle.test.ts]
+
+### T84.5: Defocus Plan/Build Modes in Favor of Sovereign Auto Mode
+  - [ ] T84.5.1: Set `DEFAULT_EXECUTION_MODE=auto` across all default configs, daemon initialization, and frontend stores. [File: packages/shared-types/src/config.ts] [Constant: DEFAULT_EXECUTION_MODE] [Test: npm test -- packages/shared-types]
+  - [ ] T84.5.2: Streamline UI navigation to highlight Auto Mode telemetry, success yield, and milestone promotion over manual step controls. [File: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts] [Test: npm test]
+  - [ ] T84.5.3: Ensure headless server and Docker containers default strictly to sovereign Auto Mode on boot. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [ ] T84.5.4: Write integration tests verifying that arena boots and executes uninterrupted in sovereign Auto Mode with zero manual prompts. [File: packages/engine/src/tests/sovereign_auto_mode.test.ts] [Test: npm test -- packages/engine/src/tests/sovereign_auto_mode.test.ts]
+
 
 
 
