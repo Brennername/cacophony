@@ -50,14 +50,13 @@ export class GitHubPlatformProvider implements IGitPlatformProvider {
   }
 
   public async createBranch(owner: string, repo: string, options: CreateGitBranchOptions): Promise<GitPlatformBranch> {
-    // 1. Get SHA of base branch
+
     const baseBranchName = options.baseBranch || "main";
     const refData = await this.request<{ object: { sha: string } }>(
       `/repos/${owner}/${repo}/git/ref/heads/${baseBranchName}`
     );
     const baseSha = refData.object.sha;
 
-    // 2. Create new reference
     const created = await this.request<{ ref: string; object: { sha: string } }>(
       `/repos/${owner}/${repo}/git/refs`,
       {
