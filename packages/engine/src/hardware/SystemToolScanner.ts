@@ -146,12 +146,6 @@ export const MONITORED_SYSTEM_TOOLS: readonly ToolDefinition[] = [
   }
 ];
 
-/**
- * SystemToolScanner
- *
- * Scans host operating system for hardware diagnostic and monitoring utilities.
- * Generates structured diagnostics and actionable copy-paste installation commands.
- */
 export class SystemToolScanner {
   private readonly toolDefs: readonly ToolDefinition[];
   private readonly execFn: (cmd: string) => Promise<{ stdout: string; stderr: string }>;
@@ -164,9 +158,6 @@ export class SystemToolScanner {
     this.execFn = customExec ?? execAsync;
   }
 
-  /**
-   * Scans all defined tools and builds a comprehensive diagnostic report.
-   */
   public async scan(): Promise<SystemToolsDiagnosticReport> {
     const results: ToolRequirement[] = [];
 
@@ -178,14 +169,12 @@ export class SystemToolScanner {
     const missing = results.filter((t) => !t.installed);
     const allRequiredInstalled = missing.length === 0;
 
-    // Build unified apt command for missing packages (deduplicating package names)
     const missingPackages = Array.from(new Set(missing.map((m) => m.packageName)));
     const unifiedInstallCommand =
       missingPackages.length > 0
         ? `sudo apt update && sudo apt install -y ${missingPackages.join(" ")}`
         : "";
 
-    // Collect all missing capabilities
     const missingCapabilities = missing.flatMap((m) => m.disabledFeaturesIfMissing);
 
     return {
@@ -199,9 +188,6 @@ export class SystemToolScanner {
     };
   }
 
-  /**
-   * Checks whether an individual binary is available in PATH and inspects version if available.
-   */
   public async checkTool(def: ToolDefinition): Promise<ToolRequirement> {
     try {
       await this.execFn(`which ${def.binaryName}`);
