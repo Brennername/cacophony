@@ -115,6 +115,34 @@ export class GitHubPlatformProvider implements IGitPlatformProvider {
     };
   }
 
+  public async getPullRequest(owner: string, repo: string, prNumber: number): Promise<GitPlatformPullRequest> {
+    const data = await this.request<{
+      id: number;
+      number: number;
+      title: string;
+      body: string;
+      state: "open" | "closed";
+      merged: boolean;
+      head: { ref: string };
+      base: { ref: string };
+      html_url: string;
+      diff_url: string;
+    }>(`/repos/${owner}/${repo}/pulls/${prNumber}`);
+
+    return {
+      id: data.id,
+      number: data.number,
+      title: data.title,
+      body: data.body,
+      state: data.state,
+      merged: Boolean(data.merged),
+      headRef: data.head.ref,
+      baseRef: data.base.ref,
+      htmlUrl: data.html_url,
+      diffUrl: data.diff_url
+    };
+  }
+
   public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {
     const url = `${this.baseUrl}/repos/${owner}/${repo}/pulls/${prNumber}`;
     const headers = {

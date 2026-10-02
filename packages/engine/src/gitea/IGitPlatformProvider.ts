@@ -65,6 +65,11 @@ export interface IGitPlatformProvider {
   openPullRequest(owner: string, repo: string, options: CreateGitPullRequestOptions): Promise<GitPlatformPullRequest>;
 
   /**
+   * Retrieves pull request details.
+   */
+  getPullRequest(owner: string, repo: string, prNumber: number): Promise<GitPlatformPullRequest>;
+
+  /**
    * Retrieves pull request diff.
    */
   getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string>;

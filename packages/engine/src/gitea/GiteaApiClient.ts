@@ -130,6 +130,14 @@ export class GiteaApiClient {
   }
 
   /**
+   * Retrieves a single Pull Request by number.
+   */
+  public async getPullRequest(owner: string, repo: string, prNumber: number): Promise<GiteaPullRequest> {
+    this.guard?.assertScope("repository", "read");
+    return this.request<GiteaPullRequest>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}`);
+  }
+
+  /**
    * Fetches unified diff for a Pull Request.
    */
   public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {

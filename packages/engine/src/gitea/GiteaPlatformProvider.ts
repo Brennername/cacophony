@@ -78,6 +78,22 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     }
   }
 
+  public async getPullRequest(owner: string, repo: string, prNumber: number): Promise<GitPlatformPullRequest> {
+    const pr = await this.client.getPullRequest(owner, repo, prNumber);
+    return {
+      id: pr.id,
+      number: pr.number,
+      title: pr.title,
+      body: pr.body,
+      state: pr.state,
+      merged: pr.merged,
+      headRef: pr.head?.ref ?? "",
+      baseRef: pr.base?.ref ?? "main",
+      htmlUrl: pr.html_url,
+      diffUrl: pr.diff_url
+    };
+  }
+
   public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {
     return this.client.getPullRequestDiff(owner, repo, prNumber);
   }

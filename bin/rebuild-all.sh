@@ -62,6 +62,18 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}\$"; then
     echo "Database distribution synchronized to /app/packages/db/dist/"
   fi
 
+  # Copy compiled shared-types distribution
+  if [ -d "${REPO_ROOT}/packages/shared-types/dist" ]; then
+    docker cp "${REPO_ROOT}/packages/shared-types/dist/." "${CONTAINER_NAME}:/app/packages/shared-types/dist/"
+    echo "Shared-types distribution synchronized to /app/packages/shared-types/dist/"
+  fi
+
+  # Copy compiled tools distribution
+  if [ -d "${REPO_ROOT}/packages/tools/dist" ]; then
+    docker cp "${REPO_ROOT}/packages/tools/dist/." "${CONTAINER_NAME}:/app/packages/tools/dist/"
+    echo "Tools distribution synchronized to /app/packages/tools/dist/"
+  fi
+
   # Copy docs directory (ensures taskcade.md is synchronized for seeding)
   if [ -d "${REPO_ROOT}/docs" ]; then
     docker cp "${REPO_ROOT}/docs/." "${CONTAINER_NAME}:/app/docs/"
