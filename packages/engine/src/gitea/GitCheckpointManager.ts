@@ -1,44 +1,116 @@
-import { TaskId, StageName } from '@cacophony/shared-types';
-import { GitWorktreeManager } from '../gitea/GitWorktreeManager';
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 
-const CHECKPOINT_REF_PREFIX = 'refs/cacophony/checkpoints/';
+const execAsync = promisify(exec);
 
+export const CHECKPOINT_REF_PREFIX = "refs/cacophony/checkpoints";
+
+export interface CheckpointRecord {
+  readonly id: string;
+  readonly hash: string;
+  readonly message: string;
+  readonly createdAt: string;
+  readonly filesChanged: number;
+  readonly taskId?: string;
+  readonly stageName?: string;
+}
+
+/**
+ * GitCheckpointManager
+ *
+ * Manages git shadow checkpoints under hidden refs/cacophony/checkpoints/ namespace,
+ * allowing instant atomic rollback without polluting repository commit history.
+ */
 export class GitCheckpointManager {
-  private gitWorktreeManager: GitWorktreeManager;
+  private readonly repositoryRoot: string;
 
-  constructor(gitWorktreeManager: GitWorktreeManager) {
-    this.gitWorktreeManager = gitWorktreeManager;
+  constructor(repositoryRoot: string) {
+    this.repositoryRoot = repositoryRoot;
+  }
+
+  /**
+   * Creates a shadow checkpoint ref for a specific task and pipeline stage.
+   */
+  public async createCheckpoint(taskId: string, stageName: string, message: string): Promise<string> {
+    const ref = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
+    try {
+      const { stdout: commitHash } = await execAsync("git rev-parse HEAD", { cwd: this.repositoryRoot });
+      const hash = commitHash.trim();
+      await execAsync(`git update-ref ${ref} ${hash}`, { cwd: this.repositoryRoot });
+      return hash;
+    } catch (err) {
+      console.warn(`[GitCheckpointManager] Failed to create checkpoint ${ref} (${message}):`, err);
+      return "";
+    }
+  }
+
+  /**
+   * Lists chronological shadow checkpoints.
+   */
+  public async listCheckpoints(taskId?: string): Promise<CheckpointRecord[]> {
+    try {
+      const pattern = taskId ? `${CHECKPOINT_REF_PREFIX}/${taskId}-*` : `${CHECKPOINT_REF_PREFIX}/*`;
+      const { stdout } = await execAsync(
+        `git for-each-ref --format="%(refname) %(objectname) %(contents:subject)" ${pattern}`,
+        { cwd: this.repositoryRoot }
+      );
+      const lines = stdout.trim().split("\n").filter(Boolean);
+      return lines.map((line, idx) => {
+        const [, hash = "", ...rest] = line.split(" ");
+        return {
+          id: `cp-${idx + 1}`,
+          hash,
+          message: rest.join(" ") || "Shadow stage checkpoint",
+          createdAt: new Date().toISOString(),
+          filesChanged: 1
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Reverts the working directory to a specific checkpoint ref or commit hash.
+   */
+  public async revertToCheckpoint(checkpointId: string): Promise<void> {
+    await execAsync(`git checkout ${checkpointId} -- .`, { cwd: this.repositoryRoot });
   }
 
   /**
    * Stores a checkpoint reference under the hidden namespace.
-   * @param taskId - The ID of the task associated with the checkpoint.
-   * @param stageName - The name of the stage associated with the checkpoint.
-   * @param ref - The reference to store as a checkpoint.
    */
-  public async storeCheckpointRef(taskId: TaskId, stageName: StageName, ref: string): Promise<void> {
-    const checkpointRef = `${CHECKPOINT_REF_PREFIX}${taskId}-${stageName}`;
-    await this.gitWorktreeManager.setGitRef(checkpointRef, ref);
+  public async storeCheckpointRef(taskId: string, stageName: string, ref: string): Promise<void> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
+    try {
+      await execAsync(`git update-ref ${checkpointRef} ${ref}`, { cwd: this.repositoryRoot });
+    } catch (err) {
+      console.warn(`[GitCheckpointManager] Failed to store ref ${checkpointRef}:`, err);
+    }
   }
 
   /**
    * Retrieves a checkpoint reference from the hidden namespace.
-   * @param taskId - The ID of the task associated with the checkpoint.
-   * @param stageName - The name of the stage associated with the checkpoint.
-   * @returns The checkpoint reference if found; otherwise, undefined.
    */
-  public async getCheckpointRef(taskId: TaskId, stageName: StageName): Promise<string | undefined> {
-    const checkpointRef = `${CHECKPOINT_REF_PREFIX}${taskId}-${stageName}`;
-    return this.gitWorktreeManager.getGitRef(checkpointRef);
+  public async getCheckpointRef(taskId: string, stageName: string): Promise<string | undefined> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
+    try {
+      const { stdout } = await execAsync(`git rev-parse ${checkpointRef}`, { cwd: this.repositoryRoot });
+      return stdout.trim() || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   /**
    * Deletes a checkpoint reference from the hidden namespace.
-   * @param taskId - The ID of the task associated with the checkpoint.
-   * @param stageName - The name of the stage associated with the checkpoint.
    */
-  public async deleteCheckpointRef(taskId: TaskId, stageName: StageName): Promise<void> {
-    const checkpointRef = `${CHECKPOINT_REF_PREFIX}${taskId}-${stageName}`;
-    await this.gitWorktreeManager.deleteGitRef(checkpointRef);
+  public async deleteCheckpointRef(taskId: string, stageName: string): Promise<void> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
+    try {
+      await execAsync(`git update-ref -d ${checkpointRef}`, { cwd: this.repositoryRoot });
+    } catch {
+      // Ignored
+    }
   }
 }

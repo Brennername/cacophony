@@ -18,6 +18,46 @@ export interface ReviewLoopResult {
   readonly remediationRequired: boolean;
 }
 
+export class ReviewVerdictParser {
+  public static parse(llmText: string): {
+    verdict: ReviewVerdict;
+    reviewNotes: string;
+    comments: ReviewComment[];
+  } {
+    try {
+      const match = llmText.match(/\{[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        const verdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(parsed.verdict)
+          ? (parsed.verdict as ReviewVerdict)
+          : "REQUEST_CHANGES";
+
+        return {
+          verdict,
+          reviewNotes: parsed.reviewNotes || "Review evaluated automatically.",
+          comments: Array.isArray(parsed.comments) ? parsed.comments : []
+        };
+      }
+    } catch {
+      // Fall through to plain text parsing
+    }
+
+    if (llmText.toUpperCase().includes("APPROVE")) {
+      return {
+        verdict: "APPROVE",
+        reviewNotes: llmText,
+        comments: []
+      };
+    }
+
+    return {
+      verdict: "REQUEST_CHANGES",
+      reviewNotes: llmText,
+      comments: []
+    };
+  }
+}
+
 export class AutomatedPrReviewLoop {
   private readonly giteaClient: GiteaApiClient;
   private readonly inferenceProvider: OllamaProvider;
@@ -28,7 +68,6 @@ export class AutomatedPrReviewLoop {
   }
 
   public async evaluatePullRequest(options: ReviewLoopOptions): Promise<ReviewLoopResult> {
-
     const diff = await this.giteaClient.getPullRequestDiff(options.owner, options.repo, options.prNumber);
 
     const reviewPrompt = this.buildPrompt(diff);
@@ -116,36 +155,6 @@ export class AutomatedPrReviewLoop {
     reviewNotes: string;
     comments: ReviewComment[];
   } {
-    try {
-      const match = llmText.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
-        const verdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(parsed.verdict)
-          ? (parsed.verdict as ReviewVerdict)
-          : "REQUEST_CHANGES";
-
-        return {
-          verdict,
-          reviewNotes: parsed.reviewNotes || "Review evaluated automatically.",
-          comments: Array.isArray(parsed.comments) ? parsed.comments : []
-        };
-      }
-    } catch {
-
-    }
-
-    if (llmText.toUpperCase().includes("APPROVE")) {
-      return {
-        verdict: "APPROVE",
-        reviewNotes: llmText,
-        comments: []
-      };
-    }
-
-    return {
-      verdict: "REQUEST_CHANGES",
-      reviewNotes: llmText,
-      comments: []
-    };
+    return ReviewVerdictParser.parse(llmText);
   }
 }

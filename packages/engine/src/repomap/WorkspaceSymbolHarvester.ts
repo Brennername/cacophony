@@ -1,43 +1,31 @@
-import { SymbolGraph, TaskScheduler } from '@cacophony/shared-types';
-import { Workspace } from '../gitea/Workspace';
+import { SyntaxKind } from 'typescript';
+import * as ts from 'typescript';
 
-class WorkspaceSymbolHarvester {
-  private symbolGraph: SymbolGraph | null = null;
-  private taskScheduler: TaskScheduler;
+/**
+ * Harvests symbols from TypeScript AST nodes.
+ */
+export class WorkspaceSymbolHarvester {
+  /**
+   * Traverses the AST and extracts ClassDeclaration, InterfaceDeclaration, and FunctionDeclaration nodes.
+   * @param sourceFile - The TypeScript source file to traverse.
+   * @returns An array of extracted declarations.
+   */
+  public static extractSymbols(sourceFile: ts.SourceFile): (ts.ClassDeclaration | ts.InterfaceDeclaration | ts.FunctionDeclaration)[] {
+    const symbols: (ts.ClassDeclaration | ts.InterfaceDeclaration | ts.FunctionDeclaration)[] = [];
 
-  constructor(taskScheduler: TaskScheduler) {
-    this.taskScheduler = taskScheduler;
-    this.taskScheduler.on('taskCompleted', () => this.invalidateCache());
-    this.taskScheduler.on('fileModified', (filePath) => this.invalidateCacheIfFileIsSymbolGraph(filePath));
-  }
+    function visit(node: ts.Node) {
+      if (
+        node.kind === SyntaxKind.ClassDeclaration ||
+        node.kind === SyntaxKind.InterfaceDeclaration ||
+        node.kind === SyntaxKind.FunctionDeclaration
+      ) {
+        symbols.push(node as ts.ClassDeclaration | ts.InterfaceDeclaration | ts.FunctionDeclaration);
+      }
 
-  private invalidateCache(): void {
-    this.symbolGraph = null;
-  }
-
-  private invalidateCacheIfFileIsSymbolGraph(filePath: string): void {
-    if (filePath.endsWith('.symbol-graph')) {
-      this.symbolGraph = null;
+      ts.forEachChild(node, visit);
     }
-  }
 
-  async getSymbolGraph(workspace: Workspace): Promise<SymbolGraph> {
-    if (!this.symbolGraph) {
-      this.symbolGraph = await this.fetchSymbolGraph(workspace);
-    }
-    return this.symbolGraph;
-  }
-
-  private async fetchSymbolGraph(workspace: Workspace): Promise<SymbolGraph> {
-    // Logic to fetch symbol graph from the workspace
-    // This could involve parsing files, analyzing code, etc.
-    // For demonstration purposes, let's assume we're fetching it from a remote service
-    const response = await fetch(`https://api.example.com/symbol-graph?workspaceId=${workspace.id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch symbol graph');
-    }
-    return await response.json();
+    visit(sourceFile);
+    return symbols;
   }
 }
-
-export { WorkspaceSymbolHarvester };

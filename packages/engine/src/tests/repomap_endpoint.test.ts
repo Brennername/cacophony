@@ -1,24 +1,40 @@
-import { test, expect } from '@jest/globals';
-import request from 'supertest';
-import app from '../../app'; // Assuming your Express app is exported from here
+import test, { describe, afterEach } from "node:test";
+import assert from "node:assert/strict";
+import { CacophonyHttpServer } from "../daemon/CacophonyHttpServer.js";
 
-test('GET /api/repomap returns 200 with complete architectural symbol inventory', async () => {
-  const response = await request(app).get('/api/repomap');
+describe("GET /api/repomap Integration Suite", () => {
+  let server: CacophonyHttpServer;
 
-  expect(response.status).toBe(200);
-  expect(response.body).toHaveProperty('symbols');
-  expect(Array.isArray(response.body.symbols)).toBe(true);
+  afterEach(async () => {
+    if (server) {
+      await server.stop();
+    }
+  });
 
-  // Assuming the architectural symbols are stored in a database
-  // and we need to check if all expected symbols are present
-  const expectedSymbols = [
-    'symbol1',
-    'symbol2',
-    'symbol3',
-    // Add more expected symbols as needed
-  ];
+  test("GET /api/repomap returns 200 with complete architectural symbol inventory", async () => {
+    const mockDaemon: any = {
+      getModelHealthRepository: () => null,
+      getTenancyGuard: () => null,
+      getModelManager: () => null,
+      getBenchmarkRunner: () => null,
+      getStreamTapManager: () => null,
+      getTaskRepository: () => ({ listPending: async () => [] }),
+      getTelemetryPoller: () => null,
+      getUserSessionRepository: () => null
+    };
 
-  response.body.symbols.forEach(symbol => {
-    expect(expectedSymbols).toContain(symbol);
+    server = new CacophonyHttpServer(mockDaemon, { httpPort: 0, httpHost: "127.0.0.1" });
+    await server.start();
+    const address = (server as any).server.address();
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/api/repomap`);
+    assert.equal(res.status, 200);
+
+    const symbols = (await res.json()) as any[];
+    assert.ok(Array.isArray(symbols));
+    assert.ok(symbols.length > 0);
+    assert.ok(symbols.some((s) => s.name === "TaskScheduler"));
+    assert.ok(symbols.some((s) => s.filePath.includes("packages/engine")));
   });
 });

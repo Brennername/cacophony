@@ -1,52 +1,38 @@
-import { VerdictParser } from '../verdict_parser';
-import { expect } from 'chai';
+import test, { describe } from "node:test";
+import assert from "node:assert/strict";
+import { ReviewVerdictParser } from "../gitea/AutomatedPrReviewLoop.js";
 
-describe('VerdictParser', () => {
-  let parser: VerdictParser;
-
-  beforeEach(() => {
-    parser = new VerdictParser();
+describe("ReviewVerdictParser Test Suite", () => {
+  test("should parse JSON verdict format correctly", () => {
+    const input = '{"verdict": "APPROVE", "reviewNotes": "All checks passed", "comments": []}';
+    const result = ReviewVerdictParser.parse(input);
+    assert.equal(result.verdict, "APPROVE");
+    assert.equal(result.reviewNotes, "All checks passed");
+    assert.deepEqual(result.comments, []);
   });
 
-  it('should parse JSON verdict format correctly', () => {
-    const input = '{"verdict": "approved", "comment": "All checks passed"}';
-    const expectedOutput = { verdict: 'approved', comment: 'All checks passed' };
-    expect(parser.parse(input)).to.deep.equal(expectedOutput);
+  test("should parse markdown/plain text containing APPROVE", () => {
+    const input = "I have reviewed this patch and VERDICT: APPROVE. Looks solid.";
+    const result = ReviewVerdictParser.parse(input);
+    assert.equal(result.verdict, "APPROVE");
   });
 
-  it('should parse XML verdict format correctly', () => {
-    const input = '<verdict><status>approved</status><comment>All checks passed</comment></verdict>';
-    const expectedOutput = { verdict: 'approved', comment: 'All checks passed' };
-    expect(parser.parse(input)).to.deep.equal(expectedOutput);
+  test("should parse REQUEST_CHANGES in JSON format", () => {
+    const input = JSON.stringify({
+      verdict: "REQUEST_CHANGES",
+      reviewNotes: "Missing unit tests",
+      comments: [{ path: "test.ts", lineNumber: 10, comment: "Add assertion", severity: "warning" }]
+    });
+    const result = ReviewVerdictParser.parse(input);
+    assert.equal(result.verdict, "REQUEST_CHANGES");
+    assert.equal(result.reviewNotes, "Missing unit tests");
+    assert.equal(result.comments.length, 1);
   });
 
-  it('should parse plain text verdict format correctly', () => {
-    const input = 'Verdict: approved\nComment: All checks passed';
-    const expectedOutput = { verdict: 'approved', comment: 'All checks passed' };
-    expect(parser.parse(input)).to.deep.equal(expectedOutput);
-  });
-
-  it('should handle missing comment in JSON format', () => {
-    const input = '{"verdict": "approved"}';
-    const expectedOutput = { verdict: 'approved', comment: '' };
-    expect(parser.parse(input)).to.deep.equal(expectedOutput);
-  });
-
-  it('should handle missing comment in XML format', () => {
-    const input = '<verdict><status>approved</status></verdict>';
-    const expectedOutput = { verdict: 'approved', comment: '' };
-    expect(parser.parse(input)).to.deep.equal(expectedOutput);
-  });
-
-  it('should handle missing comment in plain text format', () => {
-    const input = 'Verdict: approved';
-    const expectedOutput = { verdict: 'approved', comment: '' };
-    expect(parser.parse(input)).to.deep.equal(expectedOutput);
-  });
-
-  it('should handle unexpected formats gracefully', () => {
-    const input = 'Unexpected format';
-    const expectedOutput = { verdict: '', comment: '' };
-    expect(parser.parse(input)).to.deep.equal(expectedOutput);
+  test("should handle missing comments or unexpected format gracefully", () => {
+    const input = "Random text without explicit verdict keyword";
+    const result = ReviewVerdictParser.parse(input);
+    assert.equal(result.verdict, "REQUEST_CHANGES");
+    assert.ok(result.reviewNotes.length > 0);
   });
 });

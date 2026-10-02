@@ -109,7 +109,7 @@
   - [ ] T47.5.1: Enhance TaskRepository.listPending() to order by effective priority considering both base priority and wait age. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.listPending] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
   - [ ] T47.5.2: Implement starvation prevention bumping tasks waiting longer than 15 minutes up one priority level. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Class: QueueGroomer] [Test: npm test -- packages/engine/src/tests/queue_groomer.test.ts]
   - [ ] T47.5.3: Add batch task creation endpoint POST /api/tasks/batch for atomic bulk enqueue of decomposed epics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/batch] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T47.5.4: Write unit tests validating that P0 tasks preempt lower-priority tasks while preventing starvation of P2 tasks. [File: packages/engine/src/tests/priority_preemption.test.ts] [Test: npm test -- packages/engine/src/tests/priority_preemption.test.ts]
+  - [x] T47.5.4: Write unit tests validating that P0 tasks preempt lower-priority tasks while preventing starvation of P2 tasks. [File: packages/engine/src/tests/priority_preemption.test.ts] [Test: npm test -- packages/engine/src/tests/priority_preemption.test.ts]
 
 ### T47.6: Queue Seed Dispatcher for Self-Hosting Bootstrap
   - [x] T47.6.1: Create TaskcadeSeedLoader reading pending tasks from docs/taskcade.md and parsing them into typed TaskRecord objects. [File: packages/engine/src/scheduler/TaskcadeSeedLoader.ts] [Class: TaskcadeSeedLoader] [Test: npm test -- packages/engine/src/tests/seed_loader.test.ts]
@@ -342,10 +342,10 @@
   - [ ] T52.2.4: Write unit tests verifying that reviewer prompt includes full diff context and architectural guidelines. [File: packages/engine/src/tests/reviewer_prompt.test.ts] [Test: npm test -- packages/engine/src/tests/reviewer_prompt.test.ts]
 
 ### T52.3: Structural Review Verdict Parsing
-  - [ ] T52.3.1: Implement ReviewVerdictParser extracting VERDICT: APPROVE | REQUEST_CHANGES | REJECT from model response. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Class: ReviewVerdictParser] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
+  - [x] T52.3.1: Implement ReviewVerdictParser extracting VERDICT: APPROVE | REQUEST_CHANGES | REJECT from model response. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Class: ReviewVerdictParser] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
   - [ ] T52.3.2: Extract line-level review comments: file path, line number, severity ('blocker' | 'warning' | 'nit'), comment text. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: parseInlineComments] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
   - [ ] T52.3.3: Handle ambiguous or unformatted model outputs by defaulting to REQUEST_CHANGES with explanatory note. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: handleUnparseableReview] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
-  - [ ] T52.3.4: Write unit tests covering diverse model response formats to ensure robust verdict and comment extraction. [File: packages/engine/src/tests/verdict_parser.test.ts] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
+  - [x] T52.3.4: Write unit tests covering diverse model response formats to ensure robust verdict and comment extraction. [File: packages/engine/src/tests/verdict_parser.test.ts] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
 
 ### T52.4: Post Review Comments & Verdict to Gitea PR
   - [ ] T52.4.1: Call GiteaApiClient.submitReview(owner, repo, prNumber, reviewPayload) with verdict and summary notes. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Method: submitReview] [Test: npm test -- packages/engine/src/tests/gitea_api_client.test.ts]
@@ -384,12 +384,12 @@
 
 ### T53.1: TypeScript Compiler API Symbol Harvester Implementation
   - [ ] T53.1.1: Initialize ts.createProgram() pointing to tsconfig.base.json to parse workspace source files. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: initializeProgram] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
-  - [ ] T53.1.2: Traverse AST nodes extracting ts.SyntaxKind.ClassDeclaration, InterfaceDeclaration, and FunctionDeclaration. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: visitNode] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+  - [x] T53.1.2: Traverse AST nodes extracting ts.SyntaxKind.ClassDeclaration, InterfaceDeclaration, and FunctionDeclaration. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: visitNode] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
   - [ ] T53.1.3: Extract symbol identifiers, exported flags, file paths, line ranges, and JSDoc documentation comments. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: extractSymbolMetadata] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
   - [ ] T53.1.4: Write unit tests verifying all exported classes and functions in packages/engine are extracted accurately. [File: packages/engine/src/tests/symbol_harvester.test.ts] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
 
 ### T53.2: Graph Centrality Computation & Edge Mapping
-  - [ ] T53.2.1: Extract import and export statements to construct directed dependency edges between symbol nodes. [File: packages/engine/src/repomap/SymbolGraphBuilder.ts] [Class: SymbolGraphBuilder] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
+  - [x] T53.2.1: Extract import and export statements to construct directed dependency edges between symbol nodes. [File: packages/engine/src/repomap/SymbolGraphBuilder.ts] [Class: SymbolGraphBuilder] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
   - [ ] T53.2.2: Compute in-degree and PageRank centrality score [0.0, 1.0] for each architectural symbol. [File: packages/engine/src/repomap/SymbolGraphBuilder.ts] [Method: computeCentrality] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
   - [ ] T53.2.3: Identify core architectural hub classes (highest centrality) for context minimization prioritization. [File: packages/engine/src/repomap/SymbolGraphBuilder.ts] [Method: getHubSymbols] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
   - [ ] T53.2.4: Write unit tests verifying that highly imported base utilities have higher centrality scores than leaf modules. [File: packages/engine/src/tests/symbol_graph.test.ts] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
@@ -398,7 +398,7 @@
   - [ ] T53.3.1: Expose GET /api/repomap returning array of RepoSymbolNode with id, name, kind, filePath, centrality. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/repomap] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
   - [ ] T53.3.2: Cache symbol graph in memory and invalidate automatically on task completion or file modification. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: invalidateCache] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
   - [ ] T53.3.3: Support query parameter ?kind=class|interface|function to filter returned symbol types. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/repomap] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T53.3.4: Write integration tests verifying /api/repomap returns 200 with complete architectural symbol inventory. [File: packages/engine/src/tests/repomap_endpoint.test.ts] [Test: npm test -- packages/engine/src/tests/repomap_endpoint.test.ts]
+  - [x] T53.3.4: Write integration tests verifying /api/repomap returns 200 with complete architectural symbol inventory. [File: packages/engine/src/tests/repomap_endpoint.test.ts] [Test: npm test -- packages/engine/src/tests/repomap_endpoint.test.ts]
 
 ### T53.4: Interactive SVG Graph Rendering in RepoMapViewerComponent
   - [ ] T53.4.1: Render symbol nodes with radius scaled proportionally to centrality score in RepoMapViewerComponent. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts] [Template: svg-graph] [Test: npm test]
@@ -436,7 +436,7 @@
   - [ ] T54.2.4: Write integration tests verifying /api/checkpoints returns chronological checkpoint history. [File: packages/engine/src/tests/checkpoints_endpoint.test.ts] [Test: npm test -- packages/engine/src/tests/checkpoints_endpoint.test.ts]
 
 ### T54.3: REST API: POST /api/checkpoints/:id/revert One-Click Rollback
-  - [ ] T54.3.1: Implement GitCheckpointManager.revertToCheckpoint(checkpointId) checking out snapshot into workspace. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: revertToCheckpoint] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.3.1: Implement GitCheckpointManager.revertToCheckpoint(checkpointId) checking out snapshot into workspace. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: revertToCheckpoint] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
   - [ ] T54.3.2: Verify working tree has no uncommitted changes before executing rollback, or create safety backup checkpoint. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: safeRollback] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
   - [ ] T54.3.3: Return rollback result: reverted commit hash, affected files count, and updated workspace git status. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/checkpoints/:id/revert] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
   - [ ] T54.3.4: Write unit tests verifying workspace rollback restores exact prior file contents. [File: packages/engine/src/tests/checkpoint_revert.test.ts] [Test: npm test -- packages/engine/src/tests/checkpoint_revert.test.ts]
@@ -632,25 +632,25 @@
   - [ ] T59.1.4: Update frontend route unit tests in app.routes.spec.ts validating presence of '/testing' route and redirect. [File: packages/frontend/src/app/app.routes.spec.ts] [Test: npm test]
 
 ### T59.2: Dedicated Testing View Layout & Active Test Execution Dashboard
-  - [ ] T59.2.1: Create standalone TestingViewComponent in packages/frontend/src/app/components/views/testing-view.component.ts with modern responsive grid layout. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Class: TestingViewComponent] [Test: npm test]
-  - [ ] T59.2.2: Implement Active Test Card displaying currently executing test command, target file paths, elapsed duration timer, and live status pill. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: active-test-card] [Test: npm test]
-  - [ ] T59.2.3: Render test execution summary counters: Total Tests Run, Passed Count, Failed Count, Current Pass Rate %, and Average Test Duration. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: summary-counters] [Test: npm test]
+  - [x] T59.2.1: Create standalone TestingViewComponent in packages/frontend/src/app/components/views/testing-view.component.ts with modern responsive grid layout. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Class: TestingViewComponent] [Test: npm test]
+  - [x] T59.2.2: Implement Active Test Card displaying currently executing test command, target file paths, elapsed duration timer, and live status pill. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: active-test-card] [Test: npm test]
+  - [x] T59.2.3: Render test execution summary counters: Total Tests Run, Passed Count, Failed Count, Current Pass Rate %, and Average Test Duration. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: summary-counters] [Test: npm test]
   - [ ] T59.2.4: Write unit tests verifying TestingViewComponent renders summary metrics and responds to active test execution signal changes. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
 
 ### T59.3: Live Test Output Streamer (SSE Terminal Stream for Test Runner Stdout/Stderr)
-  - [ ] T59.3.1: Connect TestingViewComponent to SSE event 'test_output' streaming real-time stdout and stderr lines from the active test runner subprocess. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: connectTestStream] [Test: npm test]
-  - [ ] T59.3.2: Render high-density terminal log component with auto-scroll to bottom, ANSI color support, and line numbers. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: test-terminal] [Test: npm test]
-  - [ ] T59.3.3: Implement live pause/resume auto-scroll toggle and copy log buffer button with visual feedback. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: copyLog] [Test: npm test]
+  - [x] T59.3.1: Connect TestingViewComponent to SSE event 'test_output' streaming real-time stdout and stderr lines from the active test runner subprocess. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: connectTestStream] [Test: npm test]
+  - [x] T59.3.2: Render high-density terminal log component with auto-scroll to bottom, ANSI color support, and line numbers. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: test-terminal] [Test: npm test]
+  - [x] T59.3.3: Implement live pause/resume auto-scroll toggle and copy log buffer button with visual feedback. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: copyLog] [Test: npm test]
   - [ ] T59.3.4: Write frontend unit tests verifying log buffer appends incoming test stream chunks and triggers auto-scroll. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
 
 ### T59.4: Historical Test Run Table with High-Density Filtering and Pass/Fail Verdicts
   - [ ] T59.4.1: Implement Historical Test Runs table in TestingViewComponent listing past test executions fetched from GET /api/tests/history. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: history-table] [Test: npm test]
   - [ ] T59.4.2: Render column data: Status badge (PASSED, FAILED, TIMEOUT), Task Title, Test Command, Execution Duration ms, Timestamp, and Actions. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: table-rows] [Test: npm test]
-  - [ ] T59.4.3: Add filter tabs (ALL, PASSED, FAILED) and search input filtering test runs by command or task ID. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: filterTests] [Test: npm test]
+  - [x] T59.4.3: Add filter tabs (ALL, PASSED, FAILED) and search input filtering test runs by command or task ID. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: filterTests] [Test: npm test]
   - [ ] T59.4.4: Write frontend unit tests validating filter tabs and text search accurately filter displayed historical test rows. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
 
 ### T59.5: Associated App Subprocess List in Testing View Bottom Drawer
-  - [ ] T59.5.1: Create Collapsible Subprocess Drawer component at bottom of TestingViewComponent displaying associated application background processes. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: subprocess-drawer] [Test: npm test]
+  - [x] T59.5.1: Create Collapsible Subprocess Drawer component at bottom of TestingViewComponent displaying associated application background processes. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: subprocess-drawer] [Test: npm test]
   - [ ] T59.5.2: Render process table displaying: Daemon Worker, Ollama Engine, PGlite Database, Gitea Git Server, and Mailpit with PID, CPU %, RSS MB, and Uptime. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: process-table] [Test: npm test]
   - [ ] T59.5.3: Add operator action button to restart any stuck background process via POST /api/processes/:name/restart with confirmation dialog. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: restartProcess] [Test: npm test]
   - [ ] T59.5.4: Write frontend unit tests verifying subprocess drawer expands/collapses and displays live process metrics from ArenaStateStore. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
@@ -738,8 +738,8 @@
   - [ ] T61.5.4: Write unit tests verifying test run records are inserted and queried correctly with full payload fidelity. [File: packages/db/src/tests/test_execution_runs.test.ts] [Test: npm test -- packages/db/src/tests/test_execution_runs.test.ts]
 
 ### T61.6: Test Failure Triage Engine Extracting Exact Failing Assertion and Line
-  - [ ] T61.6.1: Implement TestFailureTriager in packages/engine/src/testing/TestFailureTriager.ts analyzing test stderr to determine root cause category. [File: packages/engine/src/testing/TestFailureTriager.ts] [Class: TestFailureTriager] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
-  - [ ] T61.6.2: Classify failures: AssertionFailure (expected vs actual), CompilationError (TS syntax/type), RuntimeCrash (uncaught exception), Timeout. [File: packages/engine/src/testing/TestFailureTriager.ts] [Type: FailureClassification] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [x] T61.6.1: Implement TestFailureTriager in packages/engine/src/testing/TestFailureTriager.ts analyzing test stderr to determine root cause category. [File: packages/engine/src/testing/TestFailureTriager.ts] [Class: TestFailureTriager] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [x] T61.6.2: Classify failures: AssertionFailure (expected vs actual), CompilationError (TS syntax/type), RuntimeCrash (uncaught exception), Timeout. [File: packages/engine/src/testing/TestFailureTriager.ts] [Type: FailureClassification] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
   - [ ] T61.6.3: Extract minimal failing code snippet and expected value to inject directly into next remediation prompt. [File: packages/engine/src/testing/TestFailureTriager.ts] [Method: buildRemediationContext] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
   - [ ] T61.6.4: Write unit tests verifying triager correctly isolates assertion mismatches and formats clean remediation context. [File: packages/engine/src/tests/failure_triager.test.ts] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
 
