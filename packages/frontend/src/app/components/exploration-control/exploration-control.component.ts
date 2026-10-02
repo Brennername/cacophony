@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 
 export interface BanditArmUi {
   readonly armId: string;
@@ -252,45 +253,33 @@ export interface BanditArmUi {
     }
   `],
 })
-export class ExplorationControlComponent {
+export class ExplorationControlComponent implements OnInit {
   public readonly epsilon = signal<number>(0.15);
   public readonly activePolicy = signal<'epsilon_greedy' | 'ucb1' | 'thompson_sampling'>('epsilon_greedy');
 
-  public readonly arms = signal<BanditArmUi[]>([
-    {
-      armId: 'coder:qwen2.5-coder:7b',
-      modelId: 'qwen2.5-coder:7b',
-      role: 'coder',
-      winRatePct: 84.5,
-      trialsCount: 42,
-      alpha: 36,
-      beta: 8,
-      tokensPerSec: 28.4,
-      vramMb: 4200,
-    },
-    {
-      armId: 'coder:deepseek-r1:8b',
-      modelId: 'deepseek-r1:8b',
-      role: 'coder',
-      winRatePct: 76.2,
-      trialsCount: 28,
-      alpha: 22,
-      beta: 8,
-      tokensPerSec: 24.1,
-      vramMb: 4950,
-    },
-    {
-      armId: 'reviewer:qwen2.5-coder:7b',
-      modelId: 'qwen2.5-coder:7b',
-      role: 'reviewer',
-      winRatePct: 91.0,
-      trialsCount: 35,
-      alpha: 32,
-      beta: 5,
-      tokensPerSec: 31.0,
-      vramMb: 4200,
-    },
-  ]);
+  public readonly arms = signal<BanditArmUi[]>([]);
+
+  constructor(private http: HttpClient) {}
+
+  ngOnInit(): void {
+    this.fetchArmsAndPolicy();
+  }
+
+  private async fetchArmsAndPolicy(): Promise<void> {
+    try {
+      const response = await this.http.get<{ arms?: BanditArmUi[]; policy?: 'epsilon_greedy' | 'ucb1' | 'thompson_sampling' }>('/api/bandit/arms').toPromise();
+      if (response) {
+        if (response.arms) {
+          this.arms.set(response.arms);
+        }
+        if (response.policy) {
+          this.activePolicy.set(response.policy);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch arms and policy:', error);
+    }
+  }
 
   public setPolicy(policy: 'epsilon_greedy' | 'ucb1' | 'thompson_sampling'): void {
     this.activePolicy.set(policy);
