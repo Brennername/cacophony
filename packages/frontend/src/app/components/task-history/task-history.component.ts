@@ -3,11 +3,6 @@ import { CommonModule } from '@angular/common';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
 import { ArenaStateStore } from '../../services/arena-state.store';
 
-/**
- * Task History and Metrics component:
- * Displays filterable past runs, model health leaderboard, rolling success rates,
- * and direct clickable links to Gitea PRs, commit diffs, and issue tickets.
- */
 @Component({
   selector: 'app-task-history',
   standalone: true,
@@ -217,7 +212,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
       display: flex;
       justify-content: space-between;
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       font-family: var(--font-mono);
       white-space: nowrap;
     }
@@ -319,113 +314,3 @@ import { ArenaStateStore } from '../../services/arena-state.store';
     }
 
     .text-muted {
-      color: var(--text-muted);
-    }
-
-    .gitea-link {
-      color: var(--color-brand);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .gitea-link:hover {
-      text-decoration: underline;
-    }
-
-    .pagination-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 0.25rem 0.25rem 0.25rem;
-      border-top: 1px solid var(--border-subtle);
-      margin-top: 0.5rem;
-    }
-
-    .page-btn {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
-      font-size: 0.75rem;
-      padding: 0.25rem 0.75rem;
-      cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease;
-    }
-
-    .page-btn:hover:not(:disabled) {
-      border-color: var(--color-brand);
-      color: var(--color-brand);
-    }
-
-    .page-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .page-info {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-  `],
-})
-export class TaskHistoryComponent {
-  private readonly metricsService = inject(HistoryMetricsService);
-  private readonly store = inject(ArenaStateStore);
-  public readonly historyItems = this.metricsService.historyItems;
-  public readonly leaderboard = this.metricsService.leaderboard;
-  public readonly successRate = this.metricsService.rollingSuccessRate;
-
-  public readonly pageSize = 25;
-  public readonly currentPage = signal<number>(1);
-
-  public readonly totalPages = computed(() => {
-    const count = this.historyItems().length;
-    return Math.max(1, Math.ceil(count / this.pageSize));
-  });
-
-  public readonly paginatedHistoryItems = computed(() => {
-    const list = this.historyItems();
-    const page = Math.min(this.currentPage(), this.totalPages());
-    const start = (page - 1) * this.pageSize;
-    return list.slice(start, start + this.pageSize);
-  });
-
-  public setPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages()) {
-      this.currentPage.set(page);
-    }
-  }
-
-  public formatTks(val: number | null | undefined): string {
-    return (Number(val) || 0).toFixed(1);
-  }
-
-  /**
-   * Formats a millisecond duration into a human-readable string for the runtime column.
-   * Renders as ms for sub-second runs, seconds for short runs, and m/s for long inference.
-   */
-  public formatDuration(ms: number | null | undefined): string {
-    const v = Number(ms) || 0;
-    if (v <= 0) return '--';
-    if (v < 1000) return `${v}ms`;
-    if (v < 60000) return `${(v / 1000).toFixed(1)}s`;
-    const mins = Math.floor(v / 60000);
-    const secs = Math.round((v % 60000) / 1000);
-    return `${mins}m ${secs}s`;
-  }
-
-  public formatTimestamp(isoStr: string | null | undefined): string {
-    if (!isoStr || isoStr === 'Recently') return 'Recently';
-    try {
-      const d = new Date(isoStr);
-      if (isNaN(d.getTime())) return isoStr;
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    } catch {
-      return isoStr;
-    }
-  }
-
-  public drillDown(taskId: string): void {
-    void this.store.selectTask(taskId);
-  }
-}
