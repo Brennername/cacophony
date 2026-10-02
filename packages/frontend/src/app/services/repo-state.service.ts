@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { EventSourcePolyfill } from 'eventsource';
 
 export interface RepoSymbolNode {
   id: string;
@@ -16,9 +17,6 @@ export interface CheckpointRecord {
   filesChanged: number;
 }
 
-/**
- * Service providing real data for RepoMap and Git Checkpoints.
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -26,9 +24,35 @@ export class RepoStateService {
   public readonly repoSymbols = signal<RepoSymbolNode[]>([]);
   public readonly checkpoints = signal<CheckpointRecord[]>([]);
 
+  private eventSource: EventSourcePolyfill | null = null;
+
   constructor() {
     this.fetchRepoSymbols();
     this.fetchCheckpoints();
+
+    // Start listening for 'repomap_updated' events
+    this.startEventListening();
+  }
+
+  private startEventListening(): void {
+    if (this.eventSource) {
+      this.eventSource.close();
+    }
+
+    this.eventSource = new EventSourcePolyfill('/api/events');
+
+    this.eventSource.onmessage = (event) => {
+      const eventData = JSON.parse(event.data);
+      if (eventData.type === 'repomap_updated') {
+        this.fetchRepoSymbols();
+      }
+    };
+
+    this.eventSource.onerror = (error) => {
+      console.error('EventSource failed:', error);
+      this.eventSource?.close();
+      setTimeout(() => this.startEventListening(), 5000); // Retry after 5 seconds
+    };
   }
 
   public async fetchRepoSymbols(): Promise<void> {
@@ -40,8 +64,8 @@ export class RepoStateService {
           this.repoSymbols.set(data);
         }
       }
-    } catch {
-      // offline fallback
+    } catch (error) {
+      console.error('Failed to fetch repo symbols:', error);
     }
   }
 
@@ -54,8 +78,8 @@ export class RepoStateService {
           this.checkpoints.set(data);
         }
       }
-    } catch {
-      // offline fallback
+    } catch (error) {
+      console.error('Failed to fetch checkpoints:', error);
     }
   }
 }
