@@ -1,5 +1,6 @@
 import { Component, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 
 export interface CheckpointRecord {
   readonly id: string;
@@ -176,6 +177,8 @@ export class CheckpointTimelineComponent {
   public readonly redo = output<void>();
   public readonly checkpointSelected = output<string>();
 
+  constructor(private http: HttpClient) {}
+
   public readonly canUndo = computed<boolean>(() => {
     const cps = this.checkpoints();
     const active = this.activeCheckpointId();
@@ -226,5 +229,18 @@ export class CheckpointTimelineComponent {
       this.diffText = selected.message;
     }
     this.checkpointSelected.emit(id);
+  }
+
+  public triggerRevert(): void {
+    const activeCheckpointId = this.activeCheckpointId();
+    if (activeCheckpointId) {
+      this.http.post(`/api/checkpoints/${activeCheckpointId}/revert`, {}).subscribe(() => {
+        // Handle success, e.g., refresh checkpoints
+        console.log('Checkpoint reverted successfully');
+      }, (error) => {
+        // Handle error
+        console.error('Failed to revert checkpoint', error);
+      });
+    }
   }
 }
