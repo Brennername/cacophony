@@ -3,7 +3,7 @@ import { GiteaPlatformProvider } from "./GiteaPlatformProvider.js";
 import { GitHubPlatformProvider } from "./GitHubPlatformProvider.js";
 import { GiteaApiClient } from "./GiteaApiClient.js";
 
-export interface GitPlatformProviderFactoryOptions {
+export interface GitPlatformProviderOptions {
   readonly platform?: "gitea" | "github" | string | undefined;
   readonly giteaBaseUrl?: string | undefined;
   readonly giteaApiToken?: string | undefined;
@@ -12,7 +12,7 @@ export interface GitPlatformProviderFactoryOptions {
 }
 
 export class GitPlatformProviderFactory {
-  public static create(options: GitPlatformProviderFactoryOptions = {}): IGitPlatformProvider {
+  public static create(options: GitPlatformProviderOptions = {}): IGitPlatformProvider {
     const platform = (options.platform || process.env["GIT_PLATFORM_PROVIDER"] || "gitea").toLowerCase();
 
     if (platform === "github") {
@@ -26,7 +26,6 @@ export class GitPlatformProviderFactory {
       });
     }
 
-    // Default: Gitea
     const baseUrl = options.giteaBaseUrl || process.env["GITEA_BASE_URL"] || "http://cacophony-gitea:3000";
     const apiToken = options.giteaApiToken || process.env["GITEA_API_TOKEN"];
 
