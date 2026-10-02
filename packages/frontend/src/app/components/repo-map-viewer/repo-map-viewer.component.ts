@@ -86,6 +86,12 @@ export interface RepoSymbolNode {
           <div class="detail-item">
             <strong>Centrality Rank:</strong> <span>{{ (node.centrality * 100).toFixed(1) }}%</span>
           </div>
+          <button
+            class="copy-path-button"
+            (click)="copyFilePath(node.filePath)"
+          >
+            Copy File Path
+          </button>
         </footer>
       }
     </div>
@@ -168,6 +174,18 @@ export interface RepoSymbolNode {
       color: var(--text-muted, #94a3b8);
       margin-right: 0.35rem;
     }
+    .copy-path-button {
+      background-color: #2d2d38;
+      border: none;
+      color: #f8fafc;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .copy-path-button:hover {
+      background-color: #334155;
+    }
   `]
 })
 export class RepoMapViewerComponent {
@@ -225,5 +243,14 @@ export class RepoMapViewerComponent {
       case 'method': return '#a855f7';
       default: return '#64748b';
     }
+  }
+
+  public copyFilePath(filePath: string): void {
+    const tempInput = document.createElement('input');
+    tempInput.value = filePath;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
   }
 }
