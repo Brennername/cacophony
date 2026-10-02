@@ -1,8 +1,5 @@
 import ts from "typescript";
 
-/**
- * Extracted imported identifier from an import statement.
- */
 export interface ImportedIdentifier {
   readonly importedName: string;
   readonly localAlias: string;
@@ -10,9 +7,6 @@ export interface ImportedIdentifier {
   readonly isTypeOnly: boolean;
 }
 
-/**
- * Result of AST dependency slicing on a source file.
- */
 export interface SlicedDependencyResult {
   readonly dependencyFilePath: string;
   readonly skeletonContent: string;
@@ -21,16 +15,6 @@ export interface SlicedDependencyResult {
   readonly reductionRatio: number;
 }
 
-/**
- * AstContextSlicer
- *
- * Performs AST dependency slicing for context token minimization:
- * 1. Analyzes imported symbols from focus files.
- * 2. Parses target dependency files with the TypeScript compiler AST.
- * 3. Extracts ONLY the used classes, interfaces, types, functions, and method signatures.
- * 4. Stubs method implementation bodies ({ throw new Error("stub"); } or empty declarations).
- * 5. Compresses prompt context while preserving 100% type fidelity for the model.
- */
 export class AstContextSlicer {
   public readonly projectDir: string;
 
@@ -38,9 +22,6 @@ export class AstContextSlicer {
     this.projectDir = projectDir;
   }
 
-  /**
-   * Parses import declarations in a consumer file to determine referenced symbols and modules.
-   */
   public extractImportedSymbols(consumerContent: string, consumerFilePath = "consumer.ts"): readonly ImportedIdentifier[] {
     const sourceFile = ts.createSourceFile(
       consumerFilePath,
@@ -76,7 +57,7 @@ export class AstContextSlicer {
             });
           }
         } else if (node.importClause?.name) {
-          // Default import
+
           imports.push({
             importedName: "default",
             localAlias: node.importClause.name.text,
@@ -92,10 +73,6 @@ export class AstContextSlicer {
     return imports;
   }
 
-  /**
-   * Generates a focused type skeleton for a secondary dependency file,
-   * retaining only specified utilized symbols or stripping bodies of all exported symbols.
-   */
   public generateTypeSkeleton(
     dependencyContent: string,
     referencedSymbolNames: readonly string[] = [],
@@ -114,21 +91,21 @@ export class AstContextSlicer {
     const filterBySymbols = symbolSet.size > 0 && !symbolSet.has("*");
 
     const visit = (node: ts.Node) => {
-      // 1. Interfaces
+
       if (ts.isInterfaceDeclaration(node)) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
           skeletons.push(node.getText(sourceFile));
         }
       }
-      // 2. Type Aliases
+
       else if (ts.isTypeAliasDeclaration(node)) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
           skeletons.push(node.getText(sourceFile));
         }
       }
-      // 3. Classes (keep signatures, strip method implementations)
+
       else if (ts.isClassDeclaration(node) && node.name) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
@@ -136,7 +113,7 @@ export class AstContextSlicer {
           skeletons.push(classSkeleton);
         }
       }
-      // 4. Functions (keep signature, stub body)
+
       else if (ts.isFunctionDeclaration(node) && node.name) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
@@ -144,7 +121,7 @@ export class AstContextSlicer {
           skeletons.push(fnSkeleton);
         }
       }
-      // 5. Enums
+
       else if (ts.isEnumDeclaration(node)) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
@@ -174,10 +151,6 @@ export class AstContextSlicer {
     };
   }
 
-  /**
-   * Slices a class declaration, preserving field types, constructors, and method signatures
-   * while replacing complex method bodies with stubs.
-   */
   private sliceClassDeclaration(node: ts.ClassDeclaration, sourceFile: ts.SourceFile): string {
     const isExported = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
     const exportPrefix = isExported ? "export " : "";
@@ -212,9 +185,6 @@ export class AstContextSlicer {
     return `${exportPrefix}${abstractPrefix}class ${className} {\n${members.join("\n")}\n}`;
   }
 
-  /**
-   * Slices a function declaration, preserving parameters and return types with stub body.
-   */
   private sliceFunctionDeclaration(node: ts.FunctionDeclaration, sourceFile: ts.SourceFile): string {
     const isExported = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
     const exportPrefix = isExported ? "export " : "";
