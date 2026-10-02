@@ -283,6 +283,7 @@ export class ExplorationControlComponent implements OnInit {
 
   public setPolicy(policy: 'epsilon_greedy' | 'ucb1' | 'thompson_sampling'): void {
     this.activePolicy.set(policy);
+    this.dispatchPolicyUpdate(policy);
   }
 
   public onEpsilonChange(event: Event): void {
@@ -292,5 +293,14 @@ export class ExplorationControlComponent implements OnInit {
 
   public formatTks(val: number | null | undefined): string {
     return (Number(val) || 0).toFixed(1);
+  }
+
+  private async dispatchPolicyUpdate(policy: 'epsilon_greedy' | 'ucb1' | 'thompson_sampling'): Promise<void> {
+    try {
+      await this.http.put('/api/bandit/policy', { policy }).toPromise();
+      console.log('Policy updated successfully:', policy);
+    } catch (error) {
+      console.error('Failed to update policy:', error);
+    }
   }
 }
