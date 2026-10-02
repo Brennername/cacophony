@@ -17,13 +17,6 @@ interface StageRow {
   readonly thinking_duration_ms?: number | null;
 }
 
-/**
- * StageRepository
- *
- * Manages fine-grained execution steps within active tasks,
- * capturing stage duration, token accounting, streaming logs,
- * reasoning transcripts, and distilled opinions.
- */
 export class StageRepository {
   private readonly driver: IDatabaseDriver;
 
@@ -31,9 +24,6 @@ export class StageRepository {
     this.driver = driver;
   }
 
-  /**
-   * Records the start of a task stage and returns the stage record ID.
-   */
   public async recordStageStart(taskId: string, stageName: StageName): Promise<number> {
     const startedAt = new Date().toISOString();
     if (this.driver.getDialect() === "postgres") {
@@ -46,7 +36,6 @@ export class StageRepository {
       return Number(row?.id);
     }
 
-    // SQLite fallback
     await this.driver.execute(
       `INSERT INTO task_stages (
         task_id, stage_name, stage_status, started_at, tokens_sent, tokens_received, duration_ms
@@ -59,10 +48,6 @@ export class StageRepository {
     return Number(row?.id);
   }
 
-  /**
-   * Completes a task stage with final verdict, output logs, token statistics, duration,
-   * and optional cognitive reasoning trace / distilled opinion metrics.
-   */
   public async recordStageCompletion(
     id: number,
     status: StageStatus,
@@ -76,7 +61,7 @@ export class StageRepository {
   ): Promise<void> {
     const completedAt = new Date().toISOString();
     await this.driver.execute(
-      `UPDATE task_stages SET 
+      `UPDATE task_stages SET
         stage_status = $1, log_output = $2, tokens_sent = $3,
         tokens_received = $4, duration_ms = $5, completed_at = $6,
         reasoning_transcript = $7, distilled_opinion = $8, thinking_duration_ms = $9
@@ -96,9 +81,6 @@ export class StageRepository {
     );
   }
 
-  /**
-   * Retrieves all stages for a task ordered chronologically.
-   */
   public async getStagesForTask(taskId: string): Promise<readonly TaskStageRecord[]> {
     const rows = await this.driver.query<StageRow>(
       "SELECT * FROM task_stages WHERE task_id = $1 ORDER BY id ASC",
