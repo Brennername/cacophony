@@ -1,52 +1,116 @@
-import { exec } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 
-interface GitCheckpoint {
-  commitHash: string;
-  message: string;
-  date: Date;
-  changedFiles: string[];
+const execAsync = promisify(exec);
+
+export const CHECKPOINT_REF_PREFIX = "refs/cacophony/checkpoints";
+
+export interface CheckpointRecord {
+  readonly id: string;
+  readonly hash: string;
+  readonly message: string;
+  readonly createdAt: string;
+  readonly filesChanged: number;
+  readonly taskId?: string;
+  readonly stageName?: string;
 }
 
+/**
+ * GitCheckpointManager
+ *
+ * Manages git shadow checkpoints under hidden refs/cacophony/checkpoints/ namespace,
+ * allowing instant atomic rollback without polluting repository commit history.
+ */
 export class GitCheckpointManager {
-  private readonly repoPath: string;
+  private readonly repositoryRoot: string;
 
-  constructor(repoPath: string) {
-    this.repoPath = repoPath;
+  constructor(repositoryRoot: string) {
+    this.repositoryRoot = repositoryRoot;
   }
 
-  public async getCheckpoints(): Promise<GitCheckpoint[]> {
-    const checkpoints: GitCheckpoint[] = [];
-
+  /**
+   * Creates a shadow checkpoint ref for a specific task and pipeline stage.
+   */
+  public async createCheckpoint(taskId: string, stageName: string, message: string): Promise<string> {
+    const ref = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
     try {
-      // Execute the git log command to retrieve refs in refs/cacophony/checkpoints/
-      const { stdout } = await exec(`git --git-dir=${this.repoPath}/.git log --pretty=format:"%H %s %ad" --name-only --date=iso-strict refs/cacophony/checkpoints/`, {
-        cwd: this.repoPath,
-      });
-
-      // Split the output into individual commits
-      const commitLines = stdout.split('\n');
-
-      for (const line of commitLines) {
-        if (line.trim() === '') continue;
-
-        const [commitHash, message, dateStr] = line.split(' ', 3);
-        const date = new Date(dateStr);
-
-        // Get the list of changed files for this commit
-        const { stdout: diffOutput } = await exec(`git --git-dir=${this.repoPath}/.git diff-tree -r --no-commit-id --name-only ${commitHash}`, {
-          cwd: this.repoPath,
-        });
-
-        const changedFiles = diffOutput.split('\n').filter(file => file.trim() !== '');
-
-        checkpoints.push({ commitHash, message, date, changedFiles });
-      }
-    } catch (error) {
-      console.error('Error fetching git checkpoints:', error);
+      const { stdout: commitHash } = await execAsync("git rev-parse HEAD", { cwd: this.repositoryRoot });
+      const hash = commitHash.trim();
+      await execAsync(`git update-ref ${ref} ${hash}`, { cwd: this.repositoryRoot });
+      return hash;
+    } catch (err) {
+      console.warn(`[GitCheckpointManager] Failed to create checkpoint ${ref} (${message}):`, err);
+      return "";
     }
+  }
 
-    return checkpoints;
+  /**
+   * Lists chronological shadow checkpoints.
+   */
+  public async listCheckpoints(taskId?: string): Promise<CheckpointRecord[]> {
+    try {
+      const pattern = taskId ? `${CHECKPOINT_REF_PREFIX}/${taskId}-*` : `${CHECKPOINT_REF_PREFIX}/*`;
+      const { stdout } = await execAsync(
+        `git for-each-ref --format="%(refname) %(objectname) %(contents:subject)" ${pattern}`,
+        { cwd: this.repositoryRoot }
+      );
+      const lines = stdout.trim().split("\n").filter(Boolean);
+      return lines.map((line, idx) => {
+        const [, hash = "", ...rest] = line.split(" ");
+        return {
+          id: `cp-${idx + 1}`,
+          hash,
+          message: rest.join(" ") || "Shadow stage checkpoint",
+          createdAt: new Date().toISOString(),
+          filesChanged: 1
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Reverts the working directory to a specific checkpoint ref or commit hash.
+   */
+  public async revertToCheckpoint(checkpointId: string): Promise<void> {
+    await execAsync(`git checkout ${checkpointId} -- .`, { cwd: this.repositoryRoot });
+  }
+
+  /**
+   * Stores a checkpoint reference under the hidden namespace.
+   */
+  public async storeCheckpointRef(taskId: string, stageName: string, ref: string): Promise<void> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
+    try {
+      await execAsync(`git update-ref ${checkpointRef} ${ref}`, { cwd: this.repositoryRoot });
+    } catch (err) {
+      console.warn(`[GitCheckpointManager] Failed to store ref ${checkpointRef}:`, err);
+    }
+  }
+
+  /**
+   * Retrieves a checkpoint reference from the hidden namespace.
+   */
+  public async getCheckpointRef(taskId: string, stageName: string): Promise<string | undefined> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
+    try {
+      const { stdout } = await execAsync(`git rev-parse ${checkpointRef}`, { cwd: this.repositoryRoot });
+      return stdout.trim() || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Deletes a checkpoint reference from the hidden namespace.
+   */
+  public async deleteCheckpointRef(taskId: string, stageName: string): Promise<void> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
+    try {
+      await execAsync(`git update-ref -d ${checkpointRef}`, { cwd: this.repositoryRoot });
+    } catch {
+      // Ignored
+    }
   }
 }

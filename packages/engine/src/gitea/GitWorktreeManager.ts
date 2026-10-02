@@ -145,6 +145,7 @@ export class GitWorktreeManager {
    */
   public async commitWorktree(worktreePath: string, commitMessage: string): Promise<string> {
     await execAsync(`git add -A`, { cwd: worktreePath });
+    await execAsync(`git reset HEAD -- node_modules packages/*/dist dist || true`, { cwd: worktreePath }).catch(() => {});
     const { stdout } = await execAsync(`git commit -m "${commitMessage.replace(/"/g, '\\"')}"`, {
       cwd: worktreePath
     });
