@@ -2,16 +2,10 @@ import * as fs from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
 
-/**
- * PGliteDriver
- *
- * Implements IDatabaseDriver using @electric-sql/pglite.
- * Runs an in-process, WASM-compiled PostgreSQL engine backed by persistent
- * filesystem storage or in-memory state without requiring an external database daemon.
- */
 export class PGliteDriver implements IDatabaseDriver {
   private pg: PGlite | null = null;
   private readonly dataDir: string | undefined;
+  private lockFile: string | null = null;
 
   constructor(dataDir?: string) {
     this.dataDir = dataDir;
@@ -22,6 +16,8 @@ export class PGliteDriver implements IDatabaseDriver {
     if (this.dataDir) {
       fs.mkdirSync(this.dataDir, { recursive: true });
     }
+    this.lockFile = `${this.dataDir}/pglite.lock`;
+    await this.checkLockFile();
     this.pg = this.dataDir ? new PGlite(this.dataDir) : new PGlite();
     await this.pg.waitReady;
   }
@@ -30,6 +26,7 @@ export class PGliteDriver implements IDatabaseDriver {
     if (!this.pg) return;
     await this.pg.close();
     this.pg = null;
+    fs.unlinkSync(this.lockFile);
   }
 
   public async query<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<readonly T[]> {
@@ -92,5 +89,23 @@ export class PGliteDriver implements IDatabaseDriver {
     if (!this.pg) {
       throw new Error("PGlite database is not connected. Call connect() before issuing queries.");
     }
+  }
+
+  private async checkLockFile(): Promise<void> {
+    if (fs.existsSync(this.lockFile)) {
+      const lockFileContent = fs.readFileSync(this.lockFile, "utf-8");
+      const currentTimestamp = Date.now();
+      const lockFileTimestamp = parseInt(lockFileContent, 10);
+
+      if (currentTimestamp - lockFileTimestamp > 60 * 1000) {
+        // Lock file is stale, remove it
+        fs.unlinkSync(this.lockFile);
+      } else {
+        throw new Error("Database connection is already in use by another process.");
+      }
+    }
+
+    // Create a new lock file with the current timestamp
+    fs.writeFileSync(this.lockFile, `${Date.now()}`);
   }
 }
