@@ -15,14 +15,13 @@ describe("Unified Git Platform Provider Suite (Gitea & GitHub)", () => {
       const url = req.url ?? "";
       const method = req.method ?? "GET";
 
-      // Gitea mock endpoints
       if (url.includes("/api/v1/repos/test-owner/test-repo/branches") && method === "POST") {
         res.writeHead(201, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ name: "feature-branch", commit: { id: "sha-1234" } }));
         return;
       }
 
-      if (url.includes("/api/v1/repos/test-owner/test-repo/pulls/1.diff")) {
+      if (url.includes("/api/v1/repos/test-owner/test-repo/pulls/1.diff") && method === "GET") {
         res.writeHead(200, { "Content-Type": "text/plain" });
         res.end("diff --git a/file.ts b/file.ts\n+added");
         return;
@@ -59,8 +58,7 @@ describe("Unified Git Platform Provider Suite (Gitea & GitHub)", () => {
         return;
       }
 
-      // GitHub mock endpoints
-      if (url.includes("/repos/gh-owner/gh-repo/git/ref/heads/main")) {
+      if (url.includes("/repos/gh-owner/gh-repo/git/ref/heads/main") && method === "GET") {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ object: { sha: "gh-base-sha" } }));
         return;
@@ -74,7 +72,7 @@ describe("Unified Git Platform Provider Suite (Gitea & GitHub)", () => {
 
       if (url.includes("/repos/gh-owner/gh-repo/pulls/42/reviews") && method === "POST") {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ id: 999, state: "APPROVED" }));
+        res.end(JSON.stringify({ id: 999, status: "APPROVED" }));
         return;
       }
 
