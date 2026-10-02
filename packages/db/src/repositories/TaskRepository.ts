@@ -1,9 +1,6 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
 import type { TaskRecord, TaskStatus, TaskPriority, AgentRole } from "@cacophony/shared-types";
 
-/**
- * Raw database row shape for tasks table.
- */
 interface TaskRow {
   readonly id: string;
   readonly title: string;
@@ -25,12 +22,6 @@ interface TaskRow {
   readonly tokens_per_sec?: number | null;
 }
 
-/**
- * TaskRepository
- *
- * Encapsulates all database operations for lifecycle tasks.
- * Converts raw SQL relational rows to strictly typed TaskRecord domain entities.
- */
 export class TaskRepository {
   private readonly driver: IDatabaseDriver;
 
@@ -38,9 +29,6 @@ export class TaskRepository {
     this.driver = driver;
   }
 
-  /**
-   * Persists a newly created task into the database.
-   */
   public async create(task: TaskRecord): Promise<TaskRecord> {
     await this.driver.execute(
       `INSERT INTO tasks (
@@ -69,9 +57,6 @@ export class TaskRepository {
     return task;
   }
 
-  /**
-   * Retrieves a task by its unique identifier.
-   */
   public async getById(id: string): Promise<TaskRecord | null> {
     const row = await this.driver.queryOne<TaskRow>(
       "SELECT * FROM tasks WHERE id = $1",
@@ -80,9 +65,6 @@ export class TaskRepository {
     return row ? this.mapRow(row) : null;
   }
 
-  /**
-   * Retrieves a task by its exact title.
-   */
   public async getByTitle(title: string): Promise<TaskRecord | null> {
     const row = await this.driver.queryOne<TaskRow>(
       "SELECT * FROM tasks WHERE title = $1 LIMIT 1",
@@ -91,9 +73,6 @@ export class TaskRepository {
     return row ? this.mapRow(row) : null;
   }
 
-  /**
-   * Persists a task if no task with the same ID or title already exists in the database.
-   */
   public async createIfNotExists(task: TaskRecord): Promise<{ created: boolean; task: TaskRecord }> {
     const existingById = await this.getById(task.id);
     if (existingById) {
@@ -107,10 +86,6 @@ export class TaskRepository {
     return { created: true, task: created };
   }
 
-  /**
-   * Updates task execution status, timestamp, and optional runtime metrics.
-   * Pass durationMs and tokensPerSec on finalization to persist efficiency data.
-   */
   public async updateStatus(
     id: string,
     status: TaskStatus,
@@ -138,9 +113,6 @@ export class TaskRepository {
     }
   }
 
-  /**
-   * Assigns an inference model to the task.
-   */
   public async updateModel(id: string, model: string): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.execute(
@@ -149,9 +121,6 @@ export class TaskRepository {
     );
   }
 
-  /**
-   * Links a Gitea Pull Request URL and target branch to the task.
-   */
   public async updatePr(id: string, targetBranch: string, prUrl: string): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.execute(
@@ -160,9 +129,6 @@ export class TaskRepository {
     );
   }
 
-  /**
-   * Updates the code diff log snippet for a task.
-   */
   public async updateLogSnippet(id: string, logSnippet: string): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.execute(
@@ -171,9 +137,6 @@ export class TaskRepository {
     );
   }
 
-  /**
-   * Increments sequential failure counter for the task and returns new count.
-   */
   public async incrementFailure(id: string): Promise<number> {
     const now = new Date().toISOString();
     await this.driver.execute(
@@ -184,14 +147,11 @@ export class TaskRepository {
     return updated ? updated.failureCount : 0;
   }
 
-  /**
-   * Lists tasks currently awaiting dispatch or executing, ordered by status (RUNNING first), priority, then age.
-   */
   public async listPending(): Promise<readonly TaskRecord[]> {
     const rows = await this.driver.query<TaskRow>(
-      `SELECT * FROM tasks 
+      `SELECT * FROM tasks
        WHERE status IN ('RUNNING', 'PENDING', 'REMEDIATING')
-       ORDER BY 
+       ORDER BY
          CASE status WHEN 'RUNNING' THEN 0 ELSE 1 END ASC,
          CASE priority WHEN 'P0' THEN 1 WHEN 'P1' THEN 2 WHEN 'P2' THEN 3 ELSE 4 END ASC,
          created_at ASC`
@@ -199,10 +159,6 @@ export class TaskRepository {
     return rows.map((r) => this.mapRow(r));
   }
 
-  /**
-   * Lists recent tasks with optional filtering for history tables.
-   * If no specific status is requested, defaults to completed/concluded historical runs (not pending).
-   */
   public async listRecent(limit = 50, filter?: { status?: TaskStatus }): Promise<readonly TaskRecord[]> {
     if (filter?.status) {
       const rows = await this.driver.query<TaskRow>(
@@ -218,17 +174,11 @@ export class TaskRepository {
     return rows.map((r) => this.mapRow(r));
   }
 
-  /**
-   * Deletes a task by ID.
-   */
   public async deleteTask(id: string): Promise<boolean> {
     await this.driver.execute("DELETE FROM tasks WHERE id = $1", [id]);
     return true;
   }
 
-  /**
-   * Purges pending tasks matching an optional title query.
-   */
   public async purgePendingTasks(titlePattern?: string): Promise<number> {
     if (titlePattern) {
       const res = await this.driver.execute(
@@ -241,9 +191,6 @@ export class TaskRepository {
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
-  /**
-   * Resets failed tasks back to PENDING status with failure count zeroed out.
-   */
   public async retryFailedTasks(pattern?: string): Promise<number> {
     const now = new Date().toISOString();
     if (pattern) {
@@ -260,9 +207,6 @@ export class TaskRepository {
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
-  /**
-   * Reclaims tasks stranded in RUNNING status back to PENDING if elapsed time exceeds timeoutMinutes.
-   */
   public async reclaimStaleRunningTasks(timeoutMinutes = 15): Promise<number> {
     const cutoff = new Date(Date.now() - timeoutMinutes * 60 * 1000).toISOString();
     const res = await this.driver.execute(
@@ -272,9 +216,6 @@ export class TaskRepository {
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
-  /**
-   * Retrieves rolling success rate for the last N finished tasks.
-   */
   public async getRollingSuccessStats(sampleSize = 100): Promise<{
     sampleSize: number;
     successRate: number;
@@ -294,7 +235,6 @@ export class TaskRepository {
     const failed = total - completed;
     const successRate = (completed / total) * 100;
 
-    // Trend comparison: compare first half (older) vs second half (newer)
     const mid = Math.floor(total / 2);
     let trendDirection: "improving" | "declining" | "stable" = "stable";
     if (mid > 0) {
@@ -316,9 +256,7 @@ export class TaskRepository {
   }
 
   private mapRow(row: TaskRow): TaskRecord {
-    // Spread optional runtime metrics only when present; exactOptionalPropertyTypes
-    // disallows assigning undefined to optional fields that have no undefined in their type.
-    // Use a mutable intermediate object so readonly fields can be set before freezing.
+
     const runtimeMetrics: { durationMs?: number; tokensPerSec?: number } = {};
     if (row.duration_ms != null) runtimeMetrics.durationMs = Number(row.duration_ms);
     if (row.tokens_per_sec != null) runtimeMetrics.tokensPerSec = Number(row.tokens_per_sec);
