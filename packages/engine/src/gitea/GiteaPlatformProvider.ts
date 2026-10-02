@@ -34,25 +34,48 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     repo: string,
     options: CreateGitPullRequestOptions
   ): Promise<GitPlatformPullRequest> {
-    const pr = await this.client.createPullRequest(owner, repo, {
-      title: options.title,
-      body: options.body,
-      head: options.head,
-      base: options.base
-    });
+    try {
+      const pr = await this.client.createPullRequest(owner, repo, {
+        title: options.title,
+        body: options.body,
+        head: options.head,
+        base: options.base
+      });
 
-    return {
-      id: pr.id,
-      number: pr.number,
-      title: pr.title,
-      body: pr.body,
-      state: pr.state,
-      merged: pr.merged,
-      headRef: pr.head.ref,
-      baseRef: pr.base.ref,
-      htmlUrl: pr.html_url,
-      diffUrl: pr.diff_url
-    };
+      return {
+        id: pr.id,
+        number: pr.number,
+        title: pr.title,
+        body: pr.body,
+        state: pr.state,
+        merged: pr.merged,
+        headRef: pr.head.ref,
+        baseRef: pr.base.ref,
+        htmlUrl: pr.html_url,
+        diffUrl: pr.diff_url
+      };
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes("already exists") || errMsg.includes("409") || errMsg.includes("422")) {
+        const pulls = await this.client.listPullRequests(owner, repo, "open").catch(() => []);
+        const existing = pulls.find((p) => p.head?.ref === options.head);
+        if (existing) {
+          return {
+            id: existing.id,
+            number: existing.number,
+            title: existing.title,
+            body: existing.body,
+            state: existing.state,
+            merged: existing.merged,
+            headRef: existing.head?.ref ?? options.head,
+            baseRef: existing.base?.ref ?? (options.base || "main"),
+            htmlUrl: existing.html_url,
+            diffUrl: existing.diff_url
+          };
+        }
+      }
+      throw err;
+    }
   }
 
   public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {

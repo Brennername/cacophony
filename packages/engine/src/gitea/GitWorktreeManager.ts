@@ -148,7 +148,7 @@ export class GitWorktreeManager {
       // non-fatal remote check
     }
 
-    await execAsync(`git push -u "${target}" "${branchName}"`, { cwd: worktreePath });
+    await execAsync(`git push --force -u "${target}" "${branchName}"`, { cwd: worktreePath });
   }
 
   /**

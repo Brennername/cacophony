@@ -122,6 +122,14 @@ export class GiteaApiClient {
   }
 
   /**
+   * Lists Pull Requests for a repository.
+   */
+  public async listPullRequests(owner: string, repo: string, state: "open" | "closed" | "all" = "open"): Promise<GiteaPullRequest[]> {
+    this.guard?.assertScope("repository", "read");
+    return this.request<GiteaPullRequest[]>(`/api/v1/repos/${owner}/${repo}/pulls?state=${state}`);
+  }
+
+  /**
    * Fetches unified diff for a Pull Request.
    */
   public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {
