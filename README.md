@@ -1,6 +1,6 @@
 # Cacophony
 
-> Autonomous Local Model Arena & Multi-Agent Code Orchestration Platform
+Autonomous Local Model Arena & Multi-Agent Code Orchestration Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
@@ -12,7 +12,7 @@
 
 ## Overview
 
-Cacophony is an enterprise-grade autonomous code orchestration platform and competitive model arena engineered to operate 24/7 on local edge hardware while harmonizing with frontier models and internal Git repositories.
+Cacophony is an autonomous code orchestration platform and competitive model arena engineered to operate 24/7 on local edge hardware while harmonizing with frontier models and internal Git repositories.
 
 Built specifically to conquer the thermal and VRAM constraints of unified-memory APUs and discrete GPUs, Cacophony replaces ad-hoc shell automation with:
 

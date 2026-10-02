@@ -8,15 +8,22 @@ export interface TestExecutionRecord {
   readonly test_command: string;
   readonly scoped_files_json: string;
   readonly exit_code: number;
-  readonly passed_count: number;
-  readonly failed_count: number;
-  readonly stdout_snippet: string;
-  readonly stderr_snippet: string;
-  readonly status: "PASSED" | "FAILED";
+  readonly passed: boolean;
   readonly duration_ms: number;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly failed_assertions_json: string;
+  readonly root_causes_json: string;
+  readonly remediation_attempt: number;
   readonly created_at: string;
 }
 
+/**
+ * TestExecutionRepository
+ *
+ * Persists test run telemetry, stdout/stderr, and structured failure analysis
+ * for closed-loop remediation and quality audits.
+ */
 export class TestExecutionRepository {
   constructor(private readonly driver: IDatabaseDriver) {}
 
@@ -27,9 +34,9 @@ export class TestExecutionRepository {
     await this.driver.query(
       `INSERT INTO test_execution_runs (
         id, task_id, session_id, test_framework, test_command,
-        scoped_files_json, exit_code, passed_count, failed_count, stdout_snippet, stderr_snippet,
-        status, duration_ms, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+        scoped_files_json, exit_code, passed, duration_ms, stdout, stderr,
+        failed_assertions_json, root_causes_json, remediation_attempt, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
         run.id,
         run.task_id,
@@ -38,12 +45,13 @@ export class TestExecutionRepository {
         run.test_command,
         run.scoped_files_json,
         run.exit_code,
-        run.passed_count,
-        run.failed_count,
-        run.stdout_snippet,
-        run.stderr_snippet,
-        run.status,
+        run.passed,
         run.duration_ms,
+        run.stdout,
+        run.stderr,
+        run.failed_assertions_json,
+        run.root_causes_json,
+        run.remediation_attempt,
         now
       ]
     );

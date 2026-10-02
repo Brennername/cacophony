@@ -1,29 +1,37 @@
-import { TestOutputParser } from '../testing/TestOutputParser';
+import { TestOutputParser } from "./TestOutputParser.js";
+
+export interface FailingTestExtraction {
+  readonly filePaths: string[];
+  readonly assertions: string[];
+  readonly lineNumbers: number[];
+}
 
 /**
- * StructuredTestOutputParser class to parse structured test output.
+ * StructuredTestOutputParser extracts structured failure details from stack traces.
  */
 export class StructuredTestOutputParser extends TestOutputParser {
   /**
    * Extracts failing test file paths, failing assertion descriptions, and line numbers from stderr stack traces.
-   * @param {string} stderr - The stderr output containing the stack traces.
-   * @returns {{filePaths: string[], assertions: string[], lineNumbers: number[]}} An object containing arrays of failing test file paths, failing assertion descriptions, and line numbers.
    */
-  public extractFailingTests(stderr: string): { filePaths: string[]; assertions: string[]; lineNumbers: number[] } {
+  public extractFailingTests(stderr: string): FailingTestExtraction {
     const regex = /at\s+(.*?)\s*\((.*?):(\d+):\d+\)/g;
-    let match;
-    const failingTests = { filePaths: [], assertions: [], lineNumbers: [] };
+    let match: RegExpExecArray | null;
+    const filePaths: string[] = [];
+    const assertions: string[] = [];
+    const lineNumbers: number[] = [];
 
     while ((match = regex.exec(stderr)) !== null) {
-      const filePath = match[2];
-      const assertion = match[1].split('at ')[1];
-      const lineNumber = parseInt(match[3], 10);
+      const assertionRaw = match[1] ?? "";
+      const filePath = match[2] ?? "";
+      const rawLine = match[3] ?? "0";
+      const assertion = assertionRaw.includes("at ") ? (assertionRaw.split("at ")[1] ?? assertionRaw) : assertionRaw;
+      const lineNumber = parseInt(rawLine, 10);
 
-      failingTests.filePaths.push(filePath);
-      failingTests.assertions.push(assertion);
-      failingTests.lineNumbers.push(lineNumber);
+      filePaths.push(filePath);
+      assertions.push(assertion);
+      lineNumbers.push(isNaN(lineNumber) ? 0 : lineNumber);
     }
 
-    return failingTests;
+    return { filePaths, assertions, lineNumbers };
   }
 }
