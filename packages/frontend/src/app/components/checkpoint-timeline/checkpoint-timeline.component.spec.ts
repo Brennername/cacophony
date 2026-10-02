@@ -57,7 +57,7 @@ describe('CheckpointTimelineComponent', () => {
     fixture.componentRef.setInput('checkpoints', mockCheckpoints);
     fixture.detectChanges();
 
-    expect(component.canUndo).toBe(false);
+    expect(component.canUndo()).toBe(false);
   });
 
   it('should enable undo button after selecting a checkpoint', () => {
@@ -71,7 +71,7 @@ describe('CheckpointTimelineComponent', () => {
 
     component.selectCheckpoint('2');
 
-    expect(component.canUndo).toBe(true);
+    expect(component.canUndo()).toBe(true);
   });
 
   it('should disable redo button at initial state', () => {
@@ -82,7 +82,7 @@ describe('CheckpointTimelineComponent', () => {
     fixture.componentRef.setInput('checkpoints', mockCheckpoints);
     fixture.detectChanges();
 
-    expect(component.canRedo).toBe(false);
+    expect(component.canRedo()).toBe(false);
   });
 
   it('should enable redo button after triggering undo', () => {
@@ -97,7 +97,7 @@ describe('CheckpointTimelineComponent', () => {
     component.selectCheckpoint('2');
     component.triggerUndo();
 
-    expect(component.canRedo).toBe(true);
+    expect(component.canRedo()).toBe(true);
   });
 
   it('should trigger API call on undo', () => {
@@ -110,10 +110,10 @@ describe('CheckpointTimelineComponent', () => {
     fixture.detectChanges();
 
     component.selectCheckpoint('2');
-    const apiCallSpy = vi.spyOn(component, 'triggerApiCall');
+    const undoSpy = vi.spyOn(component.undo, 'emit');
 
     component.triggerUndo();
-    expect(apiCallSpy).toHaveBeenCalledWith('undo');
+    expect(undoSpy).toHaveBeenCalled();
   });
 
   it('should trigger API call on redo', () => {
@@ -127,10 +127,10 @@ describe('CheckpointTimelineComponent', () => {
 
     component.selectCheckpoint('2');
     component.triggerUndo();
-    const apiCallSpy = vi.spyOn(component, 'triggerApiCall');
+    const redoSpy = vi.spyOn(component.redo, 'emit');
 
     component.triggerRedo();
-    expect(apiCallSpy).toHaveBeenCalledWith('redo');
+    expect(redoSpy).toHaveBeenCalled();
   });
 
   it('should emit checkpointSelected event on checkpoint selection', () => {

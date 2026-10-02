@@ -14,6 +14,15 @@ export interface GroomedTask {
   readonly stackProfile: IStackProfile;
 }
 
+/**
+ * QueueGroomer
+ *
+ * Enriches, validates, and scopes pending tasks before dispatch:
+ * 1. Resolves missing target focus files.
+ * 2. Scopes workspace-level test commands to target packages based on detected stack.
+ * 3. Injects architectural directives dynamically resolved from the target stack profile.
+ * 4. Enforces Context Minimization: restricts payload to essential file dependencies.
+ */
 export class QueueGroomer {
   private readonly projectDir: string;
   private readonly defaultDirectives: readonly string[];
@@ -36,6 +45,9 @@ export class QueueGroomer {
     ];
   }
 
+  /**
+   * Grooms a task record and returns enriched prompt and scoped execution directives.
+   */
   public groom(
     task: TaskRecord,
     options?: {
@@ -47,10 +59,12 @@ export class QueueGroomer {
     const groomNotes: string[] = [];
     let modified = false;
 
+    // Resolve stack profile (from options or via auto-detection)
     const activeProfile = options?.stackProfile ?? this.stackDetector.detect(this.projectDir);
     groomNotes.push(`Resolved active stack profile: ${activeProfile.name} (${activeProfile.id})`);
 
-    let focusFilesList: readonly string[] = [];
+    // 1. Resolve Focus Files
+    let focusFilesList: string[] = [];
     if (task.focusFiles && task.focusFiles.trim().length > 0) {
       focusFilesList = task.focusFiles
         .trim()
@@ -67,6 +81,7 @@ export class QueueGroomer {
       }
     }
 
+    // 2. Resolve & Scope Test Command
     let testCommand = task.testCommand ? task.testCommand.trim() : "";
     const repoRoot = this.getRepoRoot();
 
@@ -91,7 +106,7 @@ export class QueueGroomer {
         if (isJsTs) {
           testCommand = `node --check ${focus}`;
           modified = true;
-          groomNotes.push(`Scoped test command to focus file verification: ${testCommand}`);
+          groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk; scoped to focus file verification: ${testCommand}`);
         } else {
           testCommand = "";
           modified = true;
@@ -133,8 +148,10 @@ export class QueueGroomer {
       }
     }
 
+    // 3. Inject Context Directives & Framework Rules
     let enrichedPrompt = task.prompt;
 
+    // Detect feature-level exemptions
     const allowEmojis = options?.allowEmojis || task.prompt.includes("@cacophony-allow-emojis");
     const allowedImports = new Set<string>([
       ...(activeProfile.defaultAllowedLibraries ?? []),
@@ -149,7 +166,7 @@ export class QueueGroomer {
       }
     }
 
-    const taskDirectives: readonly string[] = [];
+    const taskDirectives: string[] = [];
     if (allowEmojis) {
       taskDirectives.push("Feature Exemption: Emojis permitted where required for feature functionality.");
       groomNotes.push("Feature emoji exemption detected and injected into prompt directives.");
@@ -163,12 +180,14 @@ export class QueueGroomer {
       groomNotes.push(`Injected approved library directives: ${allowedStr}`);
     }
 
+    // Add profile-specific directives
     for (const directive of activeProfile.directives) {
       if (!directive.startsWith("Zero Emojis:")) {
         taskDirectives.push(directive);
       }
     }
 
+    // Add general fallback directives
     const baseDirectives = this.defaultDirectives.filter((d) => !d.startsWith("Zero Emojis:"));
     for (const d of baseDirectives) {
       if (!taskDirectives.some((td) => td.split(":")[0] === d.split(":")[0])) {
@@ -176,6 +195,7 @@ export class QueueGroomer {
       }
     }
 
+    // 3b. Inject Archetype-Specific Directives (Reasoning vs Direct Coder)
     const modelTag = task.modelAssigned || "";
     const archetypeDirective = this.formatPromptForModelArchetype(modelTag);
     if (archetypeDirective) {
@@ -195,7 +215,7 @@ export class QueueGroomer {
 
     const updatedTask: TaskRecord = {
       ...task,
-      focusFiles: focusFilesList,
+      focusFiles: focusFilesList.join(" "),
       testCommand
     };
 
@@ -210,12 +230,17 @@ export class QueueGroomer {
     };
   }
 
+  /**
+   * Formats archetype-specific guidance based on the assigned model family:
+   * - Reasoning models (DeepSeek R1, Qwen Thinking) are instructed to enclose reasoning in <think> tags.
+   * - Direct coder models (Qwen 2.5 Coder, Gemma, CodeLlama) are instructed to output markdown code blocks immediately.
+   */
   public formatPromptForModelArchetype(modelTag: string): string | null {
     if (!modelTag) return null;
     const lower = modelTag.toLowerCase();
 
     if (lower.includes("r1") || lower.includes("think") || lower.includes("reasoning")) {
-      return "Cognitive Reasoning Directive: Enclose your complete strategic thought process, trade-off evaluations, and architectural edge cases inside  tags. Keep internal reasoning concise and under 1,500 tokens before emitting the final markdown code block.";
+      return "Cognitive Reasoning Directive: Enclose your complete strategic thought process, trade-off evaluations, and architectural edge cases inside <think>...</think> tags. Keep internal reasoning concise and under 1,500 tokens before emitting the final markdown code block.";
     }
 
     if (lower.includes("coder") || lower.includes("gemma") || lower.includes("instruct")) {
@@ -225,6 +250,10 @@ export class QueueGroomer {
     return null;
   }
 
+
+  /**
+   * Resolves the monorepo root directory dynamically by searching upward for markers.
+   */
   private getRepoRoot(): string {
     let cur = this.projectDir;
     while (cur !== path.dirname(cur)) {
@@ -240,7 +269,7 @@ export class QueueGroomer {
           const pkg = JSON.parse(fs.readFileSync(pkgJson, "utf8"));
           if (pkg.workspaces) return cur;
         } catch {
-
+          // ignore
         }
       }
       cur = path.dirname(cur);
@@ -248,8 +277,11 @@ export class QueueGroomer {
     return this.projectDir;
   }
 
-  private detectFocusFiles(promptText: string): readonly string[] {
-    const matches: readonly string[] = [];
+  /**
+   * Scans prompt text for file path mentions that exist within the workspace.
+   */
+  private detectFocusFiles(promptText: string): string[] {
+    const matches: string[] = [];
     const pathRegex = /(?:[a-zA-Z0-9_-]+\/)+[a-zA-Z0-9_.-]+\.(?:ts|js|json|html|css|java)/g;
     const repoRoot = this.getRepoRoot();
 
@@ -266,6 +298,9 @@ export class QueueGroomer {
     return matches;
   }
 
+  /**
+   * Determines the most specific package test command given target focus files and stack profile.
+   */
   private scopeTestCommand(focusFiles: readonly string[], profile?: IStackProfile): string | null {
     if (focusFiles.length === 0) return null;
     const firstFile = focusFiles[0]!;
@@ -282,4 +317,45 @@ export class QueueGroomer {
           if (fs.existsSync(candidateDistTest) || fs.existsSync(candidateSrcTest)) {
             return `node --test packages/${pkgName}/dist/tests/${baseName}.test.js`;
           }
-          if (/\.(?:[cm
+          if (/\.(?:[cm]?[jt]sx?)$/i.test(firstFile)) {
+            return `node --check ${firstFile}`;
+          }
+          return null;
+        }
+        if (pkgName === "frontend") {
+          // Frontend test execution uses karma/headless browser which requires display environment
+          // If firstFile is TypeScript/JavaScript, scope to syntax verification instead of full browser test
+          if (/\.(?:[cm]?[jt]sx?)$/i.test(firstFile)) {
+            return `node --check ${firstFile}`;
+          }
+          return null;
+        }
+        return `npm test --workspace=@cacophony/${pkgName} --if-present`;
+      }
+    }
+
+    if (profile?.id === "java-maven" && firstFile.includes("/")) {
+      const moduleCandidate = firstFile.split("/")[0];
+      const pomPath = path.resolve(this.projectDir, moduleCandidate ?? "", "pom.xml");
+      if (fs.existsSync(pomPath)) {
+        return `mvn test -pl ${moduleCandidate}`;
+      }
+    }
+
+    if (profile?.id === "rust" && firstFile.includes("/")) {
+      const pkgCandidate = firstFile.split("/")[0];
+      const cargoPath = path.resolve(this.projectDir, pkgCandidate ?? "", "Cargo.toml");
+      if (fs.existsSync(cargoPath)) {
+        return `cargo test -p ${pkgCandidate}`;
+      }
+    }
+
+    if (profile?.id === "go" && firstFile.includes("/")) {
+      const dirCandidate = path.dirname(firstFile);
+      return `go test ./${dirCandidate}/...`;
+    }
+
+    return null;
+  }
+}
+

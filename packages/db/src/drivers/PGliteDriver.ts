@@ -16,7 +16,7 @@ export class PGliteDriver implements IDatabaseDriver {
     if (this.dataDir) {
       fs.mkdirSync(this.dataDir, { recursive: true });
     }
-    this.lockFile = `${this.dataDir}/pglite.lock`;
+    this.lockFile = this.dataDir ? `${this.dataDir}.lock` : null;
     await this.checkLockFile();
     this.pg = this.dataDir ? new PGlite(this.dataDir) : new PGlite();
     await this.pg.waitReady;
@@ -26,7 +26,13 @@ export class PGliteDriver implements IDatabaseDriver {
     if (!this.pg) return;
     await this.pg.close();
     this.pg = null;
-    fs.unlinkSync(this.lockFile);
+    if (this.lockFile && fs.existsSync(this.lockFile)) {
+      try {
+        fs.unlinkSync(this.lockFile);
+      } catch {
+        // ignore
+      }
+    }
   }
 
   public async query<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<readonly T[]> {
@@ -92,6 +98,7 @@ export class PGliteDriver implements IDatabaseDriver {
   }
 
   private async checkLockFile(): Promise<void> {
+    if (!this.lockFile) return;
     if (fs.existsSync(this.lockFile)) {
       const lockFileContent = fs.readFileSync(this.lockFile, "utf-8");
       const currentTimestamp = Date.now();
@@ -99,13 +106,21 @@ export class PGliteDriver implements IDatabaseDriver {
 
       if (currentTimestamp - lockFileTimestamp > 60 * 1000) {
         // Lock file is stale, remove it
-        fs.unlinkSync(this.lockFile);
+        try {
+          fs.unlinkSync(this.lockFile);
+        } catch {
+          // ignore
+        }
       } else {
         throw new Error("Database connection is already in use by another process.");
       }
     }
 
     // Create a new lock file with the current timestamp
-    fs.writeFileSync(this.lockFile, `${Date.now()}`);
+    try {
+      fs.writeFileSync(this.lockFile, `${Date.now()}`);
+    } catch {
+      // ignore
+    }
   }
 }

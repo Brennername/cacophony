@@ -206,7 +206,7 @@ export class RepoMapViewerComponent {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.nodes();
     return this.nodes().filter(
-      (n) => n.name.toLowerCase().includes(q) || n.filePath.toLowerCase().includes(q)
+      (n) => (n.name && n.name.toLowerCase().includes(q)) || (n.filePath && n.filePath.toLowerCase().includes(q))
     );
   });
 

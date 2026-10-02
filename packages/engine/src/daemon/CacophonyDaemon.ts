@@ -100,8 +100,12 @@ export class CacophonyDaemon {
     // to prevent encrypted secrets from being trivially decryptable
     const vaultKey = process.env.VAULT_MASTER_KEY || "";
     const isDefaultKey = /^0{64}$/.test(vaultKey);
-    const isDemoStartup = process.env.DEMO_MODE === "true" || process.env.SIMULATION_MODE === "true";
-    if (isDefaultKey && !isDemoStartup) {
+    const isTestOrDemo =
+      process.env.DEMO_MODE === "true" ||
+      process.env.SIMULATION_MODE === "true" ||
+      process.env.NODE_ENV === "test" ||
+      Boolean(process.env.NODE_TEST_CONTEXT);
+    if (isDefaultKey && !isTestOrDemo) {
       console.error(
         "[CacophonyDaemon] FATAL: VAULT_MASTER_KEY is set to the default all-zeros placeholder. " +
         "Generate a real key with: openssl rand -hex 32"

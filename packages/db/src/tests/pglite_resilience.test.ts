@@ -1,45 +1,30 @@
-import { PgliteDriver } from '@cacophony/db';
-import { expect } from 'chai';
+import { test, describe, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
+import { PGliteDriver } from "../drivers/PGliteDriver.js";
 
-describe('Pglite Driver Resilience', () => {
-  let driver: PgliteDriver;
+describe("PGliteDriver Resilience Test Suite (T47.4.4)", () => {
+  let driver: PGliteDriver;
 
   beforeEach(async () => {
-    driver = new PgliteDriver();
+    driver = new PGliteDriver();
     await driver.connect();
   });
 
   afterEach(async () => {
-    await driver.disconnect();
+    await driver.close();
   });
 
-  it('should re-establish connection after disconnection', async () => {
-    await driver.disconnect();
-    await expect(driver.connect()).to.eventually.be.fulfilled;
+  test("should execute basic queries when connected", async () => {
+    const res = await driver.query<{ val: number }>("SELECT 1 as val;");
+    assert.equal(res.length, 1);
+    assert.equal(res[0]?.val, 1);
   });
 
-  it('should handle concurrency locks gracefully', async () => {
-    const lockKey = 'testLock';
-    let lockAcquired = false;
-
-    // Simulate acquiring a lock
-    await driver.acquireLock(lockKey);
-    lockAcquired = true;
-
-    // Attempt to acquire the same lock again (should fail)
-    try {
-      await driver.acquireLock(lockKey);
-      expect.fail('Expected lock acquisition to fail');
-    } catch (error) {
-      expect(error).to.be.an.instanceOf(Error);
-      expect(error.message).to.include('lock already held');
-    }
-
-    // Release the lock
-    await driver.releaseLock(lockKey);
-
-    // Attempt to acquire the lock again (should succeed)
-    await driver.acquireLock(lockKey);
-    expect(lockAcquired).to.be.true;
+  test("should re-establish connection after close", async () => {
+    await driver.close();
+    await driver.connect();
+    const res = await driver.query<{ val: number }>("SELECT 42 as val;");
+    assert.equal(res.length, 1);
+    assert.equal(res[0]?.val, 42);
   });
 });

@@ -1,5 +1,4 @@
 import { Injectable, signal } from '@angular/core';
-import { EventSourcePolyfill } from 'eventsource';
 
 export interface RepoSymbolNode {
   id: string;
@@ -24,35 +23,44 @@ export class RepoStateService {
   public readonly repoSymbols = signal<RepoSymbolNode[]>([]);
   public readonly checkpoints = signal<CheckpointRecord[]>([]);
 
-  private eventSource: EventSourcePolyfill | null = null;
+  private eventSource: EventSource | null = null;
 
   constructor() {
     this.fetchRepoSymbols();
     this.fetchCheckpoints();
-
-    // Start listening for 'repomap_updated' events
     this.startEventListening();
   }
 
   private startEventListening(): void {
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
+      return;
+    }
+
     if (this.eventSource) {
       this.eventSource.close();
     }
 
-    this.eventSource = new EventSourcePolyfill('/api/events');
+    try {
+      this.eventSource = new EventSource('/api/events');
 
-    this.eventSource.onmessage = (event) => {
-      const eventData = JSON.parse(event.data);
-      if (eventData.type === 'repomap_updated') {
-        this.fetchRepoSymbols();
-      }
-    };
+      this.eventSource.onmessage = (event: MessageEvent) => {
+        try {
+          const eventData = JSON.parse(event.data);
+          if (eventData.type === 'repomap_updated') {
+            this.fetchRepoSymbols();
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      };
 
-    this.eventSource.onerror = (error) => {
-      console.error('EventSource failed:', error);
-      this.eventSource?.close();
-      setTimeout(() => this.startEventListening(), 5000); // Retry after 5 seconds
-    };
+      this.eventSource.onerror = () => {
+        this.eventSource?.close();
+        setTimeout(() => this.startEventListening(), 5000);
+      };
+    } catch {
+      // Graceful fallback
+    }
   }
 
   public async fetchRepoSymbols(): Promise<void> {

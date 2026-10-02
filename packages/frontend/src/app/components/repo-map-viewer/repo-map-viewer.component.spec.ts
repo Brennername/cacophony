@@ -23,7 +23,8 @@ describe('RepoMapViewerComponent', () => {
       { id: 'sym-4', name: 'SecurityModule' },
       { id: 'sym-5', name: 'UserInterface' }
     ];
-    comp.nodes = mockNodes;
+    fixture.componentRef.setInput('nodes', mockNodes as any);
+    fixture.detectChanges();
 
     // Check initial node count
     expect(comp.filteredNodes().length).toBe(5);
