@@ -664,6 +664,40 @@ export class AutonomousWorkerPipeline {
         );
       }
 
+      // PRE-COMMIT VERIFICATION GATE: Ensure modified package compiles cleanly in worktree
+      if (worktree && targetRel) {
+        let pkgName = "";
+        if (targetRel.startsWith("packages/frontend")) pkgName = "@cacophony/frontend";
+        else if (targetRel.startsWith("packages/engine")) pkgName = "@cacophony/engine";
+        else if (targetRel.startsWith("packages/db")) pkgName = "@cacophony/db";
+        else if (targetRel.startsWith("packages/shared-types")) pkgName = "@cacophony/shared-types";
+        else if (targetRel.startsWith("packages/tools")) pkgName = "@cacophony/tools";
+
+        if (pkgName) {
+          const buildCmd = `npm run build --workspace=${pkgName}`;
+          const buildCheck = await this.sandboxedRunner.run(buildCmd, {
+            cwd: worktree.worktreePath,
+            timeoutMs: 90000,
+            maxBufferBytes: 128 * 1024
+          });
+          if (buildCheck.exitCode !== 0) {
+            const errSummary = (buildCheck.stderr || buildCheck.stdout).slice(0, 500);
+            await this.recordAndEmitStage(
+              taskId,
+              "remediation",
+              "FAILURE",
+              0,
+              `Pre-commit package build check failed (${buildCmd}): ${errSummary}`
+            );
+            await this.rollbackWorkspace(targetAbs, originalExistingContent);
+            if (this.worktreeManager && worktree) {
+              await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+            }
+            return { success: false, tokensPerSec: measuredTps };
+          }
+        }
+      }
+
       // STAGE 6: Pull Request Lifecycle & Auto-Merge Gate
       const mergeStart = Date.now();
       await this.recordAndEmitStage(taskId, "pr_review", "RUNNING");
