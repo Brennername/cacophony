@@ -150,6 +150,21 @@ export class AutonomousWorkerPipeline {
             thinkingDurationMs
           );
           stageId = activeStage.id;
+        } else {
+          // If no running stage was found, create and immediately complete one for auditability
+          const createdId = await this.stageRepo.recordStageStart(taskId, stageName);
+          await this.stageRepo.recordStageCompletion(
+            createdId,
+            stageStatus,
+            logOutput || "",
+            tokensSent,
+            tokensReceived,
+            durationMs,
+            reasoningTranscript,
+            distilledOpinion,
+            thinkingDurationMs
+          );
+          stageId = createdId;
         }
       }
     }
@@ -809,6 +824,12 @@ export class AutonomousWorkerPipeline {
       return { success: prMerged, tokensPerSec: measuredTps };
     } catch (err) {
       console.error(`[AutonomousWorkerPipeline] Execution error for task '${groomed.enrichedPrompt.slice(0, 40)}':`, err);
+      const errMsg = err instanceof Error ? err.stack || err.message : String(err);
+      try {
+        await this.recordAndEmitStage(taskId, "deterministic_scrub", "FAILURE", 0, `Uncaught pipeline execution error: ${errMsg.slice(0, 800)}`);
+      } catch {
+        // non-fatal
+      }
       return { success: false, tokensPerSec: measuredTps };
     } finally {
       if (this.worktreeManager && worktree) {
