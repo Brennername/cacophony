@@ -209,7 +209,7 @@ export class AutonomousWorkerPipeline {
       const targetRel = focusFiles[0];
       const formatter = typeof this.parser.getFormatter === "function" ? this.parser.getFormatter() : null;
       const formatInstruction = formatter
-        ? formatter.getFormatInstruction(true, targetRel)
+        ? formatter.getFormatInstruction(true, targetRel, selectedModel)
         : "[OUTPUT FORMAT REQUIREMENT]: Provide valid code enclosed in markdown code fences.";
       const directives = [...groomed.stackProfile.directives, formatInstruction];
       const context = this.minimizer.assembleContext(
@@ -240,13 +240,15 @@ export class AutonomousWorkerPipeline {
         const targetAbsFile = path.resolve(executionRoot, targetRelFile);
         try {
           const fileStat = await fs.stat(targetAbsFile);
-          if (fileStat.size > 8 * 1024) {
+          if (fileStat.size > 8 * 1024 && (selectedModel.includes("14b") || selectedModel.includes("16b"))) {
             requestedMaxTokens = 8192;
           }
         } catch {
           // File does not exist yet (creating new file)
         }
       }
+      const envMaxPredict = process.env["OLLAMA_NUM_PREDICT"] ? Number(process.env["OLLAMA_NUM_PREDICT"]) : 4096;
+      requestedMaxTokens = Math.min(requestedMaxTokens, envMaxPredict);
 
       let parseResult: {
         readonly code: string;

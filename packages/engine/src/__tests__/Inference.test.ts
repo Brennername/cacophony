@@ -23,23 +23,31 @@ describe("Model Inference & Adaptation Engine", () => {
       assert.ok(instruction.includes("Do NOT use diffs"));
     });
 
-    test("should extract code fences and pick primary code", () => {
+    test("should tailor format instructions to model archetype, withholding think instructions for direct coders", () => {
+      const coderInstruction = formatter.getFormatInstruction(true, "src/index.ts", "qwen2.5-coder:3b");
+      assert.ok(coderInstruction.includes("[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]"));
+      assert.equal(coderInstruction.includes("Once </think> is closed"), false);
+      assert.ok(coderInstruction.includes("Do NOT emit <think> or </think> tags"));
+
+      const reasonerInstruction = formatter.getFormatInstruction(true, "src/index.ts", "deepseek-r1:8b");
+      assert.ok(reasonerInstruction.includes("Once </think> is closed"));
+    });
+
+    test("should cleanly strip orphan </think> tags when extracting code blocks", () => {
       const sampleResponse = `
-Here is your implementation:
 \`\`\`typescript
 export function add(a: number, b: number): number {
   return a + b;
 }
 \`\`\`
-And that concludes the file.
+---
+</think>
 `;
       const blocks = formatter.extractCodeBlocks(sampleResponse);
       assert.equal(blocks.length, 1);
       assert.equal(blocks[0]?.language, "typescript");
       assert.ok(blocks[0]?.code.includes("return a + b;"));
-
-      const primary = formatter.extractPrimaryCode(sampleResponse);
-      assert.ok(primary?.includes("return a + b;"));
+      assert.equal(blocks[0]?.code.includes("</think>"), false);
     });
   });
 
@@ -61,6 +69,14 @@ And that concludes the file.
 
       const correction = parser.buildCorrectionPrompt(result.error!);
       assert.ok(correction.includes("[PARSER ERROR DETECTED - CORRECTION REQUIRED]"));
+    });
+
+    test("should reject missing code fence and not misclassify orphan </think> as completed thinking block", () => {
+      const output = "# Documentation\nSome text\n---\n</think>";
+      const result = parser.validate(output);
+      assert.equal(result.valid, false);
+      assert.ok(result.error?.includes("Missing required markdown code fence"));
+      assert.equal(result.error?.includes("Thinking block completed"), false);
     });
 
     test("should reject lazy placeholder comments", () => {

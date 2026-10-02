@@ -99,4 +99,14 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
     assert.strictEqual(tap.getReasoningTranscript(taskId), "Thinking through strategy...");
     assert.strictEqual(tap.getDemuxedCode(taskId), "function solution() {}");
   });
+
+  it("should cleanly strip orphan </think> tags without leaking into code or reasoning", () => {
+    const demuxer = new ReasoningStreamDemuxer();
+    demuxer.feed("const a = 1;\n</think>\nconst b = 2;");
+    demuxer.flush();
+
+    assert.strictEqual(demuxer.getAccumulatedReasoning(), "");
+    assert.strictEqual(demuxer.getAccumulatedCode(), "const a = 1;\n\nconst b = 2;");
+    assert.strictEqual(demuxer.getAccumulatedCode().includes("</think>"), false);
+  });
 });

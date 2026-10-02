@@ -219,7 +219,7 @@ export class CacophonyDaemon {
     const gitProvider = GitPlatformProviderFactory.createFromEnv();
     const frontierReviewer = new FrontierReviewer({
       inferenceProvider: (this.fallbackRouter ?? primaryInferenceProvider) as any,
-      defaultModel: process.env.FRONTIER_REVIEWER_MODEL || "deepseek-r1:8b"
+      defaultModel: process.env.FRONTIER_REVIEWER_MODEL || process.env.DEFAULT_REVIEWER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M"
     });
 
     const worker = new AutonomousWorkerPipeline({
@@ -350,7 +350,11 @@ export class CacophonyDaemon {
     const { EngineAutoTuner } = await import("../scheduler/EngineAutoTuner.js");
     this.autoTuner = new EngineAutoTuner({
       profileRepo: this.modelProfileRepo,
-      healthRepo: this.healthRepo
+      healthRepo: this.healthRepo,
+      hardwareSpec: {
+        totalVramGb: 16,
+        availableVramGb: 8
+      }
     });
 
     // Run autonomous model profile optimization periodically every 30 minutes

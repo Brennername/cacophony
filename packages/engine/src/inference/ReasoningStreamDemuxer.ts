@@ -37,10 +37,22 @@ export class ReasoningStreamDemuxer {
 
     while (this.pendingBuffer.length > 0) {
       if (!this.inThinkBlock) {
-        // Look for <think> opening tag
+        // Look for <think> opening tag or orphan </think> closing tag
         const openIdx = this.pendingBuffer.indexOf(ReasoningStreamDemuxer.OPEN_TAG);
+        const orphanCloseIdx = this.pendingBuffer.indexOf(ReasoningStreamDemuxer.CLOSE_TAG);
 
         if (openIdx !== -1) {
+          // If an orphan </think> appears before <think>, discard the orphan tag
+          if (orphanCloseIdx !== -1 && orphanCloseIdx < openIdx) {
+            const codePart = this.pendingBuffer.slice(0, orphanCloseIdx);
+            if (codePart.length > 0) {
+              this.accumulatedCode += codePart;
+              chunks.push({ type: "code", content: codePart });
+            }
+            this.pendingBuffer = this.pendingBuffer.slice(orphanCloseIdx + ReasoningStreamDemuxer.CLOSE_TAG.length);
+            continue;
+          }
+
           // Emit any code preceding the open tag
           if (openIdx > 0) {
             const codePart = this.pendingBuffer.slice(0, openIdx);
@@ -51,16 +63,27 @@ export class ReasoningStreamDemuxer {
           // Advance past <think>
           this.pendingBuffer = this.pendingBuffer.slice(openIdx + ReasoningStreamDemuxer.OPEN_TAG.length);
           this.inThinkBlock = true;
+        } else if (orphanCloseIdx !== -1) {
+          // Orphan </think> without an opening <think> tag: emit code before it and discard orphan tag
+          const codePart = this.pendingBuffer.slice(0, orphanCloseIdx);
+          if (codePart.length > 0) {
+            this.accumulatedCode += codePart;
+            chunks.push({ type: "code", content: codePart });
+          }
+          this.pendingBuffer = this.pendingBuffer.slice(orphanCloseIdx + ReasoningStreamDemuxer.CLOSE_TAG.length);
         } else {
-          // Check if buffer ends with a prefix of <think>
+          // Check if buffer ends with a prefix of <think> or </think>
           const prefixMatch = this.getPotentialTagPrefix(this.pendingBuffer, ReasoningStreamDemuxer.OPEN_TAG);
-          if (prefixMatch.length > 0) {
-            const emitLen = this.pendingBuffer.length - prefixMatch.length;
+          const closePrefixMatch = this.getPotentialTagPrefix(this.pendingBuffer, ReasoningStreamDemuxer.CLOSE_TAG);
+          const longerPrefix = prefixMatch.length >= closePrefixMatch.length ? prefixMatch : closePrefixMatch;
+
+          if (longerPrefix.length > 0) {
+            const emitLen = this.pendingBuffer.length - longerPrefix.length;
             if (emitLen > 0) {
               const codePart = this.pendingBuffer.slice(0, emitLen);
               this.accumulatedCode += codePart;
               chunks.push({ type: "code", content: codePart });
-              this.pendingBuffer = prefixMatch;
+              this.pendingBuffer = longerPrefix;
             }
             break; // Wait for next token to disambiguate tag
           }

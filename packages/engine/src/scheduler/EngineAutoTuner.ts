@@ -61,14 +61,22 @@ export class EngineAutoTuner {
       numCtx = 16384;
     }
 
+    // Constrain by explicit environment setting if provided (e.g. OLLAMA_NUM_CTX=8192)
+    const envCtx = process.env["OLLAMA_NUM_CTX"] ? Number(process.env["OLLAMA_NUM_CTX"]) : null;
+    if (envCtx && envCtx > 0) {
+      numCtx = Math.min(numCtx, envCtx);
+    }
+
     // Default prediction limits:
     // Reasoners require larger prediction limits to prevent thoughts cutting off mid-stream
     let numPredict = isReasoner ? 8192 : 4096;
 
     // Truncation-adaptive elevation:
     // If the model frequently truncates before code blocks emerge, raise prediction limit
+    // Strictly capped at 8192 for coders to prevent multi-thousand token runaway timeouts
     if (truncationFrequency > 0) {
-      const elevation = Math.min(16384, numPredict + (truncationFrequency * 2048));
+      const maxPredictCap = isReasoner ? 16384 : 8192;
+      const elevation = Math.min(maxPredictCap, numPredict + (truncationFrequency * 2048));
       numPredict = elevation;
     }
 
@@ -112,8 +120,11 @@ export class EngineAutoTuner {
       if (this.healthRepo) {
         try {
           const health = await this.healthRepo.getProfile(model);
-          if (health && health.totalFailures > 2) {
-            truncationCount = Math.floor(health.totalFailures / 2);
+          // Only elevate prediction tokens when specifically encountering truncation errors,
+          // rather than general execution timeouts or test failures which require tighter token bounds.
+          const customFailures = (health as unknown as { readonly truncationFailures?: number });
+          if (customFailures?.truncationFailures && customFailures.truncationFailures > 2) {
+            truncationCount = Math.floor(customFailures.truncationFailures / 2);
           }
         } catch {
           // Gracefully default truncationCount to 0

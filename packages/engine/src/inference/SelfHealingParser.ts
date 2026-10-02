@@ -59,7 +59,7 @@ export class SelfHealingParser {
         };
       }
 
-      if (rawOutput.includes("</think>") && !rawOutput.includes("```")) {
+      if (rawOutput.includes("<think>") && rawOutput.includes("</think>") && !rawOutput.includes("```")) {
         return {
           valid: false,
           code: null,

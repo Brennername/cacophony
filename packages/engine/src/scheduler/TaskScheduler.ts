@@ -228,6 +228,14 @@ export class TaskScheduler {
         // Guard against assigning a pure reasoning model (deepseek-r1) to non-architect tasks
         if (normalizedAssigned.includes("r1") && role !== "architect" && role !== "reviewer") {
           candidateList = ["qwen2.5-coder:7b", "qwen2.5-coder:14b", "gemma3:4b-it-qat"];
+        } else if (targetTask.failureCount > 0 && role !== "architect") {
+          // If the task previously failed (such as execution timeout or memory exhaustion),
+          // permit fallback to fast lightweight models to unblock pipeline execution.
+          candidateList = [
+            "qwen2.5-coder:3b",
+            "gemma3:4b-it-qat",
+            normalizedAssigned
+          ];
         } else {
           candidateList = [normalizedAssigned];
         }

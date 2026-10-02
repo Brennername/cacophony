@@ -1300,6 +1300,7 @@
   - [x] T77.1.2: Wire ReasoningStreamDemuxer into StreamTapManager emitting dual SSE events: 'reasoning_chunk' for cognitive trace and 'code_chunk' for generated artifacts. [File: packages/engine/src/telemetry/StreamTapManager.ts] [Method: handleTokenStream] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
   - [x] T77.1.3: Measure intra-reasoning token velocity and duration separately from code generation velocity in AutonomousWorkerPipeline. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeGenerationStage] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
   - [x] T77.1.4: Write unit tests verifying that code fences inside thinking tags are not prematurely parsed as executable code and that the demuxer handles split tag boundaries across chunks. [File: packages/engine/src/tests/reasoning_stream_demuxer.test.ts] [Test: npm test -- packages/engine/src/tests/reasoning_stream_demuxer.test.ts]
+  - [x] T77.1.5: Guard against orphan </think> tags in ReasoningStreamDemuxer, AdaptiveOutputFormatter, and SelfHealingParser, and ensure prompt directives in AdaptiveOutputFormatter only instruct reasoning models on </think> blocks. [File: packages/engine/src/inference/AdaptiveOutputFormatter.ts] [Class: AdaptiveOutputFormatter] [Test: npm test -- packages/engine/src/tests/reasoning_stream_demuxer.test.ts]
 
 ### T77.2: Reasoning Trace Persistence & Stage Schema Migration
   - [x] T77.2.1: Author database migration 013_reasoning_transcripts.ts adding reasoning_transcript TEXT and distilled_opinion TEXT columns to task_stages table with SQLite and Postgres cross-dialect compatibility. [File: packages/db/src/migrations/013_reasoning_transcripts.ts] [Test: npm test -- packages/db]
@@ -1385,5 +1386,12 @@
   - [x] T79.5.2: Add 'Auto-Tune Profiles' action button triggering `POST /api/models/profiles/auto-tune` with toast feedback and visual diff of adjusted parameters. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.ts] [Test: npm test]
   - [x] T79.5.3: Integrate tuning controls into `/models` route alongside installed fleet and download terminal. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Test: npm test]
   - [x] T79.5.4: Write frontend unit tests validating form inputs, dirty state tracking, and profile update payload dispatch. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.spec.ts] [Test: npm test]
+
+### T79.6: Host UMA VRAM Governor & Timeout Watchdog Mitigation
+  - [x] T79.6.1: Enforce AbortController cancellation on FrontierReviewer evaluateReview and cap review prompt maxTokens to 1024. [File: packages/engine/src/inference/FrontierReviewer.ts] [Class: FrontierReviewer] [Test: npm --prefix packages/engine test]
+  - [x] T79.6.2: Configure EngineAutoTuner hardwareSpec for 8GB UMA APU architecture, clamp context window to OLLAMA_NUM_CTX, and disallow non-truncation failure inflation. [File: packages/engine/src/scheduler/EngineAutoTuner.ts] [Class: EngineAutoTuner] [Test: npm --prefix packages/engine test]
+  - [x] T79.6.3: Implement dynamic lightweight model fallback in TaskScheduler for previously failed tasks (qwen2.5-coder:3b, gemma3:4b-it-qat). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Class: TaskScheduler] [Test: npm --prefix packages/engine test]
+  - [x] T79.6.4: Increase GiteaApiClient mergePullRequest retry budget to 10 attempts with arithmetic backoff to eliminate 405 async race conditions. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Class: GiteaApiClient] [Test: npm --prefix packages/engine test]
+
 
 

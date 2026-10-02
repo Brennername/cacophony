@@ -56,32 +56,38 @@ export class FrontierReviewer {
       try {
         const prompt = this.buildReviewPrompt(context.title, diffText, testSummary);
         const reviewTimeoutMs = this.reviewTimeoutMs;
+        const abortController = new AbortController();
         let timeoutHandle: NodeJS.Timeout | null = null;
         const timeoutPromise = new Promise<never>((_, reject) => {
           timeoutHandle = setTimeout(() => {
+            abortController.abort(new Error(`Frontier review generation timed out after ${reviewTimeoutMs}ms`));
             reject(new Error(`Frontier review generation timed out after ${reviewTimeoutMs}ms`));
           }, reviewTimeoutMs);
         });
 
-        const generatePromise = this.inferenceProvider.generate({
-          model: this.defaultModel,
-          messages: [
-            {
-              role: "system",
-              content: "You are a senior principal software architect conducting an automated pull request review."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.1
-        });
+        try {
+          const generatePromise = this.inferenceProvider.generate({
+            model: this.defaultModel,
+            messages: [
+              {
+                role: "system",
+                content: "You are a senior principal software architect conducting an automated pull request review."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            temperature: 0.1,
+            maxTokens: 1024,
+            signal: abortController.signal
+          });
 
-        const response = await Promise.race([generatePromise, timeoutPromise]);
-        if (timeoutHandle) clearTimeout(timeoutHandle);
-
-        return this.parseReviewResponse(response.content, diffText);
+          const response = await Promise.race([generatePromise, timeoutPromise]);
+          return this.parseReviewResponse(response.content, diffText);
+        } finally {
+          if (timeoutHandle) clearTimeout(timeoutHandle);
+        }
       } catch (err) {
         console.warn("[FrontierReviewer] Provider review invocation failed, applying heuristic evaluation:", err);
       }

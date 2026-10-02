@@ -165,7 +165,7 @@ export class GiteaApiClient {
     mergeReq: MergePullRequestRequest
   ): Promise<void> {
     this.guard?.assertScope("repository", "write");
-    const maxRetries = 5;
+    const maxRetries = 10;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         await this.request<void>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
@@ -177,7 +177,7 @@ export class GiteaApiClient {
         const errMsg = err instanceof Error ? err.message : String(err);
         // Gitea returns 405 Method Not Allowed ("Please try again later") while conflict checking is in progress
         if (errMsg.includes("405") && errMsg.includes("Please try again later") && attempt < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
           continue;
         }
         throw err;

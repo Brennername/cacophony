@@ -18,18 +18,35 @@ export interface ExtractedCodeBlock {
  */
 export class AdaptiveOutputFormatter {
   /**
-   * Generates output format instruction directives tailored to model tier.
+   * Generates output format instruction directives tailored to model tier and archetype.
    */
-  public getFormatInstruction(isLocalModel: boolean, focusFile?: string): string {
+  public getFormatInstruction(isLocalModel: boolean, focusFile?: string, modelTag?: string): string {
     if (isLocalModel) {
       const fileTarget = focusFile ? ` for file '${focusFile}'` : "";
-      return [
+      const isReasoner = modelTag ? (
+        modelTag.toLowerCase().includes("r1") ||
+        modelTag.toLowerCase().includes("think") ||
+        modelTag.toLowerCase().includes("reason")
+      ) : false;
+
+      const lines = [
         "[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]:",
         `Provide the COMPLETE, fully working file content${fileTarget}.`,
         "Do NOT use diffs, search/replace blocks, ellipses, or placeholder comments (e.g. '// ... existing code ...').",
-        "Enclose the entire code inside a single standard markdown code block: ```<language> ... ```.",
-        "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the complete implementation."
-      ].join("\n");
+        "Enclose the entire code inside a single standard markdown code block: ```<language> ... ```."
+      ];
+
+      if (isReasoner) {
+        lines.push(
+          "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the complete implementation."
+        );
+      } else {
+        lines.push(
+          "Your response should be only the code block or brief explanation followed by the code block. Do NOT emit <think> or </think> tags."
+        );
+      }
+
+      return lines.join("\n");
     }
 
     // Frontier model instructions
@@ -56,6 +73,9 @@ export class AdaptiveOutputFormatter {
     if (unclosedThinkIdx !== -1) {
       cleaned = cleaned.slice(0, unclosedThinkIdx).trim();
     }
+
+    // Strip any orphan </think> or <think> tags emitted by confused or non-reasoning models
+    cleaned = cleaned.replace(/<\/?think>/gi, "").trim();
 
     // If all content was inside think tags but code fences exist inside, extract from rawContent
     if (!cleaned && rawContent.includes("```")) {
