@@ -1,16 +1,29 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ProcessesViewComponent } from './processes-view.component';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { SSEService } from '@cacophony/shared-types';
 
-/**
- * TestingViewComponent
- *
- * Dedicated route view for running tests, subprocess inspections, and deterministic verification.
- */
 @Component({
   selector: 'app-testing-view',
-  standalone: true,
-  imports: [CommonModule, ProcessesViewComponent],
-  template: `<app-processes-view />`
+  templateUrl: './testing-view.component.html',
+  styleUrls: ['./testing-view.component.css']
 })
-export class TestingViewComponent {}
+export class TestingViewComponent implements OnInit, OnDestroy {
+  testOutput: string[] = [];
+  private sseSubscription: Subscription;
+
+  constructor(private sseService: SSEService) {}
+
+  ngOnInit(): void {
+    this.sseSubscription = this.sseService.connect('test_output').subscribe((event) => {
+      if (event.data) {
+        this.testOutput.push(event.data);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.sseSubscription) {
+      this.sseSubscription.unsubscribe();
+    }
+  }
+}
