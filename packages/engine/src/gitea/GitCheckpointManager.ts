@@ -1,31 +1,44 @@
+import { TaskId, StageName } from '@cacophony/shared-types';
 import { GitWorktreeManager } from '../gitea/GitWorktreeManager';
-import { TaskScheduler } from '../scheduler/TaskScheduler';
+
+const CHECKPOINT_REF_PREFIX = 'refs/cacophony/checkpoints/';
 
 export class GitCheckpointManager {
   private gitWorktreeManager: GitWorktreeManager;
-  private taskScheduler: TaskScheduler;
 
-  constructor(gitWorktreeManager: GitWorktreeManager, taskScheduler: TaskScheduler) {
+  constructor(gitWorktreeManager: GitWorktreeManager) {
     this.gitWorktreeManager = gitWorktreeManager;
-    this.taskScheduler = taskScheduler;
   }
 
   /**
-   * Reverts the workspace to a specific checkpoint.
-   * @param checkpointId - The ID of the checkpoint to revert to.
+   * Stores a checkpoint reference under the hidden namespace.
+   * @param taskId - The ID of the task associated with the checkpoint.
+   * @param stageName - The name of the stage associated with the checkpoint.
+   * @param ref - The reference to store as a checkpoint.
    */
-  async revertToCheckpoint(checkpointId: string): Promise<void> {
-    try {
-      // Checkout the snapshot into the workspace
-      await this.gitWorktreeManager.checkoutSnapshot(checkpointId);
+  public async storeCheckpointRef(taskId: TaskId, stageName: StageName, ref: string): Promise<void> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}${taskId}-${stageName}`;
+    await this.gitWorktreeManager.setGitRef(checkpointRef, ref);
+  }
 
-      // Schedule a task to update any necessary metadata or configurations
-      this.taskScheduler.scheduleTask('updateMetadata', { checkpointId });
+  /**
+   * Retrieves a checkpoint reference from the hidden namespace.
+   * @param taskId - The ID of the task associated with the checkpoint.
+   * @param stageName - The name of the stage associated with the checkpoint.
+   * @returns The checkpoint reference if found; otherwise, undefined.
+   */
+  public async getCheckpointRef(taskId: TaskId, stageName: StageName): Promise<string | undefined> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}${taskId}-${stageName}`;
+    return this.gitWorktreeManager.getGitRef(checkpointRef);
+  }
 
-      console.log(`Workspace reverted to checkpoint ${checkpointId}`);
-    } catch (error) {
-      console.error(`Failed to revert workspace to checkpoint ${checkpointId}:`, error);
-      throw error;
-    }
+  /**
+   * Deletes a checkpoint reference from the hidden namespace.
+   * @param taskId - The ID of the task associated with the checkpoint.
+   * @param stageName - The name of the stage associated with the checkpoint.
+   */
+  public async deleteCheckpointRef(taskId: TaskId, stageName: StageName): Promise<void> {
+    const checkpointRef = `${CHECKPOINT_REF_PREFIX}${taskId}-${stageName}`;
+    await this.gitWorktreeManager.deleteGitRef(checkpointRef);
   }
 }
