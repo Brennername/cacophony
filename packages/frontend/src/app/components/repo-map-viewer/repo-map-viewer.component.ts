@@ -1,4 +1,4 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface RepoSymbolNode {
@@ -14,7 +14,7 @@ export interface RepoSymbolNode {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="repomap-container">
+    <div class="repomap-container" (wheel)="onWheel($event)">
       <div class="repomap-toolbar">
         <span class="toolbar-title">Repository Architectural Graph</span>
         <div class="search-box">
@@ -28,7 +28,7 @@ export interface RepoSymbolNode {
         </div>
       </div>
 
-      <div class="repomap-viewport">
+      <div class="repomap-viewport" (click)="onClick($event)">
         <svg class="graph-svg" viewBox="0 0 800 400">
           <!-- Render connecting edges -->
           @for (node of filteredNodes(); track node.id; let idx = $index) {
@@ -171,30 +171,25 @@ export interface RepoSymbolNode {
   `]
 })
 export class RepoMapViewerComponent {
-  public readonly nodes = input<RepoSymbolNode[]>([
-    { id: 'sym-1', name: 'TaskScheduler', kind: 'class', filePath: 'packages/engine/src/scheduler/TaskScheduler.ts', centrality: 0.9 },
-    { id: 'sym-2', name: 'ContextManager', kind: 'class', filePath: 'packages/engine/src/context/ContextManager.ts', centrality: 0.85 },
-    { id: 'sym-3', name: 'SymbolExtractor', kind: 'class', filePath: 'packages/engine/src/repomap/SymbolExtractor.ts', centrality: 0.7 },
-    { id: 'sym-4', name: 'SessionManager', kind: 'class', filePath: 'packages/engine/src/inference/SessionManager.ts', centrality: 0.75 },
-    { id: 'sym-5', name: 'TelemetryPoller', kind: 'class', filePath: 'packages/engine/src/telemetry/TelemetryPoller.ts', centrality: 0.65 }
-  ]);
-
-  public readonly nodeSelected = output<RepoSymbolNode>();
+  @Input() nodes: RepoSymbolNode[] = [];
+  @Output() nodeSelected = new EventEmitter<RepoSymbolNode>();
 
   public readonly searchQuery = signal<string>('');
   public readonly selectedNodeId = signal<string | null>(null);
+  public readonly panOffsetX = signal<number>(0);
+  public readonly panOffsetY = signal<number>(0);
 
   public readonly filteredNodes = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
-    if (!q) return this.nodes();
-    return this.nodes().filter(
+    if (!q) return this.nodes;
+    return this.nodes.filter(
       (n) => n.name.toLowerCase().includes(q) || n.filePath.toLowerCase().includes(q)
     );
   });
 
   public readonly selectedNode = computed(() => {
     const id = this.selectedNodeId();
-    return this.nodes().find((n) => n.id === id) || null;
+    return this.nodes.find((n) => n.id === id) || null;
   });
 
   public onSearchInput(event: Event): void {
@@ -225,5 +220,24 @@ export class RepoMapViewerComponent {
       case 'method': return '#a855f7';
       default: return '#64748b';
     }
+  }
+
+  public onWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -1 : 1;
+    this.panOffsetX.update(offset => offset + delta * 5);
+    this.panOffsetY.update(offset => offset + delta * 5);
+  }
+
+  public onClick(event: MouseEvent): void {
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    this.panOffsetX.update(offset => offset + (centerX - offsetX));
+    this.panOffsetY.update(offset => offset + (centerY - offsetY));
   }
 }
