@@ -15,10 +15,23 @@ export type BanditPolicy = BanditPolicyType;
 export const BanditPolicySchema = BanditPolicyTypeSchema;
 
 export type Action = string | Record<string, any>;
+export type BanditAction = Action;
+
+export interface EpsilonGreedyConfig {
+  readonly initialEpsilon?: number; // default 0.2
+  readonly minEpsilon?: number;     // default 0.05
+  readonly decayRate?: number;      // default 0.995
+}
+
+export const EpsilonGreedyConfigSchema = z.object({
+  initialEpsilon: z.number().min(0).max(1).optional().default(0.2),
+  minEpsilon: z.number().min(0).max(1).optional().default(0.05),
+  decayRate: z.number().min(0).max(1).optional().default(0.995),
+});
 
 export interface IBanditPolicy {
   readonly policyType?: BanditPolicyType;
-  selectArm?(arms: readonly BanditArmRecord[]): BanditArmRecord | string;
+  selectArm?(arms: readonly BanditArmRecord[]): BanditArmRecord | string | BanditDispatchOutcome;
   updateReward?(armId: string, reward: number): void;
   [key: string]: any;
 }

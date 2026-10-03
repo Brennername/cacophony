@@ -455,10 +455,10 @@
   - [ ] T54.5.4: Write frontend unit tests verifying diff drawer opens on checkpoint selection and renders diff text. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.spec.ts] [Test: npm test]
 
 ### T54.6: Checkpoint Retention Policy & Garbage Collection
-  - [ ] T54.6.1: Implement GitCheckpointManager.pruneOldCheckpoints(maxAgeDays: number, maxCount: number) cleaning old refs. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: pruneOldCheckpoints] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
-  - [ ] T54.6.2: Add automated checkpoint garbage collection task to daily maintenance schedule in CacophonyDaemon. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: runDailyMaintenance] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
-  - [ ] T54.6.3: Expose manual checkpoint pruning endpoint POST /api/checkpoints/prune. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/checkpoints/prune] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T54.6.4: Write unit tests verifying that pruning deletes refs older than retention window while preserving recent checkpoints. [File: packages/engine/src/tests/checkpoint_pruning.test.ts] [Test: npm test -- packages/engine/src/tests/checkpoint_pruning.test.ts]
+  - [x] T54.6.1: Implement GitCheckpointManager.pruneOldCheckpoints(maxAgeDays: number, maxCount: number) cleaning old refs. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: pruneOldCheckpoints] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.6.2: Add automated checkpoint garbage collection task to daily maintenance schedule in CacophonyDaemon. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: runDailyMaintenance] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T54.6.3: Expose manual checkpoint pruning endpoint POST /api/checkpoints/prune. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/checkpoints/prune] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T54.6.4: Write unit tests verifying that pruning deletes refs older than retention window while preserving recent checkpoints. [File: packages/engine/src/tests/checkpoint_pruning.test.ts] [Test: npm test -- packages/engine/src/tests/checkpoint_pruning.test.ts]
 
 ---
 
@@ -686,10 +686,10 @@
   - [ ] T60.3.4: Write unit tests verifying that unvisited arms receive infinite priority and high-variance arms are adequately explored. [File: packages/engine/src/tests/ucb1_policy.test.ts] [Test: npm test -- packages/engine/src/tests/ucb1_policy.test.ts]
 
 ### T60.4: Epsilon-Greedy Policy Engine with Exponential Decay Schedule
-  - [ ] T60.4.1: Implement EpsilonGreedyPolicy selecting random exploration arm with probability epsilon, and highest empirical mean arm with probability 1 - epsilon. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Class: EpsilonGreedyPolicy] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
-  - [ ] T60.4.2: Implement exponential epsilon decay: epsilon = max(minEpsilon, initialEpsilon * (decayRate ^ epoch)) allowing gradual shift from exploration to exploitation. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Method: stepEpoch] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
-  - [ ] T60.4.3: Expose initialEpsilon (default 0.2), minEpsilon (default 0.05), and decayRate (default 0.995) as typed configuration options. [File: packages/shared-types/src/bandit.ts] [Type: EpsilonGreedyConfig] [Test: npm test]
-  - [ ] T60.4.4: Write unit tests verifying epsilon decreases over epochs and exploitation probability increases as expected. [File: packages/engine/src/tests/epsilon_greedy.test.ts] [Test: npm test -- packages/engine/src/tests/epsilon_greedy.test.ts]
+  - [x] T60.4.1: Implement EpsilonGreedyPolicy selecting random exploration arm with probability epsilon, and highest empirical mean arm with probability 1 - epsilon. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Class: EpsilonGreedyPolicy] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.4.2: Implement exponential epsilon decay: epsilon = max(minEpsilon, initialEpsilon * (decayRate ^ epoch)) allowing gradual shift from exploration to exploitation. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Method: stepEpoch] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.4.3: Expose initialEpsilon (default 0.2), minEpsilon (default 0.05), and decayRate (default 0.995) as typed configuration options. [File: packages/shared-types/src/bandit.ts] [Type: EpsilonGreedyConfig] [Test: npm test]
+  - [x] T60.4.4: Write unit tests verifying epsilon decreases over epochs and exploitation probability increases as expected. [File: packages/engine/src/tests/epsilon_greedy.test.ts] [Test: npm test -- packages/engine/src/tests/epsilon_greedy.test.ts]
 
 ### T60.5: REST API: GET/PUT /api/bandit/policy and GET /api/bandit/arms Real Telemetry Wireup
   - [ ] T60.5.1: Implement GET /api/bandit/arms returning live arm statistics (alpha, beta, winRate, totalRuns, avgTks, status) queried directly from database. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/bandit/arms] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
@@ -791,9 +791,9 @@
 *RDF Category: orchestration*
 
 ### T63.1: Automated Remediation Stage in AutonomousWorkerPipeline
-  - [ ] T63.1.1: Add 'remediation' stage to AutonomousWorkerPipeline pipeline execution sequence between 'test_execution' and 'review'. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Property: stages] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-  - [ ] T63.1.2: Trigger remediation stage automatically whenever test_execution fails with non-zero exit code or assertion failure. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleTestFailure] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-  - [ ] T63.1.3: Update task status to 'REMEDIATING' and broadcast SSE stage transition event to connected frontend clients. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: broadcastStageTransition] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T63.1.1: Add 'remediation' stage to AutonomousWorkerPipeline pipeline execution sequence between 'test_execution' and 'review'. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Property: stages] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T63.1.2: Trigger remediation stage automatically whenever test_execution fails with non-zero exit code or assertion failure. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleTestFailure] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T63.1.3: Update task status to 'REMEDIATING' and broadcast SSE stage transition event to connected frontend clients. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: broadcastStageTransition] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
   - [ ] T63.1.4: Write integration tests verifying that failing test automatically advances task into REMEDIATING status. [File: packages/engine/src/tests/remediation_pipeline.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_pipeline.test.ts]
 
 ### T63.2: Compiler Diagnostic Parser Extracting TypeScript (tsc) Diagnostic Objects
@@ -809,9 +809,9 @@
   - [ ] T63.3.4: Write unit tests verifying remediation prompt contains all compiler diagnostics and exact failing code lines. [File: packages/engine/src/tests/remediation_prompt.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_prompt.test.ts]
 
 ### T63.4: Remediation Attempt Counter and Circuit Breaker (Max 2 Attempts)
-  - [ ] T63.4.1: Track remediationAttempts counter in task execution context; enforce maxRemediationAttempts ceiling of 2. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeRemediation] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
-  - [ ] T63.4.2: When remediation count reaches 2 without passing tests, trigger circuit breaker: stop remediation and fail task with REMEDIATION_EXHAUSTED. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: checkRemediationBreaker] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
-  - [ ] T63.4.3: Prevent infinite token expenditure on fundamentally unviable prompts or corrupted task specifications. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleRemediationExhaustion] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
+  - [x] T63.4.1: Track remediationAttempts counter in task execution context; enforce maxRemediationAttempts ceiling of 2. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeRemediation] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
+  - [x] T63.4.2: When remediation count reaches 2 without passing tests, trigger circuit breaker: stop remediation and fail task with REMEDIATION_EXHAUSTED. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: checkRemediationBreaker] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
+  - [x] T63.4.3: Prevent infinite token expenditure on fundamentally unviable prompts or corrupted task specifications. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleRemediationExhaustion] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
   - [ ] T63.4.4: Write unit tests simulating repeated test failure verifying pipeline halts remediation after 2 attempts and flags task failed. [File: packages/engine/src/tests/remediation_circuit_breaker.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_circuit_breaker.test.ts]
 
 ### T63.5: Remediation Success Telemetry Tracking per Model and Error Category
@@ -822,8 +822,8 @@
 
 ### T63.6: Fast Remediation Pre-Flight Check via Compiler Diagnostic Re-Verification
   - [ ] T63.6.1: Run instant in-memory TypeScript diagnostic check on remediated code before executing full test suite to fail fast on syntax errors. [File: packages/engine/src/testing/DiagnosticPreFlightChecker.ts] [Class: DiagnosticPreFlightChecker] [Test: npm test -- packages/engine/src/tests/preflight_checker.test.ts]
-  - [ ] T63.6.2: Abort and re-prompt immediately if remediated code introduces new syntax errors, saving test runner subprocess execution time. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePreFlight] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-  - [ ] T63.6.3: Pass valid remediated code forward to 'test_execution' stage for complete verification. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: advanceToTestExecution] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T63.6.2: Abort and re-prompt immediately if remediated code introduces new syntax errors, saving test runner subprocess execution time. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePreFlight] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T63.6.3: Pass valid remediated code forward to 'test_execution' stage for complete verification. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: advanceToTestExecution] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
   - [ ] T63.6.4: Write unit tests verifying pre-flight check catches obvious syntax mistakes without launching full test suite. [File: packages/engine/src/tests/preflight_checker.test.ts] [Test: npm test -- packages/engine/src/tests/preflight_checker.test.ts]
 
 ---

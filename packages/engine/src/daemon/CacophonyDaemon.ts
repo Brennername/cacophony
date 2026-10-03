@@ -376,19 +376,10 @@ export class CacophonyDaemon {
       }
     }, 1800_000);
 
-    // Run periodic database maintenance (VACUUM ANALYZE, WAL compaction, telemetry partitioning) every hour
+    // Run periodic database maintenance and checkpoint garbage collection
     this.pruningTimer = setInterval(async () => {
       if (this.isRunning) {
-        try {
-          await this.maintenanceService.runVacuumAndCompaction();
-          await this.maintenanceService.partitionAndArchiveOldTelemetry();
-          const metrics = await this.maintenanceService.getStorageMetrics();
-          if (metrics.isOverThreshold) {
-            process.stderr.write(`[storage-warning] Database directory size ${metrics.totalSizeMegabytes}MB exceeds threshold ${metrics.thresholdBytes / (1024 * 1024)}MB\n`);
-          }
-        } catch {
-          // ignore transient maintenance lock contention
-        }
+        await this.runDailyMaintenance();
       }
     }, 3600_000);
 
@@ -515,6 +506,35 @@ export class CacophonyDaemon {
 
   public getAutoTuner(): import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined {
     return this.autoTuner;
+  }
+
+  /**
+   * Executes daily background maintenance:
+   * 1. Database VACUUM ANALYZE and WAL compaction.
+   * 2. Partitioning and telemetry archiving.
+   * 3. Pruning expired Git shadow checkpoints.
+   */
+  public async runDailyMaintenance(): Promise<void> {
+    try {
+      await this.maintenanceService.runVacuumAndCompaction();
+      await this.maintenanceService.partitionAndArchiveOldTelemetry();
+      const metrics = await this.maintenanceService.getStorageMetrics();
+      if (metrics.isOverThreshold) {
+        process.stderr.write(
+          `[storage-warning] Database directory size ${metrics.totalSizeMegabytes}MB exceeds threshold ${metrics.thresholdBytes / (1024 * 1024)}MB\n`
+        );
+      }
+    } catch {
+      // ignore transient maintenance lock contention
+    }
+
+    try {
+      const { GitCheckpointManager } = await import("../gitea/GitCheckpointManager.js");
+      const checkpointManager = new GitCheckpointManager(process.cwd());
+      await checkpointManager.pruneOldCheckpoints(14, 50);
+    } catch {
+      // non-fatal checkpoint pruning error
+    }
   }
 
   private async handleCommand(command: string, params?: Record<string, unknown>): Promise<unknown> {

@@ -113,4 +113,56 @@ export class GitCheckpointManager {
       // Ignored
     }
   }
+
+  /**
+   * Prunes shadow checkpoint references that are older than maxAgeDays or exceed maxCount.
+   *
+   * @param maxAgeDays The maximum age in days before a checkpoint ref is pruned.
+   * @param maxCount The maximum number of recent checkpoints to retain.
+   * @returns The number of pruned checkpoint references.
+   */
+  public async pruneOldCheckpoints(maxAgeDays: number, maxCount: number): Promise<number> {
+    try {
+      const pattern = `${CHECKPOINT_REF_PREFIX}/*`;
+      const format = "%(refname) %(creatordate:iso8601)";
+      const { stdout } = await execAsync(
+        `git for-each-ref --format="${format}" --sort=-creatordate ${pattern}`,
+        { cwd: this.repositoryRoot }
+      );
+
+      const lines = stdout.trim().split("\n").filter(Boolean);
+      if (lines.length === 0) {
+        return 0;
+      }
+
+      const now = Date.now();
+      const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+      let prunedCount = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]!;
+        const [refname = "", ...dateParts] = line.split(" ");
+        if (!refname) continue;
+
+        const dateStr = dateParts.join(" ");
+        const refTime = dateStr ? new Date(dateStr).getTime() : now;
+        const isOverAge = now - refTime > maxAgeMs;
+        const isOverCount = i >= maxCount;
+
+        if (isOverAge || isOverCount) {
+          try {
+            await execAsync(`git update-ref -d ${refname}`, { cwd: this.repositoryRoot });
+            prunedCount++;
+          } catch {
+            // Ignored per-ref deletion error
+          }
+        }
+      }
+
+      return prunedCount;
+    } catch (err) {
+      console.warn("[GitCheckpointManager] Error pruning old checkpoints:", err);
+      return 0;
+    }
+  }
 }

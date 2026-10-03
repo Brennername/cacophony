@@ -5,15 +5,16 @@ import ts from "typescript";
  *
  * Implements Incremental Code Preservation under SOLID principles:
  * When language models generate updates for large existing classes (e.g. AutonomousWorkerPipeline,
- * CacophonyHttpServer), they often output only the newly implemented method or a partial class
- * with stubbed/omitted existing methods.
+ * CacophonyHttpServer), they often output only the newly implemented method, a route handler,
+ * or a partial class with stubbed/omitted existing methods.
  *
  * This merger compares AST nodes of the original file and newly generated code:
  * 1. Preserves all existing methods, properties, and constructors in the original class.
- * 2. Injects any newly created methods or replaces modified methods.
+ * 2. Injects any newly created methods or updates existing methods in place without duplicates.
  * 3. Injects any new import declarations that do not yet exist in the original file.
  * 4. Injects any new top-level exported functions, interfaces, or type aliases.
  * 5. Rejects placeholder stubs like '/* existing implementation * /' to protect working code.
+ * 6. Hard safety guard: Never overwrites a large existing file with a truncated or broken stub.
  */
 export class IncrementalClassMerger {
   /**
@@ -41,7 +42,10 @@ export class IncrementalClassMerger {
       origSf = ts.createSourceFile("original.ts", originalCode, ts.ScriptTarget.ES2022, true);
       newSf = ts.createSourceFile("new.ts", newCode, ts.ScriptTarget.ES2022, true);
     } catch {
-      // If AST parsing fails, fallback to newCode
+      // If AST parsing fails and originalCode is substantial, protect originalCode
+      if (originalCode.length > 500) {
+        return originalCode;
+      }
       return newCode;
     }
 
@@ -69,8 +73,94 @@ export class IncrementalClassMerger {
       }
     }
 
+    // Fallback 1: If original has exactly one class and new code defined a single class with a different name
+    if (!matchingClassName && origClasses.size === 1) {
+      const origClassName = Array.from(origClasses.keys())[0]!;
+      if (newClasses.size === 1) {
+        const candidateNewClass = Array.from(newClasses.values())[0]!;
+        newClasses.set(origClassName, candidateNewClass);
+        matchingClassName = origClassName;
+      } else if (newClasses.size === 0) {
+        // Fallback 2: Model emitted methods or code without a class wrapper
+        // Separate imports from body
+        const lines = newCode.split("\n");
+        const importLines: string[] = [];
+        const bodyLines: string[] = [];
+        for (const line of lines) {
+          const t = line.trim();
+          if (t.startsWith("import ") || t.startsWith("import{") || t.startsWith("export type ") || t.startsWith("export interface ")) {
+            importLines.push(line);
+          } else {
+            bodyLines.push(line);
+          }
+        }
+
+        // Check if body is an HTTP route block for CacophonyHttpServer
+        const bodyText = bodyLines.join("\n").trim();
+        if (
+          origClassName === "CacophonyHttpServer" &&
+          (bodyText.includes("url.pathname") || bodyText.includes("req.method"))
+        ) {
+          // Look for either production marker or fallback serveStatic marker
+          const markers = [
+            "// 5. Static Angular Frontend Serving",
+            "this.serveStatic(",
+            "// Static asset fallback"
+          ];
+          let markerIdx = -1;
+          for (const m of markers) {
+            markerIdx = originalCode.indexOf(m);
+            if (markerIdx !== -1) {
+              break;
+            }
+          }
+
+          if (markerIdx !== -1) {
+            let mergedWithRoute =
+              originalCode.slice(0, markerIdx) +
+              "    // Autonomous Injected Route Handler\n    " +
+              bodyText +
+              "\n\n    " +
+              originalCode.slice(markerIdx);
+
+            if (importLines.length > 0) {
+              mergedWithRoute = importLines.join("\n") + "\n" + mergedWithRoute;
+            }
+            return mergedWithRoute;
+          }
+        }
+
+        // Try wrapping body in class declaration only if body looks like class members
+        const looksLikeClassMember =
+          bodyText.startsWith("public ") ||
+          bodyText.startsWith("private ") ||
+          bodyText.startsWith("protected ") ||
+          bodyText.startsWith("async ");
+
+        if (looksLikeClassMember) {
+          const wrappedCode = `${importLines.join("\n")}\nclass ${origClassName} {\n${bodyLines.join("\n")}\n}`;
+          try {
+            const wrappedSf = ts.createSourceFile("wrapped.ts", wrappedCode, ts.ScriptTarget.ES2022, true);
+            for (const stmt of wrappedSf.statements) {
+              if (ts.isClassDeclaration(stmt)) {
+                newClasses.set(origClassName, stmt);
+                matchingClassName = origClassName;
+                newSf = wrappedSf;
+                break;
+              }
+            }
+          } catch {
+            // Wrap failed
+          }
+        }
+      }
+    }
+
     if (!matchingClassName) {
-      // If new code is a pure standalone file or does not overlap existing classes, return newCode
+      // Safety guard: If original file is large and newCode is small/fragmented, NEVER destroy originalCode
+      if (originalCode.length > 2000 && newCode.length < originalCode.length * 0.7) {
+        return originalCode;
+      }
       return newCode;
     }
 
@@ -85,17 +175,19 @@ export class IncrementalClassMerger {
       }
     }
 
-    // If new class has MORE or equal members and no placeholders, newCode might be a full replacement
+    // Check if new class has placeholder comments
     const isStubbed =
       newCode.includes("existing implementation") ||
       newCode.includes("existing code") ||
       newCode.includes("// ...") ||
       newCode.includes("/* ... */");
 
-    const newMembersToAdd: string[] = [];
+    const newMembersToAppend: string[] = [];
+    const membersToReplace = new Map<ts.ClassElement, string>();
+
     for (const m of newClass.members) {
       if (ts.isConstructorDeclaration(m)) {
-        continue; // Keep original constructor
+        continue; // Always preserve original constructor
       }
 
       const memberText = m.getText(newSf).trim();
@@ -103,7 +195,8 @@ export class IncrementalClassMerger {
       if (
         memberText.includes("existing implementation") ||
         memberText.includes("existing code") ||
-        memberText.includes("// ...")
+        memberText.includes("// ...") ||
+        memberText.includes("/* ... */")
       ) {
         continue;
       }
@@ -112,13 +205,13 @@ export class IncrementalClassMerger {
         const memberName = m.name.text;
         if (!origMembersByName.has(memberName)) {
           // Genuinely new member
-          newMembersToAdd.push(memberText);
-        } else if (isStubbed || newClass.members.length < origClass.members.length / 2) {
-          // If newCode is a partial class update and member changed, replace it
+          newMembersToAppend.push(memberText);
+        } else if (isStubbed || newClass.members.length < origClass.members.length) {
+          // Member was modified in partial class: replace in place
           const origMember = origMembersByName.get(memberName)!;
           const origText = origMember.getText(origSf).trim();
           if (origText !== memberText) {
-            newMembersToAdd.push(memberText);
+            membersToReplace.set(origMember, memberText);
           }
         }
       }
@@ -164,26 +257,42 @@ export class IncrementalClassMerger {
       }
     }
 
-    if (newMembersToAdd.length === 0 && newImportsToAdd.length === 0 && newTopLevelToAdd.length === 0) {
+    if (
+      newMembersToAppend.length === 0 &&
+      membersToReplace.size === 0 &&
+      newImportsToAdd.length === 0 &&
+      newTopLevelToAdd.length === 0
+    ) {
       return originalCode;
     }
 
     // Build merged code
     let merged = originalCode;
 
-    // 1. Prepend new imports
+    // 1. Apply in-place member replacements (sorted descending by position)
+    if (membersToReplace.size > 0) {
+      const sortedReplacements = Array.from(membersToReplace.entries()).sort(
+        (a, b) => b[0].getStart(origSf) - a[0].getStart(origSf)
+      );
+      for (const [origElem, newText] of sortedReplacements) {
+        const start = origElem.getStart(origSf);
+        const end = origElem.getEnd();
+        merged = merged.slice(0, start) + newText + merged.slice(end);
+      }
+    }
+
+    // 2. Prepend new imports
     if (newImportsToAdd.length > 0) {
       merged = newImportsToAdd.join("\n") + "\n" + merged;
     }
 
-    // 2. Append new top-level declarations
+    // 3. Append new top-level declarations
     if (newTopLevelToAdd.length > 0) {
       merged = merged + "\n\n" + newTopLevelToAdd.join("\n\n");
     }
 
-    // 3. Inject new class members before the closing brace of the target class
-    if (newMembersToAdd.length > 0) {
-      // Re-parse merged code to locate closing brace accurately
+    // 4. Inject new class members before the closing brace of the target class
+    if (newMembersToAppend.length > 0) {
       const reParsedSf = ts.createSourceFile("reparsed.ts", merged, ts.ScriptTarget.ES2022, true);
       let reParsedClass: ts.ClassDeclaration | null = null;
       for (const stmt of reParsedSf.statements) {
@@ -194,14 +303,13 @@ export class IncrementalClassMerger {
       }
 
       if (reParsedClass) {
-        const classEnd = reParsedClass.end; // End position after closing brace '}'
-        // Find the index of the last closing brace '}' in that range
+        const classEnd = reParsedClass.end;
         const closingBraceIdx = merged.lastIndexOf("}", classEnd);
         if (closingBraceIdx !== -1) {
           const indent = "  ";
           const formattedMembers =
             "\n\n" +
-            newMembersToAdd
+            newMembersToAppend
               .map((m) =>
                 m
                   .split("\n")

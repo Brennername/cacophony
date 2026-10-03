@@ -1350,6 +1350,21 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4f1. REST API: Manual Git Checkpoint Pruning
+    if (url.pathname === "/api/checkpoints/prune" && req.method === "POST") {
+      try {
+        const { GitCheckpointManager } = await import("../gitea/GitCheckpointManager.js");
+        const checkpointManager = new GitCheckpointManager(process.cwd());
+        const pruned = await checkpointManager.pruneOldCheckpoints(14, 50);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, prunedCount: pruned }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+      }
+      return;
+    }
+
     // 4g. REST API: LSP Diagnostics
     if (url.pathname === "/api/diagnostics" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
