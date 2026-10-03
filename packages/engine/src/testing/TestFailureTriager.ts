@@ -1,6 +1,3 @@
-/**
- * Common test failure classification categories.
- */
 export enum TestFailureCategory {
   AssertionError = "AssertionError",
   TimeoutError = "TimeoutError",
@@ -13,16 +10,9 @@ export enum TestFailureCategory {
   UnknownError = "UnknownError"
 }
 
-// Backward compatibility alias
 export const TestFailure = TestFailureCategory;
 export type TestFailure = TestFailureCategory;
 
-/**
- * Triages a test failure based on its stderr output.
- *
- * @param stderr - The stderr output of the failed test.
- * @returns A category representing the root cause of the test failure.
- */
 export function triageTestFailure(stderr: string): TestFailureCategory {
   if (stderr.includes("AssertionError")) {
     return TestFailureCategory.AssertionError;
