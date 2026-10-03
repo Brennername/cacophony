@@ -237,6 +237,13 @@ export class TaskScheduler {
             "qwen2.5-coder:14b",
             normalizedAssigned
           ];
+        } else if (normalizedAssigned === "qwen2.5-coder:3b" && role !== "architect") {
+          candidateList = [
+            "qwen2.5-coder:7b-instruct-q4_K_M",
+            "qwen2.5-coder:7b",
+            "gemma3:4b-it-qat",
+            normalizedAssigned
+          ];
         } else {
           candidateList = [normalizedAssigned];
         }

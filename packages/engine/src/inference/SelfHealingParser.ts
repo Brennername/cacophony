@@ -76,6 +76,15 @@ export class SelfHealingParser {
       };
     }
 
+    if (blocks.some((b) => b.isTruncated)) {
+      return {
+        valid: false,
+        code: null,
+        error: "Output was cut off before closing the code fence (```). Please continue immediately and provide the complete, fully closed code without cutting off.",
+        blocks
+      };
+    }
+
     const primary = this.formatter.extractPrimaryCode(rawOutput);
     if (!primary || primary.trim().length === 0) {
       return {

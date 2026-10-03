@@ -11,6 +11,18 @@ export const BanditPolicyTypeSchema = z.enum([
   "thompson_sampling",
 ]);
 
+export type BanditPolicy = BanditPolicyType;
+export const BanditPolicySchema = BanditPolicyTypeSchema;
+
+export type Action = string | Record<string, any>;
+
+export interface IBanditPolicy {
+  readonly policyType?: BanditPolicyType;
+  selectArm?(arms: readonly BanditArmRecord[]): BanditArmRecord | string;
+  updateReward?(armId: string, reward: number): void;
+  [key: string]: any;
+}
+
 /**
  * Dynamic Bandit Arm State representing a model or configuration permutation.
  */

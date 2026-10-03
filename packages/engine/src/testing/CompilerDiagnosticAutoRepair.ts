@@ -145,8 +145,8 @@ export class CompilerDiagnosticAutoRepair {
             return `import { ${memberList.join(", ")} } from '${modPath}';`;
           });
           if (!currentCode.includes(`type ${missingMember} =`) && !currentCode.includes(`interface ${missingMember}`)) {
-            currentCode = `type ${missingMember} = any;\n` + currentCode;
-            repairsApplied.push(`Removed non-existent export '${missingMember}' from '${modPath}' and declared local fallback`);
+            currentCode = `interface ${missingMember} { [key: string]: any; }\n` + currentCode;
+            repairsApplied.push(`Removed non-existent export '${missingMember}' from '${modPath}' and declared local fallback interface`);
           }
         }
       }
@@ -193,6 +193,23 @@ export class CompilerDiagnosticAutoRepair {
         currentCode = currentCode.replace("imports: [", "imports: [FormsModule, ");
       }
       repairsApplied.push("Imported and registered FormsModule for ngModel binding");
+    }
+
+    // 4g. Repair missing Angular template file
+    for (const diag of diagnostics) {
+      if (/Could not find template file\s+'([^']+)'/i.test(diag.message)) {
+        const tplMatch = diag.message.match(/Could not find template file\s+'([^']+)'/i);
+        if (tplMatch && tplMatch[1]) {
+          const tplPath = tplMatch[1];
+          const escaped = tplPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const regex = new RegExp(`templateUrl:\\s*['"]${escaped}['"]`, "g");
+          const updated = currentCode.replace(regex, `template: '<div class="component-container"></div>'`);
+          if (updated !== currentCode) {
+            currentCode = updated;
+            repairsApplied.push(`Replaced missing template file '${tplPath}' with inline template`);
+          }
+        }
+      }
     }
 
     // 5. Repair TS2834: Explicit .js file extensions in relative imports
@@ -260,6 +277,71 @@ export class CompilerDiagnosticAutoRepair {
       }
     }
     currentCode = lines.join("\n");
+
+    // 8. Repair TS7006: Parameter implicitly has an 'any' type
+    for (const diag of diagnostics) {
+      if (diag.errorCode === "TS7006" || /Parameter '([^']+)' implicitly has an 'any' type/i.test(diag.message)) {
+        const paramMatch = diag.message.match(/Parameter '([^']+)' implicitly has an 'any' type/i);
+        if (paramMatch && paramMatch[1] && diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+          const param = paramMatch[1];
+          const lineIdx = diag.lineNumber - 1;
+          const line = lines[lineIdx];
+          if (line) {
+            const updatedLine = line
+              .replace(new RegExp(`(\\()\\s*${param}\\s*([,)])`), `$1${param}: any$2`)
+              .replace(new RegExp(`(,\\s*)${param}\\s*([,)])`), `$1${param}: any$2`);
+            if (updatedLine !== line) {
+              lines[lineIdx] = updatedLine;
+              repairsApplied.push(`Added ': any' type annotation to implicit parameter '${param}' at line ${diag.lineNumber}`);
+            }
+          }
+        }
+      }
+    }
+    currentCode = lines.join("\n");
+
+    // 9. Repair TS1002 / TS1005: Unterminated string literal or syntax error on EOF truncated file
+    const hasUnterminatedEof = diagnostics.some(
+      (d) => (d.errorCode === "TS1002" || d.errorCode === "TS1005") && d.lineNumber >= Math.max(1, lines.length - 2)
+    );
+    if (hasUnterminatedEof && lines.length >= 2) {
+      let lastIdx = lines.length - 1;
+      while (lastIdx >= 0 && lines[lastIdx]?.trim() === "") {
+        lastIdx--;
+      }
+      if (lastIdx >= 0) {
+        const lastLine = lines[lastIdx]?.trim() || "";
+        if (lastLine.endsWith('"') || lastLine.endsWith("'") || lastLine.endsWith("(") || !lastLine.endsWith(";")) {
+          lines.splice(lastIdx, 1);
+          repairsApplied.push(`Stripped truncated trailing line ${lastIdx + 1} with unterminated string`);
+        }
+        const codeSoFar = lines.join("\n");
+        const openBraces = (codeSoFar.match(/\{/g) || []).length;
+        const closeBraces = (codeSoFar.match(/\}/g) || []).length;
+        const openParens = (codeSoFar.match(/\(/g) || []).length;
+        const closeParens = (codeSoFar.match(/\)/g) || []).length;
+
+        let suffix = "";
+        const matchedPairs = Math.min(
+          Math.max(0, openParens - closeParens),
+          Math.max(0, openBraces - closeBraces)
+        );
+        for (let i = 0; i < matchedPairs; i++) {
+          suffix += "});\n";
+        }
+        for (let i = 0; i < Math.max(0, (openParens - closeParens) - matchedPairs); i++) {
+          suffix += ");\n";
+        }
+        for (let i = 0; i < Math.max(0, (openBraces - closeBraces) - matchedPairs); i++) {
+          suffix += "}\n";
+        }
+        if (suffix.length > 0) {
+          lines.push(suffix.trimEnd());
+          repairsApplied.push("Balanced unclosed braces and parentheses from truncated EOF");
+        }
+      }
+      currentCode = lines.join("\n");
+    }
 
     return {
       repairedCode: currentCode,

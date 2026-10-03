@@ -126,7 +126,7 @@ describe("CompilerDiagnosticAutoRepair Test Suite", () => {
     ];
 
     const result = repairer.repair(inputCode, diags);
-    assert.ok(result.repairedCode.includes("type Action = any;"));
+    assert.ok(result.repairedCode.includes("interface Action { [key: string]: any; }"));
     assert.ok(result.repairedCode.includes("import { TaskRecord } from '@cacophony/shared-types';"));
   });
 
@@ -163,5 +163,65 @@ describe("CompilerDiagnosticAutoRepair Test Suite", () => {
     const result = repairer.repair(inputCode, diags);
     assert.ok(result.repairedCode.includes("EventEmitter"));
     assert.ok(result.repairedCode.includes("from '@angular/core'"));
+  });
+
+  test("should replace missing template file with inline template", () => {
+    const inputCode = `@Component({\n  selector: 'app-bar',\n  templateUrl: './bar.component.html'\n})\nexport class BarComponent {}`;
+    const diags = [
+      {
+        filePath: "src/bar.component.ts",
+        lineNumber: 3,
+        columnNumber: 1,
+        severity: "error" as const,
+        message: "Could not find template file './bar.component.html'."
+      }
+    ];
+
+    const result = repairer.repair(inputCode, diags);
+    assert.ok(result.repairedCode.includes("template: '<div class=\"component-container\"></div>'"));
+    assert.ok(!result.repairedCode.includes("templateUrl"));
+  });
+
+  test("should repair TS7006 implicit any parameter", () => {
+    const inputCode = `const update = (percentage) => { console.log(percentage); };`;
+    const diags = [
+      {
+        filePath: "src/calc.ts",
+        lineNumber: 1,
+        columnNumber: 1,
+        severity: "error" as const,
+        message: "Parameter 'percentage' implicitly has an 'any' type.",
+        errorCode: "TS7006"
+      }
+    ];
+
+    const result = repairer.repair(inputCode, diags);
+    assert.ok(result.repairedCode.includes("(percentage: any)"));
+  });
+
+  test("should repair TS1002 and TS1005 by stripping truncated trailing line and balancing braces", () => {
+    const inputCode = `describe('Suite', () => {\n  it('test', () => {\n    assert.ok(result.includes("`;
+    const diags = [
+      {
+        filePath: "src/suite.test.ts",
+        lineNumber: 3,
+        columnNumber: 1,
+        severity: "error" as const,
+        message: "Unterminated string literal.",
+        errorCode: "TS1002"
+      },
+      {
+        filePath: "src/suite.test.ts",
+        lineNumber: 3,
+        columnNumber: 1,
+        severity: "error" as const,
+        message: "')' expected.",
+        errorCode: "TS1005"
+      }
+    ];
+
+    const result = repairer.repair(inputCode, diags);
+    assert.ok(!result.repairedCode.includes("assert.ok(result.includes(\""));
+    assert.ok(result.repairedCode.includes("});"));
   });
 });

@@ -5,6 +5,7 @@ export interface ExtractedCodeBlock {
   readonly language: string;
   readonly code: string;
   readonly targetFile?: string;
+  readonly isTruncated?: boolean;
 }
 
 /**
@@ -107,7 +108,8 @@ export class AdaptiveOutputFormatter {
       if (unclosedMatch && unclosedMatch[2]?.trim()) {
         blocks.push({
           language: unclosedMatch[1]?.trim() || "text",
-          code: unclosedMatch[2].trim()
+          code: unclosedMatch[2].trim(),
+          isTruncated: true
         });
       }
     }
