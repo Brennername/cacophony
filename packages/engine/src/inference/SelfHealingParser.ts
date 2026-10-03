@@ -68,6 +68,28 @@ export class SelfHealingParser {
         };
       }
 
+      // Fallback: If output contains pure TypeScript/JavaScript code without markdown fences
+      // Must be a dedicated code block (starts with import or class/interface definition), not conversational chat
+      const cleanedRaw = rawOutput.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+      const hasCodeDeclaration =
+        cleanedRaw.startsWith("import ") ||
+        cleanedRaw.startsWith("export class ") ||
+        cleanedRaw.startsWith("export interface ") ||
+        cleanedRaw.startsWith("class ") ||
+        cleanedRaw.startsWith("interface ");
+
+      const hasMultipleLinesOfCode =
+        cleanedRaw.split("\n").length >= 3 &&
+        (cleanedRaw.includes("export class ") || cleanedRaw.includes("export interface "));
+
+      if ((hasCodeDeclaration || hasMultipleLinesOfCode) && !cleanedRaw.includes("```")) {
+        return {
+          valid: true,
+          code: cleanedRaw,
+          blocks: [{ language: "typescript", code: cleanedRaw }]
+        };
+      }
+
       return {
         valid: false,
         code: null,
