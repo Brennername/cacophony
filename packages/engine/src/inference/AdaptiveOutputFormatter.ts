@@ -21,7 +21,12 @@ export class AdaptiveOutputFormatter {
   /**
    * Generates output format instruction directives tailored to model tier and archetype.
    */
-  public getFormatInstruction(isLocalModel: boolean, focusFile?: string, modelTag?: string): string {
+  public getFormatInstruction(
+    isLocalModel: boolean,
+    focusFile?: string,
+    modelTag?: string,
+    isLargeExistingFile?: boolean
+  ): string {
     if (isLocalModel) {
       const fileTarget = focusFile ? ` for file '${focusFile}'` : "";
       const isReasoner = modelTag ? (
@@ -29,6 +34,30 @@ export class AdaptiveOutputFormatter {
         modelTag.toLowerCase().includes("think") ||
         modelTag.toLowerCase().includes("reason")
       ) : false;
+
+      if (isLargeExistingFile) {
+        const lines = [
+          "[OUTPUT FORMAT REQUIREMENT - TARGETED CLASS / METHOD EXTENSION]:",
+          `File '${focusFile}' is a large existing module (> 250 lines). Do NOT output a full rewrite of the file.`,
+          "Output a valid TypeScript class declaration containing ONLY:",
+          "1. Any required import statements.",
+          "2. The target class containing ONLY the new or updated methods/properties required for this task.",
+          "Existing unchanged methods and class members will be automatically merged via AST analysis.",
+          "Enclose the implementation inside a single standard markdown code block: ```typescript ... ```."
+        ];
+
+        if (isReasoner) {
+          lines.push(
+            "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the targeted implementation."
+          );
+        } else {
+          lines.push(
+            "Your response should be only the code block or brief explanation followed by the code block. Do NOT emit <think> or </think> tags."
+          );
+        }
+
+        return lines.join("\n");
+      }
 
       const lines = [
         "[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]:",

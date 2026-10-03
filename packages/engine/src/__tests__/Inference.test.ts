@@ -33,6 +33,18 @@ describe("Model Inference & Adaptation Engine", () => {
       assert.ok(reasonerInstruction.includes("Once </think> is closed"));
     });
 
+    test("should generate targeted class/method extension instructions for large existing files", () => {
+      const instruction = formatter.getFormatInstruction(
+        true,
+        "packages/engine/src/daemon/CacophonyHttpServer.ts",
+        undefined,
+        true
+      );
+      assert.ok(instruction.includes("[OUTPUT FORMAT REQUIREMENT - TARGETED CLASS / METHOD EXTENSION]"));
+      assert.ok(instruction.includes("Do NOT output a full rewrite"));
+      assert.ok(instruction.includes("Existing unchanged methods and class members will be automatically merged"));
+    });
+
     test("should cleanly strip orphan </think> tags when extracting code blocks", () => {
       const sampleResponse = `
 \`\`\`typescript

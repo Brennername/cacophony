@@ -230,9 +230,23 @@ export class AutonomousWorkerPipeline {
 
       const focusFiles = groomed.focusFiles;
       const targetRel = focusFiles[0];
+      let originalExistingContent = "";
+      let isLargeExistingFile = false;
+      if (targetRel) {
+        try {
+          const targetAbs = path.resolve(executionRoot, targetRel);
+          originalExistingContent = await fs.readFile(targetAbs, "utf-8");
+          if (originalExistingContent.length > 8192 || originalExistingContent.split("\n").length > 250) {
+            isLargeExistingFile = true;
+          }
+        } catch {
+          originalExistingContent = "";
+        }
+      }
+
       const formatter = typeof this.parser.getFormatter === "function" ? this.parser.getFormatter() : null;
       const formatInstruction = formatter
-        ? formatter.getFormatInstruction(true, targetRel, selectedModel)
+        ? formatter.getFormatInstruction(true, targetRel, selectedModel, isLargeExistingFile)
         : "[OUTPUT FORMAT REQUIREMENT]: Provide valid code enclosed in markdown code fences.";
       const directives = [...groomed.stackProfile.directives, formatInstruction];
       const context = this.minimizer.assembleContext(
@@ -398,17 +412,18 @@ export class AutonomousWorkerPipeline {
       const scrubStart = Date.now();
       await this.recordAndEmitStage(taskId, "deterministic_scrub", "RUNNING");
 
-      let originalExistingContent = "";
       let targetAbs = "";
       let generatedDiff = "";
       let currentCode = finalCode;
       if (focusFiles.length > 0) {
         const targetRelFile = focusFiles[0]!;
         targetAbs = path.resolve(executionRoot, targetRelFile);
-        try {
-          originalExistingContent = await fs.readFile(targetAbs, "utf-8");
-        } catch {
-          originalExistingContent = "";
+        if (!originalExistingContent) {
+          try {
+            originalExistingContent = await fs.readFile(targetAbs, "utf-8");
+          } catch {
+            originalExistingContent = "";
+          }
         }
 
         const fileContentsMap = new Map<string, string>();
@@ -511,7 +526,7 @@ export class AutonomousWorkerPipeline {
         else if (candidatePaths.includes("packages/tools")) pkgName = "@cacophony/tools";
       }
 
-      let remediationAttempts = 0;
+      let compilationRemediationAttempts = 0;
       const maxRemediationAttempts = 2;
 
       // 1. Compilation Verification Gate with Compiler Diagnostic Remediation Loop
@@ -519,7 +534,7 @@ export class AutonomousWorkerPipeline {
         const buildCmd = `npm run build --workspace=${pkgName}`;
         let buildPassed = false;
 
-        while (!buildPassed && remediationAttempts < maxRemediationAttempts) {
+        while (!buildPassed && compilationRemediationAttempts < maxRemediationAttempts) {
           const buildCheck = await this.sandboxedRunner.run(buildCmd, {
             cwd: worktree.worktreePath,
             timeoutMs: 90000,
@@ -531,7 +546,7 @@ export class AutonomousWorkerPipeline {
             break;
           }
 
-          remediationAttempts++;
+          compilationRemediationAttempts++;
           const buildOutput = `${buildCheck.stdout}\n${buildCheck.stderr}`.trim();
           const rawDiags = CompilerDiagnosticParser.parseLines(buildOutput.split("\n"));
 
@@ -576,7 +591,7 @@ export class AutonomousWorkerPipeline {
             : (buildCheck.stdout || buildCheck.stderr).slice(0, 500);
 
           console.warn(
-            `[AutonomousWorkerPipeline] Compilation check failed (${buildCmd}) on attempt ${remediationAttempts}/${maxRemediationAttempts}: ${errSummary}`
+            `[AutonomousWorkerPipeline] Compilation check failed (${buildCmd}) on attempt ${compilationRemediationAttempts}/${maxRemediationAttempts}: ${errSummary}`
           );
 
           const remediationStart = Date.now();
@@ -649,7 +664,7 @@ export class AutonomousWorkerPipeline {
                 "remediation",
                 "SUCCESS",
                 Date.now() - remediationStart,
-                `Remediation attempt ${remediationAttempts} generated fix for compiler diagnostics`
+                `Remediation attempt ${compilationRemediationAttempts} generated fix for compiler diagnostics`
               );
             } else {
               throw new Error("Remediation produced no code block");
@@ -680,7 +695,7 @@ export class AutonomousWorkerPipeline {
               "remediation",
               "FAILURE",
               0,
-              `Package compilation check failed after ${remediationAttempts} remediation attempts (${buildCmd}): ${errSummary}`
+              `Package compilation check failed after ${compilationRemediationAttempts} remediation attempts (${buildCmd}): ${errSummary}`
             );
             await this.rollbackWorkspace(targetAbs, originalExistingContent);
             if (this.worktreeManager && worktree) {
@@ -696,9 +711,10 @@ export class AutonomousWorkerPipeline {
         await this.recordAndEmitStage(taskId, "test_execution", "RUNNING");
 
         let testPassed = false;
+        let testRemediationAttempts = 0;
         let lastTestResult: any = null;
 
-        while (!testPassed && remediationAttempts < maxRemediationAttempts) {
+        while (!testPassed && testRemediationAttempts < maxRemediationAttempts) {
           const runResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
             cwd: executionRoot,
             timeoutMs: 180000,
@@ -722,9 +738,9 @@ export class AutonomousWorkerPipeline {
             break;
           }
 
-          remediationAttempts++;
+          testRemediationAttempts++;
           console.warn(
-            `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, attempt ${remediationAttempts}/${maxRemediationAttempts}). Attempting automated remediation...`
+            `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, attempt ${testRemediationAttempts}/${maxRemediationAttempts}). Attempting automated remediation...`
           );
           await this.recordAndEmitStage(
             taskId,
@@ -831,7 +847,7 @@ export class AutonomousWorkerPipeline {
                 "remediation",
                 "SUCCESS",
                 Date.now() - remediationStart,
-                `Automated remediation attempt ${remediationAttempts} applied fix`
+                `Automated remediation attempt ${testRemediationAttempts} applied fix`
               );
             } else {
               throw new Error("Remediation produced no code block");
@@ -849,12 +865,21 @@ export class AutonomousWorkerPipeline {
         }
 
         if (!testPassed) {
-          const finalRun = lastTestResult || await this.sandboxedRunner.run(groomed.scopedTestCommand, {
+          const finalRun = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
             cwd: executionRoot,
             timeoutMs: 180000,
             maxBufferBytes: 256 * 1024
           });
-          if (finalRun.exitCode !== 0) {
+          if (finalRun.exitCode === 0) {
+            testPassed = true;
+            await this.recordAndEmitStage(
+              taskId,
+              "test_execution",
+              "SUCCESS",
+              finalRun.durationMs,
+              `Exit Code: 0\nDuration: ${finalRun.durationMs}ms\nPassed after remediation`
+            );
+          } else {
             await this.rollbackWorkspace(targetAbs, originalExistingContent);
             if (this.worktreeManager && worktree) {
               await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
