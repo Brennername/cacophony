@@ -463,5 +463,13 @@ export interface IGitPlatformProvider {
   - Worktree Pre-Commit Gate: Verifies modified worktrees build cleanly prior to commit, preventing corrupted code from entering staging `main`.
 - **Assigned Taskcade Phase**: Phase 84 (`spec:SovereignLoopSupervisor`, `spec:GitHubIssueSyncDaemon`).
 
+---
 
-
+### 1.18 Multi-Window Convergence Analytics, Git Regression Pinpointing & Plateau Intervention Dispatcher
+- **Objective**: Establish flexible sliding-window success analytics, discrete derivative calculus for convergence and plateau detection, automated correlation of failure windows with git commit hashes, and priority regression remediation agent dispatching.
+- **Architectural Scope**:
+  - `RollingWindowAnalyticsService`: Configurable sliding windows (10, 20, 50, 100, 1000, capped at total qualified tasks; minimum N >= 2 or 3 tasks) across contiguous time-series or multi-dimensional qualifications (role, model, commit).
+  - `ConvergenceAnalyzer`: Computes first and second discrete derivatives of success/failure curves, recognizing rate plateauing across nested windows (e.g. 50-task vs 10-task).
+  - `GitRegressionCorrelator` & `RegressionDispatchSupervisor`: Maps failure surges to culprit git commit hashes, dispatches high-reasoning models to diagnose regressions or spot hallucinations, synthesizes test assertions, applies worktree fixes, and triggers smarter interventions upon stagnation.
+  - Mobile-First Dashboard Trend Chart: Angular responsive widget with dark/light themes displaying failure/success window trends next to overall rate.
+- **Assigned Taskcade Phase**: Phase 85 (`spec:RollingWindowAnalytics`, `spec:ConvergencePlateauAnalyzer`, `spec:GitRegressionDispatcher`).

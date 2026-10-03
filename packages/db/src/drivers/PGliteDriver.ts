@@ -100,19 +100,32 @@ export class PGliteDriver implements IDatabaseDriver {
   private async checkLockFile(): Promise<void> {
     if (!this.lockFile) return;
     if (fs.existsSync(this.lockFile)) {
-      const lockFileContent = fs.readFileSync(this.lockFile, "utf-8");
+      const lockFileContent = fs.readFileSync(this.lockFile, "utf-8").trim();
       const currentTimestamp = Date.now();
       const lockFileTimestamp = parseInt(lockFileContent, 10);
 
-      if (currentTimestamp - lockFileTimestamp > 60 * 1000) {
-        // Lock file is stale, remove it
+      // If lockfile timestamp is NaN or older than 15 seconds, consider it stale from prior run/crash
+      if (isNaN(lockFileTimestamp) || (currentTimestamp - lockFileTimestamp > 15 * 1000)) {
         try {
           fs.unlinkSync(this.lockFile);
         } catch {
           // ignore
         }
       } else {
-        throw new Error("Database connection is already in use by another process.");
+        // Sleep briefly and check one more time before failing
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (fs.existsSync(this.lockFile)) {
+          const recheck = parseInt(fs.readFileSync(this.lockFile, "utf-8").trim(), 10);
+          if (isNaN(recheck) || (Date.now() - recheck > 15 * 1000)) {
+            try {
+              fs.unlinkSync(this.lockFile);
+            } catch {
+              // ignore
+            }
+          } else {
+            throw new Error("Database connection is already in use by another process.");
+          }
+        }
       }
     }
 

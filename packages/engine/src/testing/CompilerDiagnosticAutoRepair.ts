@@ -252,10 +252,18 @@ export class CompilerDiagnosticAutoRepair {
             const lineIdx = diag.lineNumber - 1;
             const targetLine = lines[lineIdx];
             if (targetLine) {
-              // Replace declaration of varName with _varName on this exact line
-              const varRegex = new RegExp(`\\b${varName}\\b`, "g");
-              lines[lineIdx] = targetLine.replace(varRegex, `_${varName}`);
-              repairsApplied.push(`Prefixed unused symbol '${varName}' with '_' at line ${diag.lineNumber}`);
+              // Avoid prefixing type annotations, class names, or import specifiers that break syntax
+              const isTypeOrClass =
+                /^\s*(?:export\s+)?(?:class|interface|type|enum)\s+/.test(targetLine) ||
+                /:\s*[A-Z]/.test(targetLine) ||
+                /\bas\s+[A-Z]/.test(targetLine);
+
+              if (!isTypeOrClass) {
+                // Replace declaration of varName with _varName on this exact line
+                const varRegex = new RegExp(`\\b${varName}\\b`, "g");
+                lines[lineIdx] = targetLine.replace(varRegex, `_${varName}`);
+                repairsApplied.push(`Prefixed unused symbol '${varName}' with '_' at line ${diag.lineNumber}`);
+              }
             }
           }
         }
