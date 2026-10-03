@@ -31,9 +31,24 @@ export class BannedImportScrubberRule extends BaseRepairRule {
     const mutations: FileMutation[] = [];
     let passed = true;
 
-    const bannedList = options?.packages ?? ["conductor", "lodash", "python"];
+    const bannedList = options?.packages ?? [
+      "conductor",
+      "lodash",
+      "python",
+      "@jest/globals",
+      "jest",
+      "vscode",
+      "@types/vscode",
+      "mocha",
+      "chai",
+      "sinon",
+      "express",
+      "koa",
+      "fastify"
+    ];
+    const escapedList = bannedList.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     const bannedPattern = new RegExp(
-      `import\\s+.*?from\\s+["'](${bannedList.join("|")})["'];?`,
+      `(?:import\\s+[\\s\\S]*?from\\s+["'](?:${escapedList.join("|")})(?:\\/[^"']*)?["'];?|import\\s+["'](?:${escapedList.join("|")})(?:\\/[^"']*)?["'];?)`,
       "g"
     );
 
@@ -49,12 +64,39 @@ export class BannedImportScrubberRule extends BaseRepairRule {
         bannedPattern.lastIndex = 0;
 
         if (severity === "silent_repair") {
-          const stripped = content.replace(bannedPattern, "");
+          let stripped = content.replace(bannedPattern, "");
+
+          // If vscode was stripped and Diagnostic is still referenced, ensure typescript is imported
+          if (content.includes("vscode") && /\bDiagnostic\b/.test(stripped) && !stripped.includes("typescript")) {
+            stripped = `import * as ts from "typescript";\n${stripped}`;
+          }
+
+          // If jest was stripped and jest. is still referenced, inject native node:test compatibility shim
+          if ((content.includes("jest") || content.includes("@jest/globals")) && /\bjest\./.test(stripped) && !stripped.includes("const jest =")) {
+            const shim = [
+              "// Native node:test compatibility shim for jest APIs",
+              "const jest = {",
+              "  fn: <T extends (...args: any[]) => any>(impl?: T) => {",
+              "    const fn = (...args: any[]) => (impl ? impl(...args) : undefined);",
+              "    fn.mockReturnValue = (val: any) => jest.fn(() => val);",
+              "    fn.mockResolvedValue = (val: any) => jest.fn(async () => val);",
+              "    fn.mockImplementation = (fnImpl: any) => jest.fn(fnImpl);",
+              "    return fn;",
+              "  },",
+              "  spyOn: (_obj: any, _method: any) => jest.fn(),",
+              "  clearAllMocks: () => {},",
+              "  resetAllMocks: () => {}",
+              "};",
+              ""
+            ].join("\n");
+            stripped = `${shim}\n${stripped}`;
+          }
+
           mutations.push({
             filePath,
             originalContent: content,
             updatedContent: stripped,
-            description: "Stripped banned package import statements",
+            description: "Stripped banned package import statements and injected necessary type/runner shims",
           });
         } else if (severity === "hard_rejection") {
           passed = false;

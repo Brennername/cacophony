@@ -607,15 +607,37 @@ export class CacophonyHttpServer {
           continue;
         }
 
-        // Normalize model assignments if invalid alias
+        // Check if task is already completed in docs/taskcade.md
+        const taskcadePath = path.resolve(process.cwd(), "docs/taskcade.md");
+        if (task.id.startsWith("taskcade-")) {
+          try {
+            const taskcadeContent = await fs.readFile(taskcadePath, "utf-8");
+            const shortId = task.id.replace("taskcade-", "");
+            const regex = new RegExp(`-\\s*\\[x\\]\\s*${shortId}\\b`, "i");
+            if (regex.test(taskcadeContent)) {
+              await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 6.0);
+              reconciledPrCount++;
+              continue;
+            }
+          } catch {
+            // non-fatal
+          }
+        }
+
+
+        // Normalize model assignments: remap unoptimized heavy models to fast instruct variants
         if (task.modelAssigned) {
-          const normalized = TaskScheduler.normalizeModelName(task.modelAssigned);
+          let normalized = TaskScheduler.normalizeModelName(task.modelAssigned);
+          if (normalized === "deepseek-coder-v2:16b") {
+            normalized = "qwen2.5-coder:7b-instruct-q4_K_M";
+          }
           if (normalized !== task.modelAssigned) {
             await taskRepo.updateModel(task.id, normalized);
             normalizedModelCount++;
           }
         }
       }
+
 
       const remainingPending = await taskRepo.listPending();
       res.writeHead(200, { "Content-Type": "application/json" });

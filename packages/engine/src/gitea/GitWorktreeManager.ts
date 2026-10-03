@@ -154,10 +154,25 @@ export class GitWorktreeManager {
   public async commitWorktree(worktreePath: string, commitMessage: string): Promise<string> {
     await execAsync(`git add -A`, { cwd: worktreePath });
     await execAsync(`git reset HEAD -- node_modules packages/*/dist dist || true`, { cwd: worktreePath }).catch(() => {});
-    const { stdout } = await execAsync(`git commit -m "${commitMessage.replace(/"/g, '\\"')}"`, {
-      cwd: worktreePath
-    });
-    return stdout;
+    try {
+      const { stdout } = await execAsync(`git commit -m "${commitMessage.replace(/"/g, '\\"')}"`, {
+        cwd: worktreePath
+      });
+      return stdout;
+    } catch (err: any) {
+      if (
+        (err?.stdout && err.stdout.includes("nothing to commit")) ||
+        (err?.stderr && err.stderr.includes("nothing to commit")) ||
+        (err?.message && err.message.includes("nothing to commit"))
+      ) {
+        const { stdout } = await execAsync(
+          `git commit --allow-empty -m "${commitMessage.replace(/"/g, '\\"')}"`,
+          { cwd: worktreePath }
+        );
+        return stdout;
+      }
+      throw err;
+    }
   }
 
   /**

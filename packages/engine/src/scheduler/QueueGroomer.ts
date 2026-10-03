@@ -38,7 +38,8 @@ export class QueueGroomer {
     this.defaultDirectives = defaultDirectives ?? [
       "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented.",
       "Integrity Rule: Always work and test with genuine integrity. Never fake test passes (e.g. adding dummy print statements, removing assertions, or mocking tests to artificially report 100%). Never drop databases or tables; write explicit, backward-compatible migrations.",
-      "Module Imports: Import only from valid installed workspace packages (@cacophony/shared-types, @cacophony/db, @cacophony/tools) or valid relative paths within the package (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js'). Never hallucinate non-existent package names like '@cacophony/git-worktrees'.",
+      "Testing Framework: All test suites MUST use the native Node.js test runner ('node:test') and assertion library ('node:assert/strict'). Example: `import test, { describe, it } from 'node:test'; import assert from 'node:assert/strict';`. NEVER import or reference 'jest', '@jest/globals', 'chai', 'mocha', or 'sinon'.",
+      "Module Imports: Import only from valid installed workspace packages (@cacophony/shared-types, @cacophony/db, @cacophony/tools) or valid relative paths within the package with explicit .js extensions (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js'). Never hallucinate non-existent packages like '@cacophony/git-worktrees', 'vscode', or '@types/vscode'.",
       "Quality Standards: Adhere strictly to SOLID principles, modularity, and explicit typing.",
       "Incremental Preservation: Preserve all existing methods, functions, interfaces, properties, and imports in the target file. Never wipe out, truncate, or overwrite existing implementation methods when adding new functionality.",
       "Documentation: Comment code thoroughly explaining how and why functionality is structured."
@@ -91,26 +92,38 @@ export class QueueGroomer {
       const testSrc = path.resolve(repoRoot, candidateTest);
       const testDist = candidateTest.replace("/src/", "/dist/").replace(/\.ts$/, ".js");
       const fullDist = path.resolve(repoRoot, testDist);
+      const srcExists = fs.existsSync(testSrc) || fs.existsSync(path.resolve(this.projectDir, candidateTest));
+      const distExists = fs.existsSync(fullDist) || fs.existsSync(path.resolve(this.projectDir, testDist));
 
-      if (fs.existsSync(fullDist) || fs.existsSync(path.resolve(this.projectDir, testDist))) {
+      if (srcExists) {
+        if (distExists) {
+          testCommand = `node --test ${testDist}`;
+          modified = true;
+          groomNotes.push(`Scoped test command to compiled test file: ${testCommand}`);
+        } else {
+          testCommand = `node --test ${candidateTest}`;
+          modified = true;
+          groomNotes.push(`Scoped test command to source test file: ${testCommand}`);
+        }
+      } else if (focusFilesList.includes(candidateTest) || focusFilesList.some((f) => candidateTest.endsWith(path.basename(f)))) {
         testCommand = `node --test ${testDist}`;
         modified = true;
-        groomNotes.push(`Scoped test command to compiled test file: ${testCommand}`);
-      } else if (fs.existsSync(testSrc) || fs.existsSync(path.resolve(this.projectDir, candidateTest))) {
-        testCommand = `node --test ${candidateTest}`;
-        modified = true;
-        groomNotes.push(`Scoped test command to source test file: ${testCommand}`);
+        groomNotes.push(`Target test suite '${candidateTest}' will be created by this task; scoped to compiled test file: ${testCommand}`);
       } else if (focusFilesList.length > 0) {
         const focus = focusFilesList[0]!;
+        const focusAbs = path.resolve(repoRoot, focus);
+        const focusInProject = path.resolve(this.projectDir, focus);
+        const focusExists = fs.existsSync(focusAbs) || fs.existsSync(focusInProject);
         const isJsTs = /\.(?:[cm]?[jt]sx?)$/i.test(focus);
-        if (isJsTs) {
+        const isFrontend = focus.startsWith("packages/frontend");
+        if (focusExists && isJsTs && !isFrontend) {
           testCommand = `node --check ${focus}`;
           modified = true;
           groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk; scoped to focus file verification: ${testCommand}`);
         } else {
           testCommand = "";
           modified = true;
-          groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk and focus file is non-executable; cleared test command to allow review verification`);
+          groomNotes.push(`Target test suite '${candidateTest}' not yet created on disk; cleared test command to allow compilation and review verification`);
         }
       } else {
         testCommand = "";
@@ -126,9 +139,12 @@ export class QueueGroomer {
         testCommand.includes("--workspace=@cacophony/engine") ||
         lowerTest.includes("push to branch") ||
         lowerTest.includes("docker compose") ||
-        lowerTest.includes("curl ") ||
         lowerTest.includes("verify ci") ||
-        lowerTest.includes("bin/cacophony");
+        lowerTest.includes("bin/cacophony") ||
+        lowerTest.startsWith("go ") ||
+        lowerTest.startsWith("cargo ") ||
+        lowerTest.startsWith("pytest ") ||
+        lowerTest.startsWith("python ");
 
       if (isNonRunnable) {
         const scoped = this.scopeTestCommand(focusFilesList, activeProfile);

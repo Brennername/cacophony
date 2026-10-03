@@ -198,7 +198,7 @@ export class GitHubPlatformProvider implements IGitPlatformProvider {
 
     return {
       id: res.id,
-      status: res.state
+      status: res.state || (res as any).status || options.event
     };
   }
 

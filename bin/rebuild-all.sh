@@ -42,33 +42,50 @@ echo "[4/4] Synchronizing built artifacts to runtime container..."
 CONTAINER_NAME="cacophony-engine"
 
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}\$"; then
-  echo "Container '${CONTAINER_NAME}' is running. Copying updated dist bundles..."
-  
-  # Copy frontend static distribution
+  echo "Cleaning stale reproducible build artifacts in '${CONTAINER_NAME}'..."
+  docker exec "${CONTAINER_NAME}" rm -rf /app/packages/engine/dist /app/packages/frontend/dist 2>/dev/null || true
+  docker exec "${CONTAINER_NAME}" mkdir -p /app/packages/engine/dist /app/packages/frontend/dist/frontend/browser
+
+  # Copy engine sources and compiled distribution
+  if [ -d "${REPO_ROOT}/packages/engine/src" ]; then
+    docker cp "${REPO_ROOT}/packages/engine/src/." "${CONTAINER_NAME}:/app/packages/engine/src/"
+  fi
+  if [ -d "${REPO_ROOT}/packages/engine/dist" ]; then
+    docker cp "${REPO_ROOT}/packages/engine/dist/." "${CONTAINER_NAME}:/app/packages/engine/dist/"
+    echo "Engine src and dist synchronized to /app/packages/engine/"
+  fi
+
+  # Copy frontend static distribution and sources
+  if [ -d "${REPO_ROOT}/packages/frontend/src" ]; then
+    docker cp "${REPO_ROOT}/packages/frontend/src/." "${CONTAINER_NAME}:/app/packages/frontend/src/"
+  fi
   if [ -d "${REPO_ROOT}/packages/frontend/dist/frontend/browser" ]; then
     docker cp "${REPO_ROOT}/packages/frontend/dist/frontend/browser/." "${CONTAINER_NAME}:/app/packages/frontend/dist/frontend/browser/"
     echo "Frontend browser bundle synchronized to /app/packages/frontend/dist/frontend/browser/"
   fi
 
-  # Copy compiled engine distribution
-  if [ -d "${REPO_ROOT}/packages/engine/dist" ]; then
-    docker cp "${REPO_ROOT}/packages/engine/dist/." "${CONTAINER_NAME}:/app/packages/engine/dist/"
-    echo "Engine distribution synchronized to /app/packages/engine/dist/"
+  # Copy compiled db distribution and sources
+  if [ -d "${REPO_ROOT}/packages/db/src" ]; then
+    docker cp "${REPO_ROOT}/packages/db/src/." "${CONTAINER_NAME}:/app/packages/db/src/"
   fi
-
-  # Copy compiled db distribution
   if [ -d "${REPO_ROOT}/packages/db/dist" ]; then
     docker cp "${REPO_ROOT}/packages/db/dist/." "${CONTAINER_NAME}:/app/packages/db/dist/"
     echo "Database distribution synchronized to /app/packages/db/dist/"
   fi
 
-  # Copy compiled shared-types distribution
+  # Copy compiled shared-types distribution and sources
+  if [ -d "${REPO_ROOT}/packages/shared-types/src" ]; then
+    docker cp "${REPO_ROOT}/packages/shared-types/src/." "${CONTAINER_NAME}:/app/packages/shared-types/src/"
+  fi
   if [ -d "${REPO_ROOT}/packages/shared-types/dist" ]; then
     docker cp "${REPO_ROOT}/packages/shared-types/dist/." "${CONTAINER_NAME}:/app/packages/shared-types/dist/"
     echo "Shared-types distribution synchronized to /app/packages/shared-types/dist/"
   fi
 
-  # Copy compiled tools distribution
+  # Copy compiled tools distribution and sources
+  if [ -d "${REPO_ROOT}/packages/tools/src" ]; then
+    docker cp "${REPO_ROOT}/packages/tools/src/." "${CONTAINER_NAME}:/app/packages/tools/src/"
+  fi
   if [ -d "${REPO_ROOT}/packages/tools/dist" ]; then
     docker cp "${REPO_ROOT}/packages/tools/dist/." "${CONTAINER_NAME}:/app/packages/tools/dist/"
     echo "Tools distribution synchronized to /app/packages/tools/dist/"

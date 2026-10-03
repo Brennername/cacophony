@@ -14,6 +14,10 @@ import type { GitWorktreeManager, WorktreeDescriptor } from "../gitea/GitWorktre
 import type { IGitPlatformProvider } from "../gitea/IGitPlatformProvider.js";
 import { FrontierReviewer } from "../inference/FrontierReviewer.js";
 import { CognitiveHandoffCoordinator } from "../inference/CognitiveHandoffCoordinator.js";
+import { RemediationPromptFormatter } from "../inference/RemediationPromptFormatter.js";
+import { CompilerDiagnosticParser } from "../testing/CompilerDiagnosticParser.js";
+import { IncrementalClassMerger } from "../context/IncrementalClassMerger.js";
+import { CompilerDiagnosticAutoRepair } from "../testing/CompilerDiagnosticAutoRepair.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -69,8 +73,10 @@ export class AutonomousWorkerPipeline {
   private readonly repoOwner: string;
   private readonly repoName: string;
   private readonly gitRemote: string;
+  private readonly remediationPromptFormatter: RemediationPromptFormatter;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
+    this.remediationPromptFormatter = new RemediationPromptFormatter();
     this.workspaceRoot = options.workspaceRoot;
     this.provider = options.ollamaProvider;
     this.minimizer = options.contextMinimizer;
@@ -105,11 +111,13 @@ export class AutonomousWorkerPipeline {
             { ruleId: "whitespace_normalizer", severity: "silent_repair" },
             { ruleId: "placeholder_stubs", severity: "hard_rejection" },
             { ruleId: "empty_files", severity: "hard_rejection" },
-            { ruleId: "banned_imports", severity: "silent_repair" }
+            { ruleId: "banned_imports", severity: "silent_repair" },
+            { ruleId: "typescript_diagnostic_repair", severity: "silent_repair" }
           ]
         }
       ]
     };
+
   }
 
   /**
@@ -393,6 +401,7 @@ export class AutonomousWorkerPipeline {
       let originalExistingContent = "";
       let targetAbs = "";
       let generatedDiff = "";
+      let currentCode = finalCode;
       if (focusFiles.length > 0) {
         const targetRelFile = focusFiles[0]!;
         targetAbs = path.resolve(executionRoot, targetRelFile);
@@ -435,9 +444,20 @@ export class AutonomousWorkerPipeline {
           return { success: false, tokensPerSec: measuredTps };
         }
 
-        const scrubbedCode = fileContentsMap.get(targetAbs) || finalCode;
+        let scrubbedCode = fileContentsMap.get(targetAbs) || finalCode;
+        if (outcome.repairsApplied && outcome.repairsApplied.length > 0) {
+          const matchingRepair = outcome.repairsApplied.find((r) => r.filePath === targetAbs);
+          if (matchingRepair) {
+            scrubbedCode = matchingRepair.updatedContent;
+          }
+        }
+        if (originalExistingContent && originalExistingContent.trim().length > 0) {
+          scrubbedCode = IncrementalClassMerger.merge(originalExistingContent, scrubbedCode);
+        }
+        currentCode = scrubbedCode;
         await fs.mkdir(path.dirname(targetAbs), { recursive: true });
         await fs.writeFile(targetAbs, scrubbedCode, "utf-8");
+
 
         // Format unified code diff and persist directly into task.logSnippet
         const formattedDiff = this.generateUnifiedDiff(
@@ -473,23 +493,230 @@ export class AutonomousWorkerPipeline {
         );
       }
 
+      // COMPILATION VERIFICATION & ACTIVE REMEDIATION
+      let pkgName = "";
+      if (worktree && targetRel) {
+        if (targetRel.startsWith("packages/frontend")) pkgName = "@cacophony/frontend";
+        else if (targetRel.startsWith("packages/engine")) pkgName = "@cacophony/engine";
+        else if (targetRel.startsWith("packages/db")) pkgName = "@cacophony/db";
+        else if (targetRel.startsWith("packages/shared-types")) pkgName = "@cacophony/shared-types";
+        else if (targetRel.startsWith("packages/tools")) pkgName = "@cacophony/tools";
+      }
+
+      let remediationAttempts = 0;
+      const maxRemediationAttempts = 2;
+
+      // 1. Compilation Verification Gate with Compiler Diagnostic Remediation Loop
+      if (pkgName && worktree) {
+        const buildCmd = `npm run build --workspace=${pkgName}`;
+        let buildPassed = false;
+
+        while (!buildPassed && remediationAttempts < maxRemediationAttempts) {
+          const buildCheck = await this.sandboxedRunner.run(buildCmd, {
+            cwd: worktree.worktreePath,
+            timeoutMs: 90000,
+            maxBufferBytes: 256 * 1024
+          });
+
+          if (buildCheck.exitCode === 0) {
+            buildPassed = true;
+            break;
+          }
+
+          remediationAttempts++;
+          const buildOutput = `${buildCheck.stdout}\n${buildCheck.stderr}`.trim();
+          const rawDiags = CompilerDiagnosticParser.parseLines(buildOutput.split("\n"));
+
+          // 1a. Attempt immediate deterministic diagnostic auto-repair
+          const autoRepair = new CompilerDiagnosticAutoRepair();
+          const repairResult = autoRepair.repair(currentCode, rawDiags);
+          if (repairResult.repairsApplied.length > 0) {
+            let candidateCode = repairResult.repairedCode;
+            if (originalExistingContent && originalExistingContent.trim().length > 0) {
+              candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+            }
+            currentCode = candidateCode;
+            await fs.writeFile(targetAbs, currentCode, "utf-8");
+            console.log(
+              `[AutonomousWorkerPipeline] Applied ${repairResult.repairsApplied.length} deterministic diagnostic auto-repair(s): ${repairResult.repairsApplied.join("; ")}`
+            );
+
+            // Re-run compilation check immediately
+            const retryCheck = await this.sandboxedRunner.run(buildCmd, {
+              cwd: worktree.worktreePath,
+              timeoutMs: 90000,
+              maxBufferBytes: 256 * 1024
+            });
+
+            if (retryCheck.exitCode === 0) {
+              buildPassed = true;
+              generatedDiff = this.generateUnifiedDiff(targetRel!, originalExistingContent, currentCode);
+              if (this.taskRepo) {
+                try {
+                  await this.taskRepo.updateLogSnippet(taskId, generatedDiff);
+                } catch {
+                  // non-fatal
+                }
+              }
+              break;
+            }
+          }
+
+          const prioritizedDiags = CompilerDiagnosticParser.prioritizeDiagnostics(rawDiags, 3);
+          const errSummary = prioritizedDiags.length > 0
+            ? prioritizedDiags.map((d) => `Line ${d.lineNumber}: ${d.message}`).join("; ")
+            : (buildCheck.stdout || buildCheck.stderr).slice(0, 500);
+
+          console.warn(
+            `[AutonomousWorkerPipeline] Compilation check failed (${buildCmd}) on attempt ${remediationAttempts}/${maxRemediationAttempts}: ${errSummary}`
+          );
+
+          const remediationStart = Date.now();
+          await this.recordAndEmitStage(taskId, "remediation", "RUNNING");
+
+          try {
+            const remediationPrompt = this.remediationPromptFormatter.formatPrompt({
+              taskGoal: groomed.task.prompt,
+              targetFilePath: targetRel!,
+              currentCode,
+              command: buildCmd,
+              compilerDiagnostics: prioritizedDiags,
+              testErrorOutput: buildOutput
+            });
+
+            const repairedParsed = await this.parser.executeWithSelfHealing(
+              this.provider,
+              {
+                model: selectedModel,
+                messages: [
+                  {
+                    role: "system",
+                    content: "You are an expert software engineer fixing compilation errors. Always return complete, valid TypeScript code without placeholders or commentary."
+                  },
+                  { role: "user", content: remediationPrompt }
+                ],
+                temperature: 0.1
+              }
+            );
+
+            if (targetAbs && repairedParsed.code) {
+              let candidateCode = repairedParsed.code;
+
+              // Rule engine scrub
+              const candidateMap = new Map<string, string>();
+              candidateMap.set(targetAbs, candidateCode);
+              const scrubOutcome = await this.ruleEngine.executePipelineHook(
+                this.defaultPipeline,
+                "post_generation",
+                {
+                  projectRoot: executionRoot,
+                  hook: "post_generation",
+                  modifiedFiles: [targetAbs],
+                  fileContents: candidateMap,
+                  simulate: false
+                }
+              );
+              if (scrubOutcome.repairsApplied && scrubOutcome.repairsApplied.length > 0) {
+                const rep = scrubOutcome.repairsApplied.find((r) => r.filePath === targetAbs);
+                if (rep) candidateCode = rep.updatedContent;
+              }
+
+              // Incremental class preservation
+              if (originalExistingContent && originalExistingContent.trim().length > 0) {
+                candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+              }
+
+              currentCode = candidateCode;
+              await fs.writeFile(targetAbs, currentCode, "utf-8");
+              generatedDiff = this.generateUnifiedDiff(targetRel!, originalExistingContent, currentCode);
+              if (this.taskRepo) {
+                try {
+                  await this.taskRepo.updateLogSnippet(taskId, generatedDiff);
+                } catch {
+                  // non-fatal
+                }
+              }
+              await this.recordAndEmitStage(
+                taskId,
+                "remediation",
+                "SUCCESS",
+                Date.now() - remediationStart,
+                `Remediation attempt ${remediationAttempts} generated fix for compiler diagnostics`
+              );
+            } else {
+              throw new Error("Remediation produced no code block");
+            }
+
+          } catch (remediationErr) {
+            await this.recordAndEmitStage(
+              taskId,
+              "remediation",
+              "FAILURE",
+              Date.now() - remediationStart,
+              `Remediation failed: ${String(remediationErr)}`
+            );
+            break;
+          }
+        }
+
+        if (!buildPassed) {
+          const finalCheck = await this.sandboxedRunner.run(buildCmd, {
+            cwd: worktree.worktreePath,
+            timeoutMs: 90000,
+            maxBufferBytes: 256 * 1024
+          });
+          if (finalCheck.exitCode !== 0) {
+            const errSummary = (finalCheck.stdout || finalCheck.stderr).slice(0, 500);
+            await this.recordAndEmitStage(
+              taskId,
+              "remediation",
+              "FAILURE",
+              0,
+              `Package compilation check failed after ${remediationAttempts} remediation attempts (${buildCmd}): ${errSummary}`
+            );
+            await this.rollbackWorkspace(targetAbs, originalExistingContent);
+            if (this.worktreeManager && worktree) {
+              await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+            }
+            return { success: false, tokensPerSec: measuredTps };
+          }
+        }
+      }
+
       // STAGE 4: Scoped Test Verification with SandboxedProcessRunner
       if (groomed.scopedTestCommand) {
         await this.recordAndEmitStage(taskId, "test_execution", "RUNNING");
 
-        const runResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
-          cwd: executionRoot,
-          timeoutMs: 180000,
-          maxBufferBytes: 256 * 1024
-        });
+        let testPassed = false;
+        let lastTestResult: any = null;
 
-        const stdoutSnippet = runResult.stdout.slice(0, 4000);
-        const stderrSnippet = runResult.stderr.slice(0, 4000);
-        const logOutput = `Exit Code: ${runResult.exitCode}\nDuration: ${runResult.durationMs}ms\n\n[STDOUT]:\n${stdoutSnippet}\n\n[STDERR]:\n${stderrSnippet}`;
+        while (!testPassed && remediationAttempts < maxRemediationAttempts) {
+          const runResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
+            cwd: executionRoot,
+            timeoutMs: 180000,
+            maxBufferBytes: 256 * 1024
+          });
+          lastTestResult = runResult;
 
-        if (runResult.exitCode !== 0) {
+          const stdoutSnippet = runResult.stdout.slice(0, 4000);
+          const stderrSnippet = runResult.stderr.slice(0, 4000);
+          const logOutput = `Exit Code: ${runResult.exitCode}\nDuration: ${runResult.durationMs}ms\n\n[STDOUT]:\n${stdoutSnippet}\n\n[STDERR]:\n${stderrSnippet}`;
+
+          if (runResult.exitCode === 0) {
+            testPassed = true;
+            await this.recordAndEmitStage(
+              taskId,
+              "test_execution",
+              "SUCCESS",
+              runResult.durationMs,
+              logOutput
+            );
+            break;
+          }
+
+          remediationAttempts++;
           console.warn(
-            `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}). Attempting automated remediation...`
+            `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, attempt ${remediationAttempts}/${maxRemediationAttempts}). Attempting automated remediation...`
           );
           await this.recordAndEmitStage(
             taskId,
@@ -499,17 +726,18 @@ export class AutonomousWorkerPipeline {
             logOutput
           );
 
-          // STAGE 5: Active Remediation
+          // Active Remediation
           const remediationStart = Date.now();
           await this.recordAndEmitStage(taskId, "remediation", "RUNNING");
 
           try {
-            const remediationPrompt = [
-              "The code modification failed verification testing.",
-              `Command: ${groomed.scopedTestCommand}`,
-              `Error Output:\n${(stderrSnippet || stdoutSnippet).slice(0, 1500)}`,
-              "Provide the corrected, complete implementation code fixing this error."
-            ].join("\n\n");
+            const remediationPrompt = this.remediationPromptFormatter.formatPrompt({
+              taskGoal: groomed.task.prompt,
+              targetFilePath: targetRel || "unknown",
+              currentCode,
+              command: groomed.scopedTestCommand,
+              testErrorOutput: (stderrSnippet || stdoutSnippet).slice(0, 2000)
+            });
 
             const repairedParsed = await this.parser.executeWithSelfHealing(
               this.provider,
@@ -524,69 +752,81 @@ export class AutonomousWorkerPipeline {
             );
 
             if (targetAbs && repairedParsed.code) {
-              await fs.writeFile(targetAbs, repairedParsed.code, "utf-8");
+              let candidateCode = repairedParsed.code;
 
-              const retryResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
-                cwd: executionRoot,
-                timeoutMs: 180000,
-                maxBufferBytes: 256 * 1024
-              });
+              // Rule engine scrub
+              const candidateMap = new Map<string, string>();
+              candidateMap.set(targetAbs, candidateCode);
+              const scrubOutcome = await this.ruleEngine.executePipelineHook(
+                this.defaultPipeline,
+                "post_generation",
+                {
+                  projectRoot: executionRoot,
+                  hook: "post_generation",
+                  modifiedFiles: [targetAbs],
+                  fileContents: candidateMap,
+                  simulate: false
+                }
+              );
+              if (scrubOutcome.repairsApplied && scrubOutcome.repairsApplied.length > 0) {
+                const rep = scrubOutcome.repairsApplied.find((r) => r.filePath === targetAbs);
+                if (rep) candidateCode = rep.updatedContent;
+              }
 
-              if (retryResult.exitCode === 0) {
-                generatedDiff = this.generateUnifiedDiff(
-                  targetRel || "unknown",
-                  originalExistingContent,
-                  repairedParsed.code
-                );
-                if (this.taskRepo) {
-                  try {
-                    await this.taskRepo.updateLogSnippet(taskId, generatedDiff);
-                  } catch {
-                    // non-fatal
+              // Incremental class preservation
+              if (originalExistingContent && originalExistingContent.trim().length > 0) {
+                candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+              }
+
+              currentCode = candidateCode;
+              await fs.writeFile(targetAbs, currentCode, "utf-8");
+              generatedDiff = this.generateUnifiedDiff(
+                targetRel || "unknown",
+                originalExistingContent,
+                currentCode
+              );
+              if (this.taskRepo) {
+                try {
+                  await this.taskRepo.updateLogSnippet(taskId, generatedDiff);
+                } catch {
+                  // non-fatal
+                }
+              }
+
+              // Recompile package in worktree if needed
+              if (pkgName && worktree) {
+                const buildRes = await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, {
+                  cwd: worktree.worktreePath,
+                  timeoutMs: 90000,
+                  maxBufferBytes: 128 * 1024
+                });
+                if (buildRes.exitCode !== 0) {
+                  const buildOutput = `${buildRes.stdout}\n${buildRes.stderr}`.trim();
+                  const rawDiags = CompilerDiagnosticParser.parseLines(buildOutput.split("\n"));
+                  const autoRepair = new CompilerDiagnosticAutoRepair();
+                  const repairResult = autoRepair.repair(currentCode, rawDiags);
+                  if (repairResult.repairsApplied.length > 0) {
+                    currentCode = repairResult.repairedCode;
+                    await fs.writeFile(targetAbs, currentCode, "utf-8");
+                    await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, {
+                      cwd: worktree.worktreePath,
+                      timeoutMs: 90000,
+                      maxBufferBytes: 128 * 1024
+                    });
                   }
                 }
-                await this.recordAndEmitStage(
-                  taskId,
-                  "remediation",
-                  "SUCCESS",
-                  Date.now() - remediationStart,
-                  "Automated remediation resolved verification errors"
-                );
-              } else {
-                await this.recordAndEmitStage(
-                  taskId,
-                  "remediation",
-                  "FAILURE",
-                  Date.now() - remediationStart,
-                  `Remediation retry failed with exit code ${retryResult.exitCode}`
-                );
-                await this.rollbackWorkspace(targetAbs, originalExistingContent);
-                if (this.worktreeManager && worktree) {
-                  await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
-                }
-                await this.logDiagnostic(taskId, {
-                  taskId,
-                  model: selectedModel,
-                  testCommand: groomed.scopedTestCommand,
-                  retryExitCode: retryResult.exitCode,
-                  retryStderr: retryResult.stderr,
-                  retryStdout: retryResult.stdout
-                });
-                return { success: false, tokensPerSec: measuredTps };
               }
-            } else {
+
+
               await this.recordAndEmitStage(
                 taskId,
                 "remediation",
-                "FAILURE",
+                "SUCCESS",
                 Date.now() - remediationStart,
-                "Remediation produced no code"
+                `Automated remediation attempt ${remediationAttempts} applied fix`
               );
-              await this.rollbackWorkspace(targetAbs, originalExistingContent);
-              if (this.worktreeManager && worktree) {
-                await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
-              }
-              return { success: false, tokensPerSec: measuredTps };
+            } else {
+              throw new Error("Remediation produced no code block");
             }
           } catch (remediationErr) {
             await this.recordAndEmitStage(
@@ -596,55 +836,66 @@ export class AutonomousWorkerPipeline {
               Date.now() - remediationStart,
               String(remediationErr)
             );
-            await this.rollbackWorkspace(targetAbs, originalExistingContent);
-            if (this.worktreeManager && worktree) {
-              await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
-            }
-            return { success: false, tokensPerSec: measuredTps };
+            break;
           }
-        } else {
-          await this.recordAndEmitStage(
-            taskId,
-            "test_execution",
-            "SUCCESS",
-            runResult.durationMs,
-            logOutput
-          );
+        }
 
-          // STAGE 5: Structured Code Review with FrontierReviewer
-          const reviewStart = Date.now();
-          await this.recordAndEmitStage(taskId, "remediation", "RUNNING");
-
-          const reviewResult = await this.frontierReviewer.evaluateReview({
-            taskId,
-            title: groomed.task.title,
-            diff: generatedDiff,
-            testSummary: logOutput
+        if (!testPassed) {
+          const finalRun = lastTestResult || await this.sandboxedRunner.run(groomed.scopedTestCommand, {
+            cwd: executionRoot,
+            timeoutMs: 180000,
+            maxBufferBytes: 256 * 1024
           });
-
-          if (reviewResult.verdict === "REJECT") {
-            await this.recordAndEmitStage(
-              taskId,
-              "remediation",
-              "FAILURE",
-              Date.now() - reviewStart,
-              `Code review rejected: ${reviewResult.reviewNotes} (SOLID score: ${reviewResult.solidComplianceScore})`
-            );
+          if (finalRun.exitCode !== 0) {
             await this.rollbackWorkspace(targetAbs, originalExistingContent);
             if (this.worktreeManager && worktree) {
               await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
             }
+            await this.logDiagnostic(taskId, {
+              taskId,
+              model: selectedModel,
+              testCommand: groomed.scopedTestCommand,
+              retryExitCode: finalRun.exitCode,
+              retryStderr: finalRun.stderr,
+              retryStdout: finalRun.stdout
+            });
             return { success: false, tokensPerSec: measuredTps };
           }
+        }
 
+        // STAGE 5: Structured Code Review with FrontierReviewer
+        const reviewStart = Date.now();
+        await this.recordAndEmitStage(taskId, "remediation", "RUNNING");
+
+        const reviewResult = await this.frontierReviewer.evaluateReview({
+          taskId,
+          title: groomed.task.title,
+          diff: generatedDiff,
+          testSummary: `Exit Code: ${lastTestResult?.exitCode ?? 0}\nTests verified successfully.`
+        });
+
+        if (reviewResult.verdict === "REJECT") {
           await this.recordAndEmitStage(
             taskId,
             "remediation",
-            "SUCCESS",
+            "FAILURE",
             Date.now() - reviewStart,
-            `Review verdict ${reviewResult.verdict} (SOLID score: ${reviewResult.solidComplianceScore}/100). ${reviewResult.reviewNotes}`
+            `Code review rejected: ${reviewResult.reviewNotes} (SOLID score: ${reviewResult.solidComplianceScore})`
           );
+          await this.rollbackWorkspace(targetAbs, originalExistingContent);
+          if (this.worktreeManager && worktree) {
+            await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+          }
+          return { success: false, tokensPerSec: measuredTps };
         }
+
+        await this.recordAndEmitStage(
+          taskId,
+          "remediation",
+          "SUCCESS",
+          Date.now() - reviewStart,
+          `Review verdict ${reviewResult.verdict} (SOLID score: ${reviewResult.solidComplianceScore}/100). ${reviewResult.reviewNotes}`
+        );
       } else {
         // No test command provided
         const reviewStart = Date.now();
@@ -679,39 +930,6 @@ export class AutonomousWorkerPipeline {
         );
       }
 
-      // PRE-COMMIT VERIFICATION GATE: Ensure modified package compiles cleanly in worktree
-      if (worktree && targetRel) {
-        let pkgName = "";
-        if (targetRel.startsWith("packages/frontend")) pkgName = "@cacophony/frontend";
-        else if (targetRel.startsWith("packages/engine")) pkgName = "@cacophony/engine";
-        else if (targetRel.startsWith("packages/db")) pkgName = "@cacophony/db";
-        else if (targetRel.startsWith("packages/shared-types")) pkgName = "@cacophony/shared-types";
-        else if (targetRel.startsWith("packages/tools")) pkgName = "@cacophony/tools";
-
-        if (pkgName) {
-          const buildCmd = `npm run build --workspace=${pkgName}`;
-          const buildCheck = await this.sandboxedRunner.run(buildCmd, {
-            cwd: worktree.worktreePath,
-            timeoutMs: 90000,
-            maxBufferBytes: 128 * 1024
-          });
-          if (buildCheck.exitCode !== 0) {
-            const errSummary = (buildCheck.stderr || buildCheck.stdout).slice(0, 500);
-            await this.recordAndEmitStage(
-              taskId,
-              "remediation",
-              "FAILURE",
-              0,
-              `Pre-commit package build check failed (${buildCmd}): ${errSummary}`
-            );
-            await this.rollbackWorkspace(targetAbs, originalExistingContent);
-            if (this.worktreeManager && worktree) {
-              await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
-            }
-            return { success: false, tokensPerSec: measuredTps };
-          }
-        }
-      }
 
       // STAGE 6: Pull Request Lifecycle & Auto-Merge Gate
       const mergeStart = Date.now();

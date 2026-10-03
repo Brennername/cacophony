@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import ts from "typescript";
 import { AstContextSlicer } from "../context/AstContextSlicer.js";
 import { PromptCompressor } from "./PromptCompressor.js";
 
@@ -32,7 +33,7 @@ export class ContextMinimizer {
   private readonly slicer: AstContextSlicer;
   private readonly compressor: PromptCompressor;
 
-  constructor(projectDir: string = process.cwd(), maxFileSizeBytes = 65536) {
+  constructor(projectDir: string = process.cwd(), maxFileSizeBytes = 32768) {
     this.projectDir = projectDir;
     this.maxFileSizeBytes = maxFileSizeBytes;
     this.slicer = new AstContextSlicer(projectDir);
@@ -63,12 +64,17 @@ export class ContextMinimizer {
       if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
         try {
           const stat = fs.statSync(fullPath);
+          const rawContent = fs.readFileSync(fullPath, "utf-8");
           if (stat.size <= this.maxFileSizeBytes) {
-            let content = fs.readFileSync(fullPath, "utf-8");
+            let content = rawContent;
             if (compressPrompt && (relPath.endsWith(".ts") || relPath.endsWith(".js") || relPath.endsWith(".tsx"))) {
               content = this.compressor.compress(content, true).compressed;
             }
             fileContents.set(relPath, content);
+          } else if (relPath.endsWith(".ts") || relPath.endsWith(".js") || relPath.endsWith(".tsx")) {
+            // Large file: extract concise AST outline with imports and method signatures
+            const outline = this.extractFileOutline(rawContent, relPath);
+            fileContents.set(relPath, outline);
           } else {
             fileContents.set(relPath, `[File exceeds size limit: ${stat.size} bytes]`);
           }
@@ -78,8 +84,10 @@ export class ContextMinimizer {
       }
     }
 
-    // 2. Perform AST dependency slicing on referenced internal modules
-    if (enableAstSlicing) {
+    const totalFocusChars = Array.from(fileContents.values()).reduce((sum, c) => sum + c.length, 0);
+
+    // 2. Perform AST dependency slicing on referenced internal modules (only if focus size is under budget)
+    if (enableAstSlicing && totalFocusChars < 12000) {
       const referencedSymbolsByModule = new Map<string, Set<string>>();
 
       for (const [focusPath, content] of fileContents.entries()) {
@@ -111,13 +119,20 @@ export class ContextMinimizer {
         }
       }
 
+      let currentSkeletonBytes = 0;
+      const MAX_SKELETON_BYTES = 4096;
+      const MAX_SKELETONS = 2;
       for (const [depPath, symbolSet] of referencedSymbolsByModule.entries()) {
+        if (dependencySkeletons.size >= MAX_SKELETONS || currentSkeletonBytes >= MAX_SKELETON_BYTES) {
+          break;
+        }
         try {
           const depContent = fs.readFileSync(depPath, "utf-8");
           originalDepBytes += depContent.length;
           const relDep = path.relative(this.projectDir, depPath);
           const symbols = Array.from(symbolSet);
           const sliced = this.slicer.generateTypeSkeleton(depContent, symbols, relDep);
+          currentSkeletonBytes += sliced.skeletonContent.length;
           skeletonDepBytes += sliced.skeletonContent.length;
           dependencySkeletons.set(relDep, sliced.skeletonContent);
         } catch {
@@ -138,9 +153,12 @@ export class ContextMinimizer {
       compactFileTree,
       "",
       "=== WORKSPACE MODULE RESOLUTION SCHEMA ===",
-      "- Valid Monorepo Packages: @cacophony/shared-types, @cacophony/db, @cacophony/tools.",
-      "- Internal Engine Files: Always use valid relative imports (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js', '../telemetry/ThermalGovernor.js').",
-      "- NEVER invent non-existent package names like '@cacophony/git-worktrees', '@cacophony/scheduler', or '@cacophony/pipeline'."
+      "- Monorepo Packages: @cacophony/shared-types, @cacophony/db, @cacophony/tools, @cacophony/engine, @cacophony/frontend.",
+      "- Language Requirement: Strictly TypeScript. Never emit Python, Java, or C++ code.",
+      "- Testing Standards: For tests, use Node.js native test runner: import test, { describe, it } from 'node:test'; import assert from 'node:assert/strict';. NEVER import or reference @jest/globals, jest, chai, mocha, or sinon.",
+      "- Frontend Standards: Angular standalone components, signals, inject(). Valid services in packages/frontend/src/app/services: arena-state.store, auth.service, history-metrics.service, model-fleet.service, task-api.service, theme.service. Never invent non-existent service files like 'telemetry.service'.",
+      "- Internal Engine Files: Always use valid relative imports ending in .js (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js', '../telemetry/ThermalGovernor.js').",
+      "- NEVER invent non-existent package names like '@cacophony/git-worktrees', 'vscode', or '@types/vscode'."
     ];
 
     if (customDirectives.length > 0) {
@@ -222,6 +240,49 @@ export class ContextMinimizer {
     };
 
     walk(this.projectDir, 1, "");
-    return lines.slice(0, 50).join("\n") || "(empty workspace)";
+    return lines.slice(0, 20).join("\n") || "(empty workspace)";
+  }
+
+  /**
+   * Generates a concise AST outline of a large TypeScript source file,
+   * retaining all imports, type definitions, and class method signatures
+   * while collapsing method bodies to preserve context window tokens.
+   */
+  private extractFileOutline(code: string, filePath: string): string {
+    try {
+      const sf = ts.createSourceFile(filePath, code, ts.ScriptTarget.ES2022, true);
+      let outline = "";
+      for (const stmt of sf.statements) {
+        if (ts.isImportDeclaration(stmt) || ts.isInterfaceDeclaration(stmt) || ts.isTypeAliasDeclaration(stmt)) {
+          outline += stmt.getText(sf) + "\n";
+        } else if (ts.isClassDeclaration(stmt)) {
+          const exportKeyword = stmt.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ? "export " : "";
+          outline += `\n${exportKeyword}class ${stmt.name?.text || ""} {\n`;
+          for (const member of stmt.members) {
+            if (ts.isConstructorDeclaration(member)) {
+              outline += `  constructor(${member.parameters.map((p) => p.getText(sf)).join(", ")}) { /* ... */ }\n`;
+            } else if (ts.isMethodDeclaration(member)) {
+              const name = member.name.getText(sf);
+              const params = member.parameters.map((p) => p.getText(sf)).join(", ");
+              const ret = member.type ? `: ${member.type.getText(sf)}` : "";
+              const isAsync = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword) ? "async " : "";
+              const access = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword)
+                ? "private "
+                : member.modifiers?.some((m) => m.kind === ts.SyntaxKind.ProtectedKeyword)
+                ? "protected "
+                : "public ";
+              outline += `  ${access}${isAsync}${name}(${params})${ret} { /* existing implementation */ }\n`;
+            } else if (ts.isPropertyDeclaration(member)) {
+              outline += `  ${member.getText(sf)};\n`;
+            }
+          }
+          outline += "}\n";
+        }
+      }
+      return outline.trim() || code.slice(0, 10000);
+    } catch {
+      return code.slice(0, 10000);
+    }
   }
 }
+
