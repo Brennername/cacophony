@@ -114,7 +114,7 @@ describe("CompilerDiagnosticParser Test Suite", () => {
 
     const prioritized = CompilerDiagnosticParser.prioritizeDiagnostics(rawDiagnostics, 3);
     assert.strictEqual(prioritized.length, 3, "Should limit to exactly 3 diagnostics");
-    // Priority order: TS2307 and TS2304 have +50, TS1005 has +40, TS2322 has +30, TS6133 is warning
+
     const codes = prioritized.map((d) => d.errorCode);
     assert.ok(codes.includes("TS2307"), "Should prioritize missing module");
     assert.ok(codes.includes("TS2304"), "Should prioritize missing name");
