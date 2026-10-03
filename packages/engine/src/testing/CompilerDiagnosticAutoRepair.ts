@@ -115,6 +115,86 @@ export class CompilerDiagnosticAutoRepair {
       }
     }
 
+    // 4b. Repair TS2724: Typos in exported members ('Did you mean 'Y'?')
+    for (const diag of diagnostics) {
+      if (diag.errorCode === "TS2724" || /Did you mean '([^']+)'\?/i.test(diag.message)) {
+        const typoMatch = diag.message.match(/(?:has no exported member named|does not exist on type)\s+'([^']+)'.*?Did you mean '([^']+)'\?/i);
+        if (typoMatch && typoMatch[1] && typoMatch[2]) {
+          const wrongName = typoMatch[1];
+          const rightName = typoMatch[2];
+          const wrongRegex = new RegExp(`\\b${wrongName}\\b`, "g");
+          currentCode = currentCode.replace(wrongRegex, rightName);
+          repairsApplied.push(`Replaced typo member '${wrongName}' with suggested '${rightName}'`);
+        }
+      }
+    }
+
+    // 4c. Repair TS2305: Missing exported member in valid module
+    for (const diag of diagnostics) {
+      if (diag.errorCode === "TS2305" || /has no exported member '([^']+)'/i.test(diag.message)) {
+        const match = diag.message.match(/Module\s+['"]*([@a-zA-Z0-9_\-./]+)['"]*\s+has no exported member\s+['"]*([a-zA-Z0-9_]+)['"]*/i);
+        if (match && match[1] && match[2]) {
+          const modPath = match[1];
+          const missingMember = match[2];
+          const importRegex = new RegExp(`import\\s*\\{([\\s\\S]*?)\\}\\s*from\\s*['"]${modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"];?`, "g");
+          currentCode = currentCode.replace(importRegex, (_full, members) => {
+            const memberList = members.split(",").map((m: string) => m.trim()).filter((m: string) => m.length > 0 && m !== missingMember);
+            if (memberList.length === 0) {
+              return "";
+            }
+            return `import { ${memberList.join(", ")} } from '${modPath}';`;
+          });
+          if (!currentCode.includes(`type ${missingMember} =`) && !currentCode.includes(`interface ${missingMember}`)) {
+            currentCode = `type ${missingMember} = any;\n` + currentCode;
+            repairsApplied.push(`Removed non-existent export '${missingMember}' from '${modPath}' and declared local fallback`);
+          }
+        }
+      }
+    }
+
+    // 4d. Repair TS2304: Missing node:test test runner functions in test files
+    const hasTestGlobalMissing = diagnostics.some(
+      (d) => d.errorCode === "TS2304" && /Cannot find name '(?:describe|it|beforeEach|afterEach|after|before)'/i.test(d.message)
+    );
+    if (hasTestGlobalMissing && !currentCode.includes("from 'node:test'") && !currentCode.includes('from "node:test"')) {
+      const nodeTestImport = "import { describe, it, test, beforeEach, afterEach, before, after } from 'node:test';\n";
+      currentCode = nodeTestImport + currentCode;
+      repairsApplied.push("Injected 'node:test' runner function imports");
+    }
+
+    // 4e. Repair TS2304: Missing Angular core symbols in Angular components
+    const angularCoreMatch = diagnostics.find(
+      (d) => d.errorCode === "TS2304" && /Cannot find name '(?:EventEmitter|Output|Input|OnInit|OnDestroy|Component|Injectable|signal|computed|effect)'/i.test(d.message)
+    );
+    if (angularCoreMatch) {
+      const symMatch = angularCoreMatch.message.match(/Cannot find name '([^']+)'/i);
+      if (symMatch && symMatch[1]) {
+        const sym = symMatch[1];
+        if (currentCode.includes("@angular/core")) {
+          currentCode = currentCode.replace(
+            /(import\s*\{)([^}]+)(\}\s*from\s*['"]@angular\/core['"])/,
+            `$1$2, ${sym}$3`
+          );
+          repairsApplied.push(`Added missing '${sym}' to '@angular/core' imports`);
+        } else {
+          currentCode = `import { ${sym} } from '@angular/core';\n` + currentCode;
+          repairsApplied.push(`Imported '${sym}' from '@angular/core'`);
+        }
+      }
+    }
+
+    // 4f. Repair NG8002: Missing FormsModule for ngModel in Angular templates
+    const hasNgModelMissing = diagnostics.some(
+      (d) => /NG8002|Can't bind to 'ngModel'/i.test(d.message)
+    );
+    if (hasNgModelMissing && !currentCode.includes("FormsModule")) {
+      currentCode = "import { FormsModule } from '@angular/forms';\n" + currentCode;
+      if (currentCode.includes("imports: [")) {
+        currentCode = currentCode.replace("imports: [", "imports: [FormsModule, ");
+      }
+      repairsApplied.push("Imported and registered FormsModule for ngModel binding");
+    }
+
     // 5. Repair TS2834: Explicit .js file extensions in relative imports
     for (const diag of diagnostics) {
       if (diag.errorCode === "TS2834" || /Relative import paths need explicit file extensions/i.test(diag.message)) {

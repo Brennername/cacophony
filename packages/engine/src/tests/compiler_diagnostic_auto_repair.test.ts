@@ -93,4 +93,75 @@ describe("CompilerDiagnosticAutoRepair Test Suite", () => {
     const result = repairer.repair(inputCode, diags);
     assert.ok(result.repairedCode.includes("options.target ?? ts.ScriptTarget.ES2022"));
   });
+
+  test("should repair TS2724 by replacing typo member with suggested member", () => {
+    const inputCode = `import { BanditPolicy } from '@cacophony/shared-types';\nconst p: BanditPolicy = 'thompson';`;
+    const diags = [
+      {
+        filePath: "src/test.ts",
+        lineNumber: 1,
+        columnNumber: 10,
+        severity: "error" as const,
+        message: "'@cacophony/shared-types' has no exported member named 'BanditPolicy'. Did you mean 'BanditPolicyType'?",
+        errorCode: "TS2724"
+      }
+    ];
+
+    const result = repairer.repair(inputCode, diags);
+    assert.ok(result.repairedCode.includes("BanditPolicyType"));
+    assert.ok(!result.repairedCode.includes("BanditPolicy ="));
+  });
+
+  test("should repair TS2305 by removing missing member and declaring local fallback", () => {
+    const inputCode = `import { TaskRecord, Action } from '@cacophony/shared-types';\nfunction doAction(a: Action) {}`;
+    const diags = [
+      {
+        filePath: "src/test.ts",
+        lineNumber: 1,
+        columnNumber: 22,
+        severity: "error" as const,
+        message: "Module '\"@cacophony/shared-types\"' has no exported member 'Action'.",
+        errorCode: "TS2305"
+      }
+    ];
+
+    const result = repairer.repair(inputCode, diags);
+    assert.ok(result.repairedCode.includes("type Action = any;"));
+    assert.ok(result.repairedCode.includes("import { TaskRecord } from '@cacophony/shared-types';"));
+  });
+
+  test("should inject node:test runner functions on TS2304 Cannot find name 'describe'", () => {
+    const inputCode = `describe('Suite', () => {\n  it('works', () => {});\n});`;
+    const diags = [
+      {
+        filePath: "src/test.ts",
+        lineNumber: 1,
+        columnNumber: 1,
+        severity: "error" as const,
+        message: "Cannot find name 'describe'.",
+        errorCode: "TS2304"
+      }
+    ];
+
+    const result = repairer.repair(inputCode, diags);
+    assert.ok(result.repairedCode.includes("import { describe, it, test, beforeEach, afterEach, before, after } from 'node:test';"));
+  });
+
+  test("should add missing Angular symbol to @angular/core imports on TS2304", () => {
+    const inputCode = `import { Component } from '@angular/core';\n\nexport class Foo {\n  change = new EventEmitter<void>();\n}`;
+    const diags = [
+      {
+        filePath: "src/foo.component.ts",
+        lineNumber: 4,
+        columnNumber: 16,
+        severity: "error" as const,
+        message: "Cannot find name 'EventEmitter'.",
+        errorCode: "TS2304"
+      }
+    ];
+
+    const result = repairer.repair(inputCode, diags);
+    assert.ok(result.repairedCode.includes("EventEmitter"));
+    assert.ok(result.repairedCode.includes("from '@angular/core'"));
+  });
 });

@@ -97,6 +97,9 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}\$"; then
     echo "Documentation synchronized to /app/docs/"
   fi
 
+  # Synchronize container git main branch to HEAD
+  docker exec "${CONTAINER_NAME}" git branch -f main HEAD 2>/dev/null || true
+
   echo "Restarting '${CONTAINER_NAME}' to reload daemon with latest builds..."
   docker restart "${CONTAINER_NAME}" > /dev/null
   echo "Container '${CONTAINER_NAME}' successfully restarted."

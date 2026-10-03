@@ -101,6 +101,15 @@ export class GitWorktreeManager {
       // non-fatal
     }
 
+    // Ensure baseBranch is synced to latest repository HEAD to prevent stale worktree checkouts
+    try {
+      if (targetBase === "main") {
+        await execAsync("git branch -f main HEAD", { cwd: this.repositoryRoot }).catch(() => {});
+      }
+    } catch {
+      // non-fatal
+    }
+
     // Ensure branch exists or create from baseBranch
     try {
       await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" "${targetBase}"`, {

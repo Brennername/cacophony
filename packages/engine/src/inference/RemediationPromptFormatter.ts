@@ -60,8 +60,9 @@ export class RemediationPromptFormatter {
     sections.push("### 3. Compiler Error Diagnostics");
     if (options.compilerDiagnostics && options.compilerDiagnostics.length > 0) {
       for (const diag of options.compilerDiagnostics) {
+        const codeSuffix = diag.errorCode ? `, ${diag.errorCode}` : "";
         sections.push(
-          `- [Line ${diag.lineNumber}, Col ${diag.columnNumber}] [${diag.severity.toUpperCase()}] ${diag.message} (${diag.filePath})`
+          `- [Line ${diag.lineNumber}, Col ${diag.columnNumber}] [${diag.severity.toUpperCase()}] ${diag.message} (${diag.filePath}${codeSuffix})`
         );
       }
     } else {

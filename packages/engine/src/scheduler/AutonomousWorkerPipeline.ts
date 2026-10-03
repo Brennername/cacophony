@@ -502,6 +502,14 @@ export class AutonomousWorkerPipeline {
         else if (targetRel.startsWith("packages/shared-types")) pkgName = "@cacophony/shared-types";
         else if (targetRel.startsWith("packages/tools")) pkgName = "@cacophony/tools";
       }
+      if (!pkgName && worktree) {
+        const candidatePaths = [...focusFiles, groomed.scopedTestCommand, groomed.task.focusFiles || ""].join(" ");
+        if (candidatePaths.includes("packages/frontend")) pkgName = "@cacophony/frontend";
+        else if (candidatePaths.includes("packages/engine")) pkgName = "@cacophony/engine";
+        else if (candidatePaths.includes("packages/db")) pkgName = "@cacophony/db";
+        else if (candidatePaths.includes("packages/shared-types")) pkgName = "@cacophony/shared-types";
+        else if (candidatePaths.includes("packages/tools")) pkgName = "@cacophony/tools";
+      }
 
       let remediationAttempts = 0;
       const maxRemediationAttempts = 2;
@@ -941,6 +949,19 @@ export class AutonomousWorkerPipeline {
       // If worktree and git platform provider are available, commit, push, open PR, and merge
       if (this.worktreeManager && worktree && this.gitPlatformProvider) {
         try {
+          // Pre-PR integrity guardrail: verify the workspace compiles cleanly before opening or merging a PR
+          if (pkgName) {
+            const prePrCheck = await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, {
+              cwd: worktree.worktreePath,
+              timeoutMs: 90000,
+              maxBufferBytes: 256 * 1024
+            });
+            if (prePrCheck.exitCode !== 0) {
+              const buildErr = (prePrCheck.stderr || prePrCheck.stdout).slice(0, 400);
+              throw new Error(`Pre-PR verification failed (npm run build --workspace=${pkgName}): ${buildErr}`);
+            }
+          }
+
           await this.worktreeManager.commitWorktree(
             worktree.worktreePath,
             `feat(${taskId}): ${groomed.task.title}\n\nAutomated commit by Cacophony Engine.`
