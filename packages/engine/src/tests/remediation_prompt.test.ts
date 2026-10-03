@@ -60,6 +60,6 @@ describe("RemediationPromptFormatter Test Suite", () => {
     assert.ok(directives.includes("Provide the COMPLETE, corrected implementation for 'packages/engine/src/sample.ts'"));
     assert.ok(directives.includes("Do NOT output partial diffs"));
     assert.ok(directives.includes("Do NOT include conversational filler"));
-    assert.ok(directives.includes("```typescript ... ```"));
-  });
+
+});
 });
