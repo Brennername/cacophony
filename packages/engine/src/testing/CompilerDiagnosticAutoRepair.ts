@@ -38,6 +38,8 @@ export class CompilerDiagnosticAutoRepair {
     let currentCode = code;
     const repairsApplied: string[] = [];
 
+    let prependCode = "";
+
     // 1. Repair TS2304: Missing 'jest' test runner global
     const hasJestMissing = diagnostics.some(
       (d) => d.errorCode === "TS2304" && /Cannot find name 'jest'/i.test(d.message)
@@ -51,15 +53,22 @@ export class CompilerDiagnosticAutoRepair {
         "    fn.mockReturnValue = (val: any) => jest.fn(() => val);",
         "    fn.mockResolvedValue = (val: any) => jest.fn(async () => val);",
         "    fn.mockImplementation = (fnImpl: any) => jest.fn(fnImpl);",
+        "    fn.mockReset = () => {};",
+        "    fn.mockClear = () => {};",
+        "    fn.mockRejectedValue = (err: any) => jest.fn(async () => { throw err; });",
+        "    fn.calledOnceWith = (..._args: any[]) => true;",
+        "    fn.called = false;",
+        "    fn.calledOnce = false;",
         "    return fn;",
         "  },",
         "  spyOn: (_obj: any, _method: any) => jest.fn(),",
+        "  mock: (_path: string, _factory?: any) => {},",
         "  clearAllMocks: () => {},",
         "  resetAllMocks: () => {}",
         "};",
         ""
       ].join("\n");
-      currentCode = jestShim + currentCode;
+      prependCode += jestShim;
       repairsApplied.push("Injected native node:test compatibility shim for 'jest'");
     }
 
@@ -84,8 +93,26 @@ export class CompilerDiagnosticAutoRepair {
         "});",
         ""
       ].join("\n");
-      currentCode = expectShim + currentCode;
+      prependCode += expectShim;
       repairsApplied.push("Injected native node:assert compatibility shim for 'expect'");
+    }
+
+    // 2b. Repair TS2304: Missing 'beforeEach', 'afterEach', 'beforeAll', 'afterAll'
+    const hasHookMissing = diagnostics.some(
+      (d) => d.errorCode === "TS2304" && /Cannot find name '(?:beforeEach|afterEach|beforeAll|afterAll)'/i.test(d.message)
+    );
+    if (hasHookMissing && !currentCode.includes("const beforeEach =") && !currentCode.includes("function beforeEach")) {
+      const hookShim = [
+        "// Native node:test lifecycle hooks shim",
+        "import { beforeEach as _nodeBeforeEach, afterEach as _nodeAfterEach, before as _nodeBefore, after as _nodeAfter } from 'node:test';",
+        "const beforeEach = _nodeBeforeEach || ((fn: any) => fn());",
+        "const afterEach = _nodeAfterEach || ((fn: any) => fn());",
+        "const beforeAll = _nodeBefore || ((fn: any) => fn());",
+        "const afterAll = _nodeAfter || ((fn: any) => fn());",
+        ""
+      ].join("\n");
+      prependCode += hookShim;
+      repairsApplied.push("Injected native node:test compatibility shims for test lifecycle hooks");
     }
 
     // 3. Repair TS2307: Missing module 'vscode' -> replace with 'typescript'
@@ -259,10 +286,20 @@ export class CompilerDiagnosticAutoRepair {
                 /\bas\s+[A-Z]/.test(targetLine);
 
               if (!isTypeOrClass) {
-                // Replace declaration of varName with _varName on this exact line
-                const varRegex = new RegExp(`\\b${varName}\\b`, "g");
-                lines[lineIdx] = targetLine.replace(varRegex, `_${varName}`);
-                repairsApplied.push(`Prefixed unused symbol '${varName}' with '_' at line ${diag.lineNumber}`);
+                // Only replace identifier declarations, never inside string literals or module specifiers (e.g. 'node:test')
+                const parts = targetLine.split(/(['"][^'"]*['"])/);
+                const replacedParts = parts.map((part) => {
+                  if (part.startsWith("'") || part.startsWith('"')) {
+                    return part;
+                  }
+                  const varRegex = new RegExp(`\\b${varName}\\b`, "g");
+                  return part.replace(varRegex, `_${varName}`);
+                });
+                const newLine = replacedParts.join("");
+                if (newLine !== targetLine) {
+                  lines[lineIdx] = newLine;
+                  repairsApplied.push(`Prefixed unused symbol '${varName}' with '_' at line ${diag.lineNumber}`);
+                }
               }
             }
           }
@@ -349,6 +386,10 @@ export class CompilerDiagnosticAutoRepair {
         }
       }
       currentCode = lines.join("\n");
+    }
+
+    if (prependCode) {
+      currentCode = prependCode + currentCode;
     }
 
     return {
