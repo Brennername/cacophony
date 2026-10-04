@@ -1,8 +1,5 @@
 import type { DiffHunk, UnifiedDiff } from "@cacophony/shared-types";
 
-/**
- * Targeted chunk representing line modifications within a specific range.
- */
 export interface TargetedChunk {
   readonly oldStartLine: number;
   readonly oldLineCount: number;
@@ -12,22 +9,8 @@ export interface TargetedChunk {
   readonly newLines: readonly string[];
 }
 
-/**
- * FocusedDiffBuilder
- *
- * Implements targeted diff computation and unified diff generation under SOLID principles.
- * Identifies exact changed lines between original and updated file contents and produces
- * surgical replacement chunks and standard unified diff syntax.
- */
 export class FocusedDiffBuilder {
-  /**
-   * Computes targeted replacement chunks by comparing original and modified code.
-   *
-   * @param originalContent Content of the original file.
-   * @param modifiedContent Content of the modified file.
-   * @param contextLines Number of surrounding context lines to include in hunks.
-   * @returns Array of targeted change chunks.
-   */
+
   public computeTargetedChunks(
     originalContent: string,
     modifiedContent: string,
@@ -45,7 +28,7 @@ export class FocusedDiffBuilder {
     let modIdx = 0;
 
     while (origIdx < origLines.length || modIdx < modLines.length) {
-      // Advance while lines match
+
       if (
         origIdx < origLines.length &&
         modIdx < modLines.length &&
@@ -56,11 +39,9 @@ export class FocusedDiffBuilder {
         continue;
       }
 
-      // Found difference: locate start of change with context
       const changeOrigStart = origIdx;
       const changeModStart = modIdx;
 
-      // Scan forward to find where lines resynchronize
       let diffOrigEnd = changeOrigStart;
       let diffModEnd = changeModStart;
 
@@ -109,14 +90,6 @@ export class FocusedDiffBuilder {
     return chunks;
   }
 
-  /**
-   * Formats a standard unified diff string for display and git patch application.
-   *
-   * @param filePath Relative path of the target file.
-   * @param originalContent Content before modification.
-   * @param modifiedContent Content after modification.
-   * @returns Formatted unified diff string.
-   */
   public formatUnifiedDiff(
     filePath: string,
     originalContent: string,
@@ -158,9 +131,6 @@ export class FocusedDiffBuilder {
     return header + hunksText.join("\n") + "\n";
   }
 
-  /**
-   * Constructs a structured UnifiedDiff object with hunks and additions/deletions counts.
-   */
   public buildStructuredDiff(
     filePath: string,
     originalContent: string,
@@ -176,8 +146,12 @@ export class FocusedDiffBuilder {
       deletions += c.oldLineCount;
       additions += c.newLineCount;
       const lines: string[] = [];
-      for (const l of c.oldLines) lines.push(`-${l}`);
-      for (const l of c.newLines) lines.push(`+${l}`);
+      for (const l of c.oldLines) {
+        lines.push(`-${l}`);
+      }
+      for (const l of c.newLines) {
+        lines.push(`+${l}`);
+      }
       return {
         oldStart: c.oldStartLine,
         oldLines: c.oldLineCount,
@@ -196,9 +170,6 @@ export class FocusedDiffBuilder {
     };
   }
 
-  /**
-   * Generates line-level diff comparing arrays of lines (convenience method for testing).
-   */
   public buildDiff(originalLines: readonly string[], modifiedLines: readonly string[]): readonly string[] {
     const result: string[] = [];
     const max = Math.max(originalLines.length, modifiedLines.length);

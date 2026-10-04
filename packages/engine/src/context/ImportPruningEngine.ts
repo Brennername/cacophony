@@ -1,8 +1,5 @@
 import ts from "typescript";
 
-/**
- * Parsed import statement metadata.
- */
 export interface ParsedImport {
   readonly moduleSpecifier: string;
   readonly defaultImport?: string;
@@ -11,20 +8,8 @@ export interface ParsedImport {
   readonly rawText: string;
 }
 
-/**
- * ImportPruningEngine
- *
- * Implements context minimization by stripping unused external module imports
- * and consolidating duplicate import declarations under SOLID principles.
- */
 export class ImportPruningEngine {
-  /**
-   * Identifies and strips external library imports that are not referenced in the file content.
-   *
-   * @param sourceCode Source code containing imports and code body.
-   * @param allowedOrRequiredModules Optional list of modules to preserve regardless of references.
-   * @returns Cleaned code with unused external imports removed.
-   */
+
   public pruneUnusedImports(
     sourceCode: string,
     allowedOrRequiredModules: readonly string[] = []
@@ -42,7 +27,6 @@ export class ImportPruningEngine {
     const importsToRemove: ts.ImportDeclaration[] = [];
     const requiredSet = new Set(allowedOrRequiredModules);
 
-    // Collect all identifiers referenced outside import declarations
     const nonImportIdentifiers = new Set<string>();
 
     function visit(node: ts.Node) {
@@ -63,12 +47,11 @@ export class ImportPruningEngine {
       }
 
       const moduleSpecifier = (stmt.moduleSpecifier as ts.StringLiteral).text;
-      // If module is explicitly required or is a relative import (starts with .), preserve it
+
       if (requiredSet.has(moduleSpecifier) || moduleSpecifier.startsWith(".")) {
         continue;
       }
 
-      // Check imported symbols
       const importClause = stmt.importClause;
       if (!importClause) {
         continue;
@@ -76,12 +59,10 @@ export class ImportPruningEngine {
 
       let isAnySymbolUsed = false;
 
-      // Check default import
       if (importClause.name && nonImportIdentifiers.has(importClause.name.text)) {
         isAnySymbolUsed = true;
       }
 
-      // Check named / namespace imports
       if (importClause.namedBindings) {
         if (ts.isNamespaceImport(importClause.namedBindings)) {
           if (nonImportIdentifiers.has(importClause.namedBindings.name.text)) {
@@ -107,15 +88,14 @@ export class ImportPruningEngine {
       return sourceCode;
     }
 
-    // Remove unused imports by range
     let updatedCode = sourceCode;
-    // Sort descending by start position to safely slice
+
     importsToRemove.sort((a, b) => b.getStart(sourceFile) - a.getStart(sourceFile));
 
     for (const imp of importsToRemove) {
       const start = imp.getStart(sourceFile);
       let end = imp.getEnd();
-      // Also consume following newline if present
+
       if (updatedCode[end] === "\n") {
         end++;
       } else if (updatedCode.slice(end, end + 2) === "\r\n") {
@@ -127,12 +107,6 @@ export class ImportPruningEngine {
     return updatedCode;
   }
 
-  /**
-   * Consolidates duplicate import declarations from the same module specifier into single statements.
-   *
-   * @param sourceCode Source code with potentially redundant imports.
-   * @returns Normalized source code with consolidated imports.
-   */
   public consolidateImports(sourceCode: string): string {
     const trimmed = sourceCode.trim();
     if (!trimmed) return sourceCode;
@@ -166,7 +140,6 @@ export class ImportPruningEngine {
       return sourceCode;
     }
 
-    // Reconstruct imports for modules with duplicates
     let updatedCode = sourceCode;
     for (const [mod, list] of importsByModule.entries()) {
       if (list.length <= 1) continue;
@@ -185,7 +158,6 @@ export class ImportPruningEngine {
         }
       }
 
-      // Format consolidated statement
       const parts: string[] = [];
       if (defaultImport) parts.push(defaultImport);
       if (namedSymbols.size > 0) {
@@ -193,8 +165,6 @@ export class ImportPruningEngine {
       }
       const consolidatedStmt = `import ${parts.join(", ")} from "${mod}";`;
 
-      // Replace first occurrence with consolidated, delete subsequent
-      // Sort list in reverse order of source position
       const sortedList = [...list].sort((a, b) => b.getStart(sourceFile) - a.getStart(sourceFile));
       for (let i = 0; i < sortedList.length - 1; i++) {
         const item = sortedList[i]!;
@@ -210,7 +180,6 @@ export class ImportPruningEngine {
       const end = firstItem.getEnd();
       updatedCode = updatedCode.slice(0, start) + consolidatedStmt + updatedCode.slice(end);
 
-      // Re-parse for next iteration if multiple modules have duplicates
       sourceFile = ts.createSourceFile("temp.ts", updatedCode, ts.ScriptTarget.ES2022, true);
     }
 

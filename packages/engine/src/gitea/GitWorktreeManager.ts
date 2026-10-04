@@ -256,4 +256,63 @@ export class GitWorktreeManager {
   public async cleanWorktree(taskId: string, branchName?: string): Promise<void> {
     return this.cleanupTerminalTask(taskId, branchName);
   }
+
+
+  public async createIsolatedWorktree(
+      taskId: string,
+      branchNameOrOptions?: string | TaskBranchOptions,
+      baseBranch = "main"
+    ): Promise<WorktreeDescriptor> {
+      await this.initialize();
+
+      let branchName: string;
+      let targetBase = baseBranch;
+
+      if (typeof branchNameOrOptions === "string") {
+        branchName = branchNameOrOptions;
+      } else {
+        branchName = this.formatBranchName(taskId, branchNameOrOptions);
+        if (branchNameOrOptions?.targetBranch) {
+          targetBase = branchNameOrOptions.targetBranch;
+        }
+      }
+
+      const worktreePath = path.join(this.workspacesRoot, `isolated-worktree-${taskId}`);
+
+      try {
+        await fs.rm(worktreePath, { recursive: true, force: true });
+      } catch {
+        // Ignore error if directory does not exist
+      }
+
+      try {
+        await execAsync("git worktree prune", { cwd: this.repositoryRoot });
+      } catch {
+        // Ignore error if pruning fails
+      }
+
+      try {
+        if (targetBase === "main") {
+          await execAsync("git branch -f main HEAD", { cwd: this.repositoryRoot }).catch(() => {});
+        }
+      } catch {
+        // Ignore error if setting base branch fails
+      }
+
+      try {
+        await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" "${targetBase}"`, {
+          cwd: this.repositoryRoot
+        });
+      } catch {
+        await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" HEAD`, {
+          cwd: this.repositoryRoot
+        });
+      }
+
+      return {
+        taskId,
+        branchName,
+        worktreePath
+      };
+    }
 }
