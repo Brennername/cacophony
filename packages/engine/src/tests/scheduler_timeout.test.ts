@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
 import { FailureClassifier, ExecutionTimeoutError } from "../analytics/FailureClassifier.js";
 import type { TaskRecord } from "@cacophony/shared-types";
+import { StreamTapManager } from "../inference/StreamTapManager.js";
 
 describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
   it("T47.2.2: FailureClassifier correctly classifies ExecutionTimeoutError as TIMEOUT category", () => {
@@ -119,5 +120,62 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
     assert.equal(completionVerdict, "FAILURE");
     assert.ok(completionMessage?.includes("[TIMEOUT]"));
     assert.ok(failureCountIncremented);
+  });
+
+  it("does not treat normal pipeline-stage transitions as stalled generation", async () => {
+    const task: TaskRecord = {
+      id: "task-stage-progress",
+      title: "Long verification stage",
+      prompt: "Run the full verification flow",
+      role: "implementer",
+      status: "PENDING",
+      priority: "P1",
+      modelAssigned: "qwen2.5-coder:3b",
+      testCommand: null,
+      focusFiles: null,
+      targetBranch: "main",
+      prUrl: null,
+      failureCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: null
+    };
+    let status = "PENDING";
+    const taskRepo = {
+      listPending: async () => [task],
+      updateStatus: async (_id: string, value: string) => { status = value; },
+      updateModel: async () => {},
+      incrementFailure: async () => {}
+    } as any;
+    const stageRepo = {
+      recordStageStart: async () => 1,
+      recordStageCompletion: async () => {}
+    } as any;
+    const evictionManager = { selectModel: async () => "qwen2.5-coder:3b", recordRunOutcome: async () => {} } as any;
+    const telemetryProvider = {
+      sample: async () => ({ edgeTempCelsius: 50, junctionTempCelsius: 55, vramUsedBytes: 1, vramTotalBytes: 2,
+        gpuBusyPercent: 0, pptWatts: 1, sclkMhz: 1, mclkMhz: 1, timestamp: new Date().toISOString() })
+    } as any;
+    const streamTapManager = new StreamTapManager();
+    const scheduler = new TaskScheduler({
+      taskRepo, stageRepo, evictionManager, telemetryProvider, streamTapManager,
+      defaultTimeoutMs: 1000,
+      noProgressTimeoutMs: 80,
+      perModelTimeoutMs: { "qwen2.5-coder:3b": 1000 }
+    });
+
+    scheduler.setExecutionHandler(async () => {
+      const heartbeat = setInterval(() => streamTapManager.emitStageTransition({
+        taskId: task.id, stageName: "test_execution", stageStatus: "RUNNING", timestamp: Date.now()
+      }), 20);
+      await new Promise((resolve) => setTimeout(resolve, 220));
+      clearInterval(heartbeat);
+      return { success: true, tokensPerSec: 0 };
+    });
+
+    scheduler.start();
+    await scheduler.tick();
+    scheduler.stop();
+    assert.equal(status, "COMPLETED");
   });
 });

@@ -37,6 +37,7 @@ export class StreamTapManager {
   private readonly taskDemuxers = new Map<string, ReasoningStreamDemuxer>();
   public readonly maxBufferSize = 100000;
   private readonly bufferTimestamps = new Map<string, number>();
+  private readonly activityTimestamps = new Map<string, number>();
 
   constructor() {
     this.emitter.setMaxListeners(100);
@@ -93,6 +94,7 @@ export class StreamTapManager {
     this.enforceBufferLimit(taskId, token);
 
     const now = Date.now();
+    this.activityTimestamps.set(taskId, Math.max(now, (this.activityTimestamps.get(taskId) ?? 0) + 1));
     const event: StreamTokenEvent = {
       taskId,
       token,
@@ -163,6 +165,11 @@ export class StreamTapManager {
     return this.bufferTimestamps.get(taskId);
   }
 
+  /** Returns the latest token or pipeline-stage activity for a task. */
+  public getLastActivityAt(taskId: string): number | undefined {
+    return this.activityTimestamps.get(taskId);
+  }
+
   /**
    * Clears the buffer and demuxer state for a task.
    */
@@ -171,6 +178,8 @@ export class StreamTapManager {
     if (!target) return;
     this.taskBuffers.delete(target);
     this.taskDemuxers.delete(target);
+    this.bufferTimestamps.delete(target);
+    this.activityTimestamps.delete(target);
   }
 
   /**
@@ -211,6 +220,10 @@ export class StreamTapManager {
    * Emits a pipeline stage transition event to all listeners.
    */
   public emitStageTransition(event: StageTransitionEvent): void {
+    this.activityTimestamps.set(
+      event.taskId,
+      Math.max(event.timestamp, (this.activityTimestamps.get(event.taskId) ?? 0) + 1)
+    );
     this.emitter.emit("stage_transition", event);
     this.emitter.emit(`stage_transition:${event.taskId}`, event);
   }

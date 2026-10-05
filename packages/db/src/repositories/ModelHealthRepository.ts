@@ -240,9 +240,18 @@ export class ModelHealthRepository {
     }
 
     const inactiveVal = this.driver.getDialect() === "postgres" ? false : 0;
+    const taskCount = profiles.reduce((total, profile) => total + profile.totalTasks, 0);
+    const successCount = profiles.reduce((total, profile) => total + profile.totalSuccess, 0);
+    const failureCount = profiles.reduce((total, profile) => total + profile.totalFailures, 0);
     await this.driver.execute(
-      "UPDATE arena_epochs SET is_active = $1, ended_at = $2 WHERE epoch_id = $3",
-      [inactiveVal, now, current.epochId]
+      `UPDATE arena_epochs SET
+        is_active = $1,
+        ended_at = $2,
+        task_count = $3,
+        success_count = $4,
+        failure_count = $5
+       WHERE epoch_id = $6`,
+      [inactiveVal, now, taskCount, successCount, failureCount, current.epochId]
     );
 
     const activeVal = this.driver.getDialect() === "postgres" ? true : 1;

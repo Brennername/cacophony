@@ -40,6 +40,7 @@ export class TaskScheduler {
 
   private readonly perModelTimeoutMs: Readonly<Record<string, number>>;
   private readonly defaultTimeoutMs: number;
+  private readonly noProgressTimeoutMs: number | undefined;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
@@ -52,6 +53,7 @@ export class TaskScheduler {
     readonly governor?: ThermalGovernor;
     readonly sorter?: ModelAffinityTaskSorter;
     readonly defaultTimeoutMs?: number;
+    readonly noProgressTimeoutMs?: number;
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
   }) {
     this.taskRepo = options.taskRepo;
@@ -60,6 +62,10 @@ export class TaskScheduler {
     this.telemetryProvider = options.telemetryProvider;
     this.streamTapManager = options.streamTapManager;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
+    // An inactivity cutoff is opt-in. Some models can legitimately spend a long
+    // time without emitting tokens or stage events; the hard model deadline is
+    // the production safety limit and must not be preempted by a shorter idle timer.
+    this.noProgressTimeoutMs = options.noProgressTimeoutMs;
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
       "qwen2.5-coder:3b": 360_000,
       "gemma3:4b-it-qat": 420_000,
@@ -326,28 +332,30 @@ export class TaskScheduler {
             );
           }, modelTimeoutMs);
         });
-        const progressTimeoutMs = Math.min(10 * 60_000, modelTimeoutMs);
-        const progressPromise = this.streamTapManager
+        const progressTimeoutMs = this.noProgressTimeoutMs === undefined
+          ? undefined
+          : Math.min(this.noProgressTimeoutMs, modelTimeoutMs);
+        const progressPromise = this.streamTapManager && progressTimeoutMs !== undefined
           ? new Promise<never>((_, reject) => {
               let lastProgressAt = Date.now();
-              let lastTokenAt = this.streamTapManager?.getLastTokenAt(targetTask.id);
+              let lastActivityAt = this.streamTapManager?.getLastActivityAt(targetTask.id);
               progressTimer = setInterval(() => {
-                const currentTokenAt = this.streamTapManager?.getLastTokenAt(targetTask.id);
-                if (currentTokenAt !== undefined && currentTokenAt !== lastTokenAt) {
-                  lastTokenAt = currentTokenAt;
+                const currentActivityAt = this.streamTapManager?.getLastActivityAt(targetTask.id);
+                if (currentActivityAt !== undefined && currentActivityAt !== lastActivityAt) {
+                  lastActivityAt = currentActivityAt;
                   lastProgressAt = Date.now();
                 }
                 if (Date.now() - lastProgressAt >= progressTimeoutMs) {
                   if (progressTimer) clearInterval(progressTimer);
                   abortController.abort();
                   reject(new ExecutionTimeoutError(
-                    `Task produced no streamed token progress for ${progressTimeoutMs}ms (hard limit ${modelTimeoutMs}ms)`,
+                    `Task produced no token or pipeline-stage progress for ${progressTimeoutMs}ms (hard limit ${modelTimeoutMs}ms)`,
                     progressTimeoutMs,
                     targetTask.id,
                     selectedModel
                   ));
                 }
-              }, 30_000);
+              }, Math.min(30_000, Math.max(10, Math.floor(progressTimeoutMs / 4))));
             })
           : new Promise<never>(() => {});
 
@@ -392,7 +400,7 @@ export class TaskScheduler {
           abortController.abort();
           const durationMs = Date.now() - stageStartMs;
           const errorMsg = err instanceof Error ? err.message : String(err);
-          const classification = FailureClassifier.classify(errorMsg);
+          const classification = FailureClassifier.classify(err instanceof Error ? err : errorMsg);
           const isTimeout = classification.category === "TIMEOUT" || err instanceof ExecutionTimeoutError;
 
           console.error(
