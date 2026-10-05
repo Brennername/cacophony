@@ -550,9 +550,42 @@ export class AutonomousWorkerPipeline {
           const buildOutput = `${buildCheck.stdout}\n${buildCheck.stderr}`.trim();
           const rawDiags = CompilerDiagnosticParser.parseLines(buildOutput.split("\n"));
 
+          // The package build can report failures in files unrelated to this task. The
+          // remediation prompt and generated code below only operate on targetAbs, so
+          // applying diagnostics from other files to currentCode produces destructive,
+          // futile edits (and can burn the full five-attempt remediation budget).
+          const targetDiagnostics = rawDiags.filter((diagnostic) => {
+            if (!diagnostic.filePath || !targetAbs) return false;
+            const normalizedTarget = path.resolve(targetAbs);
+            const packageRoot = targetRel?.match(/^(packages\/[^/]+)\//)?.[1] || "";
+            const diagnosticPaths = [
+              path.resolve(worktree!.worktreePath, diagnostic.filePath),
+              path.resolve(worktree!.worktreePath, packageRoot, diagnostic.filePath)
+            ];
+            return diagnosticPaths.some((diagnosticPath) => diagnosticPath === normalizedTarget);
+          });
+
+          if (targetDiagnostics.length === 0) {
+            const unrelatedDetails = CompilerDiagnosticParser.prioritizeDiagnostics(rawDiags, 5)
+              .map((diagnostic) => `${diagnostic.filePath || "<project>"}:${diagnostic.lineNumber}: ${diagnostic.message}`)
+              .join("; ");
+            const summary = rawDiags.length > 0
+              ? `${rawDiags.length} compiler diagnostic(s) did not point to the generated focus file '${targetRel}': ${unrelatedDetails}`
+              : "The build failed without diagnostics mapped to the generated focus file.";
+            console.warn(`[AutonomousWorkerPipeline] Stopping remediation: ${summary}`);
+            await this.recordAndEmitStage(
+              taskId,
+              "remediation",
+              "FAILURE",
+              0,
+              `Build failure is outside the generated focus file; skipped unsafe rewrite. ${summary}`
+            );
+            break;
+          }
+
           // 1a. Attempt immediate deterministic diagnostic auto-repair
           const autoRepair = new CompilerDiagnosticAutoRepair();
-          const repairResult = autoRepair.repair(currentCode, rawDiags);
+          const repairResult = autoRepair.repair(currentCode, targetDiagnostics);
           if (repairResult.repairsApplied.length > 0) {
             let candidateCode = repairResult.repairedCode;
             if (originalExistingContent && originalExistingContent.trim().length > 0) {
@@ -585,7 +618,7 @@ export class AutonomousWorkerPipeline {
             }
           }
 
-          const prioritizedDiags = CompilerDiagnosticParser.prioritizeDiagnostics(rawDiags, 3);
+          const prioritizedDiags = CompilerDiagnosticParser.prioritizeDiagnostics(targetDiagnostics, 3);
           const errSummary = prioritizedDiags.length > 0
             ? prioritizedDiags.map((d) => `Line ${d.lineNumber}: ${d.message}`).join("; ")
             : (buildCheck.stdout || buildCheck.stderr).slice(0, 500);

@@ -1,4 +1,5 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
+import type { InferenceProviderType, ModelStatus } from "@cacophony/shared-types";
 
 interface ModelHealthRow {
   readonly model_id: string;
@@ -24,14 +25,6 @@ interface ArenaEpochRow {
   readonly success_count: number;
   readonly failure_count: number;
   readonly notes: string | null;
-}
-
-interface InferenceProviderType {
-  // Define the type for provider
-}
-
-interface ModelStatus {
-  // Define the type for status
 }
 
 export interface ModelHealthProfile {

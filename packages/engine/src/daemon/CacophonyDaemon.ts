@@ -181,7 +181,7 @@ export class CacophonyDaemon {
       streamTapManager: this.streamTapManager,
       groomer,
       governor,
-      defaultTimeoutMs: 1200000,
+      defaultTimeoutMs: 2400000,
       perModelTimeoutMs: {
         "qwen2.5-coder:7b-instruct-q4_K_M": 1800000,
         "qwen2.5-coder:7b": 1800000

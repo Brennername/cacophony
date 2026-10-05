@@ -1,5 +1,5 @@
 import type { ModelHealthRepository } from "@cacophony/db";
-import type { AgentRole } from "@cacophony/shared-types";
+import type { AgentRole, ModelStatus } from "@cacophony/shared-types";
 import type { ModelTenancyGuard } from "./ModelTenancyGuard.js";
 import type { OllamaModelManager } from "../inference/OllamaModelManager.js";
 
@@ -8,7 +8,7 @@ export interface ModelCandidateWeight {
   readonly weight: number;
   readonly passRate: number;
   readonly consecutiveFailures: number;
-  readonly status: string;
+  readonly status: ModelStatus;
 }
 
 export class ModelEvictionManager {
