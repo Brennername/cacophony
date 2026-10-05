@@ -34,7 +34,7 @@ export class QueueGroomer {
     defaultDirectives?: readonly string[],
     stackDetector?: StackDetector
   ) {
-    this.projectDir = projectDir;
+    this.projectDir = QueueGroomer.findRepositoryRoot(projectDir);
     this.stackDetector = stackDetector ?? new StackDetector();
     this.defaultDirectives = defaultDirectives ?? [
       "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented.",
@@ -138,12 +138,17 @@ export class QueueGroomer {
         modified = true;
         groomNotes.push(`Target test suite '${candidateTest}' will be created by this task; scoped to compiled test file: ${testCommand}`);
       } else {
-        preflightIssues.push(
-          `Requested test target '${candidateTest}' does not exist and is not a focus file. Update the task test path or include the test file in a separate task before retrying.`
-        );
-        testCommand = "";
+        const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
+        if (scoped) {
+          testCommand = scoped;
+          groomNotes.push(`Requested test target '${candidateTest}' is missing; fell back to the existing package test suite: ${testCommand}`);
+        } else {
+          preflightIssues.push(
+            `Requested test target '${candidateTest}' does not exist and no package test suite can be selected. Update the task test path before retrying.`
+          );
+          testCommand = "";
+        }
         modified = true;
-        groomNotes.push(`Rejected missing test target '${candidateTest}' instead of passing it to Node.`);
       }
     } else {
       const lowerTest = testCommand.toLowerCase();
@@ -289,7 +294,11 @@ export class QueueGroomer {
    * Resolves the monorepo root directory dynamically by searching upward for markers.
    */
   private getRepoRoot(): string {
-    let cur = this.projectDir;
+    return QueueGroomer.findRepositoryRoot(this.projectDir);
+  }
+
+  private static findRepositoryRoot(startPath: string): string {
+    let cur = path.resolve(startPath);
     while (cur !== path.dirname(cur)) {
       if (
         fs.existsSync(path.join(cur, "docs/taskcade.md")) ||
@@ -308,7 +317,7 @@ export class QueueGroomer {
       }
       cur = path.dirname(cur);
     }
-    return this.projectDir;
+    return path.resolve(startPath);
   }
 
   /**
