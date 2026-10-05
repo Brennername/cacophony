@@ -1599,3 +1599,34 @@
   - [ ] T85.4.3: Integrate trend widget into `DashboardViewComponent` directly adjacent to overall success rate badge, featuring mobile-first responsive layout, dark/light theme support, and visual regression alerts. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Test: npm test]
   - [ ] T85.4.4: Write Angular unit tests validating signal reactions, window selector changes, mobile viewport reflows, and theme token bindings. [File: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.spec.ts] [Test: npm test]
 
+
+---
+
+## Phase 86: Distributed Fleet Load Balancing & Elastic Worker Scaling
+*RDF Category: infrastructure_and_scaling*
+
+### T86.1: Node Health Monitoring & Status Heartbeats
+  - [ ] T86.1.1: Create `INodeHealthStatus` interface in `packages/shared-types/src/fleet.ts` covering node state (IDLE, BUSY, OFFLINE), active memory usage, APU/GPU thermals, and current task assignment. [File: packages/shared-types/src/fleet.ts] [Interface: INodeHealthStatus] [Test: npm test -- packages/shared-types]
+  - [ ] T86.1.2: Implement `FleetHealthMonitor` service in `packages/engine/src/fleet/FleetHealthMonitor.ts` to collect local telemetry and receive UDP/HTTP heartbeats from peer worker nodes. [File: packages/engine/src/fleet/FleetHealthMonitor.ts] [Class: FleetHealthMonitor] [Test: npm test -- packages/engine/src/tests/fleet_health_monitor.test.ts]
+  - [ ] T86.1.3: Expose `POST /api/fleet/heartbeat` for worker nodes to report their status to the orchestrator node. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/fleet/heartbeat] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [ ] T86.1.4: Write unit tests verifying missing heartbeats transition node state to OFFLINE and active heartbeats update thermal profiles. [File: packages/engine/src/tests/fleet_health_monitor.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_health_monitor.test.ts]
+
+### T86.2: Multi-Node Task Dispatch & Load Balancing
+  - [ ] T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/DistributedTaskDispatcher.ts` replacing local-only dispatch to route tasks to the node with optimal thermal headroom and VRAM availability. [File: packages/engine/src/scheduler/DistributedTaskDispatcher.ts] [Class: DistributedTaskDispatcher] [Test: npm test -- packages/engine/src/tests/distributed_dispatcher.test.ts]
+  - [ ] T86.2.2: Refactor `TaskScheduler` to leverage `DistributedTaskDispatcher` for offloading compute-intensive tasks (e.g. `deepseek-coder-v2:16b`) to heavy compute nodes while keeping light orchestration tasks (e.g. `qwen2.5-coder:3b`) local. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: tick] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
+  - [ ] T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully pause its task, sync the worktree patch back to DB, and re-dispatch to a cooler node. [File: packages/engine/src/scheduler/DistributedTaskDispatcher.ts] [Method: migrateTask] [Test: npm test -- packages/engine/src/tests/distributed_dispatcher.test.ts]
+
+### T86.3: Fleet Topology Visualization Dashboard
+  - [ ] T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/views/fleet-topology-view.component.ts` rendering a live network graph of connected worker nodes. [File: packages/frontend/src/app/components/views/fleet-topology-view.component.ts] [Class: FleetTopologyViewComponent] [Test: npm test]
+  - [ ] T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET /api/fleet/events` to visually pulse nodes when they receive tasks or throw thermal warnings. [File: packages/frontend/src/app/components/views/fleet-topology-view.component.ts] [Test: npm test]
+  - [ ] T86.3.3: Write Angular unit and integration tests verifying topology reflow on node connect/disconnect and mobile-first responsive scaling. [File: packages/frontend/src/app/components/views/fleet-topology-view.component.spec.ts] [Test: npm test]
+
+---
+
+## Phase 87: Predictive Telemetry Pre-fetching & Caching Optimization
+*RDF Category: performance_and_optimization*
+
+### T87.1: Pre-fetching Model Weights into VRAM
+  - [ ] T87.1.1: Implement `VramPrefetchCoordinator` in `packages/engine/src/inference/VramPrefetchCoordinator.ts` that monitors the `PENDING` queue and pre-loads the next required model into VRAM during the compilation stage of the current task. [File: packages/engine/src/inference/VramPrefetchCoordinator.ts] [Class: VramPrefetchCoordinator] [Test: npm test -- packages/engine/src/tests/vram_prefetch.test.ts]
+  - [ ] T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g., if a front-end task is finishing, a reviewer model will be needed next). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: predictNextModel] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
+  - [ ] T87.1.3: Expose `POST /api/models/preload` to trigger Ollama background loads without blocking task execution. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/preload] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
