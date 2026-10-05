@@ -180,7 +180,12 @@ export class CacophonyDaemon {
       telemetryProvider,
       streamTapManager: this.streamTapManager,
       groomer,
-      governor
+      governor,
+      defaultTimeoutMs: 1200000,
+      perModelTimeoutMs: {
+        "qwen2.5-coder:7b-instruct-q4_K_M": 1800000,
+        "qwen2.5-coder:7b": 1800000
+      }
     });
 
     // Wire real or simulated worker pipeline

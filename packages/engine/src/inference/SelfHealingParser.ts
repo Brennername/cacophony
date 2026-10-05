@@ -72,15 +72,11 @@ export class SelfHealingParser {
       // Must be a dedicated code block (starts with import or class/interface definition), not conversational chat
       const cleanedRaw = rawOutput.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
       const hasCodeDeclaration =
-        cleanedRaw.startsWith("import ") ||
-        cleanedRaw.startsWith("export class ") ||
-        cleanedRaw.startsWith("export interface ") ||
-        cleanedRaw.startsWith("class ") ||
-        cleanedRaw.startsWith("interface ");
+        /^\s*(?:\/\/.*?\n\s*|\/\*[\s\S]*?\*\/\s*)*(?:import|export|class|interface|function|const|let|var)\b/.test(cleanedRaw);
 
       const hasMultipleLinesOfCode =
         cleanedRaw.split("\n").length >= 3 &&
-        (cleanedRaw.includes("export class ") || cleanedRaw.includes("export interface "));
+        (cleanedRaw.includes("export class ") || cleanedRaw.includes("export interface ") || cleanedRaw.includes("import "));
 
       if ((hasCodeDeclaration || hasMultipleLinesOfCode) && !cleanedRaw.includes("```")) {
         return {

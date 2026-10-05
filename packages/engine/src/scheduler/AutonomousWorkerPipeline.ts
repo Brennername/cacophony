@@ -527,7 +527,7 @@ export class AutonomousWorkerPipeline {
       }
 
       let compilationRemediationAttempts = 0;
-      const maxRemediationAttempts = 2;
+      const maxRemediationAttempts = 5;
 
       // 1. Compilation Verification Gate with Compiler Diagnostic Remediation Loop
       if (pkgName && worktree) {

@@ -1,5 +1,4 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { ModelHealthProfile, ModelStatus, InferenceProviderType, ArenaEpochRecord } from "@cacophony/shared-types";
 
 interface ModelHealthRow {
   readonly model_id: string;
@@ -27,12 +26,40 @@ interface ArenaEpochRow {
   readonly notes: string | null;
 }
 
-/**
- * ModelHealthRepository
- *
- * Persists model execution telemetry, calculates rolling success rates,
- * and maintains consecutive failure counters for automated model eviction.
- */
+interface InferenceProviderType {
+  // Define the type for provider
+}
+
+interface ModelStatus {
+  // Define the type for status
+}
+
+export interface ModelHealthProfile {
+  modelId: string;
+  provider: InferenceProviderType;
+  totalTasks: number;
+  totalSuccess: number;
+  totalFailures: number;
+  consecutiveFailures: number;
+  avgLatencyMs: number;
+  avgTokensPerSec: number;
+  status: ModelStatus;
+  lastUsedAt: string | null;
+}
+
+export interface ArenaEpochRecord {
+  epochId: number;
+  name: string;
+  reason: string;
+  startedAt: string;
+  endedAt: string | null;
+  isActive: boolean;
+  taskCount: number;
+  successCount: number;
+  failureCount: number;
+  notes: string | null;
+}
+
 export class ModelHealthRepository {
   private readonly driver: IDatabaseDriver;
 
@@ -40,9 +67,6 @@ export class ModelHealthRepository {
     this.driver = driver;
   }
 
-  /**
-   * Retrieves profile for a model or creates a default ACTIVE profile if none exists.
-   */
   public async getProfile(modelId: string, provider: InferenceProviderType = "ollama"): Promise<ModelHealthProfile> {
     const existing = await this.driver.queryOne<ModelHealthRow>(
       "SELECT * FROM model_health_profiles WHERE model_id = $1",
@@ -69,10 +93,6 @@ export class ModelHealthRepository {
     return this.mapRow(created!);
   }
 
-  /**
-   * Records the outcome of an inference job, updates rolling averages,
-   * and triggers automated eviction if consecutive failures reach 3 or more.
-   */
   public async recordRun(
     modelId: string,
     provider: InferenceProviderType,
@@ -87,7 +107,6 @@ export class ModelHealthRepository {
     const totalFailures = profile.totalFailures + (success ? 0 : 1);
     const consecutiveFailures = success ? 0 : profile.consecutiveFailures + 1;
 
-    // Moving average update
     const avgLatencyMs = profile.avgLatencyMs === 0
       ? latencyMs
       : Math.round((profile.avgLatencyMs * 0.8) + (latencyMs * 0.2));
@@ -95,7 +114,6 @@ export class ModelHealthRepository {
       ? tokensPerSec
       : Number(((profile.avgTokensPerSec * 0.8) + (tokensPerSec * 0.2)).toFixed(2));
 
-    // Automated eviction on 3 consecutive failures
     let status = profile.status;
     if (consecutiveFailures >= 3 && status === "ACTIVE") {
       status = "EJECTED";
@@ -104,7 +122,7 @@ export class ModelHealthRepository {
     const now = new Date().toISOString();
 
     await this.driver.execute(
-      `UPDATE model_health_profiles SET 
+      `UPDATE model_health_profiles SET
         total_tasks = $1, total_success = $2, total_failures = $3,
         consecutive_failures = $4, avg_latency_ms = $5, avg_tokens_per_sec = $6,
         status = $7, last_used_at = $8
@@ -136,9 +154,6 @@ export class ModelHealthRepository {
     };
   }
 
-  /**
-   * Manually sets or resets model status (e.g. recovering an EJECTED model).
-   */
   public async updateStatus(modelId: string, status: ModelStatus): Promise<void> {
     const resetFailures = status === "ACTIVE" ? 0 : undefined;
     if (resetFailures !== undefined) {
@@ -154,9 +169,6 @@ export class ModelHealthRepository {
     }
   }
 
-  /**
-   * Lists all recorded model profiles ordered by success rate and total tasks.
-   */
   public async listProfiles(): Promise<readonly ModelHealthProfile[]> {
     const rows = await this.driver.query<ModelHealthRow>(
       "SELECT * FROM model_health_profiles ORDER BY total_success DESC, total_tasks DESC"
@@ -164,13 +176,9 @@ export class ModelHealthRepository {
     return rows.map((r) => this.mapRow(r));
   }
 
-  /**
-   * Resets active model health metrics and consecutive failure counters to clean baseline values.
-   * Restores status to 'ACTIVE' for all registered models.
-   */
   public async resetAllStats(): Promise<void> {
     await this.driver.execute(
-      `UPDATE model_health_profiles SET 
+      `UPDATE model_health_profiles SET
         total_tasks = 0,
         total_success = 0,
         total_failures = 0,
@@ -181,9 +189,6 @@ export class ModelHealthRepository {
     );
   }
 
-  /**
-   * Retrieves the currently active arena epoch record, creating a baseline Epoch 1 if missing.
-   */
   public async getCurrentEpoch(): Promise<ArenaEpochRecord> {
     const isPostgres = this.driver.getDialect() === "postgres";
     const activeCondition = isPostgres ? "is_active = true" : "is_active = 1";
@@ -214,15 +219,10 @@ export class ModelHealthRepository {
     return this.mapEpochRow(created!);
   }
 
-  /**
-   * Archives current model metrics to epoch history, closes active epoch,
-   * advances to a new clean epoch, and resets model stats to baseline.
-   */
   public async advanceEpoch(name: string, reason: string, notes = ""): Promise<ArenaEpochRecord> {
     const current = await this.getCurrentEpoch();
     const now = new Date().toISOString();
 
-    // 1. Snapshot all current model health profiles into model_health_epoch_history
     const profiles = await this.listProfiles();
     for (const p of profiles) {
       await this.driver.execute(
@@ -246,14 +246,12 @@ export class ModelHealthRepository {
       );
     }
 
-    // 2. Close current epoch
     const inactiveVal = this.driver.getDialect() === "postgres" ? false : 0;
     await this.driver.execute(
       "UPDATE arena_epochs SET is_active = $1, ended_at = $2 WHERE epoch_id = $3",
       [inactiveVal, now, current.epochId]
     );
 
-    // 3. Insert and activate new epoch
     const activeVal = this.driver.getDialect() === "postgres" ? true : 1;
     await this.driver.execute(
       `INSERT INTO arena_epochs (name, reason, started_at, is_active, notes)
@@ -261,15 +259,11 @@ export class ModelHealthRepository {
       [name, reason, now, activeVal, notes]
     );
 
-    // 4. Reset all active model metrics to clean baseline
     await this.resetAllStats();
 
     return await this.getCurrentEpoch();
   }
 
-  /**
-   * Lists all historical arena epochs in chronological order.
-   */
   public async listEpochs(): Promise<readonly ArenaEpochRecord[]> {
     const rows = await this.driver.query<ArenaEpochRow>(
       "SELECT * FROM arena_epochs ORDER BY epoch_id ASC"
@@ -277,9 +271,6 @@ export class ModelHealthRepository {
     return rows.map((r) => this.mapEpochRow(r));
   }
 
-  /**
-   * Retrieves model health snapshots for a specific historical epoch.
-   */
   public async getEpochHistory(epochId: number): Promise<readonly ModelHealthProfile[]> {
     const rows = await this.driver.query<ModelHealthRow>(
       "SELECT * FROM model_health_epoch_history WHERE epoch_id = $1 ORDER BY total_success DESC, total_tasks DESC",
