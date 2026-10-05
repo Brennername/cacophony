@@ -158,6 +158,11 @@ export class StreamTapManager {
     return this.taskBuffers.get(target) || "";
   }
 
+  /** Returns the timestamp of the most recent streamed token for a task. */
+  public getLastTokenAt(taskId: string): number | undefined {
+    return this.bufferTimestamps.get(taskId);
+  }
+
   /**
    * Clears the buffer and demuxer state for a task.
    */

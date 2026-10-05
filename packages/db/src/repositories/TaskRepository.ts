@@ -191,18 +191,20 @@ export class TaskRepository {
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
-  public async retryFailedTasks(pattern?: string): Promise<number> {
+  public async retryFailedTasks(pattern?: string, force = false): Promise<number> {
     const now = new Date().toISOString();
     if (pattern) {
       const res = await this.driver.execute(
-        "UPDATE tasks SET status = 'PENDING', failure_count = 0, updated_at = $1, completed_at = NULL WHERE status = 'FAILED' AND (id LIKE $2 OR title LIKE $2)",
-        [now, pattern]
+        `UPDATE tasks SET status = 'PENDING', updated_at = $1, completed_at = NULL
+         WHERE status = 'FAILED' AND (id LIKE $2 OR title LIKE $2) AND ($3 = 1 OR failure_count < 3)`,
+        [now, pattern, force ? 1 : 0]
       );
       return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
     }
     const res = await this.driver.execute(
-      "UPDATE tasks SET status = 'PENDING', failure_count = 0, updated_at = $1, completed_at = NULL WHERE status = 'FAILED'",
-      [now]
+      `UPDATE tasks SET status = 'PENDING', updated_at = $1, completed_at = NULL
+       WHERE status = 'FAILED' AND ($2 = 1 OR failure_count < 3)`,
+      [now, force ? 1 : 0]
     );
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
