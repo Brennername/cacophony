@@ -1,0 +1,73 @@
+<!-- packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.html -->
+
+<div class="windowed-success-trend">
+  <div class="controls">
+    <label for="window-size">Window Size:</label>
+    <select id="window-size" [(ngModel)]="selectedWindowSize" (change)="updateWindowSize()">
+      <option value="10">10</option>
+      <option value="20">20</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+      <option value="1000">1000</option>
+      <option value="total">Total</option>
+    </select>
+
+    <label for="qualification-filter">Qualification Filter:</label>
+    <select id="qualification-filter" [(ngModel)]="selectedFilter" (change)="updateFilter()">
+      <option value="role">By Role</option>
+      <option value="model">By Model</option>
+      <option value="branch/commit">By Branch/Commit</option>
+    </select>
+  </div>
+
+  <trend-chart [data]="filteredData" [options]="chartOptions"></trend-chart>
+</div>
+
+<!-- Component Class -->
+<script lang="typescript">
+import { Component, OnInit } from '@angular/core';
+import { SignalService } from '@cacophony/shared-types';
+
+@Component({
+  selector: 'app-windowed-success-trend',
+  templateUrl: './windowed-success-trend.component.html',
+  styleUrls: ['./windowed-success-trend.component.css']
+})
+export class WindowedSuccessTrendComponent implements OnInit {
+  selectedWindowSize = '10';
+  selectedFilter = 'role';
+  filteredData: any[] = [];
+  chartOptions: any;
+
+  constructor(private signalService: SignalService) {}
+
+  ngOnInit(): void {
+    this.updateChartData();
+    this.signalService.on('data-update', () => this.updateChartData());
+  }
+
+  updateWindowSize() {
+    this.updateChartData();
+  }
+
+  updateFilter() {
+    this.updateChartData();
+  }
+
+  updateChartData() {
+    // Logic to filter and update data based on selected window size and filter
+    // Example:
+    if (this.selectedFilter === 'role') {
+      // Filter by role logic
+    } else if (this.selectedFilter === 'model') {
+      // Filter by model logic
+    } else if (this.selectedFilter === 'branch/commit') {
+      // Filter by branch/commit logic
+    }
+
+    this.chartOptions = {
+      // Update chart options based on selected window size and filter
+    };
+  }
+}
+</script>
