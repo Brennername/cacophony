@@ -455,13 +455,13 @@ export interface IGitPlatformProvider {
 
 ---
 
-### 1.17 Auto-Mode Sovereign Loop Hardening & Bi-Directional GitHub Issue Sync
+### 1.17 Auto-Mode Loop Hardening & Bi-Directional GitHub Issue Sync
 - **Objective**: Defocus manual Build and Plan modes and harden Auto Mode so the arena operates 24/7 autonomously without human intervention. Synchronizes public GitHub issues directly into the local execution queue and returns verified pull requests.
 - **Architectural Scope**:
-  - Sovereign Loop Supervisor: Recovers from unhandled process exceptions, monitors thermal limits, and re-enqueues stalled tasks automatically.
+  - Auto Loop Supervisor: Recovers from unhandled process exceptions, monitors thermal limits, and re-enqueues stalled tasks automatically.
   - GitHub Issue Sync Daemon: Periodically polls `GET /repos/{owner}/{repo}/issues`, parses `arena:auto` issues into taskcade items, and posts status updates.
   - Worktree Pre-Commit Gate: Verifies modified worktrees build cleanly prior to commit, preventing corrupted code from entering staging `main`.
-- **Assigned Taskcade Phase**: Phase 84 (`spec:SovereignLoopSupervisor`, `spec:GitHubIssueSyncDaemon`).
+- **Assigned Taskcade Phase**: Phase 84 (`spec:AutoLoopSupervisor`, `spec:GitHubIssueSyncDaemon`).
 
 ---
 
