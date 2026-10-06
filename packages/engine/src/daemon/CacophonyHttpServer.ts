@@ -518,13 +518,14 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // 4a0b. REST API: POST /api/tasks/requeue - Requeue failed tasks back to PENDING (supports ?pattern=query)
+    // 4a0b. REST API: POST /api/tasks/requeue - Retry failed tasks with a three-failure quarantine (force=true bypasses)
     if (url.pathname === "/api/tasks/requeue" && req.method === "POST") {
       const taskRepo = this.daemon.getTaskRepository();
       const pattern = url.searchParams.get("pattern") || undefined;
-      const requeuedCount = await taskRepo.retryFailedTasks(pattern);
+      const force = url.searchParams.get("force") === "true";
+      const requeuedCount = await taskRepo.retryFailedTasks(pattern, force);
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: true, requeuedCount }));
+      res.end(JSON.stringify({ success: true, requeuedCount, maxAutomaticFailures: 3, force }));
       return;
     }
 

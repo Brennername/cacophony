@@ -94,6 +94,38 @@ describe("Database & Persistence Layer", () => {
       assert.equal(stages[0]?.durationMs, 1200);
     });
 
+    test("should quarantine failed tasks after three retries unless explicitly forced", async () => {
+      const makeFailedTask = (id: string, failures: number): TaskRecord => ({
+        id,
+        title: id,
+        prompt: "Keep failure history when retrying",
+        role: "implementer",
+        status: "FAILED",
+        priority: "P1",
+        modelAssigned: "qwen2.5-coder:7b",
+        testCommand: "npm test",
+        focusFiles: "src/index.ts",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: failures,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString()
+      });
+
+      await taskRepo.create(makeFailedTask("task-retryable", 2));
+      await taskRepo.create(makeFailedTask("task-quarantined", 3));
+
+      assert.equal(await taskRepo.retryFailedTasks(), 1);
+      assert.equal((await taskRepo.getById("task-retryable"))?.status, "PENDING");
+      assert.equal((await taskRepo.getById("task-retryable"))?.failureCount, 2);
+      assert.equal((await taskRepo.getById("task-quarantined"))?.status, "FAILED");
+
+      assert.equal(await taskRepo.retryFailedTasks("task-quarantined", true), 1);
+      assert.equal((await taskRepo.getById("task-quarantined"))?.status, "PENDING");
+      assert.equal((await taskRepo.getById("task-quarantined"))?.failureCount, 3);
+    });
+
     test("should track model health and trigger automated eviction on 3 consecutive failures", async () => {
       const modelId = "deepseek-r1:8b";
       const initial = await modelRepo.getProfile(modelId, "ollama");

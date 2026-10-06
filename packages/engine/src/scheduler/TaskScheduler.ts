@@ -40,6 +40,7 @@ export class TaskScheduler {
 
   private readonly perModelTimeoutMs: Readonly<Record<string, number>>;
   private readonly defaultTimeoutMs: number;
+  private readonly noProgressTimeoutMs: number;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
@@ -52,6 +53,7 @@ export class TaskScheduler {
     readonly governor?: ThermalGovernor;
     readonly sorter?: ModelAffinityTaskSorter;
     readonly defaultTimeoutMs?: number;
+    readonly noProgressTimeoutMs?: number;
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
   }) {
     this.taskRepo = options.taskRepo;
@@ -60,6 +62,7 @@ export class TaskScheduler {
     this.telemetryProvider = options.telemetryProvider;
     this.streamTapManager = options.streamTapManager;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
+    this.noProgressTimeoutMs = options.noProgressTimeoutMs ?? 10 * 60_000;
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
       "qwen2.5-coder:3b": 360_000,
       "gemma3:4b-it-qat": 420_000,
@@ -216,6 +219,14 @@ export class TaskScheduler {
 
       // 4. Groom task (resolve focus files, scope test command, inject architectural directives)
       const groomed = this.groomer.groom(targetTask);
+      if ((groomed.preflightIssues?.length ?? 0) > 0) {
+        const message = groomed.preflightIssues!.join(" ");
+        const preflightStage = await this.stageRepo.recordStageStart(targetTask.id, "planning");
+        await this.stageRepo.recordStageCompletion(preflightStage, "FAILURE", message, 0, 0, 0);
+        await this.taskRepo.updateStatus(targetTask.id, "FAILED");
+        console.warn(`[TaskScheduler] Preflight rejected task ${targetTask.id}: ${message}`);
+        return targetTask;
+      }
 
       const normalizedAssigned = targetTask.modelAssigned
         ? TaskScheduler.normalizeModelName(targetTask.modelAssigned)
@@ -304,6 +315,7 @@ export class TaskScheduler {
 
         const abortController = new AbortController();
         let watchdogTimer: NodeJS.Timeout | null = null;
+        let progressTimer: NodeJS.Timeout | null = null;
         const watchdogPromise = new Promise<never>((_, reject) => {
           watchdogTimer = setTimeout(() => {
             abortController.abort();
@@ -317,11 +329,36 @@ export class TaskScheduler {
             );
           }, modelTimeoutMs);
         });
+        const progressTimeoutMs = Math.min(this.noProgressTimeoutMs, modelTimeoutMs);
+        const progressPromise = this.streamTapManager
+          ? new Promise<never>((_, reject) => {
+              let lastProgressAt = Date.now();
+              let lastActivityAt = this.streamTapManager?.getLastActivityAt(targetTask.id);
+              progressTimer = setInterval(() => {
+                const currentActivityAt = this.streamTapManager?.getLastActivityAt(targetTask.id);
+                if (currentActivityAt !== undefined && currentActivityAt !== lastActivityAt) {
+                  lastActivityAt = currentActivityAt;
+                  lastProgressAt = Date.now();
+                }
+                if (Date.now() - lastProgressAt >= progressTimeoutMs) {
+                  if (progressTimer) clearInterval(progressTimer);
+                  abortController.abort();
+                  reject(new ExecutionTimeoutError(
+                    `Task produced no token or pipeline-stage progress for ${progressTimeoutMs}ms (hard limit ${modelTimeoutMs}ms)`,
+                    progressTimeoutMs,
+                    targetTask.id,
+                    selectedModel
+                  ));
+                }
+              }, Math.min(30_000, Math.max(10, Math.floor(progressTimeoutMs / 4))));
+            })
+          : new Promise<never>(() => {});
 
         try {
           const handlerPromise = this.executionHandler(groomed, selectedModel, abortController.signal);
-          const result = await Promise.race([handlerPromise, watchdogPromise]);
+          const result = await Promise.race([handlerPromise, watchdogPromise, progressPromise]);
           if (watchdogTimer) clearTimeout(watchdogTimer);
+          if (progressTimer) clearInterval(progressTimer);
 
           const durationMs = Date.now() - stageStartMs;
           const finalStatus = result.success ? "COMPLETED" : "FAILED";
@@ -354,10 +391,11 @@ export class TaskScheduler {
           }
         } catch (err) {
           if (watchdogTimer) clearTimeout(watchdogTimer);
+          if (progressTimer) clearInterval(progressTimer);
           abortController.abort();
           const durationMs = Date.now() - stageStartMs;
           const errorMsg = err instanceof Error ? err.message : String(err);
-          const classification = FailureClassifier.classify(errorMsg);
+          const classification = FailureClassifier.classify(err instanceof Error ? err : errorMsg);
           const isTimeout = classification.category === "TIMEOUT" || err instanceof ExecutionTimeoutError;
 
           console.error(
@@ -389,7 +427,7 @@ export class TaskScheduler {
             stageId,
             "FAILURE",
             isTimeout
-              ? `[TIMEOUT]: Execution exceeded maximum watchdog limit of ${modelTimeoutMs}ms. ${errorMsg}`
+              ? `[TIMEOUT]: ${errorMsg}`
               : `[${classification.category}]: ${errorMsg}`,
             0,
             0,

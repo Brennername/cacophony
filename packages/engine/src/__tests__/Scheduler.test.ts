@@ -246,7 +246,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       assert.ok(groomed.enrichedPrompt.includes("Module Imports: Import only from valid installed workspace packages"));
     });
 
-    test("should scope to node --check syntax verification when target test file does not exist yet", () => {
+    test("should fall back to the package test suite when the requested test file does not exist yet", () => {
       const task: TaskRecord = {
         id: "task-groom-missing-test",
         title: "T50.1.2: Missing test suite",
@@ -266,7 +266,8 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.scopedTestCommand, "node --check packages/engine/src/gitea/GitWorktreeManager.ts");
+      assert.equal(groomed.scopedTestCommand, "npm run test --workspace=@cacophony/engine");
+      assert.deepEqual(groomed.preflightIssues, []);
     });
 
     test("should clear test command for non-executable markdown files when test suite does not exist", () => {
@@ -292,7 +293,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       assert.equal(groomed.scopedTestCommand, "");
     });
 
-    test("should scope frontend focus file to syntax check instead of headless karma test", () => {
+    test("should scope frontend focus file to the frontend test suite", () => {
       const task: TaskRecord = {
         id: "task-groom-frontend",
         title: "T50.1.4: Frontend component",
@@ -312,7 +313,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.scopedTestCommand, "node --check packages/frontend/src/app/dashboard.component.ts");
+      assert.equal(groomed.scopedTestCommand, "npm run test --workspace=@cacophony/frontend");
     });
   });
 

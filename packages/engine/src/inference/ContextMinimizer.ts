@@ -161,6 +161,16 @@ export class ContextMinimizer {
       "- NEVER invent non-existent package names like '@cacophony/git-worktrees', 'vscode', or '@types/vscode'."
     ];
 
+    const moduleCatalog = this.buildModuleCatalog(focusFiles);
+    if (moduleCatalog.length > 0) {
+      sections.push(
+        "",
+        "=== VERIFIED PACKAGE EXPORTS ===",
+        "Use only the listed existing files and exports for new imports. A symbol absent from this catalog must be verified in source before use.",
+        ...moduleCatalog
+      );
+    }
+
     if (customDirectives.length > 0) {
       sections.push("", "=== DIRECTIVES ===");
       for (const d of customDirectives) {
@@ -243,6 +253,68 @@ export class ContextMinimizer {
     return lines.slice(0, 20).join("\n") || "(empty workspace)";
   }
 
+  private buildModuleCatalog(focusFiles: readonly string[]): string[] {
+    const packageNames = new Set(
+      focusFiles
+        .map((file) => file.match(/^packages\/([^/]+)\//)?.[1])
+        .filter((name): name is string => Boolean(name))
+    );
+    const catalog: string[] = [];
+
+    for (const packageName of packageNames) {
+      const packageRoot = path.resolve(this.projectDir, "packages", packageName);
+      const sourceRoot = path.join(packageRoot, "src");
+      if (!fs.existsSync(sourceRoot)) continue;
+      const visit = (directory: string): void => {
+        let entries: fs.Dirent[];
+        try {
+          entries = fs.readdirSync(directory, { withFileTypes: true });
+        } catch {
+          return;
+        }
+        for (const entry of entries) {
+          if (catalog.length >= 80) return;
+          const absolute = path.join(directory, entry.name);
+          if (entry.isDirectory()) {
+            if (!entry.name.startsWith(".") && entry.name !== "tests" && entry.name !== "__tests__") {
+              visit(absolute);
+            }
+            continue;
+          }
+          if (!entry.isFile() || !entry.name.endsWith(".ts") || entry.name.endsWith(".d.ts")) continue;
+          try {
+            const sourceText = fs.readFileSync(absolute, "utf8");
+            const sourceFile = ts.createSourceFile(absolute, sourceText, ts.ScriptTarget.Latest, true);
+            const exports: string[] = [];
+            for (const statement of sourceFile.statements) {
+              if (ts.isExportDeclaration(statement) && statement.exportClause && ts.isNamedExports(statement.exportClause)) {
+                exports.push(...statement.exportClause.elements.map((element) => element.name.text));
+                continue;
+              }
+              const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined;
+              if (!modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) continue;
+              if (ts.isVariableStatement(statement)) {
+                for (const declaration of statement.declarationList.declarations) {
+                  if (ts.isIdentifier(declaration.name)) exports.push(declaration.name.text);
+                }
+              } else if ("name" in statement && statement.name && ts.isIdentifier(statement.name as ts.Node)) {
+                exports.push((statement.name as ts.Identifier).text);
+              }
+            }
+            if (exports.length > 0) {
+              catalog.push(`- ${path.relative(packageRoot, absolute)}: ${[...new Set(exports)].slice(0, 12).join(", ")}`);
+            }
+          } catch {
+            // A catalog is advisory context; unreadable source is omitted.
+          }
+        }
+      };
+      visit(sourceRoot);
+    }
+
+    return catalog;
+  }
+
   /**
    * Generates a concise AST outline of a large TypeScript source file,
    * retaining all imports, type definitions, and class method signatures
@@ -285,4 +357,3 @@ export class ContextMinimizer {
     }
   }
 }
-

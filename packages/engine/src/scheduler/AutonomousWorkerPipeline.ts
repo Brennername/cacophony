@@ -18,6 +18,7 @@ import { RemediationPromptFormatter } from "../inference/RemediationPromptFormat
 import { CompilerDiagnosticParser } from "../testing/CompilerDiagnosticParser.js";
 import { IncrementalClassMerger } from "../context/IncrementalClassMerger.js";
 import { CompilerDiagnosticAutoRepair } from "../testing/CompilerDiagnosticAutoRepair.js";
+import { GeneratedChangeGuard } from "../testing/GeneratedChangeGuard.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -230,6 +231,20 @@ export class AutonomousWorkerPipeline {
 
       const focusFiles = groomed.focusFiles;
       const targetRel = focusFiles[0];
+      let pkgName = "";
+      if (targetRel?.startsWith("packages/frontend")) pkgName = "@cacophony/frontend";
+      else if (targetRel?.startsWith("packages/engine")) pkgName = "@cacophony/engine";
+      else if (targetRel?.startsWith("packages/db")) pkgName = "@cacophony/db";
+      else if (targetRel?.startsWith("packages/shared-types")) pkgName = "@cacophony/shared-types";
+      else if (targetRel?.startsWith("packages/tools")) pkgName = "@cacophony/tools";
+      if (!pkgName && worktree) {
+        const candidatePaths = [...focusFiles, groomed.scopedTestCommand, groomed.task.focusFiles || ""].join(" ");
+        if (candidatePaths.includes("packages/frontend")) pkgName = "@cacophony/frontend";
+        else if (candidatePaths.includes("packages/engine")) pkgName = "@cacophony/engine";
+        else if (candidatePaths.includes("packages/db")) pkgName = "@cacophony/db";
+        else if (candidatePaths.includes("packages/shared-types")) pkgName = "@cacophony/shared-types";
+        else if (candidatePaths.includes("packages/tools")) pkgName = "@cacophony/tools";
+      }
       let originalExistingContent = "";
       let isLargeExistingFile = false;
       if (targetRel) {
@@ -241,6 +256,17 @@ export class AutonomousWorkerPipeline {
           }
         } catch {
           originalExistingContent = "";
+        }
+      }
+
+      if (pkgName && worktree) {
+        const baseline = await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, { cwd: executionRoot, timeoutMs: 180_000 });
+        if (baseline.exitCode !== 0) {
+          const details = `${baseline.stdout}\n${baseline.stderr}`.slice(-1200);
+          await this.recordAndEmitStage(taskId, "planning", "FAILURE", Date.now() - planningStart,
+            `Baseline package build failed before generation: ${details}`);
+          await this.worktreeManager?.cleanWorktree(taskId, worktree.branchName);
+          return { success: false, tokensPerSec: 0 };
         }
       }
 
@@ -469,6 +495,13 @@ export class AutonomousWorkerPipeline {
         if (originalExistingContent && originalExistingContent.trim().length > 0) {
           scrubbedCode = IncrementalClassMerger.merge(originalExistingContent, scrubbedCode);
         }
+        const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRelFile, originalExistingContent, scrubbedCode, groomed.task.prompt);
+        if (integrityIssues.length) {
+          await this.recordAndEmitStage(taskId, "deterministic_scrub", "FAILURE", Date.now() - scrubStart,
+            `Rejected unsafe replacement: ${integrityIssues.join(" ")}`);
+          if (this.worktreeManager && worktree) await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
+          return { success: false, tokensPerSec: measuredTps };
+        }
         currentCode = scrubbedCode;
         await fs.mkdir(path.dirname(targetAbs), { recursive: true });
         await fs.writeFile(targetAbs, scrubbedCode, "utf-8");
@@ -509,23 +542,6 @@ export class AutonomousWorkerPipeline {
       }
 
       // COMPILATION VERIFICATION & ACTIVE REMEDIATION
-      let pkgName = "";
-      if (worktree && targetRel) {
-        if (targetRel.startsWith("packages/frontend")) pkgName = "@cacophony/frontend";
-        else if (targetRel.startsWith("packages/engine")) pkgName = "@cacophony/engine";
-        else if (targetRel.startsWith("packages/db")) pkgName = "@cacophony/db";
-        else if (targetRel.startsWith("packages/shared-types")) pkgName = "@cacophony/shared-types";
-        else if (targetRel.startsWith("packages/tools")) pkgName = "@cacophony/tools";
-      }
-      if (!pkgName && worktree) {
-        const candidatePaths = [...focusFiles, groomed.scopedTestCommand, groomed.task.focusFiles || ""].join(" ");
-        if (candidatePaths.includes("packages/frontend")) pkgName = "@cacophony/frontend";
-        else if (candidatePaths.includes("packages/engine")) pkgName = "@cacophony/engine";
-        else if (candidatePaths.includes("packages/db")) pkgName = "@cacophony/db";
-        else if (candidatePaths.includes("packages/shared-types")) pkgName = "@cacophony/shared-types";
-        else if (candidatePaths.includes("packages/tools")) pkgName = "@cacophony/tools";
-      }
-
       let compilationRemediationAttempts = 0;
       const maxRemediationAttempts = 5;
 
@@ -591,20 +607,23 @@ export class AutonomousWorkerPipeline {
             if (originalExistingContent && originalExistingContent.trim().length > 0) {
               candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
             }
-            currentCode = candidateCode;
-            await fs.writeFile(targetAbs, currentCode, "utf-8");
+            const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel!, originalExistingContent, candidateCode, groomed.task.prompt);
+            if (integrityIssues.length === 0) {
+              currentCode = candidateCode;
+              await fs.writeFile(targetAbs, currentCode, "utf-8");
+            }
             console.log(
               `[AutonomousWorkerPipeline] Applied ${repairResult.repairsApplied.length} deterministic diagnostic auto-repair(s): ${repairResult.repairsApplied.join("; ")}`
             );
 
             // Re-run compilation check immediately
-            const retryCheck = await this.sandboxedRunner.run(buildCmd, {
+            const retryCheck = integrityIssues.length === 0 ? await this.sandboxedRunner.run(buildCmd, {
               cwd: worktree.worktreePath,
               timeoutMs: 90000,
               maxBufferBytes: 256 * 1024
-            });
+            }) : null;
 
-            if (retryCheck.exitCode === 0) {
+            if (retryCheck?.exitCode === 0) {
               buildPassed = true;
               generatedDiff = this.generateUnifiedDiff(targetRel!, originalExistingContent, currentCode);
               if (this.taskRepo) {
@@ -681,6 +700,9 @@ export class AutonomousWorkerPipeline {
               if (originalExistingContent && originalExistingContent.trim().length > 0) {
                 candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
               }
+
+              const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel!, originalExistingContent, candidateCode, groomed.task.prompt);
+              if (integrityIssues.length) throw new Error(`Rejected unsafe repair: ${integrityIssues.join(" ")}`);
 
               currentCode = candidateCode;
               await fs.writeFile(targetAbs, currentCode, "utf-8");
@@ -834,6 +856,9 @@ export class AutonomousWorkerPipeline {
               if (originalExistingContent && originalExistingContent.trim().length > 0) {
                 candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
               }
+
+              const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel || "unknown", originalExistingContent, candidateCode, groomed.task.prompt);
+              if (integrityIssues.length) throw new Error(`Rejected unsafe test repair: ${integrityIssues.join(" ")}`);
 
               currentCode = candidateCode;
               await fs.writeFile(targetAbs, currentCode, "utf-8");
