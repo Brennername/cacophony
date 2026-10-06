@@ -114,12 +114,12 @@ export class SelfHealingParser {
     }
 
     // Detect placeholder comments and lazy stubs that local models frequently emit when incomplete
-    const placeholderRegex = /(\/\/\s*\.\.\.\s*existing\s*code|\/\*\s*\.\.\.\s*existing|\/\/\s*rest\s*of\s*code|\/\/\s*\.\.\.\s*rest\s*of\s*code|\/\/\s*TODO:\s*(?:implement|fill|add|later)|throw\s+new\s+Error\(\s*["'](?:Not implemented|TODO)["']\s*\))/i;
+    const placeholderRegex = /(\/\/\s*\.\.\.\s*existing\s*code|\/\*\s*\.\.\.\s*existing|(?:\/\/|\/\*)\s*(?:\.\.\.\s*)?previous\s+code\s+goes\s+here|(?:\/\/|\/\*)\s*rest\s*of\s*(?:code|method)|\/\/\s*\.\.\.\s*rest\s*of\s*(?:code|method)|\/\/\s*TODO:\s*(?:implement|fill|add|later)|throw\s+new\s+Error\(\s*["'](?:Not implemented|TODO)["']\s*\))/i;
     if (placeholderRegex.test(primary)) {
       return {
         valid: false,
         code: null,
-        error: "Forbidden placeholder comment detected (e.g. '// ... existing code ...' or incomplete stub). You must rewrite the FULL file with all imports, functions, classes, and complete implementations included without placeholders.",
+        error: "Forbidden placeholder comment detected (e.g. '// ... existing code ...' or incomplete stub). Retry using the output scope requested in the original task; do not expand a targeted edit into a full-file rewrite.",
         blocks
       };
     }
@@ -140,10 +140,10 @@ export class SelfHealingParser {
       `Your previous response failed structural validation with the following error:`,
       `> ${validationError}`,
       "",
-      "Please immediately correct this mistake and resend your complete code output.",
+      "Please correct this mistake while preserving the output scope requested in the original task.",
       "Rules reminder:",
       "- Enclose the complete code inside a standard markdown code block: ```<language> ... ```.",
-      "- Include ALL existing code and imports. Do NOT use placeholder comments like '// ... existing code ...'.",
+      "- Do NOT use placeholder comments like '// ... existing code ...'. For targeted edits, return only the requested target; for whole-file tasks, return the complete file.",
       "- Do NOT output any <think> tags or internal thoughts. Start your response directly with the markdown code fence ```."
     ].join("\n");
   }

@@ -217,8 +217,14 @@ export class IncrementalClassMerger {
       }
     }
 
-    // If newCode contains almost all members of original class and no stubs, it is a valid full rewrite
-    if (!isStubbed && newClass.members.length >= origClass.members.length * 0.8) {
+    // A full-file response is safe to accept only when it still contains every
+    // original named member. Partial class responses are merged surgically.
+    const generatedMemberNames = new Set<string>();
+    for (const member of newClass.members) {
+      if (member.name && ts.isIdentifier(member.name)) generatedMemberNames.add(member.name.text);
+    }
+    const containsAllOriginalMembers = [...origMembersByName.keys()].every((name) => generatedMemberNames.has(name));
+    if (!isStubbed && containsAllOriginalMembers && newClass.members.length >= origClass.members.length) {
       return newCode;
     }
 

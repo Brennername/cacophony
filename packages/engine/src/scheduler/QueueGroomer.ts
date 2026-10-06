@@ -347,19 +347,14 @@ export class QueueGroomer {
   private scopeTestCommand(focusFiles: readonly string[], profile?: IStackProfile): string | null {
     if (focusFiles.length === 0) return null;
     const firstFile = focusFiles[0]!;
-    const repoRoot = this.getRepoRoot();
-
     if (firstFile.startsWith("packages/")) {
       const parts = firstFile.split("/");
       if (parts.length >= 2 && parts[1]) {
         const pkgName = parts[1];
         if (pkgName === "engine") {
-          const baseName = path.basename(firstFile, path.extname(firstFile));
-          const candidateDistTest = path.resolve(repoRoot, `packages/${pkgName}/dist/tests/${baseName}.test.js`);
-          const candidateSrcTest = path.resolve(repoRoot, `packages/${pkgName}/src/tests/${baseName}.test.ts`);
-          if (fs.existsSync(candidateDistTest) || fs.existsSync(candidateSrcTest)) {
-            return `node --test packages/${pkgName}/dist/tests/${baseName}.test.js`;
-          }
+          // Queue grooming runs against the daemon checkout, while execution may
+          // happen in an isolated worktree. A dist-file existence check here can
+          // select an artifact that is absent from the task's checkout.
           return `npm run test --workspace=@cacophony/${pkgName}`;
         }
         if (pkgName === "frontend") {

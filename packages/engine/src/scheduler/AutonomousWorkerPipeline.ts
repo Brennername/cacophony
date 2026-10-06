@@ -19,6 +19,7 @@ import { CompilerDiagnosticParser } from "../testing/CompilerDiagnosticParser.js
 import { IncrementalClassMerger } from "../context/IncrementalClassMerger.js";
 import { CompilerDiagnosticAutoRepair } from "../testing/CompilerDiagnosticAutoRepair.js";
 import { GeneratedChangeGuard } from "../testing/GeneratedChangeGuard.js";
+import { TypeScriptMethodSplicer } from "../context/TypeScriptMethodSplicer.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -274,7 +275,15 @@ export class AutonomousWorkerPipeline {
       const formatInstruction = formatter
         ? formatter.getFormatInstruction(true, targetRel, selectedModel, isLargeExistingFile)
         : "[OUTPUT FORMAT REQUIREMENT]: Provide valid code enclosed in markdown code fences.";
-      const directives = [...groomed.stackProfile.directives, formatInstruction];
+      const targetedMethodEdit = targetRel && originalExistingContent
+        ? TypeScriptMethodSplicer.prepare(originalExistingContent, groomed.enrichedPrompt, targetRel)
+        : null;
+      const directives = [
+        ...groomed.stackProfile.directives,
+        targetedMethodEdit
+          ? "AST-targeted method mode: respond with only the requested method body statements; the pipeline validates and splices that body into the existing file."
+          : formatInstruction
+      ];
       const context = this.minimizer.assembleContext(
         groomed.enrichedPrompt,
         focusFiles,
@@ -288,6 +297,17 @@ export class AutonomousWorkerPipeline {
         planningDuration,
         `Context assembled: ${focusFiles.length} focus files, ${directives.length} directives`
       );
+
+      let inferencePrompt = context.assembledPrompt;
+      if (targetedMethodEdit) {
+        const targetContextMarker = "=== TARGET FILE CONTEXT ===";
+        const dependencyMarker = "=== SLICED DEPENDENCY SKELETONS ===";
+        const targetContextAt = inferencePrompt.indexOf(targetContextMarker);
+        const dependenciesAt = inferencePrompt.indexOf(dependencyMarker);
+        const contextPrefix = targetContextAt >= 0 ? inferencePrompt.slice(0, targetContextAt) : "";
+        const dependencyContext = dependenciesAt >= 0 ? inferencePrompt.slice(dependenciesAt) : "";
+        inferencePrompt = [contextPrefix, targetedMethodEdit.prompt, dependencyContext].filter(Boolean).join("\n\n");
+      }
 
       if (signal?.aborted) {
         throw new Error("Task execution aborted by watchdog signal");
@@ -327,7 +347,7 @@ export class AutonomousWorkerPipeline {
           this.provider,
           {
             model: selectedModel,
-            messages: [{ role: "user", content: context.assembledPrompt }],
+            messages: [{ role: "user", content: inferencePrompt }],
             temperature: 0.1,
             maxTokens: requestedMaxTokens
           },
@@ -353,6 +373,14 @@ export class AutonomousWorkerPipeline {
 
       let generationDuration = Date.now() - generationStart;
       let finalCode = parseResult.code;
+      if (targetedMethodEdit && targetRel) {
+        finalCode = TypeScriptMethodSplicer.splice(
+          originalExistingContent,
+          targetRel,
+          targetedMethodEdit,
+          finalCode
+        );
+      }
       let finalAttempts = parseResult.attempts || 1;
       let finalPromptTokens = parseResult.tokensPrompt || 0;
       let finalCompletionTokens = parseResult.tokensCompletion || 0;
