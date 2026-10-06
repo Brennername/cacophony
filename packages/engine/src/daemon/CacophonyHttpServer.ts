@@ -793,25 +793,25 @@ export class CacophonyHttpServer {
 
     // 4c. REST API: Model Health Leaderboard
     if (url.pathname === "/api/models/leaderboard" && req.method === "GET") {
-      const healthRepo = this.daemon.getModelHealthRepository();
-      const profiles = await healthRepo.listProfiles();
-      const leaderboard = profiles.map((p) => ({
-        modelId: p.modelId,
-        provider: p.provider,
-        successRate: p.totalTasks > 0 ? (p.totalSuccess / p.totalTasks) * 100 : 100,
-        totalRuns: p.totalTasks,
-        totalSuccess: p.totalSuccess,
-        totalFailures: p.totalFailures,
-        consecutiveFailures: p.consecutiveFailures,
-        avgLatencyMs: p.avgLatencyMs,
-        avgTokensPerSec: p.avgTokensPerSec || 0.0,
-        status: p.status === "EJECTED" ? "EVICTED" : p.consecutiveFailures > 0 ? "DEGRADED" : "HEALTHY",
-        lastUsedAt: p.lastUsedAt
-      }));
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(leaderboard));
-      return;
-    }
+  const healthRepo = this.daemon.getModelHealthRepository();
+  const profiles = await healthRepo.listProfiles();
+  const leaderboard = profiles.map((p) => ({
+    modelId: p.modelId,
+    provider: p.provider,
+    successRate: p.totalTasks > 0 ? (p.totalSuccess / p.totalTasks) * 100 : 100,
+    totalRuns: p.totalTasks,
+    totalSuccess: p.totalSuccess,
+    totalFailures: p.totalFailures,
+    consecutiveFailures: p.consecutiveFailures,
+    avgLatencyMs: p.avgLatencyMs,
+    avgTokensPerSec: p.avgTokensPerSec || 0.0,
+    status: p.status === "EJECTED" ? "EVICTED" : p.consecutiveFailures > 0 ? "DEGRADED" : "HEALTHY",
+    lastUsedAt: p.lastUsedAt
+  }));
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(leaderboard));
+  return;
+}
 
     // 4c0. REST API: GET /api/arena/epochs - List All Epochs & Current Active Epoch
     if (url.pathname === "/api/arena/epochs" && req.method === "GET") {
