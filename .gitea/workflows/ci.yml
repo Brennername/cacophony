@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+      - name: Build packages
+        run: npm run build
+      - name: Lint codebase
+        run: npm run lint
+      - name: Run unit tests
+        run: npm test
+      - name: Queue failed run in Cacophony
+        if: failure()
+        env:
+          CALLBACK_URL: ${{ secrets.CACOPHONY_CI_FAILURE_URL }}
+          CALLBACK_TOKEN: ${{ secrets.CACOPHONY_CI_FAILURE_TOKEN }}
+          REPOSITORY: ${{ gitea.repository }}
+          WORKFLOW: ${{ gitea.workflow }}
+          COMMIT_SHA: ${{ gitea.sha }}
+          RUN_ID: ${{ gitea.run_id }}
+          REF: ${{ gitea.ref }}
+          RUN_URL: ${{ gitea.server_url }}/${{ gitea.repository }}/actions/runs/${{ gitea.run_id }}
+        run: |
+          if [ -z "$CALLBACK_URL" ] || [ -z "$CALLBACK_TOKEN" ]; then
+            echo "CI failed; Cacophony callback is not configured (set CACOPHONY_CI_FAILURE_URL and CACOPHONY_CI_FAILURE_TOKEN)."
+            exit 1
+          fi
+          node -e 'const p={repository:process.env.REPOSITORY,workflow:process.env.WORKFLOW,job:"build-and-test",commit:process.env.COMMIT_SHA,run_id:process.env.RUN_ID,run_url:process.env.RUN_URL,ref:process.env.REF,details:"Gitea Actions build, audit, lint, or test step failed. Inspect the linked run for step output."}; process.stdout.write(JSON.stringify(p))' \
+            | curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
+                -H "Authorization: Bearer $CALLBACK_TOKEN" -H 'Content-Type: application/json' \
+                --data-binary @- "$CALLBACK_URL"

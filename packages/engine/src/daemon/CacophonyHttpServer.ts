@@ -2,6 +2,7 @@ import * as http from "node:http";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as os from "node:os";
+import * as crypto from "node:crypto";
 import type { CacophonyDaemon } from "./CacophonyDaemon.js";
 import { AuthService } from "../auth/AuthService.js";
 import { RateLimiter } from "./RateLimiter.js";
@@ -1302,6 +1303,76 @@ export class CacophonyHttpServer {
           const result = await receiver.handleWebhook(event, payload);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+      return;
+    }
+
+    // CI failure callbacks use a separate bearer secret from the Gitea webhook HMAC.
+    if (url.pathname === "/api/ci/failures" && req.method === "POST") {
+      const configuredToken = process.env.CI_FAILURE_WEBHOOK_TOKEN || "";
+      const authHeader = req.headers["authorization"] || "";
+      const suppliedToken = authHeader.replace(/^Bearer\s+/i, "");
+      const configured = Buffer.from(configuredToken);
+      const supplied = Buffer.from(suppliedToken);
+      if (!configuredToken || configured.length !== supplied.length || !crypto.timingSafeEqual(configured, supplied)) {
+        res.writeHead(configuredToken ? 401 : 503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: configuredToken ? "Invalid CI callback token" : "CI callback is not configured" }));
+        return;
+      }
+
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+        if (body.length > 65536) {
+          req.destroy();
+        }
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body) as {
+            repository?: string;
+            workflow?: string;
+            job?: string;
+            commit?: string;
+            run_id?: string | number;
+            run_url?: string;
+            ref?: string;
+            details?: string;
+          };
+          if (!payload.repository || !payload.commit || !payload.run_id) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "repository, commit, and run_id are required" }));
+            return;
+          }
+          const id = `ci-failure-${crypto.createHash("sha256").update(`${payload.repository}:${payload.run_id}`).digest("hex").slice(0, 24)}`;
+          const title = `CI failure: ${payload.repository} / ${payload.workflow || "workflow"} (${payload.run_id})`;
+          const runUrl = payload.run_url || "(run URL unavailable)";
+          const details = (payload.details || "No failure details were provided.").slice(0, 12000);
+          const now = new Date().toISOString();
+          const task = await this.daemon.getTaskRepository().createIfNotExists({
+            id,
+            title,
+            prompt: `Investigate and fix this failed Gitea CI run.\nRepository: ${payload.repository}\nWorkflow: ${payload.workflow || "unknown"}\nJob: ${payload.job || "unknown"}\nCommit: ${payload.commit}\nRun: ${runUrl}\n\nFailure details:\n${details}`,
+            role: "implementer",
+            status: "PENDING",
+            priority: "P1",
+            modelAssigned: null,
+            testCommand: null,
+            focusFiles: null,
+            targetBranch: payload.ref?.replace(/^refs\/heads\//, "") || "main",
+            prUrl: null,
+            failureCount: 0,
+            createdAt: now,
+            updatedAt: now,
+            completedAt: null
+          });
+          res.writeHead(task.created ? 201 : 200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ queued: task.created, task: task.task }));
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           res.writeHead(400, { "Content-Type": "application/json" });

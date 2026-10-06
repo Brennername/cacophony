@@ -23,6 +23,7 @@ services:
       - GITEA_BASE_URL=${GITEA_BASE_URL:-http://cacophony-gitea:3000}
       - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
       - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
+      - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
       - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
       - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
       - GIT_REMOTE=${GIT_REMOTE:-gitea}
