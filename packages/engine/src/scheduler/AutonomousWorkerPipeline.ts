@@ -796,6 +796,7 @@ export class AutonomousWorkerPipeline {
         let testPassed = false;
         let testRemediationAttempts = 0;
         let lastTestResult: any = null;
+        let previousTestFailureSignature: string | null = null;
 
         while (!testPassed && testRemediationAttempts < maxRemediationAttempts) {
           const runResult = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
@@ -805,8 +806,10 @@ export class AutonomousWorkerPipeline {
           });
           lastTestResult = runResult;
 
-          const stdoutSnippet = runResult.stdout.slice(0, 4000);
-          const stderrSnippet = runResult.stderr.slice(0, 4000);
+          // Keep the tail because test runners report failed assertions after
+          // their passing-test output; the head often hides the actual cause.
+          const stdoutSnippet = runResult.stdout.slice(-4000);
+          const stderrSnippet = runResult.stderr.slice(-4000);
           const logOutput = `Exit Code: ${runResult.exitCode}\nDuration: ${runResult.durationMs}ms\n\n[STDOUT]:\n${stdoutSnippet}\n\n[STDERR]:\n${stderrSnippet}`;
 
           if (runResult.exitCode === 0) {
@@ -821,16 +824,32 @@ export class AutonomousWorkerPipeline {
             break;
           }
 
-          testRemediationAttempts++;
-          console.warn(
-            `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, attempt ${testRemediationAttempts}/${maxRemediationAttempts}). Attempting automated remediation...`
-          );
           await this.recordAndEmitStage(
             taskId,
             "test_execution",
             "FAILURE",
             runResult.durationMs,
             logOutput
+          );
+
+          const failureSignature = `${runResult.exitCode}\n${`${runResult.stdout}\n${runResult.stderr}`
+            .replace(/\(node:\d+\)/g, "(node:PID)")
+            .replace(/\b\d+(?:\.\d+)?ms\b/g, "#ms")
+            .slice(-12000)}`;
+          if (failureSignature === previousTestFailureSignature) {
+            await this.recordAndEmitStage(
+              taskId,
+              "remediation",
+              "FAILURE",
+              0,
+              "Stopped automated test repair because the same test failure recurred unchanged after remediation."
+            );
+            break;
+          }
+          previousTestFailureSignature = failureSignature;
+          testRemediationAttempts++;
+          console.warn(
+            `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, attempt ${testRemediationAttempts}/${maxRemediationAttempts}). Attempting automated remediation...`
           );
 
           // Active Remediation

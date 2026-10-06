@@ -138,17 +138,26 @@ export class QueueGroomer {
         modified = true;
         groomNotes.push(`Target test suite '${candidateTest}' will be created by this task; scoped to compiled test file: ${testCommand}`);
       } else {
-        const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
-        if (scoped) {
-          testCommand = scoped;
-          groomNotes.push(`Requested test target '${candidateTest}' is missing; fell back to the existing package test suite: ${testCommand}`);
+        const closestTest = candidateTest.startsWith("packages/engine/src/tests/")
+          ? this.findClosestEngineTest(candidateTest, task.prompt)
+          : null;
+        if (closestTest) {
+          testCommand = `node --test packages/engine/dist/tests/${closestTest}`;
+          modified = true;
+          groomNotes.push(`Requested test '${candidateTest}' is missing; selected the unique closest existing engine test '${closestTest}'.`);
         } else {
-          preflightIssues.push(
-            `Requested test target '${candidateTest}' does not exist and no package test suite can be selected. Update the task test path before retrying.`
-          );
-          testCommand = "";
+          const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
+          if (scoped) {
+            testCommand = scoped;
+            groomNotes.push(`Requested test target '${candidateTest}' is missing; fell back to the existing package test suite: ${testCommand}`);
+          } else {
+            preflightIssues.push(
+              `Requested test target '${candidateTest}' does not exist and no package test suite can be selected. Update the task test path before retrying.`
+            );
+            testCommand = "";
+          }
+          modified = true;
         }
-        modified = true;
       }
     } else {
       const lowerTest = testCommand.toLowerCase();
@@ -386,5 +395,35 @@ export class QueueGroomer {
     }
 
     return null;
+  }
+
+  private findClosestEngineTest(requestedPath: string, taskPrompt: string): string | null {
+    const testDirectory = path.resolve(this.projectDir, "packages/engine/src/tests");
+    let entries: string[];
+    try {
+      entries = fs.readdirSync(testDirectory).filter((entry) => entry.endsWith(".test.ts"));
+    } catch {
+      return null;
+    }
+
+    const normalizeToken = (token: string): string => token.endsWith("ies") ? `${token.slice(0, -3)}y` : token.replace(/s$/, "");
+    const tokens = (value: string): Set<string> => new Set(
+      value.toLowerCase().split(/[^a-z0-9]+/).filter((part) => part.length > 2).map(normalizeToken)
+    );
+    const requestedTokens = tokens(requestedPath);
+    const taskTokens = tokens(taskPrompt);
+    if (requestedTokens.size === 0 && taskTokens.size === 0) return null;
+    const scored = entries.map((entry) => {
+      const candidateTokens = tokens(entry);
+      const pathOverlap = [...requestedTokens].filter((token) => candidateTokens.has(token)).length;
+      const taskOverlap = [...taskTokens].filter((token) => candidateTokens.has(token)).length;
+      const weightedOverlap = pathOverlap + taskOverlap * 3;
+      return { entry: entry.replace(/\.ts$/, ".js"), score: weightedOverlap / Math.sqrt(candidateTokens.size), weightedOverlap };
+    }).filter((candidate) => candidate.weightedOverlap > 0 && candidate.score >= 1.5)
+      .sort((a, b) => b.score - a.score || b.weightedOverlap - a.weightedOverlap);
+    if (scored.length === 0 || (scored.length > 1 && scored[0]!.score === scored[1]!.score && scored[0]!.weightedOverlap === scored[1]!.weightedOverlap)) {
+      return null;
+    }
+    return scored[0]!.entry;
   }
 }
