@@ -419,7 +419,9 @@ export class TaskHistoryComponent {
     try {
       const d = new Date(isoStr);
       if (isNaN(d.getTime())) return isoStr;
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      const date = d.toLocaleDateString([], { year: 'numeric', month: '2-digit', day: '2-digit' });
+      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      return `${date} ${time}`;
     } catch {
       return isoStr;
     }
