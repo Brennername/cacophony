@@ -278,6 +278,11 @@ export class AutonomousWorkerPipeline {
       const targetedMethodEdit = targetRel && originalExistingContent
         ? TypeScriptMethodSplicer.prepare(originalExistingContent, groomed.enrichedPrompt, targetRel)
         : null;
+      const integrityTaskText = targetedMethodEdit?.kind === "method"
+        ? `${groomed.enrichedPrompt}\nUpdate method ${targetedMethodEdit.methodName}`
+        : targetedMethodEdit?.kind === "route" || targetedMethodEdit?.kind === "route-insert"
+          ? `${groomed.enrichedPrompt}\n${targetedMethodEdit.httpMethod} ${targetedMethodEdit.routePath}`
+          : groomed.enrichedPrompt;
       const directives = [
         ...groomed.stackProfile.directives,
         targetedMethodEdit
@@ -520,10 +525,10 @@ export class AutonomousWorkerPipeline {
             scrubbedCode = matchingRepair.updatedContent;
           }
         }
-        if (originalExistingContent && originalExistingContent.trim().length > 0) {
+        if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
           scrubbedCode = IncrementalClassMerger.merge(originalExistingContent, scrubbedCode);
         }
-        const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRelFile, originalExistingContent, scrubbedCode, groomed.task.prompt);
+        const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRelFile, originalExistingContent, scrubbedCode, integrityTaskText);
         if (integrityIssues.length) {
           await this.recordAndEmitStage(taskId, "deterministic_scrub", "FAILURE", Date.now() - scrubStart,
             `Rejected unsafe replacement: ${integrityIssues.join(" ")}`);
@@ -632,10 +637,10 @@ export class AutonomousWorkerPipeline {
           const repairResult = autoRepair.repair(currentCode, targetDiagnostics);
           if (repairResult.repairsApplied.length > 0) {
             let candidateCode = repairResult.repairedCode;
-            if (originalExistingContent && originalExistingContent.trim().length > 0) {
+            if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
               candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
             }
-            const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel!, originalExistingContent, candidateCode, groomed.task.prompt);
+            const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel!, originalExistingContent, candidateCode, integrityTaskText);
             if (integrityIssues.length === 0) {
               currentCode = candidateCode;
               await fs.writeFile(targetAbs, currentCode, "utf-8");
@@ -725,11 +730,11 @@ export class AutonomousWorkerPipeline {
               }
 
               // Incremental class preservation
-              if (originalExistingContent && originalExistingContent.trim().length > 0) {
+              if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
                 candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
               }
 
-              const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel!, originalExistingContent, candidateCode, groomed.task.prompt);
+              const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel!, originalExistingContent, candidateCode, integrityTaskText);
               if (integrityIssues.length) throw new Error(`Rejected unsafe repair: ${integrityIssues.join(" ")}`);
 
               currentCode = candidateCode;
@@ -900,11 +905,11 @@ export class AutonomousWorkerPipeline {
               }
 
               // Incremental class preservation
-              if (originalExistingContent && originalExistingContent.trim().length > 0) {
+              if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
                 candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
               }
 
-              const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel || "unknown", originalExistingContent, candidateCode, groomed.task.prompt);
+              const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel || "unknown", originalExistingContent, candidateCode, integrityTaskText);
               if (integrityIssues.length) throw new Error(`Rejected unsafe test repair: ${integrityIssues.join(" ")}`);
 
               currentCode = candidateCode;
@@ -935,13 +940,18 @@ export class AutonomousWorkerPipeline {
                   const autoRepair = new CompilerDiagnosticAutoRepair();
                   const repairResult = autoRepair.repair(currentCode, rawDiags);
                   if (repairResult.repairsApplied.length > 0) {
-                    currentCode = repairResult.repairedCode;
-                    await fs.writeFile(targetAbs, currentCode, "utf-8");
-                    await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, {
-                      cwd: worktree.worktreePath,
-                      timeoutMs: 90000,
-                      maxBufferBytes: 128 * 1024
-                    });
+                    const integrityIssues = GeneratedChangeGuard.inspectReplacement(
+                      targetRel || "unknown", originalExistingContent, repairResult.repairedCode, integrityTaskText
+                    );
+                    if (integrityIssues.length === 0) {
+                      currentCode = repairResult.repairedCode;
+                      await fs.writeFile(targetAbs, currentCode, "utf-8");
+                      await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, {
+                        cwd: worktree.worktreePath,
+                        timeoutMs: 90000,
+                        maxBufferBytes: 128 * 1024
+                      });
+                    }
                   }
                 }
               }

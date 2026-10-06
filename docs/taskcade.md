@@ -40,10 +40,10 @@
 
 > [!IMPORTANT]
 > **Execution Directives for Next Frontier Model Implementer:**
-> The following phases constitute the highest-priority implementation pipeline, aligned with sovereign Auto Mode, Staging-to-Production promotion, and hardware democratized contribution:
+> The following phases constitute the highest-priority implementation pipeline, aligned with Auto Mode, Staging-to-Production promotion, and hardware democratized contribution:
 > 1. **Priority 1: Phase 82 (Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine)**: Clear dirty bootstrap failure-cascade statistics, advance to Epoch 2, reset model eviction counters to 0, restore all evicted models (`gemma3:4b-it-qat`) to `ACTIVE`, and establish epoch-aware rolling metrics.
 > 2. **Priority 2: Phase 80 (Multi-Stage Staging to Production Promotion Gate & Batched Promotion Pipeline)**: Implement the quarantine gauntlet between Gitea staging and public GitHub: full monorepo build verification (`npm run build`), 100% test gate, secret/hygiene scrubber, and batched release milestone PR bundling.
-> 3. **Priority 3: Phase 84 (Auto-Mode Sovereign Loop Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 sovereign Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
+> 3. **Priority 3: Phase 84 (Auto-Mode Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
 > 4. **Priority 4: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
 > 5. **Priority 5: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
 
@@ -1536,14 +1536,14 @@
 
 ---
 
-## Phase 84: Auto-Mode Sovereign Loop Hardening & Bi-Directional GitHub Issue Sync
-*RDF Category: sovereign_autonomy*
+## Phase 84: Auto-Mode Hardening & Bi-Directional GitHub Issue Sync
+*RDF Category: autonomy*
 
-### T84.1: Sovereign Auto-Mode Loop Supervisor
-  - [ ] T84.1.1: Create `SovereignLoopSupervisor` in `packages/engine/src/daemon/SovereignLoopSupervisor.ts` keeping the autonomous loop running 24/7. [File: packages/engine/src/daemon/SovereignLoopSupervisor.ts] [Class: SovereignLoopSupervisor] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
-  - [ ] T84.1.2: Implement unhandled error containment: if an unhandled promise rejection occurs during task execution, isolate the error, rollback worktree, and resume queue. [File: packages/engine/src/daemon/SovereignLoopSupervisor.ts] [Method: handleWorkerError] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
-  - [ ] T84.1.3: Automatically detect empty queue conditions and trigger internal vacancy tasks (test coverage expansion, dead code elimination, AST grooming). [File: packages/engine/src/daemon/SovereignLoopSupervisor.ts] [Method: fillVacancy] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
-  - [ ] T84.1.4: Write unit tests verifying supervisor survives simulated worker crashes and resumes task processing. [File: packages/engine/src/tests/sovereign_supervisor.test.ts] [Test: npm test -- packages/engine/src/tests/sovereign_supervisor.test.ts]
+### T84.1: Auto-Mode Loop Supervisor
+  - [ ] T84.1.1: Create `AutoLoopSupervisor` in `packages/engine/src/daemon/AutoLoopSupervisor.ts` keeping the autonomous loop running 24/7. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Class: AutoLoopSupervisor] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [ ] T84.1.2: Implement unhandled error containment: if an unhandled promise rejection occurs during task execution, isolate the error, rollback worktree, and resume queue. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: handleWorkerError] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [ ] T84.1.3: Automatically detect empty queue conditions and trigger internal vacancy tasks (test coverage expansion, dead code elimination, AST grooming). [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: fillVacancy] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [ ] T84.1.4: Write unit tests verifying supervisor survives simulated worker crashes and resumes task processing. [File: packages/engine/src/tests/auto_supervisor.test.ts] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
 
 ### T84.2: Worktree Pre-Commit Monorepo Build Gate in Pipeline
   - [ ] T84.2.1: Add `verifyCleanBuild(worktreePath: string)` call in `AutonomousWorkerPipeline.ts` Stage 6 before `commitWorktree`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
@@ -1563,11 +1563,11 @@
   - [ ] T84.4.3: Close GitHub issue automatically when the promoted release PR is merged into upstream `main`. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: closeResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
   - [ ] T84.4.4: Write unit tests simulating full issue ingestion -> local execution -> staging merge -> GitHub PR resolution lifecycle. [File: packages/engine/src/tests/issue_resolution_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/issue_resolution_lifecycle.test.ts]
 
-### T84.5: Defocus Plan/Build Modes in Favor of Sovereign Auto Mode
+### T84.5: Defocus Plan/Build Modes in Favor of Auto Mode
   - [ ] T84.5.1: Set `DEFAULT_EXECUTION_MODE=auto` across all default configs, daemon initialization, and frontend stores. [File: packages/shared-types/src/config.ts] [Constant: DEFAULT_EXECUTION_MODE] [Test: npm test -- packages/shared-types]
   - [ ] T84.5.2: Streamline UI navigation to highlight Auto Mode telemetry, success yield, and milestone promotion over manual step controls. [File: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts] [Test: npm test]
-  - [ ] T84.5.3: Ensure headless server and Docker containers default strictly to sovereign Auto Mode on boot. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
-  - [ ] T84.5.4: Write integration tests verifying that arena boots and executes uninterrupted in sovereign Auto Mode with zero manual prompts. [File: packages/engine/src/tests/sovereign_auto_mode.test.ts] [Test: npm test -- packages/engine/src/tests/sovereign_auto_mode.test.ts]
+  - [ ] T84.5.3: Ensure headless server and Docker containers default strictly to Auto Mode on boot. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [ ] T84.5.4: Write integration tests verifying that arena boots and executes uninterrupted in Auto Mode with zero manual prompts. [File: packages/engine/src/tests/auto_mode.test.ts] [Test: npm test -- packages/engine/src/tests/auto_mode.test.ts]
 
 ---
 

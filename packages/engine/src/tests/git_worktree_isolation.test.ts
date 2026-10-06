@@ -32,6 +32,13 @@ test("Phase 78: T78.2 Ephemeral Git Worktree Isolation", async (t) => {
   await fs.writeFile(initialFilePath, "# Main Repository Content\n", "utf-8");
   await execAsync("git add -A && git commit -m 'Initial commit'", { cwd: repoDir });
 
+  // Simulate build output that exists in the main checkout but is not part of
+  // the commit. Task worktrees must build their own artifacts rather than
+  // sharing this mutable directory.
+  const rootDistPath = path.join(repoDir, "packages", "engine", "dist");
+  await fs.mkdir(rootDistPath, { recursive: true });
+  await fs.writeFile(path.join(rootDistPath, "stale-build.js"), "// stale root artifact\n", "utf-8");
+
   const worktreeManager = new GitWorktreeManager(repoDir, workspacesDir);
 
   await t.test("T78.2.1: GitWorktreeManager creates isolated worktrees on ephemeral task branches", async () => {
@@ -50,6 +57,10 @@ test("Phase 78: T78.2 Ephemeral Git Worktree Isolation", async (t) => {
 
     const worktreeReadme = await fs.readFile(path.join(descriptor.worktreePath, "README.md"), "utf-8");
     assert.strictEqual(worktreeReadme, "# Main Repository Content\n");
+
+    const worktreeDistPath = path.join(descriptor.worktreePath, "packages", "engine", "dist");
+    assert.equal(await fs.stat(worktreeDistPath).then(() => true).catch(() => false), false,
+      "untracked root build output must not be linked into the task worktree");
 
     // Clean up
     await worktreeManager.cleanWorktree("task-test-01", descriptor.branchName);

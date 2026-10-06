@@ -80,8 +80,9 @@ export class TypeScriptMethodSplicer {
 
     if (candidates.length === 0) {
       const explicitNames = new Set<string>();
-      for (const match of taskPrompt.matchAll(/(?:method|function|implement|update|complete|flesh\s+out)\s+[`'"\[]?([A-Za-z_$][\w$]*)/gi)) {
-        explicitNames.add(match[1]!.toLowerCase());
+      for (const match of taskPrompt.matchAll(/(?:\b(?:method|function)\s+[`'"\[]?([A-Za-z_$][\w$]*)|\b(?:implement|update|complete|flesh\s+out)\s+(?:the\s+)?(?:method\s+)?[`'"\[]?([A-Za-z_$][\w$]*))/gi)) {
+        const name = match[1] || match[2];
+        if (name) explicitNames.add(name.toLowerCase());
       }
       candidates = methods.filter((method) => explicitNames.has((method.name as ts.Identifier).text.toLowerCase()));
     }

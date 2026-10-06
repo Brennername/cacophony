@@ -138,13 +138,9 @@ export class GitWorktreeManager {
           await fs.symlink(rootPkgModules, worktreePkgModules, "dir").catch(() => {});
         }
 
-        // Symlink built dist directories for sibling packages so cross-package imports resolve
-        const rootDist = path.join(this.repositoryRoot, "packages", pkg, "dist");
-        const worktreeDist = path.join(worktreePath, "packages", pkg, "dist");
-        const exists = await fs.stat(rootDist).then(() => true).catch(() => false);
-        if (exists) {
-          await fs.symlink(rootDist, worktreeDist, "dir").catch(() => {});
-        }
+        // Do not share dist outputs between worktrees. Builds mutate these
+        // directories, so a task could otherwise consume another checkout's
+        // stale or half-written JavaScript and test artifacts.
       }
     } catch {
       // non-fatal
