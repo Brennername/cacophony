@@ -473,3 +473,29 @@ export interface IGitPlatformProvider {
   - `GitRegressionCorrelator` & `RegressionDispatchSupervisor`: Maps failure surges to culprit git commit hashes, dispatches high-reasoning models to diagnose regressions or spot hallucinations, synthesizes test assertions, applies worktree fixes, and triggers smarter interventions upon stagnation.
   - Mobile-First Dashboard Trend Chart: Angular responsive widget with dark/light themes displaying failure/success window trends next to overall rate.
 - **Assigned Taskcade Phase**: Phase 85 (`spec:RollingWindowAnalytics`, `spec:ConvergencePlateauAnalyzer`, `spec:GitRegressionDispatcher`).
+
+---
+
+### 1.19 Bounded Code Generation & Structural Preservation
+- **Objective**: Keep model output proportional to the requested change. Large or multi-method files must be decomposed into symbol-scoped context and changed through syntax-aware, bounded edits that preserve unrelated code.
+- **Generation Contract**:
+  - Index the target file into symbols, scopes, signatures, references, imports, and state dependencies. Supply the target implementation with its required contracts and relevant call edges, not unrelated sibling bodies.
+  - Generate a single target body or a typed edit request. Cross-symbol changes must be explicit peer edits with a reason and their own verification; they must not be smuggled into a whole-file response.
+  - Reject placeholder bodies and comments that claim omitted work, including `// previous code goes here`, `// ... rest of method`, empty TODO stubs, and suspicious method deletion. Preserve the original bytes on rejection.
+  - Parse and type-check the proposed replacement in its language context, splice only the target range, format the touched file, and compare symbol inventories and non-target ranges before accepting it.
+  - Use language adapters behind a common parser and edit contract. The current TypeScript method splicer is the first adapter; unsupported or ambiguous syntax must use a conservative fallback or request a smaller task.
+- **Verification Gates**: Regression fixtures for stub detection, sibling-method preservation, signatures and references, comments/imports, Unicode byte offsets, parse errors, and multi-symbol edit requests. Run focused tests, package build, and required project checks before a change can become a PR.
+- **Assigned Taskcade Phase**: Phase 88, Tasks T88.5–T88.6.
+
+### 1.20 Independent PR Assessment, Queued Fixes & Review Evidence
+- **Objective**: End implementation runs after a verified PR is published. Assess that PR in separate queue work, preserve reviewer evidence, and route requested changes through a new fix task and a later independent assessment round.
+- **Lifecycle Contract**:
+  1. The implementation task builds, tests, and publishes a PR. Its task record completes and does not continue into an assessment or repair loop.
+  2. The coordinator creates independent assessment tasks for distinct eligible models, excluding the implementation model by default. Each record refers to the same work item, PR, head SHA, and assessment round; no model may silently stand in for another reviewer.
+  3. Persist each structured report and publish its verdict and actionable findings to the PR. Show reviewer model, evidence, severity, affected lines, deterministic fixability, and CI status in task history and PR details.
+  4. If the outcome requests changes, enqueue a separate `review_fixer` task tied to the same work item and PR. It addresses findings, runs verification, updates the PR, completes, and then starts a new independent assessment round.
+  5. Only an explicit approval policy plus passing required CI can advance the PR to merge. Duplicate webhooks and retried callbacks must be idempotent.
+- **Model Selection**: Use role- and task-category performance evidence with sample counts and recency; select distinct available models for independent assessments. Choose the highest weighted eligible model for fixes. If it is evicted or unhealthy, select the next weighted eligible model, record the fallback reason, and keep the fix as a separately traceable queued attempt. Prefer the configured local fleet by default; external providers remain opt-in.
+- **Review Report Contract**: `{ workItemId, taskId, prUrl, headSha, round, reviewerModel, verdict, findings[], verification, createdAt }`. A finding contains `{ id, severity, category, file, startLine, endLine, evidence, rationale, deterministicFix?, requestedAction }`. Reports are immutable per head SHA; a changed head starts a new round.
+- **Guardrails**: Review workers have read/review permissions, fix workers have branch-scoped write permissions, and neither may write to protected branches. GitHub/Gitea actions may execute only allowlisted deterministic fix envelopes on the reviewed PR head, then must run required checks and report their result. All other findings become bounded fix-task instructions. Reports, comments, queue transitions, model choice, fallback, and merge decision remain auditable.
+- **Assigned Taskcade Phase**: Phase 88, Tasks T88.1–T88.4.
