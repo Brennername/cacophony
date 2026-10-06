@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: cacophony-engine
     restart: unless-stopped
+    init: true
     ports:
       - "${PORT_FRONTEND:-24072}:${PORT_API:-24161}"
       - "${PORT_API:-24161}:${PORT_API:-24161}"
