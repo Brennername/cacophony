@@ -408,9 +408,10 @@ export class QueueGroomer {
 
     const normalizeToken = (token: string): string => token.endsWith("ies") ? `${token.slice(0, -3)}y` : token.replace(/s$/, "");
     const tokens = (value: string): Set<string> => new Set(
-      value.toLowerCase().split(/[^a-z0-9]+/).filter((part) => part.length > 2).map(normalizeToken)
+      path.basename(value).replace(/\.test\.(?:ts|js)$/i, "").replace(/\.(?:ts|js)$/i, "")
+        .toLowerCase().split(/[^a-z0-9]+/).filter((part) => part.length > 2).map(normalizeToken)
     );
-    const requestedTokens = tokens(requestedPath);
+    const requestedTokens = tokens(path.basename(requestedPath));
     const taskTokens = tokens(taskPrompt);
     if (requestedTokens.size === 0 && taskTokens.size === 0) return null;
     const scored = entries.map((entry) => {
@@ -418,8 +419,8 @@ export class QueueGroomer {
       const pathOverlap = [...requestedTokens].filter((token) => candidateTokens.has(token)).length;
       const taskOverlap = [...taskTokens].filter((token) => candidateTokens.has(token)).length;
       const weightedOverlap = pathOverlap + taskOverlap * 3;
-      return { entry: entry.replace(/\.ts$/, ".js"), score: weightedOverlap / Math.sqrt(candidateTokens.size), weightedOverlap };
-    }).filter((candidate) => candidate.weightedOverlap > 0 && candidate.score >= 1.5)
+      return { entry: entry.replace(/\.ts$/, ".js"), score: weightedOverlap / Math.sqrt(candidateTokens.size), weightedOverlap, pathOverlap };
+    }).filter((candidate) => candidate.pathOverlap > 0 && candidate.score >= 0.9)
       .sort((a, b) => b.score - a.score || b.weightedOverlap - a.weightedOverlap);
     if (scored.length === 0 || (scored.length > 1 && scored[0]!.score === scored[1]!.score && scored[0]!.weightedOverlap === scored[1]!.weightedOverlap)) {
       return null;
