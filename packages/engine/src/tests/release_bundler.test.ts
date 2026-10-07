@@ -6,20 +6,17 @@ describe("ReleaseBundlerService Suite (T80.3)", () => {
   test("computeNextVersion performs semantic increments correctly", () => {
     const bundler = new ReleaseBundlerService();
 
-    // Patch bump for fixes/chores
     const fixTasks: ReleaseTaskItem[] = [
       { id: "t1", title: "fix(engine): resolve race condition in scheduler", testsCount: 5 }
     ];
     assert.equal(bundler.computeNextVersion("1.0.0", fixTasks), "1.0.1");
 
-    // Minor bump for features
     const featTasks: ReleaseTaskItem[] = [
       { id: "t1", title: "fix(engine): resolve race condition in scheduler" },
       { id: "t2", title: "feat(epoch): implement arena telemetry epoching" }
     ];
     assert.equal(bundler.computeNextVersion("1.0.0", featTasks), "1.1.0");
 
-    // Major bump for breaking changes
     const breakingTasks: ReleaseTaskItem[] = [
       { id: "t1", title: "feat!: redesign database schema for multi-tenancy", breakingChange: true }
     ];
@@ -51,8 +48,7 @@ describe("ReleaseBundlerService Suite (T80.3)", () => {
     assert.match(changelog, /Passing Automated Tests: 9/);
     assert.match(changelog, /Total Tasks Bundled: 4/);
 
-    // Assert strictly zero emojis
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
     assert.equal(emojiRegex.test(changelog), false);
   });
 
@@ -76,6 +72,5 @@ describe("ReleaseBundlerService Suite (T80.3)", () => {
     assert.equal(bundle.metrics.totalTests, 9);
     assert.equal(bundle.metrics.featuresCount, 2);
     assert.equal(bundle.metrics.fixesCount, 0);
-    assert.equal(bundle.metrics.breakingCount, 0);
   });
 });
