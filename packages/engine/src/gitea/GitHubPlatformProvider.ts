@@ -222,4 +222,62 @@ export class GitHubPlatformProvider implements IGitPlatformProvider {
 
     return Boolean(res.merged);
   }
+
+  /**
+   * Generates authenticated HTTPS git clone/push remote URL using the provided GitHub bearer token.
+   */
+  public getAuthenticatedRemoteUrl(owner: string, repo: string): string {
+    return `https://x-access-token:${this.token}@github.com/${owner}/${repo}.git`;
+  }
+
+  /**
+   * Retrieves branch details from GitHub or returns null if branch does not exist.
+   */
+  public async getBranch(owner: string, repo: string, branchName: string): Promise<GitPlatformBranch | null> {
+    try {
+      const data = await this.request<{
+        name: string;
+        commit: { sha: string };
+      }>(`/repos/${owner}/${repo}/branches/${encodeURIComponent(branchName)}`);
+      return {
+        name: data.name,
+        commitSha: data.commit.sha
+      };
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("404")) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Creates or updates a Git ref on GitHub.
+   */
+  public async createOrUpdateRef(
+    owner: string,
+    repo: string,
+    branchName: string,
+    sha: string,
+    force: boolean = false
+  ): Promise<void> {
+    const existing = await this.getBranch(owner, repo, branchName);
+    if (!existing) {
+      await this.request(`/repos/${owner}/${repo}/git/refs`, {
+        method: "POST",
+        body: JSON.stringify({
+          ref: `refs/heads/${branchName}`,
+          sha
+        })
+      });
+    } else {
+      await this.request(`/repos/${owner}/${repo}/git/refs/heads/${encodeURIComponent(branchName)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          sha,
+          force
+        })
+      });
+    }
+  }
 }

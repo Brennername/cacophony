@@ -1933,3 +1933,40 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T82.5.2: Add 'Start New Epoch' button in UI opening a confirmation modal to record epoch name, reason, and reset dirty metrics. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Method: openEpochModal] [Test: npm test]
   - [x] T82.5.3: Display visual epoch badge and current epoch run count in `SessionTabsComponent`. [File: packages/frontend/src/app/components/session-tabs/session-tabs.component.ts] [Test: npm test]
   - [x] T82.5.4: Write frontend unit tests validating epoch dropdown filtering and epoch advancement modal lifecycle. [File: packages/frontend/src/app/components/views/models-view.component.spec.ts] [Test: npm test]
+
+---
+
+## Archived Phase 80: Multi-Stage Staging (Gitea) to Production (GitHub) Release Gate & Batched Promotion Pipeline
+*Completed & Verified in Engineering Session*
+
+*RDF Category: devops_orchestration*
+
+### T80.1: Monorepo Compilation & Clean Build Verification Gate
+  - [x] T80.1.1: Create `MonorepoBuildGate` in `packages/engine/src/gitea/MonorepoBuildGate.ts` executing `npm run build` across all packages in isolated worktrees. [File: packages/engine/src/gitea/MonorepoBuildGate.ts] [Class: MonorepoBuildGate] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
+  - [x] T80.1.2: Capture standard error and compiler diagnostic codes (e.g. TS2304, TS2305, NG2008), rejecting broken commits before staging promotion. [File: packages/engine/src/gitea/MonorepoBuildGate.ts] [Method: verifyBuild] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
+  - [x] T80.1.3: Wire build verification into `AutonomousWorkerPipeline` Stage 6 preventing broken tasks from merging into Gitea `main`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T80.1.4: Write unit tests verifying that build failures abort PR creation and trigger remediation feedback. [File: packages/engine/src/tests/monorepo_build_gate.test.ts] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
+
+### T80.2: Secret Leak & Deterministic Hygiene Scanner
+  - [x] T80.2.1: Implement `PromotionSanitizer` in `packages/engine/src/gitea/PromotionSanitizer.ts` scanning git diffs for API keys, tokens, and private keys. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Class: PromotionSanitizer] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+  - [x] T80.2.2: Scan git diffs for prohibited unicode emojis or dingbats per project rules, rejecting dirty diffs prior to upstream promotion. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Method: scanEmojis] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+  - [x] T80.2.3: Check for banned imports (`acorn`, `eventsource`, etc.) and ensure no loose root files outside permitted list. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Method: scanHygiene] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+  - [x] T80.2.4: Write unit tests verifying sanitizer detects simulated leaked secrets and unicode emojis. [File: packages/engine/src/tests/promotion_sanitizer.test.ts] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
+
+### T80.3: Milestone Release Bundler & Changelog Generator
+  - [x] T80.3.1: Create `ReleaseBundlerService` in `packages/engine/src/gitea/ReleaseBundlerService.ts` bundling closed Gitea staging tasks into a unified release. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Class: ReleaseBundlerService] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+  - [x] T80.3.2: Generate structured markdown changelogs categorizing features, bug fixes, refactors, and test coverage metrics. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Method: generateChangelog] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+  - [x] T80.3.3: Implement semantic version bump (`major`, `minor`, `patch`) based on task metadata and breaking change annotations. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Method: computeNextVersion] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+  - [x] T80.3.4: Write unit tests verifying changelog formatting and clean release bundle aggregation across multiple tasks. [File: packages/engine/src/tests/release_bundler.test.ts] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
+
+### T80.4: GitHub API Platform Provider & Pull Request Promotion
+  - [x] T80.4.1: Extend `GitHubPlatformProvider` in `packages/engine/src/gitea/GitHubPlatformProvider.ts` to support authenticated push and PR creation to public upstream. [File: packages/engine/src/gitea/GitHubPlatformProvider.ts] [Class: GitHubPlatformProvider] [Test: npm test -- packages/engine/src/tests/github_platform_provider.test.ts]
+  - [x] T80.4.2: Implement `promoteMilestoneToGitHub(releaseBranch: string, milestoneTitle: string, changelog: string)` pushing verified release branches to GitHub. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: promoteMilestoneToGitHub] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [x] T80.4.3: Open a single, cohesive Pull Request on GitHub against `main` containing the full milestone body of work and test verification badge. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [x] T80.4.4: Write unit tests simulating GitHub promotion with mock Octokit/REST API responses. [File: packages/engine/src/tests/github_promotion.test.ts] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+
+### T80.5: Automated Promotion CLI & REST API
+  - [x] T80.5.1: Expose `POST /api/promotion/release` in `CacophonyHttpServer.ts` triggering the quarantine gauntlet and staging promotion. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/promotion/release] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T80.5.2: Expose `GET /api/promotion/status` returning current staging vs upstream GitHub divergence and pending release candidates. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/promotion/status] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T80.5.3: Add CLI command `bin/cacophony promote [--dry-run] [--target=github]` to trigger automated verification and upstream release. [File: bin/cacophony.ts] [Subcommand: promote] [Test: node bin/cacophony.ts promote --dry-run]
+  - [x] T80.5.4: Write integration tests verifying REST API and CLI endpoints validate build and test gates before pushing. [File: packages/engine/src/tests/promotion_api.test.ts] [Test: npm test -- packages/engine/src/tests/promotion_api.test.ts]

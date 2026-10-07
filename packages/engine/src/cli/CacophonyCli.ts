@@ -84,6 +84,10 @@ export class CacophonyCli {
         case "run":
           return await this.handleCommandPalette(rest);
 
+        // Staging to Production Promotion Pipeline
+        case "promote":
+          return await this.handlePromote(rest);
+
         default:
           console.error(`Unknown command: ${command}`);
           this.printHelp();
@@ -424,6 +428,52 @@ export class CacophonyCli {
     return undefined;
   }
 
+  private async handlePromote(args: readonly string[]): Promise<number> {
+    const dryRun = args.includes("--dry-run");
+    const targetArg = args.find((a) => a.startsWith("--target="));
+    const target = targetArg ? targetArg.split("=")[1] : "github";
+
+    console.log(`[Promotion Pipeline] Starting quarantine gauntlet for target '${target}' (dry-run: ${dryRun})...`);
+
+    const { MonorepoBuildGate } = await import("../gitea/MonorepoBuildGate.js");
+    const { PromotionSanitizer } = await import("../gitea/PromotionSanitizer.js");
+
+    const buildGate = new MonorepoBuildGate();
+    console.log("[Quarantine Gate] Verifying monorepo build...");
+    const buildResult = await buildGate.verifyBuild(process.cwd());
+    if (!buildResult.passed) {
+      console.error(`[Promotion Gate Failure] Build verification failed: ${buildResult.failureSummary}`);
+      return 1;
+    }
+    console.log("[Quarantine Gate] Monorepo build verified successfully.");
+
+    console.log("[Quarantine Gate] Scanning for leaked secrets and banned dependencies...");
+    const sanitizer = new PromotionSanitizer();
+    const files = fs.readdirSync(process.cwd());
+    const sanitization = sanitizer.sanitize({ filePaths: files });
+    if (!sanitization.passed) {
+      console.error(`[Promotion Gate Failure] Hygiene check failed: ${sanitization.summary}`);
+      return 1;
+    }
+    console.log("[Quarantine Gate] Repository hygiene scan passed.");
+
+    if (dryRun) {
+      console.log("[Promotion Pipeline] Dry run successful. All quarantine gates passed. No upstream push executed.");
+      return 0;
+    }
+
+    console.log(`[Promotion Pipeline] Pushing release to upstream ${target}...`);
+    const { execSync } = await import("node:child_process");
+    try {
+      execSync("git push origin master", { stdio: "inherit" });
+      console.log("[Promotion Pipeline] Promotion to upstream production successful.");
+      return 0;
+    } catch (pushErr) {
+      console.error(`[Promotion Gate Failure] Upstream push failed: ${String(pushErr)}`);
+      return 1;
+    }
+  }
+
   private printHelp(): void {
     console.log(`
 Cacophony Unified CLI & Command Palette
@@ -462,6 +512,9 @@ Live LLM Stream Audit:
 
 Code Correction & Scrubber:
   scrub <file> [--write]    Run deterministic scrubbers on a source file
+
+Staging to Production Promotion:
+  promote [--dry-run]       Execute quarantine gauntlet and promote to upstream GitHub
 
 Command Palette:
   run <action> [args...]    Universal dispatcher for any registered engine command

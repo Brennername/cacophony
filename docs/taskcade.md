@@ -26,13 +26,13 @@
 2. **Archival Procedure**: When an entire phase or major milestone is fully verified, its completed checklist items are transferred from `docs/taskcade.md` to `docs/taskcade-history.md`.
 3. **Traceability**: Each archived phase preserves its task IDs, descriptions, subtask trees, associated git commit hashes, and verification scope.
 4. **Token Efficiency**: Active planning and execution in `docs/taskcade.md` remain uncluttered, allowing AI agents and human operators to focus directly on pending work without context exhaustion.
-5. **Reference**: See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-79, 82, and 89-95.
+5. **Reference**: See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-80, 82, and 89-95.
 
 ---
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-79, 82, and 89-95.*
+*See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-80, 82, and 89-95.*
 
 ---
 
@@ -41,10 +41,9 @@
 > [!IMPORTANT]
 > **Execution Directives for Next Frontier Model Implementer:**
 > The following phases constitute the highest-priority implementation pipeline above all others, structured for immediate frontier model execution:
-> 1. **Priority 1: Phase 80 (Multi-Stage Staging to Production Promotion Gate & Batched Promotion Pipeline)**: Implement the quarantine gauntlet between Gitea staging and public GitHub: full monorepo build verification (`npm run build`), 100% test gate, secret/hygiene scrubber, and batched release milestone PR bundling.
-> 2. **Priority 2: Phase 84 (Auto-Mode Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
-> 3. **Priority 3: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
-> 4. **Priority 4: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
+> 1. **Priority 1: Phase 84 (Auto-Mode Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
+> 2. **Priority 2: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
+> 3. **Priority 3: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
 
 
 ---
@@ -781,37 +780,7 @@
 ---
 
 ## Phase 80: Multi-Stage Staging (Gitea) to Production (GitHub) Release Gate & Batched Promotion Pipeline
-*RDF Category: devops_orchestration*
-
-### T80.1: Monorepo Compilation & Clean Build Verification Gate
-  - [ ] T80.1.1: Create `MonorepoBuildGate` in `packages/engine/src/gitea/MonorepoBuildGate.ts` executing `npm run build` across all packages in isolated worktrees. [File: packages/engine/src/gitea/MonorepoBuildGate.ts] [Class: MonorepoBuildGate] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
-  - [ ] T80.1.2: Capture standard error and compiler diagnostic codes (e.g. TS2304, TS2305, NG2008), rejecting broken commits before staging promotion. [File: packages/engine/src/gitea/MonorepoBuildGate.ts] [Method: verifyBuild] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
-  - [ ] T80.1.3: Wire build verification into `AutonomousWorkerPipeline` Stage 6 preventing broken tasks from merging into Gitea `main`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-  - [ ] T80.1.4: Write unit tests verifying that build failures abort PR creation and trigger remediation feedback. [File: packages/engine/src/tests/monorepo_build_gate.test.ts] [Test: npm test -- packages/engine/src/tests/monorepo_build_gate.test.ts]
-
-### T80.2: Secret Leak & Deterministic Hygiene Scanner
-  - [ ] T80.2.1: Implement `PromotionSanitizer` in `packages/engine/src/gitea/PromotionSanitizer.ts` scanning git diffs for API keys, tokens, and private keys. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Class: PromotionSanitizer] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
-  - [ ] T80.2.2: Scan git diffs for prohibited unicode emojis or dingbats per project rules, rejecting dirty diffs prior to upstream promotion. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Method: scanEmojis] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
-  - [ ] T80.2.3: Check for banned imports (`acorn`, `eventsource`, etc.) and ensure no loose root files outside permitted list. [File: packages/engine/src/gitea/PromotionSanitizer.ts] [Method: scanHygiene] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
-  - [ ] T80.2.4: Write unit tests verifying sanitizer detects simulated leaked secrets and unicode emojis. [File: packages/engine/src/tests/promotion_sanitizer.test.ts] [Test: npm test -- packages/engine/src/tests/promotion_sanitizer.test.ts]
-
-### T80.3: Milestone Release Bundler & Changelog Generator
-  - [ ] T80.3.1: Create `ReleaseBundlerService` in `packages/engine/src/gitea/ReleaseBundlerService.ts` bundling closed Gitea staging tasks into a unified release. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Class: ReleaseBundlerService] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
-  - [ ] T80.3.2: Generate structured markdown changelogs categorizing features, bug fixes, refactors, and test coverage metrics. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Method: generateChangelog] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
-  - [ ] T80.3.3: Implement semantic version bump (`major`, `minor`, `patch`) based on task metadata and breaking change annotations. [File: packages/engine/src/gitea/ReleaseBundlerService.ts] [Method: computeNextVersion] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
-  - [ ] T80.3.4: Write unit tests verifying changelog formatting and clean release bundle aggregation across multiple tasks. [File: packages/engine/src/tests/release_bundler.test.ts] [Test: npm test -- packages/engine/src/tests/release_bundler.test.ts]
-
-### T80.4: GitHub API Platform Provider & Pull Request Promotion
-  - [ ] T80.4.1: Extend `GitHubPlatformProvider` in `packages/engine/src/gitea/GitHubPlatformProvider.ts` to support authenticated push and PR creation to public upstream. [File: packages/engine/src/gitea/GitHubPlatformProvider.ts] [Class: GitHubPlatformProvider] [Test: npm test -- packages/engine/src/tests/github_platform_provider.test.ts]
-  - [ ] T80.4.2: Implement `promoteMilestoneToGitHub(releaseBranch: string, milestoneTitle: string, changelog: string)` pushing verified release branches to GitHub. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: promoteMilestoneToGitHub] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
-  - [ ] T80.4.3: Open a single, cohesive Pull Request on GitHub against `main` containing the full milestone body of work and test verification badge. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
-  - [ ] T80.4.4: Write unit tests simulating GitHub promotion with mock Octokit/REST API responses. [File: packages/engine/src/tests/github_promotion.test.ts] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
-
-### T80.5: Automated Promotion CLI & REST API
-  - [ ] T80.5.1: Expose `POST /api/promotion/release` in `CacophonyHttpServer.ts` triggering the quarantine gauntlet and staging promotion. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/promotion/release] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T80.5.2: Expose `GET /api/promotion/status` returning current staging vs upstream GitHub divergence and pending release candidates. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/promotion/status] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T80.5.3: Add CLI command `bin/cacophony promote [--dry-run] [--target=github]` to trigger automated verification and upstream release. [File: bin/cacophony.ts] [Subcommand: promote] [Test: node bin/cacophony.ts promote --dry-run]
-  - [ ] T80.5.4: Write integration tests verifying REST API and CLI endpoints validate build and test gates before pushing. [File: packages/engine/src/tests/promotion_api.test.ts] [Test: npm test -- packages/engine/src/tests/promotion_api.test.ts]
+*Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-80-multi-stage-staging-gitea-to-production-github-release-gate--batched-promotion-pipeline)*
 
 ---
 

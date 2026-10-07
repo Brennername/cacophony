@@ -15,5 +15,8 @@ export * from "./GiteaPlatformProvider.js";
 export * from "./GitHubPlatformProvider.js";
 export * from "./GitPlatformProviderFactory.js";
 export * from "./PrAssessmentCoordinator.js";
-
-
+export * from "./MonorepoBuildGate.js";
+export * from "./PromotionSanitizer.js";
+export * from "./ReleaseBundlerService.js";
+export * from "./GitHubPromotionPipeline.js";
+export * from "./promoteCli.js";

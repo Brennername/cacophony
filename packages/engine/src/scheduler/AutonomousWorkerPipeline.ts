@@ -22,6 +22,7 @@ import { GeneratedChangeGuard } from "../testing/GeneratedChangeGuard.js";
 import { TypeScriptMethodSplicer } from "../context/TypeScriptMethodSplicer.js";
 import { GenerationHeartbeatTracker } from "../inference/GenerationHeartbeatTracker.js";
 import { MicroModelToolRouter } from "../inference/MicroModelToolRouter.js";
+import { MonorepoBuildGate } from "../gitea/MonorepoBuildGate.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -43,6 +44,7 @@ export interface AutonomousWorkerPipelineOptions {
   readonly repoOwner?: string | undefined;
   readonly repoName?: string | undefined;
   readonly gitRemote?: string | undefined;
+  readonly monorepoBuildGate?: MonorepoBuildGate | undefined;
   readonly microModelToolRouter?: MicroModelToolRouter | undefined;
 }
 
@@ -80,6 +82,7 @@ export class AutonomousWorkerPipeline {
   private readonly gitRemote: string;
   private readonly remediationPromptFormatter: RemediationPromptFormatter;
   private readonly microModelToolRouter: MicroModelToolRouter;
+  private readonly monorepoBuildGate: MonorepoBuildGate;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
     this.remediationPromptFormatter = new RemediationPromptFormatter();
@@ -106,6 +109,7 @@ export class AutonomousWorkerPipeline {
       reviewTimeoutMs: 45_000
     });
     this.sandboxedRunner = options.sandboxedRunner ?? new SandboxedProcessRunner();
+    this.monorepoBuildGate = options.monorepoBuildGate ?? new MonorepoBuildGate({ sandboxedRunner: this.sandboxedRunner });
     this.defaultPipeline = options.defaultPipeline ?? {
       id: "pipeline_autonomous_standard",
       name: "Standard Autonomous Code Pipeline",
@@ -1168,17 +1172,11 @@ export class AutonomousWorkerPipeline {
       // If worktree and git platform provider are available, commit, push, open PR, and merge
       if (this.worktreeManager && worktree && this.gitPlatformProvider) {
         try {
-          // Pre-PR integrity guardrail: verify the workspace compiles cleanly before opening or merging a PR
-          if (pkgName) {
-            const prePrCheck = await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, {
-              cwd: worktree.worktreePath,
-              timeoutMs: 90000,
-              maxBufferBytes: 256 * 1024
-            });
-            if (prePrCheck.exitCode !== 0) {
-              const buildErr = (prePrCheck.stderr || prePrCheck.stdout).slice(0, 400);
-              throw new Error(`Pre-PR verification failed (npm run build --workspace=${pkgName}): ${buildErr}`);
-            }
+          // Pre-PR integrity guardrail: verify monorepo compilation via MonorepoBuildGate
+          const buildCheck = await this.monorepoBuildGate.verifyBuild(worktree.worktreePath);
+          if (!buildCheck.passed) {
+            const summary = buildCheck.failureSummary || "Monorepo build gate failed";
+            throw new Error(`Pre-PR verification failed: ${summary}`);
           }
 
           await this.worktreeManager.commitWorktree(

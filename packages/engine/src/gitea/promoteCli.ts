@@ -14,7 +14,6 @@ export function promote(options: PromoteOptions): Promise<boolean> {
   const { dryRun = false, target = "github", skipGitCleanCheck = false, testCommand = "npm test" } = options;
 
   return new Promise((resolve) => {
-    // 1. Verify clean working directory
     exec("git status", (statusErr, stdout, stderr) => {
       if (statusErr) {
         console.error(`Error checking git status: ${stderr}`);
@@ -32,7 +31,6 @@ export function promote(options: PromoteOptions): Promise<boolean> {
 
       console.log("[Promotion Gauntlet] Running automated test verification gate...");
 
-      // 2. Execute verification gate
       exec(testCommand, (testErr, testStdout, testStderr) => {
         if (testErr) {
           console.error(`[Promotion Gate Failure] Automated verification tests failed: ${testStderr || testStdout}`);
@@ -42,50 +40,24 @@ export function promote(options: PromoteOptions): Promise<boolean> {
 
         console.log("[Promotion Gauntlet] All test suites passed 100%.");
 
-        // 3. Dry-run mode completes here
         if (dryRun) {
           console.log(`[Promotion Pipeline] Dry run complete for target '${target}'. Gates passed. No remote push performed.`);
           resolve(true);
-          return;
+        } else {
+          console.log(`[Promotion Pipeline] Pushing release to upstream ${target}...`);
+          exec("git push origin master", (pushErr, pushStdout, pushStderr) => {
+            if (pushErr) {
+              console.error(`[Promotion Gate Failure] Failed pushing to upstream: ${pushStderr}`);
+              resolve(false);
+              return;
+            }
+
+            console.log(pushStdout.trim());
+            console.log("[Promotion Pipeline] Promotion to upstream production successful.");
+            resolve(true);
+          });
         }
-
-        // 4. Upstream release push
-        console.log(`[Promotion Pipeline] Pushing release to upstream ${target}...`);
-        exec("git push origin master", (pushErr, pushStdout, pushStderr) => {
-          if (pushErr) {
-            console.error(`[Promotion Gate Failure] Failed pushing to upstream: ${pushStderr}`);
-            resolve(false);
-            return;
-          }
-
-          console.log(pushStdout.trim());
-          console.log("[Promotion Pipeline] Promotion to upstream production successful.");
-          resolve(true);
-        });
       });
     });
-  });
-}
-
-// CLI entrypoint execution
-const isDirectRun = Boolean(process.argv[1]?.endsWith("cacophony.ts") || process.argv[1]?.endsWith("cacophony.js"));
-if (isDirectRun) {
-  const rawArgs = process.argv.slice(2);
-  const command = rawArgs[0] === "promote" ? rawArgs[0] : undefined;
-  const commandArgs = command ? rawArgs.slice(1) : rawArgs;
-
-  const options: PromoteOptions = {
-    dryRun: commandArgs.includes("--dry-run"),
-    target: "github"
-  };
-
-  for (const arg of commandArgs) {
-    if (arg.startsWith("--target=")) {
-      options.target = arg.split("=")[1];
-    }
-  }
-
-  promote(options).then((success) => {
-    process.exit(success ? 0 : 1);
   });
 }
