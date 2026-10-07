@@ -36,7 +36,6 @@ describe("PromotionSanitizer Suite (T80.2)", () => {
   test("scanEmojis detects prohibited unicode emojis", () => {
     const sanitizer = new PromotionSanitizer();
 
-    // Use unicode escape sequence to avoid raw emoji in source code
     const rocketEmoji = "\u{1F680}";
     const diffWithEmoji = `
 --- a/file.ts
