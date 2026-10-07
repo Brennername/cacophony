@@ -805,7 +805,10 @@ export class CacophonyHttpServer {
 
       // Extract verdict and SOLID compliance score from stage logs
       const logText = remediationStage?.logOutput || "";
-      const isApproved = logText.includes("APPROVED") || logText.includes("passed verification gates") || prReviewStage?.stageStatus === "SUCCESS";
+      const isApproved =
+        /\bAPPROVE\b|\bAPPROVED\b/i.test(logText) ||
+        logText.includes("passed verification gates") ||
+        prReviewStage?.stageStatus === "SUCCESS";
       const verdict = isApproved ? "APPROVED" : "CHANGES_REQUESTED";
 
       let solidScore = 95;

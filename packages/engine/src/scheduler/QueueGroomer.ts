@@ -39,7 +39,7 @@ export class QueueGroomer {
     this.defaultDirectives = defaultDirectives ?? [
       "Zero Emojis: Strictly NO emojis in code, comments, strings, or commit messages, unless it is specifically an emoji feature being implemented.",
       "Integrity Rule: Always work and test with genuine integrity. Never fake test passes (e.g. adding dummy print statements, removing assertions, or mocking tests to artificially report 100%). Never drop databases or tables; write explicit, backward-compatible migrations.",
-      "Testing Framework: All test suites MUST use the native Node.js test runner ('node:test') and assertion library ('node:assert/strict'). Example: `import test, { describe, it } from 'node:test'; import assert from 'node:assert/strict';`. NEVER import or reference 'jest', '@jest/globals', 'chai', 'mocha', or 'sinon'.",
+      "Testing Framework: All test suites MUST use the native Node.js test runner ('node:test') and assertion library ('node:assert/strict'). Example: `import { describe, it, test } from 'node:test'; import assert from 'node:assert/strict';`. NEVER import or reference 'jest', '@jest/globals', 'chai', 'mocha', or 'sinon'.",
       "Module Imports: Import only from valid installed workspace packages (@cacophony/shared-types, @cacophony/db, @cacophony/tools) or valid relative paths within the package with explicit .js extensions (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js'). Never hallucinate non-existent packages like '@cacophony/git-worktrees', 'vscode', or '@types/vscode'.",
       "Quality Standards: Adhere strictly to SOLID principles, modularity, and explicit typing.",
       "Incremental Preservation: Preserve all existing methods, functions, interfaces, properties, and imports in the target file. Never wipe out, truncate, or overwrite existing implementation methods when adding new functionality.",
@@ -138,7 +138,8 @@ export class QueueGroomer {
         modified = true;
         groomNotes.push(`Target test suite '${candidateTest}' will be created by this task; scoped to compiled test file: ${testCommand}`);
       } else {
-        const closestTest = candidateTest.startsWith("packages/engine/src/tests/")
+        const isDocTask = task.role === "doc_writer" || (focusFilesList.length > 0 && focusFilesList.every((f) => f.endsWith(".md") || f.startsWith("docs/")));
+        const closestTest = !isDocTask && candidateTest.startsWith("packages/engine/src/tests/")
           ? this.findClosestEngineTest(candidateTest, task.prompt)
           : null;
         if (closestTest) {

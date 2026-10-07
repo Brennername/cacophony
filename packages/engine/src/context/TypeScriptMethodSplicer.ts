@@ -128,8 +128,23 @@ export class TypeScriptMethodSplicer {
     if (edit.kind === "route" || edit.kind === "route-insert") {
       const handler = this.findHttpRequestHandler(sourceFile);
       if (!handler?.body || !edit.routePath || !edit.httpMethod) throw new Error("Target HTTP route handler disappeared before splice");
-      const body = bodyText.trim();
-      if (!body.startsWith("if") || !body.includes(edit.routePath) || !body.includes(edit.httpMethod) || this.stubPattern.test(body)) {
+
+      let body = bodyText.replace(/^```(?:typescript|ts)?\s*/i, "").replace(/```\s*$/i, "").trim();
+
+      if (!body.startsWith("if")) {
+        const ifMatch = body.match(/\bif\s*\(/);
+        if (ifMatch && ifMatch.index !== undefined) {
+          const prelude = body.slice(0, ifMatch.index).trim();
+          if (/^\s*(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/\s*)*$/.test(prelude)) {
+            body = body.slice(ifMatch.index).trim();
+          }
+        }
+      }
+
+      const hasRoute = body.includes(edit.routePath) || body.toLowerCase().includes(edit.routePath.toLowerCase());
+      const hasMethod = body.includes(edit.httpMethod) || body.toUpperCase().includes(edit.httpMethod.toUpperCase());
+
+      if (!body.startsWith("if") || !hasRoute || !hasMethod || this.stubPattern.test(body)) {
         throw new Error(`Targeted output must contain one complete ${edit.httpMethod} ${edit.routePath} route block without placeholders`);
       }
       const probe = ts.createSourceFile("route-probe.ts", `class __Probe { async run() {\n${body}\n} }`, ts.ScriptTarget.Latest, true);
@@ -141,8 +156,8 @@ export class TypeScriptMethodSplicer {
         const findTarget = (node: ts.Node): void => {
           const parentMethod = ts.isIfStatement(node) ? this.findOwningMethod(node) : undefined;
           if (ts.isIfStatement(node) && parentMethod?.name && ts.isIdentifier(parentMethod.name) &&
-              parentMethod.name.text === edit.methodName && node.expression.getText(sourceFile).includes(edit.routePath!) &&
-              node.expression.getText(sourceFile).includes(edit.httpMethod!)) target = node;
+              parentMethod.name.text === edit.methodName && node.expression.getText(sourceFile).toLowerCase().includes(edit.routePath!.toLowerCase()) &&
+              node.expression.getText(sourceFile).toUpperCase().includes(edit.httpMethod!.toUpperCase())) target = node;
           if (!target) ts.forEachChild(node, findTarget);
         };
         findTarget(sourceFile);

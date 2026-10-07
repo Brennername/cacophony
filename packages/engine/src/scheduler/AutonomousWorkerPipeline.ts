@@ -422,12 +422,17 @@ export class AutonomousWorkerPipeline {
       let generationDuration = Date.now() - generationStart;
       let finalCode = parseResult.code;
       if (targetedMethodEdit && targetRel) {
-        finalCode = TypeScriptMethodSplicer.splice(
-          originalExistingContent,
-          targetRel,
-          targetedMethodEdit,
-          finalCode
-        );
+        try {
+          finalCode = TypeScriptMethodSplicer.splice(
+            originalExistingContent,
+            targetRel,
+            targetedMethodEdit,
+            finalCode
+          );
+        } catch (spliceErr) {
+          console.warn(`[AutonomousWorkerPipeline] Targeted AST splice failed:`, spliceErr);
+          finalCode = "";
+        }
       }
       let finalAttempts = parseResult.attempts || 1;
       let finalPromptTokens = parseResult.tokensPrompt || 0;
@@ -647,14 +652,14 @@ export class AutonomousWorkerPipeline {
           }
 
           compilationRemediationAttempts++;
-          const buildOutput = `${buildCheck.stdout}\n${buildCheck.stderr}`.trim();
+          let buildOutput = `${buildCheck.stdout}\n${buildCheck.stderr}`.trim();
           const rawDiags = CompilerDiagnosticParser.parseLines(buildOutput.split("\n"));
 
           // The package build can report failures in files unrelated to this task. The
           // remediation prompt and generated code below only operate on targetAbs, so
           // applying diagnostics from other files to currentCode produces destructive,
           // futile edits (and can burn the full five-attempt remediation budget).
-          const targetDiagnostics = rawDiags.filter((diagnostic) => {
+          let targetDiagnostics = rawDiags.filter((diagnostic) => {
             if (!diagnostic.filePath || !targetAbs) return false;
             const normalizedTarget = path.resolve(targetAbs);
             const packageRoot = targetRel?.match(/^(packages\/[^/]+)\//)?.[1] || "";
@@ -685,7 +690,7 @@ export class AutonomousWorkerPipeline {
 
           // 1a. Attempt immediate deterministic diagnostic auto-repair
           const autoRepair = new CompilerDiagnosticAutoRepair();
-          const repairResult = autoRepair.repair(currentCode, targetDiagnostics);
+          const repairResult = autoRepair.repair(currentCode, targetDiagnostics, targetRel || undefined);
           if (repairResult.repairsApplied.length > 0) {
             let candidateCode = repairResult.repairedCode;
             if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
@@ -726,6 +731,12 @@ export class AutonomousWorkerPipeline {
                 }
               }
               break;
+            } else if (retryCheck) {
+              buildOutput = `${retryCheck.stdout}\n${retryCheck.stderr}`.trim();
+              const freshDiags = CompilerDiagnosticParser.parseLines(buildOutput.split("\n"));
+              targetDiagnostics = targetRel
+                ? freshDiags.filter((d) => !d.filePath || d.filePath.includes(path.basename(targetRel!)))
+                : freshDiags;
             }
           }
 
@@ -1006,7 +1017,7 @@ export class AutonomousWorkerPipeline {
                   const buildOutput = `${buildRes.stdout}\n${buildRes.stderr}`.trim();
                   const rawDiags = CompilerDiagnosticParser.parseLines(buildOutput.split("\n"));
                   const autoRepair = new CompilerDiagnosticAutoRepair();
-                  const repairResult = autoRepair.repair(currentCode, rawDiags);
+                  const repairResult = autoRepair.repair(currentCode, rawDiags, targetRel || undefined);
                   if (repairResult.repairsApplied.length > 0) {
                     const integrityIssues = GeneratedChangeGuard.inspectReplacement(
                       targetRel || "unknown", originalExistingContent, repairResult.repairedCode, integrityTaskText

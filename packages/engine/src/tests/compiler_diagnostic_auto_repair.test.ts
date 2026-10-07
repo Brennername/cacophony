@@ -150,5 +150,68 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.strictEqual(dynamicResult.repairedCode, "const val: string = 'test';");
     assert.ok(dynamicResult.repairsApplied.includes("Dynamically repaired type mismatch"));
   });
+
+  it("repairs TS6133 on import statements by removing the unused import instead of prefixing", () => {
+    const source = `import test, { describe, it } from 'node:test';\ndescribe('Suite', () => { it('ok', () => {}); });`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS6133",
+      "'test' is declared but its value is never read.",
+      1
+    )]);
+
+    assert.ok(!result.repairedCode.includes("_test"));
+    assert.ok(result.repairedCode.includes("import { describe, it } from 'node:test';"));
+  });
+
+  it("repairs TS6133 on previously underscore-prefixed local variables by adding @ts-ignore", () => {
+    const source = `const _afterEach = () => {};\nexport const active = true;`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS6133",
+      "'_afterEach' is declared but its value is never read.",
+      1
+    )]);
+
+    assert.ok(result.repairedCode.includes("// @ts-ignore\nconst _afterEach ="));
+  });
+
+  it("repairs TS2307 by resolving relative module path in workspace", () => {
+    const source = `import { TokenEstimator } from '../../src/token_estimator/TokenEstimator.js';`;
+    const result = repairer.repair(
+      source,
+      [diagnostic(
+        "TS2307",
+        "Cannot find module '../../src/token_estimator/TokenEstimator.js' or its corresponding type declarations."
+      )],
+      "packages/engine/src/tests/token_estimator.test.ts"
+    );
+
+    assert.ok(result.repairedCode.includes("../inference/TokenEstimator.js"));
+  });
+
+  it("repairs TS2307 by stubbing unresolvable module class exports", () => {
+    const source = `import { StandardTokenizer } from '../../src/tokenizer/StandardTokenizer.js';`;
+    const result = repairer.repair(
+      source,
+      [diagnostic(
+        "TS2307",
+        "Cannot find module '../../src/tokenizer/StandardTokenizer.js' or its corresponding type declarations."
+      )],
+      "packages/engine/src/tests/token_estimator.test.ts"
+    );
+
+    assert.ok(result.repairedCode.includes("class StandardTokenizer"));
+  });
+
+  it("repairs TS2304 missing beforeEach without declaring unused local constants", () => {
+    const source = `describe('Suite', () => { beforeEach(() => {}); it('ok', () => {}); });`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2304",
+      "Cannot find name 'beforeEach'."
+    )]);
+
+    assert.ok(!result.repairedCode.includes("const afterEach ="));
+    assert.ok(!result.repairedCode.includes("const beforeAll ="));
+    assert.ok(result.repairedCode.includes("beforeEach"));
+  });
 });
 
