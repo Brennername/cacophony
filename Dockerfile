@@ -61,6 +61,7 @@ COPY --from=builder /app/packages/db ./packages/db
 COPY --from=builder /app/packages/tools ./packages/tools
 COPY --from=builder /app/packages/frontend ./packages/frontend
 COPY --from=builder /app/packages/engine ./packages/engine
+COPY --from=builder /app/docs ./docs
 
 # Create persistent storage directories
 RUN mkdir -p /app/data /app/workspaces /app/conf

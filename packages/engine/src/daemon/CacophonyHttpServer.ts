@@ -532,19 +532,24 @@ export class CacophonyHttpServer {
 
     // 4a0c. REST API: POST /api/tasks/seed - Ingest uncompleted tasks from docs/taskcade.md via TaskcadeSeedLoader
     if (url.pathname === "/api/tasks/seed" && req.method === "POST") {
-      const taskRepo = this.daemon.getTaskRepository();
-      const { TaskcadeSeedLoader } = await import("../scheduler/TaskcadeSeedLoader.js");
-      const loader = new TaskcadeSeedLoader();
-      const limit = parseInt(url.searchParams.get("limit") || "400", 10);
-      const phaseFilter = url.searchParams.get("phase") || undefined;
-      const tasks = await loader.loadTasks({ limit, phaseFilter });
-      let seededCount = 0;
-      for (const t of tasks) {
-        const res = await taskRepo.createIfNotExists(t);
-        if (res.created) seededCount++;
+      try {
+        const taskRepo = this.daemon.getTaskRepository();
+        const { TaskcadeSeedLoader } = await import("../scheduler/TaskcadeSeedLoader.js");
+        const loader = new TaskcadeSeedLoader();
+        const limit = parseInt(url.searchParams.get("limit") || "400", 10);
+        const phaseFilter = url.searchParams.get("phase") || undefined;
+        const tasks = await loader.loadTasks({ limit, phaseFilter });
+        let seededCount = 0;
+        for (const t of tasks) {
+          const res = await taskRepo.createIfNotExists(t);
+          if (res.created) seededCount++;
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, totalParsed: tasks.length, seededCount }));
+      } catch (err: any) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err?.message || String(err) }));
       }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: true, totalParsed: tasks.length, seededCount }));
       return;
     }
 
