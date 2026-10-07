@@ -1,3 +1,4 @@
+
 export type TaskCategory = "feat" | "fix" | "refactor" | "docs" | "test" | "chore";
 
 export interface ReleaseTaskItem {
@@ -218,11 +219,11 @@ export class ReleaseBundlerService {
 
     const metrics: ReleaseMetrics = {
       totalTasks: options.tasks.length,
-      totalTests: options.tasks.reduce((sum, t) => sum + (t.testsCount ?? 0), 0),
-      featuresCount: options.tasks.filter((t) => this.classifyTask(t) === "feat").length,
-      fixesCount: options.tasks.filter((t) => this.classifyTask(t) === "fix").length,
-      refactorsCount: options.tasks.filter((t) => this.classifyTask(t) === "refactor").length,
-      breakingCount: options.tasks.filter((t) => this.isBreakingChange(t)).length
+      totalTests: options.tasks.reduce((sum: any, t: any) => sum + (t.testsCount ?? 0), 0),
+      featuresCount: options.tasks.filter((t: any) => this.classifyTask(t) === "feat").length,
+      fixesCount: options.tasks.filter((t: any) => this.classifyTask(t) === "fix").length,
+      refactorsCount: options.tasks.filter((t: any) => this.classifyTask(t) === "refactor").length,
+      breakingCount: options.tasks.filter((t: any) => this.isBreakingChange(t)).length
     };
 
     return {
@@ -236,4 +237,31 @@ export class ReleaseBundlerService {
       generatedAt: new Date().toISOString()
     };
   }
+
+
+  public bumpVersion(currentVersion: string, tasks: readonly ReleaseTaskItem[]): string {
+      const cleanVersion = currentVersion.replace(/^v/, "").trim();
+      const parts = cleanVersion.split(".").map((p) => parseInt(p, 10));
+      let major = parts[0] ?? 1;
+      let minor = parts[1] ?? 0;
+      let patch = parts[2] ?? 0;
+
+      const hasBreaking = tasks.some((t) => this.isBreakingChange(t));
+      if (hasBreaking) {
+        major += 1;
+        minor = 0;
+        patch = 0;
+        return `${major}.${minor}.${patch}`;
+      }
+
+      const hasFeature = tasks.some((t) => this.classifyTask(t) === "feat");
+      if (hasFeature) {
+        minor += 1;
+        patch = 0;
+        return `${major}.${minor}.${patch}`;
+      }
+
+      patch += 1;
+      return `${major}.${minor}.${patch}`;
+    }
 }
