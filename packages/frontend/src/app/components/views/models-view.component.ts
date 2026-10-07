@@ -32,6 +32,27 @@ import { ModelFleetService } from '../../services/model-fleet.service';
           <p class="subtitle">Empirical win rates, hardware memory footprints, and multi-tenant eviction controls</p>
         </div>
         <div class="header-actions-group">
+          <div class="epoch-control-inline">
+            <label for="epoch-filter-select" class="epoch-filter-label">Epoch:</label>
+            <select
+              id="epoch-filter-select"
+              class="epoch-select-input"
+              [value]="selectedEpoch()"
+              (change)="onEpochSelected($event)"
+            >
+              <option value="current">Current Epoch (Epoch {{ metricsService.currentEpoch()?.epochId || 1 }})</option>
+              @for (ep of metricsService.epochs(); track ep.epochId) {
+                <option [value]="ep.epochId">Epoch {{ ep.epochId }}: {{ ep.name }}</option>
+              }
+              <option value="all">All Time</option>
+            </select>
+            <button class="action-btn-secondary" (click)="openEpochModal()" title="Advance to a fresh epoch and reset model stats">
+              Start New Epoch
+            </button>
+            <button class="action-btn-secondary" (click)="resetStatsCurrentEpoch()" title="Reset failure degradation without advancing epoch">
+              Reset Stats
+            </button>
+          </div>
           <button class="action-btn-primary" (click)="showPullModal.set(true)">
             + Pull Model
           </button>
@@ -357,6 +378,66 @@ import { ModelFleetService } from '../../services/model-fleet.service';
           </div>
         }
       </div>
+
+      <!-- Epoch Advancement Modal -->
+      @if (showEpochModal()) {
+        <div class="modal-backdrop" (click)="closeEpochModal()">
+          <div class="modal-dialog epoch-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>Start New Arena Epoch</h2>
+              <button class="close-btn" (click)="closeEpochModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+              <p class="modal-description">
+                Advancing the active epoch snapshots existing metrics, restores evicted models to active status,
+                and re-establishes a clean slate for empirical model competition.
+              </p>
+              <div class="form-group">
+                <label for="epoch-name">Epoch Name</label>
+                <input
+                  id="epoch-name"
+                  type="text"
+                  class="form-input"
+                  [value]="epochNameInput()"
+                  (input)="onEpochNameInput($event)"
+                  placeholder="e.g. Epoch 2: Post-Pipeline Fix"
+                />
+              </div>
+              <div class="form-group">
+                <label for="epoch-reason">Reason for Epoch Reset</label>
+                <input
+                  id="epoch-reason"
+                  type="text"
+                  class="form-input"
+                  [value]="epochReasonInput()"
+                  (input)="onEpochReasonInput($event)"
+                  placeholder="e.g. Pipeline auto-repair deployed"
+                />
+              </div>
+              <div class="form-group">
+                <label for="epoch-notes">Notes (Optional)</label>
+                <textarea
+                  id="epoch-notes"
+                  class="form-textarea"
+                  [value]="epochNotesInput()"
+                  (input)="onEpochNotesInput($event)"
+                  placeholder="Additional context or experimental hypothesis"
+                ></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="action-btn-secondary" (click)="closeEpochModal()">Cancel</button>
+              <button
+                class="action-btn-primary"
+                [disabled]="isSubmittingEpoch()"
+                (click)="submitNewEpoch()"
+              >
+                {{ isSubmittingEpoch() ? 'Advancing Epoch...' : 'Confirm New Epoch' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -1173,6 +1254,145 @@ import { ModelFleetService } from '../../services/model-fleet.service';
       color: var(--color-brand);
       font-weight: 600;
     }
+
+    .epoch-control-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .epoch-filter-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .epoch-select-input {
+      background: var(--bg-surface-elevated, #1e293b);
+      color: var(--text-primary, #f8fafc);
+      border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+      border-radius: var(--radius-sm, 6px);
+      padding: 0.45rem 0.75rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .epoch-select-input:focus {
+      outline: none;
+      border-color: var(--color-brand);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    .modal-dialog.epoch-modal {
+      background: var(--bg-surface, #0f172a);
+      border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+      border-radius: var(--radius-md, 10px);
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .close-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .modal-description {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .form-group label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .form-input, .form-textarea {
+      background: var(--bg-surface-elevated, #1e293b);
+      border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+      border-radius: var(--radius-sm, 6px);
+      color: var(--text-primary);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--color-brand);
+    }
+
+    .form-textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+    }
   `],
 })
 export class ModelsViewComponent {
@@ -1186,6 +1406,63 @@ export class ModelsViewComponent {
   public readonly showPullModal = signal<boolean>(false);
   public readonly showTenancyPanel = signal<boolean>(false);
   public readonly showTuningPanel = signal<boolean>(false);
+
+  public readonly selectedEpoch = signal<string>('current');
+  public readonly showEpochModal = signal<boolean>(false);
+  public readonly epochNameInput = signal<string>('');
+  public readonly epochReasonInput = signal<string>('');
+  public readonly epochNotesInput = signal<string>('');
+  public readonly isSubmittingEpoch = signal<boolean>(false);
+
+  public openEpochModal(): void {
+    const nextEpochId = (this.metricsService.currentEpoch()?.epochId ?? 1) + 1;
+    this.epochNameInput.set(`Epoch ${nextEpochId}`);
+    this.epochReasonInput.set('Clean slate reset & model recovery');
+    this.epochNotesInput.set('');
+    this.showEpochModal.set(true);
+  }
+
+  public closeEpochModal(): void {
+    this.showEpochModal.set(false);
+  }
+
+  public async submitNewEpoch(): Promise<void> {
+    this.isSubmittingEpoch.set(true);
+    try {
+      await this.metricsService.advanceEpoch(
+        this.epochNameInput(),
+        this.epochReasonInput(),
+        this.epochNotesInput()
+      );
+      this.showEpochModal.set(false);
+    } finally {
+      this.isSubmittingEpoch.set(false);
+    }
+  }
+
+  public async resetStatsCurrentEpoch(): Promise<void> {
+    await this.metricsService.resetStats();
+  }
+
+  public onEpochSelected(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.selectedEpoch.set(select.value);
+  }
+
+  public onEpochNameInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.epochNameInput.set(target.value);
+  }
+
+  public onEpochReasonInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.epochReasonInput.set(target.value);
+  }
+
+  public onEpochNotesInput(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.epochNotesInput.set(target.value);
+  }
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {

@@ -30,6 +30,7 @@ export class CacophonyHttpServer {
   private untapStageListener: (() => void) | null = null;
   private untapHeartbeatListener: (() => void) | null = null;
   private untapSubStageLogListener: (() => void) | null = null;
+  private untapEpochListener: (() => void) | null = null;
   private readonly authService: AuthService;
   private readonly rateLimiter: RateLimiter;
 
@@ -166,6 +167,23 @@ export class CacophonyHttpServer {
           }
         }
       });
+
+      this.untapEpochListener = streamTap.tapEpochAdvanced((event) => {
+        const payload = `data: ${JSON.stringify({
+          type: "arena_epoch_advanced",
+          epochId: event.epochId,
+          name: event.name,
+          reason: event.reason,
+          timestamp: event.timestamp
+        })}\n\n`;
+        for (const client of this.sseClients) {
+          try {
+            client.write(payload);
+          } catch {
+            this.sseClients.delete(client);
+          }
+        }
+      });
     }
 
     // Start periodic SSE telemetry broadcast
@@ -190,6 +208,10 @@ export class CacophonyHttpServer {
     if (this.untapSubStageLogListener) {
       this.untapSubStageLogListener();
       this.untapSubStageLogListener = null;
+    }
+    if (this.untapEpochListener) {
+      this.untapEpochListener();
+      this.untapEpochListener = null;
     }
 
     if (this.sseInterval) {
@@ -893,6 +915,14 @@ export class CacophonyHttpServer {
           const notes = payload.notes || "";
           const healthRepo = this.daemon.getModelHealthRepository();
           const newEpoch = await healthRepo.advanceEpoch(name, reason, notes);
+          const streamTap = this.daemon.getStreamTapManager();
+          if (streamTap) {
+            streamTap.broadcastEpochAdvanced({
+              epochId: newEpoch.epochId,
+              name: newEpoch.name,
+              reason: newEpoch.reason
+            });
+          }
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, epoch: newEpoch }));
         } catch (err: unknown) {

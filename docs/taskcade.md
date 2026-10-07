@@ -26,13 +26,13 @@
 2. **Archival Procedure**: When an entire phase or major milestone is fully verified, its completed checklist items are transferred from `docs/taskcade.md` to `docs/taskcade-history.md`.
 3. **Traceability**: Each archived phase preserves its task IDs, descriptions, subtask trees, associated git commit hashes, and verification scope.
 4. **Token Efficiency**: Active planning and execution in `docs/taskcade.md` remain uncluttered, allowing AI agents and human operators to focus directly on pending work without context exhaustion.
-5. **Reference**: See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-79, and 89-95.
+5. **Reference**: See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-79, 82, and 89-95.
 
 ---
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-*See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-79, and 89-95.*
+*See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 73, 75, 77-79, 82, and 89-95.*
 
 ---
 
@@ -41,11 +41,10 @@
 > [!IMPORTANT]
 > **Execution Directives for Next Frontier Model Implementer:**
 > The following phases constitute the highest-priority implementation pipeline above all others, structured for immediate frontier model execution:
-> 1. **Priority 1: Phase 82 (Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine)**: Clear dirty bootstrap failure-cascade statistics, advance to Epoch 2, reset model eviction counters to 0, restore all evicted models (`gemma3:4b-it-qat`) to `ACTIVE`, and establish epoch-aware rolling metrics.
-> 2. **Priority 2: Phase 80 (Multi-Stage Staging to Production Promotion Gate & Batched Promotion Pipeline)**: Implement the quarantine gauntlet between Gitea staging and public GitHub: full monorepo build verification (`npm run build`), 100% test gate, secret/hygiene scrubber, and batched release milestone PR bundling.
-> 3. **Priority 3: Phase 84 (Auto-Mode Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
-> 4. **Priority 4: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
-> 5. **Priority 5: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
+> 1. **Priority 1: Phase 80 (Multi-Stage Staging to Production Promotion Gate & Batched Promotion Pipeline)**: Implement the quarantine gauntlet between Gitea staging and public GitHub: full monorepo build verification (`npm run build`), 100% test gate, secret/hygiene scrubber, and batched release milestone PR bundling.
+> 2. **Priority 2: Phase 84 (Auto-Mode Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
+> 3. **Priority 3: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
+> 4. **Priority 4: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
 
 
 ---
@@ -852,37 +851,7 @@
 ---
 
 ## Phase 82: Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine
-*RDF Category: empirical_metrics*
-
-### T82.1: Database Migration `015_arena_epochs.ts`
-  - [ ] T82.1.1: Author database migration `015_arena_epochs.ts` creating `arena_epochs` table (`epoch_id`, `name`, `reason`, `started_at`, `ended_at`, `is_active`, `task_count`, `success_count`, `failure_count`, `notes`). [File: packages/db/src/migrations/015_arena_epochs.ts] [Test: npm test -- packages/db]
-  - [ ] T82.1.2: Create `model_health_epoch_history` table capturing point-in-time snapshots of model health profiles per epoch. [File: packages/db/src/migrations/015_arena_epochs.ts] [Table: model_health_epoch_history] [Test: npm test -- packages/db]
-  - [ ] T82.1.3: Register migration in `MigrationRegistry.ts` ensuring clean execution on startup across PostgreSQL and SQLite dialects. [File: packages/db/src/migrations/MigrationRegistry.ts] [Test: npm test -- packages/db]
-  - [ ] T82.1.4: Write unit tests verifying migration executes idempotently and initial baseline Epoch 1 is seeded. [File: packages/db/src/tests/arena_epoch.test.ts] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
-
-### T82.2: `ModelHealthRepository` Epoch Methods
-  - [ ] T82.2.1: Implement `resetAllStats()` in `ModelHealthRepository.ts` resetting `total_tasks`, `total_success`, `total_failures`, `consecutive_failures` to 0, and restoring status to `ACTIVE`. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: resetAllStats] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
-  - [ ] T82.2.2: Implement `advanceEpoch(name: string, reason: string, notes?: string)` archiving current model metrics to history table and initializing a fresh epoch. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: advanceEpoch] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
-  - [ ] T82.2.3: Implement `getCurrentEpoch()` and `listEpochs()` returning historical epoch records and metadata. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: getCurrentEpoch] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
-  - [ ] T82.2.4: Write unit tests verifying that advancing an epoch un-ejects all evicted models and snapshots historical metrics cleanly. [File: packages/db/src/tests/arena_epoch.test.ts] [Test: npm test -- packages/db/src/tests/arena_epoch.test.ts]
-
-### T82.3: REST API Routes for Epoch Management
-  - [ ] T82.3.1: Expose `POST /api/models/epoch` in `CacophonyHttpServer.ts` advancing the active arena epoch and resetting model counters. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/epoch] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T82.3.2: Expose `POST /api/models/reset-stats` in `CacophonyHttpServer.ts` clearing dirty stats for the current epoch without advancing epoch counter. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/reset-stats] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T82.3.3: Expose `GET /api/arena/epochs` returning all historical epochs with their start/end dates and aggregate pass rates. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/arena/epochs] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T82.3.4: Write integration tests verifying REST API routes validate authentication and return expected JSON payloads. [File: packages/engine/src/tests/epoch_api.test.ts] [Test: npm test -- packages/engine/src/tests/epoch_api.test.ts]
-
-### T82.4: Multi-Armed Bandit Policy State Reset on Epoch Advancement
-  - [ ] T82.4.1: Connect `advanceEpoch` trigger to `BanditPolicy` resetting arms' alpha/beta parameters in Thompson Sampling to uniform priors. [File: packages/engine/src/bandit/ThompsonSamplingPolicy.ts] [Method: resetArms] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
-  - [ ] T82.4.2: Reset exploration budget in `EpsilonGreedyPolicy` to `initialEpsilon`, allowing models to be re-explored in the new epoch. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Method: resetExploration] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
-  - [ ] T82.4.3: Broadcast `arena_epoch_advanced` SSE event over `StreamTapManager` alerting all connected UI clients. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: broadcastEpochAdvanced] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
-  - [ ] T82.4.4: Write unit tests verifying bandit policies cleanly re-explore candidate models following an epoch reset. [File: packages/engine/src/tests/epoch_bandit_reset.test.ts] [Test: npm test -- packages/engine/src/tests/epoch_bandit_reset.test.ts]
-
-### T82.5: Frontend UI Epoch Selector & Reset Control on `/models`
-  - [ ] T82.5.1: Add epoch selector dropdown to `ModelsViewComponent` on `/models` allowing operators to toggle between 'Current Epoch', historical epochs, and 'All Time'. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Signal: selectedEpoch] [Test: npm test]
-  - [ ] T82.5.2: Add 'Start New Epoch' button in UI opening a confirmation modal to record epoch name, reason, and reset dirty metrics. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Method: openEpochModal] [Test: npm test]
-  - [ ] T82.5.3: Display visual epoch badge and current epoch run count in `TelemetryBarComponent`. [File: packages/frontend/src/app/components/telemetry-bar/telemetry-bar.component.ts] [Test: npm test]
-  - [ ] T82.5.4: Write frontend unit tests validating epoch dropdown filtering and epoch advancement modal lifecycle. [File: packages/frontend/src/app/components/views/models-view.component.spec.ts] [Test: npm test]
+*Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-82-arena-telemetry-epoching--clean-slate-model-health-reset-engine)*
 
 ---
 

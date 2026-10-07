@@ -31,9 +31,22 @@ export interface ModelLeaderboardEntry {
   lastUsedAt?: string | null;
 }
 
+export interface ArenaEpoch {
+  epochId: number;
+  name: string;
+  reason: string;
+  startedAt: string;
+  endedAt?: string | null;
+  isActive: boolean;
+  taskCount?: number;
+  successCount?: number;
+  failureCount?: number;
+  notes?: string;
+}
+
 /**
  * Service managing historical task completions, model health leaderboards,
- * and direct links to Gitea PRs and commit diffs.
+ * arena telemetry epochs, and direct links to Gitea PRs and commit diffs.
  */
 @Injectable({
   providedIn: 'root',
@@ -41,14 +54,69 @@ export interface ModelLeaderboardEntry {
 export class HistoryMetricsService {
   public readonly historyItems = signal<HistoryItem[]>([]);
   public readonly leaderboard = signal<ModelLeaderboardEntry[]>([]);
+  public readonly currentEpoch = signal<ArenaEpoch | null>(null);
+  public readonly epochs = signal<ArenaEpoch[]>([]);
 
   constructor() {
     this.fetchHistoryAndLeaderboard();
+    this.fetchEpochs();
     if (typeof window !== 'undefined') {
       setInterval(() => {
         void this.fetchHistoryAndLeaderboard();
+        void this.fetchEpochs();
       }, 3000);
     }
+  }
+
+  public async fetchEpochs(): Promise<void> {
+    try {
+      const res = await fetch('/api/arena/epochs');
+      if (res.ok) {
+        const data = (await res.json()) as { current: ArenaEpoch; epochs: ArenaEpoch[] };
+        if (data.current) {
+          this.currentEpoch.set(data.current);
+        }
+        if (data.epochs) {
+          this.epochs.set(data.epochs);
+        }
+      }
+    } catch {
+      // offline
+    }
+  }
+
+  public async advanceEpoch(name: string, reason: string, notes?: string): Promise<ArenaEpoch | null> {
+    try {
+      const res = await fetch('/api/models/epoch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, reason, notes }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { success: boolean; epoch: ArenaEpoch };
+        await this.fetchEpochs();
+        await this.fetchHistoryAndLeaderboard();
+        return data.epoch;
+      }
+    } catch {
+      // offline
+    }
+    return null;
+  }
+
+  public async resetStats(): Promise<boolean> {
+    try {
+      const res = await fetch('/api/models/reset-stats', {
+        method: 'POST',
+      });
+      if (res.ok) {
+        await this.fetchHistoryAndLeaderboard();
+        return true;
+      }
+    } catch {
+      // offline
+    }
+    return false;
   }
 
   public async fetchHistoryAndLeaderboard(): Promise<void> {

@@ -72,6 +72,30 @@ export class BanditTaskScheduler {
   }
 
   /**
+   * Resets all arms' statistical metrics and priors to uniform defaults.
+   */
+  public resetArms(initialAlpha = 2, initialBeta = 2): void {
+    for (const [armId, arm] of this.arms.entries()) {
+      this.arms.set(armId, {
+        ...arm,
+        trialsCount: 0,
+        successCount: 0,
+        failureCount: 0,
+        totalReward: 0,
+        alpha: initialAlpha,
+        beta: initialBeta,
+      });
+    }
+  }
+
+  /**
+   * Resets exploration budget to initial rate.
+   */
+  public resetExploration(initialEpsilon = 0.15): void {
+    this.epsilon = initialEpsilon;
+  }
+
+  /**
    * Dispatches the next task to an optimal or exploratory model arm.
    */
   public selectModel(role: string, candidateModels?: string[]): BanditDispatchOutcome {

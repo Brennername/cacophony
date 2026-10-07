@@ -299,6 +299,32 @@ export class StreamTapManager {
   }
 
   /**
+   * Emits an arena epoch advanced event to all active stream tap listeners.
+   */
+  public broadcastEpochAdvanced(event: {
+    readonly epochId: number;
+    readonly name: string;
+    readonly reason: string;
+    readonly timestamp?: number;
+  }): void {
+    const payload = {
+      ...event,
+      timestamp: event.timestamp ?? Date.now(),
+    };
+    this.emitter.emit("arena_epoch_advanced", payload);
+  }
+
+  /**
+   * Subscribes a listener to arena epoch advanced events.
+   */
+  public tapEpochAdvanced(listener: (event: { epochId: number; name: string; reason: string; timestamp: number }) => void): () => void {
+    this.emitter.on("arena_epoch_advanced", listener);
+    return () => {
+      this.emitter.off("arena_epoch_advanced", listener);
+    };
+  }
+
+  /**
    * Suspends token production for a task.
    */
   public suspend(taskId?: string): boolean {

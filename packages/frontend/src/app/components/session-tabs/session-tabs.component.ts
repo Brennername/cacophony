@@ -1,6 +1,7 @@
 import { Component, signal, model, output, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
+import { HistoryMetricsService } from '../../services/history-metrics.service';
 
 export interface SessionTab {
   readonly id: string;
@@ -53,6 +54,10 @@ export interface SessionTab {
         <button class="new-tab-btn" (click)="createNewTab()" aria-label="New Session Tab">
           + New Tab
         </button>
+        <div class="epoch-indicator-badge" title="Active Arena Telemetry Epoch">
+          <span class="epoch-dot"></span>
+          <span class="epoch-label">Epoch {{ metricsService.currentEpoch()?.epochId || 1 }}</span>
+        </div>
       </div>
     </nav>
   `,
@@ -158,10 +163,34 @@ export interface SessionTab {
       border-color: var(--color-primary, #38bdf8);
       color: var(--color-primary, #38bdf8);
     }
+    .epoch-indicator-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-surface-elevated, #1e293b);
+      border: 1px solid var(--border-color, #334155);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-brand, #38bdf8);
+      margin-left: auto;
+    }
+    .epoch-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+    .epoch-label {
+      white-space: nowrap;
+    }
   `]
 })
 export class SessionTabsComponent {
   private readonly store = inject(ArenaStateStore);
+  public readonly metricsService = inject(HistoryMetricsService);
 
   public readonly tabs = signal<SessionTab[]>([
     { id: 'tab-1', title: 'Main Session', branch: 'master', activeModel: 'qwen2.5-coder:7b' }
