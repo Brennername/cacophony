@@ -317,4 +317,18 @@ export class ModelHealthRepository {
       lastUsedAt: row.last_used_at ? String(row.last_used_at) : null
     };
   }
+
+
+  public async computeRemediationRecoveryRate(modelId: string): Promise<number> {
+      const profile = await this.getProfile(modelId);
+      const totalRemediationAttempts = profile.totalTasks;
+      const totalRemediationSuccess = profile.totalSuccess;
+
+      if (totalRemediationAttempts === 0) {
+        return 0;
+      }
+
+      const remediationRecoveryRate = (totalRemediationSuccess / totalRemediationAttempts) * 100;
+      return Number(remediationRecoveryRate.toFixed(2));
+    }
 }
