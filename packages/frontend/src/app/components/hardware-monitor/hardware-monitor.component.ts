@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ArenaStateStore } from '../../services/arena-state.store';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
+import { TriMetricGaugeComponent } from '../tri-metric-gauge/tri-metric-gauge.component';
 
 /**
  * Modern System Diagnostics and Telemetry Monitor.
@@ -14,11 +15,13 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
  * 4. Deduplicated metrics: GPU Load, CPU Load, System RAM, VRAM, and GTT Memory.
  * 5. Fixed bounding boxes with tabular numbers to prevent digit change flickering.
  * 6. Interactive click navigation to model statistics view.
+ * 7. Real-time Processor SCLK MHz Tri-Metric Rolling Gauge (trough, average, peak).
+ * 8. Live vs Historical Model Velocity Comparison with variance indicator.
  */
 @Component({
   selector: 'app-hardware-monitor',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TriMetricGaugeComponent],
   template: `
     <div class="cacophony-card monitor-card">
       <!-- Header: Hardware Identification & Active Model High-Water Mark HUD -->
@@ -52,11 +55,11 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
             <span class="badge-val fixed-model-name">{{ metrics().activeModel }}</span>
           </div>
 
-          <!-- Token Velocity High-Water Mark Meter -->
+          <!-- Token Velocity High-Water Mark Meter with Live vs Historic Comparison -->
           <div
             class="hwm-badge clickable"
             (click)="navigateToModelStats(metrics().activeModel)"
-            title="Current token velocity vs recorded high-water mark peak"
+            title="Current token velocity vs recorded high-water mark peak and model historical average"
           >
             <div class="hwm-header">
               <span class="hwm-label">Velocity / HWM</span>
@@ -67,10 +70,24 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
               <div class="hwm-marker" [style.left.%]="100" title="High-Water Mark"></div>
             </div>
             <div class="hwm-numbers font-mono">
-              <span class="fixed-val num-live">{{ currentLiveVelocity().toFixed(1) }}</span>
+              <span class="fixed-val num-live" title="Live Velocity">{{ currentLiveVelocity().toFixed(1) }}</span>
               <span class="slash">/</span>
-              <span class="fixed-val num-run">{{ currentRunVelocity().toFixed(1) }}</span>
+              <span class="fixed-val num-run" title="Current Run Velocity">{{ currentRunVelocity().toFixed(1) }}</span>
               <span class="unit">tok/s</span>
+            </div>
+            <!-- Historic Baseline & Comparison Variance Badge -->
+            <div class="velocity-historic-row font-mono">
+              <span class="hist-label">HIST AVG:</span>
+              <span class="hist-val">{{ historicVelocity().toFixed(1) }} tok/s</span>
+              @if (velocityVariancePercent() !== null) {
+                <span
+                  class="variance-badge"
+                  [class.text-green]="velocityVariancePercent()! >= 0"
+                  [class.text-red]="velocityVariancePercent()! < 0"
+                >
+                  {{ velocityVariancePercent()! >= 0 ? '+' : '' }}{{ velocityVariancePercent()!.toFixed(0) }}%
+                </span>
+              }
             </div>
           </div>
         </div>
@@ -163,6 +180,18 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
           <div class="sub-stat-row">
             <span>Core: {{ metrics().sclkMhz }} MHz</span>
             <span>Power: {{ metrics().pptPowerW }} W</span>
+          </div>
+
+          <!-- Real-Time Processor Core SCLK MHz Tri-Metric Rolling Gauge -->
+          <div class="mhz-gauge-wrapper">
+            <app-tri-metric-gauge
+              [liveValue]="metrics().sclkMhz"
+              unit="MHz"
+              label="Core Frequency"
+              [minRange]="0"
+              [maxRange]="2200"
+              [digits]="0"
+            />
           </div>
           <div class="chart-container">
             <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
@@ -478,6 +507,49 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
       margin-left: 0.1rem;
     }
 
+    .velocity-historic-row {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.625rem;
+      margin-top: 0.25rem;
+      padding-top: 0.25rem;
+      border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    }
+
+    .hist-label {
+      color: var(--text-muted);
+      font-size: 0.5625rem;
+      font-weight: 600;
+    }
+
+    .hist-val {
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .variance-badge {
+      font-weight: 700;
+      font-size: 0.625rem;
+      padding: 0.05rem 0.25rem;
+      border-radius: 2px;
+      background: var(--bg-surface-elevated, rgba(255, 255, 255, 0.05));
+    }
+
+    .variance-badge.text-green {
+      color: #10b981;
+    }
+
+    .variance-badge.text-red {
+      color: #ef4444;
+    }
+
+    .mhz-gauge-wrapper {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    }
+
     /* Sensor Grid */
     .sensors-grid {
       display: grid;
@@ -646,6 +718,19 @@ export class HardwareMonitorComponent {
     if (hwm <= 0) return 0;
     const current = Math.max(this.currentLiveVelocity(), this.currentRunVelocity());
     return Math.min(100, (current / hwm) * 100);
+  });
+
+  public readonly historicVelocity = computed(() => {
+    const active = this.metrics().activeModel;
+    return this.metricsService.getHistoricVelocityForModel(active);
+  });
+
+  public readonly velocityVariancePercent = computed(() => {
+    const hist = this.historicVelocity();
+    if (hist <= 0) return null;
+    const current = Math.max(this.currentLiveVelocity(), this.currentRunVelocity());
+    if (current <= 0) return null;
+    return ((current - hist) / hist) * 100;
   });
 
   public readonly Math = Math;

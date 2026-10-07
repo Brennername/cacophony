@@ -33,7 +33,8 @@ export const AgentRoleSchema = z.enum([
   "test_engineer",
   "doc_writer",
   "type_specialist",
-  "security_auditor"
+  "security_auditor",
+  "chore_runner"
 ]);
 export type AgentRole = z.infer<typeof AgentRoleSchema>;
 
@@ -87,6 +88,18 @@ export interface TaskRecord {
    * Used to compare model efficiency in history and leaderboard views.
    */
   readonly tokensPerSec?: number;
+  /**
+   * Active decoupled sub-stage for stage-decomposed execution.
+   */
+  readonly currentStage?: StageName | undefined;
+  /**
+   * State of the current decoupled sub-stage.
+   */
+  readonly stageState?: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | undefined;
+  /**
+   * Ephemeral artifacts passed between asynchronous stage boundaries.
+   */
+  readonly stageArtifacts?: Record<string, any> | undefined;
 }
 
 

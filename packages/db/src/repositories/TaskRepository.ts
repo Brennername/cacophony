@@ -137,6 +137,34 @@ export class TaskRepository {
     );
   }
 
+  /**
+   * Persists stage-decomposed progress between sub-stages without marking the overarching task
+   * as completed or failed, enabling asynchronous stage handoffs across models.
+   */
+  public async updateStageState(
+    taskId: string,
+    stageName: string,
+    stageState: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED",
+    artifacts?: Record<string, any>
+  ): Promise<void> {
+    const updatedAt = new Date().toISOString();
+    const snippet = artifacts
+      ? `[Stage ${stageName}: ${stageState}] ${JSON.stringify(artifacts).slice(0, 500)}`
+      : undefined;
+
+    if (snippet) {
+      await this.driver.execute(
+        "UPDATE tasks SET updated_at = $1, log_snippet = $2 WHERE id = $3",
+        [updatedAt, snippet, taskId]
+      );
+    } else {
+      await this.driver.execute(
+        "UPDATE tasks SET updated_at = $1 WHERE id = $2",
+        [updatedAt, taskId]
+      );
+    }
+  }
+
   public async incrementFailure(id: string): Promise<number> {
     const now = new Date().toISOString();
     await this.driver.execute(

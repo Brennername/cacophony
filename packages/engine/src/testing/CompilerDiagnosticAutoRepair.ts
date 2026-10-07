@@ -30,6 +30,60 @@ export interface CompilerAutoRepairResult {
  * - Missing Angular templates: replaces missing templateUrl with inline template
  */
 export class CompilerDiagnosticAutoRepair {
+  private readonly dynamicRepairs = new Map<
+    string,
+    Array<(code: string, diag: CompilerDiagnostic) => { repairedCode: string; description: string } | null>
+  >();
+
+  /**
+   * Registers a dynamic repair handler for a specific compiler diagnostic error code.
+   */
+  public registerDynamicRepair(
+    errorCode: string,
+    handler: (code: string, diag: CompilerDiagnostic) => { repairedCode: string; description: string } | null
+  ): void {
+    const code = errorCode.toUpperCase().trim();
+    const list = this.dynamicRepairs.get(code) ?? [];
+    list.push(handler);
+    this.dynamicRepairs.set(code, list);
+  }
+
+  /**
+   * Auto-generates a reusable TypeScript AST repair template from a verified remediation diff.
+   */
+  public static generateRepairTemplate(
+    diagnostic: CompilerDiagnostic,
+    originalCode: string,
+    repairedCode: string
+  ): string {
+    const origLines = originalCode.split("\n");
+    const repLines = repairedCode.split("\n");
+    const targetLine = diagnostic.lineNumber > 0 && diagnostic.lineNumber <= origLines.length
+      ? origLines[diagnostic.lineNumber - 1] ?? ""
+      : "";
+    const replacementLine = diagnostic.lineNumber > 0 && diagnostic.lineNumber <= repLines.length
+      ? repLines[diagnostic.lineNumber - 1] ?? ""
+      : "";
+
+    return `/**
+ * Auto-Generated Repair Handler for ${diagnostic.errorCode}
+ * Error: ${diagnostic.message}
+ */
+export function repair${diagnostic.errorCode}(code: string, diagnostic: CompilerDiagnostic): { repairedCode: string; description: string } | null {
+  if (diagnostic.errorCode !== "${diagnostic.errorCode}") return null;
+  const target = ${JSON.stringify(targetLine)};
+  const replacement = ${JSON.stringify(replacementLine)};
+  if (target && replacement && code.includes(target)) {
+    return {
+      repairedCode: code.replace(target, replacement),
+      description: "Auto-repaired ${diagnostic.errorCode}: replaced target pattern"
+    };
+  }
+  return null;
+}
+`;
+  }
+
   /**
    * Applies deterministic surgical repairs to source code based on parsed compiler diagnostics.
    *
@@ -45,6 +99,22 @@ export class CompilerDiagnosticAutoRepair {
     let currentCode = code;
     const repairsApplied: string[] = [];
     let prependCode = "";
+
+    // Dynamic synthesized repair handlers
+    for (const diag of diagnostics) {
+      if (diag.errorCode) {
+        const handlers = this.dynamicRepairs.get(diag.errorCode.toUpperCase().trim());
+        if (handlers) {
+          for (const handler of handlers) {
+            const res = handler(currentCode, diag);
+            if (res) {
+              currentCode = res.repairedCode;
+              repairsApplied.push(res.description);
+            }
+          }
+        }
+      }
+    }
 
     // 1. Repair TS2304: Missing 'jest' test runner global
     const hasJestMissing = diagnostics.some(

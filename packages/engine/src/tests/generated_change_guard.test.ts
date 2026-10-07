@@ -160,3 +160,29 @@ test("GeneratedChangeGuard rejects stub replacement on general full-file edits",
   assert.ok(issues.some((issue) => issue.includes("left a stub in Service.calculate")));
 });
 
+test("T93.3.2: GeneratedChangeGuard rejects replacements containing residual hash stub comments", () => {
+  const replacement = `export class Service {
+  public calculate(input: number): number {
+    /* [CACOPHONY_HASH_STUB:99aabbcc:calculate] */
+    return input + 1;
+  }
+
+  public preserveThis(): string {
+    return "real behavior";
+  }
+}
+`;
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "Service.ts",
+    original,
+    replacement,
+    "Refactor calculation logic across service",
+  );
+
+  assert.ok(
+    issues.some((issue) => issue.includes("residual stub comments")),
+    `Expected issue mentioning residual stub comments, got: ${JSON.stringify(issues)}`
+  );
+});
+
+

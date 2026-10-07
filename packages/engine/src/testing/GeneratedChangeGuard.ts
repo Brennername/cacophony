@@ -1,5 +1,6 @@
 import ts from "typescript";
 import { TypeScriptMethodSplicer } from "../context/TypeScriptMethodSplicer.js";
+import { StubCommentSanitizer } from "./StubCommentSanitizer.js";
 
 /**
  * Rejects generated replacements that accidentally discard existing declarations.
@@ -44,6 +45,11 @@ export class GeneratedChangeGuard {
     const addedPlaceholders = this.getAddedPlaceholderComments(original, replacement);
     if (addedPlaceholders.length > 0) {
       issues.push(`Generated replacement added placeholder code: ${addedPlaceholders.slice(0, 3).join("; ")}.`);
+    }
+
+    const residualMarkers = StubCommentSanitizer.findResidualMarkers(replacement);
+    if (residualMarkers.length > 0) {
+      issues.push(`Generated replacement contains residual stub comments: ${residualMarkers.slice(0, 3).join("; ")}.`);
     }
 
     // A full-file response may retain every declaration name while silently

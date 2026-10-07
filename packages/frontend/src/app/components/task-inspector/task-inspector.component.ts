@@ -21,6 +21,12 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
         </div>
         @if (activeTask(); as task) {
           <div class="speed-hud">
+            @if (heartbeatStatus(); as hb) {
+              <div class="heartbeat-badge" [ngClass]="hb.badgeClass" [title]="'Generation Watchdog: ' + hb.state">
+                <span class="heartbeat-dot"></span>
+                <span class="heartbeat-text font-mono">{{ hb.label }}</span>
+              </div>
+            }
             <div class="speed-badge" [class.live-active]="isStreamActive()">
               <span class="hud-pill" [class.live]="isStreamActive()" [class.paused]="!isStreamActive()">
                 {{ isStreamActive() ? 'LIVE' : 'PAUSED' }}
@@ -107,12 +113,39 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
               >
                 Cognitive Trace @if (liveReasoningBuffer().length > 0) { <span class="trace-indicator"></span> }
               </button>
+              <button
+                class="stream-tab-btn testing"
+                [class.active]="activeStreamChannel() === 'testing'"
+                (click)="activeStreamChannel.set('testing')"
+              >
+                Test Execution @if (liveTestOutput().length > 0) { <span class="trace-indicator test-ind"></span> }
+              </button>
+              <button
+                class="stream-tab-btn ast"
+                [class.active]="activeStreamChannel() === 'ast'"
+                (click)="activeStreamChannel.set('ast')"
+              >
+                AST Scrubbing @if (liveAstScrubbing().length > 0) { <span class="trace-indicator ast-ind"></span> }
+              </button>
+              <button
+                class="stream-tab-btn review"
+                [class.active]="activeStreamChannel() === 'review'"
+                (click)="activeStreamChannel.set('review')"
+              >
+                PR Review @if (liveReviewCritique().length > 0) { <span class="trace-indicator review-ind"></span> }
+              </button>
             </div>
             <span class="terminal-title">task: {{ task.id }}</span>
             <button class="expand-btn" (click)="drillDown(task)">Expand Log</button>
           </div>
           @if (activeStreamChannel() === 'cognitive') {
             <pre #terminalContent class="terminal-content cognitive-content"><code>{{ liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...' }}</code></pre>
+          } @else if (activeStreamChannel() === 'testing') {
+            <pre #terminalContent class="terminal-content test-content"><code>{{ liveTestOutput() || '// Awaiting test runner stdout/stderr stream...' }}</code></pre>
+          } @else if (activeStreamChannel() === 'ast') {
+            <pre #terminalContent class="terminal-content ast-content"><code>{{ liveAstScrubbing() || '// Awaiting deterministic AST rule engine & diagnostic repairs...' }}</code></pre>
+          } @else if (activeStreamChannel() === 'review') {
+            <pre #terminalContent class="terminal-content review-content"><code>{{ liveReviewCritique() || '// Awaiting PR review evaluation & gate status...' }}</code></pre>
           } @else {
             <pre #terminalContent class="terminal-content"><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
           }
@@ -477,6 +510,24 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
       border-color: rgba(99, 102, 241, 0.4);
     }
 
+    .stream-tab-btn.testing.active {
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.15);
+      border-color: rgba(52, 211, 153, 0.4);
+    }
+
+    .stream-tab-btn.ast.active {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      border-color: rgba(251, 191, 36, 0.4);
+    }
+
+    .stream-tab-btn.review.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
     .trace-indicator {
       display: inline-block;
       width: 6px;
@@ -486,6 +537,67 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
       animation: pulse-glow 1.5s infinite;
       vertical-align: middle;
       margin-left: 4px;
+    }
+
+    .trace-indicator.test-ind {
+      background-color: #34d399;
+    }
+
+    .trace-indicator.ast-ind {
+      background-color: #fbbf24;
+    }
+
+    .trace-indicator.review-ind {
+      background-color: #38bdf8;
+    }
+
+    .heartbeat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .heartbeat-badge.badge-ingesting {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+
+    .heartbeat-badge.badge-streaming {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+
+    .heartbeat-badge.badge-stalled {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #f87171;
+      animation: stall-blink 1s infinite alternate;
+    }
+
+    .heartbeat-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .badge-streaming .heartbeat-dot {
+      animation: pulse-glow 1.2s infinite;
+    }
+
+    .badge-ingesting .heartbeat-dot {
+      animation: pulse-glow 0.8s infinite;
+    }
+
+    @keyframes stall-blink {
+      0% { opacity: 0.7; }
+      100% { opacity: 1; filter: brightness(1.2); }
     }
 
     @keyframes pulse-glow {
@@ -518,6 +630,21 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
     .terminal-content.cognitive-content {
       color: #a5b4fc;
       background: #090d16;
+    }
+
+    .terminal-content.test-content {
+      color: #34d399;
+      background: #06140d;
+    }
+
+    .terminal-content.ast-content {
+      color: #fbbf24;
+      background: #141006;
+    }
+
+    .terminal-content.review-content {
+      color: #38bdf8;
+      background: #081119;
     }
 
     .task-info-banner.clickable {
@@ -566,7 +693,41 @@ export class TaskInspectorComponent {
   public readonly activeTask = this.store.activeTask;
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
   public readonly liveReasoningBuffer = this.store.liveReasoningBuffer;
-  public readonly activeStreamChannel = signal<'combined' | 'cognitive'>('combined');
+  public readonly liveTestOutput = this.store.testOutputBuffer;
+  public readonly liveAstScrubbing = this.store.astScrubbingBuffer;
+  public readonly liveReviewCritique = this.store.reviewCritiqueBuffer;
+  public readonly generationHeartbeat = this.store.generationHeartbeat;
+  public readonly activeStreamChannel = signal<'combined' | 'cognitive' | 'testing' | 'ast' | 'review'>('combined');
+
+  public readonly heartbeatStatus = computed(() => {
+    const hb = this.generationHeartbeat();
+    if (!hb) return null;
+    const task = this.activeTask();
+    if (!task || task.status !== 'RUNNING') return null;
+
+    if (hb.state === 'ingesting_prompt') {
+      return {
+        state: 'ingesting_prompt',
+        label: `Ingesting Prompt (${(hb.elapsedMs / 1000).toFixed(1)}s)`,
+        badgeClass: 'badge-ingesting'
+      };
+    }
+    if (hb.state === 'stalled') {
+      return {
+        state: 'stalled',
+        label: `Stall Warning (No output for ${(hb.idleMs / 1000).toFixed(1)}s)`,
+        badgeClass: 'badge-stalled'
+      };
+    }
+    if (hb.state === 'streaming') {
+      return {
+        state: 'streaming',
+        label: `Streaming (${hb.instantaneousTps > 0 ? hb.instantaneousTps.toFixed(1) : this.formattedLiveVelocity()} tok/s)`,
+        badgeClass: 'badge-streaming'
+      };
+    }
+    return null;
+  });
 
   public readonly liveVelocity = computed(() => this.store.liveTokenVelocity());
   public readonly runVelocity = computed(() => {

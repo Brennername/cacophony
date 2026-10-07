@@ -1076,6 +1076,818 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
 
 ---
 
+## Archived Phase 45: Real-Time Stream Tap Filtering, Telemetry HUD Metrics & Visual Pacing Alerts
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: telemetry*
+
+### T45.1: Real-Time Telemetry HUD Stream Filtering & Visual Pacing Alerts
+  - [x] T45.1.1: Implement TelemetryHudBridge in packages/engine/src/telemetry/ streaming high-frequency AMD Vega sensor readouts (VRAM, APU frequency, edge temp, PPT watts) to WebSocket/SSE clients.
+  - [x] T45.1.2: Add visual thermal pacing alert thresholds in frontend TelemetryBar for Nominal (<70C), Warm (70-79C), Elevated (80-89C), and Danger (>=90C).
+  - [x] T45.1.3: Integrate automated pacing status in DashboardViewComponent showing active model pacing delays (0s, 5s, 15s).
+  - [x] T45.1.4: Write frontend unit tests verifying reactive signal updates on telemetry threshold crossings.
+
+---
+
+---
+
+## Archived Phase 46: End-to-End Autonomous Pipeline Integration: Multi-Stage Telemetry, Git Worktrees & PR Automation
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: orchestration*
+
+### T46.1: Live Pipeline Multi-Stage Transitions & Real-Time Stepper Telemetry
+  - [x] T46.1.1: Connect AutonomousWorkerPipeline stages (Planning, Generation, Scrubbing, Testing, Review, Merge) to stageRepo records and broadcast stage transitions over SSE. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T46.1.2: Update TaskInspectorComponent stage stepper to dynamically highlight active pipeline stages in real-time instead of hardcoded stage numbers. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test]
+  - [x] T46.1.3: Persist generated code diffs directly into task.logSnippet so Code Diffs tab in TaskDetailModalComponent displays actual diffs. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T46.1.4: Write unit tests verifying stage transition broadcasts and stage timing telemetry. [File: packages/engine/src/tests/stage_telemetry.test.ts] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
+
+### T46.2: Git Worktree Branch Isolation & Autonomous Gitea PR Publication
+  - [x] T46.2.1: Integrate GitWorktreeManager with AutonomousWorkerPipeline: create ephemeral branch `task/<priority>-<taskId>` per task execution. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T46.2.2: Commit verified code modifications to task branch using git worktree without touching main workspace. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T46.2.3: Wire AutomatedPrPublisher to open pull requests in Gitea automatically upon test passing. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T46.2.4: Write integration tests verifying automated branch creation, commit creation, and PR publication workflow. [File: packages/engine/src/tests/gitea_integration.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+
+---
+
+---
+
+## Archived Phase 48: UI Mock Elimination & Full-Stack Service Wiring
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: frontend*
+*Note: Targets production UI and component stub mocks only. Preserves `MockInferenceStreamProvider` and `FallbackTelemetryProvider` for `DEMO_MODE=true` / `SIMULATION_MODE=true` visual showcase functionality.*
+
+### T48.1: Eliminate Mock in FrontierModalComponent via Real Decomposition API
+  - [x] T48.1.1: Add backend endpoint POST /api/tasks/decompose invoking FrontierTaskDecomposer.decomposeEpic(). [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/decompose] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.1.2: Remove simulateDecomposition() setTimeout mock in FrontierModalComponent and call /api/tasks/decompose via fetch. [File: packages/frontend/src/app/components/frontier-modal/frontier-modal.component.ts] [Method: FrontierModalComponent.decomposeWithFrontier] [Test: npm test]
+  - [x] T48.1.3: Wire FrontierModalComponent.commitTasks() to call POST /api/tasks/batch to persist decomposed tasks directly to database. [File: packages/frontend/src/app/components/frontier-modal/frontier-modal.component.ts] [Method: FrontierModalComponent.commitTasks] [Test: npm test]
+  - [x] T48.1.4: Write frontend unit tests verifying FrontierModalComponent states (analyzing, previews rendered, commit dispatched). [File: packages/frontend/src/app/components/frontier-modal/frontier-modal.component.spec.ts] [Test: npm test]
+
+### T48.2: Eliminate Mock in FleetViewComponent via Dynamic Hardware & Node Queries
+  - [x] T48.2.1: Initialize nodes signal in FleetViewComponent as empty array instead of hardcoded node-master-vega dummy objects. [File: packages/frontend/src/app/components/views/fleet-view.component.ts] [Class: FleetViewComponent] [Test: npm test]
+  - [x] T48.2.2: Implement FleetNodeManager in engine registering local engine as node-local on startup with live telemetry. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Class: FleetNodeManager] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T48.2.3: Update GET /api/fleet/nodes in CacophonyHttpServer to return live registered nodes from FleetNodeManager. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/fleet/nodes] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.2.4: Write frontend unit tests verifying FleetViewComponent displays real node telemetry and handles empty node lists cleanly. [File: packages/frontend/src/app/components/views/fleet-view.component.spec.ts] [Test: npm test]
+
+### T48.3: Eliminate Mock in GanttTransportComponent via Real Stage Spans
+  - [x] T48.3.1: Remove hardcoded default fake spans array from GanttTransportComponent inputs and default to empty array. [File: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.ts] [Class: GanttTransportComponent] [Test: npm test]
+  - [x] T48.3.2: Bind TaskInspectorComponent to pass live task stage spans into app-gantt-transport [spans]="activeTaskSpans()". [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Class: TaskInspectorComponent] [Test: npm test]
+  - [x] T48.3.3: Implement activeTaskSpans computed signal in TaskInspectorComponent fetching /api/tasks/:id/gantt for current task. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Computed: activeTaskSpans] [Test: npm test]
+  - [x] T48.3.4: Write frontend unit tests verifying GanttTransportComponent renders real stage timelines with correct millisecond offsets. [File: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.spec.ts] [Test: npm test]
+
+### T48.4: Eliminate Mock in RepoStateService & RepoMapViewerComponent via AST Harvester
+  - [x] T48.4.1: Implement WorkspaceSymbolHarvester in packages/engine/src/repomap/ using TypeScript Compiler API to extract actual symbols. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Class: WorkspaceSymbolHarvester] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+  - [x] T48.4.2: Replace static symbols in GET /api/repomap with live output from WorkspaceSymbolHarvester. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/repomap] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.4.3: Update RepoStateService.fetchRepoSymbols() to handle dynamic node centrality and symbol types without static fallbacks. [File: packages/frontend/src/app/services/repo-state.service.ts] [Method: RepoStateService.fetchRepoSymbols] [Test: npm test]
+  - [x] T48.4.4: Write unit tests verifying that TypeScript classes, interfaces, and methods in packages/ are correctly mapped to RepoSymbolNode. [File: packages/engine/src/tests/symbol_harvester.test.ts] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+
+### T48.5: Eliminate Mock in CheckpointTimelineComponent via Git Shadow Checkpoints
+  - [x] T48.5.1: Implement GitCheckpointManager in packages/engine/src/gitea/ querying git log --tags=checkpoint-* for shadow commit history. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Class: GitCheckpointManager] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T48.5.2: Replace static single checkpoint in GET /api/checkpoints with dynamic checkpoint records from GitCheckpointManager. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/checkpoints] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.5.3: Add POST /api/checkpoints/:id/revert endpoint executing git checkout or git reset to target checkpoint. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/checkpoints/:id/revert] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.5.4: Write frontend unit tests verifying CheckpointTimelineComponent dispatches undo/redo requests to revert API. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.spec.ts] [Test: npm test]
+
+### T48.6: Mount and Wire ExecutionModeSelectorComponent Across App & Backend
+  - [x] T48.6.1: Add executionMode signal ('plan' | 'build' | 'auto') to ArenaStateStore with localStorage persistence. [File: packages/frontend/src/app/services/arena-state.store.ts] [Signal: executionMode] [Test: npm test]
+  - [x] T48.6.2: Bind ExecutionModeSelectorComponent in app.ts to ArenaStateStore.executionMode with two-way signal binding. [File: packages/frontend/src/app/app.ts] [Template: app-execution-mode-selector] [Test: npm test]
+  - [x] T48.6.3: Add GET/PUT /api/config/execution-mode endpoints in CacophonyHttpServer syncing safety mode with engine daemon. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: /api/config/execution-mode] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.6.4: Write frontend unit tests verifying safety mode toggling updates store, notifies backend, and adjusts UI indicators. [File: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.spec.ts] [Test: npm test]
+
+### T48.7: Wire ExplorationControlComponent to Real BanditTaskScheduler Telemetry
+  - [x] T48.7.1: Add GET /api/bandit/arms endpoint in CacophonyHttpServer exposing live BanditTaskScheduler arm statistics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/bandit/arms] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.7.2: Add PUT /api/bandit/policy endpoint in CacophonyHttpServer dynamically updating active exploration policy and epsilon. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: PUT /api/bandit/policy] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.7.3: Remove hardcoded dummy arms from ExplorationControlComponent and fetch real arms from /api/bandit/arms on init. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Class: ExplorationControlComponent] [Test: npm test]
+  - [x] T48.7.4: Write frontend unit tests verifying policy selection and epsilon slider changes call backend API and update signals. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.spec.ts] [Test: npm test]
+
+### T48.8: Wire LspTestLoopPanelComponent to Real Language Server Diagnostics
+  - [x] T48.8.1: Implement LspDiagnosticCollector in packages/engine/src/lsp/ running TypeScript compiler diagnostics across modified files. [File: packages/engine/src/lsp/LspDiagnosticCollector.ts] [Class: LspDiagnosticCollector] [Test: npm test -- packages/engine/src/tests/lsp_collector.test.ts]
+  - [x] T48.8.2: Replace empty array in GET /api/diagnostics with real compiler error/warning diagnostics from LspDiagnosticCollector. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/diagnostics] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T48.8.3: Wire RepomapViewComponent to pass live diagnostics and scoped test runner state into LspTestLoopPanelComponent. [File: packages/frontend/src/app/components/views/repomap-view.component.ts] [Class: RepomapViewComponent] [Test: npm test]
+  - [x] T48.8.4: Write frontend unit tests verifying LspTestLoopPanelComponent renders error pills with line numbers and triggers reRunTests. [File: packages/frontend/src/app/components/lsp-test-loop-panel/lsp-test-loop-panel.component.spec.ts] [Test: npm test]
+
+### T48.9: Mobile-First Shell Fit & Responsive Viewport Elimination of Pinch-to-Zoom
+  - [x] T48.9.1: Constrain ExecutionModeSelectorComponent and SessionTabsComponent with :host display block, width 100%, and min-width 0, removing the 140px fixed option width blowout. [File: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts] [Test: npm test]
+  - [x] T48.9.2: Constrain HardwareMonitorComponent badges, subtext, and sensors-grid using minmax(0, 1fr) and flexible high-water mark badge widths. [File: packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.ts] [Test: npm test]
+  - [x] T48.9.3: Add word-break break-all and overflow-wrap anywhere to TaskInspectorComponent terminal logs and enable touch scrolling on stepper container. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test]
+  - [x] T48.9.4: Add global viewport shield to styles.css ensuring all media, tables, pre/code blocks, and component hosts conform to 100% viewport width without horizontal scrollbars. [File: packages/frontend/src/styles.css] [Test: npm test]
+
+---
+
+---
+
+## Archived Phase 49: Centralized Multi-Stage Telemetry Engine & Live Operational Console
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: telemetry*
+
+### T49.1: Instrument AutonomousWorkerPipeline for All Six Pipeline Stages
+  - [x] T49.1.1: Record 'planning' stage in stageRepo on task dispatch: duration of context assembly and focus file discovery. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Stage: planning] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T49.1.2: Record 'generation' stage in stageRepo: duration of LLM inference, total input tokens, total output tokens, and average tok/s. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Stage: generation] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T49.1.3: Record 'scrub' stage in stageRepo: AST parameter correction checks, placeholder stub detection, and rule diff summary. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Stage: scrub] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T49.1.4: Record 'git_commit' stage in stageRepo: worktree branch creation, commit SHA, and changed file list. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Stage: git_commit] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+
+### T49.2: Broadcast Real-Time Stage Transitions Over Server-Sent Events
+  - [x] T49.2.1: Add event types 'stage_start', 'stage_progress', and 'stage_complete' to SSE event contract in shared-types. [File: packages/shared-types/src/index.ts] [Type: SseEventType] [Test: npm test -- packages/engine/src/tests/sse_stream.test.ts]
+  - [x] T49.2.2: Emit SSE events from AutonomousWorkerPipeline at the boundary of each pipeline stage transition. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: broadcastStageTransition] [Test: npm test -- packages/engine/src/tests/sse_stream.test.ts]
+  - [x] T49.2.3: Update ArenaStateStore to listen for 'stage_start' and 'stage_complete' events and update active task signals. [File: packages/frontend/src/app/services/arena-state.store.ts] [Method: handleSseMessage] [Test: npm test]
+  - [x] T49.2.4: Write unit tests verifying that SSE clients receive properly serialized stage transition payloads in real-time. [File: packages/engine/src/tests/sse_stage_events.test.ts] [Test: npm test -- packages/engine/src/tests/sse_stage_events.test.ts]
+
+### T49.3: Centralized Operational Log Stream in TaskInspectorComponent
+  - [x] T49.3.1: Create OperationalLogAggregator in engine interleaving LLM tokens, rule scrubber logs, compiler stdout, and git output. [File: packages/engine/src/telemetry/OperationalLogAggregator.ts] [Class: OperationalLogAggregator] [Test: npm test -- packages/engine/src/tests/log_aggregator.test.ts]
+  - [x] T49.3.2: Expose unified operational log stream via GET /api/tasks/:id/operational-log for active and historical tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/tasks/:id/operational-log] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T49.3.3: Replace token-only terminal in TaskInspectorComponent with tabbed or unified console showing compiler and test outputs. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Class: TaskInspectorComponent] [Test: npm test]
+  - [x] T49.3.4: Write frontend unit tests verifying that terminal display updates when test execution stdout or review comments arrive. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm test]
+
+### T49.4: Dynamically Bind TaskInspector Stepper to Active Stage
+  - [x] T49.4.1: Create activeStageIndex computed signal in TaskInspectorComponent mapping stage name to step index 1 through 6. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Computed: activeStageIndex] [Test: npm test]
+  - [x] T49.4.2: Replace static .step.done and .step.active CSS classes with dynamic [class.done] and [class.active] bindings. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Template: stepper-container] [Test: npm test]
+  - [x] T49.4.3: Add error state styling to stepper circle when active stage status is 'FAILURE'. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Style: .step.failed] [Test: npm test]
+  - [x] T49.4.4: Write frontend unit tests verifying stepper advances correctly across Planning, Generation, Scrub, Test, Review, Merge. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm test]
+
+### T49.5: Dynamically Bind StageProgressBarComponent to Current Stage
+  - [x] T49.5.1: Compute currentStageNumber (1-6) and activeStageLabel dynamically from task's active stage record in store. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Class: TaskInspectorComponent] [Test: npm test]
+  - [x] T49.5.2: Replace hardcoded currentStageNumber="3" and activeStageLabel="3/7 Generation" with dynamic inputs. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Template: app-stage-progress-bar] [Test: npm test]
+  - [x] T49.5.3: Calculate progressPercent based on completed stages count (e.g. 1/6 = 16%, 2/6 = 33%, etc.). [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Computed: taskProgressPercent] [Test: npm test]
+  - [x] T49.5.4: Write frontend unit tests verifying StageProgressBarComponent updates fill width and label as stages advance. [File: packages/frontend/src/app/components/stage-progress-bar/stage-progress-bar.component.spec.ts] [Test: npm test]
+
+### T49.6: Populate TaskDetailModalComponent Stages Tab with Real Stage Telemetry
+  - [x] T49.6.1: Ensure GET /api/tasks/:id populates stages array with full records from StageRepository. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/tasks/:id] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T49.6.2: Format stage log accordion in TaskDetailModalComponent to display tokens, duration, and formatted stdout/stderr. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: stages-list] [Test: npm test]
+  - [x] T49.6.3: Add visual status badges (PENDING, RUNNING, SUCCESS, FAILURE) with distinct accessible color coding per stage. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Styles: stage-status] [Test: npm test]
+  - [x] T49.6.4: Write frontend unit tests verifying that all recorded execution stages render in chronological order with correct durations. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm test]
+
+### T49.7: Populate TaskDetailModalComponent Code Diffs Tab with Unified Git Diffs
+  - [x] T49.7.1: Capture git diff of modified focus files inside worktree before commit in AutonomousWorkerPipeline. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: captureWorktreeDiff] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T49.7.2: Store captured diff in task.logSnippet or dedicated diff_summary column in tasks table. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.updateLogSnippet] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T49.7.3: Render syntax-highlighted git diff (+ added, - deleted) in Code Diffs tab of TaskDetailModalComponent. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: diff-content] [Test: npm test]
+  - [x] T49.7.4: Write frontend unit tests verifying that Code Diffs tab displays actual patch lines when task modifies code. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm test]
+
+### T49.8: Populate TaskDetailModalComponent Test Stderr Tab with Real Runner Output
+  - [x] T49.8.1: Persist test stdout and stderr snippets into test_execution stage logOutput in StageRepository. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T49.8.2: Extract test stderr from test_execution stage in TaskDetailModalComponent to populate Test Stderr tab. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Computed: testStderrContent] [Test: npm test]
+  - [x] T49.8.3: Add empty state message ("No test failures or stderr warnings recorded") when test suite passed with zero errors. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: tab-stderr] [Test: npm test]
+  - [x] T49.8.4: Write frontend unit tests verifying Test Stderr tab correctly displays assertion failures from failed test runs. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm test]
+
+---
+
+---
+
+## Archived Phase 50: Git Worktree Isolation & Ephemeral Task Branch Lifecycle
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: orchestration*
+
+### T50.1: Git Worktree Allocation on Task Dispatch
+  - [x] T50.1.1: Implement GitWorktreeManager.createWorktreeForTask(taskId, branchName) creating isolated directory under /workspaces. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: GitWorktreeManager.createWorktreeForTask] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.1.2: Derive deterministic branch name task/<priority>-<taskId>-<slug> from task attributes. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: generateBranchName] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.1.3: Update task record in TaskRepository with targetBranch name upon worktree allocation. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.updateTargetBranch] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T50.1.4: Write unit tests verifying that worktrees are created on separate isolated branches without locking root repo. [File: packages/engine/src/tests/git_worktrees.test.ts] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+
+### T50.2: Redirect File Write Operations & Scrubber Hooks to Worktree
+  - [x] T50.2.1: Update AutonomousWorkerPipeline to write generated code into worktree path instead of workspaceRoot. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/worktree_pipeline.test.ts]
+  - [x] T50.2.2: Pass worktree directory as projectRoot to RulePipelineEngine pre-write and post-write hooks. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/worktree_pipeline.test.ts]
+  - [x] T50.2.3: Ensure root workspace remains completely clean (git status porcelain is empty) during task execution. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Assertion: rootWorkspaceClean] [Test: npm test -- packages/engine/src/tests/worktree_pipeline.test.ts]
+  - [x] T50.2.4: Write unit tests confirming that code edits happen exclusively within the task's assigned worktree folder. [File: packages/engine/src/tests/worktree_isolation.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_isolation.test.ts]
+
+### T50.3: Execute Sandboxed Test Runner Inside Worktree CWD
+  - [x] T50.3.1: Configure SandboxedProcessRunner options to use worktree path as execution cwd. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [RunnerOption: cwd] [Test: npm test -- packages/engine/src/tests/worktree_pipeline.test.ts]
+  - [x] T50.3.2: Symlink or reference root node_modules into ephemeral worktree to prevent redundant npm install overhead. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: linkDependencies] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.3.3: Capture test runner exit code and stdout/stderr executed directly within worktree environment. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/worktree_pipeline.test.ts]
+  - [x] T50.3.4: Write unit tests verifying test suite executes against modified files in worktree and reports accurate pass/fail. [File: packages/engine/src/tests/worktree_test_runner.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_test_runner.test.ts]
+
+### T50.4: Automated Git Commit Generation with Strict Conventional Formatting
+  - [x] T50.4.1: Stage modified focus files using git add inside the worktree directory. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: stageFiles] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.4.2: Create commit with message feat(arena): [taskId] <title> omitting emojis and authoring as Cacophony Agent. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: commitWorktree] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.4.3: Extract git commit SHA and record commit metadata in task_stages git_commit record. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/worktree_pipeline.test.ts]
+  - [x] T50.4.4: Write unit tests verifying git commit creation, commit message formatting, and SHA extraction. [File: packages/engine/src/tests/git_commit.test.ts] [Test: npm test -- packages/engine/src/tests/git_commit.test.ts]
+
+### T50.5: Git Worktree Teardown & Safe Pruning
+  - [x] T50.5.1: Implement GitWorktreeManager.removeWorktree(taskId) safely unmounting and removing worktree directory. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: GitWorktreeManager.removeWorktree] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.5.2: Execute git worktree prune on task finalization to keep git repository metadata clean. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: pruneWorktrees] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.5.3: Ensure worktree cleanup occurs in a finally block so failures and timeouts still clean up disk space. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Block: finally] [Test: npm test -- packages/engine/src/tests/worktree_pipeline.test.ts]
+  - [x] T50.5.4: Write unit tests verifying that worktree folders are cleanly deleted after task completion. [File: packages/engine/src/tests/worktree_cleanup.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_cleanup.test.ts]
+
+### T50.6: Worktree Collision Detection & Stale Directory Eviction
+  - [x] T50.6.1: Check if worktree directory already exists prior to allocation and force-prune orphaned worktrees. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: ensureCleanWorktreeDir] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.6.2: Add orphan worktree garbage collection sweep on CacophonyDaemon startup. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: sweepOrphanWorktrees] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T50.6.3: Implement worktree disk usage quota check warning if total worktrees exceed configured storage threshold. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: checkWorktreeDiskUsage] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.6.4: Write unit tests verifying collision avoidance when consecutive tasks have identical branch identifiers. [File: packages/engine/src/tests/worktree_collision.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_collision.test.ts]
+
+### T50.7: Git Status & Changed File Telemetry Capture
+  - [x] T50.7.1: Query git status --porcelain inside worktree after test pass to verify exact list of modified files. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: getChangedFiles] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.7.2: Verify no untracked binaries, node_modules artifacts, or secret files (.env) are included in change set. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: validateCleanChangeset] [Test: npm test -- packages/engine/src/tests/git_worktrees.test.ts]
+  - [x] T50.7.3: Persist changed file paths and line delta metrics (added/deleted counts) into task record. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.updateMetrics] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T50.7.4: Write unit tests ensuring changesets containing prohibited files are rejected before commit creation. [File: packages/engine/src/tests/changeset_validation.test.ts] [Test: npm test -- packages/engine/src/tests/changeset_validation.test.ts]
+
+---
+
+---
+
+## Archived Phase 51: Autonomous Gitea PR Publication & Webhook Synchronization
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: orchestration*
+
+### T51.1: Push Ephemeral Task Branch to Gitea Remote
+  - [x] T51.1.1: Implement GitWorktreeManager.pushBranch(branchName) pushing committed branch to Gitea origin. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: pushBranch] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T51.1.2: Resolve Gitea authenticated push URL using configured GITEA_API_TOKEN from secret vault. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: getAuthenticatedRemoteUrl] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T51.1.3: Add retry backoff for network push operations handling transient Docker network latency. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: pushWithRetry] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T51.1.4: Write integration tests verifying branch push creates branch on local Gitea instance. [File: packages/engine/src/tests/gitea_push.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_push.test.ts]
+
+### T51.2: Open Gitea Pull Request via REST API
+  - [x] T51.2.1: Call GiteaApiClient.createPullRequest() specifying head branch, base branch (master), title, and body. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Method: publishPullRequest] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T51.2.2: Generate structured markdown PR description including prompt directive, focus files, and test output. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Method: generatePrBody] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T51.2.3: Record pr_url and pr_number in tasks table and broadcast 'pr_opened' event over SSE. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.updatePrUrl] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T51.2.4: Write integration tests verifying PR creation returns valid PR number and HTML URL from Gitea. [File: packages/engine/src/tests/gitea_pr_creation.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_pr_creation.test.ts]
+
+### T51.3: Update Gitea Commit Status Checks
+  - [x] T51.3.1: Implement GiteaApiClient.createCommitStatus(owner, repo, sha, statusPayload) setting commit status. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Method: createCommitStatus] [Test: npm test -- packages/engine/src/tests/gitea_api_client.test.ts]
+  - [x] T51.3.2: Report 'pending' status when task begins verification tests, and 'success' upon test passing. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Method: updateCommitCheck] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T51.3.3: Set commit status context to "cacophony/test-suite" with description showing execution duration. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Constant: COMMIT_STATUS_CONTEXT] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T51.3.4: Write unit tests verifying that commit status payloads conform to Gitea OpenAPI commit status schema. [File: packages/engine/src/tests/gitea_commit_status.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_commit_status.test.ts]
+
+### T51.4: Register Gitea Webhooks for Real-Time Notification
+  - [x] T51.4.1: Implement GiteaWebhookBootstrap ensuring repo webhook pointing to /api/webhooks/gitea exists on startup. [File: packages/engine/src/gitea/GiteaWebhookReceiver.ts] [Method: ensureWebhookRegistered] [Test: npm test -- packages/engine/src/tests/gitea_webhooks.test.ts]
+  - [x] T51.4.2: Sign webhook payloads with shared secret and verify HMAC-SHA256 signature in GiteaWebhookReceiver. [File: packages/engine/src/gitea/GiteaWebhookReceiver.ts] [Method: verifySignature] [Test: npm test -- packages/engine/src/tests/gitea_webhooks.test.ts]
+  - [x] T51.4.3: Handle pull_request events ('opened', 'closed', 'reopened', 'synchronized') updating task state in DB. [File: packages/engine/src/gitea/GiteaWebhookReceiver.ts] [Method: handlePullRequestEvent] [Test: npm test -- packages/engine/src/tests/gitea_webhooks.test.ts]
+  - [x] T51.4.4: Write unit tests verifying that valid webhook events trigger appropriate repository state updates. [File: packages/engine/src/tests/gitea_webhooks.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_webhooks.test.ts]
+
+### T51.5: Gitea OAuth2 & API Token Secure Lifecycle
+  - [x] T51.5.1: Implement GiteaTokenRotator checking token expiration and requesting fresh tokens via OAuth2 refresh grant. [File: packages/engine/src/gitea/GiteaOAuthProvider.ts] [Method: refreshToken] [Test: npm test -- packages/engine/src/tests/gitea_auth.test.ts]
+  - [x] T51.5.2: Store updated access and refresh tokens encrypted in secret_vault table using AES-256-GCM. [File: packages/db/src/repositories/VaultRepository.ts] [Method: VaultRepository.saveSecret] [Test: npm test -- packages/db/src/tests/VaultRepository.test.ts]
+  - [x] T51.5.3: Fallback gracefully to GITEA_API_TOKEN environment variable when OAuth2 token is unavailable. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Method: resolveAuthHeader] [Test: npm test -- packages/engine/src/tests/gitea_api_client.test.ts]
+  - [x] T51.5.4: Write unit tests verifying encrypted storage and retrieval of Gitea authentication tokens. [File: packages/engine/src/tests/gitea_token_vault.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_token_vault.test.ts]
+
+### T51.6: PR Link Display in Frontend Task Lists & Modals
+  - [x] T51.6.1: Update TaskHistoryComponent to render clickable Gitea PR link badge with external link icon. [File: packages/frontend/src/app/components/task-history/task-history.component.ts] [Template: pr-link-badge] [Test: npm test]
+  - [x] T51.6.2: Ensure TaskDetailModalComponent overview tab renders active PR URL linking directly to Gitea web UI. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: pr-link] [Test: npm test]
+  - [x] T51.6.3: Add PR status badge ('OPEN', 'MERGED', 'CLOSED') dynamically based on Gitea PR state. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Component: PrStatusBadge] [Test: npm test]
+  - [x] T51.6.4: Write frontend unit tests verifying that PR link badges display correctly when task.prUrl is populated. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm test]
+
+### T51.7: Gitea Webhook Heartbeat & Connection Health Telemetry
+  - [x] T51.7.1: Add Gitea connection status check (HTTP reachability and API latency) in GET /api/status. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/status] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T51.7.2: Broadcast 'gitea_status' event over SSE when Gitea connectivity transitions between ONLINE and OFFLINE. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: checkGiteaHealth] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T51.7.3: Display Gitea service status indicator in frontend TelemetryBar alongside database and Ollama indicators. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Template: gitea-status-indicator] [Test: npm test]
+  - [x] T51.7.4: Write unit tests verifying Gitea health check accurately detects network timeouts and server errors. [File: packages/engine/src/tests/gitea_health.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_health.test.ts]
+
+---
+
+---
+
+## Archived Phase 52: Autonomous Code Review Loop & Remediation Requeue Engine
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: orchestration*
+
+### T52.1: Execution Mode Guard: Plan, Build, and Auto Routing
+  - [x] T52.1.1: Implement ExecutionSafetyGuard in AutonomousWorkerPipeline enforcing mode constraints. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Class: ExecutionSafetyGuard] [Test: npm test -- packages/engine/src/tests/safety_modes.test.ts]
+  - [x] T52.1.2: In 'plan' mode: simulate task execution, generate diff preview, do NOT commit or push, mark COMPLETED. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Mode: plan] [Test: npm test -- packages/engine/src/tests/safety_modes.test.ts]
+  - [x] T52.1.3: In 'build' mode: apply edits and run tests, commit to branch and open PR, pause for human approval. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Mode: build] [Test: npm test -- packages/engine/src/tests/safety_modes.test.ts]
+  - [x] T52.1.4: In 'auto' mode: execute full closed loop: generate, test, commit, PR, review with model, and auto-merge. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Mode: auto] [Test: npm test -- packages/engine/src/tests/safety_modes.test.ts]
+
+### T52.2: Automated PR Reviewer Model Dispatch
+  - [x] T52.2.1: Select best available model (e.g. deepseek-r1:8b or qwen2.5-coder:7b) for the 'reviewer' role. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: selectReviewerModel] [Test: npm test -- packages/engine/src/tests/pr_review_loop.test.ts]
+  - [x] T52.2.2: Assemble review prompt with architectural directives, PR unified diff, original task directive, and test output. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: assembleReviewPrompt] [Test: npm test -- packages/engine/src/tests/pr_review_loop.test.ts]
+  - [x] T52.2.3: Execute inference with reviewer model and stream review tokens into review stage stream tap. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: evaluatePullRequest] [Test: npm test -- packages/engine/src/tests/pr_review_loop.test.ts]
+  - [x] T52.2.4: Write unit tests verifying that reviewer prompt includes full diff context and architectural guidelines. [File: packages/engine/src/tests/reviewer_prompt.test.ts] [Test: npm test -- packages/engine/src/tests/reviewer_prompt.test.ts]
+
+### T52.3: Structural Review Verdict Parsing
+  - [x] T52.3.1: Implement ReviewVerdictParser extracting VERDICT: APPROVE | REQUEST_CHANGES | REJECT from model response. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Class: ReviewVerdictParser] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
+  - [x] T52.3.2: Extract line-level review comments: file path, line number, severity ('blocker' | 'warning' | 'nit'), comment text. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: parseInlineComments] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
+  - [x] T52.3.3: Handle ambiguous or unformatted model outputs by defaulting to REQUEST_CHANGES with explanatory note. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: handleUnparseableReview] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
+  - [x] T52.3.4: Write unit tests covering diverse model response formats to ensure robust verdict and comment extraction. [File: packages/engine/src/tests/verdict_parser.test.ts] [Test: npm test -- packages/engine/src/tests/verdict_parser.test.ts]
+
+### T52.4: Post Review Comments & Verdict to Gitea PR
+  - [x] T52.4.1: Call GiteaApiClient.submitReview(owner, repo, prNumber, reviewPayload) with verdict and summary notes. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Method: submitReview] [Test: npm test -- packages/engine/src/tests/gitea_api_client.test.ts]
+  - [x] T52.4.2: Post inline review comments to specific diff lines using Gitea PR review comment API. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Method: postInlineReviewComments] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T52.4.3: Persist full review record into pr_reviews database table for audit and historical analysis. [File: packages/engine/src/gitea/AutomatedPrReviewLoop.ts] [Method: persistReviewRecord] [Test: npm test -- packages/engine/src/tests/pr_review_loop.test.ts]
+  - [x] T52.4.4: Write integration tests verifying review submission appears on Gitea PR conversation timeline. [File: packages/engine/src/tests/gitea_review_submission.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_review_submission.test.ts]
+
+### T52.5: Auto-Merge on Approval via Gitea API
+  - [x] T52.5.1: If verdict is APPROVE, execute squash-and-merge via GiteaApiClient.mergePullRequest(). [File: packages/engine/src/gitea/ClosedLoopPrCoordinator.ts] [Method: executeCycle] [Test: npm test -- packages/engine/src/tests/closed_loop_pr.test.ts]
+  - [x] T52.5.2: Format squash merge title Merge PR #<num>: <taskTitle> and commit message summarizing changes. [File: packages/engine/src/gitea/ClosedLoopPrCoordinator.ts] [Method: executeCycle] [Test: npm test -- packages/engine/src/tests/closed_loop_pr.test.ts]
+  - [x] T52.5.3: Delete ephemeral task branch on Gitea remote following successful squash merge. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Method: deleteBranch] [Test: npm test -- packages/engine/src/tests/gitea_api_client.test.ts]
+  - [x] T52.5.4: Transition task status to COMPLETED and record completedAt timestamp. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.updateStatus] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+
+### T52.6: Automated Remediation Requeue on Changes Requested
+  - [x] T52.6.1: If verdict is REQUEST_CHANGES, synthesize a P0 remediation task remedy-<taskId>-<timestamp>. [File: packages/engine/src/gitea/ClosedLoopPrCoordinator.ts] [Method: executeCycle] [Test: npm test -- packages/engine/src/tests/closed_loop_pr.test.ts]
+  - [x] T52.6.2: Format remediation prompt embedding reviewer notes, flagged comments, and original task directives. [File: packages/engine/src/gitea/ClosedLoopPrCoordinator.ts] [Method: synthesizeRemediationPrompt] [Test: npm test -- packages/engine/src/tests/closed_loop_pr.test.ts]
+  - [x] T52.6.3: Target existing task branch so remediation worker commits fixes directly onto the active PR branch. [File: packages/engine/src/gitea/ClosedLoopPrCoordinator.ts] [Property: targetBranch] [Test: npm test -- packages/engine/src/tests/closed_loop_pr.test.ts]
+  - [x] T52.6.4: Enqueue remediation task into TaskRepository with priority P0 and status PENDING. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.create] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+
+### T52.7: Remediation Stage Telemetry & Stage Stepper Extension
+  - [x] T52.7.1: Record 'remediation' stage in task_stages recording reviewer feedback and remediation attempt counter. [File: packages/db/src/repositories/StageRepository.ts] [Stage: remediation] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
+  - [x] T52.7.2: Broadcast 'remediation_enqueued' event over SSE notifying frontend of kick-back for revisions. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Event: remediation_enqueued] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T52.7.3: Update TaskInspectorComponent to render remediation loop indicator when task has been kicked back. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Component: RemediationBadge] [Test: npm test]
+  - [x] T52.7.4: Write unit tests verifying remediation cycle increments failure count and creates correctly targeted P0 task. [File: packages/engine/src/tests/remediation_cycle.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_cycle.test.ts]
+
+### T52.8: Reviewer Model Failure Handling & Escalation
+  - [x] T52.8.1: Limit max consecutive remediation cycles to 3 attempts before marking task as ESCALATED_FOR_HUMAN_REVIEW. [File: packages/engine/src/gitea/ClosedLoopPrCoordinator.ts] [Constant: MAX_REMEDIATION_CYCLES] [Test: npm test -- packages/engine/src/tests/closed_loop_pr.test.ts]
+  - [x] T52.8.2: Add label 'needs-human-review' to Gitea PR when max automated remediation attempts are exhausted. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Method: addIssueLabels] [Test: npm test -- packages/engine/src/tests/gitea_api_client.test.ts]
+  - [x] T52.8.3: Post summary of automated failure causes to Gitea PR comment thread for human developer triage. [File: packages/engine/src/gitea/ClosedLoopPrCoordinator.ts] [Method: postEscalationSummary] [Test: npm test -- packages/engine/src/tests/closed_loop_pr.test.ts]
+  - [x] T52.8.4: Write unit tests verifying escalation logic and Gitea label application when remediation loop exceeds threshold. [File: packages/engine/src/tests/review_escalation.test.ts] [Test: npm test -- packages/engine/src/tests/review_escalation.test.ts]
+
+---
+
+---
+
+## Archived Phase 53: AST Symbol Graph Extraction & Interactive RepoMap Engine
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: repomap*
+
+### T53.1: TypeScript Compiler API Symbol Harvester Implementation
+  - [x] T53.1.1: Initialize ts.createProgram() pointing to tsconfig.base.json to parse workspace source files. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: initializeProgram] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+  - [x] T53.1.2: Traverse AST nodes extracting ts.SyntaxKind.ClassDeclaration, InterfaceDeclaration, and FunctionDeclaration. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: visitNode] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+  - [x] T53.1.3: Extract symbol identifiers, exported flags, file paths, line ranges, and JSDoc documentation comments. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: extractSymbolMetadata] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+  - [x] T53.1.4: Write unit tests verifying all exported classes and functions in packages/engine are extracted accurately. [File: packages/engine/src/tests/symbol_harvester.test.ts] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+
+### T53.2: Graph Centrality Computation & Edge Mapping
+  - [x] T53.2.1: Extract import and export statements to construct directed dependency edges between symbol nodes. [File: packages/engine/src/repomap/SymbolGraphBuilder.ts] [Class: SymbolGraphBuilder] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
+  - [x] T53.2.2: Compute in-degree and PageRank centrality score [0.0, 1.0] for each architectural symbol. [File: packages/engine/src/repomap/SymbolGraphBuilder.ts] [Method: computeCentrality] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
+  - [x] T53.2.3: Identify core architectural hub classes (highest centrality) for context minimization prioritization. [File: packages/engine/src/repomap/SymbolGraphBuilder.ts] [Method: getHubSymbols] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
+  - [x] T53.2.4: Write unit tests verifying that highly imported base utilities have higher centrality scores than leaf modules. [File: packages/engine/src/tests/symbol_graph.test.ts] [Test: npm test -- packages/engine/src/tests/symbol_graph.test.ts]
+
+### T53.3: REST API: GET /api/repomap with In-Memory Caching
+  - [x] T53.3.1: Expose GET /api/repomap returning array of RepoSymbolNode with id, name, kind, filePath, centrality. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/repomap] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T53.3.2: Cache symbol graph in memory and invalidate automatically on task completion or file modification. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: invalidateCache] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+  - [x] T53.3.3: Support query parameter ?kind=class|interface|function to filter returned symbol types. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/repomap] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T53.3.4: Write integration tests verifying /api/repomap returns 200 with complete architectural symbol inventory. [File: packages/engine/src/tests/repomap_endpoint.test.ts] [Test: npm test -- packages/engine/src/tests/repomap_endpoint.test.ts]
+
+### T53.4: Interactive SVG Graph Rendering in RepoMapViewerComponent
+  - [x] T53.4.1: Render symbol nodes with radius scaled proportionally to centrality score in RepoMapViewerComponent. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts] [Template: svg-graph] [Test: npm test]
+  - [x] T53.4.2: Color-code nodes by kind: classes (blue), interfaces (purple), functions (green), methods (amber). [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts] [Style: node-color] [Test: npm test]
+  - [x] T53.4.3: Implement zoom and pan controls supporting smooth exploration of dense workspace symbol networks. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts] [Method: onGraphPan] [Test: npm test]
+  - [x] T53.4.4: Write frontend unit tests verifying SVG circles and labels are generated for all supplied symbol nodes. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.spec.ts] [Test: npm test]
+
+### T53.5: Symbol Search, Filtering & Detail Drawer
+  - [x] T53.5.1: Add search input in RepoMapViewerComponent filtering visible nodes in real-time by symbol name or file path. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts] [Signal: searchQuery] [Test: npm test]
+  - [x] T53.5.2: Open side drawer on node click showing full symbol details: export status, line number, and dependents. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts] [Method: selectSymbol] [Test: npm test]
+  - [x] T53.5.3: Add "Copy File Path" button in symbol detail drawer for quick developer copy to clipboard. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts] [Method: copyFilePath] [Test: npm test]
+  - [x] T53.5.4: Write frontend unit tests verifying search query filter updates displayed SVG node count accurately. [File: packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.spec.ts] [Test: npm test]
+
+### T53.6: Incremental AST Invalidation on File System Changes
+  - [x] T53.6.1: Connect WorkspaceSymbolHarvester to file system watcher triggering incremental re-parse on file save. [File: packages/engine/src/repomap/WorkspaceSymbolHarvester.ts] [Method: watchFiles] [Test: npm test -- packages/engine/src/tests/symbol_harvester.test.ts]
+  - [x] T53.6.2: Broadcast 'repomap_updated' event over SSE when symbol graph changes due to completed tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Event: repomap_updated] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T53.6.3: Update RepoStateService to re-fetch /api/repomap on receiving 'repomap_updated' SSE event. [File: packages/frontend/src/app/services/repo-state.service.ts] [Method: setupSseListener] [Test: npm test]
+  - [x] T53.6.4: Write integration tests verifying that modifying a class in packages/ updates symbol graph without server restart. [File: packages/engine/src/tests/incremental_ast.test.ts] [Test: npm test -- packages/engine/src/tests/incremental_ast.test.ts]
+
+---
+
+---
+
+## Archived Phase 54: Git Shadow Micro-Checkpoints & Interactive Time Travel Engine
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: git*
+
+### T54.1: Git Shadow Checkpoint Creation Before & After Every Stage
+  - [x] T54.1.1: Implement GitCheckpointManager.createCheckpoint(taskId, stageName, message) creating git shadow commit ref. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: createCheckpoint] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.1.2: Store checkpoint refs under hidden namespace refs/cacophony/checkpoints/<taskId>-<stageName>. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Constant: CHECKPOINT_REF_PREFIX] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.1.3: Trigger pre-stage checkpoint before code generation and post-stage checkpoint after rule scrubbing. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/checkpoint_pipeline.test.ts]
+  - [x] T54.1.4: Write unit tests verifying that git shadow checkpoint commits preserve exact working tree state. [File: packages/engine/src/tests/git_checkpoints.test.ts] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+
+### T54.2: REST API: GET /api/checkpoints Listing Real Historical Snapshots
+  - [x] T54.2.1: Query git for all refs in refs/cacophony/checkpoints/ returning commit hash, message, date, and changed files. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: listCheckpoints] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.2.2: Map git log output to typed CheckpointRecord array in GET /api/checkpoints. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/checkpoints] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T54.2.3: Support query parameter ?taskId=id to filter checkpoints associated with a specific task execution. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/checkpoints] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T54.2.4: Write integration tests verifying /api/checkpoints returns chronological checkpoint history. [File: packages/engine/src/tests/checkpoints_endpoint.test.ts] [Test: npm test -- packages/engine/src/tests/checkpoints_endpoint.test.ts]
+
+### T54.3: REST API: POST /api/checkpoints/:id/revert One-Click Rollback
+  - [x] T54.3.1: Implement GitCheckpointManager.revertToCheckpoint(checkpointId) checking out snapshot into workspace. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: revertToCheckpoint] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.3.2: Verify working tree has no uncommitted changes before executing rollback, or create safety backup checkpoint. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: safeRollback] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.3.3: Return rollback result: reverted commit hash, affected files count, and updated workspace git status. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/checkpoints/:id/revert] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T54.3.4: Write unit tests verifying workspace rollback restores exact prior file contents. [File: packages/engine/src/tests/checkpoint_revert.test.ts] [Test: npm test -- packages/engine/src/tests/checkpoint_revert.test.ts]
+
+### T54.4: Wire CheckpointTimelineComponent Undo and Redo Operations
+  - [x] T54.4.1: Connect Undo button in CheckpointTimelineComponent to call POST /api/checkpoints/:id/revert for prior checkpoint. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.ts] [Method: triggerUndo] [Test: npm test]
+  - [x] T54.4.2: Connect Redo button in CheckpointTimelineComponent to advance to the next forward checkpoint. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.ts] [Method: triggerRedo] [Test: npm test]
+  - [x] T54.4.3: Dynamically compute canUndo and canRedo boolean signals based on activeCheckpointId position in array. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.ts] [Computed: canUndo] [Test: npm test]
+  - [x] T54.4.4: Write frontend unit tests verifying undo/redo buttons disable appropriately at boundaries and trigger API calls. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.spec.ts] [Test: npm test]
+
+### T54.5: Visual Diff Comparison Against Selected Checkpoint
+  - [x] T54.5.1: Add endpoint GET /api/checkpoints/:id/diff returning unified diff between checkpoint and current workspace. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/checkpoints/:id/diff] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T54.5.2: Open diff preview drawer in CheckpointTimelineComponent when clicking on a checkpoint row. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.ts] [Template: checkpoint-diff-drawer] [Test: npm test]
+  - [x] T54.5.3: Highlight lines added (+ green) and lines removed (- red) in checkpoint diff view. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.ts] [Style: diff-line] [Test: npm test]
+  - [x] T54.5.4: Write frontend unit tests verifying diff drawer opens on checkpoint selection and renders diff text. [File: packages/frontend/src/app/components/checkpoint-timeline/checkpoint-timeline.component.spec.ts] [Test: npm test]
+
+### T54.6: Checkpoint Retention Policy & Garbage Collection
+  - [x] T54.6.1: Implement GitCheckpointManager.pruneOldCheckpoints(maxAgeDays: number, maxCount: number) cleaning old refs. [File: packages/engine/src/gitea/GitCheckpointManager.ts] [Method: pruneOldCheckpoints] [Test: npm test -- packages/engine/src/tests/git_checkpoints.test.ts]
+  - [x] T54.6.2: Add automated checkpoint garbage collection task to daily maintenance schedule in CacophonyDaemon. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: runDailyMaintenance] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T54.6.3: Expose manual checkpoint pruning endpoint POST /api/checkpoints/prune. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/checkpoints/prune] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T54.6.4: Write unit tests verifying that pruning deletes refs older than retention window while preserving recent checkpoints. [File: packages/engine/src/tests/checkpoint_pruning.test.ts] [Test: npm test -- packages/engine/src/tests/checkpoint_pruning.test.ts]
+
+---
+
+---
+
+## Archived Phase 58: Dynamic Multi-Model Rotation, Failure Fallback Cascade & Adaptive Context Window Reduction (8k -> 4k)
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: orchestration*
+
+### T58.1: Heterogeneous Model Task Distributor & Anti-Starvation Scheduler
+  - [x] T58.1.1: Refactor TaskScheduler.selectModelForTask to distribute task assignments across all healthy models in ModelRegistry instead of locking to a single model. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: selectModelForTask] [Test: npm test -- packages/engine/src/tests/scheduler_model_rotation.test.ts]
+  - [x] T58.1.2: Implement model usage balancing: track run counts per model in memory and prioritize idle registered models (e.g. qwen2.5-coder:7b, deepseek-r1:8b, gemma3:4b). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: getLeastRecentlyUsedModel] [Test: npm test -- packages/engine/src/tests/scheduler_model_rotation.test.ts]
+  - [x] T58.1.3: Remove hardcoded modelName in TaskcadePlanningService.replenishQueueIfLow, allowing dynamic model assignment from registered model pool. [File: packages/engine/src/inference/TaskcadePlanningService.ts] [Method: replenishQueueIfLow] [Test: npm test -- packages/engine/src/tests/taskcade_planning.test.ts]
+  - [x] T58.1.4: Write unit tests verifying that 20 consecutive queued tasks receive balanced allocations across 3 distinct registered model IDs. [File: packages/engine/src/tests/model_distribution.test.ts] [Test: npm test -- packages/engine/src/tests/model_distribution.test.ts]
+
+### T58.2: Role-to-Model Specialization Router (Architect, Implementer, Reviewer, DocWriter)
+  - [x] T58.2.1: Implement RoleModelAffinityMatrix mapping task roles to preferred model capabilities: architect -> reasoning models (8b), implementer -> code generation (3b/7b), reviewer -> verification (8b), doc_writer -> language models (4b/7b). [File: packages/engine/src/inference/RoleModelRouter.ts] [Class: RoleModelRouter] [Test: npm test -- packages/engine/src/tests/role_model_router.test.ts]
+  - [x] T58.2.2: Evaluate model availability: fallback to next best qualified model in the affinity tier if preferred model is unavailable or in cooldown. [File: packages/engine/src/inference/RoleModelRouter.ts] [Method: resolveModelForRole] [Test: npm test -- packages/engine/src/tests/role_model_router.test.ts]
+  - [x] T58.2.3: Support runtime override of role affinity configuration via GET/PUT /api/config/role-models REST endpoints. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: /api/config/role-models] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T58.2.4: Write unit tests verifying that tasks with role 'architect' receive deepseek-r1:8b while role 'implementer' receives qwen2.5-coder models. [File: packages/engine/src/tests/role_model_router.test.ts] [Test: npm test -- packages/engine/src/tests/role_model_router.test.ts]
+
+### T58.3: Dynamic Failure Fallback Cascade (Sequential Alternative Model Selection)
+  - [x] T58.3.1: Implement FailureFallbackCascade in TaskScheduler: when a task fails execution, identify the next alternative model in the role cascade. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: getFallbackModelForTask] [Test: npm test -- packages/engine/src/tests/failure_fallback_cascade.test.ts]
+  - [x] T58.3.2: Requeue failed task with incremented failureCount, updated modelAssigned to fallback model, and status PENDING. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: handleTaskFailure] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T58.3.3: Cap retries at maxTaskRetries (default 3); mark task permanently FAILED only after exhausting all available alternative models in cascade. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: handleFailedTaskRetries] [Test: npm test -- packages/engine/src/tests/failure_fallback_cascade.test.ts]
+  - [x] T58.3.4: Write unit tests verifying task failing under model A automatically retries under model B and records fallback lineage. [File: packages/engine/src/tests/failure_fallback_cascade.test.ts] [Test: npm test -- packages/engine/src/tests/failure_fallback_cascade.test.ts]
+
+### T58.4: Adaptive Context Window Reduction (Automatic Fallback from 8192 to 4096 Tokens)
+  - [x] T58.4.1: Add contextWindowSize option (default 8192) to OllamaInferenceOptions and InferenceJob payload. [File: packages/shared-types/src/inference.ts] [Type: OllamaInferenceOptions] [Test: npm test]
+  - [x] T58.4.2: Implement AdaptiveContextManager detecting task failures caused by context overflow, repetitive loops, or VRAM pressure. [File: packages/engine/src/inference/AdaptiveContextManager.ts] [Class: AdaptiveContextManager] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+  - [x] T58.4.3: On retry of a failed task, reduce context window parameter num_ctx from 8192 to 4096 tokens to force concise generation and reduce VRAM allocation. [File: packages/engine/src/inference/AdaptiveContextManager.ts] [Method: calculateRetryContextOptions] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+  - [x] T58.4.4: Trigger aggressive AST import pruning and context minimization when context window drops to 4096 tokens. [File: packages/engine/src/inference/ContextMinimizer.ts] [Method: pruneForCompactWindow] [Test: npm test -- packages/engine/src/tests/context_minimizer.test.ts]
+  - [x] T58.4.5: Write unit tests verifying num_ctx is set to 8192 on initial attempt and reduced to 4096 on first retry following failure. [File: packages/engine/src/tests/adaptive_context.test.ts] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+
+### T58.5: Model Eviction Recovery & Consecutive Failure Cooldown Daemon
+  - [x] T58.5.1: Enhance ModelEvictionManager with cooldown timer: models with 3 consecutive failures enter COOLDOWN state for 5 minutes instead of permanent ejection. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: handleModelFailure] [Test: npm test -- packages/engine/src/tests/model_eviction.test.ts]
+  - [x] T58.5.2: Implement probe task execution: after cooldown expires, dispatch a low-complexity P2 test task to evaluate whether model has recovered. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: scheduleProbeTask] [Test: npm test -- packages/engine/src/tests/model_eviction.test.ts]
+  - [x] T58.5.3: Restore model status to ACTIVE on probe success; escalate to EJECTED only if probe task fails. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: handleProbeResult] [Test: npm test -- packages/engine/src/tests/model_eviction.test.ts]
+  - [x] T58.5.4: Write unit tests verifying model enters COOLDOWN after 3 consecutive failures and recovers cleanly upon passing probe task. [File: packages/engine/src/tests/model_eviction_cooldown.test.ts] [Test: npm test -- packages/engine/src/tests/model_eviction_cooldown.test.ts]
+
+### T58.6: Failure Classifier Feedback Propagation for Adaptive Retries
+  - [x] T58.6.1: Classify task failure error type (SYNTAX_ERROR, TYPE_MISMATCH, ASSERTION_FAILURE, TIMEOUT, MEMORY_OOM) in FailureClassifier. [File: packages/engine/src/analytics/FailureClassifier.ts] [Method: classify] [Test: npm test -- packages/engine/src/tests/failure_classifier.test.ts]
+  - [x] T58.6.2: Format targeted retry prompt directive: append categorized error explanation and exact failing assertion to retry prompt. [File: packages/engine/src/inference/AdaptiveContextManager.ts] [Method: formatRetryPromptWithDiagnostics] [Test: npm test -- packages/engine/src/tests/adaptive_context.test.ts]
+  - [x] T58.6.3: Record failure category in stageRepo records for longitudinal failure mode correlation analytics. [File: packages/db/src/repositories/StageRepository.ts] [Method: recordStageCompletion] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
+  - [x] T58.6.4: Write unit tests verifying retry prompt includes exact compiler error diagnostic and tailored instruction to fix failing test. [File: packages/engine/src/tests/retry_prompt_diagnostics.test.ts] [Test: npm test -- packages/engine/src/tests/retry_prompt_diagnostics.test.ts]
+
+---
+
+---
+
+## Archived Phase 61: Test Execution Subprocess Isolation, Guardrails & Memory Limits
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: testing*
+
+### T61.1: Sandboxed Subprocess Test Execution Runner with Structured Execution Options
+  - [x] T61.1.1: Create SandboxedSubprocessRunner in packages/engine/src/testing/SandboxedSubprocessRunner.ts executing task test commands using node:child_process spawn. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Class: SandboxedSubprocessRunner] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.1.2: Sanitize execution environment: whitelist safe environment variables (PATH, NODE_ENV, HOME) and scrub all API keys and vault secrets from child process env. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: sanitizeEnvironment] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.1.3: Set process execution current working directory strictly to target workspace or isolated task worktree folder. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: executeTest] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.1.4: Write unit tests verifying that subprocess runner executes test commands and captures standard output and exit codes cleanly. [File: packages/engine/src/tests/subprocess_runner.test.ts] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+
+### T61.2: Subprocess Memory Limit Guardrails via Cgroups and Node Memory Caps
+  - [x] T61.2.1: Implement memory guardrail injecting --max-old-space-size=2048 into NODE_OPTIONS for Node.js test executions. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: applyMemoryLimits] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.2.2: Poll child process memory usage via /proc/<pid>/statm or pidusage every 500ms; terminate process if RSS exceeds 2500 MB. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: monitorMemory] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.2.3: Record MEMORY_EXCEEDED failure diagnostic when test execution is killed due to memory limit breach. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Type: TestExecutionResult] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.2.4: Write unit tests verifying memory monitoring aborts high-memory allocating processes and flags memory limit breach. [File: packages/engine/src/tests/subprocess_memory_limits.test.ts] [Test: npm test -- packages/engine/src/tests/subprocess_memory_limits.test.ts]
+
+### T61.3: Execution Timeout Watchdog with Graceful SIGTERM/SIGKILL Cascade
+  - [x] T61.3.1: Implement timeout watchdog timer (configurable per task, default 60 seconds) aborting hanging or deadlocked test processes. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: startWatchdog] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.3.2: Implement two-stage termination: send SIGTERM, wait 3 seconds for graceful process cleanup, then escalate to SIGKILL if process remains alive. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: terminateChildProcess] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.3.3: Record TIMEOUT error classification and preserve any stdout/stderr captured prior to process termination. [File: packages/engine/src/testing/SandboxedSubprocessRunner.ts] [Method: handleTimeout] [Test: npm test -- packages/engine/src/tests/subprocess_runner.test.ts]
+  - [x] T61.3.4: Write unit tests verifying that a hanging child process (e.g. infinite loop) is terminated within timeout threshold and marked TIMEOUT. [File: packages/engine/src/tests/subprocess_timeout.test.ts] [Test: npm test -- packages/engine/src/tests/subprocess_timeout.test.ts]
+
+### T61.4: Structured Test Output Parser for Vitest, Node Test Runner, and Jest
+  - [x] T61.4.1: Create StructuredTestOutputParser in packages/engine/src/testing/StructuredTestOutputParser.ts parsing raw terminal text into structured test results. [File: packages/engine/src/testing/StructuredTestOutputParser.ts] [Class: StructuredTestOutputParser] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+  - [x] T61.4.2: Parse total tests, passed count, failed count, skipped count, and duration from Vitest and Node.js native test runner summaries. [File: packages/engine/src/testing/StructuredTestOutputParser.ts] [Method: parseSummary] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+  - [x] T61.4.3: Extract failing test file paths, failing assertion descriptions, and line numbers from stderr stack traces. [File: packages/engine/src/testing/StructuredTestOutputParser.ts] [Method: extractFailures] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+  - [x] T61.4.4: Write unit tests verifying parser extracts accurate pass/fail counts and failure locations from sample Vitest, Node test, and Jest outputs. [File: packages/engine/src/tests/test_output_parser.test.ts] [Test: npm test -- packages/engine/src/tests/test_output_parser.test.ts]
+
+### T61.5: Test Run Record Persistence in test_execution_runs Database Table
+  - [x] T61.5.1: Create TestExecutionRepository in packages/db/src/repositories/TestExecutionRepository.ts managing test_execution_runs table records. [File: packages/db/src/repositories/TestExecutionRepository.ts] [Class: TestExecutionRepository] [Test: npm test -- packages/db/src/tests/TestExecutionRepository.test.ts]
+  - [x] T61.5.2: Persist complete test execution record: taskId, command, exitCode, durationMs, passedCount, failedCount, stdoutSnippet, stderrSnippet, status. [File: packages/db/src/repositories/TestExecutionRepository.ts] [Method: recordRun] [Test: npm test -- packages/db/src/tests/TestExecutionRepository.test.ts]
+  - [x] T61.5.3: Add method listRecentRuns(limit: number, filter?: { status?: string }) returning historical test runs ordered by created_at DESC. [File: packages/db/src/repositories/TestExecutionRepository.ts] [Method: listRecentRuns] [Test: npm test -- packages/db/src/tests/TestExecutionRepository.test.ts]
+  - [x] T61.5.4: Write unit tests verifying test run records are inserted and queried correctly with full payload fidelity. [File: packages/db/src/tests/test_execution_runs.test.ts] [Test: npm test -- packages/db/src/tests/test_execution_runs.test.ts]
+
+### T61.6: Test Failure Triage Engine Extracting Exact Failing Assertion and Line
+  - [x] T61.6.1: Implement TestFailureTriager in packages/engine/src/testing/TestFailureTriager.ts analyzing test stderr to determine root cause category. [File: packages/engine/src/testing/TestFailureTriager.ts] [Class: TestFailureTriager] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [x] T61.6.2: Classify failures: AssertionFailure (expected vs actual), CompilationError (TS syntax/type), RuntimeCrash (uncaught exception), Timeout. [File: packages/engine/src/testing/TestFailureTriager.ts] [Type: FailureClassification] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [x] T61.6.3: Extract minimal failing code snippet and expected value to inject directly into next remediation prompt. [File: packages/engine/src/testing/TestFailureTriager.ts] [Method: buildRemediationContext] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+  - [x] T61.6.4: Write unit tests verifying triager correctly isolates assertion mismatches and formats clean remediation context. [File: packages/engine/src/tests/failure_triager.test.ts] [Test: npm test -- packages/engine/src/tests/failure_triager.test.ts]
+
+---
+
+---
+
+## Archived Phase 73: Task Runtime Metrics, Model Velocity Tracking & History Efficiency View
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: telemetry*
+*Note: Preserves MockInferenceStreamProvider and FallbackTelemetryProvider for demo/showcase mode. Model-calibrated pacing rates (3B=54, 4B=38, 7B=28, 8B=16 tok/s) ensure meaningful leaderboard differentiation without hardware.*
+
+### T73.1: Database Schema & Repository: duration_ms and tokens_per_sec Columns
+  - [x] T73.1.1: Author migration 012_task_runtime_metrics.ts adding duration_ms INTEGER DEFAULT 0 and tokens_per_sec REAL DEFAULT 0.0 columns to tasks table via IF NOT EXISTS guards. [File: packages/db/src/migrations/012_task_runtime_metrics.ts] [Test: npm test -- packages/db]
+  - [x] T73.1.2: Register migration012 in MigrationRegistry in correct chronological slot after migration011. [File: packages/db/src/migrations/MigrationRegistry.ts] [Test: npm test -- packages/db]
+  - [x] T73.1.3: Extend TaskRecord in @cacophony/shared-types with optional readonly durationMs and tokensPerSec fields with full JSDoc documentation. [File: packages/shared-types/src/task.ts] [Test: npm test -- packages/shared-types]
+  - [x] T73.1.4: Update TaskRepository.updateStatus to accept durationMs and tokensPerSec optional parameters and persist them in a single conditional UPDATE; update mapRow to read both columns with exactOptionalPropertyTypes-safe spread pattern. [File: packages/db/src/repositories/TaskRepository.ts] [Test: npm test -- packages/db]
+
+### T73.2: Engine Execution: Real Token Velocity Measurement & Propagation
+  - [x] T73.2.1: Update MockInferenceStreamProvider to implement getTokensPerSecondForModel() deriving per-model-family realistic velocities (3B: 54, 4B: 38, 7B: 28, 8B: 16 tok/s) keyed from model name substring. [File: packages/engine/src/inference/MockInferenceStreamProvider.ts] [Test: npm test -- packages/engine]
+  - [x] T73.2.2: Update AutonomousWorkerPipeline.executeTask return type from Promise<boolean> to Promise<{ success: boolean; tokensPerSec: number }> and capture parseResult.tokensPerSec into measuredTps after generation stage. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T73.2.3: Update TaskExecutionHandler type in TaskScheduler to Promise<TaskExecutionResult> and thread actualTps into taskRepo.updateStatus and evictionManager.recordRunOutcome; remove hardcoded 30.0 tok/s. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm test -- packages/engine]
+  - [x] T73.2.4: Remove hardcoded 35.0 tok/s fallback from CacophonyHttpServer /api/models/leaderboard endpoint; pass p.avgTokensPerSec || 0.0 for honest zero-value display. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: curl http://localhost:24072/api/models/leaderboard]
+
+### T73.3: Frontend History View: Runtime & Velocity Columns
+  - [x] T73.3.1: Add tokensPerSec to HistoryItem interface and update HistoryMetricsService API payload type to include createdAt, durationMs, tokensPerSec; replace durationMs:3500 dummy with real stored value plus timestamp-delta fallback for pre-migration records. [File: packages/frontend/src/app/services/history-metrics.service.ts] [Test: npm test]
+  - [x] T73.3.2: Add Runtime and Velocity table columns to task-history.component with formatDuration helper (ms/s/m+s display), and conditional tok/s cell showing '--' when no data is present. [File: packages/frontend/src/app/components/task-history/task-history.component.ts] [Test: npm test]
+  - [x] T73.3.3: Add formatDuration method to models-view.component replacing raw {{ task.durationMs }}ms display with clean time strings; remove 35.0 fallback from selectedModelHwm computed. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Test: npm test]
+  - [x] T73.3.4: Fix test assertions in autonomous_continuous_arena.test.ts and stage_telemetry.test.ts to check result.success instead of direct boolean equality after executeTask return type change. [File: packages/engine/src/tests/autonomous_continuous_arena.test.ts, packages/engine/src/tests/stage_telemetry.test.ts] [Test: npm test -- packages/engine]
+
+
+---
+
+---
+
+## Archived Phase 75: Dynamic Ollama Model Lifecycle Management & Multi-Tenant Hardware Adaptation
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: hardware*
+*Priority: SPRINT PRIORITY 1*
+
+### T75.1: Ollama Model Client & Lifecycle Controller
+  - [x] T75.1.1: Create OllamaModelManager in packages/engine/src/inference/OllamaModelManager.ts implementing listInstalledModels() querying Ollama GET /api/tags and mapping sizes, digests, and modified timestamps. [File: packages/engine/src/inference/OllamaModelManager.ts] [Class: OllamaModelManager] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [x] T75.1.2: Implement pullModel(modelName: string, onProgress: (event: OllamaPullProgressEvent) => void) in OllamaModelManager parsing ndjson streaming chunks from Ollama POST /api/pull. [File: packages/engine/src/inference/OllamaModelManager.ts] [Method: pullModel] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [x] T75.1.3: Implement deleteModel(modelName: string) in OllamaModelManager issuing DELETE /api/delete with JSON body { model: modelName } and verifying eviction. [File: packages/engine/src/inference/OllamaModelManager.ts] [Method: deleteModel] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [x] T75.1.4: Implement showModelInfo(modelName: string) in OllamaModelManager querying POST /api/show to extract parameter_size, quantization_level, and architecture family. [File: packages/engine/src/inference/OllamaModelManager.ts] [Method: showModelInfo] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+  - [x] T75.1.5: Write unit tests with mocked fetch verifying listInstalledModels, pullModel progress demuxing, deleteModel, and showModelInfo. [File: packages/engine/src/tests/ollama_model_manager.test.ts] [Test: npm test -- packages/engine/src/tests/ollama_model_manager.test.ts]
+
+### T75.2: Multi-Tenant Model Protection & Tenancy Guardrail Engine
+  - [x] T75.2.1: Define ModelManagementConfig in packages/shared-types/src/config.ts with managedModelsEnabled, protectedModels whitelist, maxDiskStorageGb, autoEvictionEnabled, minimumSuccessRateThreshold, and maxConsecutiveFailuresBeforeEviction. [File: packages/shared-types/src/config.ts] [Interface: ModelManagementConfig] [Test: npm test -- packages/shared-types]
+  - [x] T75.2.2: Implement ModelTenancyGuard in packages/engine/src/scheduler/ModelTenancyGuard.ts verifying whether a model tag matches protectedModels wildcard patterns before any deletion is permitted. [File: packages/engine/src/scheduler/ModelTenancyGuard.ts] [Class: ModelTenancyGuard] [Test: npm test -- packages/engine/src/tests/model_tenancy_guard.test.ts]
+  - [x] T75.2.3: Add disk capacity evaluation in ModelTenancyGuard checking available host disk space via statfs before initiating model download to prevent disk exhaustion. [File: packages/engine/src/scheduler/ModelTenancyGuard.ts] [Method: checkDiskHeadroom] [Test: npm test -- packages/engine/src/tests/model_tenancy_guard.test.ts]
+  - [x] T75.2.4: Write unit tests verifying that protected models are strictly rejected from eviction calls and that disk quota limits reject excessive downloads. [File: packages/engine/src/tests/model_tenancy_guard.test.ts] [Test: npm test -- packages/engine/src/tests/model_tenancy_guard.test.ts]
+
+### T75.3: Automated Hardware-Model Benchmark & Eviction Governor
+  - [x] T75.3.1: Implement ModelBenchmarkRunner in packages/engine/src/scheduler/ModelBenchmarkRunner.ts executing a fixed synthetic prompt and evaluating syntax correctness, tokens/sec, and latency. [File: packages/engine/src/scheduler/ModelBenchmarkRunner.ts] [Class: ModelBenchmarkRunner] [Test: npm test -- packages/engine/src/tests/model_benchmark_runner.test.ts]
+  - [x] T75.3.2: Connect ModelBenchmarkRunner results to ModelHealthRepository to seed initial success rates and velocity metrics for newly downloaded models. [File: packages/engine/src/scheduler/ModelBenchmarkRunner.ts] [Method: recordBenchmark] [Test: npm test -- packages/engine/src/tests/model_benchmark_runner.test.ts]
+  - [x] T75.3.3: Update ModelEvictionManager in packages/engine/src/scheduler/ModelEvictionManager.ts to check ModelTenancyGuard and invoke OllamaModelManager.deleteModel when autoEvictionEnabled is true and consecutive failures reach threshold. [File: packages/engine/src/scheduler/ModelEvictionManager.ts] [Method: evaluateModelEviction] [Test: npm test -- packages/engine/src/tests/model_eviction_manager.test.ts]
+  - [x] T75.3.4: Write unit tests validating that degraded non-protected models are automatically deleted while protected models remain intact and marked degraded. [File: packages/engine/src/tests/model_eviction_manager.test.ts] [Test: npm test -- packages/engine/src/tests/model_eviction_manager.test.ts]
+
+### T75.4: Model Management HTTP REST Endpoints & SSE Streaming
+  - [x] T75.4.1: Add GET /api/models/installed route in CacophonyHttpServer returning installed models annotated with protected tenancy status and VRAM residency. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/models/installed] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [x] T75.4.2: Add POST /api/models/pull route streaming Ollama pull progress events over SSE event channel 'model_pull_progress'. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/pull] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [x] T75.4.3: Add DELETE /api/models/:modelId route validating tenancy rules through ModelTenancyGuard and deleting model via OllamaModelManager. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: DELETE /api/models/:modelId] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [x] T75.4.4: Add GET and PUT /api/models/config routes reading and updating runtime ModelManagementConfig in memory and persisting to conf/cacophony.json. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: /api/models/config] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [x] T75.4.5: Add POST /api/models/benchmark route triggering ModelBenchmarkRunner on specified model tag and returning empirical metrics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/benchmark] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+  - [x] T75.4.6: Write unit tests covering all model management REST endpoints, verifying permission guards and error handling for invalid models. [File: packages/engine/src/tests/models_http_api.test.ts] [Test: npm test -- packages/engine/src/tests/models_http_api.test.ts]
+
+---
+
+---
+
+## Archived Phase 77: Reasoning Model `<think>` Stream Separation, Distillation & Opinion Synthesis
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: inference*
+*Priority: SPRINT PRIORITY 3*
+
+### T77.1: Real-Time Cognitive Stream Token Demuxer
+  - [x] T77.1.1: Create ReasoningStreamDemuxer in packages/engine/src/inference/ReasoningStreamDemuxer.ts statefully scanning streaming token deltas for <think> and </think> boundaries. [File: packages/engine/src/inference/ReasoningStreamDemuxer.ts] [Class: ReasoningStreamDemuxer] [Test: npm test -- packages/engine/src/tests/reasoning_stream_demuxer.test.ts]
+  - [x] T77.1.2: Wire ReasoningStreamDemuxer into StreamTapManager emitting dual SSE events: 'reasoning_chunk' for cognitive trace and 'code_chunk' for generated artifacts. [File: packages/engine/src/telemetry/StreamTapManager.ts] [Method: handleTokenStream] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
+  - [x] T77.1.3: Measure intra-reasoning token velocity and duration separately from code generation velocity in AutonomousWorkerPipeline. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeGenerationStage] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
+  - [x] T77.1.4: Write unit tests verifying that code fences inside thinking tags are not prematurely parsed as executable code and that the demuxer handles split tag boundaries across chunks. [File: packages/engine/src/tests/reasoning_stream_demuxer.test.ts] [Test: npm test -- packages/engine/src/tests/reasoning_stream_demuxer.test.ts]
+  - [x] T77.1.5: Guard against orphan </think> tags in ReasoningStreamDemuxer, AdaptiveOutputFormatter, and SelfHealingParser, and ensure prompt directives in AdaptiveOutputFormatter only instruct reasoning models on </think> blocks. [File: packages/engine/src/inference/AdaptiveOutputFormatter.ts] [Class: AdaptiveOutputFormatter] [Test: npm test -- packages/engine/src/tests/reasoning_stream_demuxer.test.ts]
+
+### T77.2: Reasoning Trace Persistence & Stage Schema Migration
+  - [x] T77.2.1: Author database migration 013_reasoning_transcripts.ts adding reasoning_transcript TEXT and distilled_opinion TEXT columns to task_stages table with SQLite and Postgres cross-dialect compatibility. [File: packages/db/src/migrations/013_reasoning_transcripts.ts] [Test: npm test -- packages/db]
+  - [x] T77.2.2: Update StageRecord in packages/shared-types/src/stage.ts to include optional reasoningTranscript, distilledOpinion, and thinkingDurationMs fields. [File: packages/shared-types/src/stage.ts] [Interface: StageRecord] [Test: npm test -- packages/shared-types]
+  - [x] T77.2.3: Update StageRepository in packages/db/src/repositories/StageRepository.ts to persist reasoning transcripts and distilled opinions in recordStageCompletion. [File: packages/db/src/repositories/StageRepository.ts] [Method: recordStageCompletion] [Test: npm test -- packages/db]
+  - [x] T77.2.4: Write integration tests verifying database migration executes cleanly on both SQLite and PGlite drivers and stores full reasoning strings. [File: packages/db/src/tests/reasoning_persistence.test.ts] [Test: npm test -- packages/db/src/tests/reasoning_persistence.test.ts]
+
+### T77.3: Reasoning Distillation & Consensus Opinion Extractor
+  - [x] T77.3.1: Create ReasoningDistillationService in packages/engine/src/inference/ReasoningDistillationService.ts taking raw <think> traces and passing them through a lightweight summarizer prompt. [File: packages/engine/src/inference/ReasoningDistillationService.ts] [Class: ReasoningDistillationService] [Test: npm test -- packages/engine/src/tests/reasoning_distillation.test.ts]
+  - [x] T77.3.2: Format distilled output into typed ModelOpinionRecord containing summary, keyDecisions, identifiedRisks, and confidenceScore. [File: packages/engine/src/inference/ReasoningDistillationService.ts] [Interface: ModelOpinionRecord] [Test: npm test -- packages/engine/src/tests/reasoning_distillation.test.ts]
+  - [x] T77.3.3: Expose GET /api/tasks/:id/opinion endpoint returning distilled architectural opinion and reasoning metrics for the specified task. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/tasks/:id/opinion] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T77.3.4: Write unit tests verifying that ReasoningDistillationService extracts structured decisions from messy reasoning traces and handles empty traces gracefully. [File: packages/engine/src/tests/reasoning_distillation.test.ts] [Test: npm test -- packages/engine/src/tests/reasoning_distillation.test.ts]
+
+### T77.4: Differentiated Frontend Model Views & Archetype-Specific UI
+  - [x] T77.4.1: Update TaskDetailModalComponent in packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts adding a dedicated 'Cognitive Trace' tab for reasoning models (DeepSeek R1, Qwen Thinking). [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: cognitive-trace-tab] [Test: npm test]
+  - [x] T77.4.2: Render collapsible thoughts panel with live thinking velocity gauge and formatted markdown distilled opinion card. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: thoughts-panel] [Test: npm test]
+  - [x] T77.4.3: Provide dense syntax diff view for direct coder models (Qwen 2.5 Coder, Gemma 3) omitting empty reasoning sections and focusing on file tree and AST mutations. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: code-diff-view] [Test: npm test]
+  - [x] T77.4.4: Inject archetype-specific prompt directives in QueueGroomer instructing reasoning models to enclose analysis in <think> tags and direct coder models to output code fences immediately. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Method: formatPromptForModelArchetype] [Test: npm test -- packages/engine/src/tests/queue_groomer.test.ts]
+
+---
+
+---
+
+## Archived Phase 78: End-to-End In-House Pull Request Lifecycle & Review Pipeline (Gitea + GitHub Compatibility)
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: orchestration*
+*Priority: SPRINT PRIORITY 4*
+
+### T78.1: Unified Git Platform Provider Abstraction (Gitea & GitHub)
+  - [x] T78.1.1: Create IGitPlatformProvider interface in packages/engine/src/gitea/IGitPlatformProvider.ts declaring createBranch, openPullRequest, submitReview, and mergePullRequest. [File: packages/engine/src/gitea/IGitPlatformProvider.ts] [Interface: IGitPlatformProvider] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [x] T78.1.2: Implement GiteaPlatformProvider in packages/engine/src/gitea/GiteaPlatformProvider.ts communicating with local Gitea instance via Swagger REST API. [File: packages/engine/src/gitea/GiteaPlatformProvider.ts] [Class: GiteaPlatformProvider] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [x] T78.1.3: Implement GitHubPlatformProvider in packages/engine/src/gitea/GitHubPlatformProvider.ts communicating with GitHub REST API using configured GITHUB_TOKEN. [File: packages/engine/src/gitea/GitHubPlatformProvider.ts] [Class: GitHubPlatformProvider] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [x] T78.1.4: Create GitPlatformProviderFactory in packages/engine/src/gitea/GitPlatformProviderFactory.ts instantiating provider based on GIT_PLATFORM_PROVIDER environment setting (defaulting to gitea). [File: packages/engine/src/gitea/GitPlatformProviderFactory.ts] [Class: GitPlatformProviderFactory] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+  - [x] T78.1.5: Write unit tests verifying that both providers correctly format pull request payloads and handle API error responses. [File: packages/engine/src/tests/git_platform_provider.test.ts] [Test: npm test -- packages/engine/src/tests/git_platform_provider.test.ts]
+
+### T78.2: Ephemeral Git Worktree Isolation per Task Execution
+  - [x] T78.2.1: Enhance GitWorktreeManager in packages/engine/src/gitea/GitWorktreeManager.ts to create isolated worktrees at workspaces/worktree-<taskId> on ephemeral branch task/<priority>-<taskId>. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: createWorktree] [Test: npm test -- packages/engine/src/tests/git_worktree_isolation.test.ts]
+  - [x] T78.2.2: Ensure AutonomousWorkerPipeline executes file modifications, scrubbing, and test commands strictly inside the isolated worktree directory without modifying the main repository checkout. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T78.2.3: Implement cleanWorktree(taskId: string) in GitWorktreeManager safely removing the ephemeral directory and pruning the git worktree entry upon task completion or rollback. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: cleanWorktree] [Test: npm test -- packages/engine/src/tests/git_worktree_isolation.test.ts]
+  - [x] T78.2.4: Write integration tests verifying that concurrent tasks modify separate worktrees without file conflicts and that cleanup leaves the git status clean. [File: packages/engine/src/tests/git_worktree_isolation.test.ts] [Test: npm test -- packages/engine/src/tests/git_worktree_isolation.test.ts]
+
+### T78.3: Automated Multi-Stage Review & Merge Gate
+  - [x] T78.3.1: Wire Stage 5 (Review) in AutonomousWorkerPipeline to generate a structured review checklist evaluating SOLID principles, test coverage, and security boundaries. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeReviewStage] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
+  - [x] T78.3.2: Add optional Frontier Model Reviewer integration: when FRONTIER_REVIEW_API_KEY is configured, dispatch the patch diff and review prompt to the frontier model for high-rigor evaluation. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: evaluateReview] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
+  - [x] T78.3.3: Automatically open pull request via IGitPlatformProvider.openPullRequest upon passing review and submit review verdict. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: publishPullRequest] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+  - [x] T78.3.4: Wire Stage 6 (Merge) to merge pull request into target branch when auto-merge is configured and all verification stages pass. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeMergeStage] [Test: npm test -- packages/engine/src/tests/gitea_integration.test.ts]
+
+### T78.4: Frontend PR Inspector & Review Timeline Badge
+  - [x] T78.4.1: Update TaskDetailModalComponent to display Pull Request banner with clickable link (prUrl), branch name, and review status badge (APPROVED, CHANGES_REQUESTED). [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: pr-banner] [Test: npm test]
+  - [x] T78.4.2: Add PR reviews tab in TaskDetailModalComponent displaying reviewer verdict, line-level comments, and SOLID compliance score. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: pr-reviews-tab] [Test: npm test]
+  - [x] T78.4.3: Add PR indicator icon and branch pill to TaskInspectorComponent stage progression bar during Stage 5 and Stage 6. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Template: stage-pr-indicator] [Test: npm test]
+  - [x] T78.4.4: Write frontend unit tests verifying PR badge rendering and link target formatting for both Gitea and GitHub URL patterns. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm test]
+
+---
+
+---
+
+## Archived Phase 79: Dynamic Model Profile Tuning, Multi-Model Cognitive Handoff & Prompt Compression
+*Completed & Verified in Commit: `460780d`*
+
+*RDF Category: optimization*
+*Priority: SPRINT PRIORITY 5*
+
+### T79.1: Whitebox Model Tuning Configuration & Profile Persistence
+  - [x] T79.1.1: Author database migration `014_model_profiles.ts` creating `model_tuning_profiles` table with columns: `id`, `model_name`, `role`, `num_predict`, `num_ctx`, `temperature`, `top_k`, `top_p`, `repeat_penalty`, `auto_tuned`, `is_active`, `created_at`, `updated_at`. [File: packages/db/src/migrations/014_model_profiles.ts] [Test: npm test -- packages/db]
+  - [x] T79.1.2: Implement `ModelProfileRepository` in `packages/db/src/repositories/ModelProfileRepository.ts` with methods to fetch active profile by model/role, upsert custom profiles, and query auto-tuning metrics. [File: packages/db/src/repositories/ModelProfileRepository.ts] [Class: ModelProfileRepository] [Test: npm test -- packages/db]
+  - [x] T79.1.3: Expose REST API routes `GET /api/models/profiles`, `PUT /api/models/profiles/:id`, and `POST /api/models/profiles/auto-tune` in `CacophonyHttpServer.ts`. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T79.1.4: Update `OllamaProvider.ts` to dynamically resolve model options (`num_predict`, `num_ctx`, `temperature`) from the matched active tuning profile before falling back to environment defaults. [File: packages/engine/src/inference/OllamaProvider.ts] [Method: resolveModelOptions] [Test: npm test -- packages/engine/src/tests/model_tuning.test.ts]
+
+### T79.2: Multi-Model Cognitive Handoff (Architect Reasoner to Implementer Coder)
+  - [x] T79.2.1: Implement `CognitiveHandoffCoordinator` in `packages/engine/src/inference/CognitiveHandoffCoordinator.ts` extracting cognitive `<think>` trace from architect models and formatting as actionable implementation briefs. [File: packages/engine/src/inference/CognitiveHandoffCoordinator.ts] [Class: CognitiveHandoffCoordinator] [Test: npm test -- packages/engine/src/tests/cognitive_handoff.test.ts]
+  - [x] T79.2.2: Wire `AutonomousWorkerPipeline` multi-model execution path: when architect model (DeepSeek R1) completes thinking without full code output, immediately hand off the distilled plan to the configured implementer model (Qwen 2.5 Coder) without failing the task. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeGenerationStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T79.2.3: Persist handoff chain telemetry in `task_stages` recording primary reasoner model, secondary coder model, and token transfer counts. [File: packages/db/src/repositories/StageRepository.ts] [Test: npm test -- packages/db]
+  - [x] T79.2.4: Write unit tests verifying that truncated reasoning outputs trigger graceful handoff rather than burning retries. [File: packages/engine/src/tests/cognitive_handoff.test.ts] [Test: npm test -- packages/engine/src/tests/cognitive_handoff.test.ts]
+
+### T79.3: Prompt Compression & Context Token Budget Maximizer
+  - [x] T79.3.1: Create `PromptCompressor` in `packages/engine/src/inference/PromptCompressor.ts` stripping redundant comment blocks, collapsing whitespace, and omitting unreferenced interface declarations. [File: packages/engine/src/inference/PromptCompressor.ts] [Class: PromptCompressor] [Test: npm test -- packages/engine/src/tests/prompt_compression.test.ts]
+  - [x] T79.3.2: Integrate `PromptCompressor` into `ContextMinimizer.ts` reporting measured compression ratio and token savings in `ContextBundle.tokenSavingsEstimate`. [File: packages/engine/src/inference/ContextMinimizer.ts] [Method: assembleContext] [Test: npm test -- packages/engine/src/tests/context_minimizer.test.ts]
+  - [x] T79.3.3: Implement intelligent fallback compression triggers when prompt tokens exceed 75% of active `num_ctx`. [File: packages/engine/src/inference/ContextMinimizer.ts] [Test: npm test -- packages/engine/src/tests/context_minimizer.test.ts]
+  - [x] T79.3.4: Write unit tests verifying AST-level semantic preservation during prompt compression. [File: packages/engine/src/tests/prompt_compression.test.ts] [Test: npm test -- packages/engine/src/tests/prompt_compression.test.ts]
+
+### T79.4: Autonomous Engine Auto-Tuner & Best Profile Matcher
+  - [x] T79.4.1: Build `EngineAutoTuner` in `packages/engine/src/scheduler/EngineAutoTuner.ts` analyzing historical token velocities (tok/s), stage pass rates, and truncation frequency across installed models. [File: packages/engine/src/scheduler/EngineAutoTuner.ts] [Class: EngineAutoTuner] [Test: npm test -- packages/engine/src/tests/engine_auto_tuner.test.ts]
+  - [x] T79.4.2: Implement heuristic hardware profile matcher mapping available host VRAM (e.g. 16GB) to optimal `num_ctx` (16384) and `num_predict` (8192) limits per quantization level. [File: packages/engine/src/scheduler/EngineAutoTuner.ts] [Method: computeOptimalProfile] [Test: npm test -- packages/engine/src/tests/engine_auto_tuner.test.ts]
+  - [x] T79.4.3: Add scheduled background job or manual button to trigger profile auto-optimization. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T79.4.4: Write unit tests verifying that `EngineAutoTuner` automatically raises completion limits for models experiencing truncation. [File: packages/engine/src/tests/engine_auto_tuner.test.ts] [Test: npm test -- packages/engine/src/tests/engine_auto_tuner.test.ts]
+
+### T79.5: Frontend Model Tuning & Profile Configuration UI
+  - [x] T79.5.1: Create `ModelTuningPanelComponent` in `packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.ts` allowing operators to configure `num_predict`, `num_ctx`, temperature, and active model roles. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.ts] [Class: ModelTuningPanelComponent] [Test: npm test]
+  - [x] T79.5.2: Add 'Auto-Tune Profiles' action button triggering `POST /api/models/profiles/auto-tune` with toast feedback and visual diff of adjusted parameters. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.ts] [Test: npm test]
+  - [x] T79.5.3: Integrate tuning controls into `/models` route alongside installed fleet and download terminal. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Test: npm test]
+  - [x] T79.5.4: Write frontend unit tests validating form inputs, dirty state tracking, and profile update payload dispatch. [File: packages/frontend/src/app/components/model-tuning-panel/model-tuning-panel.component.spec.ts] [Test: npm test]
+
+### T79.6: Host UMA VRAM Governor & Timeout Watchdog Mitigation
+  - [x] T79.6.1: Enforce AbortController cancellation on FrontierReviewer evaluateReview and cap review prompt maxTokens to 1024. [File: packages/engine/src/inference/FrontierReviewer.ts] [Class: FrontierReviewer] [Test: npm --prefix packages/engine test]
+  - [x] T79.6.2: Configure EngineAutoTuner hardwareSpec for 8GB UMA APU architecture, clamp context window to OLLAMA_NUM_CTX, and disallow non-truncation failure inflation. [File: packages/engine/src/scheduler/EngineAutoTuner.ts] [Class: EngineAutoTuner] [Test: npm --prefix packages/engine test]
+  - [x] T79.6.3: Implement dynamic lightweight model fallback in TaskScheduler for previously failed tasks (qwen2.5-coder:3b, gemma3:4b-it-qat). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Class: TaskScheduler] [Test: npm --prefix packages/engine test]
+  - [x] T79.6.4: Increase GiteaApiClient mergePullRequest retry budget to 10 attempts with arithmetic backoff to eliminate 405 async race conditions. [File: packages/engine/src/gitea/GiteaApiClient.ts] [Class: GiteaApiClient] [Test: npm --prefix packages/engine test]
+
+---
+
+## Archived Phase 89: North-to-South Responsive Layout, Real-Time Processor MHz Tri-Metric Gauge & Historic Velocity Analytics
+*Completed & Verified in Engineering Session*
+
+*RDF Category: telemetry / frontend*
+
+### T89.1: Desktop & Mobile North-to-South Unified Responsive Grid
+  - [x] T89.1.1: Refactor packages/frontend/src/app/components/views/dashboard-view.component.ts layout grid so that app-hardware-monitor and app-task-inspector flow North-to-South vertically across all breakpoints, setting both grid-card-wrapper elements to span full width on desktop (min-width: 1024px) rather than sharing a 2-column split. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Test: npm test -- packages/frontend/src/app/components/views/dashboard-view.component.spec.ts]
+  - [x] T89.1.2: Ensure all dashboard card wrappers adhere to mobile-first responsive constraints with touch-friendly scroll bounds, zero horizontal overflow, and consistent padding. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Test: npm test -- packages/frontend]
+
+### T89.2: Tri-Metric Dynamic Rolling Window Gauge Component (Trough / Avg / Peak)
+  - [x] T89.2.1: Implement TriMetricGaugeComponent in packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.ts with typed inputs for liveValue, unit, label, minRange, maxRange, and windowSize. [File: packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.ts] [Class: TriMetricGaugeComponent] [Test: npm test -- packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.spec.ts]
+  - [x] T89.2.2: Implement the windowed calculation engine: dynamic peak (highest observed in window), running arithmetic average (midpoint in window), and baseline trough (average of lower dips past the initial zero-ramp). Color markers: red for peak/trough, emerald green for running average, with a real-time progress head indicator tracking live ticks. [File: packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.ts] [Method: calculateWindowMetrics] [Test: npm test -- packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.spec.ts]
+
+### T89.3: GPU Core SCLK MHz Tri-Metric Progress Integration
+  - [x] T89.3.1: Integrate TriMetricGaugeComponent into HardwareMonitorComponent under the GPU Load card, displaying a dedicated MHz progress track for AMD Core Clock (sclkMhz), visual peak, average, and trough indicators. [File: packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.ts] [Test: npm test -- packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.spec.ts]
+  - [x] T89.3.2: Expose rolling processor frequency metrics (sclkMinMhz, sclkAvgMhz, sclkPeakMhz) via HardwareTelemetryService and ArenaStateStore. [File: packages/frontend/src/app/services/arena-state.store.ts] [Test: npm test -- packages/frontend]
+
+### T89.4: Active Model Live vs Historical Velocity Visual Comparison
+  - [x] T89.4.1: Enhance the Velocity HUD card in HardwareMonitorComponent to render dual metrics: instantaneous live token velocity (tok/s) and the active model's historical baseline average velocity retrieved from ModelHealthRepository / HistoryMetricsService. [File: packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.ts] [Test: npm test -- packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.spec.ts]
+  - [x] T89.4.2: Display a visual comparison variance badge indicating whether current generation speed is faster (green +X%) or degraded (amber/red -X%) relative to the model's historical baseline. [File: packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.ts] [Test: npm test -- packages/frontend]
+
+---
+
+## Archived Phase 90: Deep Active Task Inspector: Sub-Stage Telemetry, Real-Time Test Taps & Generation Health Watchdog
+*Completed & Verified in Engineering Session*
+
+*RDF Category: telemetry / orchestration*
+
+### T90.1: Live Multi-Sub-Stage Inspection Panel in Task Inspector
+  - [x] T90.1.1: Extend TaskInspectorComponent with sub-stage selection tabs: Live Generation & Thought Trace, Test Execution Console, AST Rule Scrubbing, and PR Review Feedback. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts]
+  - [x] T90.1.2: Connect the Test Execution Console tab to real-time stdout/stderr streams emitted by test runners (node --test, jest, ng test) during the test execution stage, eliminating blind waiting periods. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend]
+  - [x] T90.1.3: Connect the AST Rule Scrubbing tab to real-time events from RulePipelineEngine and CompilerDiagnosticAutoRepair, displaying which compiler diagnostic codes were detected and the exact deterministic transformations applied. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend]
+
+### T90.2: Generation Heartbeat & Stall Detection Diagnostics
+  - [x] T90.2.1: Implement GenerationHeartbeatTracker in packages/engine/src/inference/GenerationHeartbeatTracker.ts that measures Time-To-First-Token (TTFT), prompt ingestion time, instantaneous inter-token latency, and total silent wait time. [File: packages/engine/src/inference/GenerationHeartbeatTracker.ts] [Class: GenerationHeartbeatTracker] [Test: npm test -- packages/engine/src/tests/generation_heartbeat.test.ts]
+  - [x] T90.2.2: Update StreamTapManager and SSE broadcast protocol to emit heartbeat events (generation_heartbeat: { ttftMs, promptIngestionMs, isStalled, idleMs }) every 1000ms during the generation stage. [File: packages/engine/src/inference/StreamTapManager.ts] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
+  - [x] T90.2.3: In TaskInspectorComponent, display an animated Generation Health indicator: Ingesting Prompt, Streaming Tokens (X tok/s), or Stall Warning (No output for Ys), giving clear visibility into whether the model is computing or frozen. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend]
+
+---
+
+## Archived Phase 91: Automated Regression Circuit Breaker, Diagnostic Incident Bundling & Rule Synthesis Engine
+*Completed & Verified in Engineering Session*
+
+*RDF Category: resilience / analytics*
+
+### T91.1: Multi-Model Failure Burst & Cluster Detection
+  - [x] T91.1.1: Implement FailureClusterDetector in packages/engine/src/analytics/FailureClusterDetector.ts that analyzes moving windows of task completions; triggers a REGRESSION_BURST_ALERT when consecutive or high-density failures occur across 2 or more distinct models within 10 tasks. [File: packages/engine/src/analytics/FailureClusterDetector.ts] [Class: FailureClusterDetector] [Test: npm test -- packages/engine/src/tests/failure_cluster_detector.test.ts]
+  - [x] T91.1.2: Automatically capture an incident snapshot bundle (data/diagnostics/incident-<timestamp>.json) containing the last 10 git commits, failing task prompts, AST diagnostic logs, and exit codes. [File: packages/engine/src/analytics/IncidentBundleRecorder.ts] [Class: IncidentBundleRecorder] [Test: npm test -- packages/engine/src/tests/incident_recorder.test.ts]
+
+### T91.2: Frontier Regression Root-Cause Analysis Hook
+  - [x] T91.2.1: Implement FrontierRegressionAnalyzer in packages/engine/src/analytics/FrontierRegressionAnalyzer.ts that queries a configured frontier model (e.g. Claude 3.7 / Gemini 2.5 / DeepSeek R1) with the incident bundle to differentiate between internal engine regressions and model prompt errors. [File: packages/engine/src/analytics/FrontierRegressionAnalyzer.ts] [Class: FrontierRegressionAnalyzer] [Test: npm test -- packages/engine/src/tests/frontier_regression_analyzer.test.ts]
+  - [x] T91.2.2: Automatically generate a git bisect / suspect commit recommendation when the frontier analyzer identifies breaking commits in git history. [File: packages/engine/src/analytics/FrontierRegressionAnalyzer.ts] [Test: npm test -- packages/engine/src/tests/frontier_regression_analyzer.test.ts]
+
+### T91.3: Automated Deterministic Mitigation & Repair Rule Synthesizer
+  - [x] T91.3.1: Implement RuleSynthesisQueue that harvests recurring compiler diagnostic errors and syntactic anomalies, automatically queueing high-priority meta_rule tasks to create new declarative rules for RulePipelineEngine. [File: packages/engine/src/rules/RuleSynthesisQueue.ts] [Class: RuleSynthesisQueue] [Test: npm test -- packages/engine/src/tests/rule_synthesis.test.ts]
+  - [x] T91.3.2: Auto-generate TypeScript AST repair templates from verified successful remediations to continuously expand CompilerDiagnosticAutoRepair without manual intervention. [File: packages/engine/src/testing/CompilerDiagnosticAutoRepair.ts] [Test: npm test -- packages/engine/src/tests/compiler_diagnostic_auto_repair.test.ts]
+
+---
+
+## Archived Phase 92: Stage-Decomposed Task Architecture, Batched Model-Affinity Scheduling & Asynchronous Verification
+*Completed & Verified in Engineering Session*
+
+*RDF Category: orchestration / scheduler*
+
+### T92.1: Asynchronous Stage-Decomposed Task State Machine
+  - [x] T92.1.1: Extend TaskRecord domain schema in packages/shared-types/src/task.ts with currentStage: PipelineStageType, stageState: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED', and stage artifact payloads. [File: packages/shared-types/src/task.ts] [Test: npm test -- packages/shared-types]
+  - [x] T92.1.2: Update TaskRepository to allow persisting task progress between individual stages without marking the overarching task as concluded (COMPLETED or FAILED), enabling asynchronous handoffs between different models. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.updateStageState] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+
+### T92.2: VRAM-Preserving Batched Stage Execution (5-Task Burst Window)
+  - [x] T92.2.1: Implement BatchedStageScheduler in packages/engine/src/scheduler/BatchedStageScheduler.ts: when a heavy model (e.g. qwen2.5-coder:14b or deepseek-r1:8b) is resident in VRAM, batch-dispatch up to 5 tasks requiring that model's specific stage (e.g. Planning or Review) before permitting model unload or context swaps. [File: packages/engine/src/scheduler/BatchedStageScheduler.ts] [Class: BatchedStageScheduler] [Test: npm test -- packages/engine/src/tests/batched_stage_scheduler.test.ts]
+  - [x] T92.2.2: Wire BatchedStageScheduler into TaskScheduler.tick(), maintaining APU thermal boundaries and single-concurrency execution while drastically cutting Ollama model load overhead. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
+
+### T92.3: Decoupled Background Asynchronous Test Execution
+  - [x] T92.3.1: Implement BackgroundTestWorkerPool in packages/engine/src/testing/BackgroundTestWorkerPool.ts: run test commands (node --test, npm test) asynchronously in isolated host subprocesses, freeing the APU/VRAM inference lock immediately for the next queued model task. [File: packages/engine/src/testing/BackgroundTestWorkerPool.ts] [Class: BackgroundTestWorkerPool] [Test: npm test -- packages/engine/src/tests/background_test_worker.test.ts]
+  - [x] T92.3.2: Reconcile test completion events asynchronously: on test pass, transition task to Review stage; on test failure, transition task to Remediation stage with captured test logs. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+
+### T92.4: Ultra-Lightweight Chore Model Squeezing (Documentation & Ephemeral Tasks)
+  - [x] T92.4.1: Define chore_runner role for ultra-small models (smollm2:135m, qwen2.5-coder:1.5b/3b) to execute zero-overhead micro-tasks: appending new route docs to docs/api_spec.md, updating README summaries, and drafting commit changelogs while primary models cool down. [File: packages/engine/src/scheduler/ModelRoleSelector.ts] [Test: npm test -- packages/engine/src/tests/model_role_selector.test.ts]
+  - [x] T92.4.2: Implement ApiDocAppender that automatically generates markdown documentation blocks for newly created API endpoints and commits them to docs/api_spec.md. [File: packages/engine/src/rules/ApiDocAppender.ts] [Class: ApiDocAppender] [Test: npm test -- packages/engine/src/tests/api_doc_appender.test.ts]
+
+---
+
+## Archived Phase 93: AST Collision-Free Hash-Stubbing & Two-Pass Method Splicing Engine
+*Completed & Verified in Engineering Session*
+
+*RDF Category: context / generation*
+
+### T93.1: Collision-Free Hash-Stub Comment Protocol
+  - [x] T93.1.1: Implement HashStubGenerator in packages/engine/src/context/HashStubGenerator.ts producing deterministic, non-colliding comment anchors (e.g. /* [CACOPHONY_HASH_STUB:7f8a9b1c:calculateRiskScore] */) paired with strict TypeScript interface signatures. [File: packages/engine/src/context/HashStubGenerator.ts] [Class: HashStubGenerator] [Test: npm test -- packages/engine/src/tests/hash_stub_generator.test.ts]
+  - [x] T93.1.2: Define the two-pass prompt protocol: Pass 1 (Architect/Large Model) outputs file architecture with imports, types, and hash-marked method stubs; Pass 2 (Implementer/Fast Model) receives individual method scopes and implements only the targeted { ... } block without touching imports. [File: packages/engine/src/inference/PromptTemplateRegistry.ts] [Test: npm test -- packages/engine/src/tests/prompt_template_registry.test.ts]
+
+### T93.2: Deterministic AST Method Splicer & Import Injector
+  - [x] T93.2.1: Implement HashStubMethodSplicer in packages/engine/src/context/HashStubMethodSplicer.ts using the TypeScript Compiler API to replace targeted hash-stub comment nodes with verified method AST declarations without line drift or formatting loss. [File: packages/engine/src/context/HashStubMethodSplicer.ts] [Class: HashStubMethodSplicer] [Test: npm test -- packages/engine/src/tests/hash_stub_splicer.test.ts]
+  - [x] T93.2.2: Implement DeterministicImportInjector that analyzes AST symbol references in newly spliced method bodies, matches unimported symbols against project exported symbols, and cleanly inserts missing ESM imports at the top of the file without model intervention. [File: packages/engine/src/context/DeterministicImportInjector.ts] [Class: DeterministicImportInjector] [Test: npm test -- packages/engine/src/tests/import_injector.test.ts]
+
+### T93.3: Temporary Marker Sanitizer & Pre-Review Cleanup
+  - [x] T93.3.1: Implement StubCommentSanitizer in packages/engine/src/testing/StubCommentSanitizer.ts: strips all temporary [CACOPHONY_HASH_STUB:*] markers, cage comments, and temporary scaffolding before committing to the task worktree. [File: packages/engine/src/testing/StubCommentSanitizer.ts] [Class: StubCommentSanitizer] [Test: npm test -- packages/engine/src/tests/stub_sanitizer.test.ts]
+  - [x] T93.3.2: Add verification assertion rejecting any pull request commit that contains residual stub comments or unimplemented marker tags. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+
+---
+
+## Archived Phase 94: Multi-Perspective Autonomous PR Review, Specialized Domain Personas & Consensus Synthesis
+*Completed & Verified in Engineering Session*
+
+*RDF Category: inference / review*
+
+### T94.1: Domain-Specialized Review Personas & Verification Envelopes
+  - [x] T94.1.1: Define structured review domain personas in packages/shared-types/src/review.ts: SecurityAuditor (sanitization, injection, secret exposure), ArchitectureAuditor (SOLID boundaries, coupling, interface isolation), and DxUxAuditor (typing ergonomics, mobile responsiveness, error clarity). [File: packages/shared-types/src/review.ts] [Test: npm test -- packages/shared-types]
+  - [x] T94.1.2: Implement specialized prompt templates per review persona with tailored checklists and machine-parseable JSON verdict schemas ({ verdict: 'APPROVE' | 'REQUEST_CHANGES', findings: [...] }). [File: packages/engine/src/inference/ReviewerPersonaPromptFactory.ts] [Class: ReviewerPersonaPromptFactory] [Test: npm test -- packages/engine/src/tests/reviewer_persona.test.ts]
+
+### T94.2: Multi-Model Consensus & Review Synthesis Engine
+  - [x] T94.2.1: Implement MultiModelConsensusCoordinator in packages/engine/src/inference/MultiModelConsensusCoordinator.ts: dispatches the PR diff to up to 3 distinct candidate models (e.g. qwen2.5-coder:14b, deepseek-r1:8b, and gemma3:4b-it-qat). [File: packages/engine/src/inference/MultiModelConsensusCoordinator.ts] [Class: MultiModelConsensusCoordinator] [Test: npm test -- packages/engine/src/tests/multi_model_consensus.test.ts]
+  - [x] T94.2.2: Implement ReviewOpinionSynthesizer that unifies findings across models, deduplicates overlapping critique, derives consensus severity ratings, and formats an actionable unified review comment on the Gitea/GitHub PR. [File: packages/engine/src/inference/ReviewOpinionSynthesizer.ts] [Class: ReviewOpinionSynthesizer] [Test: npm test -- packages/engine/src/tests/review_synthesis.test.ts]
+
+### T94.3: Model Reviewer Profiles & Interactive Remediation Loop
+  - [x] T94.3.1: Extend ModelProfileRepository with per-model review capabilities: configured context window (e.g. 4k vs 8k vs 16k), review temperature, and domain affinity scores. [File: packages/db/src/repositories/ModelProfileRepository.ts] [Test: npm test -- packages/db/src/tests/ModelProfileRepository.test.ts]
+  - [x] T94.3.2: Wire the review feedback loop back into the task queue: when REQUEST_CHANGES is synthesized, enqueue a targeted remediation task containing specific reviewer comments and line references for the implementer model to address. [File: packages/engine/src/gitea/PrAssessmentCoordinator.ts] [Test: npm test -- packages/engine/src/tests/pr_assessment.test.ts]
+
+---
+
+## Archived Phase 95: Ultra-Lightweight Tool Routing, Strategy Classifier & Zero-Latency Decision Dispatcher
+*Completed & Verified in Engineering Session*
+
+*RDF Category: inference / routing*
+
+### T95.1: Micro-Model Binary Tool Routing & Strategy Classifier
+  - [x] T95.1.1: Implement MicroModelToolRouter in packages/engine/src/inference/MicroModelToolRouter.ts using fast sub-1B / 3B models (smollm2:135m, qwen2.5-coder:3b) to classify code task strategy: MONOLITHIC_FILE_GENERATION (files < 150 lines) vs HASH_STUB_SPLICING (complex classes / multi-method edits). [File: packages/engine/src/inference/MicroModelToolRouter.ts] [Class: MicroModelToolRouter] [Test: npm test -- packages/engine/src/tests/micro_tool_router.test.ts]
+  - [x] T95.1.2: Implement structured constrained JSON decoding for tool selection, verifying that small models yield valid tool invocations without hallucinations or latency penalties (< 200ms decision latency). [File: packages/engine/src/inference/MicroModelToolRouter.ts] [Method: MicroModelToolRouter.routeTaskStrategy] [Test: npm test -- packages/engine/src/tests/micro_tool_router.test.ts]
+
+### T95.2: Automated Strategy Dispatch Wireup in Autonomous Worker Pipeline
+  - [x] T95.2.1: Integrate MicroModelToolRouter into AutonomousWorkerPipeline.executeTask(): queries the strategy classifier during preflight and automatically routes task execution to either the single-file pipeline or the two-pass hash-stub splicer. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T95.2.2: Write integration tests verifying seamless strategy selection across small single-file tasks and large multi-method classes. [File: packages/engine/src/tests/pipeline_strategy_dispatch.test.ts] [Test: npm test -- packages/engine/src/tests/pipeline_strategy_dispatch.test.ts]
+
+---
+
 ## Engineering Session Record — 2026-10-06
 
 - Audited arena changes from the first explicit PR merge through `44f224a`; the findings and change-size evidence are recorded in [`docs/arena-internals-audit.md`](arena-internals-audit.md).

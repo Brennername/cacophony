@@ -1,5 +1,5 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { ModelTuningProfile } from "@cacophony/shared-types";
+import type { ModelTuningProfile, ModelReviewCapability } from "@cacophony/shared-types";
 
 export interface ModelTuningProfileDbRow {
   readonly id: string;
@@ -122,5 +122,85 @@ export class ModelProfileRepository {
       [id]
     );
     return result.rowsAffected > 0;
+  }
+
+  /**
+   * Retrieves review capabilities (context window, temperature, domain affinities) for a model.
+   */
+  public async getReviewCapability(modelName: string): Promise<ModelReviewCapability> {
+    const profile = await this.getActiveProfile(modelName, "reviewer");
+    if (profile) {
+      return {
+        modelId: modelName,
+        contextWindow: profile.numCtx,
+        reviewTemperature: profile.temperature,
+        domainAffinities: this.inferDomainAffinities(modelName),
+      };
+    }
+
+    return {
+      modelId: modelName,
+      contextWindow: 8192,
+      reviewTemperature: 0.2,
+      domainAffinities: this.inferDomainAffinities(modelName),
+    };
+  }
+
+  /**
+   * Configures review capabilities for a given model.
+   */
+  public async setReviewCapability(
+    modelName: string,
+    contextWindow: number,
+    reviewTemperature: number,
+    domainAffinities?: Record<string, number>
+  ): Promise<ModelReviewCapability> {
+    const id = `profile-reviewer-${modelName.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+    await this.upsertProfile({
+      id,
+      modelName,
+      role: "reviewer",
+      numPredict: 2048,
+      numCtx: contextWindow,
+      temperature: reviewTemperature,
+      topK: 40,
+      topP: 0.9,
+      repeatPenalty: 1.1,
+      autoTuned: false,
+      isActive: true,
+    });
+
+    return {
+      modelId: modelName,
+      contextWindow,
+      reviewTemperature,
+      domainAffinities: domainAffinities ?? this.inferDomainAffinities(modelName),
+    };
+  }
+
+  /**
+   * Heuristically computes baseline domain affinity scores according to model strengths.
+   */
+  public inferDomainAffinities(modelName: string): Readonly<Record<string, number>> {
+    const lower = modelName.toLowerCase();
+    if (lower.includes("r1") || lower.includes("deepseek") || lower.includes("reasoning")) {
+      return {
+        SecurityAuditor: 0.95,
+        ArchitectureAuditor: 0.9,
+        DxUxAuditor: 0.7,
+      };
+    }
+    if (lower.includes("coder") || lower.includes("qwen")) {
+      return {
+        ArchitectureAuditor: 0.95,
+        DxUxAuditor: 0.85,
+        SecurityAuditor: 0.8,
+      };
+    }
+    return {
+      DxUxAuditor: 0.9,
+      ArchitectureAuditor: 0.8,
+      SecurityAuditor: 0.75,
+    };
   }
 }

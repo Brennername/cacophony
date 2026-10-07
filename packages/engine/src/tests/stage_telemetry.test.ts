@@ -198,4 +198,71 @@ test("T46.1: Stage Transition Telemetry & Broadcast Suite", async (t) => {
 
     untap();
   });
+
+  await t.test("T90.2.2: Broadcasts generation heartbeats and sub-stage logs over StreamTapManager", async () => {
+    const streamTap = new StreamTapManager();
+    const receivedHeartbeats: any[] = [];
+    const receivedSubStageLogs: any[] = [];
+
+    const untapHb = streamTap.tapGenerationHeartbeat((evt) => {
+      receivedHeartbeats.push(evt);
+    });
+
+    const untapLogs = streamTap.tapSubStageLog((evt) => {
+      receivedSubStageLogs.push(evt);
+    });
+
+    streamTap.emitGenerationHeartbeat({
+      taskId: "task-hb-1",
+      modelId: "qwen2.5-coder:7b",
+      state: "ingesting_prompt",
+      elapsedMs: 250,
+      promptIngestionMs: 250,
+      timeToFirstTokenMs: null,
+      tokensEmitted: 0,
+      instantaneousTps: 0,
+      idleMs: 250,
+      timestamp: Date.now()
+    });
+
+    streamTap.emitGenerationHeartbeat({
+      taskId: "task-hb-1",
+      modelId: "qwen2.5-coder:7b",
+      state: "streaming",
+      elapsedMs: 1250,
+      promptIngestionMs: 300,
+      timeToFirstTokenMs: 300,
+      tokensEmitted: 25,
+      instantaneousTps: 26.3,
+      idleMs: 10,
+      timestamp: Date.now()
+    });
+
+    streamTap.emitSubStageLog({
+      taskId: "task-hb-1",
+      channel: "test_output",
+      content: "[Test Runner] node --test passed (14ms)",
+      timestamp: Date.now()
+    });
+
+    streamTap.emitSubStageLog({
+      taskId: "task-hb-1",
+      channel: "ast_scrubbing",
+      content: "[CompilerDiagnosticAutoRepair] Applied 1 repair",
+      timestamp: Date.now()
+    });
+
+    assert.strictEqual(receivedHeartbeats.length, 2);
+    assert.strictEqual(receivedHeartbeats[0]?.state, "ingesting_prompt");
+    assert.strictEqual(receivedHeartbeats[1]?.state, "streaming");
+    assert.strictEqual(receivedHeartbeats[1]?.tokensEmitted, 25);
+
+    assert.strictEqual(receivedSubStageLogs.length, 2);
+    assert.strictEqual(receivedSubStageLogs[0]?.channel, "test_output");
+    assert.strictEqual(receivedSubStageLogs[1]?.channel, "ast_scrubbing");
+
+    untapHb();
+    untapLogs();
+  });
 });
+

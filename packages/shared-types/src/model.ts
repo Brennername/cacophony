@@ -108,3 +108,14 @@ export interface ModelTuningProfile {
   readonly updatedAt: string;
 }
 
+/**
+ * Per-model review capabilities including context window, review temperature, and domain affinity scores.
+ */
+export interface ModelReviewCapability {
+  readonly modelId: string;
+  readonly contextWindow: number;
+  readonly reviewTemperature: number;
+  readonly domainAffinities: Readonly<Record<string, number>>;
+}
+
+

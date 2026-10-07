@@ -141,4 +141,16 @@ export class HistoryMetricsService {
     const passed = windowItems.filter((i) => i.status === 'PASSED' || i.status === 'REMEDIATED').length;
     return Math.round((passed / windowItems.length) * 100);
   });
+
+  /**
+   * Resolves the historical lifetime average tokens/sec velocity for the specified model.
+   */
+  public getHistoricVelocityForModel(rawModelId: string): number {
+    if (!rawModelId || rawModelId === 'None' || rawModelId === 'Auto') return 0;
+    const cleanId = rawModelId.trim();
+    const entry = this.leaderboard().find(
+      (m) => m.modelId === cleanId || m.modelId.startsWith(cleanId) || cleanId.startsWith(m.modelId)
+    );
+    return entry?.avgTokensPerSec ?? 0;
+  }
 }

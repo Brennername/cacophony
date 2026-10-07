@@ -125,4 +125,30 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(!result.repairedCode.includes("'vscode'"));
     assert.ok(result.repairedCode.includes("import * as ts from 'typescript'"));
   });
+
+  it("T91.3.2: auto-generates AST repair template and applies dynamically registered repairs", () => {
+    const orig = `const val: number = 'test';`;
+    const rep = `const val: string = 'test';`;
+    const diag = diagnostic("TS2322", "Type 'string' is not assignable to type 'number'.", 1);
+
+    const template = CompilerDiagnosticAutoRepair.generateRepairTemplate(diag, orig, rep);
+    assert.ok(template.includes("repairTS2322"));
+    assert.ok(template.includes("Type 'string' is not assignable to type 'number'."));
+
+    // Test dynamic repair registration
+    repairer.registerDynamicRepair("TS2322", (code, d) => {
+      if (d.errorCode === "TS2322" && code.includes("const val: number = 'test';")) {
+        return {
+          repairedCode: code.replace("const val: number", "const val: string"),
+          description: "Dynamically repaired type mismatch"
+        };
+      }
+      return null;
+    });
+
+    const dynamicResult = repairer.repair(orig, [diag]);
+    assert.strictEqual(dynamicResult.repairedCode, "const val: string = 'test';");
+    assert.ok(dynamicResult.repairsApplied.includes("Dynamically repaired type mismatch"));
+  });
 });
+

@@ -14,4 +14,6 @@ export * from "./IGitPlatformProvider.js";
 export * from "./GiteaPlatformProvider.js";
 export * from "./GitHubPlatformProvider.js";
 export * from "./GitPlatformProviderFactory.js";
+export * from "./PrAssessmentCoordinator.js";
+
 

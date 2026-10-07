@@ -23,6 +23,26 @@ export interface StageTransitionEvent {
   readonly timestamp: number;
 }
 
+export interface GenerationHeartbeatEvent {
+  readonly taskId: string;
+  readonly modelId: string;
+  readonly state: "ingesting_prompt" | "streaming" | "stalled" | "completed";
+  readonly elapsedMs: number;
+  readonly promptIngestionMs: number;
+  readonly timeToFirstTokenMs: number | null;
+  readonly tokensEmitted: number;
+  readonly instantaneousTps: number;
+  readonly idleMs: number;
+  readonly timestamp: number;
+}
+
+export interface SubStageLogEvent {
+  readonly taskId: string;
+  readonly channel: "test_output" | "ast_scrubbing" | "review_critique";
+  readonly content: string;
+  readonly timestamp: number;
+}
+
 /**
  * StreamTapManager
  * Facilitates real-time observation, audit tapping, and flow control
@@ -234,6 +254,44 @@ export class StreamTapManager {
    */
   public tapStageTransitions(listener: (event: StageTransitionEvent) => void, taskId?: string): () => void {
     const eventName = taskId ? `stage_transition:${taskId}` : "stage_transition";
+    this.emitter.on(eventName, listener);
+    return () => {
+      this.emitter.off(eventName, listener);
+    };
+  }
+
+  /**
+   * Emits a real-time generation heartbeat event for generation health tracking.
+   */
+  public emitGenerationHeartbeat(event: GenerationHeartbeatEvent): void {
+    this.emitter.emit("generation_heartbeat", event);
+    this.emitter.emit(`generation_heartbeat:${event.taskId}`, event);
+  }
+
+  /**
+   * Subscribes a listener to generation heartbeat events.
+   */
+  public tapGenerationHeartbeat(listener: (event: GenerationHeartbeatEvent) => void, taskId?: string): () => void {
+    const eventName = taskId ? `generation_heartbeat:${taskId}` : "generation_heartbeat";
+    this.emitter.on(eventName, listener);
+    return () => {
+      this.emitter.off(eventName, listener);
+    };
+  }
+
+  /**
+   * Emits a sub-stage log event (e.g. test output, AST scrubbing, review critique).
+   */
+  public emitSubStageLog(event: SubStageLogEvent): void {
+    this.emitter.emit("substage_log", event);
+    this.emitter.emit(`substage_log:${event.taskId}`, event);
+  }
+
+  /**
+   * Subscribes a listener to live sub-stage log events.
+   */
+  public tapSubStageLog(listener: (event: SubStageLogEvent) => void, taskId?: string): () => void {
+    const eventName = taskId ? `substage_log:${taskId}` : "substage_log";
     this.emitter.on(eventName, listener);
     return () => {
       this.emitter.off(eventName, listener);

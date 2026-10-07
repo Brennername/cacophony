@@ -28,6 +28,8 @@ export class CacophonyHttpServer {
   private sseInterval: NodeJS.Timeout | null = null;
   private untapListener: (() => void) | null = null;
   private untapStageListener: (() => void) | null = null;
+  private untapHeartbeatListener: (() => void) | null = null;
+  private untapSubStageLogListener: (() => void) | null = null;
   private readonly authService: AuthService;
   private readonly rateLimiter: RateLimiter;
 
@@ -124,6 +126,46 @@ export class CacophonyHttpServer {
           }
         }
       });
+
+      this.untapHeartbeatListener = streamTap.tapGenerationHeartbeat((event) => {
+        const payload = `data: ${JSON.stringify({
+          type: "generation_heartbeat",
+          taskId: event.taskId,
+          modelId: event.modelId,
+          state: event.state,
+          elapsedMs: event.elapsedMs,
+          promptIngestionMs: event.promptIngestionMs,
+          timeToFirstTokenMs: event.timeToFirstTokenMs,
+          tokensEmitted: event.tokensEmitted,
+          instantaneousTps: event.instantaneousTps,
+          idleMs: event.idleMs,
+          timestamp: event.timestamp
+        })}\n\n`;
+        for (const client of this.sseClients) {
+          try {
+            client.write(payload);
+          } catch {
+            this.sseClients.delete(client);
+          }
+        }
+      });
+
+      this.untapSubStageLogListener = streamTap.tapSubStageLog((event) => {
+        const payload = `data: ${JSON.stringify({
+          type: "substage_log",
+          taskId: event.taskId,
+          channel: event.channel,
+          content: event.content,
+          timestamp: event.timestamp
+        })}\n\n`;
+        for (const client of this.sseClients) {
+          try {
+            client.write(payload);
+          } catch {
+            this.sseClients.delete(client);
+          }
+        }
+      });
     }
 
     // Start periodic SSE telemetry broadcast
@@ -140,6 +182,14 @@ export class CacophonyHttpServer {
     if (this.untapStageListener) {
       this.untapStageListener();
       this.untapStageListener = null;
+    }
+    if (this.untapHeartbeatListener) {
+      this.untapHeartbeatListener();
+      this.untapHeartbeatListener = null;
+    }
+    if (this.untapSubStageLogListener) {
+      this.untapSubStageLogListener();
+      this.untapSubStageLogListener = null;
     }
 
     if (this.sseInterval) {

@@ -20,6 +20,8 @@ import { IncrementalClassMerger } from "../context/IncrementalClassMerger.js";
 import { CompilerDiagnosticAutoRepair } from "../testing/CompilerDiagnosticAutoRepair.js";
 import { GeneratedChangeGuard } from "../testing/GeneratedChangeGuard.js";
 import { TypeScriptMethodSplicer } from "../context/TypeScriptMethodSplicer.js";
+import { GenerationHeartbeatTracker } from "../inference/GenerationHeartbeatTracker.js";
+import { MicroModelToolRouter } from "../inference/MicroModelToolRouter.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -41,6 +43,7 @@ export interface AutonomousWorkerPipelineOptions {
   readonly repoOwner?: string | undefined;
   readonly repoName?: string | undefined;
   readonly gitRemote?: string | undefined;
+  readonly microModelToolRouter?: MicroModelToolRouter | undefined;
 }
 
 /**
@@ -76,10 +79,12 @@ export class AutonomousWorkerPipeline {
   private readonly repoName: string;
   private readonly gitRemote: string;
   private readonly remediationPromptFormatter: RemediationPromptFormatter;
+  private readonly microModelToolRouter: MicroModelToolRouter;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
     this.remediationPromptFormatter = new RemediationPromptFormatter();
     this.workspaceRoot = options.workspaceRoot;
+    this.microModelToolRouter = options.microModelToolRouter ?? new MicroModelToolRouter();
     this.provider = options.ollamaProvider;
     this.minimizer = options.contextMinimizer;
     this.parser = options.parser;
@@ -275,6 +280,23 @@ export class AutonomousWorkerPipeline {
       const formatInstruction = formatter
         ? formatter.getFormatInstruction(true, targetRel, selectedModel, isLargeExistingFile)
         : "[OUTPUT FORMAT REQUIREMENT]: Provide valid code enclosed in markdown code fences.";
+
+      // T95.2.1: Micro-model strategy classification preflight
+      const strategyDecision = await this.microModelToolRouter.routeTaskStrategy({
+        taskTitle: groomed.task.title,
+        taskPrompt: groomed.enrichedPrompt,
+        targetFilePath: targetRel,
+        existingFileLines: originalExistingContent ? originalExistingContent.split("\n").length : 0,
+      });
+
+      if (this.streamTapManager) {
+        this.streamTapManager.emitSubStageLog({
+          taskId,
+          channel: "ast_scrubbing",
+          content: `[StrategyClassifier] Routed task to ${strategyDecision.strategy} (model: ${strategyDecision.modelUsed}, latency: ${strategyDecision.latencyMs}ms)`,
+          timestamp: Date.now(),
+        });
+      }
       const targetedMethodEdit = targetRel && originalExistingContent
         ? TypeScriptMethodSplicer.prepare(originalExistingContent, groomed.enrichedPrompt, targetRel)
         : null;
@@ -347,6 +369,20 @@ export class AutonomousWorkerPipeline {
         readonly tokensCompletion: number;
       };
 
+      const heartbeatTracker = new GenerationHeartbeatTracker({
+        taskId,
+        modelId: selectedModel,
+        streamTapManager: this.streamTapManager
+      });
+      heartbeatTracker.start();
+
+      const heartbeatInterval = setInterval(() => {
+        if (this.streamTapManager) {
+          const snapshot = heartbeatTracker.sample();
+          this.streamTapManager.emitGenerationHeartbeat(snapshot);
+        }
+      }, 1000);
+
       try {
         parseResult = await this.parser.executeWithSelfHealing(
           this.provider,
@@ -357,6 +393,7 @@ export class AutonomousWorkerPipeline {
             maxTokens: requestedMaxTokens
           },
           (chunk) => {
+            heartbeatTracker.recordToken(1);
             if (this.streamTapManager) {
               this.streamTapManager.emitToken(taskId, chunk);
             }
@@ -374,6 +411,12 @@ export class AutonomousWorkerPipeline {
           tokensPrompt: 0,
           tokensCompletion: 0
         };
+      } finally {
+        clearInterval(heartbeatInterval);
+        const finalSnapshot = heartbeatTracker.finish();
+        if (this.streamTapManager) {
+          this.streamTapManager.emitGenerationHeartbeat(finalSnapshot);
+        }
       }
 
       let generationDuration = Date.now() - generationStart;
@@ -524,6 +567,14 @@ export class AutonomousWorkerPipeline {
           if (matchingRepair) {
             scrubbedCode = matchingRepair.updatedContent;
           }
+          if (this.streamTapManager) {
+            this.streamTapManager.emitSubStageLog({
+              taskId,
+              channel: "ast_scrubbing",
+              content: `Applied ${outcome.repairsApplied.length} deterministic rule repair(s): ${outcome.repairsApplied.map((r) => r.description).join(", ")}`,
+              timestamp: Date.now()
+            });
+          }
         }
         if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
           scrubbedCode = IncrementalClassMerger.merge(originalExistingContent, scrubbedCode);
@@ -648,6 +699,14 @@ export class AutonomousWorkerPipeline {
             console.log(
               `[AutonomousWorkerPipeline] Applied ${repairResult.repairsApplied.length} deterministic diagnostic auto-repair(s): ${repairResult.repairsApplied.join("; ")}`
             );
+            if (this.streamTapManager) {
+              this.streamTapManager.emitSubStageLog({
+                taskId,
+                channel: "ast_scrubbing",
+                content: `[CompilerDiagnosticAutoRepair] Applied ${repairResult.repairsApplied.length} deterministic auto-repair(s): ${repairResult.repairsApplied.join("; ")}`,
+                timestamp: Date.now()
+              });
+            }
 
             // Re-run compilation check immediately
             const retryCheck = integrityIssues.length === 0 ? await this.sandboxedRunner.run(buildCmd, {
@@ -816,6 +875,15 @@ export class AutonomousWorkerPipeline {
           const stdoutSnippet = runResult.stdout.slice(-4000);
           const stderrSnippet = runResult.stderr.slice(-4000);
           const logOutput = `Exit Code: ${runResult.exitCode}\nDuration: ${runResult.durationMs}ms\n\n[STDOUT]:\n${stdoutSnippet}\n\n[STDERR]:\n${stderrSnippet}`;
+
+          if (this.streamTapManager) {
+            this.streamTapManager.emitSubStageLog({
+              taskId,
+              channel: "test_output",
+              content: `[Test Runner] Command: ${groomed.scopedTestCommand} (Exit: ${runResult.exitCode}, Duration: ${runResult.durationMs}ms)\n${stdoutSnippet}\n${stderrSnippet}`.trim(),
+              timestamp: Date.now()
+            });
+          }
 
           if (runResult.exitCode === 0) {
             testPassed = true;
@@ -1147,6 +1215,15 @@ export class AutonomousWorkerPipeline {
             if (!errMsg.includes("approve your own pull")) {
               console.warn(`[AutonomousWorkerPipeline] Automated PR review submission warning: ${errMsg}`);
             }
+          }
+
+          if (this.streamTapManager) {
+            this.streamTapManager.emitSubStageLog({
+              taskId,
+              channel: "review_critique",
+              content: `[PR Review] Opened PR #${pr.number}: ${pr.htmlUrl}\nStatus: Verification gates passed\nVerdict: APPROVED\nTarget Base: ${groomed.task.targetBranch || "main"}`,
+              timestamp: Date.now()
+            });
           }
 
           // If autoMerge is enabled, merge PR

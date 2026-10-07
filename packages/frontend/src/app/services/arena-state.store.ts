@@ -63,6 +63,19 @@ export interface ProcessItem {
   status: 'RUNNING' | 'SUCCESS' | 'FAILED';
 }
 
+export interface GenerationHeartbeatInfo {
+  taskId: string;
+  modelId: string;
+  state: 'ingesting_prompt' | 'streaming' | 'stalled' | 'completed';
+  elapsedMs: number;
+  promptIngestionMs: number;
+  timeToFirstTokenMs: number | null;
+  tokensEmitted: number;
+  instantaneousTps: number;
+  idleMs: number;
+  timestamp: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -73,6 +86,14 @@ export class ArenaStateStore {
   public readonly liveReasoningBuffer = signal<string>('');
 
   public readonly liveCodeBuffer = signal<string>('');
+
+  public readonly testOutputBuffer = signal<string>('');
+
+  public readonly astScrubbingBuffer = signal<string>('');
+
+  public readonly reviewCritiqueBuffer = signal<string>('');
+
+  public readonly generationHeartbeat = signal<GenerationHeartbeatInfo | null>(null);
 
   public readonly liveTokenVelocity = signal<number>(0);
 
@@ -95,6 +116,27 @@ export class ArenaStateStore {
   public readonly gttHistory = signal<number[]>([5, 8, 10, 12, 15, 18, 20, 22, 25, 26]);
   public readonly cpuLoadHistory = signal<number[]>([10, 15, 22, 35, 45, 50, 40, 35, 30, 28]);
   public readonly sysMemHistory = signal<number[]>([30, 31, 32, 33, 34, 35, 36, 37, 38, 38]);
+
+  public readonly sclkHistory = signal<number[]>([200, 400, 800, 1200, 1400, 1600]);
+
+  public readonly sclkMinMhz = computed(() => {
+    const history = this.sclkHistory();
+    if (history.length === 0) return 0;
+    return Math.min(...history);
+  });
+
+  public readonly sclkAvgMhz = computed(() => {
+    const history = this.sclkHistory();
+    if (history.length === 0) return 0;
+    const sum = history.reduce((acc, v) => acc + v, 0);
+    return Math.round(sum / history.length);
+  });
+
+  public readonly sclkPeakMhz = computed(() => {
+    const history = this.sclkHistory();
+    if (history.length === 0) return 0;
+    return Math.max(...history);
+  });
 
   public readonly modelHighWaterMarks = signal<Record<string, number>>({});
   private readonly modelVelocitySamples = new Map<string, number[]>();
@@ -233,6 +275,7 @@ export class ArenaStateStore {
             this.appendHistory(this.vramHistory, vramPct);
             this.appendHistory(this.gttHistory, gttPct);
             this.appendHistory(this.sysMemHistory, sysMemPct);
+            this.appendHistory(this.sclkHistory, data.sclkMhz ?? 0);
           }
           if (data.type === 'stream_init') {
             if (data.buffer) {
@@ -257,6 +300,10 @@ export class ArenaStateStore {
               this.liveStreamBuffer.set('');
               this.liveReasoningBuffer.set('');
               this.liveCodeBuffer.set('');
+              this.testOutputBuffer.set('');
+              this.astScrubbingBuffer.set('');
+              this.reviewCritiqueBuffer.set('');
+              this.generationHeartbeat.set(null);
               this.runTokenCount = 0;
               this.runStartTimestamp = null;
               this.runTokenVelocity.set(0);
@@ -397,6 +444,30 @@ export class ArenaStateStore {
                 };
               })
             );
+          }
+          if (data.type === 'generation_heartbeat') {
+            this.generationHeartbeat.set({
+              taskId: data.taskId,
+              modelId: data.modelId,
+              state: data.state,
+              elapsedMs: data.elapsedMs ?? 0,
+              promptIngestionMs: data.promptIngestionMs ?? 0,
+              timeToFirstTokenMs: data.timeToFirstTokenMs ?? null,
+              tokensEmitted: data.tokensEmitted ?? 0,
+              instantaneousTps: data.instantaneousTps ?? 0,
+              idleMs: data.idleMs ?? 0,
+              timestamp: data.timestamp ?? Date.now(),
+            });
+          }
+          if (data.type === 'substage_log') {
+            const content = data.content ?? '';
+            if (data.channel === 'test_output') {
+              this.testOutputBuffer.update((prev) => (prev ? prev + '\n' + content : content).slice(-25000));
+            } else if (data.channel === 'ast_scrubbing') {
+              this.astScrubbingBuffer.update((prev) => (prev ? prev + '\n' + content : content).slice(-25000));
+            } else if (data.channel === 'review_critique') {
+              this.reviewCritiqueBuffer.update((prev) => (prev ? prev + '\n' + content : content).slice(-25000));
+            }
           }
         } catch {
 
