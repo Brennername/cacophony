@@ -77,13 +77,13 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
         </div>
       </section>
 
-      <!-- Hardware Telemetry Diagnostics (Left Column) -->
-      <section class="grid-card-wrapper">
+      <!-- Hardware Telemetry Diagnostics (North-to-South Stacked) -->
+      <section class="grid-card-wrapper full-width">
         <app-hardware-monitor />
       </section>
 
-      <!-- Active Running Task Stepper & Log Stream (Right Column) -->
-      <section class="grid-card-wrapper">
+      <!-- Active Running Task Stepper & Log Stream (North-to-South Stacked) -->
+      <section class="grid-card-wrapper full-width">
         <app-task-inspector />
       </section>
 

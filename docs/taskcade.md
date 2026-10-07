@@ -40,12 +40,19 @@
 
 > [!IMPORTANT]
 > **Execution Directives for Next Frontier Model Implementer:**
-> The following phases constitute the highest-priority implementation pipeline, aligned with Auto Mode, Staging-to-Production promotion, and hardware democratized contribution:
-> 1. **Priority 1: Phase 82 (Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine)**: Clear dirty bootstrap failure-cascade statistics, advance to Epoch 2, reset model eviction counters to 0, restore all evicted models (`gemma3:4b-it-qat`) to `ACTIVE`, and establish epoch-aware rolling metrics.
-> 2. **Priority 2: Phase 80 (Multi-Stage Staging to Production Promotion Gate & Batched Promotion Pipeline)**: Implement the quarantine gauntlet between Gitea staging and public GitHub: full monorepo build verification (`npm run build`), 100% test gate, secret/hygiene scrubber, and batched release milestone PR bundling.
-> 3. **Priority 3: Phase 84 (Auto-Mode Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
-> 4. **Priority 4: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
-> 5. **Priority 5: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
+> The following phases constitute the highest-priority implementation pipeline above all others, structured for immediate frontier model execution:
+> 1. **Priority 1: Phase 89 (North-to-South Responsive Layout, Real-Time Processor MHz Tri-Metric Gauge & Historic Velocity Analytics)**: Refactor dashboard layout grid so Hardware Sensors and Active Task Inspector flow North-to-South on desktop and mobile; implement a rolling tri-metric gauge (trough, average, peak) with green midpoint and red bounds; integrate processor core MHz gauge; display live vs historical velocity comparison.
+> 2. **Priority 2: Phase 90 (Deep Active Task Inspector: Sub-Stage Telemetry, Real-Time Test Taps & Generation Health Watchdog)**: Add sub-stage inspection tabs (test runner stdout/stderr, deterministic AST repair logs, PR reviews); decompose generation time into TTFT, prompt ingestion, and token generation; add live stall warning indicators.
+> 3. **Priority 3: Phase 91 (Automated Regression Circuit Breaker, Diagnostic Incident Bundling & Rule Synthesis Engine)**: Detect multi-model failure bursts; automatically bundle incident diagnostics with git commit history; integrate frontier root-cause regression bisecting; harvest recurring failure patterns into automated deterministic repair rules.
+> 4. **Priority 4: Phase 92 (Stage-Decomposed Task Architecture, Batched Model-Affinity Scheduling & Asynchronous Verification)**: Decompose tasks into decoupled asynchronous sub-stages; batch up to 5 tasks for a resident VRAM model before swapping; execute test verification in decoupled background workers; squeeze small chore models for documentation and micro-tasks.
+> 5. **Priority 5: Phase 93 (AST Collision-Free Hash-Stubbing & Two-Pass Method Splicing Engine)**: Implement collision-free hash-stub comments; two-pass generation (architect planning stubs -> coder filling method bodies); deterministic AST method body splicing and import injection; strip temporary scaffolding prior to PR publication.
+> 6. **Priority 6: Phase 94 (Multi-Perspective Autonomous PR Review, Specialized Domain Personas & Consensus Synthesis)**: Implement domain-specific review personas (Security, Architecture, DX/UX); support running up to 3 candidate models for review with unified consensus synthesis; wire reviewer feedback into targeted remediation queues.
+> 7. **Priority 7: Phase 95 (Ultra-Lightweight Tool Routing, Strategy Classifier & Zero-Latency Decision Dispatcher)**: Leverage sub-1B/3B micro-models as zero-latency tool dispatchers to classify task strategies (monolithic generation vs hash-stub AST splicing).
+> 8. **Priority 8: Phase 82 (Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine)**: Clear dirty bootstrap failure-cascade statistics, advance to Epoch 2, reset model eviction counters to 0, restore all evicted models (`gemma3:4b-it-qat`) to `ACTIVE`, and establish epoch-aware rolling metrics.
+> 9. **Priority 9: Phase 80 (Multi-Stage Staging to Production Promotion Gate & Batched Promotion Pipeline)**: Implement the quarantine gauntlet between Gitea staging and public GitHub: full monorepo build verification (`npm run build`), 100% test gate, secret/hygiene scrubber, and batched release milestone PR bundling.
+> 10. **Priority 10: Phase 84 (Auto-Mode Hardening & Bi-Directional GitHub Issue Sync)**: Defocus manual Plan and Build modes in favor of 24/7 Auto Mode; add pre-commit build gates in worktrees and poll public GitHub issues into the local queue.
+> 11. **Priority 11: Phase 81 (Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine)**: Enable drop-in spec file ingestion (`docs/spec.md`, `README.md`) that autonomously derives SOLID architectures, data schemas, machine-testable acceptance criteria, and topologically sequenced tasks.
+> 12. **Priority 12: Phase 83 (Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine)**: Implement pluggable telemetry and hyperparameter auto-sizing for external contributors running NVIDIA CUDA, Apple Silicon Metal, Intel Arc, or CPU inference.
 
 
 ---
@@ -1667,3 +1674,125 @@
   - [ ] T88.6.1: Critical: Write integration tests for implementation completion -> PR publication -> independent model reports -> queued fix -> updated PR -> new assessment round -> policy-gated merge. [File: packages/engine/src/tests/pr_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/pr_lifecycle.test.ts]
   - [ ] T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one queue item, retain commit/run evidence, and resume the correct workflow stage. [File: packages/engine/src/tests/ci_failure_queue.test.ts] [Test: npm test -- packages/engine/src/tests/ci_failure_queue.test.ts]
   - [ ] T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not lose findings, duplicate a completed run, or attribute one model's outcome to another model. [File: packages/engine/src/tests/pr_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/pr_lifecycle.test.ts]
+
+---
+
+## Phase 89: North-to-South Responsive Layout, Real-Time Processor MHz Tri-Metric Gauge & Historic Velocity Analytics
+*RDF Category: telemetry / frontend*
+
+### T89.1: Desktop & Mobile North-to-South Unified Responsive Grid
+  - [x] T89.1.1: Refactor packages/frontend/src/app/components/views/dashboard-view.component.ts layout grid so that app-hardware-monitor and app-task-inspector flow North-to-South vertically across all breakpoints, setting both grid-card-wrapper elements to span full width on desktop (min-width: 1024px) rather than sharing a 2-column split. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Test: npm test -- packages/frontend/src/app/components/views/dashboard-view.component.spec.ts]
+  - [ ] T89.1.2: Ensure all dashboard card wrappers adhere to mobile-first responsive constraints with touch-friendly scroll bounds, zero horizontal overflow, and consistent padding. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Test: npm test -- packages/frontend]
+
+### T89.2: Tri-Metric Dynamic Rolling Window Gauge Component (Trough / Avg / Peak)
+  - [ ] T89.2.1: Implement TriMetricGaugeComponent in packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.ts with typed inputs for liveValue, unit, label, minRange, maxRange, and windowSize. [File: packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.ts] [Class: TriMetricGaugeComponent] [Test: npm test -- packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.spec.ts]
+  - [ ] T89.2.2: Implement the windowed calculation engine: dynamic peak (highest observed in window), running arithmetic average (midpoint in window), and baseline trough (average of lower dips past the initial zero-ramp). Color markers: red for peak/trough, emerald green for running average, with a real-time progress head indicator tracking live ticks. [File: packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.ts] [Method: calculateWindowMetrics] [Test: npm test -- packages/frontend/src/app/components/tri-metric-gauge/tri-metric-gauge.component.spec.ts]
+
+### T89.3: GPU Core SCLK MHz Tri-Metric Progress Integration
+  - [ ] T89.3.1: Integrate TriMetricGaugeComponent into HardwareMonitorComponent under the GPU Load card, displaying a dedicated MHz progress track for AMD Core Clock (sclkMhz), visual peak, average, and trough indicators. [File: packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.ts] [Test: npm test -- packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.spec.ts]
+  - [ ] T89.3.2: Expose rolling processor frequency metrics (sclkMinMhz, sclkAvgMhz, sclkPeakMhz) via HardwareTelemetryService and ArenaStateStore. [File: packages/frontend/src/app/services/arena-state.store.ts] [Test: npm test -- packages/frontend]
+
+### T89.4: Active Model Live vs Historical Velocity Visual Comparison
+  - [ ] T89.4.1: Enhance the Velocity HUD card in HardwareMonitorComponent to render dual metrics: instantaneous live token velocity (tok/s) and the active model's historical baseline average velocity retrieved from ModelHealthRepository / HistoryMetricsService. [File: packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.ts] [Test: npm test -- packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.spec.ts]
+  - [ ] T89.4.2: Display a visual comparison variance badge indicating whether current generation speed is faster (green +X%) or degraded (amber/red -X%) relative to the model's historical baseline. [File: packages/frontend/src/app/components/hardware-monitor/hardware-monitor.component.ts] [Test: npm test -- packages/frontend]
+
+---
+
+## Phase 90: Deep Active Task Inspector: Sub-Stage Telemetry, Real-Time Test Taps & Generation Health Watchdog
+*RDF Category: telemetry / orchestration*
+
+### T90.1: Live Multi-Sub-Stage Inspection Panel in Task Inspector
+  - [ ] T90.1.1: Extend TaskInspectorComponent with sub-stage selection tabs: Live Generation & Thought Trace, Test Execution Console, AST Rule Scrubbing, and PR Review Feedback. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts]
+  - [ ] T90.1.2: Connect the Test Execution Console tab to real-time stdout/stderr streams emitted by test runners (node --test, jest, ng test) during the test execution stage, eliminating blind waiting periods. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend]
+  - [ ] T90.1.3: Connect the AST Rule Scrubbing tab to real-time events from RulePipelineEngine and CompilerDiagnosticAutoRepair, displaying which compiler diagnostic codes were detected and the exact deterministic transformations applied. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend]
+
+### T90.2: Generation Heartbeat & Stall Detection Diagnostics
+  - [ ] T90.2.1: Implement GenerationHeartbeatTracker in packages/engine/src/inference/GenerationHeartbeatTracker.ts that measures Time-To-First-Token (TTFT), prompt ingestion time, instantaneous inter-token latency, and total silent wait time. [File: packages/engine/src/inference/GenerationHeartbeatTracker.ts] [Class: GenerationHeartbeatTracker] [Test: npm test -- packages/engine/src/tests/generation_heartbeat.test.ts]
+  - [ ] T90.2.2: Update StreamTapManager and SSE broadcast protocol to emit heartbeat events (generation_heartbeat: { ttftMs, promptIngestionMs, isStalled, idleMs }) every 1000ms during the generation stage. [File: packages/engine/src/inference/StreamTapManager.ts] [Test: npm test -- packages/engine/src/tests/stage_telemetry.test.ts]
+  - [ ] T90.2.3: In TaskInspectorComponent, display an animated Generation Health indicator: Ingesting Prompt, Streaming Tokens (X tok/s), or Stall Warning (No output for Ys), giving clear visibility into whether the model is computing or frozen. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Test: npm test -- packages/frontend]
+
+---
+
+## Phase 91: Automated Regression Circuit Breaker, Diagnostic Incident Bundling & Rule Synthesis Engine
+*RDF Category: resilience / analytics*
+
+### T91.1: Multi-Model Failure Burst & Cluster Detection
+  - [ ] T91.1.1: Implement FailureClusterDetector in packages/engine/src/analytics/FailureClusterDetector.ts that analyzes moving windows of task completions; triggers a REGRESSION_BURST_ALERT when consecutive or high-density failures occur across 2 or more distinct models within 10 tasks. [File: packages/engine/src/analytics/FailureClusterDetector.ts] [Class: FailureClusterDetector] [Test: npm test -- packages/engine/src/tests/failure_cluster_detector.test.ts]
+  - [ ] T91.1.2: Automatically capture an incident snapshot bundle (data/diagnostics/incident-<timestamp>.json) containing the last 10 git commits, failing task prompts, AST diagnostic logs, and exit codes. [File: packages/engine/src/analytics/IncidentBundleRecorder.ts] [Class: IncidentBundleRecorder] [Test: npm test -- packages/engine/src/tests/incident_recorder.test.ts]
+
+### T91.2: Frontier Regression Root-Cause Analysis Hook
+  - [ ] T91.2.1: Implement FrontierRegressionAnalyzer in packages/engine/src/analytics/FrontierRegressionAnalyzer.ts that queries a configured frontier model (e.g. Claude 3.7 / Gemini 2.5 / DeepSeek R1) with the incident bundle to differentiate between internal engine regressions and model prompt errors. [File: packages/engine/src/analytics/FrontierRegressionAnalyzer.ts] [Class: FrontierRegressionAnalyzer] [Test: npm test -- packages/engine/src/tests/frontier_regression_analyzer.test.ts]
+  - [ ] T91.2.2: Automatically generate a git bisect / suspect commit recommendation when the frontier analyzer identifies breaking commits in git history. [File: packages/engine/src/analytics/FrontierRegressionAnalyzer.ts] [Test: npm test -- packages/engine/src/tests/frontier_regression_analyzer.test.ts]
+
+### T91.3: Automated Deterministic Mitigation & Repair Rule Synthesizer
+  - [ ] T91.3.1: Implement RuleSynthesisQueue that harvests recurring compiler diagnostic errors and syntactic anomalies, automatically queueing high-priority meta_rule tasks to create new declarative rules for RulePipelineEngine. [File: packages/engine/src/rules/RuleSynthesisQueue.ts] [Class: RuleSynthesisQueue] [Test: npm test -- packages/engine/src/tests/rule_synthesis.test.ts]
+  - [ ] T91.3.2: Auto-generate TypeScript AST repair templates from verified successful remediations to continuously expand CompilerDiagnosticAutoRepair without manual intervention. [File: packages/engine/src/testing/CompilerDiagnosticAutoRepair.ts] [Test: npm test -- packages/engine/src/tests/compiler_diagnostic_auto_repair.test.ts]
+
+---
+
+## Phase 92: Stage-Decomposed Task Architecture, Batched Model-Affinity Scheduling & Asynchronous Verification
+*RDF Category: orchestration / scheduler*
+
+### T92.1: Asynchronous Stage-Decomposed Task State Machine
+  - [ ] T92.1.1: Extend TaskRecord domain schema in packages/shared-types/src/task.ts with currentStage: PipelineStageType, stageState: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED', and stage artifact payloads. [File: packages/shared-types/src/task.ts] [Test: npm test -- packages/shared-types]
+  - [ ] T92.1.2: Update TaskRepository to allow persisting task progress between individual stages without marking the overarching task as concluded (COMPLETED or FAILED), enabling asynchronous handoffs between different models. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.updateStageState] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+
+### T92.2: VRAM-Preserving Batched Stage Execution (5-Task Burst Window)
+  - [ ] T92.2.1: Implement BatchedStageScheduler in packages/engine/src/scheduler/BatchedStageScheduler.ts: when a heavy model (e.g. qwen2.5-coder:14b or deepseek-r1:8b) is resident in VRAM, batch-dispatch up to 5 tasks requiring that model's specific stage (e.g. Planning or Review) before permitting model unload or context swaps. [File: packages/engine/src/scheduler/BatchedStageScheduler.ts] [Class: BatchedStageScheduler] [Test: npm test -- packages/engine/src/tests/batched_stage_scheduler.test.ts]
+  - [ ] T92.2.2: Wire BatchedStageScheduler into TaskScheduler.tick(), maintaining APU thermal boundaries and single-concurrency execution while drastically cutting Ollama model load overhead. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
+
+### T92.3: Decoupled Background Asynchronous Test Execution
+  - [ ] T92.3.1: Implement BackgroundTestWorkerPool in packages/engine/src/testing/BackgroundTestWorkerPool.ts: run test commands (node --test, npm test) asynchronously in isolated host subprocesses, freeing the APU/VRAM inference lock immediately for the next queued model task. [File: packages/engine/src/testing/BackgroundTestWorkerPool.ts] [Class: BackgroundTestWorkerPool] [Test: npm test -- packages/engine/src/tests/background_test_worker.test.ts]
+  - [ ] T92.3.2: Reconcile test completion events asynchronously: on test pass, transition task to Review stage; on test failure, transition task to Remediation stage with captured test logs. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+
+### T92.4: Ultra-Lightweight Chore Model Squeezing (Documentation & Ephemeral Tasks)
+  - [ ] T92.4.1: Define chore_runner role for ultra-small models (smollm2:135m, qwen2.5-coder:1.5b/3b) to execute zero-overhead micro-tasks: appending new route docs to docs/api_spec.md, updating README summaries, and drafting commit changelogs while primary models cool down. [File: packages/engine/src/scheduler/ModelRoleSelector.ts] [Test: npm test -- packages/engine/src/tests/model_role_selector.test.ts]
+  - [ ] T92.4.2: Implement ApiDocAppender that automatically generates markdown documentation blocks for newly created API endpoints and commits them to docs/api_spec.md. [File: packages/engine/src/rules/ApiDocAppender.ts] [Class: ApiDocAppender] [Test: npm test -- packages/engine/src/tests/api_doc_appender.test.ts]
+
+---
+
+## Phase 93: AST Collision-Free Hash-Stubbing & Two-Pass Method Splicing Engine
+*RDF Category: context / generation*
+
+### T93.1: Collision-Free Hash-Stub Comment Protocol
+  - [ ] T93.1.1: Implement HashStubGenerator in packages/engine/src/context/HashStubGenerator.ts producing deterministic, non-colliding comment anchors (e.g. /* [CACOPHONY_HASH_STUB:7f8a9b1c:calculateRiskScore] */) paired with strict TypeScript interface signatures. [File: packages/engine/src/context/HashStubGenerator.ts] [Class: HashStubGenerator] [Test: npm test -- packages/engine/src/tests/hash_stub_generator.test.ts]
+  - [ ] T93.1.2: Define the two-pass prompt protocol: Pass 1 (Architect/Large Model) outputs file architecture with imports, types, and hash-marked method stubs; Pass 2 (Implementer/Fast Model) receives individual method scopes and implements only the targeted { ... } block without touching imports. [File: packages/engine/src/inference/PromptTemplateRegistry.ts] [Test: npm test -- packages/engine/src/tests/prompt_template_registry.test.ts]
+
+### T93.2: Deterministic AST Method Splicer & Import Injector
+  - [ ] T93.2.1: Implement HashStubMethodSplicer in packages/engine/src/context/HashStubMethodSplicer.ts using the TypeScript Compiler API to replace targeted hash-stub comment nodes with verified method AST declarations without line drift or formatting loss. [File: packages/engine/src/context/HashStubMethodSplicer.ts] [Class: HashStubMethodSplicer] [Test: npm test -- packages/engine/src/tests/hash_stub_splicer.test.ts]
+  - [ ] T93.2.2: Implement DeterministicImportInjector that analyzes AST symbol references in newly spliced method bodies, matches unimported symbols against project exported symbols, and cleanly inserts missing ESM imports at the top of the file without model intervention. [File: packages/engine/src/context/DeterministicImportInjector.ts] [Class: DeterministicImportInjector] [Test: npm test -- packages/engine/src/tests/import_injector.test.ts]
+
+### T93.3: Temporary Marker Sanitizer & Pre-Review Cleanup
+  - [ ] T93.3.1: Implement StubCommentSanitizer in packages/engine/src/testing/StubCommentSanitizer.ts: strips all temporary [CACOPHONY_HASH_STUB:*] markers, cage comments, and temporary scaffolding before committing to the task worktree. [File: packages/engine/src/testing/StubCommentSanitizer.ts] [Class: StubCommentSanitizer] [Test: npm test -- packages/engine/src/tests/stub_sanitizer.test.ts]
+  - [ ] T93.3.2: Add verification assertion rejecting any pull request commit that contains residual stub comments or unimplemented marker tags. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+
+---
+
+## Phase 94: Multi-Perspective Autonomous PR Review, Specialized Domain Personas & Consensus Synthesis
+*RDF Category: inference / review*
+
+### T94.1: Domain-Specialized Review Personas & Verification Envelopes
+  - [ ] T94.1.1: Define structured review domain personas in packages/shared-types/src/review.ts: SecurityAuditor (sanitization, injection, secret exposure), ArchitectureAuditor (SOLID boundaries, coupling, interface isolation), and DxUxAuditor (typing ergonomics, mobile responsiveness, error clarity). [File: packages/shared-types/src/review.ts] [Test: npm test -- packages/shared-types]
+  - [ ] T94.1.2: Implement specialized prompt templates per review persona with tailored checklists and machine-parseable JSON verdict schemas ({ verdict: 'APPROVE' | 'REQUEST_CHANGES', findings: [...] }). [File: packages/engine/src/inference/ReviewerPersonaPromptFactory.ts] [Class: ReviewerPersonaPromptFactory] [Test: npm test -- packages/engine/src/tests/reviewer_persona.test.ts]
+
+### T94.2: Multi-Model Consensus & Review Synthesis Engine
+  - [ ] T94.2.1: Implement MultiModelConsensusCoordinator in packages/engine/src/inference/MultiModelConsensusCoordinator.ts: dispatches the PR diff to up to 3 distinct candidate models (e.g. qwen2.5-coder:14b, deepseek-r1:8b, and gemma3:4b-it-qat). [File: packages/engine/src/inference/MultiModelConsensusCoordinator.ts] [Class: MultiModelConsensusCoordinator] [Test: npm test -- packages/engine/src/tests/multi_model_consensus.test.ts]
+  - [ ] T94.2.2: Implement ReviewOpinionSynthesizer that unifies findings across models, deduplicates overlapping critique, derives consensus severity ratings, and formats an actionable unified review comment on the Gitea/GitHub PR. [File: packages/engine/src/inference/ReviewOpinionSynthesizer.ts] [Class: ReviewOpinionSynthesizer] [Test: npm test -- packages/engine/src/tests/review_synthesis.test.ts]
+
+### T94.3: Model Reviewer Profiles & Interactive Remediation Loop
+  - [ ] T94.3.1: Extend ModelProfileRepository with per-model review capabilities: configured context window (e.g. 4k vs 8k vs 16k), review temperature, and domain affinity scores. [File: packages/db/src/repositories/ModelProfileRepository.ts] [Test: npm test -- packages/db/src/tests/ModelProfileRepository.test.ts]
+  - [ ] T94.3.2: Wire the review feedback loop back into the task queue: when REQUEST_CHANGES is synthesized, enqueue a targeted remediation task containing specific reviewer comments and line references for the implementer model to address. [File: packages/engine/src/gitea/PrAssessmentCoordinator.ts] [Test: npm test -- packages/engine/src/tests/pr_assessment.test.ts]
+
+---
+
+## Phase 95: Ultra-Lightweight Tool Routing, Strategy Classifier & Zero-Latency Decision Dispatcher
+*RDF Category: inference / routing*
+
+### T95.1: Micro-Model Binary Tool Routing & Strategy Classifier
+  - [ ] T95.1.1: Implement MicroModelToolRouter in packages/engine/src/inference/MicroModelToolRouter.ts using fast sub-1B / 3B models (smollm2:135m, qwen2.5-coder:3b) to classify code task strategy: MONOLITHIC_FILE_GENERATION (files < 150 lines) vs HASH_STUB_SPLICING (complex classes / multi-method edits). [File: packages/engine/src/inference/MicroModelToolRouter.ts] [Class: MicroModelToolRouter] [Test: npm test -- packages/engine/src/tests/micro_tool_router.test.ts]
+  - [ ] T95.1.2: Implement structured constrained JSON decoding for tool selection, verifying that small models yield valid tool invocations without hallucinations or latency penalties (< 200ms decision latency). [File: packages/engine/src/inference/MicroModelToolRouter.ts] [Method: MicroModelToolRouter.routeTaskStrategy] [Test: npm test -- packages/engine/src/tests/micro_tool_router.test.ts]
+
+### T95.2: Automated Strategy Dispatch Wireup in Autonomous Worker Pipeline
+  - [ ] T95.2.1: Integrate MicroModelToolRouter into AutonomousWorkerPipeline.executeTask(): queries the strategy classifier during preflight and automatically routes task execution to either the single-file pipeline or the two-pass hash-stub splicer. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [ ] T95.2.2: Write integration tests verifying seamless strategy selection across small single-file tasks and large multi-method classes. [File: packages/engine/src/tests/pipeline_strategy_dispatch.test.ts] [Test: npm test -- packages/engine/src/tests/pipeline_strategy_dispatch.test.ts]
+
