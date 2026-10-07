@@ -55,9 +55,15 @@ export interface ArenaEpochRecord {
 
 export class ModelHealthRepository {
   private readonly driver: IDatabaseDriver;
+  private isProtectedCheck?: ((modelId: string) => boolean) | undefined;
 
-  constructor(driver: IDatabaseDriver) {
+  constructor(driver: IDatabaseDriver, isProtectedCheck?: ((modelId: string) => boolean) | undefined) {
     this.driver = driver;
+    this.isProtectedCheck = isProtectedCheck;
+  }
+
+  public setProtectionChecker(checker: (modelId: string) => boolean): void {
+    this.isProtectedCheck = checker;
   }
 
   public async getProfile(modelId: string, provider: InferenceProviderType = "ollama"): Promise<ModelHealthProfile> {
@@ -108,7 +114,8 @@ export class ModelHealthRepository {
       : Number(((profile.avgTokensPerSec * 0.8) + (tokensPerSec * 0.2)).toFixed(2));
 
     let status = profile.status;
-    if (consecutiveFailures >= 3 && status === "ACTIVE") {
+    const isProtected = this.isProtectedCheck ? this.isProtectedCheck(modelId) : false;
+    if (consecutiveFailures >= 3 && status === "ACTIVE" && !isProtected) {
       status = "EJECTED";
     }
 

@@ -163,6 +163,9 @@ export class CacophonyDaemon {
       maxConsecutiveFailuresBeforeEviction: Number(process.env["MAX_CONSECUTIVE_FAILURES"] || 3)
     });
 
+    // Register tenancy protection checker so whitelisted/managed models are never marked EJECTED
+    this.healthRepo.setProtectionChecker((modelId: string) => this.tenancyGuard?.isProtected(modelId) ?? false);
+
     const evictionManager = new ModelEvictionManager(
       this.healthRepo,
       3,

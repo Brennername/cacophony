@@ -147,13 +147,12 @@ export class ModelEvictionManager {
     let activeCandidates = profiles.filter((p) => p.status !== "EJECTED");
 
     if (activeCandidates.length === 0) {
-      const sortedByFailures = [...profiles].sort(
-        (a, b) => a.consecutiveFailures - b.consecutiveFailures
+      for (const p of profiles) {
+        await this.healthRepo.updateStatus(p.modelId, "ACTIVE");
+      }
+      activeCandidates = await Promise.all(
+        candidateModels.map((m) => this.healthRepo.getProfile(m))
       );
-      let toRevive = sortedByFailures[0]!;
-      await this.healthRepo.updateStatus(toRevive.modelId, "ACTIVE");
-      toRevive = await this.healthRepo.getProfile(toRevive.modelId);
-      activeCandidates = [toRevive];
     }
 
     const weights: ModelCandidateWeight[] = activeCandidates.map((p) => {

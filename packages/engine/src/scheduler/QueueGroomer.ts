@@ -361,9 +361,11 @@ export class QueueGroomer {
       if (parts.length >= 2 && parts[1]) {
         const pkgName = parts[1];
         if (pkgName === "engine") {
-          // Queue grooming runs against the daemon checkout, while execution may
-          // happen in an isolated worktree. A dist-file existence check here can
-          // select an artifact that is absent from the task's checkout.
+          const baseName = path.basename(firstFile, path.extname(firstFile));
+          const testSrcPath = path.resolve(this.projectDir, `packages/engine/src/tests/${baseName}.test.ts`);
+          if (fs.existsSync(testSrcPath)) {
+            return `node --test packages/engine/dist/tests/${baseName}.test.js`;
+          }
           return `npm run test --workspace=@cacophony/${pkgName}`;
         }
         if (pkgName === "frontend") {

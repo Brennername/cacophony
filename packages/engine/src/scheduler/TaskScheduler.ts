@@ -41,6 +41,8 @@ export class TaskScheduler {
   private readonly perModelTimeoutMs: Readonly<Record<string, number>>;
   private readonly defaultTimeoutMs: number;
   private readonly noProgressTimeoutMs: number | undefined;
+  private readonly autoReplenish: boolean;
+  private seedLoader?: import("./TaskcadeSeedLoader.js").TaskcadeSeedLoader | undefined;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
@@ -55,6 +57,7 @@ export class TaskScheduler {
     readonly defaultTimeoutMs?: number;
     readonly noProgressTimeoutMs?: number;
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
+    readonly autoReplenish?: boolean;
   }) {
     this.taskRepo = options.taskRepo;
     this.stageRepo = options.stageRepo;
@@ -81,6 +84,7 @@ export class TaskScheduler {
     this.groomer = options.groomer ?? new QueueGroomer();
     this.governor = options.governor ?? new ThermalGovernor();
     this.sorter = options.sorter ?? new ModelAffinityTaskSorter();
+    this.autoReplenish = options.autoReplenish ?? (process.env["AUTO_REPLENISH_QUEUE"] !== "false");
   }
 
   /**
@@ -200,12 +204,49 @@ export class TaskScheduler {
     }
 
     const allPending = await this.taskRepo.listPending();
-    const pending = allPending.filter((t) => t.status !== "RUNNING");
+    let pending = allPending.filter((t) => t.status !== "RUNNING");
     if (pending.length === 0) {
-      if (this.drainMode) {
-        this.stop();
+      if (this.autoReplenish && !this.drainMode) {
+        try {
+          // 1. Automatically requeue failed tasks under the maximum retry threshold (failure_count < 3)
+          if (typeof this.taskRepo.retryFailedTasks === "function") {
+            const requeuedCount = await this.taskRepo.retryFailedTasks(undefined, false);
+            if (requeuedCount > 0) {
+              console.log(`[TaskScheduler] Automatically requeued ${requeuedCount} failed tasks for retry`);
+              const refreshed = await this.taskRepo.listPending();
+              pending = refreshed.filter((t) => t.status !== "RUNNING");
+            }
+          }
+
+          // 2. If still empty, automatically seed uncompleted tasks from docs/taskcade.md
+          if (pending.length === 0) {
+            if (!this.seedLoader) {
+              const { TaskcadeSeedLoader } = await import("./TaskcadeSeedLoader.js");
+              this.seedLoader = new TaskcadeSeedLoader();
+            }
+            const uncompletedTasks = await this.seedLoader.loadTasks({ limit: 50 });
+            let seededCount = 0;
+            for (const t of uncompletedTasks) {
+              const res = await this.taskRepo.createIfNotExists(t);
+              if (res.created) seededCount++;
+            }
+            if (seededCount > 0) {
+              console.log(`[TaskScheduler] Automatically seeded ${seededCount} uncompleted tasks from taskcade.md`);
+              const refreshed = await this.taskRepo.listPending();
+              pending = refreshed.filter((t) => t.status !== "RUNNING");
+            }
+          }
+        } catch {
+          // Gracefully continue if replenishment fails in test environments
+        }
       }
-      return null;
+
+      if (pending.length === 0) {
+        if (this.drainMode) {
+          this.stop();
+        }
+        return null;
+      }
     }
 
     // 1. Acquire single-concurrency APU mutex

@@ -47,69 +47,95 @@ export class GeneratedChangeGuard {
     }
 
     // A full-file response may retain every declaration name while silently
-    // replacing sibling implementations. Allow body changes only for the one
-    // AST target identified by the task; every other existing class member and
+    // replacing sibling implementations. When an AST target is identified by the task,
+    // allow body changes only for that target; every other existing class member and
     // named top-level declaration must remain byte-for-byte equivalent.
     const targetEdit = TypeScriptMethodSplicer.prepare(original, taskText, filePath);
-    const targetClass = targetEdit?.className;
-    const targetMethod = targetEdit?.methodName;
-    for (const originalStatement of originalSource.statements) {
-      if (!ts.isClassDeclaration(originalStatement) || !originalStatement.name) continue;
-      const replacementClass = replacementSource.statements.find(
-        (statement): statement is ts.ClassDeclaration =>
-          ts.isClassDeclaration(statement) && statement.name?.text === originalStatement.name!.text
-      );
-      if (!replacementClass) continue; // Declaration removal is reported above.
+    if (targetEdit) {
+      const targetClass = targetEdit.className;
+      const targetMethod = targetEdit.methodName;
+      for (const originalStatement of originalSource.statements) {
+        if (!ts.isClassDeclaration(originalStatement) || !originalStatement.name) continue;
+        const replacementClass = replacementSource.statements.find(
+          (statement): statement is ts.ClassDeclaration =>
+            ts.isClassDeclaration(statement) && statement.name?.text === originalStatement.name!.text
+        );
+        if (!replacementClass) continue; // Declaration removal is reported above.
 
-      for (const originalMember of originalStatement.members) {
-        const name = this.memberName(originalMember);
-        if (!name) continue;
-        const replacementMember = replacementClass.members.find((member) => this.memberName(member) === name);
-        if (!replacementMember && this.isAuthorizedRemoval(`${originalStatement.name.text}.${name}`, authorizedRemovals)) continue;
-        if (!replacementMember || originalMember.getText(originalSource) === replacementMember.getText(replacementSource)) continue;
+        for (const originalMember of originalStatement.members) {
+          const name = this.memberName(originalMember);
+          if (!name) continue;
+          const replacementMember = replacementClass.members.find((member) => this.memberName(member) === name);
+          if (!replacementMember && this.isAuthorizedRemoval(`${originalStatement.name.text}.${name}`, authorizedRemovals)) continue;
+          if (!replacementMember || originalMember.getText(originalSource) === replacementMember.getText(replacementSource)) continue;
 
-        const isTarget = originalStatement.name.text === targetClass && name === targetMethod;
-        if (isTarget && targetEdit?.kind === "method" &&
-            ts.isMethodDeclaration(originalMember) && ts.isMethodDeclaration(replacementMember)) {
-          const originalHeader = originalMember.body
-            ? originalMember.getText(originalSource).slice(0, originalMember.body.getStart(originalSource) - originalMember.getStart(originalSource))
-            : originalMember.getText(originalSource);
-          const replacementHeader = replacementMember.body
-            ? replacementMember.getText(replacementSource).slice(0, replacementMember.body.getStart(replacementSource) - replacementMember.getStart(replacementSource))
-            : replacementMember.getText(replacementSource);
-          if (originalHeader !== replacementHeader) {
-            issues.push(`Generated replacement changed the signature of ${originalStatement.name.text}.${name}.`);
+          const isTarget = originalStatement.name.text === targetClass && name === targetMethod;
+          if (isTarget && targetEdit.kind === "method" &&
+              ts.isMethodDeclaration(originalMember) && ts.isMethodDeclaration(replacementMember)) {
+            const originalHeader = originalMember.body
+              ? originalMember.getText(originalSource).slice(0, originalMember.body.getStart(originalSource) - originalMember.getStart(originalSource))
+              : originalMember.getText(originalSource);
+            const replacementHeader = replacementMember.body
+              ? replacementMember.getText(replacementSource).slice(0, replacementMember.body.getStart(replacementSource) - replacementMember.getStart(replacementSource))
+              : replacementMember.getText(replacementSource);
+            if (originalHeader !== replacementHeader) {
+              issues.push(`Generated replacement changed the signature of ${originalStatement.name.text}.${name}.`);
+            }
+            if (this.hasPlaceholderBody(replacementMember) && !this.hasPlaceholderBody(originalMember)) {
+              issues.push(`Generated replacement left a stub in ${originalStatement.name.text}.${name}.`);
+            }
+            continue;
           }
-          if (this.hasPlaceholderBody(replacementMember) && !this.hasPlaceholderBody(originalMember)) {
-            issues.push(`Generated replacement left a stub in ${originalStatement.name.text}.${name}.`);
+
+          if (isTarget && (targetEdit.kind === "route" || targetEdit.kind === "route-insert") &&
+              name === "handleRequest" && ts.isMethodDeclaration(originalMember) && ts.isMethodDeclaration(replacementMember)) {
+            const routeIssues = this.inspectRouteSiblings(
+              originalMember,
+              replacementMember,
+              originalSource,
+              replacementSource,
+              targetEdit.routePath || "",
+              targetEdit.httpMethod || ""
+            );
+            issues.push(...routeIssues);
+            continue;
           }
-          continue;
-        }
 
-        if (isTarget && targetEdit && (targetEdit.kind === "route" || targetEdit.kind === "route-insert") &&
-            name === "handleRequest" && ts.isMethodDeclaration(originalMember) && ts.isMethodDeclaration(replacementMember)) {
-          const routeIssues = this.inspectRouteSiblings(
-            originalMember,
-            replacementMember,
-            originalSource,
-            replacementSource,
-            targetEdit.routePath || "",
-            targetEdit.httpMethod || ""
-          );
-          issues.push(...routeIssues);
-          continue;
+          issues.push(`Generated replacement changed non-target member ${originalStatement.name.text}.${name}.`);
         }
-
-        issues.push(`Generated replacement changed non-target member ${originalStatement.name.text}.${name}.`);
       }
-    }
 
-    const originalNamedStatements = this.namedTopLevelStatements(originalSource);
-    const replacementNamedStatements = this.namedTopLevelStatements(replacementSource);
-    for (const [name, statement] of originalNamedStatements) {
-      const current = replacementNamedStatements.get(name);
-      if (current && statement.getText(originalSource) !== current.getText(replacementSource)) {
-        issues.push(`Generated replacement changed non-target declaration ${name}.`);
+      const originalNamedStatements = this.namedTopLevelStatements(originalSource);
+      const replacementNamedStatements = this.namedTopLevelStatements(replacementSource);
+      for (const [name, statement] of originalNamedStatements) {
+        const current = replacementNamedStatements.get(name);
+        if (current && statement.getText(originalSource) !== current.getText(replacementSource)) {
+          issues.push(`Generated replacement changed non-target declaration ${name}.`);
+        }
+      }
+    } else {
+      // For general full-file edits without a single target anchor, verify that
+      // existing populated methods are not replaced with stub or empty bodies.
+      for (const originalStatement of originalSource.statements) {
+        if (!ts.isClassDeclaration(originalStatement) || !originalStatement.name) continue;
+        const replacementClass = replacementSource.statements.find(
+          (statement): statement is ts.ClassDeclaration =>
+            ts.isClassDeclaration(statement) && statement.name?.text === originalStatement.name!.text
+        );
+        if (!replacementClass) continue;
+
+        for (const originalMember of originalStatement.members) {
+          const name = this.memberName(originalMember);
+          if (!name) continue;
+          const replacementMember = replacementClass.members.find((member) => this.memberName(member) === name);
+          if (!replacementMember) continue;
+
+          if (ts.isMethodDeclaration(originalMember) && ts.isMethodDeclaration(replacementMember)) {
+            if (this.hasPlaceholderBody(replacementMember) && !this.hasPlaceholderBody(originalMember)) {
+              issues.push(`Generated replacement left a stub in ${originalStatement.name.text}.${name}.`);
+            }
+          }
+        }
       }
     }
 

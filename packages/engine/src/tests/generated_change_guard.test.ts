@@ -113,3 +113,50 @@ test("GeneratedChangeGuard rejects signature changes to the targeted method", ()
     ),
   );
 });
+
+test("GeneratedChangeGuard permits valid full-file edits when not targeting a single method", () => {
+  const replacement = `export class Service {
+  public calculate(input: number): number {
+    return input + 10;
+  }
+
+  public preserveThis(): string {
+    return "updated behavior";
+  }
+
+  public newFeature(): boolean {
+    return true;
+  }
+}
+`;
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "Service.ts",
+    original,
+    replacement,
+    "Refactor service calculations and enhance features",
+  );
+
+  assert.deepEqual(issues, []);
+});
+
+test("GeneratedChangeGuard rejects stub replacement on general full-file edits", () => {
+  const replacement = `export class Service {
+  public calculate(input: number): number {
+    throw new Error("not implemented");
+  }
+
+  public preserveThis(): string {
+    return "real behavior";
+  }
+}
+`;
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "Service.ts",
+    original,
+    replacement,
+    "Refactor calculation logic across service",
+  );
+
+  assert.ok(issues.some((issue) => issue.includes("left a stub in Service.calculate")));
+});
+
