@@ -373,4 +373,9 @@ export class StreamTapManager {
       this.emitter.on("resume", onResume);
     });
   }
+
+
+  public getTaskBuffer(taskId: string): string {
+      return this.taskBuffers.get(taskId) || "";
+    }
 }
