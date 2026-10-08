@@ -233,9 +233,7 @@ export class GeneratedChangeGuard {
         continue;
       }
       const declaration = statement as ts.Statement & { name?: ts.Identifier };
-      if (declaration.name && ts.isIdentifier(declaration.name)) {
-        named.set(declaration.name.text, statement);
-      }
+      if (declaration.name && ts.isIdentifier(declaration.name)) named.set(declaration.name.text, statement);
     }
     return named;
   }
