@@ -123,7 +123,6 @@ export class StreamTapManager {
     this.emitter.emit("token", event);
     this.emitter.emit(`token:${taskId}`, event);
 
-    // Run token through the task's demuxer
     let demuxer = this.taskDemuxers.get(taskId);
     if (!demuxer) {
       demuxer = new ReasoningStreamDemuxer();
