@@ -55,23 +55,19 @@ describe('TaskInspectorComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.task-title')?.textContent).toContain('Implement AST Scrubbing Taps');
 
-    // Verify sub-stage tab buttons are rendered
     const tabButtons = compiled.querySelectorAll('.stream-tab-btn');
     expect(tabButtons.length).toBe(5);
 
-    // Switch to testing tab
     fixture.componentInstance.activeStreamChannel.set('testing');
     fixture.detectChanges();
     const testContent = compiled.querySelector('.test-content');
     expect(testContent?.textContent).toContain('PASS dist/tests/sample.test.js');
 
-    // Switch to AST scrubbing tab
     fixture.componentInstance.activeStreamChannel.set('ast');
     fixture.detectChanges();
     const astContent = compiled.querySelector('.ast-content');
     expect(astContent?.textContent).toContain('CompilerDiagnosticAutoRepair');
 
-    // Switch to PR review tab
     fixture.componentInstance.activeStreamChannel.set('review');
     fixture.detectChanges();
     const reviewContent = compiled.querySelector('.review-content');
@@ -110,7 +106,6 @@ describe('TaskInspectorComponent', () => {
     expect(badge?.classList.contains('badge-ingesting')).toBe(true);
     expect(badge?.textContent).toContain('Ingesting Prompt');
 
-    // Transition to stalled state
     store.generationHeartbeat.set({
       taskId: 'task-watchdog-1',
       modelId: 'qwen2.5-coder:7b',
