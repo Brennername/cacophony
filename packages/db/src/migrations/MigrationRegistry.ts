@@ -15,12 +15,6 @@ import { migration013 } from "./013_reasoning_transcripts.js";
 import { migration014 } from "./014_model_profiles.js";
 import { migration015 } from "./015_arena_epochs.js";
 
-/**
- * MigrationRegistry
- *
- * Central registry holding all registered database migrations in chronological sequence.
- * Decouples consumers (daemon, tests, CLI) from individual migration files.
- */
 export class MigrationRegistry {
   private static readonly migrations: Migration[] = [
     migration001,
@@ -40,16 +34,10 @@ export class MigrationRegistry {
     migration015
   ];
 
-  /**
-   * Returns all registered migrations in ascending execution order.
-   */
   public static getAllMigrations(): readonly Migration[] {
     return [...MigrationRegistry.migrations];
   }
 
-  /**
-   * Registers an additional migration into the registry.
-   */
   public static register(migration: Migration): void {
     if (MigrationRegistry.migrations.some((m) => m.id === migration.id)) {
       return;
