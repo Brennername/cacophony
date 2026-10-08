@@ -128,8 +128,7 @@ export class ArenaStateStore {
   public readonly sclkAvgMhz = computed(() => {
     const history = this.sclkHistory();
     if (history.length === 0) return 0;
-    const sum = history.reduce((acc, v) => acc + v, 0);
-    return Math.round(sum / history.length);
+    return history.reduce((acc, val) => acc + val, 0) / history.length;
   });
 
   public readonly sclkPeakMhz = computed(() => {
@@ -664,4 +663,20 @@ export class ArenaStateStore {
   public clearSelectedTask(): void {
     this.selectedTask.set(null);
   }
+
+
+  public readonly sclkMaxMhz = computed(() => {
+      const history = this.sclkHistory();
+      if (history.length === 0) return 0;
+      return Math.max(...history);
+    });
+
+  public readonly smoothedTokenVelocity = signal<number>(0);
+
+  private alpha = 0.1;
+
+  private updateSmoothedTokenVelocity(instant: number): void {
+        const smoothed = this.alpha * instant + (1 - this.alpha) * this.smoothedTokenVelocity();
+        this.smoothedTokenVelocity.set(smoothed);
+      }
 }
