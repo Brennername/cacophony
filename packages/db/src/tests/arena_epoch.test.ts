@@ -28,7 +28,7 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
   });
 
   test("should record runs, evict on consecutive failures, and resetAllStats cleanly", async () => {
-    // Record 3 consecutive failures to trigger EJECTED status
+
     await healthRepo.recordRun("test-model-1", "ollama", false, 1500, 5.0);
     await healthRepo.recordRun("test-model-1", "ollama", false, 1600, 4.8);
     const profile = await healthRepo.recordRun("test-model-1", "ollama", false, 1400, 5.2);
@@ -36,7 +36,6 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
     assert.equal(profile.consecutiveFailures, 3);
     assert.equal(profile.status, "EJECTED");
 
-    // Clean slate reset
     await healthRepo.resetAllStats();
 
     const resetProfile = await healthRepo.getProfile("test-model-1");
@@ -47,7 +46,7 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
   });
 
   test("should advance to Epoch 2, snapshot history, and un-eject models", async () => {
-    // Create dirty model runs in Epoch 1
+
     await healthRepo.recordRun("dirty-model-a", "ollama", true, 2000, 8.0);
     await healthRepo.recordRun("dirty-model-a", "ollama", false, 2500, 7.5);
     await healthRepo.recordRun("dirty-model-a", "ollama", false, 2400, 7.2);
@@ -57,7 +56,6 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
     assert.equal(initial.status, "EJECTED");
     assert.equal(initial.totalTasks, 4);
 
-    // Advance to Epoch 2
     const epoch2 = await healthRepo.advanceEpoch(
       "Epoch 2: Post-Bootstrap Mitigation",
       "Cleared failure cascade from PR #74 and restored healthy arena baseline",
@@ -68,13 +66,11 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
     assert.equal(epoch2.isActive, true);
     assert.equal(epoch2.name, "Epoch 2: Post-Bootstrap Mitigation");
 
-    // Active model metrics must be completely clean and ACTIVE
     const newProfile = await healthRepo.getProfile("dirty-model-a");
     assert.equal(newProfile.totalTasks, 0);
     assert.equal(newProfile.consecutiveFailures, 0);
     assert.equal(newProfile.status, "ACTIVE");
 
-    // Historical snapshot of Epoch 1 must be preserved
     const epochs = await healthRepo.listEpochs();
     assert.equal(epochs.length, 2);
     assert.equal(epochs[0]?.isActive, false);
