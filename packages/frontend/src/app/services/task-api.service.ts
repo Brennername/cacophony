@@ -11,10 +11,6 @@ export interface TaskDto {
   focusFiles?: string[] | null;
 }
 
-/**
- * Reactive client service communicating with backend REST endpoints:
- * GET /api/tasks, POST /api/tasks, GET /api/tasks/:id
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -53,6 +49,60 @@ export class TaskApiService {
       const msg = err instanceof Error ? err.message : String(err);
       this.error.set(msg);
       return null;
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  public async getTask(taskId: string): Promise<TaskDto | null> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch task`);
+      return await res.json() as TaskDto;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      return null;
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  public async updateTask(taskId: string, dto: Partial<TaskDto>): Promise<TaskDto | null> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dto)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to update task`);
+      return await res.json() as TaskDto;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      return null;
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  public async deleteTask(taskId: string): Promise<boolean> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to delete task`);
+      return res.status === 204;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      return false;
     } finally {
       this.loading.set(false);
     }
