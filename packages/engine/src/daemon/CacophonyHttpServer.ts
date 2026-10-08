@@ -24,7 +24,7 @@ export class CacophonyHttpServer {
   private readonly daemon: CacophonyDaemon;
   private readonly config: UnifiedServerConfig;
   private server: http.Server | null = null;
-  private readonly sseClients: Set<http.ServerResponse> = new Set();
+  private sseClients: Set<http.ServerResponse> = new Set();
   private sseInterval: NodeJS.Timeout | null = null;
   private untapListener: (() => void) | null = null;
   private untapStageListener: (() => void) | null = null;
