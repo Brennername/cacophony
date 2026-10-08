@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/**
- * Valid execution states for an arena task lifecycle.
- */
 export const TaskStatusSchema = z.enum([
   "PENDING",
   "SCHEDULED",
@@ -16,15 +13,9 @@ export const TaskStatusSchema = z.enum([
 ]);
 export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 
-/**
- * Priority tiers for queue ordering and dispatch scheduling.
- */
 export const TaskPrioritySchema = z.enum(["P0", "P1", "P2"]);
 export type TaskPriority = z.infer<typeof TaskPrioritySchema>;
 
-/**
- * Specialized roles fulfilling discrete phases of task execution.
- */
 export const AgentRoleSchema = z.enum([
   "implementer",
   "reviewer",
@@ -38,11 +29,6 @@ export const AgentRoleSchema = z.enum([
 ]);
 export type AgentRole = z.infer<typeof AgentRoleSchema>;
 
-/**
- * Granular stages tracked within a single task's pipeline execution:
- * 1/7 Planning, 2/7 Context Assembly, 3/7 Generation, 4/7 Scrubbing,
- * 5/7 Test Verification, 6/7 Remediation, 7/7 PR Review.
- */
 export const StageNameSchema = z.enum([
   "planning",
   "context_assembly",
@@ -57,9 +43,6 @@ export type StageName = z.infer<typeof StageNameSchema>;
 export const StageStatusSchema = z.enum(["RUNNING", "SUCCESS", "FAILURE"]);
 export type StageStatus = z.infer<typeof StageStatusSchema>;
 
-/**
- * Core task database entity representing an autonomous unit of work.
- */
 export interface TaskRecord {
   readonly id: string;
   readonly title: string;
@@ -78,34 +61,18 @@ export interface TaskRecord {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly completedAt: string | null;
-  /**
-   * Total wall-clock execution time in milliseconds for this task run.
-   * Populated by the scheduler upon task finalization.
-   */
+
   readonly durationMs?: number;
-  /**
-   * Average inference velocity measured during the generation stage (tokens per second).
-   * Used to compare model efficiency in history and leaderboard views.
-   */
+
   readonly tokensPerSec?: number;
-  /**
-   * Active decoupled sub-stage for stage-decomposed execution.
-   */
+
   readonly currentStage?: StageName | undefined;
-  /**
-   * State of the current decoupled sub-stage.
-   */
+
   readonly stageState?: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | undefined;
-  /**
-   * Ephemeral artifacts passed between asynchronous stage boundaries.
-   */
+
   readonly stageArtifacts?: Record<string, any> | undefined;
 }
 
-
-/**
- * Detailed step execution log and telemetry within an active task run.
- */
 export interface TaskStageRecord {
   readonly id: number;
   readonly taskId: string;
@@ -122,9 +89,6 @@ export interface TaskStageRecord {
   readonly thinkingDurationMs?: number | undefined;
 }
 
-/**
- * Input DTO for enqueuing a new task into the arena.
- */
 export const EnqueueTaskDtoSchema = z.object({
   title: z.string().min(1).max(255),
   prompt: z.string().min(1),
@@ -138,4 +102,3 @@ export const EnqueueTaskDtoSchema = z.object({
   disabledScrubbers: z.array(z.string()).optional()
 });
 export type EnqueueTaskDto = z.infer<typeof EnqueueTaskDtoSchema>;
-
