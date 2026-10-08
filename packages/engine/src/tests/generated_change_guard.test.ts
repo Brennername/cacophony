@@ -185,4 +185,29 @@ test("T93.3.2: GeneratedChangeGuard rejects replacements containing residual has
   );
 });
 
+test("GeneratedChangeGuard permits legitimate comments and docstrings mentioning existing code or using ellipsis", () => {
+  const replacement = `export class Service {
+  /**
+   * Helper method that extends the existing implementation with custom parameters...
+   */
+  public calculate(input: number): number {
+    // Preserving calculation logic while applying new offset...
+    return input + 5;
+  }
+
+  public preserveThis(): string {
+    return "real behavior";
+  }
+}
+`;
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "Service.ts",
+    original,
+    replacement,
+    "Refactor calculation logic with documentation",
+  );
+
+  assert.deepEqual(issues, []);
+});
+
 

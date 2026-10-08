@@ -213,5 +213,42 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(!result.repairedCode.includes("const beforeAll ="));
     assert.ok(result.repairedCode.includes("beforeEach"));
   });
+
+  it("repairs TS2304 Jest runner missing by injecting compatibility shim with .mock property", () => {
+    const source = `describe('Suite', () => { it('test', () => { const mock = jest.fn(); expect(mock.mock.calls.length).toBe(0); }); });`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2304",
+      "Cannot find name 'jest'."
+    )]);
+
+    assert.ok(result.repairedCode.includes("const jest ="));
+    assert.ok(result.repairedCode.includes("calls: [] as any[][]"));
+    assert.ok(result.repairedCode.includes("mockFn.mock ="));
+  });
+
+  it("repairs TS2305 with nested quotes and provides callable fallback stub", () => {
+    const source = `import { runTui, otherUtil } from '../cli/runTui.js';\nexport function execute() { return runTui(); }`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2305",
+      "Module '\"../cli/runTui.js\"' has no exported member 'runTui'."
+    )]);
+
+    assert.ok(result.repairedCode.includes("import { otherUtil } from '../cli/runTui.js';"));
+    assert.ok(result.repairedCode.includes("interface runTui"));
+    assert.ok(result.repairedCode.includes("const runTui: any ="));
+    assert.ok(!result.repairedCode.includes("import { runTui, otherUtil }"));
+  });
+
+  it("repairs TS2339 property not found by casting target to any", () => {
+    const source = `function check(myMock: Function) {\n  const count = myMock.mock.calls.length;\n  return count;\n}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2339",
+      "Property 'mock' does not exist on type 'Function'.",
+      2
+    )]);
+
+    assert.ok(result.repairedCode.includes("(myMock as any).mock.calls.length"));
+    assert.ok(result.repairsApplied.some((r) => r.includes("Cast target of '.mock' to 'any'")));
+  });
 });
 

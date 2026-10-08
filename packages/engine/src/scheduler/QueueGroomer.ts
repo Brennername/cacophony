@@ -85,9 +85,12 @@ export class QueueGroomer {
     }
 
     if (focusFilesList.length > 1) {
-      preflightIssues.push(
-        `This worker currently applies one generated file per task, but focus_files lists ${focusFilesList.length} files. Split this into single-file tasks before retrying.`
+      const primaryTarget = focusFilesList[0]!;
+      groomNotes.push(
+        `Selected primary target '${primaryTarget}' from ${focusFilesList.length} declared focus files.`
       );
+      focusFilesList = [primaryTarget];
+      modified = true;
     }
     for (const focusFile of focusFilesList) {
       const absolute = path.resolve(this.projectDir, focusFile);

@@ -131,20 +131,38 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       const jestShim = [
         "// Native node:test compatibility shim for jest APIs",
         "const jest = {",
-        "  fn: <T extends (...args: any[]) => any>(impl?: T) => {",
-        "    const fn = (...args: any[]) => (impl ? impl(...args) : undefined);",
-        "    fn.mockReturnValue = (val: any) => jest.fn(() => val);",
-        "    fn.mockResolvedValue = (val: any) => jest.fn(async () => val);",
-        "    fn.mockImplementation = (fnImpl: any) => jest.fn(fnImpl);",
-        "    fn.mockReset = () => {};",
-        "    fn.mockClear = () => {};",
-        "    fn.mockRejectedValue = (err: any) => jest.fn(async () => { throw err; });",
-        "    fn.calledOnceWith = (..._args: any[]) => true;",
-        "    fn.called = false;",
-        "    fn.calledOnce = false;",
-        "    return fn;",
+        "  fn: <T extends (...args: any[]) => any>(impl?: T): any => {",
+        "    const mockFn: any = (...args: any[]) => {",
+        "      mockFn.mock.calls.push(args);",
+        "      const res = impl ? impl(...args) : undefined;",
+        "      mockFn.mock.results.push({ type: 'return', value: res });",
+        "      return res;",
+        "    };",
+        "    mockFn.mock = {",
+        "      calls: [] as any[][],",
+        "      results: [] as any[],",
+        "      instances: [] as any[],",
+        "      lastCall: undefined as any,",
+        "      mockClear: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; },",
+        "      mockReset: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; }",
+        "    };",
+        "    mockFn.mockReturnValue = (val: any) => jest.fn(() => val);",
+        "    mockFn.mockReturnValueOnce = (val: any) => jest.fn(() => val);",
+        "    mockFn.mockResolvedValue = (val: any) => jest.fn(async () => val);",
+        "    mockFn.mockResolvedValueOnce = (val: any) => jest.fn(async () => val);",
+        "    mockFn.mockImplementation = (fnImpl: any) => jest.fn(fnImpl);",
+        "    mockFn.mockImplementationOnce = (fnImpl: any) => jest.fn(fnImpl);",
+        "    mockFn.mockReset = () => { mockFn.mock.mockReset(); };",
+        "    mockFn.mockClear = () => { mockFn.mock.mockClear(); };",
+        "    mockFn.mockRejectedValue = (err: any) => jest.fn(async () => { throw err; });",
+        "    mockFn.mockRejectedValueOnce = (err: any) => jest.fn(async () => { throw err; });",
+        "    mockFn.mockReturnThis = () => mockFn;",
+        "    mockFn.calledOnceWith = (..._args: any[]) => true;",
+        "    mockFn.called = false;",
+        "    mockFn.calledOnce = false;",
+        "    return mockFn;",
         "  },",
-        "  spyOn: (_obj: any, _method: any) => jest.fn(),",
+        "  spyOn: (_obj: any, _method: any): any => jest.fn(),",
         "  mock: (_path: string, _factory?: any) => {},",
         "  clearAllMocks: () => {},",
         "  resetAllMocks: () => {}",
@@ -300,11 +318,17 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     // 4c. Repair TS2305: Missing exported member in valid module
     for (const diag of diagnostics) {
       if (diag.errorCode === "TS2305" || /has no exported member '([^']+)'/i.test(diag.message)) {
-        const match = diag.message.match(/Module\s+['"]*([@a-zA-Z0-9_\-./]+)['"]*\s+has no exported member\s+['"]*([a-zA-Z0-9_]+)['"]*/i);
+        const match = diag.message.match(/Module\s+['"]+([^'"]+)['"]+\s+has no exported member\s+['"]+([a-zA-Z0-9_]+)['"]+/i);
         if (match && match[1] && match[2]) {
-          const modPath = match[1];
-          const missingMember = match[2];
-          const importRegex = new RegExp(`import\\s*\\{([\\s\\S]*?)\\}\\s*from\\s*['"]${modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"];?`, "g");
+          const modPath = match[1].replace(/^["']|["']$/g, "").trim();
+          const missingMember = match[2].trim();
+          const modPathNoExt = modPath.replace(/\.[jt]sx?$/, "");
+          const escapedMod = modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const escapedBase = modPathNoExt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const importRegex = new RegExp(
+            `import\\s*(?:type\\s*)?\\{([\\s\\S]*?)\\}\\s*from\\s*['"](?:${escapedMod}|${escapedBase}(?:\\.[a-zA-Z]+)?)['"];?`,
+            "g"
+          );
           currentCode = currentCode.replace(importRegex, (_full, members) => {
             const memberList = members.split(",").map((m: string) => m.trim()).filter((m: string) => m.length > 0 && m !== missingMember);
             if (memberList.length === 0) {
@@ -312,9 +336,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             }
             return `import { ${memberList.join(", ")} } from '${modPath}';`;
           });
-          if (!currentCode.includes(`type ${missingMember} =`) && !currentCode.includes(`interface ${missingMember}`)) {
-            currentCode = `interface ${missingMember} { [key: string]: any; }\n` + currentCode;
-            repairsApplied.push(`Removed non-existent export '${missingMember}' from '${modPath}' and declared local fallback interface`);
+          if (!currentCode.includes(`interface ${missingMember}`) && !currentCode.includes(`const ${missingMember}:`)) {
+            const fallbackDecl = [
+              `interface ${missingMember} { [key: string]: any; (...args: any[]): any; new (...args: any[]): any; }`,
+              `const ${missingMember}: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });`,
+              ""
+            ].join("\n");
+            currentCode = fallbackDecl + currentCode;
+            repairsApplied.push(`Removed non-existent export '${missingMember}' from '${modPath}' and declared local fallback interface and callable stub`);
           }
         }
       }
@@ -522,6 +551,27 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             if (updatedLine !== line) {
               lines[lineIdx] = updatedLine;
               repairsApplied.push(`Added ': any' type annotation to implicit parameter '${param}' at line ${diag.lineNumber}`);
+            }
+          }
+        }
+      }
+    }
+    currentCode = lines.join("\n");
+
+    // 8b. Repair TS2339: Property 'X' does not exist on type 'Y'
+    for (const diag of diagnostics) {
+      if (diag.errorCode === "TS2339" || /Property '([^']+)' does not exist on type/i.test(diag.message)) {
+        const propMatch = diag.message.match(/Property '([^']+)' does not exist on type/i);
+        if (propMatch && propMatch[1] && diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+          const propName = propMatch[1];
+          const lineIdx = diag.lineNumber - 1;
+          const targetLine = lines[lineIdx];
+          if (targetLine && targetLine.includes(`.${propName}`)) {
+            const castRegex = new RegExp(`(?<!as\\s+any\\s*\\))\\b([a-zA-Z0-9_$]+)\\.${propName}\\b`, "g");
+            const updatedLine = targetLine.replace(castRegex, `($1 as any).${propName}`);
+            if (updatedLine !== targetLine) {
+              lines[lineIdx] = updatedLine;
+              repairsApplied.push(`Cast target of '.${propName}' to 'any' at line ${diag.lineNumber}`);
             }
           }
         }

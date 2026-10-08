@@ -270,6 +270,31 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       assert.deepEqual(groomed.preflightIssues, []);
     });
 
+    test("should normalize multiple declared focus files to primary target without preflight failure", () => {
+      const task: TaskRecord = {
+        id: "task-groom-multi-focus",
+        title: "T50.1.2b: Multi focus files",
+        prompt: "Refactor pipeline workflows",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: "npm test",
+        focusFiles: "packages/engine/src/scheduler/QueueGroomer.ts packages/engine/src/scheduler/TaskScheduler.ts",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      const groomed = groomer.groom(task);
+      assert.deepEqual(groomed.focusFiles, ["packages/engine/src/scheduler/QueueGroomer.ts"]);
+      assert.deepEqual(groomed.preflightIssues, []);
+      assert.ok(groomed.groomNotes.some((n) => n.includes("Selected primary target 'packages/engine/src/scheduler/QueueGroomer.ts' from 2 declared focus files")));
+    });
+
     test("should clear test command for non-executable markdown files when test suite does not exist", () => {
       const task: TaskRecord = {
         id: "task-groom-md",

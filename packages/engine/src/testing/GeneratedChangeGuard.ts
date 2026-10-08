@@ -148,7 +148,7 @@ export class GeneratedChangeGuard {
     return issues;
   }
 
-  private static readonly placeholderPattern = /\/\/[^\r\n]*(?:previous\s+code\s+goes\s+here|existing\s+(?:code|implementation)|rest\s+of\s+(?:the\s+)?(?:method|class|file|code)|omitted\s+for\s+brevity|unchanged\s+(?:methods?|code)|\.\.\.)[^\r\n]*|\/\*[\s\S]*?(?:previous\s+code|existing\s+(?:code|implementation)|omitted\s+for\s+brevity|\.\.\.)[\s\S]*?\*\/|\bTODO\s*:\s*(?:implement|fill|complete)\b/gi;
+  private static readonly placeholderPattern = /(?:^[ \t]*\/\/[ \t]*(?:\[[ \t]*)?(?:\.\.\.[ \t]*)?(?:previous\s+code\s+goes\s+here|(?:existing\s+(?:code|implementation)|rest\s+of\s+(?:the\s+)?(?:method|class|file|code)|unchanged\s+(?:methods?|code))(?:\s+(?:goes\s+here|remains?(?:\s+(?:the\s+same|unchanged))?|continues(?:\s+here)?|\.\.\.))?|omitted\s+for\s+brevity)(?:[ \t]*\])?[ \t]*(?:\.\.\.)?[ \t]*$)|(?:^[ \t]*\/\/[ \t]*(?:\[[ \t]*)?\.\.\.(?:[ \t]*\])?[ \t]*$)|(?:\/\*[ \t]*(?:\[[ \t]*)?(?:\.\.\.[ \t]*)?(?:previous\s+code\s+goes\s+here|(?:existing\s+(?:code|implementation)|rest\s+of\s+(?:the\s+)?(?:method|class|file|code)|unchanged\s+(?:methods?|code))(?:\s+(?:goes\s+here|remains?(?:\s+(?:the\s+same|unchanged))?|continues(?:\s+here)?|\.\.\.))?|omitted\s+for\s+brevity|\.\.\.)(?:[ \t]*\])?[ \t]*\*\/)|\bTODO\s*:\s*(?:implement|fill|complete)\b/gim;
 
   private static getAddedPlaceholderComments(original: string, replacement: string): string[] {
     const count = (source: string): Map<string, number> => {
