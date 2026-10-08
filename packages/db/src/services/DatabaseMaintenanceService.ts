@@ -22,7 +22,7 @@ export interface DatabaseMaintenanceConfig {
   readonly driver: IDatabaseDriver;
   readonly dataDirPath?: string;
   readonly maxStorageThresholdBytes?: number; // Default 500 MB
-  readonly telemetryRetentionDays?: number;   // Default 14 days
+  readonly telemetryRetentionDays?: number;   // Default 30 days
   readonly archiveDirPath?: string;
 }
 
@@ -37,7 +37,7 @@ export class DatabaseMaintenanceService {
     this.driver = config.driver;
     this.dataDirPath = config.dataDirPath ?? "data/cacophony_pglite";
     this.maxStorageThresholdBytes = config.maxStorageThresholdBytes ?? 500 * 1024 * 1024;
-    this.telemetryRetentionDays = config.telemetryRetentionDays ?? 14;
+    this.telemetryRetentionDays = config.telemetryRetentionDays ?? 30;
     this.archiveDirPath = config.archiveDirPath ?? path.join(this.dataDirPath, "archives");
   }
 
