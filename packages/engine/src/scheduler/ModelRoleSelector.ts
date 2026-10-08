@@ -8,14 +8,6 @@ export interface ModelRoleMappingConfig {
   readonly defaultModel?: string | undefined;
 }
 
-/**
- * ModelRoleSelector
- *
- * Dispatches tasks to models specialized by role.
- * In particular, assigns chore_runner tasks (documentation appends, README updates,
- * changelog drafting) to ultra-lightweight micro-models (smollm2:135m, qwen2.5-coder:1.5b/3b)
- * to run during cooldown intervals with zero VRAM pressure.
- */
 export class ModelRoleSelector {
   private readonly choreModels: readonly string[];
   private readonly architectModels: readonly string[];
@@ -48,9 +40,6 @@ export class ModelRoleSelector {
     this.defaultModel = config.defaultModel ?? "qwen2.5-coder:7b";
   }
 
-  /**
-   * Selects the optimal model for a given role from the available fleet.
-   */
   public selectModelForRole(role: AgentRole, availableModels: readonly string[]): string {
     if (availableModels.length === 0) {
       return this.defaultModel;
@@ -78,7 +67,6 @@ export class ModelRoleSelector {
         break;
     }
 
-    // Pick first matching model present in availableModels
     for (const pref of preferredList) {
       const match = availableModels.find(
         (m) => m === pref || m.startsWith(`${pref}:`) || pref.startsWith(m)
@@ -86,7 +74,6 @@ export class ModelRoleSelector {
       if (match) return match;
     }
 
-    // For chore_runner, if none of the specific micro-models are installed, pick the smallest available model
     if (role === "chore_runner") {
       const smallest = availableModels.find((m) =>
         m.includes("1.5b") || m.includes("3b") || m.includes("135m") || m.includes("0.5b")
@@ -94,14 +81,9 @@ export class ModelRoleSelector {
       if (smallest) return smallest;
     }
 
-    // Fall back to first available model or default
     return availableModels[0] || this.defaultModel;
   }
 
-  /**
-   * Checks whether a role corresponds to low-overhead micro-tasks that can run
-   * without evicting resident primary models.
-   */
   public isMicroTaskRole(role: AgentRole): boolean {
     return role === "chore_runner" || role === "doc_writer";
   }
