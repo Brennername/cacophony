@@ -1578,53 +1578,53 @@ export class CacophonyHttpServer {
 
     // 4f3. REST API: POST /api/promotion/release - Trigger Quarantine Gauntlet and Production Promotion
     if (url.pathname === "/api/promotion/release" && req.method === "POST") {
-      let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
-      req.on("end", async () => {
-        try {
-          const payload = JSON.parse(body || "{}");
-          const { GitHubPlatformProvider } = await import("../gitea/GitHubPlatformProvider.js");
-          const { GitHubPromotionPipeline } = await import("../gitea/GitHubPromotionPipeline.js");
+  let body = "";
+  req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+  req.on("end", async () => {
+    try {
+      const payload = JSON.parse(body || "{}");
+      const { GitHubPlatformProvider } = await import("../gitea/GitHubPlatformProvider.js");
+      const { GitHubPromotionPipeline } = await import("../gitea/GitHubPromotionPipeline.js");
 
-          const token = process.env.GITHUB_TOKEN || "mock-token";
-          const ghProvider = new GitHubPlatformProvider({ token });
-          const pipeline = new GitHubPromotionPipeline({
-            gitPlatformProvider: ghProvider,
-            repoOwner: payload.owner || process.env.GITHUB_OWNER || "Brennername",
-            repoName: payload.repo || process.env.GITHUB_REPO || "cacophony",
-            baseBranch: payload.baseBranch || "main",
-            gitRemote: payload.gitRemote || "origin"
-          });
-
-          const releaseBranch = payload.releaseBranch || `release/v${Date.now()}`;
-          const milestoneTitle = payload.milestoneTitle || `Milestone Release ${new Date().toISOString().slice(0, 10)}`;
-          const changelog = payload.changelog || `## Cacophony Automated Release\n- Milestone: ${milestoneTitle}`;
-
-          const result = await pipeline.promoteMilestoneToGitHub({
-            releaseBranch,
-            milestoneTitle,
-            changelog,
-            workspacePath: payload.workspacePath || process.cwd(),
-            dryRun: Boolean(payload.dryRun),
-            baseBranch: payload.baseBranch,
-            owner: payload.owner,
-            repo: payload.repo,
-            gitRemote: payload.gitRemote,
-            diff: payload.diff,
-            filePaths: payload.filePaths
-          });
-
-          const statusCode = result.success ? 200 : (result.quarantinePassed ? 502 : 422);
-          res.writeHead(statusCode, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(result));
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
-        }
+      const token = process.env.GITHUB_TOKEN || "mock-token";
+      const ghProvider = new GitHubPlatformProvider({ token });
+      const pipeline = new GitHubPromotionPipeline({
+        gitPlatformProvider: ghProvider,
+        repoOwner: payload.owner || process.env.GITHUB_OWNER || "Brennername",
+        repoName: payload.repo || process.env.GITHUB_REPO || "cacophony",
+        baseBranch: payload.baseBranch || "main",
+        gitRemote: payload.gitRemote || "origin"
       });
-      return;
+
+      const releaseBranch = payload.releaseBranch || `release/v${Date.now()}`;
+      const milestoneTitle = payload.milestoneTitle || `Milestone Release ${new Date().toISOString().slice(0, 10)}`;
+      const changelog = payload.changelog || `## Cacophony Automated Release\n- Milestone: ${milestoneTitle}`;
+
+      const result = await pipeline.promoteMilestoneToGitHub({
+        releaseBranch,
+        milestoneTitle,
+        changelog,
+        workspacePath: payload.workspacePath || process.cwd(),
+        dryRun: Boolean(payload.dryRun),
+        baseBranch: payload.baseBranch,
+        owner: payload.owner,
+        repo: payload.repo,
+        gitRemote: payload.gitRemote,
+        diff: payload.diff,
+        filePaths: payload.filePaths
+      });
+
+      const statusCode = result.success ? 200 : (result.quarantinePassed ? 502 : 422);
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(result));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: message }));
     }
+  });
+  return;
+}
 
     // 4g. REST API: LSP Diagnostics
     if (url.pathname === "/api/diagnostics" && req.method === "GET") {
