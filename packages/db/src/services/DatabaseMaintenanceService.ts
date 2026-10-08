@@ -1,10 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { gzipSync } from "node:zlib";
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
 
-/**
- * Storage metrics for database maintenance and capacity planning.
- */
 export interface StorageMetrics {
   readonly dataDirPath: string;
   readonly totalSizeBytes: number;
@@ -14,18 +12,12 @@ export interface StorageMetrics {
   readonly thresholdBytes: number;
 }
 
-/**
- * Archival result for pruned telemetry snapshots.
- */
 export interface TelemetryPartitionArchiveResult {
   readonly archivedCount: number;
   readonly cutoffIsoString: string;
   readonly archiveFilePath?: string;
 }
 
-/**
- * Options for configuring DatabaseMaintenanceService.
- */
 export interface DatabaseMaintenanceConfig {
   readonly driver: IDatabaseDriver;
   readonly dataDirPath?: string;
@@ -34,12 +26,6 @@ export interface DatabaseMaintenanceConfig {
   readonly archiveDirPath?: string;
 }
 
-/**
- * DatabaseMaintenanceService
- *
- * Provides periodic WAL compaction, VACUUM ANALYZE maintenance, disk storage
- * directory size monitoring, and automated telemetry table partitioning/archival.
- */
 export class DatabaseMaintenanceService {
   private readonly driver: IDatabaseDriver;
   private readonly dataDirPath: string;
@@ -55,19 +41,15 @@ export class DatabaseMaintenanceService {
     this.archiveDirPath = config.archiveDirPath ?? path.join(this.dataDirPath, "archives");
   }
 
-  /**
-   * Executes database optimization, VACUUM, and checkpoint compaction.
-   * Uses non-locking execution compatible with active concurrent reader/writer transactions.
-   */
   public async runVacuumAndCompaction(): Promise<{ readonly durationMs: number; readonly dialect: string }> {
     const start = Date.now();
     const dialect = this.driver.getDialect();
 
     if (dialect === "postgres") {
-      // PGlite / PostgreSQL supports standard VACUUM and ANALYZE
+
       await this.driver.execRaw("VACUUM ANALYZE;");
     } else if (dialect === "sqlite") {
-      // In SQLite, run PRAGMA incremental_vacuum or optimize and WAL checkpoint
+
       await this.driver.execRaw("PRAGMA optimize;");
       await this.driver.execRaw("PRAGMA wal_checkpoint(PASSIVE);");
     }
@@ -78,10 +60,6 @@ export class DatabaseMaintenanceService {
     };
   }
 
-  /**
-   * Calculates the storage directory size for the underlying database storage.
-   * If directory does not exist or is in-memory, returns safe zero defaults.
-   */
   public async getStorageMetrics(): Promise<StorageMetrics> {
     const resolvedPath = path.resolve(this.dataDirPath);
 
@@ -112,7 +90,7 @@ export class DatabaseMaintenanceService {
             fileCount++;
           }
         } catch {
-          // Ignore transient file lock issues
+
         }
       }
     };
@@ -132,10 +110,6 @@ export class DatabaseMaintenanceService {
     };
   }
 
-  /**
-   * Partitions / archives telemetry snapshots older than the configured retention period
-   * to a compressed JSON archive file, then purges them from the operational database table.
-   */
   public async partitionAndArchiveOldTelemetry(
     retentionDaysOverride?: number
   ): Promise<TelemetryPartitionArchiveResult> {
@@ -143,7 +117,6 @@ export class DatabaseMaintenanceService {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const cutoffIso = cutoffDate.toISOString();
 
-    // Query older snapshots
     const oldSnapshots = await this.driver.query<{
       timestamp: string;
       gpu_busy_pct: number;
@@ -161,14 +134,15 @@ export class DatabaseMaintenanceService {
       };
     }
 
-    // Write to archive file in JSON format
     fs.mkdirSync(this.archiveDirPath, { recursive: true });
     const archiveFilename = `telemetry-archive-${cutoffDate.toISOString().replace(/[:.]/g, "-")}.json`;
     const archivePath = path.join(this.archiveDirPath, archiveFilename);
 
-    fs.writeFileSync(archivePath, JSON.stringify(oldSnapshots, null, 2), "utf-8");
+    const jsonContent = JSON.stringify(oldSnapshots, null, 2);
+    const gzippedContent = gzipSync(jsonContent);
 
-    // Purge archived records from operational table
+    fs.writeFileSync(archivePath, gzippedContent, "binary");
+
     await this.driver.execute("DELETE FROM telemetry_snapshots WHERE timestamp < $1", [cutoffIso]);
 
     return {
