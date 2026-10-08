@@ -1,13 +1,6 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
 import type { Migration } from "./MigrationRunner.js";
 
-/**
- * Migration 015: Arena Epochs & Model Health Epoch History
- *
- * Implements statistical epoching for self-bootstrapping autonomous runs.
- * Separates historical dirty runs caused by bootstrap regressions from active telemetry.
- * Captures historical performance per epoch and allows clean-slate model resets.
- */
 export const migration015: Migration = {
   id: "015_arena_epochs",
   name: "Create arena_epochs and model_health_epoch_history tables for statistical epoching",
@@ -54,7 +47,6 @@ export const migration015: Migration = {
         CREATE INDEX IF NOT EXISTS idx_model_epoch_history_epoch ON model_health_epoch_history(epoch_id)
       `);
 
-      // Seed initial Epoch 1 if empty
       await driver.execute(`
         INSERT INTO arena_epochs (name, reason, started_at, is_active, notes)
         SELECT 'Epoch 1: Arena Bootstrap & Early Operations', 'Initial self-hosting bootstrap epoch', NOW(), TRUE, 'Pre-failure cascade bootstrap trials'
