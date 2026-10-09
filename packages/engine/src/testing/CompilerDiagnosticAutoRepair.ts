@@ -132,9 +132,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         "// Native node:test compatibility shim for jest APIs",
         "const jest = {",
         "  fn: <T extends (...args: any[]) => any>(impl?: T): any => {",
+        "    let currentImpl = impl;",
+        "    const onceQueue: Array<(...args: any[]) => any> = [];",
         "    const mockFn: any = (...args: any[]) => {",
         "      mockFn.mock.calls.push(args);",
-        "      const res = impl ? impl(...args) : undefined;",
+        "      mockFn.called = true;",
+        "      mockFn.calledOnce = mockFn.mock.calls.length === 1;",
+        "      const effectiveImpl = onceQueue.shift() ?? currentImpl;",
+        "      const res = effectiveImpl ? effectiveImpl(...args) : undefined;",
         "      mockFn.mock.results.push({ type: 'return', value: res });",
         "      return res;",
         "    };",
@@ -143,26 +148,31 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         "      results: [] as any[],",
         "      instances: [] as any[],",
         "      lastCall: undefined as any,",
-        "      mockClear: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; },",
-        "      mockReset: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; }",
+        "      mockClear: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; mockFn.called = false; mockFn.calledOnce = false; },",
+        "      mockReset: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; currentImpl = undefined; onceQueue.length = 0; mockFn.called = false; mockFn.calledOnce = false; }",
         "    };",
-        "    mockFn.mockReturnValue = (val: any) => jest.fn(() => val);",
-        "    mockFn.mockReturnValueOnce = (val: any) => jest.fn(() => val);",
-        "    mockFn.mockResolvedValue = (val: any) => jest.fn(async () => val);",
-        "    mockFn.mockResolvedValueOnce = (val: any) => jest.fn(async () => val);",
-        "    mockFn.mockImplementation = (fnImpl: any) => jest.fn(fnImpl);",
-        "    mockFn.mockImplementationOnce = (fnImpl: any) => jest.fn(fnImpl);",
-        "    mockFn.mockReset = () => { mockFn.mock.mockReset(); };",
-        "    mockFn.mockClear = () => { mockFn.mock.mockClear(); };",
-        "    mockFn.mockRejectedValue = (err: any) => jest.fn(async () => { throw err; });",
-        "    mockFn.mockRejectedValueOnce = (err: any) => jest.fn(async () => { throw err; });",
-        "    mockFn.mockReturnThis = () => mockFn;",
-        "    mockFn.calledOnceWith = (..._args: any[]) => true;",
+        "    mockFn.mockReturnValue = (val: any) => { currentImpl = () => val; return mockFn; };",
+        "    mockFn.mockReturnValueOnce = (val: any) => { onceQueue.push(() => val); return mockFn; };",
+        "    mockFn.mockResolvedValue = (val: any) => { currentImpl = async () => val; return mockFn; };",
+        "    mockFn.mockResolvedValueOnce = (val: any) => { onceQueue.push(async () => val); return mockFn; };",
+        "    mockFn.mockImplementation = (fnImpl: any) => { currentImpl = fnImpl; return mockFn; };",
+        "    mockFn.mockImplementationOnce = (fnImpl: any) => { onceQueue.push(fnImpl); return mockFn; };",
+        "    mockFn.mockReset = () => { mockFn.mock.mockReset(); return mockFn; };",
+        "    mockFn.mockClear = () => { mockFn.mock.mockClear(); return mockFn; };",
+        "    mockFn.mockRejectedValue = (err: any) => { currentImpl = async () => { throw err; }; return mockFn; };",
+        "    mockFn.mockRejectedValueOnce = (err: any) => { onceQueue.push(async () => { throw err; }); return mockFn; };",
+        "    mockFn.mockReturnThis = () => { currentImpl = function(this: any) { return this; }; return mockFn; };",
+        "    mockFn.calledOnceWith = (...args: any[]) => mockFn.mock.calls.length === 1 && JSON.stringify(mockFn.mock.calls[0]) === JSON.stringify(args);",
         "    mockFn.called = false;",
         "    mockFn.calledOnce = false;",
         "    return mockFn;",
         "  },",
-        "  spyOn: (_obj: any, _method: any): any => jest.fn(),",
+        "  spyOn: (obj: any, method: any): any => {",
+        "    const original = obj ? obj[method] : undefined;",
+        "    const fn = jest.fn(original);",
+        "    if (obj) obj[method] = fn;",
+        "    return fn;",
+        "  },",
         "  mock: (_path: string, _factory?: any) => {},",
         "  clearAllMocks: () => {},",
         "  resetAllMocks: () => {}",
@@ -189,8 +199,26 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         "  toBeDefined: () => _assert.notStrictEqual(actual, undefined),",
         "  toBeUndefined: () => _assert.strictEqual(actual, undefined),",
         "  toBeNull: () => _assert.strictEqual(actual, null),",
+        "  toBeGreaterThan: (expected: any) => _assert.ok(actual > expected, `Expected ${actual} > ${expected}`),",
+        "  toBeGreaterThanOrEqual: (expected: any) => _assert.ok(actual >= expected, `Expected ${actual} >= ${expected}`),",
+        "  toBeLessThan: (expected: any) => _assert.ok(actual < expected, `Expected ${actual} < ${expected}`),",
+        "  toBeLessThanOrEqual: (expected: any) => _assert.ok(actual <= expected, `Expected ${actual} <= ${expected}`),",
+        "  toHaveLength: (expected: any) => _assert.strictEqual(actual?.length, expected),",
         "  toContain: (item: any) => _assert.ok(actual && (actual as any).includes ? (actual as any).includes(item) : false),",
-        "  toThrow: () => _assert.throws(() => { if (typeof actual === 'function') actual(); })",
+        "  toThrow: () => _assert.throws(() => { if (typeof actual === 'function') actual(); }),",
+        "  toHaveBeenCalled: () => _assert.ok(actual?.called || actual?.mock?.calls?.length > 0),",
+        "  toHaveBeenCalledTimes: (count: number) => _assert.strictEqual(actual?.mock?.calls?.length, count),",
+        "  toHaveBeenCalledWith: (...args: any[]) => _assert.deepStrictEqual(actual?.mock?.calls?.[actual?.mock?.calls?.length - 1], args),",
+        "  not: {",
+        "    toBe: (expected: any) => _assert.notStrictEqual(actual, expected),",
+        "    toEqual: (expected: any) => _assert.notDeepStrictEqual(actual, expected),",
+        "    toBeTruthy: () => _assert.ok(!actual),",
+        "    toBeFalsy: () => _assert.ok(actual),",
+        "    toBeDefined: () => _assert.strictEqual(actual, undefined),",
+        "    toBeUndefined: () => _assert.notStrictEqual(actual, undefined),",
+        "    toBeNull: () => _assert.notStrictEqual(actual, null),",
+        "    toContain: (item: any) => _assert.ok(!(actual && (actual as any).includes ? (actual as any).includes(item) : false))",
+        "  }",
         "});",
         ""
       ].join("\n");
@@ -198,39 +226,51 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       repairsApplied.push("Injected native node:assert compatibility shim for 'expect'");
     }
 
-    // 2b. Repair TS2304: Missing 'beforeEach', 'afterEach', 'beforeAll', 'afterAll'
-    const hasHookMissing = diagnostics.some(
-      (d) => d.errorCode === "TS2304" && /Cannot find name '(?:beforeEach|afterEach|beforeAll|afterAll)'/i.test(d.message)
-    );
-    if (hasHookMissing) {
+    // 2b. Repair TS2304: Missing node:test runner functions and lifecycle hooks
+    const testFunctions = [
+      { name: "describe", exportName: "describe" },
+      { name: "it", exportName: "it" },
+      { name: "test", exportName: "test" },
+      { name: "beforeEach", exportName: "beforeEach" },
+      { name: "afterEach", exportName: "afterEach" },
+      { name: "before", exportName: "before" },
+      { name: "after", exportName: "after" },
+      { name: "beforeAll", exportName: "before as beforeAll" },
+      { name: "afterAll", exportName: "after as afterAll" }
+    ];
+
+    const missingTestFns: string[] = [];
+    for (const item of testFunctions) {
+      const hasMissing = diagnostics.some(
+        (d) => d.errorCode === "TS2304" && new RegExp(`Cannot find name '${item.name}'`, "i").test(d.message)
+      );
+      if (hasMissing) {
+        missingTestFns.push(item.exportName);
+      }
+    }
+
+    if (missingTestFns.length > 0) {
       if (!currentCode.includes("from 'node:test'") && !currentCode.includes('from "node:test"') && !prependCode.includes("from 'node:test'")) {
-        const hookShim = [
-          "// Native node:test lifecycle hooks shim",
-          "import { describe, it, test, beforeEach, afterEach, before as beforeAll, after as afterAll } from 'node:test';",
-          ""
-        ].join("\n");
+        const standardImports = ["describe", "it", "test", "beforeEach", "afterEach", "before", "after"];
+        if (missingTestFns.includes("before as beforeAll")) standardImports.push("before as beforeAll");
+        if (missingTestFns.includes("after as afterAll")) standardImports.push("after as afterAll");
+        const hookShim = `import { ${standardImports.join(", ")} } from 'node:test';\n`;
         prependCode += hookShim;
-        repairsApplied.push("Injected native node:test compatibility shims for test lifecycle hooks");
+        repairsApplied.push(`Injected 'node:test' runner function imports`);
       } else {
-        const hooksToAdd: string[] = [];
-        if (diagnostics.some((d) => d.errorCode === "TS2304" && /Cannot find name 'beforeEach'/i.test(d.message)) && !currentCode.includes("beforeEach")) {
-          hooksToAdd.push("beforeEach");
-        }
-        if (diagnostics.some((d) => d.errorCode === "TS2304" && /Cannot find name 'afterEach'/i.test(d.message)) && !currentCode.includes("afterEach")) {
-          hooksToAdd.push("afterEach");
-        }
-        if (diagnostics.some((d) => d.errorCode === "TS2304" && /Cannot find name 'beforeAll'/i.test(d.message)) && !currentCode.includes("beforeAll")) {
-          hooksToAdd.push("before as beforeAll");
-        }
-        if (diagnostics.some((d) => d.errorCode === "TS2304" && /Cannot find name 'afterAll'/i.test(d.message)) && !currentCode.includes("afterAll")) {
-          hooksToAdd.push("after as afterAll");
-        }
-        if (hooksToAdd.length > 0) {
-          currentCode = currentCode.replace(
-            /(import\s*\{)([^}]+)(\}\s*from\s*['"]node:test['"])/,
-            (_m, p1, p2, p3) => `${p1} ${p2.trim()}, ${hooksToAdd.join(", ")} ${p3}`
-          );
-          repairsApplied.push(`Added missing lifecycle hooks to 'node:test' import: ${hooksToAdd.join(", ")}`);
+        const importRegex = /(import\s*\{)([^}]+)(\}\s*from\s*['"]node:test['"])/;
+        if (importRegex.test(currentCode)) {
+          currentCode = currentCode.replace(importRegex, (_m, p1, p2, p3) => {
+            const existing = p2.split(",").map((s: string) => s.trim()).filter(Boolean);
+            for (const fn of missingTestFns) {
+              const baseName = fn.split(" as ")[0]!.trim();
+              if (!existing.some((e: string) => e === fn || e.startsWith(baseName))) {
+                existing.push(fn);
+              }
+            }
+            return `${p1} ${existing.join(", ")} ${p3}`;
+          });
+          repairsApplied.push(`Added missing test runner functions to 'node:test' import: ${missingTestFns.join(", ")}`);
         }
       }
     }
@@ -303,13 +343,15 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 4b. Repair TS2724: Typos in exported members ('Did you mean 'Y'?')
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2724" || /Did you mean '([^']+)'\?/i.test(diag.message)) {
-        const typoMatch = diag.message.match(/(?:has no exported member named|does not exist on type)\s+'([^']+)'.*?Did you mean '([^']+)'\?/i);
+      if (diag.errorCode === "TS2724" || diag.errorCode === "TS2552" || /Did you mean '([^']+)'\?/i.test(diag.message)) {
+        const typoMatch = diag.message.match(/(?:has no exported member named|does not exist on type|Cannot find name)\s+'([^']+)'.*?Did you mean '([^']+)'\?/i);
         if (typoMatch && typoMatch[1] && typoMatch[2]) {
           const wrongName = typoMatch[1];
           const rightName = typoMatch[2];
-          const wrongRegex = new RegExp(`\\b${wrongName}\\b`, "g");
-          currentCode = currentCode.replace(wrongRegex, rightName);
+          if (wrongName.toLowerCase() === "assert" && rightName.toLowerCase() === "assert") {
+            continue;
+          }
+          currentCode = this.replaceIdentifierSafely(currentCode, wrongName, rightName);
           repairsApplied.push(`Replaced typo member '${wrongName}' with suggested '${rightName}'`);
         }
       }
@@ -317,8 +359,8 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 4c. Repair TS2305: Missing exported member in valid module
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2305" || /has no exported member '([^']+)'/i.test(diag.message)) {
-        const match = diag.message.match(/Module\s+['"]+([^'"]+)['"]+\s+has no exported member\s+['"]+([a-zA-Z0-9_]+)['"]+/i);
+      if (diag.errorCode === "TS2305" || /has no exported member/i.test(diag.message)) {
+        const match = diag.message.match(/Module\s+['"]+([^'"]+)['"]+\s+has no exported member(?:\s+named)?\s+['"]+([a-zA-Z0-9_]+)['"]+/i);
         if (match && match[1] && match[2]) {
           const modPath = match[1].replace(/^["']|["']$/g, "").trim();
           const missingMember = match[2].trim();
@@ -347,16 +389,6 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           }
         }
       }
-    }
-
-    // 4d. Repair TS2304: Missing node:test test runner functions in test files
-    const hasTestGlobalMissing = diagnostics.some(
-      (d) => d.errorCode === "TS2304" && /Cannot find name '(?:describe|it|beforeEach|afterEach|after|before)'/i.test(d.message)
-    );
-    if (hasTestGlobalMissing && !currentCode.includes("from 'node:test'") && !currentCode.includes('from "node:test"') && !prependCode.includes("from 'node:test'")) {
-      const nodeTestImport = "import { describe, it, test, beforeEach, afterEach, before, after } from 'node:test';\n";
-      currentCode = nodeTestImport + currentCode;
-      repairsApplied.push("Injected 'node:test' runner function imports");
     }
 
     // 4e. Repair TS2304: Missing Angular core symbols in Angular components
@@ -404,6 +436,49 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           if (updated !== currentCode) {
             currentCode = updated;
             repairsApplied.push(`Replaced missing template file '${tplPath}' with inline template`);
+          }
+        }
+      }
+    }
+
+    // 4h. Repair missing Angular stylesheet file
+    for (const diag of diagnostics) {
+      if (
+        /Could not (?:resolve|find) (?:stylesheet file\s+)?'([^']+\.css)'/i.test(diag.message) ||
+        /Cannot find module '([^']+\.css)'/i.test(diag.message) ||
+        /Failed to resolve (?:import )?'([^']+\.css)'/i.test(diag.message)
+      ) {
+        const cssMatch = diag.message.match(/['"]([^'"]+\.css)['"]/i);
+        if (cssMatch && cssMatch[1]) {
+          const cssPath = cssMatch[1];
+          const escaped = cssPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const styleUrlRegex = new RegExp(`styleUrl:\\s*['"]${escaped}['"]`, "g");
+          const styleUrlsRegex = new RegExp(`styleUrls:\\s*\\[[^\\]]*${escaped}[^\\]]*\\]`, "g");
+          let updated = currentCode.replace(styleUrlRegex, `styles: []`);
+          updated = updated.replace(styleUrlsRegex, `styles: []`);
+          if (updated !== currentCode) {
+            currentCode = updated;
+            repairsApplied.push(`Replaced missing stylesheet '${cssPath}' with inline styles`);
+          }
+        }
+      }
+    }
+
+    if (targetFilePath && (currentCode.includes("styleUrl") || currentCode.includes("styleUrls"))) {
+      const match = currentCode.match(/styleUrls?:\s*(?:['"]([^'"]+\.css)['"]|\[\s*['"]([^'"]+\.css)['"]\s*\])/);
+      if (match) {
+        const relCss = match[1] || match[2];
+        if (relCss && relCss.startsWith(".")) {
+          const absCss = path.resolve(path.dirname(targetFilePath), relCss);
+          if (!fs.existsSync(absCss)) {
+            try {
+              fs.mkdirSync(path.dirname(absCss), { recursive: true });
+              fs.writeFileSync(absCss, "/* auto-generated component styles */\n", "utf8");
+              repairsApplied.push(`Created missing stylesheet file at '${relCss}'`);
+            } catch {
+              currentCode = currentCode.replace(/styleUrls?:\s*(?:['"][^'"]+['"]|\[[^\]]*\])/g, "styles: []");
+              repairsApplied.push(`Replaced unresolvable stylesheet '${relCss}' with inline styles`);
+            }
           }
         }
       }
@@ -490,7 +565,6 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
               const isTypeOrClass =
                 /^\s*(?:export\s+)?(?:class|interface|type|enum)\s+/.test(targetLine) ||
-                /:\s*[A-Z]/.test(targetLine) ||
                 /\bas\s+[A-Z]/.test(targetLine);
 
               if (!isTypeOrClass) {
@@ -559,15 +633,26 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     currentCode = lines.join("\n");
 
     // 8b. Repair TS2339: Property 'X' does not exist on type 'Y'
+    const isTestFile = targetFilePath
+      ? (targetFilePath.endsWith(".test.ts") || targetFilePath.endsWith(".spec.ts"))
+      : (code.includes("describe(") || code.includes("it(") || code.includes("test("));
+
     for (const diag of diagnostics) {
       if (diag.errorCode === "TS2339" || /Property '([^']+)' does not exist on type/i.test(diag.message)) {
         const propMatch = diag.message.match(/Property '([^']+)' does not exist on type/i);
         if (propMatch && propMatch[1] && diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
           const propName = propMatch[1];
+          const isMockProp = /^(mock|mockReturnValue|mockResolvedValue|mockImplementation|mockClear|mockReset|mockRejectedValue|mockReturnValueOnce|mockResolvedValueOnce|mockImplementationOnce|mockReturnThis|called|calledOnce)$/.test(propName);
+
+          // Restrict property cast to test files or mock properties to avoid mangling production code
+          if (!isTestFile && !isMockProp) {
+            continue;
+          }
+
           const lineIdx = diag.lineNumber - 1;
           const targetLine = lines[lineIdx];
-          if (targetLine && targetLine.includes(`.${propName}`)) {
-            const castRegex = new RegExp(`(?<!as\\s+any\\s*\\))\\b([a-zA-Z0-9_$]+)\\.${propName}\\b`, "g");
+          if (targetLine && targetLine.includes(`.${propName}`) && !targetLine.includes(`as any).${propName}`)) {
+            const castRegex = new RegExp(`(?<![\\w$.])((?:this\\.)?[a-zA-Z0-9_$]+(?:\\.[a-zA-Z0-9_$]+)*)\\.${propName}\\b`, "g");
             const updatedLine = targetLine.replace(castRegex, `($1 as any).${propName}`);
             if (updatedLine !== targetLine) {
               lines[lineIdx] = updatedLine;
@@ -691,5 +776,33 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       // directory inaccessible
     }
     return null;
+  }
+
+  /**
+   * Replaces an identifier safely outside of string literals, quotes, and import source paths.
+   */
+  private replaceIdentifierSafely(code: string, wrongName: string, rightName: string): string {
+    const lines = code.split("\n");
+    const wrongRegex = new RegExp(`\\b${wrongName}\\b`, "g");
+    const updatedLines = lines.map((line) => {
+      if (/^\s*(?:import|export)\b.*?\bfrom\s*['"]/.test(line)) {
+        const fromIdx = line.indexOf(" from ");
+        if (fromIdx !== -1) {
+          const importClause = line.slice(0, fromIdx);
+          const fromClause = line.slice(fromIdx);
+          return importClause.replace(wrongRegex, rightName) + fromClause;
+        }
+      }
+      const parts = line.split(/(['"`][^'"`]*['"`])/);
+      return parts
+        .map((part) => {
+          if (part.startsWith("'") || part.startsWith('"') || part.startsWith("`")) {
+            return part;
+          }
+          return part.replace(wrongRegex, rightName);
+        })
+        .join("");
+    });
+    return updatedLines.join("\n");
   }
 }

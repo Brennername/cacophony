@@ -157,6 +157,31 @@ export class IncrementalClassMerger {
     }
 
     if (!matchingClassName) {
+      // Check if newCode defines new exported declarations (interfaces, types, functions, classes)
+      // that can be safely appended to originalCode while preserving all existing implementations
+      const newDeclarations: string[] = [];
+      const newImportLines: string[] = [];
+      for (const stmt of newSf.statements) {
+        if (ts.isImportDeclaration(stmt)) {
+          const importText = stmt.getText(newSf);
+          if (!originalCode.includes(importText)) {
+            newImportLines.push(importText);
+          }
+        } else {
+          newDeclarations.push(stmt.getText(newSf));
+        }
+      }
+
+      const hasExportedDeclarations = newDeclarations.some((decl) => /^\s*export\s+/.test(decl));
+      if (origClasses.size > 0 && hasExportedDeclarations) {
+        let merged = originalCode;
+        if (newImportLines.length > 0) {
+          merged = newImportLines.join("\n") + "\n" + merged;
+        }
+        merged = merged.trimEnd() + "\n\n" + newDeclarations.join("\n\n") + "\n";
+        return merged;
+      }
+
       // Safety guard: If original file is large and newCode is small/fragmented, NEVER destroy originalCode
       if (originalCode.length > 2000 && newCode.length < originalCode.length * 0.7) {
         return originalCode;

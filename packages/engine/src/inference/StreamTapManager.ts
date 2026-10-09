@@ -11,6 +11,7 @@ export interface StreamTokenEvent {
 export interface DemuxedTokenEvent {
   readonly taskId: string;
   readonly chunk: string;
+  readonly content?: string;
   readonly type: "reasoning" | "code";
   readonly timestamp: number;
 }
@@ -135,6 +136,7 @@ export class StreamTapManager {
       const demuxedEvent: DemuxedTokenEvent = {
         taskId,
         chunk: chunk.content,
+        content: chunk.content,
         type: chunk.type,
         timestamp: now
       };

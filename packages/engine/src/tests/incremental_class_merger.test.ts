@@ -123,4 +123,16 @@ export class CacophonyHttpServer {
     const merged = IncrementalClassMerger.merge(original, generated);
     assert.strictEqual(merged, original);
   });
+
+  test("should append new exported declarations and imports when class names do not match", () => {
+    const original = `import { Service } from "./Service.js";\n\nexport class WorkerEngine {\n  public run(): void {}\n}\n`;
+    const generated = `import { ExtraType } from "./Extra.js";\n\nexport interface ExtraConfig {\n  readonly flag: boolean;\n}\n\nexport function createHelper(): ExtraConfig {\n  return { flag: true };\n}\n`;
+
+    const merged = IncrementalClassMerger.merge(original, generated);
+    assert.ok(merged.includes("export class WorkerEngine"));
+    assert.ok(merged.includes("public run(): void"));
+    assert.ok(merged.includes('import { ExtraType } from "./Extra.js"'));
+    assert.ok(merged.includes("export interface ExtraConfig"));
+    assert.ok(merged.includes("export function createHelper"));
+  });
 });

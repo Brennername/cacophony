@@ -176,6 +176,8 @@ export class QueueGroomer {
         lowerTest.includes("docker compose") ||
         lowerTest.includes("verify ci") ||
         lowerTest.includes("bin/cacophony") ||
+        lowerTest.startsWith("node bin/") ||
+        /node\s+.*\.ts(\s|$)/.test(lowerTest) ||
         lowerTest.startsWith("go ") ||
         lowerTest.startsWith("cargo ") ||
         lowerTest.startsWith("pytest ") ||

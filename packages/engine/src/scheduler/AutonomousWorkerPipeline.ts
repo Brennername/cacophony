@@ -434,8 +434,12 @@ export class AutonomousWorkerPipeline {
             finalCode
           );
         } catch (spliceErr) {
-          console.warn(`[AutonomousWorkerPipeline] Targeted AST splice failed:`, spliceErr);
-          finalCode = "";
+          console.warn(`[AutonomousWorkerPipeline] Targeted AST splice failed, falling back to incremental class merger:`, spliceErr);
+          try {
+            finalCode = IncrementalClassMerger.merge(originalExistingContent, parseResult.code);
+          } catch {
+            finalCode = parseResult.code;
+          }
         }
       }
       let finalAttempts = parseResult.attempts || 1;

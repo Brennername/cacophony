@@ -239,16 +239,68 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(!result.repairedCode.includes("import { runTui, otherUtil }"));
   });
 
-  it("repairs TS2339 property not found by casting target to any", () => {
-    const source = `function check(myMock: Function) {\n  const count = myMock.mock.calls.length;\n  return count;\n}`;
+  it("repairs TS2304 missing symbol when node:test is already partially imported", () => {
+    const source = `import { describe, it } from 'node:test';\ndescribe('suite', () => {\n  beforeEach(() => {});\n  it('works', () => {});\n});`;
     const result = repairer.repair(source, [diagnostic(
-      "TS2339",
-      "Property 'mock' does not exist on type 'Function'.",
-      2
+      "TS2304",
+      "Cannot find name 'beforeEach'.",
+      3
     )]);
 
-    assert.ok(result.repairedCode.includes("(myMock as any).mock.calls.length"));
-    assert.ok(result.repairsApplied.some((r) => r.includes("Cast target of '.mock' to 'any'")));
+    assert.ok(result.repairedCode.includes("beforeEach"));
+    assert.ok(result.repairedCode.includes("from 'node:test'"));
+    assert.ok(result.repairsApplied.some((r) => r.includes("Added missing test runner functions to 'node:test' import")));
+  });
+
+  it("safely casts chained properties in test files without generating invalid syntax", () => {
+    const source = `describe('component', () => {\n  it('pipes', () => {\n    const res = this.taskIds.pipe();\n  });\n});`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2339",
+      "Property 'pipe' does not exist on type 'Subject'.",
+      3
+    )], "component.spec.ts");
+
+    assert.ok(result.repairedCode.includes("(this.taskIds as any).pipe()"));
+    assert.ok(!result.repairedCode.includes("this.(taskIds as any).pipe"));
+  });
+
+  it("does not corrupt module specifiers or string literals during TS2724 typo replacement", () => {
+    const source = `import assert from 'node:assert/strict';\nconst val = 'assert';\nconst x = asert;`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2724",
+      "Cannot find name 'asert'. Did you mean 'assert'?",
+      3
+    )]);
+
+    assert.ok(result.repairedCode.includes("from 'node:assert/strict'"));
+    assert.ok(result.repairedCode.includes("'assert'"));
+    assert.ok(result.repairedCode.includes("const x = assert;"));
+  });
+
+  it("repairs missing stylesheet file references with inline styles array", () => {
+    const source = `@Component({\n  selector: 'app-drawer',\n  template: '<div></div>',\n  styleUrls: ['./missing.component.css']\n})\nexport class DrawerComponent {}`;
+    const result = repairer.repair(source, [diagnostic(
+      "NG8001",
+      "Could not resolve './missing.component.css'",
+      4
+    )]);
+
+    assert.ok(result.repairedCode.includes("styles: []"));
+    assert.ok(!result.repairedCode.includes("styleUrls: ['./missing.component.css']"));
+  });
+
+  it("validates that the injected jest mock shim contains robust mocking constructs", () => {
+    const source = `const fn = jest.fn();\nfn.mockResolvedValue(42);\nconst res = fn('arg1');`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2304",
+      "Cannot find name 'jest'.",
+      1
+    )]);
+
+    assert.ok(result.repairedCode.includes("const jest ="));
+    assert.ok(result.repairedCode.includes("mockFn.called = true"));
+    assert.ok(result.repairedCode.includes("mockResolvedValue = (val: any) =>"));
+    assert.ok(result.repairedCode.includes("spyOn: (obj: any, method: any)"));
   });
 });
 

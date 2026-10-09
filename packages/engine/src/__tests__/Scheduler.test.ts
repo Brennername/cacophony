@@ -340,6 +340,29 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(groomed.scopedTestCommand, "npm run test --workspace=@cacophony/frontend");
     });
+
+    test("should scope non-runnable node typescript CLI commands to package test suite", () => {
+      const task: TaskRecord = {
+        id: "task-groom-node-ts",
+        title: "T50.1.5: Run decomposition CLI",
+        prompt: "Run decompose spec",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: "node bin/decompose-spec.ts --dry-run",
+        focusFiles: "packages/engine/src/scheduler/QueueGroomer.ts",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      const groomed = groomer.groom(task);
+      assert.equal(groomed.scopedTestCommand, "npm run test --workspace=@cacophony/engine");
+    });
   });
 
 
