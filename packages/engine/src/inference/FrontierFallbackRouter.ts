@@ -6,24 +6,12 @@ import type {
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 import { ProviderCircuitBreaker, TokenQuotaTracker } from "./CircuitBreaker.js";
 
-/**
- * Registered provider entry with circuit breaker.
- */
 export interface RegisteredProviderEntry {
   readonly providerType: InferenceProviderType;
   readonly provider: IInferenceProvider;
   readonly priority: number; // lower number = higher preference
 }
 
-/**
- * FrontierFallbackRouter
- *
- * Implements resilient frontier provider routing with Circuit Breaker protections:
- * 1. Dispatches generation requests to preferred provider (e.g. OpenAI or Anthropic).
- * 2. If provider responds with 429 (rate-limit) or 5xx error, trips ProviderCircuitBreaker.
- * 3. Transparently falls back to secondary provider or high-reasoning local model (e.g. deepseek-r1:8b).
- * 4. Records all prompt/completion tokens and estimated cost in TokenQuotaTracker.
- */
 export class FrontierFallbackRouter implements IInferenceProvider {
   private readonly providers: RegisteredProviderEntry[] = [];
   private readonly circuitBreakers = new Map<string, ProviderCircuitBreaker>();
