@@ -1,11 +1,20 @@
 import { z } from "zod";
 import { AgentRoleSchema } from "./task.js";
 
+export type ExecutionMode = "auto" | "plan" | "build";
+
+/**
+ * Global default execution mode for Cacophony engine.
+ * Defaults strictly to 'auto' for 24/7 autonomous loop operation (T84.5.1).
+ */
+export const DEFAULT_EXECUTION_MODE: ExecutionMode = "auto";
+
 /**
  * System configuration schema governing Cacophony execution parameters.
  */
 export const CacophonySystemConfigSchema = z.object({
   system_name: z.string().default("cacophony"),
+  execution_mode: z.enum(["auto", "plan", "build"]).default("auto"),
   data_dir: z.string().default("data/cacophony_pglite"),
   workspaces_dir: z.string().default("workspaces"),
   concurrency_limit: z.number().int().positive().default(1),

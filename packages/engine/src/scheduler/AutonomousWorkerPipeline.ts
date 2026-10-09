@@ -1407,4 +1407,13 @@ export class AutonomousWorkerPipeline {
       // non-fatal
     }
   }
+
+  /**
+   * Pre-commit monorepo build verification gate (Phase 84 T84.2).
+   * Verifies that the worktree builds cleanly before allowing commit and PR creation.
+   */
+  public async verifyCleanBuild(worktreePath: string): Promise<boolean> {
+    const buildCheck = await this.monorepoBuildGate.verifyBuild(worktreePath);
+    return buildCheck.passed;
+  }
 }

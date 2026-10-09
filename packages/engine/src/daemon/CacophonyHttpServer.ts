@@ -581,6 +581,108 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4a0-spec. REST API: POST /api/tasks/decompose-spec - Ingest and decompose specification into sequenced atomic tasks
+    if (url.pathname === "/api/tasks/decompose-spec" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const { ProjectSpecIngestionService } = await import("../inference/ProjectSpecIngestionService.js");
+          const { AcceptanceCriteriaEngine } = await import("../inference/AcceptanceCriteriaEngine.js");
+          const { DependencyGraphSequencer } = await import("../inference/DependencyGraphSequencer.js");
+
+          const ingestion = new ProjectSpecIngestionService();
+          const criteriaEngine = new AcceptanceCriteriaEngine();
+          const sequencer = new DependencyGraphSequencer();
+
+          let specDoc;
+          if (payload.filePath) {
+            specDoc = await ingestion.ingestFile(payload.filePath);
+          } else if (payload.specText) {
+            specDoc = ingestion.parseMarkdown(payload.specText, payload.title || "Project Specification");
+          } else {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing 'specText' or 'filePath' parameter in request payload" }));
+            return;
+          }
+
+          const rawTasks: any[] = [];
+          let idx = 1;
+          for (const reqNode of specDoc.requirements) {
+            const criteria = criteriaEngine.deriveCriteria(reqNode, specDoc.technicalConstraints);
+            const primaryCrit = criteria[0];
+            const testTemplate = primaryCrit
+              ? criteriaEngine.generateTestTemplate(primaryCrit, { moduleName: reqNode.title.replace(/[^a-zA-Z0-9]/g, "") })
+              : undefined;
+
+            let cat: any = "service";
+            if (reqNode.type === "data_model") cat = "migration";
+            else if (reqNode.type === "api_endpoint") cat = "route";
+            else if (reqNode.category.toLowerCase().includes("ui") || reqNode.category.toLowerCase().includes("frontend")) cat = "component";
+
+            rawTasks.push({
+              id: `task-spec-${Date.now()}-${idx++}`,
+              title: reqNode.title,
+              role: reqNode.type === "api_endpoint" ? "implementer" : "coder",
+              category: cat,
+              dependencies: [],
+              focusFiles: testTemplate ? [`packages/engine/src/services/${testTemplate.fileName.replace(".test.ts", ".ts")}`] : [],
+              testCommand: testTemplate ? `npm test -- ${testTemplate.fileName}` : "npm test",
+              prompt: [
+                `[SPECIFICATION GOAL]: ${reqNode.title}`,
+                `DESCRIPTION: ${reqNode.description}`,
+                primaryCrit ? `ACCEPTANCE SCENARIO: Given ${primaryCrit.given}, When ${primaryCrit.when}, Then ${primaryCrit.then}` : "",
+                specDoc.technicalConstraints.length > 0 ? `TECHNICAL CONSTRAINTS: ${specDoc.technicalConstraints.join(", ")}` : ""
+              ].filter(Boolean).join("\n\n")
+            });
+          }
+
+          const sequenced = sequencer.sequenceTasks(rawTasks);
+          const taskRepo = this.daemon.getTaskRepository();
+          const createdTasks: any[] = [];
+
+          for (const t of sequenced) {
+            const resRecord = await taskRepo.createIfNotExists({
+              id: t.id,
+              title: t.title,
+              prompt: t.prompt || t.title,
+              role: t.role,
+              status: "PENDING",
+              priority: "P1",
+              modelAssigned: null,
+              testCommand: t.testCommand,
+              focusFiles: t.focusFiles.join(" "),
+              targetBranch: "main",
+              prUrl: null,
+              failureCount: 0,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              completedAt: null
+            });
+            if (resRecord.created) {
+              createdTasks.push(resRecord.task);
+            }
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            success: true,
+            title: specDoc.title,
+            totalParsed: specDoc.requirements.length,
+            createdCount: createdTasks.length,
+            tasks: createdTasks
+          }));
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err?.message || String(err) }));
+        }
+      });
+      return;
+    }
+
     // 4a0. REST API: DELETE /api/tasks - Purge pending tasks (supports ?pattern=query)
     if (url.pathname === "/api/tasks" && req.method === "DELETE") {
       const taskRepo = this.daemon.getTaskRepository();
@@ -785,6 +887,33 @@ export class CacophonyHttpServer {
       const stages = await stageRepo.getStagesForTask(taskId);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ...task, stages }));
+      return;
+    }
+    if (taskDetailMatch && req.method === "PATCH") {
+      const taskId = taskDetailMatch[1]!;
+      let body = "";
+      req.on("data", (chunk) => { body += chunk; });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const taskRepo = this.daemon.getTaskRepository();
+          if (payload.status) {
+            await taskRepo.updateStatus(taskId, payload.status, payload.durationMs, payload.tokensPerSec);
+          }
+          if (payload.modelAssigned) {
+            await taskRepo.updateModel(taskId, payload.modelAssigned);
+          }
+          if (payload.prUrl) {
+            await taskRepo.updatePr(taskId, payload.targetBranch || "main", payload.prUrl);
+          }
+          const updated = await taskRepo.getById(taskId);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, task: updated }));
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err?.message || String(err) }));
+        }
+      });
       return;
     }
 

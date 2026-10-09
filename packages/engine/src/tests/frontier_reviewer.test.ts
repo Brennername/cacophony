@@ -116,4 +116,152 @@ test("FrontierReviewer Suite", async (t) => {
     assert.strictEqual(result.verdict, "REJECT");
     assert.ok(result.reviewNotes.includes("strips documentation comments"));
   });
+
+  await t.test("should evaluate Striped MoE review and consolidate multi-critic verdicts", async () => {
+    let callCount = 0;
+    const mockProvider: IInferenceProvider = {
+      getProviderType: () => "ollama",
+      generate: async (req) => {
+        callCount++;
+        if (req.model === "deepseek-r1:8b") {
+          return {
+            content: JSON.stringify({
+              verdict: "APPROVE",
+              score: 95,
+              notes: "Semantic analysis confirms full functional implementation.",
+              comments: []
+            }),
+            model: req.model,
+            tokensPrompt: 50,
+            tokensCompletion: 50,
+            totalTokens: 100,
+            latencyMs: 100,
+            tokensPerSec: 50
+          };
+        }
+        return {
+          content: JSON.stringify({
+            verdict: "APPROVE",
+            score: 92,
+            notes: "SOLID analysis confirms clean interfaces and error handling.",
+            comments: []
+          }),
+          model: req.model,
+          tokensPrompt: 50,
+          tokensCompletion: 50,
+          totalTokens: 100,
+          latencyMs: 100,
+          tokensPerSec: 50
+        };
+      },
+      stream: async (_req, onChunk) => {
+        onChunk("chunk");
+        return {
+          content: "chunk",
+          model: "test",
+          tokensPrompt: 10,
+          tokensCompletion: 10,
+          totalTokens: 20,
+          latencyMs: 10,
+          tokensPerSec: 20
+        };
+      }
+    };
+
+    const reviewer = new FrontierReviewer({
+      inferenceProvider: mockProvider,
+      defaultModel: "qwen2.5-coder:7b-instruct-q4_K_M"
+    });
+
+    const result = await reviewer.evaluateStripedMoEReview(
+      {
+        taskId: "task-06",
+        title: "Implement High-Performance Cache Service",
+        diff: "--- a/cache.ts\n+++ b/cache.ts\n@@ -1,1 +1,25 @@\n+export class CacheService {\n+  private store = new Map<string, string>();\n+  public get(key: string): string | undefined { return this.store.get(key); }\n+  public set(key: string, val: string): void { this.store.set(key, val); }\n+}\n"
+      },
+      {
+        semanticModel: "deepseek-r1:8b",
+        qualityModel: "qwen2.5-coder:7b-instruct-q4_K_M"
+      }
+    );
+
+    assert.strictEqual(callCount, 2);
+    assert.strictEqual(result.verdict, "APPROVE");
+    assert.strictEqual(result.semanticCompletenessScore, 95);
+    assert.strictEqual(result.solidComplianceScore, 92);
+    assert.ok(result.criticPasses && result.criticPasses.length === 2);
+    assert.ok(result.executivePlan && result.executivePlan.includes("Ready for staging merge"));
+  });
+
+  await t.test("should generate executive remediation plan when critics request changes", async () => {
+    const mockProvider: IInferenceProvider = {
+      getProviderType: () => "ollama",
+      generate: async (req) => {
+        if (req.model === "deepseek-r1:8b") {
+          return {
+            content: JSON.stringify({
+              verdict: "REQUEST_CHANGES",
+              score: 65,
+              notes: "Missing boundary condition handling and tests.",
+              comments: [{ path: "cache.ts", lineNumber: 10, comment: "Add TTL eviction", severity: "warning" }]
+            }),
+            model: req.model,
+            tokensPrompt: 50,
+            tokensCompletion: 50,
+            totalTokens: 100,
+            latencyMs: 100,
+            tokensPerSec: 50
+          };
+        }
+        return {
+          content: JSON.stringify({
+            verdict: "APPROVE",
+            score: 85,
+            notes: "SOLID principles satisfied.",
+            comments: []
+          }),
+          model: req.model,
+          tokensPrompt: 50,
+          tokensCompletion: 50,
+          totalTokens: 100,
+          latencyMs: 100,
+          tokensPerSec: 50
+        };
+      },
+      stream: async (_req, onChunk) => {
+        onChunk("chunk");
+        return {
+          content: "chunk",
+          model: "test",
+          tokensPrompt: 10,
+          tokensCompletion: 10,
+          totalTokens: 20,
+          latencyMs: 10,
+          tokensPerSec: 20
+        };
+      }
+    };
+
+    const reviewer = new FrontierReviewer({
+      inferenceProvider: mockProvider
+    });
+
+    const result = await reviewer.evaluateStripedMoEReview(
+      {
+        taskId: "task-07",
+        title: "Implement Cache with TTL",
+        diff: "--- a/cache.ts\n+++ b/cache.ts\n@@ -1,1 +1,10 @@\n+export class CacheService {}\n"
+      },
+      {
+        semanticModel: "deepseek-r1:8b",
+        qualityModel: "qwen2.5-coder:7b-instruct-q4_K_M"
+      }
+    );
+
+    assert.strictEqual(result.verdict, "REQUEST_CHANGES");
+    assert.strictEqual(result.semanticCompletenessScore, 65);
+    assert.ok(result.executivePlan && result.executivePlan.includes("Remediation Plan"));
+    assert.ok(result.executivePlan.includes("Expand operational feature logic"));
+  });
 });
+

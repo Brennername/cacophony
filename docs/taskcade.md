@@ -788,34 +788,34 @@
 *RDF Category: architectural_synthesis*
 
 ### T81.1: Spec & Project Document Ingestion Engine
-  - [ ] T81.1.1: Create `ProjectSpecIngestionService` in `packages/engine/src/inference/ProjectSpecIngestionService.ts` reading dropped specification files (`docs/spec.md`, `README.md`, OpenAPI JSON). [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Class: ProjectSpecIngestionService] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
-  - [ ] T81.1.2: Parse markdown headings, bulleted requirement lists, and API endpoint definitions into structured `RequirementNode` objects. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: parseRequirements] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
-  - [ ] T81.1.3: Extract explicit technical constraints (languages, frameworks, database drivers, coding rules) from ingested documents. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: extractConstraints] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
-  - [ ] T81.1.4: Write unit tests verifying parser extracts functional and non-functional requirements from diverse document formats. [File: packages/engine/src/tests/spec_ingestion.test.ts] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [x] T81.1.1: Create `ProjectSpecIngestionService` in `packages/engine/src/inference/ProjectSpecIngestionService.ts` reading dropped specification files (`docs/spec.md`, `README.md`, OpenAPI JSON). [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Class: ProjectSpecIngestionService] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [x] T81.1.2: Parse markdown headings, bulleted requirement lists, and API endpoint definitions into structured `RequirementNode` objects. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: parseRequirements] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [x] T81.1.3: Extract explicit technical constraints (languages, frameworks, database drivers, coding rules) from ingested documents. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: extractConstraints] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [x] T81.1.4: Write unit tests verifying parser extracts functional and non-functional requirements from diverse document formats. [File: packages/engine/src/tests/spec_ingestion.test.ts] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
 
 ### T81.2: Structured Acceptance Criteria Derivation Engine
-  - [ ] T81.2.1: Implement `AcceptanceCriteriaEngine` in `packages/engine/src/inference/AcceptanceCriteriaEngine.ts` utilizing high-reasoning models to formulate testable criteria. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Class: AcceptanceCriteriaEngine] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
-  - [ ] T81.2.2: Convert ambiguous user directives into explicit Given/When/Then scenarios with expected HTTP status codes, error models, and return shapes. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: deriveCriteria] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
-  - [ ] T81.2.3: Generate concrete test assertion templates (native `node:test` and `node:assert/strict` for backend, Angular component spec for frontend). [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: generateTestTemplate] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
-  - [ ] T81.2.4: Write unit tests verifying that acceptance criteria strictly adhere to SOLID principles and mobile-first rules. [File: packages/engine/src/tests/acceptance_criteria.test.ts] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [x] T81.2.1: Implement `AcceptanceCriteriaEngine` in `packages/engine/src/inference/AcceptanceCriteriaEngine.ts` utilizing high-reasoning models to formulate testable criteria. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Class: AcceptanceCriteriaEngine] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [x] T81.2.2: Convert ambiguous user directives into explicit Given/When/Then scenarios with expected HTTP status codes, error models, and return shapes. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: deriveCriteria] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [x] T81.2.3: Generate concrete test assertion templates (native `node:test` and `node:assert/strict` for backend, Angular component spec for frontend). [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: generateTestTemplate] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [x] T81.2.4: Write unit tests verifying that acceptance criteria strictly adhere to SOLID principles and mobile-first rules. [File: packages/engine/src/tests/acceptance_criteria.test.ts] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
 
 ### T81.3: Architectural Contract & Type Schema Generator
-  - [ ] T81.3.1: Create `ContractSynthesizer` in `packages/engine/src/inference/ContractSynthesizer.ts` defining TypeScript interfaces and Zod validation schemas. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Class: ContractSynthesizer] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
-  - [ ] T81.3.2: Synthesize database migration definitions with primary keys, indexes, foreign keys, and dialect-agnostic column types. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: synthesizeMigration] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
-  - [ ] T81.3.3: Verify synthesized schemas against existing project types to prevent namespace collisions and circular references. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: validateAgainstWorkspace] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
-  - [ ] T81.3.4: Write unit tests verifying generated contracts compile cleanly with `tsc`. [File: packages/engine/src/tests/contract_synthesizer.test.ts] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [x] T81.3.1: Create `ContractSynthesizer` in `packages/engine/src/inference/ContractSynthesizer.ts` defining TypeScript interfaces and Zod validation schemas. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Class: ContractSynthesizer] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [x] T81.3.2: Synthesize database migration definitions with primary keys, indexes, foreign keys, and dialect-agnostic column types. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: synthesizeMigration] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [x] T81.3.3: Verify synthesized schemas against existing project types to prevent namespace collisions and circular references. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: validateAgainstWorkspace] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [x] T81.3.4: Write unit tests verifying generated contracts compile cleanly with `tsc`. [File: packages/engine/src/tests/contract_synthesizer.test.ts] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
 
 ### T81.4: Topological Dependency Graph Task Sequencer
-  - [ ] T81.4.1: Build `DependencyGraphSequencer` in `packages/engine/src/inference/DependencyGraphSequencer.ts` arranging decomposed tasks in dependency order. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Class: DependencyGraphSequencer] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
-  - [ ] T81.4.2: Enforce architectural sequencing: Shared Types & Migrations -> Repositories -> Services -> HTTP Routes -> UI Components -> E2E Tests. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: sequenceTasks] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
-  - [ ] T81.4.3: Detect and break circular task dependencies by splitting interfaces from concrete implementations. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: resolveCircularDependencies] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
-  - [ ] T81.4.4: Write unit tests validating topological sort ordering for complex multi-module feature epics. [File: packages/engine/src/tests/dependency_sequencer.test.ts] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [x] T81.4.1: Build `DependencyGraphSequencer` in `packages/engine/src/inference/DependencyGraphSequencer.ts` arranging decomposed tasks in dependency order. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Class: DependencyGraphSequencer] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [x] T81.4.2: Enforce architectural sequencing: Shared Types & Migrations -> Repositories -> Services -> HTTP Routes -> UI Components -> E2E Tests. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: sequenceTasks] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [x] T81.4.3: Detect and break circular task dependencies by splitting interfaces from concrete implementations. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: resolveCircularDependencies] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [x] T81.4.4: Write unit tests validating topological sort ordering for complex multi-module feature epics. [File: packages/engine/src/tests/dependency_sequencer.test.ts] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
 
 ### T81.5: REST API & Drop-In Ingestion CLI
-  - [ ] T81.5.1: Expose `POST /api/tasks/decompose-spec` in `CacophonyHttpServer.ts` ingesting uploaded spec files and persisting atomic tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/decompose-spec] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-  - [ ] T81.5.2: Create CLI entrypoint `bin/decompose-spec.ts` allowing operators to run `node bin/decompose-spec.ts path/to/spec.md`. [File: bin/decompose-spec.ts] [Test: node bin/decompose-spec.ts --dry-run]
-  - [ ] T81.5.3: Add file-watcher daemon monitoring `docs/inbox/` for dropped project specifications and auto-decomposing them into the active queue. [File: packages/engine/src/daemon/SpecInboxWatcher.ts] [Class: SpecInboxWatcher] [Test: npm test -- packages/engine/src/tests/inbox_watcher.test.ts]
-  - [ ] T81.5.4: Write integration tests verifying spec decomposition pipeline creates valid `TaskRecord` rows in database. [File: packages/engine/src/tests/spec_decomposition_pipeline.test.ts] [Test: npm test -- packages/engine/src/tests/spec_decomposition_pipeline.test.ts]
+  - [x] T81.5.1: Expose `POST /api/tasks/decompose-spec` in `CacophonyHttpServer.ts` ingesting uploaded spec files and persisting atomic tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/decompose-spec] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T81.5.2: Create CLI entrypoint `bin/decompose-spec.ts` allowing operators to run `node bin/decompose-spec.ts path/to/spec.md`. [File: bin/decompose-spec.ts] [Test: node bin/decompose-spec.ts --dry-run]
+  - [x] T81.5.3: Add file-watcher daemon monitoring `docs/inbox/` for dropped project specifications and auto-decomposing them into the active queue. [File: packages/engine/src/daemon/SpecInboxWatcher.ts] [Class: SpecInboxWatcher] [Test: npm test -- packages/engine/src/tests/inbox_watcher.test.ts]
+  - [x] T81.5.4: Write integration tests verifying spec decomposition pipeline creates valid `TaskRecord` rows in database. [File: packages/engine/src/tests/spec_decomposition_pipeline.test.ts] [Test: npm test -- packages/engine/src/tests/spec_decomposition_pipeline.test.ts]
 
 ---
 
@@ -863,34 +863,34 @@
 *RDF Category: autonomy*
 
 ### T84.1: Auto-Mode Loop Supervisor
-  - [ ] T84.1.1: Create `AutoLoopSupervisor` in `packages/engine/src/daemon/AutoLoopSupervisor.ts` keeping the autonomous loop running 24/7. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Class: AutoLoopSupervisor] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
-  - [ ] T84.1.2: Implement unhandled error containment: if an unhandled promise rejection occurs during task execution, isolate the error, rollback worktree, and resume queue. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: handleWorkerError] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
-  - [ ] T84.1.3: Automatically detect empty queue conditions and trigger internal vacancy tasks (test coverage expansion, dead code elimination, AST grooming). [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: fillVacancy] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
-  - [ ] T84.1.4: Write unit tests verifying supervisor survives simulated worker crashes and resumes task processing. [File: packages/engine/src/tests/auto_supervisor.test.ts] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [x] T84.1.1: Create `AutoLoopSupervisor` in `packages/engine/src/daemon/AutoLoopSupervisor.ts` keeping the autonomous loop running 24/7. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Class: AutoLoopSupervisor] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [x] T84.1.2: Implement unhandled error containment: if an unhandled promise rejection occurs during task execution, isolate the error, rollback worktree, and resume queue. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: handleWorkerError] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [x] T84.1.3: Automatically detect empty queue conditions and trigger internal vacancy tasks (test coverage expansion, dead code elimination, AST grooming). [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: fillVacancy] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [x] T84.1.4: Write unit tests verifying supervisor survives simulated worker crashes and resumes task processing. [File: packages/engine/src/tests/auto_supervisor.test.ts] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
 
 ### T84.2: Worktree Pre-Commit Monorepo Build Gate in Pipeline
-  - [ ] T84.2.1: Add `verifyCleanBuild(worktreePath: string)` call in `AutonomousWorkerPipeline.ts` Stage 6 before `commitWorktree`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-  - [ ] T84.2.2: Ensure tasks failing pre-commit build verification return `success: false` and do NOT merge into Gitea `main`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-  - [ ] T84.2.3: Forward compiler error outputs from failed build verification to active remediation stage. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeRemediationStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-  - [ ] T84.2.4: Write unit tests verifying that non-compiling worktree changes are blocked from committing to staging `main`. [File: packages/engine/src/tests/worktree_build_gate.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_build_gate.test.ts]
+  - [x] T84.2.1: Add `verifyCleanBuild(worktreePath: string)` call in `AutonomousWorkerPipeline.ts` Stage 6 before `commitWorktree`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T84.2.2: Ensure tasks failing pre-commit build verification return `success: false` and do NOT merge into Gitea `main`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T84.2.3: Forward compiler error outputs from failed build verification to active remediation stage. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeRemediationStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T84.2.4: Write unit tests verifying that non-compiling worktree changes are blocked from committing to staging `main`. [File: packages/engine/src/tests/worktree_build_gate.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_build_gate.test.ts]
 
 ### T84.3: Bi-Directional GitHub Issue Poller & Task Ingestion Daemon
-  - [ ] T84.3.1: Implement `GitHubIssueSyncDaemon` in `packages/engine/src/gitea/GitHubIssueSyncDaemon.ts` polling public GitHub issues every 5 minutes. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Class: GitHubIssueSyncDaemon] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
-  - [ ] T84.3.2: Filter issues with label `arena:auto`, extracting title, body, and linked focus files into atomic `TaskRecord` rows. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: ingestIssues] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
-  - [ ] T84.3.3: Add duplicate detection avoiding re-ingesting issues that already have active or completed tasks in database. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: isDuplicate] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
-  - [ ] T84.3.4: Write unit tests verifying GitHub issue ingestion parses labels, bodies, and priorities accurately into database tasks. [File: packages/engine/src/tests/github_issue_sync.test.ts] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.3.1: Implement `GitHubIssueSyncDaemon` in `packages/engine/src/gitea/GitHubIssueSyncDaemon.ts` polling public GitHub issues every 5 minutes. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Class: GitHubIssueSyncDaemon] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.3.2: Filter issues with label `arena:auto`, extracting title, body, and linked focus files into atomic `TaskRecord` rows. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: ingestIssues] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.3.3: Add duplicate detection avoiding re-ingesting issues that already have active or completed tasks in database. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: isDuplicate] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.3.4: Write unit tests verifying GitHub issue ingestion parses labels, bodies, and priorities accurately into database tasks. [File: packages/engine/src/tests/github_issue_sync.test.ts] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
 
 ### T84.4: Autonomous Issue Resolution & Verification PR Linker
-  - [ ] T84.4.1: Link resolved GitHub issue number in commit message (`Fixes #123`) when promoting milestone releases to GitHub. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: linkResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
-  - [ ] T84.4.2: Post automated verification comment on GitHub issue once staging verification passes in Gitea, providing transparency before public release. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: postVerificationStatus] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
-  - [ ] T84.4.3: Close GitHub issue automatically when the promoted release PR is merged into upstream `main`. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: closeResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
-  - [ ] T84.4.4: Write unit tests simulating full issue ingestion -> local execution -> staging merge -> GitHub PR resolution lifecycle. [File: packages/engine/src/tests/issue_resolution_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/issue_resolution_lifecycle.test.ts]
+  - [x] T84.4.1: Link resolved GitHub issue number in commit message (`Fixes #123`) when promoting milestone releases to GitHub. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: linkResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [x] T84.4.2: Post automated verification comment on GitHub issue once staging verification passes in Gitea, providing transparency before public release. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: postVerificationStatus] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.4.3: Close GitHub issue automatically when the promoted release PR is merged into upstream `main`. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: closeResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [x] T84.4.4: Write unit tests simulating full issue ingestion -> local execution -> staging merge -> GitHub PR resolution lifecycle. [File: packages/engine/src/tests/issue_resolution_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/issue_resolution_lifecycle.test.ts]
 
 ### T84.5: Defocus Plan/Build Modes in Favor of Auto Mode
-  - [ ] T84.5.1: Set `DEFAULT_EXECUTION_MODE=auto` across all default configs, daemon initialization, and frontend stores. [File: packages/shared-types/src/config.ts] [Constant: DEFAULT_EXECUTION_MODE] [Test: npm test -- packages/shared-types]
-  - [ ] T84.5.2: Streamline UI navigation to highlight Auto Mode telemetry, success yield, and milestone promotion over manual step controls. [File: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts] [Test: npm test]
-  - [ ] T84.5.3: Ensure headless server and Docker containers default strictly to Auto Mode on boot. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
-  - [ ] T84.5.4: Write integration tests verifying that arena boots and executes uninterrupted in Auto Mode with zero manual prompts. [File: packages/engine/src/tests/auto_mode.test.ts] [Test: npm test -- packages/engine/src/tests/auto_mode.test.ts]
+  - [x] T84.5.1: Set `DEFAULT_EXECUTION_MODE=auto` across all default configs, daemon initialization, and frontend stores. [File: packages/shared-types/src/config.ts] [Constant: DEFAULT_EXECUTION_MODE] [Test: npm test -- packages/shared-types]
+  - [x] T84.5.2: Streamline UI navigation to highlight Auto Mode telemetry, success yield, and milestone promotion over manual step controls. [File: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts] [Test: npm test]
+  - [x] T84.5.3: Ensure headless server and Docker containers default strictly to Auto Mode on boot. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T84.5.4: Write integration tests verifying that arena boots and executes uninterrupted in Auto Mode with zero manual prompts. [File: packages/engine/src/tests/auto_mode.test.ts] [Test: npm test -- packages/engine/src/tests/auto_mode.test.ts]
 
 ---
 
@@ -1003,14 +1003,50 @@
 
 ### T89.2: Multi-Model Progressive Review Gate & Frontier Reviewer Hardening
   - [x] T89.2.1: Implement inspectStructuralAntiStub in FrontierReviewer rejecting empty templates, placeholder bodies, and comment stripping before LLM invocation. [File: packages/engine/src/inference/FrontierReviewer.ts] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
-  - [ ] T89.2.2: Implement two-stage striped MoE reviewer running Semantic Completeness Critic and SOLID Quality Critic across distinct models. [File: packages/engine/src/inference/FrontierReviewer.ts] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
+  - [x] T89.2.2: Implement two-stage striped MoE reviewer running Semantic Completeness Critic and SOLID Quality Critic across distinct models. [File: packages/engine/src/inference/FrontierReviewer.ts] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
 
 ### T89.3: Model Role Specialization & 3B Feature Disqualification
   - [x] T89.3.1: Disqualify 3B parameter models from coding and implementer roles, routing implementation tasks to 7B+ instruct models. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
-  - [ ] T89.3.2: Implement micro-model scaffolding generator using 3B models strictly for file structure and method signature generation, delegating method bodies to larger models. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+  - [x] T89.3.2: Implement micro-model scaffolding generator using 3B models strictly for file structure and method signature generation, delegating method bodies to larger models. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
 
 ### T89.4: Angular Standards Skill & Component Decomposition Hardening
   - [x] T89.4.1: Update Angular standards skill documentation enforcing file decomposition, prohibiting placeholder templates, and establishing mobile-first criteria. [File: /home/nexen/.gemini/config/plugins/modern-web-guidance-plugin/skills/angular-standards/SKILL.md]
+
+---
+
+## Phase 96: Granular Test Suites, Strict Typing Hardening & Edge-Case Guardrails
+*RDF Category: verification_and_hardening*
+
+### T96.1: Core Utility & Math Unit Tests
+  - [ ] T96.1.1: Write unit tests verifying moving average calculations across empty, single-element, and large numeric streams. [File: packages/engine/src/tests/math_utils.test.ts] [Test: npm test -- packages/engine/src/tests/math_utils.test.ts]
+  - [ ] T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain bounds within min/max delay limits. [File: packages/engine/src/tests/backoff_utils.test.ts] [Test: npm test -- packages/engine/src/tests/backoff_utils.test.ts]
+  - [ ] T96.1.3: Write unit tests validating token throughput rate calculation clamped against zero division when duration is 0ms. [File: packages/engine/src/tests/throughput_math.test.ts] [Test: npm test -- packages/engine/src/tests/throughput_math.test.ts]
+  - [ ] T96.1.4: Write unit tests verifying percentage rounding precision and boundary clamping [0.0, 100.0]. [File: packages/engine/src/tests/percent_math.test.ts] [Test: npm test -- packages/engine/src/tests/percent_math.test.ts]
+
+### T96.2: Schema Validation & Zod Parser Unit Tests
+  - [ ] T96.2.1: Write unit tests verifying TaskRecordSchema validates valid task payloads and rejects missing required fields. [File: packages/shared-types/src/tests/task_schema.test.ts] [Test: npm test -- packages/shared-types]
+  - [ ] T96.2.2: Write unit tests verifying CacophonySystemConfigSchema enforces default execution mode 'auto' and positive concurrency. [File: packages/shared-types/src/tests/config_schema.test.ts] [Test: npm test -- packages/shared-types]
+  - [ ] T96.2.3: Write unit tests validating ModelManagementConfigSchema defaults for protected models and storage quotas. [File: packages/shared-types/src/tests/model_config_schema.test.ts] [Test: npm test -- packages/shared-types]
+  - [ ] T96.2.4: Write unit tests verifying AgentRoleSchema enum rejects unknown string identifiers. [File: packages/shared-types/src/tests/agent_role_schema.test.ts] [Test: npm test -- packages/shared-types]
+
+### T96.3: AST Context Slicer & Tokenizer Edge-Case Tests
+  - [ ] T96.3.1: Write unit tests validating AstContextSlicer handles complex generic interface declarations without syntax corruption. [File: packages/engine/src/tests/ast_generic_slicing.test.ts] [Test: npm test -- packages/engine/src/tests/ast_generic_slicing.test.ts]
+  - [ ] T96.3.2: Write unit tests verifying AstContextSlicer correctly preserves decorators (@Component, @Injectable) when generating class skeletons. [File: packages/engine/src/tests/ast_decorator_slicing.test.ts] [Test: npm test -- packages/engine/src/tests/ast_decorator_slicing.test.ts]
+  - [ ] T96.3.3: Write unit tests verifying ImportPruningEngine correctly resolves type-only imports vs value imports. [File: packages/engine/src/tests/import_type_pruning.test.ts] [Test: npm test -- packages/engine/src/tests/import_type_pruning.test.ts]
+  - [ ] T96.3.4: Write unit tests validating FocusedDiffBuilder handles multi-line string replacements with exact indentation preservation. [File: packages/engine/src/tests/diff_indentation.test.ts] [Test: npm test -- packages/engine/src/tests/diff_indentation.test.ts]
+
+### T96.4: Frontend UI State Store & Reactive Signals Unit Tests
+  - [ ] T96.4.1: Write unit tests verifying ArenaStateStore activeTaskId signal transitions reactively upon task dispatch events. [File: packages/frontend/src/app/services/arena_state_dispatch.spec.ts] [Test: npm test]
+  - [ ] T96.4.2: Write unit tests verifying ArenaStateStore modelWarmth signal updates when warm model SSE payload arrives. [File: packages/frontend/src/app/services/arena_state_warmth.spec.ts] [Test: npm test]
+  - [ ] T96.4.3: Write unit tests verifying ArenaStateStore successRate signal updates accurately on success_rate_updated SSE events. [File: packages/frontend/src/app/services/arena_state_success.spec.ts] [Test: npm test]
+  - [ ] T96.4.4: Write unit tests verifying ArenaStateStore thermalThrottleState signal triggers warning badge in UI state. [File: packages/frontend/src/app/services/arena_state_thermal.spec.ts] [Test: npm test]
+
+### T96.5: Database Query Builder & Parameter Escaping Tests
+  - [ ] T96.5.1: Write unit tests verifying TaskRepository.create handles SQL string escaping and special characters in prompts safely. [File: packages/db/src/tests/task_sql_escaping.test.ts] [Test: npm test -- packages/db]
+  - [ ] T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes JSON log output without truncating special symbols. [File: packages/db/src/tests/stage_json_serialization.test.ts] [Test: npm test -- packages/db]
+  - [ ] T96.5.3: Write unit tests validating StageRepository stage span queries return chronological ordering without gaps. [File: packages/db/src/tests/stage_chronology.test.ts] [Test: npm test -- packages/db]
+  - [ ] T96.5.4: Write unit tests verifying PGlite driver handles concurrent statement execution queueing without deadlocking. [File: packages/db/src/tests/pglite_concurrent_queue.test.ts] [Test: npm test -- packages/db]
+
 
 
 

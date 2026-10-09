@@ -8,6 +8,24 @@ export interface ReviewEvaluationResult {
   readonly solidComplianceScore: number; // 0 to 100
   readonly testCoveragePassed: boolean;
   readonly securityBoundariesPassed: boolean;
+  readonly semanticCompletenessScore?: number | undefined;
+  readonly executivePlan?: string | undefined;
+  readonly criticPasses?: readonly CriticPassResult[] | undefined;
+}
+
+export interface CriticPassResult {
+  readonly criticRole: "semantic_completeness" | "solid_quality";
+  readonly modelUsed: string;
+  readonly verdict: ReviewVerdict;
+  readonly score: number;
+  readonly notes: string;
+  readonly comments: readonly ReviewComment[];
+}
+
+export interface MoEReviewOptions {
+  readonly semanticModel?: string | undefined;
+  readonly qualityModel?: string | undefined;
+  readonly executiveModel?: string | undefined;
 }
 
 export interface ReviewPromptContext {
@@ -113,6 +131,264 @@ export class FrontierReviewer {
 
     // Heuristic deterministic evaluation when no provider or on provider error
     return this.evaluateHeuristically(context.title, diffText);
+  }
+
+  /**
+   * Two-stage Striped Mixture-of-Experts review gate:
+   * Stage 1: Semantic Completeness Critic (runs on semantic reasoning model)
+   * Stage 2: SOLID Quality & Security Critic (runs on quality/architecture model)
+   * Stage 3: Executive Consolidator (synthesizes verdicts and outputs post-review roadmap)
+   */
+  public async evaluateStripedMoEReview(
+    context: ReviewPromptContext,
+    options?: MoEReviewOptions
+  ): Promise<ReviewEvaluationResult> {
+    const diffText = context.diff || "";
+    const testSummary = context.testSummary || "All scoped tests passed cleanly.";
+
+    // 1. Structural Anti-Stub deterministic pre-flight check
+    const structuralIssues = this.inspectStructuralAntiStub(context.title, diffText);
+    if (structuralIssues.length > 0) {
+      return {
+        verdict: "REJECT",
+        reviewNotes: `Structural Anti-Stub Gate rejected diff: ${structuralIssues.join("; ")}`,
+        comments: structuralIssues.map((msg) => ({
+          path: "diff",
+          lineNumber: 1,
+          comment: msg,
+          severity: "blocker" as const
+        })),
+        solidComplianceScore: 30,
+        semanticCompletenessScore: 10,
+        testCoveragePassed: false,
+        securityBoundariesPassed: true,
+        executivePlan: "Rework implementation to provide substantive functional logic without placeholders or empty stubs."
+      };
+    }
+
+    const semanticModel = options?.semanticModel || process.env.FRONTIER_SEMANTIC_MODEL || "deepseek-r1:8b";
+    const qualityModel = options?.qualityModel || options?.executiveModel || this.defaultModel;
+
+    // Stage 1: Semantic Completeness Critic
+    const semanticPass = await this.runSemanticCritic(context.title, diffText, testSummary, semanticModel);
+
+    // Stage 2: SOLID Quality Critic
+    const qualityPass = await this.runSolidQualityCritic(context.title, diffText, testSummary, qualityModel);
+
+    // Stage 3: Executive Consolidation
+    return this.consolidateMoEVerdicts(context.title, diffText, [semanticPass, qualityPass]);
+  }
+
+  /**
+   * Stage 1 Critic: Evaluates semantic completeness and feature coverage against task objective.
+   */
+  public async runSemanticCritic(
+    title: string,
+    diff: string,
+    testSummary: string,
+    model: string
+  ): Promise<CriticPassResult> {
+    if (this.inferenceProvider) {
+      try {
+        const prompt = [
+          `Task Objective: ${title}`,
+          "Evaluate strictly whether the provided diff substantively implements the task objective.",
+          "Check for: full functional coverage, absence of hollow mocks, real logic implementations.",
+          `Test Summary: ${testSummary}`,
+          "",
+          "Diff:",
+          diff.slice(0, 15000),
+          "",
+          "Respond strictly in JSON with no Markdown wrappers:",
+          "{",
+          '  "verdict": "APPROVE" | "REQUEST_CHANGES" | "REJECT",',
+          '  "score": 90,',
+          '  "notes": "Semantic evaluation notes",',
+          '  "comments": [{ "path": "file.ts", "lineNumber": 1, "comment": "Note", "severity": "info" | "warning" | "blocker" }]',
+          "}"
+        ].join("\n");
+
+        const response = await this.inferenceProvider.generate({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: "You are the Semantic Completeness Critic. Ensure the code diff fully satisfies the task title and implements real operational logic rather than hollow stubs."
+            },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1,
+          maxTokens: 1024
+        });
+
+        const parsed = this.parseCriticResponse(response.content, "semantic_completeness", model);
+        if (parsed) return parsed;
+      } catch (err) {
+        console.warn(`[FrontierReviewer] Semantic critic call with model '${model}' failed, falling back to heuristic:`, err);
+      }
+    }
+
+    // Heuristic semantic evaluation
+    const isTrivial = diff.trim().length < 80;
+    const score = isTrivial ? 50 : 90;
+    return {
+      criticRole: "semantic_completeness",
+      modelUsed: model,
+      verdict: score >= 75 ? "APPROVE" : "REQUEST_CHANGES",
+      score,
+      notes: isTrivial
+        ? "Diff appears trivial or incomplete relative to task objective."
+        : "Substantive changes detected matching task scope.",
+      comments: isTrivial
+        ? [{ path: "diff", lineNumber: 1, comment: "Diff has minimal code changes.", severity: "warning" }]
+        : []
+    };
+  }
+
+  /**
+   * Stage 2 Critic: Evaluates SOLID architecture, strict typing, and security boundaries.
+   */
+  public async runSolidQualityCritic(
+    title: string,
+    diff: string,
+    testSummary: string,
+    model: string
+  ): Promise<CriticPassResult> {
+    if (this.inferenceProvider) {
+      try {
+        const prompt = this.buildReviewPrompt(title, diff, testSummary);
+        const response = await this.inferenceProvider.generate({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: "You are the SOLID Quality Critic. Evaluate interfaces, single responsibility, dependency injection, typing rigor, and security boundaries."
+            },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1,
+          maxTokens: 1024
+        });
+
+        const parsed = this.parseCriticResponse(response.content, "solid_quality", model);
+        if (parsed) return parsed;
+      } catch (err) {
+        console.warn(`[FrontierReviewer] Quality critic call with model '${model}' failed, falling back to heuristic:`, err);
+      }
+    }
+
+    // Heuristic SOLID evaluation
+    const heuristic = this.evaluateHeuristically(title, diff);
+    return {
+      criticRole: "solid_quality",
+      modelUsed: model,
+      verdict: heuristic.verdict,
+      score: heuristic.solidComplianceScore,
+      notes: heuristic.reviewNotes,
+      comments: heuristic.comments
+    };
+  }
+
+  /**
+   * Stage 3: Consolidates multi-model critic findings into final verdict and executive plan.
+   */
+  public consolidateMoEVerdicts(
+    title: string,
+    _diff: string,
+    criticPasses: readonly CriticPassResult[]
+  ): ReviewEvaluationResult {
+    const semanticPass = criticPasses.find((p) => p.criticRole === "semantic_completeness");
+    const qualityPass = criticPasses.find((p) => p.criticRole === "solid_quality");
+
+    const semanticScore = semanticPass ? semanticPass.score : 85;
+    const solidScore = qualityPass ? qualityPass.score : 85;
+
+    const allComments: ReviewComment[] = [];
+    for (const pass of criticPasses) {
+      allComments.push(...pass.comments);
+    }
+
+    const hasBlockers = allComments.some((c) => c.severity === "blocker");
+    const hasWarnings = allComments.some((c) => c.severity === "warning");
+
+    let verdict: ReviewVerdict = "APPROVE";
+    if (
+      semanticPass?.verdict === "REJECT" ||
+      qualityPass?.verdict === "REJECT" ||
+      semanticScore < 50 ||
+      solidScore < 50
+    ) {
+      verdict = "REJECT";
+    } else if (
+      semanticPass?.verdict === "REQUEST_CHANGES" ||
+      qualityPass?.verdict === "REQUEST_CHANGES" ||
+      hasBlockers ||
+      semanticScore < 75 ||
+      solidScore < 75
+    ) {
+      verdict = "REQUEST_CHANGES";
+    }
+
+    // Executive Roadmap for remediation
+    let executivePlan: string;
+    if (verdict === "APPROVE") {
+      executivePlan = "Changes meet architectural, semantic, and SOLID standards. Ready for staging merge.";
+    } else {
+      const planItems: string[] = [];
+      if (semanticScore < 75) {
+        planItems.push("1. Expand operational feature logic to fully cover task objectives without stubs.");
+      }
+      if (solidScore < 75 || hasBlockers) {
+        planItems.push("2. Resolve SOLID and security boundary defects flagged by the Quality Critic.");
+      }
+      if (hasWarnings) {
+        planItems.push("3. Eliminate untyped declarations and refactor warnings.");
+      }
+      executivePlan = `Remediation Plan for '${title}':\n` + planItems.join("\n");
+    }
+
+    const reviewNotes = `MoE Striped Review (${criticPasses.map((p) => `${p.criticRole}: ${p.modelUsed}`).join(", ")}): ` +
+      `Semantic ${semanticScore}%, SOLID ${solidScore}%. Verdict: ${verdict}.`;
+
+    return {
+      verdict,
+      reviewNotes,
+      comments: allComments,
+      solidComplianceScore: solidScore,
+      semanticCompletenessScore: semanticScore,
+      testCoveragePassed: verdict !== "REJECT",
+      securityBoundariesPassed: !hasBlockers,
+      executivePlan,
+      criticPasses
+    };
+  }
+
+  private parseCriticResponse(
+    rawText: string,
+    role: "semantic_completeness" | "solid_quality",
+    model: string
+  ): CriticPassResult | null {
+    try {
+      const match = rawText.match(/\{[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        const verdict: ReviewVerdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(parsed.verdict)
+          ? parsed.verdict
+          : "APPROVE";
+        const score = typeof parsed.score === "number" ? parsed.score : (typeof parsed.solidComplianceScore === "number" ? parsed.solidComplianceScore : 85);
+        return {
+          criticRole: role,
+          modelUsed: model,
+          verdict,
+          score,
+          notes: parsed.notes || parsed.reviewNotes || "Critic evaluation complete.",
+          comments: Array.isArray(parsed.comments) ? parsed.comments : []
+        };
+      }
+    } catch {
+      // Fallback
+    }
+    return null;
   }
 
   /**

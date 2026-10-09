@@ -43,6 +43,13 @@ export class MonorepoBuildGate {
   }
 
   /**
+   * Pre-commit monorepo clean build verification gate (Phase 84 T84.2).
+   */
+  public async verifyCleanBuild(worktreePath: string): Promise<MonorepoBuildResult> {
+    return this.verifyBuild(worktreePath);
+  }
+
+  /**
    * Extracts compiler diagnostic error codes from standard output and standard error streams.
    */
   public extractDiagnostics(output: string): CompilerDiagnostic[] {
