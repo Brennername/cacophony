@@ -983,13 +983,34 @@
 
 ### T88.5: Critical Code-Safe Incremental Generation and Stub Rejection
   - [ ] T88.5.1: Critical: Extend method-scoped generation context with resolved member contracts, references, and explicit peer-edit requests while excluding unrelated sibling implementations. [File: packages/engine/src/context/TypeScriptMethodSplicer.ts] [Test: npm test -- packages/engine/src/tests/method_splicer.test.ts]
-  - [ ] T88.5.2: Critical: Reject placeholder comments, empty stubs, unexplained method removals, and out-of-target edits before writing; retain the original file bytes on rejection. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+  - [x] T88.5.2: Critical: Reject placeholder comments, empty stubs, unexplained method removals, and out-of-target edits before writing; retain the original file bytes on rejection. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
   - [ ] T88.5.3: Critical: Add language-adapter contracts for parse, target-symbol range, body validation, surgical splice, and post-edit symbol inventory comparison. [File: packages/engine/src/context/MethodEditAdapter.ts] [Test: npm test -- packages/engine/src/tests/method_splicer.test.ts]
 
 ### T88.6: Critical Regression Verification for Review-to-Fix Lifecycle
   - [ ] T88.6.1: Critical: Write integration tests for implementation completion -> PR publication -> independent model reports -> queued fix -> updated PR -> new assessment round -> policy-gated merge. [File: packages/engine/src/tests/pr_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/pr_lifecycle.test.ts]
   - [ ] T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one queue item, retain commit/run evidence, and resume the correct workflow stage. [File: packages/engine/src/tests/ci_failure_queue.test.ts] [Test: npm test -- packages/engine/src/tests/ci_failure_queue.test.ts]
   - [ ] T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not lose findings, duplicate a completed run, or attribute one model's outcome to another model. [File: packages/engine/src/tests/pr_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/pr_lifecycle.test.ts]
+
+---
+
+## Phase 89: Two-Tier Review Gates, Anti-Stub AST Enforcement & Role-Tiered Model Routing
+*RDF Category: review_and_validation*
+
+### T89.1: Deterministic Structural Anti-Stub Review Gate
+  - [x] T89.1.1: Implement AST empty template and placeholder detection for Angular components in GeneratedChangeGuard. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+  - [x] T89.1.2: Enforce module-root execution guardrail preventing top-level function invocations in library modules. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+  - [x] T89.1.3: Detect and reject arbitrary stripping of JSDoc documentation comment blocks from existing source files. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+
+### T89.2: Multi-Model Progressive Review Gate & Frontier Reviewer Hardening
+  - [x] T89.2.1: Implement inspectStructuralAntiStub in FrontierReviewer rejecting empty templates, placeholder bodies, and comment stripping before LLM invocation. [File: packages/engine/src/inference/FrontierReviewer.ts] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
+  - [ ] T89.2.2: Implement two-stage striped MoE reviewer running Semantic Completeness Critic and SOLID Quality Critic across distinct models. [File: packages/engine/src/inference/FrontierReviewer.ts] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
+
+### T89.3: Model Role Specialization & 3B Feature Disqualification
+  - [x] T89.3.1: Disqualify 3B parameter models from coding and implementer roles, routing implementation tasks to 7B+ instruct models. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
+  - [ ] T89.3.2: Implement micro-model scaffolding generator using 3B models strictly for file structure and method signature generation, delegating method bodies to larger models. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+
+### T89.4: Angular Standards Skill & Component Decomposition Hardening
+  - [x] T89.4.1: Update Angular standards skill documentation enforcing file decomposition, prohibiting placeholder templates, and establishing mobile-first criteria. [File: /home/nexen/.gemini/config/plugins/modern-web-guidance-plugin/skills/angular-standards/SKILL.md]
 
 
 

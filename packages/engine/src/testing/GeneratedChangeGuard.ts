@@ -14,27 +14,8 @@ export class GeneratedChangeGuard {
     replacement: string,
     taskText: string
   ): readonly string[] {
-    if (!original.trim()) return [];
-
     const issues: string[] = [];
-    const oldLines = original.split(/\r?\n/).length;
-    const newLines = replacement.split(/\r?\n/).length;
-    const authorizedRemovals = this.getAuthorizedRemovals(taskText);
 
-    if (oldLines >= 80 && newLines < oldLines * 0.6 && authorizedRemovals.size === 0) {
-      issues.push(`Generated replacement shrinks ${filePath} from ${oldLines} to ${newLines} lines.`);
-    }
-
-    const originalNames = this.collectDeclarations(original, filePath);
-    const replacementNames = this.collectDeclarations(replacement, filePath);
-    const missing = [...originalNames].filter((name) =>
-      !replacementNames.has(name) && !this.isAuthorizedRemoval(name, authorizedRemovals)
-    );
-    if (missing.length > 0) {
-      issues.push(`Generated replacement removes existing declarations: ${missing.slice(0, 12).join(", ")}.`);
-    }
-
-    const originalSource = ts.createSourceFile(filePath, original, ts.ScriptTarget.Latest, true);
     const replacementSource = ts.createSourceFile(filePath, replacement, ts.ScriptTarget.Latest, true);
     const parseDiagnostics = (replacementSource as ts.SourceFile & { parseDiagnostics?: readonly ts.Diagnostic[] }).parseDiagnostics ?? [];
     if (parseDiagnostics.length > 0) {
@@ -51,6 +32,54 @@ export class GeneratedChangeGuard {
     if (residualMarkers.length > 0) {
       issues.push(`Generated replacement contains residual stub comments: ${residualMarkers.slice(0, 3).join("; ")}.`);
     }
+
+    // Check for Angular placeholder/empty templates in newly created or modified components
+    this.inspectAngularComponentTemplates(filePath, replacement, issues);
+
+    // Check for naked module-root function executions in library and service modules
+    this.inspectModuleRootExecutions(filePath, replacementSource, issues);
+
+    if (!original.trim()) {
+      for (const statement of replacementSource.statements) {
+        if (ts.isClassDeclaration(statement)) {
+          for (const member of statement.members) {
+            if (ts.isMethodDeclaration(member) && this.hasExplicitPlaceholder(member)) {
+              const className = statement.name?.text || "AnonymousClass";
+              const mName = this.memberName(member) || "method";
+              issues.push(`Generated class ${className}.${mName} contains a placeholder stub.`);
+            }
+          }
+        }
+      }
+      return issues;
+    }
+
+    const oldLines = original.split(/\r?\n/).length;
+    const newLines = replacement.split(/\r?\n/).length;
+    const authorizedRemovals = this.getAuthorizedRemovals(taskText);
+
+    if (oldLines >= 80 && newLines < oldLines * 0.6 && authorizedRemovals.size === 0) {
+      issues.push(`Generated replacement shrinks ${filePath} from ${oldLines} to ${newLines} lines.`);
+    }
+
+    // Check for JSDoc documentation stripping
+    const originalJsDocs = (original.match(/\/\*\*[\s\S]*?\*\//g) || []).length;
+    const replacementJsDocs = (replacement.match(/\/\*\*[\s\S]*?\*\//g) || []).length;
+    if (originalJsDocs > 0 && replacementJsDocs < originalJsDocs && authorizedRemovals.size === 0) {
+      const stripped = originalJsDocs - replacementJsDocs;
+      issues.push(`Generated replacement stripped ${stripped} JSDoc documentation comment block(s) from ${filePath}.`);
+    }
+
+    const originalNames = this.collectDeclarations(original, filePath);
+    const replacementNames = this.collectDeclarations(replacement, filePath);
+    const missing = [...originalNames].filter((name) =>
+      !replacementNames.has(name) && !this.isAuthorizedRemoval(name, authorizedRemovals)
+    );
+    if (missing.length > 0) {
+      issues.push(`Generated replacement removes existing declarations: ${missing.slice(0, 12).join(", ")}.`);
+    }
+
+    const originalSource = ts.createSourceFile(filePath, original, ts.ScriptTarget.Latest, true);
 
     // A full-file response may retain every declaration name while silently
     // replacing sibling implementations. When an AST target is identified by the task,
@@ -262,5 +291,60 @@ export class GeneratedChangeGuard {
       }
     }
     return names;
+  }
+
+  private static inspectAngularComponentTemplates(filePath: string, source: string, issues: string[]): void {
+    if (!filePath.endsWith(".ts") || !source.includes("@Component")) return;
+    const templateMatch = source.match(/template\s*:\s*[`'"]([\s\S]*?)[`'"]/);
+    if (templateMatch && templateMatch[1] !== undefined) {
+      const tpl = templateMatch[1].trim();
+      if (
+        tpl === "" ||
+        /^<div(\s+class=["'][^"']*["'])?>\s*<\/div>$/i.test(tpl) ||
+        tpl === '<div class="component-container"></div>' ||
+        /^<p>\s*<\/p>$/i.test(tpl) ||
+        tpl.length < 15
+      ) {
+        issues.push(`Generated Angular component in ${filePath} contains an empty or placeholder template.`);
+      }
+    }
+  }
+
+  private static inspectModuleRootExecutions(filePath: string, source: ts.SourceFile, issues: string[]): void {
+    if (
+      !filePath.endsWith(".ts") ||
+      filePath.endsWith(".test.ts") ||
+      filePath.endsWith(".spec.ts") ||
+      filePath.includes("/bin/") ||
+      filePath.includes("/scripts/") ||
+      filePath.includes("main.ts")
+    ) {
+      return;
+    }
+    for (const statement of source.statements) {
+      if (ts.isExpressionStatement(statement) && ts.isCallExpression(statement.expression)) {
+        const expr = statement.expression.expression;
+        const callName = expr.getText(source);
+        if (
+          !callName.startsWith("describe") &&
+          !callName.startsWith("test") &&
+          !callName.startsWith("it") &&
+          !callName.startsWith("before") &&
+          !callName.startsWith("after") &&
+          !callName.startsWith("console.")
+        ) {
+          issues.push(`Generated file ${filePath} executes '${callName}(...)' at module root; library modules must encapsulate execution.`);
+        }
+      }
+    }
+  }
+
+  private static hasExplicitPlaceholder(member: ts.MethodDeclaration): boolean {
+    if (!member.body) return false;
+    const body = member.body.getText();
+    return (
+      /throw\s+new\s+Error\s*\(\s*[`'"](?:not implemented|todo|stub)/i.test(body) ||
+      /\/\/\s*(?:TODO|stub|placeholder)/i.test(body)
+    );
   }
 }

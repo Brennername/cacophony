@@ -91,4 +91,29 @@ test("FrontierReviewer Suite", async (t) => {
     assert.strictEqual(result.comments.length, 1);
     assert.strictEqual(result.comments[0]?.severity, "info");
   });
+
+  await t.test("should reject diff containing empty Angular placeholder template", async () => {
+    const reviewer = new FrontierReviewer();
+    const result = await reviewer.evaluateReview({
+      taskId: "task-04",
+      title: "Render test modal with tabs",
+      diff: "--- a/modal.component.ts\n+++ b/modal.component.ts\n@@ -1,1 +1,7 @@\n+@Component({\n+  selector: 'app-modal',\n+  template: '<div class=\"component-container\"></div>'\n+})\n+export class ModalComponent {}\n"
+    });
+
+    assert.strictEqual(result.verdict, "REJECT");
+    assert.strictEqual(result.solidComplianceScore, 30);
+    assert.ok(result.reviewNotes.includes("placeholder or empty component template"));
+  });
+
+  await t.test("should reject diff that predominantly strips documentation comments", async () => {
+    const reviewer = new FrontierReviewer();
+    const result = await reviewer.evaluateReview({
+      taskId: "task-05",
+      title: "Enforce version checks in adapter",
+      diff: "--- a/adapter.ts\n+++ b/adapter.ts\n@@ -10,12 +10,0 @@\n-/**\n- * Adapter description\n- * with multiple lines\n- */\n"
+    });
+
+    assert.strictEqual(result.verdict, "REJECT");
+    assert.ok(result.reviewNotes.includes("strips documentation comments"));
+  });
 });

@@ -51,6 +51,24 @@ export class FrontierReviewer {
     const diffText = context.diff || "";
     const testSummary = context.testSummary || "All scoped tests passed cleanly.";
 
+    // 1. Structural Anti-Stub Inspection
+    const structuralIssues = this.inspectStructuralAntiStub(context.title, diffText);
+    if (structuralIssues.length > 0) {
+      return {
+        verdict: "REJECT",
+        reviewNotes: `Structural Anti-Stub Gate rejected diff: ${structuralIssues.join("; ")}`,
+        comments: structuralIssues.map((msg) => ({
+          path: "diff",
+          lineNumber: 1,
+          comment: msg,
+          severity: "blocker" as const
+        })),
+        solidComplianceScore: 30,
+        testCoveragePassed: false,
+        securityBoundariesPassed: true
+      };
+    }
+
     // If an inference provider is configured (either frontier API or local reasoner)
     if (this.inferenceProvider) {
       try {
@@ -71,7 +89,7 @@ export class FrontierReviewer {
             messages: [
               {
                 role: "system",
-                content: "You are a senior principal software architect conducting an automated pull request review."
+                content: "You are a senior principal software architect conducting an automated pull request review. Reject any superficial mocks, empty component templates, or stub implementations."
               },
               {
                 role: "user",
@@ -95,6 +113,48 @@ export class FrontierReviewer {
 
     // Heuristic deterministic evaluation when no provider or on provider error
     return this.evaluateHeuristically(context.title, diffText);
+  }
+
+  /**
+   * Deterministic structural verification rejecting empty templates, comment stripping,
+   * and placeholder error stubs before model invocation.
+   */
+  public inspectStructuralAntiStub(_title: string, diffText: string): string[] {
+    const issues: string[] = [];
+    if (!diffText) return issues;
+
+    // Check for empty Angular component templates
+    if (
+      diffText.includes("@Component") &&
+      (/template\s*:\s*[`'"]\s*<div(?:\s+class=["'][^"']*["'])?>\s*<\/div>\s*[`'"]/i.test(diffText) ||
+       /template\s*:\s*[`'"]\s*<div class="component-container"><\/div>\s*[`'"]/i.test(diffText) ||
+       /template\s*:\s*[`'"]\s*<p>\s*<\/p>\s*[`'"]/i.test(diffText))
+    ) {
+      issues.push("Detected placeholder or empty component template ('component-container'). Real semantic UI required.");
+    }
+
+    // Check for placeholder error throwing or TODO bodies
+    if (/\+.*throw\s+new\s+Error\s*\(\s*[`'"](?:not implemented|todo|stub)/i.test(diffText)) {
+      issues.push("Detected unimplemented placeholder method body in added lines.");
+    }
+
+    // Check for net comment-only deletion
+    const addedLines = diffText.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++"));
+    const removedLines = diffText.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---"));
+    const addedCodeLines = addedLines.filter((l) => {
+      const trimmed = l.slice(1).trim();
+      return trimmed.length > 0 && !trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*");
+    });
+    const removedDocLines = removedLines.filter((l) => {
+      const trimmed = l.slice(1).trim();
+      return trimmed.startsWith("/**") || trimmed.startsWith("*") || trimmed.startsWith("*/");
+    });
+
+    if (removedDocLines.length >= 4 && addedCodeLines.length === 0) {
+      issues.push("Diff predominantly strips documentation comments without adding implementation logic.");
+    }
+
+    return issues;
   }
 
   private buildReviewPrompt(title: string, diff: string, testSummary: string): string {

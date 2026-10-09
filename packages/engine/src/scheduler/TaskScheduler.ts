@@ -348,11 +348,11 @@ export class TaskScheduler {
             normalizedAssigned
           ];
         } else if (normalizedAssigned === "qwen2.5-coder:3b" && role !== "architect") {
+          // Disqualify 3b models from implementation to prevent superficial stub generation
           candidateList = [
             "qwen2.5-coder:7b-instruct-q4_K_M",
             "qwen2.5-coder:7b",
-            "gemma3:4b-it-qat",
-            normalizedAssigned
+            "gemma3:4b-it-qat"
           ];
         } else {
           candidateList = [normalizedAssigned];

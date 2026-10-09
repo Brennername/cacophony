@@ -210,4 +210,77 @@ test("GeneratedChangeGuard permits legitimate comments and docstrings mentioning
   assert.deepEqual(issues, []);
 });
 
+test("GeneratedChangeGuard rejects new Angular component with placeholder template", () => {
+  const newComponent = `import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-test-modal',
+  template: '<div class="component-container"></div>',
+  styles: []
+})
+export class TestModalComponent {}
+`;
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "TestModalComponent.ts",
+    "",
+    newComponent,
+    "Render test modal with detailed tabs"
+  );
+
+  assert.ok(
+    issues.some((i) => i.includes("empty or placeholder template")),
+    `Expected placeholder template issue, got: ${JSON.stringify(issues)}`
+  );
+});
+
+test("GeneratedChangeGuard rejects naked function execution at module root in library files", () => {
+  const libraryFile = `export function migrate(from: string, to: string): void {}
+
+migrate("/path/a", "/path/b");
+`;
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "MigrationService.ts",
+    "",
+    libraryFile,
+    "Implement migration service"
+  );
+
+  assert.ok(
+    issues.some((i) => i.includes("executes 'migrate(...)' at module root")),
+    `Expected module root execution issue, got: ${JSON.stringify(issues)}`
+  );
+});
+
+test("GeneratedChangeGuard rejects stripping existing JSDoc documentation comment blocks", () => {
+  const docSource = `/**
+ * Service calculating business metrics.
+ */
+export class MetricService {
+  /**
+   * Computes aggregate total.
+   */
+  public compute(val: number): number {
+    return val * 2;
+  }
+}
+`;
+  const stripped = `export class MetricService {
+  public compute(val: number): number {
+    return val * 2;
+  }
+}
+`;
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "MetricService.ts",
+    docSource,
+    stripped,
+    "Update compute logic"
+  );
+
+  assert.ok(
+    issues.some((i) => i.includes("stripped 2 JSDoc documentation comment block(s)")),
+    `Expected JSDoc stripped issue, got: ${JSON.stringify(issues)}`
+  );
+});
+
 
