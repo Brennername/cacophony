@@ -170,7 +170,6 @@ describe("Arena Epoch REST API Integration Suite (T82.3)", () => {
     assert.equal(data.epoch.name, "Epoch 2: Architecture Upgrade");
     assert.equal(data.epoch.isActive, true);
 
-    // Verify subsequent GET returns Epoch 2 as current
     const checkRes = await fetch(`${baseUrl}/api/arena/epochs`);
     const checkData = (await checkRes.json()) as any;
     assert.equal(checkData.current.epochId, 2);
