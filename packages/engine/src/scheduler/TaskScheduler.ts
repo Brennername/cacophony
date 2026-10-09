@@ -205,6 +205,39 @@ export class TaskScheduler {
 
     const allPending = await this.taskRepo.listPending();
     let pending = allPending.filter((t) => t.status !== "RUNNING");
+
+    // Guard: reconcile and transition tasks already marked completed in taskcade.md or taskcade-history.md
+    if (pending.length > 0) {
+      try {
+        if (!this.seedLoader) {
+          const { TaskcadeSeedLoader } = await import("./TaskcadeSeedLoader.js");
+          this.seedLoader = new TaskcadeSeedLoader();
+        }
+        const completedIds = await this.seedLoader.getCompletedTaskIds();
+        if (completedIds.size > 0) {
+          const uncompleted: TaskRecord[] = [];
+          for (const t of pending) {
+            const normId = t.id.toLowerCase();
+            const shortId = normId.replace("taskcade-", "");
+            const codeMatch = t.title.match(/^(T\d+\.\d+\.\d+):/i);
+            const taskCode = codeMatch ? codeMatch[1]!.toLowerCase() : null;
+            if (
+              completedIds.has(normId) ||
+              completedIds.has(shortId) ||
+              (taskCode && completedIds.has(taskCode))
+            ) {
+              await this.taskRepo.updateStatus(t.id, "COMPLETED", t.durationMs || 1000, t.tokensPerSec || 6.0);
+            } else {
+              uncompleted.push(t);
+            }
+          }
+          pending = uncompleted;
+        }
+      } catch {
+        // Non-fatal if seedLoader is unavailable in test environments
+      }
+    }
+
     if (pending.length === 0) {
       if (this.autoReplenish && !this.drainMode) {
         try {
@@ -260,6 +293,28 @@ export class TaskScheduler {
       const sorted = this.sorter.sort(pending, activeVramModel);
       const targetTask = sorted[0];
       if (!targetTask) return null;
+
+      // 3b. Pre-dispatch safeguard: ensure targetTask was not completed in taskcade.md or history
+      if (this.seedLoader) {
+        try {
+          const completedIds = await this.seedLoader.getCompletedTaskIds();
+          const normalizedId = targetTask.id.toLowerCase();
+          const shortId = normalizedId.replace("taskcade-", "");
+          const taskCodeMatch = targetTask.title.match(/^(T\d+\.\d+\.\d+):/i);
+          const taskCode = taskCodeMatch ? taskCodeMatch[1]!.toLowerCase() : null;
+
+          if (
+            completedIds.has(normalizedId) ||
+            completedIds.has(shortId) ||
+            (taskCode && completedIds.has(taskCode))
+          ) {
+            await this.taskRepo.updateStatus(targetTask.id, "COMPLETED", targetTask.durationMs || 1000, targetTask.tokensPerSec || 6.0);
+            return targetTask;
+          }
+        } catch {
+          // Non-fatal
+        }
+      }
 
       // 4. Groom task (resolve focus files, scope test command, inject architectural directives)
       const groomed = this.groomer.groom(targetTask);

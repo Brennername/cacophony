@@ -23,8 +23,12 @@ export interface ParsedTaskcadeItem {
  */
 export class TaskcadeSeedLoader {
   private readonly taskcadeFilePath: string;
+  private readonly historyFilePath: string | null;
+  private cachedCompletedIds: Set<string> | null = null;
+  private lastCompletedIdsTime = 0;
+  private static readonly CACHE_TTL_MS = 5000;
 
-  constructor(taskcadeFilePath?: string) {
+  constructor(taskcadeFilePath?: string, historyFilePath?: string) {
     if (taskcadeFilePath) {
       this.taskcadeFilePath = taskcadeFilePath;
     } else {
@@ -35,10 +39,62 @@ export class TaskcadeSeedLoader {
       ];
       this.taskcadeFilePath = candidates.find((c) => fsSync.existsSync(c)) || candidates[0]!;
     }
+
+    if (historyFilePath) {
+      this.historyFilePath = historyFilePath;
+    } else {
+      const historyCandidates = [
+        path.resolve(process.cwd(), "docs/taskcade-history.md"),
+        path.resolve(process.cwd(), "../../docs/taskcade-history.md"),
+        path.resolve(process.cwd(), "../docs/taskcade-history.md")
+      ];
+      this.historyFilePath = historyCandidates.find((c) => fsSync.existsSync(c)) || null;
+    }
+  }
+
+  /**
+   * Returns a normalized set of all task IDs marked completed ([x]) across
+   * both docs/taskcade.md and docs/taskcade-history.md.
+   */
+  public async getCompletedTaskIds(forceRefresh = false): Promise<Set<string>> {
+    const now = Date.now();
+    if (!forceRefresh && this.cachedCompletedIds && now - this.lastCompletedIdsTime < TaskcadeSeedLoader.CACHE_TTL_MS) {
+      return this.cachedCompletedIds;
+    }
+
+    const completedSet = new Set<string>();
+
+    const checkFile = async (filePath: string | null): Promise<void> => {
+      if (!filePath) return;
+      try {
+        const text = await fs.readFile(filePath, "utf-8");
+        const lines = text.split("\n");
+        const itemRegex = /^[\s]*-[\s]+\[([xX])\][\s]+([A-Za-z0-9_.-]+):/;
+        for (const line of lines) {
+          const match = line.match(itemRegex);
+          if (match && match[2]) {
+            const rawCode = match[2].trim().toLowerCase();
+            completedSet.add(rawCode);
+            completedSet.add(`taskcade-${rawCode}`);
+          }
+        }
+      } catch {
+        // Missing or unreadable file is non-fatal
+      }
+    };
+
+    await checkFile(this.taskcadeFilePath);
+    await checkFile(this.historyFilePath);
+
+    this.cachedCompletedIds = completedSet;
+    this.lastCompletedIdsTime = now;
+    return completedSet;
   }
 
   /**
    * Reads and parses all uncompleted (or all) checklist items from docs/taskcade.md.
+   * Cross-references against both docs/taskcade.md and docs/taskcade-history.md
+   * to guarantee that already implemented tasks are never duplicated or re-seeded.
    */
   public async loadTasks(options?: {
     readonly includeCompleted?: boolean | undefined;
@@ -51,7 +107,13 @@ export class TaskcadeSeedLoader {
 
     let filtered = parsedItems;
     if (!options?.includeCompleted) {
-      filtered = filtered.filter((item) => !item.completed);
+      const completedIds = await this.getCompletedTaskIds();
+      filtered = filtered.filter((item) => {
+        if (item.completed) return false;
+        const normalizedId = item.taskId.toLowerCase();
+        const shortId = normalizedId.replace("taskcade-", "");
+        return !completedIds.has(normalizedId) && !completedIds.has(shortId);
+      });
     }
     if (options?.phaseFilter) {
       const filterLower = options.phaseFilter.toLowerCase();

@@ -673,6 +673,13 @@ export class CacophonyHttpServer {
         }
       }
 
+      const { TaskcadeSeedLoader } = await import("../scheduler/TaskcadeSeedLoader.js");
+      const loader = new TaskcadeSeedLoader();
+      const completedTaskIds = await loader.getCompletedTaskIds();
+
+      const seenTaskCodes = new Set<string>();
+      let deduplicatedCount = 0;
+
       for (const task of allPending) {
         // Check if task already has a merged PR in Gitea
         const matchingPr = mergedPrMap.get(task.id) ||
@@ -686,23 +693,30 @@ export class CacophonyHttpServer {
           continue;
         }
 
-        // Check if task is already completed in docs/taskcade.md
-        const taskcadePath = path.resolve(process.cwd(), "docs/taskcade.md");
-        if (task.id.startsWith("taskcade-")) {
-          try {
-            const taskcadeContent = await fs.readFile(taskcadePath, "utf-8");
-            const shortId = task.id.replace("taskcade-", "");
-            const regex = new RegExp(`-\\s*\\[x\\]\\s*${shortId}\\b`, "i");
-            if (regex.test(taskcadeContent)) {
-              await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 6.0);
-              reconciledPrCount++;
-              continue;
-            }
-          } catch {
-            // non-fatal
-          }
+        // Check if task is already completed in docs/taskcade.md or docs/taskcade-history.md
+        const normalizedId = task.id.toLowerCase();
+        const shortId = normalizedId.replace("taskcade-", "");
+        const taskCodeMatch = task.title.match(/^(T\d+\.\d+\.\d+):/i);
+        const taskCode = taskCodeMatch ? taskCodeMatch[1]!.toLowerCase() : null;
+
+        if (
+          completedTaskIds.has(normalizedId) ||
+          completedTaskIds.has(shortId) ||
+          (taskCode && completedTaskIds.has(taskCode))
+        ) {
+          await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 6.0);
+          reconciledPrCount++;
+          continue;
         }
 
+        // Deduplicate: if another pending task with the same task code was already queued
+        const dedupeKey = taskCode || shortId;
+        if (seenTaskCodes.has(dedupeKey)) {
+          await taskRepo.updateStatus(task.id, "CANCELLED");
+          deduplicatedCount++;
+          continue;
+        }
+        seenTaskCodes.add(dedupeKey);
 
         // Normalize model assignments: remap unoptimized heavy models to fast instruct variants
         if (task.modelAssigned) {
@@ -717,6 +731,24 @@ export class CacophonyHttpServer {
         }
       }
 
+      // Also reconcile any running tasks if their work is already marked completed
+      const allTasks = await taskRepo.listPending();
+      const runningTasks = allTasks.filter((t) => t.status === "RUNNING");
+      for (const task of runningTasks) {
+        const normalizedId = task.id.toLowerCase();
+        const shortId = normalizedId.replace("taskcade-", "");
+        const taskCodeMatch = task.title.match(/^(T\d+\.\d+\.\d+):/i);
+        const taskCode = taskCodeMatch ? taskCodeMatch[1]!.toLowerCase() : null;
+
+        if (
+          completedTaskIds.has(normalizedId) ||
+          completedTaskIds.has(shortId) ||
+          (taskCode && completedTaskIds.has(taskCode))
+        ) {
+          await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 6.0);
+          reconciledPrCount++;
+        }
+      }
 
       const remainingPending = await taskRepo.listPending();
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -724,6 +756,7 @@ export class CacophonyHttpServer {
         success: true,
         reconciledPrCount,
         normalizedModelCount,
+        deduplicatedCount,
         pendingRemaining: remainingPending.length
       }));
       return;

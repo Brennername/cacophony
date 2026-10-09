@@ -435,5 +435,39 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const finalTask = await taskRepo.getById("task-sched-01");
       assert.equal(finalTask?.status, "COMPLETED");
     });
+
+    test("should skip execution and transition status to COMPLETED for tasks already completed in taskcade", async () => {
+      const task: TaskRecord = {
+        id: "taskcade-t82.1.1",
+        title: "T82.1.1: History item already completed",
+        prompt: "Implement historical task",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P0",
+        modelAssigned: "qwen2.5-coder:7b",
+        testCommand: "npm test",
+        focusFiles: "",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null
+      };
+
+      await taskRepo.create(task);
+
+      const executedTaskIds: string[] = [];
+      scheduler.setExecutionHandler(async (groomedTask) => {
+        executedTaskIds.push(groomedTask.task.id);
+        return { success: true, tokensPerSec: 25.0 };
+      });
+
+      await scheduler.tick();
+      assert.ok(!executedTaskIds.includes("taskcade-t82.1.1"));
+
+      const reconciledTask = await taskRepo.getById("taskcade-t82.1.1");
+      assert.equal(reconciledTask?.status, "COMPLETED");
+    });
   });
 });

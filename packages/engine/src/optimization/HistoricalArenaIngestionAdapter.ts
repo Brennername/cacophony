@@ -10,6 +10,12 @@ import {
   LEGACY_ARENA_DATASET_VERSION,
 } from "@cacophony/shared-types";
 
+/**
+ * HistoricalArenaIngestionAdapter
+ *
+ * Ingests external historical run data and empirical benchmarks from any versioned arena dataset directory
+ * without depending on legacy shell scripts or runners.
+ */
 export class HistoricalArenaIngestionAdapter {
   private readonly defaultBasePath: string;
 
@@ -20,6 +26,10 @@ export class HistoricalArenaIngestionAdapter {
       path.resolve(process.cwd(), "data/arena");
   }
 
+  /**
+   * Discovers and returns the version of the dataset directory.
+   * Reads manifest.json if present; falls back to stats.json inspection or legacy v1.0.0.
+   */
   public async getDatasetVersion(basePath = this.defaultBasePath): Promise<string> {
     try {
       const manifestPath = path.join(basePath, "manifest.json");
@@ -29,7 +39,7 @@ export class HistoricalArenaIngestionAdapter {
         return parsed.version;
       }
     } catch {
-
+      // Manifest not present, inspect stats.json
     }
 
     try {
@@ -45,6 +55,9 @@ export class HistoricalArenaIngestionAdapter {
     }
   }
 
+  /**
+   * Reads and parses stats.json summary telemetry.
+   */
   public async loadStats(basePath = this.defaultBasePath): Promise<HistoricalArenaStats> {
     const statsPath = path.join(basePath, "stats.json");
     const raw = await fs.readFile(statsPath, "utf-8");
@@ -61,6 +74,9 @@ export class HistoricalArenaIngestionAdapter {
     };
   }
 
+  /**
+   * Loads task records from completed, failed, or exhausted subdirectories.
+   */
   public async loadTasks(
     category: "completed" | "failed" | "exhausted",
     limit = 50,
@@ -109,6 +125,9 @@ export class HistoricalArenaIngestionAdapter {
     }
   }
 
+  /**
+   * Loads postmortem failure records.
+   */
   public async loadPostmortems(
     limit = 50,
     basePath = this.defaultBasePath
@@ -133,7 +152,7 @@ export class HistoricalArenaIngestionAdapter {
             ...(d.error_snippets ? { errorSnippets: d.error_snippets } : {}),
           });
         } catch {
-
+          // Skip corrupt records
         }
       }
       return records;
@@ -142,6 +161,12 @@ export class HistoricalArenaIngestionAdapter {
     }
   }
 
+  /**
+   * MitigationParadoxAnalyzer
+   *
+   * Formulates the historical analysis comparing deterministic validation rejections
+   * (review_failed, validation_failed, disallowed_root_files) vs actual test assertion failures.
+   */
   public analyzeMitigationParadox(stats: HistoricalArenaStats): MitigationParadoxReport {
     const totalProcessed = stats.totalProcessed;
     const totalCompleted = stats.totalCompleted;
