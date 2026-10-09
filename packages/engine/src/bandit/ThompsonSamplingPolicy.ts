@@ -10,11 +10,6 @@ export interface ThompsonSamplingConfig {
   readonly uniformPriorBeta?: number;
 }
 
-/**
- * ThompsonSamplingPolicy
- * Implements Bayesian probability matching by sampling from Beta posterior distributions
- * of model win rates. Supports uniform prior resets on epoch advancements.
- */
 export class ThompsonSamplingPolicy implements IBanditPolicy {
   public readonly policyType: BanditPolicyType = "thompson_sampling";
   private readonly defaultAlpha: number;
@@ -53,9 +48,6 @@ export class ThompsonSamplingPolicy implements IBanditPolicy {
     };
   }
 
-  /**
-   * Resets arms to uniform priors upon epoch advancement.
-   */
   public resetArms(arms: readonly BanditArmRecord[]): BanditArmRecord[] {
     this.currentEpoch = 0;
     return arms.map((arm) => ({
