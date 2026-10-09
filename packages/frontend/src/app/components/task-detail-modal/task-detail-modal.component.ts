@@ -37,7 +37,12 @@ export interface PrReviewData {
   template: `
     @if (store.selectedTask(); as task) {
       <div class="modal-backdrop" (click)="close()">
-        <div class="modal-content cacophony-card" (click)="$event.stopPropagation()">
+        <div
+          class="modal-content cacophony-card"
+          [style.width.px]="customWidth()"
+          [style.height.px]="customHeight()"
+          (click)="$event.stopPropagation()"
+        >
           <div class="modal-header">
             <div class="header-titles">
               <div class="badge-row">
@@ -376,6 +381,16 @@ export interface PrReviewData {
 
           <div class="modal-footer">
             <button class="btn btn-outline touch-target" (click)="close()">Close</button>
+            <div
+              class="modal-resize-grip"
+              (pointerdown)="startResize($event)"
+              title="Drag to resize dialog"
+              aria-label="Resize dialog"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 1L1 11M11 5L5 11M11 9L9 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -395,16 +410,38 @@ export interface PrReviewData {
     }
 
     .modal-content {
-      width: 100%;
-      max-width: 820px;
-      max-height: 92vh;
+      width: 860px;
+      height: 640px;
+      max-width: calc(100vw - 1rem);
+      max-height: calc(100vh - 1.5rem);
+      min-width: 320px;
+      min-height: 380px;
       display: flex;
       flex-direction: column;
       background: var(--bg-surface);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-md);
       overflow: hidden;
+      position: relative;
+      resize: both;
+      box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--border-strong);
       animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (max-width: 640px) {
+      .modal-content {
+        width: calc(100vw - 1rem);
+        height: calc(100vh - 1.5rem);
+        max-width: 100vw;
+        max-height: 100vh;
+        min-width: 0;
+        min-height: 0;
+        resize: none;
+      }
+
+      .modal-resize-grip {
+        display: none;
+      }
     }
 
     @keyframes modalFadeIn {
@@ -425,6 +462,8 @@ export interface PrReviewData {
       padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--border-subtle);
       background: var(--bg-surface-elevated);
+      flex-shrink: 0;
+      z-index: 10;
     }
 
     .touch-target {
@@ -440,6 +479,10 @@ export interface PrReviewData {
       border-bottom: 1px solid var(--border-subtle);
       overflow-x: auto;
       scrollbar-width: none;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 8;
     }
 
     .tab-btn {
@@ -579,7 +622,11 @@ export interface PrReviewData {
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
+      flex: 1 1 0%;
+      min-height: 0;
+      min-width: 0;
       overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .pr-banner {
@@ -591,6 +638,8 @@ export interface PrReviewData {
       background: rgba(56, 189, 248, 0.08);
       border-bottom: 1px solid rgba(56, 189, 248, 0.25);
       flex-wrap: wrap;
+      flex-shrink: 0;
+      z-index: 9;
     }
 
     .pr-banner.approved {
@@ -883,6 +932,8 @@ export interface PrReviewData {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      min-width: 0;
+      width: 100%;
     }
 
     .stage-item {
@@ -893,6 +944,8 @@ export interface PrReviewData {
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     .stage-top {
@@ -935,8 +988,11 @@ export interface PrReviewData {
       font-size: 0.75rem;
       color: #a5f3fc;
       white-space: pre-wrap;
-      max-height: 120px;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      max-height: 160px;
       overflow-y: auto;
+      overflow-x: auto;
     }
 
     .full-terminal-box {
@@ -1077,9 +1133,33 @@ export interface PrReviewData {
     .modal-footer {
       display: flex;
       justify-content: flex-end;
+      align-items: center;
       padding: 0.875rem 1.25rem;
       border-top: 1px solid var(--border-subtle);
       background: var(--bg-surface-elevated);
+      flex-shrink: 0;
+      position: relative;
+      padding-right: 2rem;
+    }
+
+    .modal-resize-grip {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: se-resize;
+      color: var(--text-muted);
+      touch-action: none;
+      user-select: none;
+      transition: color 0.15s ease;
+    }
+
+    .modal-resize-grip:hover {
+      color: var(--color-brand);
     }
 
     .btn {
@@ -1114,6 +1194,11 @@ export class TaskDetailModalComponent {
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
   public readonly activeTab = signal<TaskModalTab>('overview');
   public readonly copiedMessage = signal<string | null>(null);
+
+  // User-defined static custom dimensions to prevent dynamic tab jumps
+  public readonly customWidth = signal<number | null>(null);
+  public readonly customHeight = signal<number | null>(null);
+  private isResizing = false;
 
   // Task-specific stream buffer fetched from backend
   public readonly taskStreamBuffer = signal<string | null>(null);
@@ -1302,6 +1387,77 @@ export class TaskDetailModalComponent {
       });
     } catch {
       return '';
+    }
+  }
+
+  /**
+   * Initializes interactive dialog resizing via the resize grip handle.
+   * Tracks pointer events across the window with boundary clamping.
+   */
+  public startResize(event: PointerEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isResizing = true;
+
+    const startX = event.clientX;
+    const startY = event.clientY;
+
+    const modalEl = (event.currentTarget as HTMLElement).closest('.modal-content') as HTMLElement | null;
+    const initialWidth = modalEl ? modalEl.offsetWidth : (this.customWidth() ?? 860);
+    const initialHeight = modalEl ? modalEl.offsetHeight : (this.customHeight() ?? 640);
+
+    const onPointerMove = (moveEvent: PointerEvent): void => {
+      if (!this.isResizing) return;
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+      const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+      const minW = 320;
+      const minH = 380;
+      const maxW = Math.max(minW, viewportWidth - 24);
+      const maxH = Math.max(minH, viewportHeight - 24);
+
+      const nextWidth = Math.min(Math.max(initialWidth + deltaX, minW), maxW);
+      const nextHeight = Math.min(Math.max(initialHeight + deltaY, minH), maxH);
+
+      this.customWidth.set(Math.round(nextWidth));
+      this.customHeight.set(Math.round(nextHeight));
+    };
+
+    const onPointerUp = (): void => {
+      this.isResizing = false;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    }
+  }
+
+  /**
+   * Synchronizes dimensions when the user resizes via native CSS handle.
+   */
+  @HostListener('pointerup')
+  public syncNativeResize(): void {
+    if (typeof document === 'undefined') return;
+    const modalEl = document.querySelector('.modal-content') as HTMLElement | null;
+    if (modalEl && !this.isResizing) {
+      const currentW = modalEl.offsetWidth;
+      const currentH = modalEl.offsetHeight;
+      if (currentW > 0 && currentH > 0 && (currentW !== this.customWidth() || currentH !== this.customHeight())) {
+        if (this.customWidth() !== null || currentW !== 860 || currentH !== 640) {
+          this.customWidth.set(currentW);
+          this.customHeight.set(currentH);
+        }
+      }
     }
   }
 }

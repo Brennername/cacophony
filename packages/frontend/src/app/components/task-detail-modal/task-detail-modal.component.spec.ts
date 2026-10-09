@@ -68,4 +68,125 @@ describe('TaskDetailModalComponent', () => {
     comp.handleEscape();
     expect(store.selectedTask()).toBeNull();
   });
+
+  it('maintains static dialog dimensions across tab changes and allows user resizing', () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    store.selectedTask.set({
+      id: 'task-modal-resize-test',
+      title: 'Modal Resize Test',
+      status: 'RUNNING',
+      priority: 'P1',
+      role: 'implementer',
+      stages: [
+        {
+          id: 's1',
+          stageName: 'generation',
+          stageStatus: 'SUCCESS',
+          logOutput: 'Line 1\nLine 2\nLine 3',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs: 350,
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    // Initial custom dimensions are null, letting static stylesheet rules define 860px x 640px
+    expect(comp.customWidth()).toBeNull();
+    expect(comp.customHeight()).toBeNull();
+
+    // Verify modal element and resize grip exist
+    const compiled = fixture.nativeElement as HTMLElement;
+    const modalEl = compiled.querySelector('.modal-content') as HTMLElement;
+    const resizeGrip = compiled.querySelector('.modal-resize-grip') as HTMLElement;
+    const tabBar = compiled.querySelector('.tab-bar') as HTMLElement;
+
+    expect(modalEl).toBeTruthy();
+    expect(resizeGrip).toBeTruthy();
+    expect(tabBar).toBeTruthy();
+
+    // Switch between tabs: dimensions remain null (static CSS size) without expansion
+    comp.activeTab.set('stages');
+    fixture.detectChanges();
+    expect(comp.customWidth()).toBeNull();
+    expect(comp.customHeight()).toBeNull();
+
+    comp.activeTab.set('diffs');
+    fixture.detectChanges();
+    expect(comp.customWidth()).toBeNull();
+    expect(comp.customHeight()).toBeNull();
+
+    // User explicitly resizes the modal
+    comp.customWidth.set(920);
+    comp.customHeight.set(700);
+    fixture.detectChanges();
+
+    expect(modalEl.style.width).toBe('920px');
+    expect(modalEl.style.height).toBe('700px');
+
+    // Switching back to stages tab retains the user-defined static dimensions
+    comp.activeTab.set('stages');
+    fixture.detectChanges();
+    expect(comp.customWidth()).toBe(920);
+    expect(comp.customHeight()).toBe(700);
+    expect(modalEl.style.width).toBe('920px');
+    expect(modalEl.style.height).toBe('700px');
+  });
+
+  it('triggers interactive startResize pointer handling', () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    store.selectedTask.set({
+      id: 'task-drag-test',
+      title: 'Drag Test',
+      status: 'PENDING',
+      priority: 'P2',
+      role: 'reviewer',
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    const compiled = fixture.nativeElement as HTMLElement;
+    const resizeGrip = compiled.querySelector('.modal-resize-grip') as HTMLElement;
+
+    let defaultPrevented = false;
+    let propagationStopped = false;
+    const mockPointerEvent = {
+      preventDefault: () => { defaultPrevented = true; },
+      stopPropagation: () => { propagationStopped = true; },
+      clientX: 500,
+      clientY: 400,
+      currentTarget: resizeGrip,
+    } as unknown as PointerEvent;
+
+    comp.startResize(mockPointerEvent);
+    expect(defaultPrevented).toBe(true);
+    expect(propagationStopped).toBe(true);
+
+    // Simulate pointer move event
+    const moveEvent = new PointerEvent('pointermove', {
+      clientX: 550,
+      clientY: 460,
+    });
+    window.dispatchEvent(moveEvent);
+
+    expect(comp.customWidth()).toBeGreaterThan(0);
+    expect(comp.customHeight()).toBeGreaterThan(0);
+
+    // Simulate pointer up event
+    const upEvent = new PointerEvent('pointerup');
+    window.dispatchEvent(upEvent);
+  });
 });
