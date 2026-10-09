@@ -936,18 +936,18 @@ export class CacophonyHttpServer {
 
     // 4c0.2. REST API: POST /api/models/reset-stats - Reset Model Health Metrics to Baseline
     if (url.pathname === "/api/models/reset-stats" && req.method === "POST") {
-      try {
-        const healthRepo = this.daemon.getModelHealthRepository();
-        await healthRepo.resetAllStats();
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, message: "Model health stats reset to clean baseline" }));
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: message }));
-      }
-      return;
-    }
+  try {
+    const healthRepo = this.daemon.getModelHealthRepository();
+    await healthRepo.resetAllStats();
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: true, message: "Model health stats reset to clean baseline" }));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: message }));
+  }
+  return;
+}
 
     // 4c0.3. REST API: GET /api/arena/epochs/:id/history - Get Snapshot History for Epoch
     if (url.pathname.startsWith("/api/arena/epochs/") && url.pathname.endsWith("/history") && req.method === "GET") {
