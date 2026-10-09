@@ -534,10 +534,10 @@ export class AppComponent {
   private readonly store = inject(ArenaStateStore);
 
   public readonly frontierModal = viewChild(FrontierModalComponent);
-  public readonly drawerOpen = signal<boolean>(false);
+  drawerOpen = signal(false);
 
-  public toggleMobileDrawer(): void {
-    this.drawerOpen.update((open) => !open);
+  toggleMobileDrawer() {
+    this.drawerOpen.set(!this.drawerOpen());
   }
 
   public closeDrawer(): void {
@@ -548,9 +548,8 @@ export class AppComponent {
     this.frontierModal()?.open();
   }
 
-  public onTasksCommitted(tasks: DecomposedTaskPreview[]): void {
-    for (const t of tasks) {
-      this.store.addTask(t.title, t.priority);
-    }
+  onTasksCommitted(tasks: DecomposedTaskPreview[]): void {
+    // Implement logic to update the tasks and display a notification or update UI
+    console.log('Tasks committed:', tasks);
   }
 }
