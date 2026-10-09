@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AppComponent } from './app';
+import { AppComponent } from './app.js';
 import { routes } from './app.routes';
 import { ThemeService } from './services/theme.service';
 import { ArenaStateStore } from './services/arena-state.store';
@@ -22,7 +22,6 @@ describe('Angular Standalone Dashboard Component Tests', () => {
     expect(compiled.querySelector('.brand-logo')?.textContent).toContain('CACOPHONY');
     expect(compiled.querySelector('.arena-tag')?.textContent).toContain('Local Model Arena');
 
-    // Test mobile drawer reactivity
     expect(app.drawerOpen()).toBe(false);
     app.toggleMobileDrawer();
     expect(app.drawerOpen()).toBe(true);
