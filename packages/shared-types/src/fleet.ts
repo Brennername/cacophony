@@ -1,20 +1,11 @@
 import { z } from "zod";
 
-/**
- * Fleet node status.
- */
 export const FleetNodeStatusSchema = z.enum(["ONLINE", "OFFLINE", "BUSY", "DEGRADED", "DRAINING"]);
 export type FleetNodeStatus = z.infer<typeof FleetNodeStatusSchema>;
 
-/**
- * Supported GPU architecture types in fleet.
- */
 export const FleetGpuTypeSchema = z.enum(["AMD_VEGA", "AMD_RDNA", "NVIDIA_CUDA", "APPLE_SILICON", "CPU_ONLY"]);
 export type FleetGpuType = z.infer<typeof FleetGpuTypeSchema>;
 
-/**
- * Fleet node entity.
- */
 export interface FleetNodeRecord {
   readonly nodeId: string;
   readonly hostname: string;
@@ -31,9 +22,6 @@ export interface FleetNodeRecord {
   readonly tokenHash: string;
 }
 
-/**
- * Node registration request schema.
- */
 export const FleetNodeRegistrationSchema = z.object({
   nodeId: z.string(),
   hostname: z.string(),
@@ -45,9 +33,6 @@ export const FleetNodeRegistrationSchema = z.object({
 });
 export type FleetNodeRegistration = z.infer<typeof FleetNodeRegistrationSchema>;
 
-/**
- * Hardware benchmark profile record.
- */
 export interface HardwareProfileRecord {
   readonly profileId: string;
   readonly gpuType: FleetGpuType;
@@ -55,4 +40,24 @@ export interface HardwareProfileRecord {
   readonly maxContextTokens: number;
   readonly thermalThresholdCelsius: number;
   readonly evalTokensPerSec: number;
+}
+
+export interface INodeHealthStatus {
+  nodeId: string;
+  hostname: string;
+  ipAddress: string;
+  port: number;
+  gpuType: FleetGpuType;
+  vramTotalMb: number;
+  vramUsedMb: number;
+  gpuBusyPercent: number;
+  temperatureCelsius: number;
+  status: FleetNodeStatus;
+  activeTasksCount: number;
+  lastHeartbeat: string;
+  tokenHash: string;
+  activeMemoryUsage: number; // in MB
+  apuThermal: number; // in Celsius
+  gpuThermal: number; // in Celsius
+  currentTaskAssignment?: string | null; // Task ID or null if no task is assigned
 }
