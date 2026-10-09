@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { GpuMetrics } from "./telemetry.js";
 
 /**
  * Normalized hardware device categories.
@@ -162,4 +163,40 @@ export const SystemToolsDiagnosticReportSchema = z.object({
   unifiedInstallCommand: z.string(),
   missingCapabilities: z.array(z.string()),
 });
+
+/**
+ * Common hardware telemetry provider contract declaring vendor categorization,
+ * VRAM capacity measurement, thermal monitoring, and real-time sensor sampling.
+ */
+export interface IHardwareTelemetryProvider {
+  /**
+   * Unique identifier name for the telemetry provider implementation.
+   */
+  getName(): string;
+
+  /**
+   * Normalized hardware category (NVIDIA_CUDA, AMD_APU_VEGA, APPLE_SILICON, etc.).
+   */
+  getCategory?(): HardwareDeviceCategory;
+
+  /**
+   * Probes system to verify if this telemetry provider can sample the host.
+   */
+  isAvailable(): Promise<boolean>;
+
+  /**
+   * Samples physical sensors and returns normalized GPU and memory metrics.
+   */
+  sample(): Promise<GpuMetrics>;
+
+  /**
+   * Retrieves VRAM capacity, used bytes, and free bytes.
+   */
+  getVramMetrics?(): Promise<{ totalBytes: number; usedBytes: number; freeBytes: number }>;
+
+  /**
+   * Retrieves thermal temperature and throttling status.
+   */
+  getThermalMetrics?(): Promise<{ temperatureCelsius: number; isThrottled: boolean }>;
+}
 

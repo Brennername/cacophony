@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { GpuMetrics } from "@cacophony/shared-types";
+import type { GpuMetrics, HardwareDeviceCategory } from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 
 /**
@@ -29,6 +29,10 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
 
   public getName(): string {
     return "AmdVegaTelemetryProvider";
+  }
+
+  public getCategory(): HardwareDeviceCategory {
+    return "AMD_APU_VEGA";
   }
 
   /**

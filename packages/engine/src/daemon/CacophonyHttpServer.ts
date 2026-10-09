@@ -1475,6 +1475,34 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c2b. REST API: Dynamic Multi-Window Success Analytics & Convergence Metrics (T85.1.3)
+    if (url.pathname === "/api/analytics/window-success" && req.method === "GET") {
+      const windowSize = Number(url.searchParams.get("windowSize") || "50");
+      const role = (url.searchParams.get("role") as any) || undefined;
+      const model = url.searchParams.get("model") || undefined;
+      const commitHash = url.searchParams.get("commitHash") || undefined;
+      const category = url.searchParams.get("category") || undefined;
+
+      const { RollingWindowAnalyticsService } = await import("../analytics/RollingWindowAnalyticsService.js");
+      const taskRepo = this.daemon.getTaskRepository();
+      const service = new RollingWindowAnalyticsService(taskRepo);
+
+      const filter: any = {};
+      if (role) filter.role = role;
+      if (model) filter.model = model;
+      if (commitHash) filter.commitHash = commitHash;
+      if (category) filter.category = category;
+
+      const metrics = await service.computeRollingMetrics({
+        windowSize: Number.isNaN(windowSize) ? 50 : windowSize,
+        filter,
+      });
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(metrics));
+      return;
+    }
+
     // 4c3. REST API: Fleet Node Registration & Cluster Topology
     if (url.pathname === "/api/fleet/register" && req.method === "POST") {
       let body = "";

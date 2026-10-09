@@ -1,77 +1,114 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import type { TaskRecord } from "@cacophony/shared-types";
+import { GitRegressionCorrelator } from "../analytics/GitRegressionCorrelator.js";
+import { RegressionDispatchSupervisor } from "../scheduler/RegressionDispatchSupervisor.js";
 
-// Mock dependencies
-const mockFailureClassifier = {
-  classifyFailure: () => ({ category: 'surge' }),
-};
+describe("RegressionDispatchSupervisor Suite (T85.3)", () => {
+  const createMockTask = (id: string, status: "COMPLETED" | "FAILED", focusFiles = "src/app.ts"): TaskRecord => ({
+    id,
+    title: `Task ${id}`,
+    prompt: `Prompt for ${id}`,
+    role: "implementer",
+    status,
+    priority: "P1",
+    modelAssigned: "qwen2.5-coder:7b",
+    testCommand: "npm test",
+    focusFiles,
+    targetBranch: null,
+    prUrl: null,
+    failureCount: status === "FAILED" ? 1 : 0,
+    createdAt: new Date(Date.now() - 60000).toISOString(),
+    updatedAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+  });
 
-const mockGitWorktreeManager = {
-  getGitHashForCommit: (commitId: string) => `git-hash-${commitId}`,
-};
+  it("correlates task failure with culprit commit via focus files", () => {
+    const commits = [
+      {
+        hash: "c111111111111111111111111111111111111111",
+        author: "Dev",
+        timestamp: Date.now() - 10000,
+        subject: "fix: update core engine",
+      },
+      {
+        hash: "c222222222222222222222222222222222222222",
+        author: "Dev",
+        timestamp: Date.now() - 50000,
+        subject: "feat: change app bootstrap",
+      },
+    ];
 
-const mockIncidentBundleRecorder = {
-  recordIncidentBundle: (bundle: any) => bundle,
-};
+    const correlator = new GitRegressionCorrelator("/tmp", (cmd: string) => {
+      if (cmd.includes("c2222222")) return "src/app.ts\nsrc/index.ts";
+      return "src/other.ts";
+    });
 
-const mockAutomatedPrReviewLoop = {
-  reviewPullRequest: (_prId: number) => ({ verdict: 'approved' }),
-};
+    const failed = createMockTask("task-f1", "FAILED", "src/app.ts");
+    const result = correlator.correlateFailure(failed, commits);
 
-// Mock classes
-class MockDiagnosticDispatch {
-  dispatchDiagnostics = () => true;
-}
+    assert.equal(result.confidenceScore, 0.9);
+    assert.equal(result.culpritCommit?.hash, "c222222222222222222222222222222222222222");
+    assert(result.matchedFiles.includes("src/app.ts"));
+  });
 
-class MockAutomatedRemediation {
-  applyRemediation = () => true;
-}
+  it("triggers diagnostic task creation on consecutive failure streak", async () => {
+    const createdTasks: TaskRecord[] = [];
+    const mockRepo = {
+      create: async (t: TaskRecord) => {
+        createdTasks.push(t);
+        return t;
+      },
+      listRecent: async () => [],
+    };
 
-class MockQueueResumption {
-  resumeQueue = () => true;
-}
+    const supervisor = new RegressionDispatchSupervisor(mockRepo, undefined, {
+      consecutiveFailuresTrigger: 3,
+    });
 
-describe('Regression Dispatch Integration Tests', () => {
-  it('should handle failure surge -> git hash correlation -> diagnostic dispatch -> automated remediation -> queue resumption lifecycle', async () => {
-    // Arrange
-    const failureClassifier = mockFailureClassifier;
-    const gitWorktreeManager = mockGitWorktreeManager;
-    const incidentBundleRecorder = mockIncidentBundleRecorder;
-    const automatedPrReviewLoop = mockAutomatedPrReviewLoop;
+    const tasks: TaskRecord[] = [
+      createMockTask("1", "FAILED"),
+      createMockTask("2", "FAILED"),
+      createMockTask("3", "FAILED"),
+      createMockTask("4", "COMPLETED"),
+    ];
 
-    const diagnosticDispatch = new MockDiagnosticDispatch();
-    const automatedRemediation = new MockAutomatedRemediation();
-    const queueResumption = new MockQueueResumption();
+    const health = await supervisor.evaluateQueueHealth(tasks);
+    assert.equal(health.isTriggered, true);
+    assert.equal(health.consecutiveFailures, 3);
+    assert.equal(createdTasks.length, 1);
+    assert.equal(createdTasks[0]?.priority, "P0");
+    assert(createdTasks[0]?.title.includes("[P0 Triage]"));
+  });
 
-    // Simulate failure surge
-    const failureCategory = failureClassifier.classifyFailure().category;
-    assert.strictEqual(failureCategory, 'surge');
+  it("triggers plateau intervention when performance stagnates", async () => {
+    const createdTasks: TaskRecord[] = [];
+    const mockRepo = {
+      create: async (t: TaskRecord) => {
+        createdTasks.push(t);
+        return t;
+      },
+      listRecent: async () => [],
+    };
 
-    // Simulate git hash correlation
-    const commitId = 'test-commit-id';
-    const gitHash = gitWorktreeManager.getGitHashForCommit(commitId);
-    assert.strictEqual(gitHash, `git-hash-${commitId}`);
+    const supervisor = new RegressionDispatchSupervisor(mockRepo);
 
-    // Simulate diagnostic dispatch
-    const diagnosticDispatchResult = diagnosticDispatch.dispatchDiagnostics();
-    assert.strictEqual(diagnosticDispatchResult, true);
+    const plateauMetrics = {
+      windowSize: 50,
+      sampleCount: 50,
+      successCount: 40,
+      failureCount: 10,
+      successRatePercent: 80.0,
+      velocityDelta: 0.1,
+      accelerationDelta: 0.0,
+      isPlateaued: true,
+      filteredBy: {},
+    };
 
-    // Simulate automated remediation
-    const automatedRemediationResult = automatedRemediation.applyRemediation();
-    assert.strictEqual(automatedRemediationResult, true);
-
-    // Simulate incident bundle recording
-    const incidentBundle = { category: failureCategory, gitHash };
-    const recordedBundle = incidentBundleRecorder.recordIncidentBundle(incidentBundle);
-    assert.deepStrictEqual(recordedBundle, incidentBundle);
-
-    // Simulate automated PR review loop
-    const prId = 123;
-    const reviewResult = automatedPrReviewLoop.reviewPullRequest(prId);
-    assert.strictEqual(reviewResult.verdict, 'approved');
-
-    // Simulate queue resumption
-    const queueResumptionResult = queueResumption.resumeQueue();
-    assert.strictEqual(queueResumptionResult, true);
+    const intervention = await supervisor.triggerPlateauIntervention(plateauMetrics);
+    assert(intervention !== null);
+    assert.equal(intervention?.priority, "P0");
+    assert(intervention?.title.includes("[P0 Architecture] Plateau Intervention"));
+    assert.equal(createdTasks.length, 1);
   });
 });

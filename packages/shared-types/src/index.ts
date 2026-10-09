@@ -16,3 +16,4 @@ export * from "./bandit.js";
 export * from "./gitea.js";
 export * from "./diff.js";
 export * from "./diagnostics.js";
+export * from "./analytics.js";

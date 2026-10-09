@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import type { GpuMetrics } from "@cacophony/shared-types";
+import type { GpuMetrics, HardwareDeviceCategory } from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 
 /**
@@ -18,6 +18,10 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
 
   public getName(): string {
     return "FallbackTelemetryProvider";
+  }
+
+  public getCategory(): HardwareDeviceCategory {
+    return "CPU_FALLBACK";
   }
 
   public async isAvailable(): Promise<boolean> {

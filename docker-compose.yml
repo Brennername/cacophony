@@ -1,5 +1,7 @@
 services:
   cacophony-engine:
+    profiles:
+      - default
     build:
       context: .
       dockerfile: Dockerfile
@@ -56,6 +58,175 @@ services:
       timeout: 5s
       start_period: 15s
       retries: 3
+
+  cacophony-engine-nvidia:
+    profiles:
+      - nvidia
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cacophony-engine-nvidia
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${PORT_FRONTEND:-24072}:${PORT_API:-24161}"
+      - "${PORT_API:-24161}:${PORT_API:-24161}"
+      - "${PORT_MCP:-21264}:${PORT_MCP:-21264}"
+    environment:
+      - NODE_ENV=production
+      - DB_DRIVER=${DB_DRIVER:-pglite}
+      - DB_PATH=/app/data/cacophony_pglite
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-8192}
+      - OLLAMA_NUM_PREDICT=${OLLAMA_NUM_PREDICT:-4096}
+      - DEFAULT_IMPLEMENTER_MODEL=${DEFAULT_IMPLEMENTER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - DEFAULT_REVIEWER_MODEL=${DEFAULT_REVIEWER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - FRONTIER_REVIEWER_MODEL=${FRONTIER_REVIEWER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - GITEA_BASE_URL=${GITEA_BASE_URL:-http://cacophony-gitea:3000}
+      - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
+      - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
+      - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
+      - GIT_REMOTE=${GIT_REMOTE:-gitea}
+      - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
+      - GITEA_OAUTH_CLIENT_SECRET=${GITEA_OAUTH_CLIENT_SECRET:-}
+      - GITEA_OAUTH_REDIRECT_URI=${GITEA_OAUTH_REDIRECT_URI:-http://localhost:24072/auth/callback}
+      - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./conf:/app/conf:ro
+      - ./data:/app/data:rw
+      - ./workspaces:/app/workspaces:rw
+      - ./docs:/app/docs:ro
+      - ./.git:/app/.git:rw
+      - ./.env:/app/.env:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - cacophony-gitea
+    networks:
+      - cacophony-net
+
+  cacophony-engine-amd:
+    profiles:
+      - amd
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cacophony-engine-amd
+    restart: unless-stopped
+    init: true
+    devices:
+      - "/dev/kfd:/dev/kfd"
+      - "/dev/dri:/dev/dri"
+    group_add:
+      - video
+      - render
+    ports:
+      - "${PORT_FRONTEND:-24072}:${PORT_API:-24161}"
+      - "${PORT_API:-24161}:${PORT_API:-24161}"
+      - "${PORT_MCP:-21264}:${PORT_MCP:-21264}"
+    environment:
+      - NODE_ENV=production
+      - DB_DRIVER=${DB_DRIVER:-pglite}
+      - DB_PATH=/app/data/cacophony_pglite
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-8192}
+      - OLLAMA_NUM_PREDICT=${OLLAMA_NUM_PREDICT:-4096}
+      - DEFAULT_IMPLEMENTER_MODEL=${DEFAULT_IMPLEMENTER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - DEFAULT_REVIEWER_MODEL=${DEFAULT_REVIEWER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - FRONTIER_REVIEWER_MODEL=${FRONTIER_REVIEWER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - GITEA_BASE_URL=${GITEA_BASE_URL:-http://cacophony-gitea:3000}
+      - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
+      - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
+      - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
+      - GIT_REMOTE=${GIT_REMOTE:-gitea}
+      - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
+      - GITEA_OAUTH_CLIENT_SECRET=${GITEA_OAUTH_CLIENT_SECRET:-}
+      - GITEA_OAUTH_REDIRECT_URI=${GITEA_OAUTH_REDIRECT_URI:-http://localhost:24072/auth/callback}
+      - SYSFS_DRM_PATH=/host/sys/class/drm
+      - SYSFS_HWMON_PATH=/host/sys/class/hwmon
+      - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./conf:/app/conf:ro
+      - ./data:/app/data:rw
+      - ./workspaces:/app/workspaces:rw
+      - ./docs:/app/docs:ro
+      - ./.git:/app/.git:rw
+      - ./.env:/app/.env:ro
+      - /sys:/host/sys:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - cacophony-gitea
+    networks:
+      - cacophony-net
+
+  cacophony-engine-cpu:
+    profiles:
+      - cpu
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cacophony-engine-cpu
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${PORT_FRONTEND:-24072}:${PORT_API:-24161}"
+      - "${PORT_API:-24161}:${PORT_API:-24161}"
+      - "${PORT_MCP:-21264}:${PORT_MCP:-21264}"
+    environment:
+      - NODE_ENV=production
+      - DB_DRIVER=${DB_DRIVER:-pglite}
+      - DB_PATH=/app/data/cacophony_pglite
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-4096}
+      - OLLAMA_NUM_PREDICT=${OLLAMA_NUM_PREDICT:-2048}
+      - DEFAULT_IMPLEMENTER_MODEL=${DEFAULT_IMPLEMENTER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - DEFAULT_REVIEWER_MODEL=${DEFAULT_REVIEWER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - FRONTIER_REVIEWER_MODEL=${FRONTIER_REVIEWER_MODEL:-qwen2.5-coder:7b-instruct-q4_K_M}
+      - GITEA_BASE_URL=${GITEA_BASE_URL:-http://cacophony-gitea:3000}
+      - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
+      - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
+      - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
+      - GIT_REMOTE=${GIT_REMOTE:-gitea}
+      - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
+      - GITEA_OAUTH_CLIENT_SECRET=${GITEA_OAUTH_CLIENT_SECRET:-}
+      - GITEA_OAUTH_REDIRECT_URI=${GITEA_OAUTH_REDIRECT_URI:-http://localhost:24072/auth/callback}
+      - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./conf:/app/conf:ro
+      - ./data:/app/data:rw
+      - ./workspaces:/app/workspaces:rw
+      - ./docs:/app/docs:ro
+      - ./.git:/app/.git:rw
+      - ./.env:/app/.env:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - cacophony-gitea
+    networks:
+      - cacophony-net
 
   cacophony-gitea:
     image: gitea/gitea:1.22-rootless
