@@ -302,5 +302,70 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("mockResolvedValue = (val: any) =>"));
     assert.ok(result.repairedCode.includes("spyOn: (obj: any, method: any)"));
   });
+
+  it("ensures unresolvable relative module replacement does not swallow preceding imports", () => {
+    const source = `import { Task } from '@cacophony/shared-types';\nimport { ThermalGovernorBackpressure } from '@cacophony/db';\nimport { AppleSiliconThermalProfile } from './AppleSiliconThermalProfile.js';\nexport class Telemetry {}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2307",
+      "Cannot find module './AppleSiliconThermalProfile.js' or its corresponding type declarations.",
+      3
+    )], "packages/engine/src/telemetry/Provider.ts");
+
+    assert.ok(result.repairedCode.includes("import { Task } from '@cacophony/shared-types';"));
+    assert.ok(result.repairedCode.includes("import { ThermalGovernorBackpressure } from '@cacophony/db';"));
+    assert.ok(result.repairedCode.includes("class AppleSiliconThermalProfile"));
+    assert.ok(!result.repairedCode.includes("class Task }"));
+  });
+
+  it("repairs TS2307 on hallucinated @cacophony/* package modules with fallback declarations", () => {
+    const source = `import { HardwareDiscoveryEngine } from '@cacophony/hardware';\nexport class Service { engine: HardwareDiscoveryEngine; }`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2307",
+      "Cannot find module '@cacophony/hardware' or its corresponding type declarations.",
+      1
+    )], "packages/engine/src/services/Service.ts");
+
+    assert.ok(!result.repairedCode.includes("from '@cacophony/hardware'"));
+    assert.ok(result.repairedCode.includes("type HardwareDiscoveryEngine"));
+    assert.ok(result.repairedCode.includes("const HardwareDiscoveryEngine: any ="));
+  });
+
+  it("repairs TS2300 duplicate identifier by cleaning duplicate import statement", () => {
+    const source = `import { GitWorktreeManager } from '../gitea/GitWorktreeManager.js';\nimport { TaskScheduler } from '../scheduler/TaskScheduler.js';\nimport { GitWorktreeManager } from '../gitea/GitWorktreeManager.js';\nexport class Orchestrator {}`;
+    const result = repairer.repair(source, [
+      diagnostic("TS2300", "Duplicate identifier 'GitWorktreeManager'.", 1),
+      diagnostic("TS2300", "Duplicate identifier 'GitWorktreeManager'.", 3)
+    ]);
+
+    assert.ok(result.repairedCode.includes("import { GitWorktreeManager } from '../gitea/GitWorktreeManager.js';"));
+    assert.ok(result.repairedCode.includes("import { TaskScheduler } from '../scheduler/TaskScheduler.js';"));
+    const matchingLines = result.repairedCode.split("\n").filter((l) => l.includes("GitWorktreeManager"));
+    assert.equal(matchingLines.length, 1);
+  });
+
+  it("converts unused private class members to public to satisfy noUnusedLocals TS6133", () => {
+    const source = `export class Pipeline {\n  private _verifyCleanBuild(worktreePath: string): void {\n    console.log(worktreePath);\n  }\n}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS6133",
+      "'_verifyCleanBuild' is declared but its value is never read.",
+      2
+    )]);
+
+    assert.ok(result.repairedCode.includes("public _verifyCleanBuild(worktreePath: string): void"));
+    assert.ok(!result.repairedCode.includes("private _verifyCleanBuild"));
+  });
+
+  it("removes hallucinated vue import statement in frontend Angular context", () => {
+    const source = `import { ref, effect } from 'vue';\nimport { Component } from '@angular/core';\n@Component({})\nexport class DashboardComponent {}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2307",
+      "Cannot find module 'vue' or its corresponding type declarations.",
+      1
+    )], "packages/frontend/src/app/components/Dashboard.ts");
+
+    assert.ok(!result.repairedCode.includes("from 'vue'"));
+    assert.ok(result.repairedCode.includes("from '@angular/core'"));
+  });
 });
+
 

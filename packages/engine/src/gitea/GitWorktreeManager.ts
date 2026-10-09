@@ -1,9 +1,10 @@
-import { exec } from "node:child_process";
+import { exec, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface WorktreeDescriptor {
   readonly taskId: string;
@@ -157,10 +158,10 @@ export class GitWorktreeManager {
    * Commits all changes staged in the worktree.
    */
   public async commitWorktree(worktreePath: string, commitMessage: string): Promise<string> {
-    await execAsync(`git add -A`, { cwd: worktreePath });
+    await execFileAsync("git", ["add", "-A"], { cwd: worktreePath });
     await execAsync(`git reset HEAD -- node_modules packages/*/dist dist || true`, { cwd: worktreePath }).catch(() => {});
     try {
-      const { stdout } = await execAsync(`git commit -m "${commitMessage.replace(/"/g, '\\"')}"`, {
+      const { stdout } = await execFileAsync("git", ["commit", "-m", commitMessage], {
         cwd: worktreePath
       });
       return stdout;
@@ -170,8 +171,9 @@ export class GitWorktreeManager {
         (err?.stderr && err.stderr.includes("nothing to commit")) ||
         (err?.message && err.message.includes("nothing to commit"))
       ) {
-        const { stdout } = await execAsync(
-          `git commit --allow-empty -m "${commitMessage.replace(/"/g, '\\"')}"`,
+        const { stdout } = await execFileAsync(
+          "git",
+          ["commit", "--allow-empty", "-m", commitMessage],
           { cwd: worktreePath }
         );
         return stdout;
