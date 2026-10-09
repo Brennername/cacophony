@@ -905,34 +905,34 @@ export class CacophonyHttpServer {
 
     // 4c0.1. REST API: POST /api/models/epoch - Advance Epoch and Reset Degradation
     if ((url.pathname === "/api/models/epoch" || url.pathname === "/api/arena/epoch") && req.method === "POST") {
-      let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
-      req.on("end", async () => {
-        try {
-          const payload = JSON.parse(body || "{}");
-          const name = payload.name || `Epoch ${Date.now()}`;
-          const reason = payload.reason || "Manual telemetry epoch rotation";
-          const notes = payload.notes || "";
-          const healthRepo = this.daemon.getModelHealthRepository();
-          const newEpoch = await healthRepo.advanceEpoch(name, reason, notes);
-          const streamTap = this.daemon.getStreamTapManager();
-          if (streamTap) {
-            streamTap.broadcastEpochAdvanced({
-              epochId: newEpoch.epochId,
-              name: newEpoch.name,
-              reason: newEpoch.reason
-            });
-          }
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true, epoch: newEpoch }));
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
-        }
-      });
-      return;
+  let body = "";
+  req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+  req.on("end", async () => {
+    try {
+      const payload = JSON.parse(body || "{}");
+      const name = payload.name || `Epoch ${Date.now()}`;
+      const reason = payload.reason || "Manual telemetry epoch rotation";
+      const notes = payload.notes || "";
+      const healthRepo = this.daemon.getModelHealthRepository();
+      const newEpoch = await healthRepo.advanceEpoch(name, reason, notes);
+      const streamTap = this.daemon.getStreamTapManager();
+      if (streamTap) {
+        streamTap.broadcastEpochAdvanced({
+          epochId: newEpoch.epochId,
+          name: newEpoch.name,
+          reason: newEpoch.reason
+        });
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, epoch: newEpoch }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: message }));
     }
+  });
+  return;
+}
 
     // 4c0.2. REST API: POST /api/models/reset-stats - Reset Model Health Metrics to Baseline
     if (url.pathname === "/api/models/reset-stats" && req.method === "POST") {
