@@ -10,12 +10,6 @@ import {
   LEGACY_ARENA_DATASET_VERSION,
 } from "@cacophony/shared-types";
 
-/**
- * HistoricalArenaIngestionAdapter
- *
- * Ingests external historical run data and empirical benchmarks from any versioned arena dataset directory
- * without depending on legacy shell scripts or runners.
- */
 export class HistoricalArenaIngestionAdapter {
   private readonly defaultBasePath: string;
 
@@ -26,10 +20,6 @@ export class HistoricalArenaIngestionAdapter {
       path.resolve(process.cwd(), "data/arena");
   }
 
-  /**
-   * Discovers and returns the version of the dataset directory.
-   * Reads manifest.json if present; falls back to stats.json inspection or legacy v1.0.0.
-   */
   public async getDatasetVersion(basePath = this.defaultBasePath): Promise<string> {
     try {
       const manifestPath = path.join(basePath, "manifest.json");
@@ -39,7 +29,7 @@ export class HistoricalArenaIngestionAdapter {
         return parsed.version;
       }
     } catch {
-      // Manifest not present, inspect stats.json
+
     }
 
     try {
@@ -55,9 +45,6 @@ export class HistoricalArenaIngestionAdapter {
     }
   }
 
-  /**
-   * Reads and parses stats.json summary telemetry.
-   */
   public async loadStats(basePath = this.defaultBasePath): Promise<HistoricalArenaStats> {
     const statsPath = path.join(basePath, "stats.json");
     const raw = await fs.readFile(statsPath, "utf-8");
@@ -74,9 +61,6 @@ export class HistoricalArenaIngestionAdapter {
     };
   }
 
-  /**
-   * Loads task records from completed, failed, or exhausted subdirectories.
-   */
   public async loadTasks(
     category: "completed" | "failed" | "exhausted",
     limit = 50,
@@ -98,7 +82,7 @@ export class HistoricalArenaIngestionAdapter {
           try {
             patchContent = await fs.readFile(path.join(basePath, "patches", patchFile), "utf-8");
           } catch {
-            // Optional patch
+
           }
 
           records.push({
@@ -116,7 +100,7 @@ export class HistoricalArenaIngestionAdapter {
             ...(patchContent !== undefined ? { patchContent } : {}),
           });
         } catch {
-          // Skip corrupt records
+
         }
       }
       return records;
@@ -125,9 +109,6 @@ export class HistoricalArenaIngestionAdapter {
     }
   }
 
-  /**
-   * Loads postmortem failure records.
-   */
   public async loadPostmortems(
     limit = 50,
     basePath = this.defaultBasePath
@@ -152,7 +133,7 @@ export class HistoricalArenaIngestionAdapter {
             ...(d.error_snippets ? { errorSnippets: d.error_snippets } : {}),
           });
         } catch {
-          // Skip corrupt records
+
         }
       }
       return records;
@@ -161,12 +142,6 @@ export class HistoricalArenaIngestionAdapter {
     }
   }
 
-  /**
-   * MitigationParadoxAnalyzer
-   *
-   * Formulates the historical analysis comparing deterministic validation rejections
-   * (review_failed, validation_failed, disallowed_root_files) vs actual test assertion failures.
-   */
   public analyzeMitigationParadox(stats: HistoricalArenaStats): MitigationParadoxReport {
     const totalProcessed = stats.totalProcessed;
     const totalCompleted = stats.totalCompleted;
@@ -182,11 +157,9 @@ export class HistoricalArenaIngestionAdapter {
     const disallowedRootFilesCount = stats.failureReasons["disallowed_root_files"] || 0;
     const noChangesCount = stats.failureReasons["no_changes_produced"] || 0;
 
-    // Verifier rejections are failures triggered by rules rather than test assertions
     const verifierRejectionCount = reviewFailedCount + validationFailedCount + disallowedRootFilesCount;
     const verifierRejectionPct = totalProcessed > 0 ? (verifierRejectionCount / totalProcessed) * 100 : 0;
 
-    // Under silent_repair or soft_warning, a significant portion of review_failed and validation_failed tasks are recoverable
     const estimatedRecoverableTasks = Math.round(reviewFailedCount * 0.75 + validationFailedCount * 0.85 + disallowedRootFilesCount * 0.90);
     const counterfactualPassRatePct = totalProcessed > 0 ? ((totalCompleted + estimatedRecoverableTasks) / totalProcessed) * 100 : 0;
 
