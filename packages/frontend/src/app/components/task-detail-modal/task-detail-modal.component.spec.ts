@@ -189,4 +189,76 @@ describe('TaskDetailModalComponent', () => {
     const upEvent = new PointerEvent('pointerup');
     window.dispatchEvent(upEvent);
   });
+
+  it('prevents dialog dismissal during and after resizing', () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    store.selectedTask.set({
+      id: 'task-no-dismiss-test',
+      title: 'No Dismiss Test',
+      status: 'RUNNING',
+      priority: 'P0',
+      role: 'implementer',
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    const compiled = fixture.nativeElement as HTMLElement;
+    const backdropEl = compiled.querySelector('.modal-backdrop') as HTMLElement;
+    const modalContent = compiled.querySelector('.modal-content') as HTMLElement;
+    const resizeGrip = compiled.querySelector('.modal-resize-grip') as HTMLElement;
+
+    // 1. When resizing via grip handle, releasing on backdrop must not dismiss the dialog
+    comp.startResize({
+      preventDefault: () => {},
+      stopPropagation: () => {},
+      clientX: 500,
+      clientY: 400,
+      currentTarget: resizeGrip,
+    } as unknown as PointerEvent);
+
+    expect(comp.isResizing).toBe(true);
+    expect(comp.justResized).toBe(true);
+
+    // Backdrop click attempt during resize
+    const mockBackdropClick = {
+      target: backdropEl,
+      currentTarget: backdropEl,
+      preventDefault: () => {},
+      stopPropagation: () => {},
+    } as unknown as MouseEvent;
+
+    comp.onBackdropClick(mockBackdropClick);
+    expect(store.selectedTask()).not.toBeNull();
+
+    // End resize
+    window.dispatchEvent(new PointerEvent('pointerup'));
+    expect(comp.isResizing).toBe(false);
+    expect(comp.justResized).toBe(true);
+
+    // Immediate click right after resize should still be suppressed
+    comp.onBackdropClick(mockBackdropClick);
+    expect(store.selectedTask()).not.toBeNull();
+
+    // 2. Dragging starting inside modal content and ending on backdrop must not dismiss
+    comp.justResized = false;
+    comp.onBackdropMouseDown({ target: modalContent } as unknown as MouseEvent);
+    comp.onBackdropClick(mockBackdropClick);
+    expect(store.selectedTask()).not.toBeNull();
+
+    // 3. Native CSS resize sync sets justResized to protect against trailing dismissal
+    comp.syncNativeResize();
+    expect(store.selectedTask()).not.toBeNull();
+
+    // 4. Clean intentional click on backdrop (mousedown on backdrop + click on backdrop) dismisses
+    comp.justResized = false;
+    comp.onBackdropMouseDown({ target: backdropEl } as unknown as MouseEvent);
+    comp.onBackdropClick(mockBackdropClick);
+    expect(store.selectedTask()).toBeNull();
+  });
 });

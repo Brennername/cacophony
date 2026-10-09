@@ -36,11 +36,18 @@ export interface PrReviewData {
   imports: [CommonModule],
   template: `
     @if (store.selectedTask(); as task) {
-      <div class="modal-backdrop" (click)="close()">
+      <div
+        class="modal-backdrop"
+        (pointerdown)="onBackdropPointerDown($event)"
+        (mousedown)="onBackdropMouseDown($event)"
+        (click)="onBackdropClick($event)"
+      >
         <div
           class="modal-content cacophony-card"
           [style.width.px]="customWidth()"
           [style.height.px]="customHeight()"
+          (pointerdown)="$event.stopPropagation()"
+          (mousedown)="$event.stopPropagation()"
           (click)="$event.stopPropagation()"
         >
           <div class="modal-header">
@@ -384,6 +391,8 @@ export interface PrReviewData {
             <div
               class="modal-resize-grip"
               (pointerdown)="startResize($event)"
+              (mousedown)="$event.stopPropagation()"
+              (click)="$event.stopPropagation()"
               title="Drag to resize dialog"
               aria-label="Resize dialog"
             >
@@ -1198,7 +1207,10 @@ export class TaskDetailModalComponent {
   // User-defined static custom dimensions to prevent dynamic tab jumps
   public readonly customWidth = signal<number | null>(null);
   public readonly customHeight = signal<number | null>(null);
-  private isResizing = false;
+  public isResizing = false;
+  public justResized = false;
+  private backdropPointerDownTarget: EventTarget | null = null;
+  private backdropMouseDownTarget: EventTarget | null = null;
 
   // Task-specific stream buffer fetched from backend
   public readonly taskStreamBuffer = signal<string | null>(null);
@@ -1339,6 +1351,45 @@ export class TaskDetailModalComponent {
     this.store.clearSelectedTask();
   }
 
+  /**
+   * Tracks target where backdrop pointerdown originates.
+   */
+  public onBackdropPointerDown(event: PointerEvent): void {
+    this.backdropPointerDownTarget = event.target;
+  }
+
+  /**
+   * Tracks target where backdrop mousedown originates.
+   */
+  public onBackdropMouseDown(event: MouseEvent): void {
+    this.backdropMouseDownTarget = event.target;
+  }
+
+  /**
+   * Dismisses modal only if pointer/mouse pressed directly on the backdrop
+   * and no resize or drag interaction is occurring or recently occurred.
+   */
+  public onBackdropClick(event: MouseEvent): void {
+    const wasDirectBackdropMousedown =
+      this.backdropMouseDownTarget === event.currentTarget ||
+      this.backdropPointerDownTarget === event.currentTarget;
+    const isDirectBackdropClick = event.target === event.currentTarget;
+
+    // Reset backdrop pointer targets
+    this.backdropMouseDownTarget = null;
+    this.backdropPointerDownTarget = null;
+
+    if (this.isResizing || this.justResized) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    if (wasDirectBackdropMousedown && isDirectBackdropClick) {
+      this.close();
+    }
+  }
+
   public copyText(text: string, successMessage: string): void {
     if (!text) return;
     if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -1398,6 +1449,7 @@ export class TaskDetailModalComponent {
     event.preventDefault();
     event.stopPropagation();
     this.isResizing = true;
+    this.justResized = true;
 
     const startX = event.clientX;
     const startY = event.clientY;
@@ -1426,13 +1478,33 @@ export class TaskDetailModalComponent {
       this.customHeight.set(Math.round(nextHeight));
     };
 
-    const onPointerUp = (): void => {
-      this.isResizing = false;
+    const suppressTrailingClick = (clickEvent: MouseEvent): void => {
+      clickEvent.preventDefault();
+      clickEvent.stopPropagation();
+      clickEvent.stopImmediatePropagation();
       if (typeof window !== 'undefined') {
+        window.removeEventListener('click', suppressTrailingClick, true);
+      }
+    };
+
+    const onPointerUp = (upEvent: PointerEvent): void => {
+      upEvent.preventDefault();
+      upEvent.stopPropagation();
+      this.isResizing = false;
+
+      if (typeof window !== 'undefined') {
+        window.addEventListener('click', suppressTrailingClick, true);
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
         window.removeEventListener('pointercancel', onPointerUp);
       }
+
+      setTimeout(() => {
+        this.justResized = false;
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('click', suppressTrailingClick, true);
+        }
+      }, 400);
     };
 
     if (typeof window !== 'undefined') {
@@ -1454,8 +1526,12 @@ export class TaskDetailModalComponent {
       const currentH = modalEl.offsetHeight;
       if (currentW > 0 && currentH > 0 && (currentW !== this.customWidth() || currentH !== this.customHeight())) {
         if (this.customWidth() !== null || currentW !== 860 || currentH !== 640) {
+          this.justResized = true;
           this.customWidth.set(currentW);
           this.customHeight.set(currentH);
+          setTimeout(() => {
+            this.justResized = false;
+          }, 400);
         }
       }
     }
