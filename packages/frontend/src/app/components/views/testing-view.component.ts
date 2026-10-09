@@ -692,13 +692,13 @@ export class TestingViewComponent implements OnInit, OnDestroy {
     return Array.isArray(task.focusFiles) ? task.focusFiles : [task.focusFiles];
   });
   public readonly activeTestDurationMs = computed(() => {
-    const task = this.activeTask();
-    if (!task || !task.createdAt) return 0;
-    const start = new Date(task.createdAt).getTime();
-    if (isNaN(start)) return 0;
-    const end = task.completedAt ? new Date(task.completedAt).getTime() : Date.now();
-    return Math.max(0, end - start);
-  });
+  const task = this.activeTask();
+  if (!task || !task.createdAt) return 0;
+  const start = new Date(task.createdAt).getTime();
+  if (isNaN(start)) return 0;
+  const end = task.completedAt ? new Date(task.completedAt).getTime() : Date.now();
+  return Math.max(0, end - start);
+});
 
   // Filtered subprocess runs (T59.4.3)
   public readonly filteredProcesses = computed(() => {
