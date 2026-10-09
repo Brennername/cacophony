@@ -17,12 +17,10 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
     assert.equal(policy.getEpsilon(), 0.3);
     assert.equal(policy.getEpoch(), 0);
 
-    // Step through 2 epochs
     policy.stepEpoch(2);
     assert.equal(policy.getEpoch(), 2);
     assert.ok(policy.getEpsilon() < 0.3);
 
-    // Reset exploration on epoch advancement
     policy.resetExploration();
     assert.equal(policy.getEpoch(), 0);
     assert.equal(policy.getEpsilon(), 0.3);
@@ -65,7 +63,6 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
     const outcome = policy.selectArm([armA, armB]);
     assert.ok(outcome.selectedModel === "model-a" || outcome.selectedModel === "model-b");
 
-    // Advance epoch and reset arms
     policy.stepEpoch(1);
     assert.equal(policy.getEpoch(), 1);
 
