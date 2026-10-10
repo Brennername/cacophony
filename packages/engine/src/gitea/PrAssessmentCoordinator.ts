@@ -45,7 +45,6 @@ export class PrAssessmentCoordinator {
   ): Promise<PrAssessmentOutcome> {
     let commentPosted = false;
 
-    // 1. Post markdown review comment to PR if Gitea client is available
     if (this.giteaClient && request.prNumber && request.owner && request.repo) {
       try {
         if ("createIssueComment" in this.giteaClient) {
@@ -66,12 +65,12 @@ export class PrAssessmentCoordinator {
           commentPosted = true;
         }
       } catch {
-        // Continue even if comment posting encounters an issue
+        // Handle the error appropriately, e.g., log it or rethrow
+        console.error("Failed to post review comment");
         commentPosted = false;
       }
     }
 
-    // 2. If verdict is APPROVE, no remediation needed
     if (request.synthesis.consensusVerdict === "APPROVE") {
       return {
         verdict: "APPROVE",
@@ -80,7 +79,6 @@ export class PrAssessmentCoordinator {
       };
     }
 
-    // 3. Verdict is REQUEST_CHANGES: construct targeted remediation task
     const remediationTaskId = `remediate-${request.task.id}-${Date.now().toString(36)}`;
     const focusPaths = Array.from(
       new Set(request.synthesis.unifiedFindings.map((f) => f.path).filter((p) => p !== "unknown"))
