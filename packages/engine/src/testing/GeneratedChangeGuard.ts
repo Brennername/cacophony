@@ -221,7 +221,14 @@ export class GeneratedChangeGuard {
       }
 
       if (trimmed.startsWith("//")) {
-        const commentBody = trimmed.slice(2).trim().replace(/^\[\s*/, "").replace(/\s*\]$/, "").trim().toLowerCase();
+        let body = trimmed.slice(2).trim();
+        if (body.startsWith("[")) {
+          body = body.slice(1).trimStart();
+        }
+        if (body.endsWith("]")) {
+          body = body.slice(0, -1).trimEnd();
+        }
+        const commentBody = body.toLowerCase();
         if (commentBody === "..." || commentBody.startsWith("...")) {
           return trimmed.toLowerCase();
         }
@@ -233,7 +240,14 @@ export class GeneratedChangeGuard {
       }
 
       if (trimmed.startsWith("/*") && trimmed.endsWith("*/")) {
-        const commentBody = trimmed.slice(2, -2).trim().replace(/^\[\s*/, "").replace(/\s*\]$/, "").trim().toLowerCase();
+        let body = trimmed.slice(2, -2).trim();
+        if (body.startsWith("[")) {
+          body = body.slice(1).trimStart();
+        }
+        if (body.endsWith("]")) {
+          body = body.slice(0, -1).trimEnd();
+        }
+        const commentBody = body.toLowerCase();
         if (commentBody === "..." || commentBody.startsWith("...")) {
           return trimmed.toLowerCase();
         }

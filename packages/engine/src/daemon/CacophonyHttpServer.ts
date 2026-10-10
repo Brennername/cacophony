@@ -237,42 +237,6 @@ export class CacophonyHttpServer {
     this.rateLimiter.stop();
   }
 
-  private isAllowedOrigin(origin: string | undefined, hostHeader: string | undefined): boolean {
-    if (!origin || origin === "null") {
-      return false;
-    }
-    try {
-      const parsed = new URL(origin);
-      const hostname = parsed.hostname;
-      if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "::1") {
-        return true;
-      }
-      if (
-        /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
-        /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
-        /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)
-      ) {
-        return true;
-      }
-      if (hostHeader) {
-        const hostWithoutPort = hostHeader.split(":")[0];
-        if (hostname === hostWithoutPort) {
-          return true;
-        }
-      }
-      const envOrigins = (process.env.ALLOWED_ORIGINS || "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (envOrigins.includes(origin) || envOrigins.includes(hostname)) {
-        return true;
-      }
-    } catch {
-      return false;
-    }
-    return false;
-  }
-
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     // Dynamic Origin & Host Resolution
     const forwardedProto = (req.headers["x-forwarded-proto"] as string) || "http";
@@ -293,17 +257,9 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // Dynamic CORS: allow validated origins to send credentials, otherwise default to wildcard
-    const rawOrigin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
-    const hostHeader = typeof req.headers.host === "string" ? req.headers.host : undefined;
-    const originAllowed = this.isAllowedOrigin(rawOrigin, hostHeader);
-
-    if (rawOrigin && originAllowed) {
-      res.setHeader("Access-Control-Allow-Origin", rawOrigin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    } else {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-    }
+    // Dynamic CORS: echo request origin for API clients without ambient credential exposure
+    const requestOrigin = (req.headers.origin as string) || "*";
+    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 

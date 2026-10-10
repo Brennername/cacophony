@@ -1,9 +1,9 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import os from "node:os";
 import type { ToolRequirement, SystemToolsDiagnosticReport } from "@cacophony/shared-types";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface ToolDefinition {
   readonly binaryName: string;
@@ -148,14 +148,24 @@ export const MONITORED_SYSTEM_TOOLS: readonly ToolDefinition[] = [
 
 export class SystemToolScanner {
   private readonly toolDefs: readonly ToolDefinition[];
-  private readonly execFn: (cmd: string) => Promise<{ stdout: string; stderr: string }>;
+  private readonly execFn: (file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;
 
   constructor(
     toolDefs: readonly ToolDefinition[] = MONITORED_SYSTEM_TOOLS,
-    customExec?: (cmd: string) => Promise<{ stdout: string; stderr: string }>
+    customExec?: ((cmd: string) => Promise<{ stdout: string; stderr: string }>) | ((file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>)
   ) {
     this.toolDefs = toolDefs;
-    this.execFn = customExec ?? execAsync;
+    if (customExec) {
+      this.execFn = async (file: string, args: string[]) => {
+        if (customExec.length === 1) {
+          const fullCmd = args.length > 0 ? `${file} ${args.join(" ")}` : file;
+          return (customExec as (cmd: string) => Promise<{ stdout: string; stderr: string }>)(fullCmd);
+        }
+        return (customExec as (file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>)(file, args);
+      };
+    } else {
+      this.execFn = (file: string, args: string[]) => execFileAsync(file, args);
+    }
   }
 
   public async scan(): Promise<SystemToolsDiagnosticReport> {
@@ -189,20 +199,24 @@ export class SystemToolScanner {
   }
 
   public async checkTool(def: ToolDefinition): Promise<ToolRequirement> {
-    if (!/^[a-zA-Z0-9_-]+$/.test(def.binaryName)) {
-      throw new Error(`Invalid binary name: ${def.binaryName}`);
+    const binaryName = def.binaryName;
+    if (!/^[a-zA-Z0-9_-]+$/.test(binaryName)) {
+      throw new Error(`Invalid binary name: ${binaryName}`);
     }
-    if (def.versionArgs && !/^[a-zA-Z0-9_ -]+$/.test(def.versionArgs)) {
-      throw new Error(`Invalid version arguments: ${def.versionArgs}`);
+    const versionArgs = def.versionArgs ? def.versionArgs.trim().split(/\s+/).filter(Boolean) : [];
+    for (const arg of versionArgs) {
+      if (!/^--?[a-zA-Z0-9_-]+$/.test(arg)) {
+        throw new Error(`Invalid version argument: ${arg}`);
+      }
     }
 
     try {
-      await this.execFn(`which ${def.binaryName}`);
+      await this.execFn("which", [binaryName]);
       let version: string | undefined;
 
-      if (def.versionArgs) {
+      if (versionArgs.length > 0) {
         try {
-          const { stdout } = await this.execFn(`${def.binaryName} ${def.versionArgs}`);
+          const { stdout } = await this.execFn(binaryName, versionArgs);
           version = def.parseVersion ? def.parseVersion(stdout) : stdout.trim().split("\n")[0];
         } catch {
           version = "installed";
