@@ -56,58 +56,72 @@ export class MonorepoBuildGate {
     const diagnostics: CompilerDiagnostic[] = [];
     const seen = new Set<string>();
 
-    // TypeScript diagnostic patterns:
-    // e.g. "path/to/file.ts(12,5): error TS2304: Cannot find name 'foo'."
-    // e.g. "path/to/file.ts:12:5 - error TS2305: Module 'x' has no exported member 'y'."
-    // e.g. "error TS2322: Type 'string' is not assignable to type 'number'."
-    const tsRegex = /(?:([a-zA-Z0-9_./\\-]+)[(:]([0-9]+)(?:,([0-9]+)\)?:|\:([0-9]+)\s+-\s+))?\s*(?:error\s+)?(TS[0-9]+):\s*([^\n\r]+)/g;
-    let match: RegExpExecArray | null;
+    const lines = output.split(/\r?\n/);
+    for (const rawLine of lines) {
+      const lineStr = rawLine.trim();
+      if (!lineStr) continue;
 
-    while ((match = tsRegex.exec(output)) !== null) {
-      const file = match[1];
-      const lineStr = match[2];
-      const colStr = match[3] || match[4];
-      const code = match[5]!;
-      const message = match[6]!.trim();
-      const line = lineStr ? parseInt(lineStr, 10) : undefined;
-      const column = colStr ? parseInt(colStr, 10) : undefined;
+      // TypeScript diagnostic patterns: TS[0-9]+:
+      const tsCodeMatch = lineStr.match(/\b(TS[0-9]+):\s*([^\r\n]+)/);
+      if (tsCodeMatch) {
+        const code = tsCodeMatch[1]!;
+        const message = tsCodeMatch[2]!.trim();
+        let file: string | undefined;
+        let line: number | undefined;
+        let column: number | undefined;
 
-      const key = `${code}:${file || ""}:${line || ""}:${message}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        diagnostics.push({
-          code,
-          message,
-          ...(file ? { file } : {}),
-          ...(line !== undefined ? { line } : {}),
-          ...(column !== undefined ? { column } : {})
-        });
+        const locMatch = lineStr.match(/^([a-zA-Z0-9_./\\-]+)(?:(?:\(([0-9]+),([0-9]+)\))|(?::([0-9]+):([0-9]+)))/);
+        if (locMatch) {
+          file = locMatch[1];
+          const l = locMatch[2] || locMatch[4];
+          const c = locMatch[3] || locMatch[5];
+          if (l) line = parseInt(l, 10);
+          if (c) column = parseInt(c, 10);
+        }
+
+        const key = `${code}:${file || ""}:${line || ""}:${message}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          diagnostics.push({
+            code,
+            message,
+            ...(file ? { file } : {}),
+            ...(line !== undefined ? { line } : {}),
+            ...(column !== undefined ? { column } : {})
+          });
+        }
+        continue;
       }
-    }
 
-    // Angular compiler diagnostic patterns:
-    // e.g. "Error: NG2008: Component foo is missing templateUrl"
-    // e.g. "src/app/foo.component.ts:10:5: error NG8001: 'my-tag' is not a known element"
-    const ngRegex = /(?:([a-zA-Z0-9_./\\-]+)[(:]([0-9]+)(?:,([0-9]+)\)?:|\:([0-9]+)\s+-\s+))?\s*(?:[Ee]rror:?\s*)?(NG[0-9]+):\s*([^\n\r]+)/g;
-    while ((match = ngRegex.exec(output)) !== null) {
-      const file = match[1];
-      const lineStr = match[2];
-      const colStr = match[3] || match[4];
-      const code = match[5]!;
-      const message = match[6]!.trim();
-      const line = lineStr ? parseInt(lineStr, 10) : undefined;
-      const column = colStr ? parseInt(colStr, 10) : undefined;
+      // Angular compiler diagnostic patterns: NG[0-9]+:
+      const ngCodeMatch = lineStr.match(/\b(NG[0-9]+):\s*([^\r\n]+)/);
+      if (ngCodeMatch) {
+        const code = ngCodeMatch[1]!;
+        const message = ngCodeMatch[2]!.trim();
+        let file: string | undefined;
+        let line: number | undefined;
+        let column: number | undefined;
 
-      const key = `${code}:${file || ""}:${line || ""}:${message}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        diagnostics.push({
-          code,
-          message,
-          ...(file ? { file } : {}),
-          ...(line !== undefined ? { line } : {}),
-          ...(column !== undefined ? { column } : {})
-        });
+        const locMatch = lineStr.match(/^([a-zA-Z0-9_./\\-]+)(?:(?:\(([0-9]+),([0-9]+)\))|(?::([0-9]+):([0-9]+)))/);
+        if (locMatch) {
+          file = locMatch[1];
+          const l = locMatch[2] || locMatch[4];
+          const c = locMatch[3] || locMatch[5];
+          if (l) line = parseInt(l, 10);
+          if (c) column = parseInt(c, 10);
+        }
+
+        const key = `${code}:${file || ""}:${line || ""}:${message}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          diagnostics.push({
+            code,
+            message,
+            ...(file ? { file } : {}),
+            ...(line !== undefined ? { line } : {}),
+            ...(column !== undefined ? { column } : {})
+          });
+        }
       }
     }
 

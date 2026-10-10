@@ -57,7 +57,7 @@ export class SignatureHarvester {
     const lines = content.split("\n");
 
     const classRegex = /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:final\s+)?class\s+([A-Za-z0-9_]+)(?:\s+extends\s+[A-Za-z0-9_]+)?(?:\s+implements\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
-    const methodRegex = /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:final\s+)?(?:<[^>]+>\s+)?([A-Za-z0-9_<>[\]]+)\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*(?:throws\s+[^{]+)?\{?/;
+    const methodRegex = /^\s*(?:(?:public|protected|private|static|final)\s+)*([A-Za-z0-9_]+(?:<[A-Za-z0-9_,\s]+>)?(?:\[\])?)\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)(?:\s+throws\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
 
     let currentClassName = "";
     const methods: CallableSignature[] = [];

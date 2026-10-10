@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import type { SessionRepository, SessionRecord, SessionMessageRecord, SessionTabRecord } from "@cacophony/db";
 import type { ChatMessage } from "@cacophony/shared-types";
 import { SessionCompactor } from "./SessionCompactor.js";
@@ -41,7 +42,7 @@ export class SessionManager {
     title: string,
     options?: { branch?: string | undefined; activeModel?: string | undefined } | undefined
   ): Promise<SessionRecord> {
-    const id = `session-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const id = `session-${Date.now()}-${randomBytes(4).toString("hex")}`;
     const branch = options?.branch ?? this.defaultBranch;
     const activeModel = options?.activeModel ?? this.defaultModel;
 

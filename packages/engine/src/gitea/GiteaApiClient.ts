@@ -32,7 +32,11 @@ export class GiteaApiClient {
   private readonly guard: GiteaPermissionGuard | undefined;
 
   constructor(config: GiteaClientConfig) {
-    this.baseUrl = config.baseUrl.replace(/\/+$/, "");
+    let url = config.baseUrl;
+    while (url.endsWith("/")) {
+      url = url.slice(0, -1);
+    }
+    this.baseUrl = url;
     this.apiToken = config.apiToken;
     this.guard = config.guard;
   }

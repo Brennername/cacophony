@@ -25,9 +25,11 @@ export class ReviewVerdictParser {
     comments: ReviewComment[];
   } {
     try {
-      const match = llmText.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
+      const firstBrace = llmText.indexOf("{");
+      const lastBrace = llmText.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        const jsonSubstring = llmText.slice(firstBrace, lastBrace + 1);
+        const parsed = JSON.parse(jsonSubstring);
         const verdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(parsed.verdict)
           ? (parsed.verdict as ReviewVerdict)
           : "REQUEST_CHANGES";

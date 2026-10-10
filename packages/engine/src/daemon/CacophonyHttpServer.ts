@@ -237,6 +237,42 @@ export class CacophonyHttpServer {
     this.rateLimiter.stop();
   }
 
+  private isAllowedOrigin(origin: string | undefined, hostHeader: string | undefined): boolean {
+    if (!origin || origin === "null") {
+      return false;
+    }
+    try {
+      const parsed = new URL(origin);
+      const hostname = parsed.hostname;
+      if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "::1") {
+        return true;
+      }
+      if (
+        /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+        /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+        /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)
+      ) {
+        return true;
+      }
+      if (hostHeader) {
+        const hostWithoutPort = hostHeader.split(":")[0];
+        if (hostname === hostWithoutPort) {
+          return true;
+        }
+      }
+      const envOrigins = (process.env.ALLOWED_ORIGINS || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (envOrigins.includes(origin) || envOrigins.includes(hostname)) {
+        return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     // Dynamic Origin & Host Resolution
     const forwardedProto = (req.headers["x-forwarded-proto"] as string) || "http";
@@ -257,13 +293,17 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // Dynamic CORS: echo the request origin back for local/LAN dev.
-    // The engine serves the Angular bundle itself, so in production this is always
-    // same-origin. CORS matters only for API-only deployments behind a proxy.
-    // Full origin allowlist enforcement is deferred to T74.2 (Phase 74).
-    const requestOrigin = (req.headers.origin as string) || "*";
-    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+    // Dynamic CORS: allow validated origins to send credentials, otherwise default to wildcard
+    const rawOrigin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
+    const hostHeader = typeof req.headers.host === "string" ? req.headers.host : undefined;
+    const originAllowed = this.isAllowedOrigin(rawOrigin, hostHeader);
+
+    if (rawOrigin && originAllowed) {
+      res.setHeader("Access-Control-Allow-Origin", rawOrigin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 
@@ -308,9 +348,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(report));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
+        console.error("System tool scan failed:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: message }));
+        res.end(JSON.stringify({ error: "System tool scan failed" }));
       }
       return;
     }
@@ -573,9 +613,9 @@ export class CacophonyHttpServer {
           res.writeHead(201, { "Content-Type": "application/json" });
           res.end(JSON.stringify(task));
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          console.error("Failed to create task:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
+          res.end(JSON.stringify({ error: "Failed to create task" }));
         }
       });
       return;
@@ -675,9 +715,10 @@ export class CacophonyHttpServer {
             createdCount: createdTasks.length,
             tasks: createdTasks
           }));
-        } catch (err: any) {
+        } catch (err: unknown) {
+          console.error("Spec decomposition failed:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: err?.message || String(err) }));
+          res.end(JSON.stringify({ error: "Spec decomposition failed" }));
         }
       });
       return;
@@ -720,9 +761,10 @@ export class CacophonyHttpServer {
         }
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, totalParsed: tasks.length, seededCount }));
-      } catch (err: any) {
+      } catch (err: unknown) {
+        console.error("Taskcade seed failed:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: false, error: err?.message || String(err) }));
+        res.end(JSON.stringify({ success: false, error: "Taskcade seed failed" }));
       }
       return;
     }
@@ -909,9 +951,10 @@ export class CacophonyHttpServer {
           const updated = await taskRepo.getById(taskId);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, task: updated }));
-        } catch (err: any) {
+        } catch (err: unknown) {
+          console.error("Failed to update task:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: err?.message || String(err) }));
+          res.end(JSON.stringify({ error: "Failed to update task" }));
         }
       });
       return;
@@ -1088,9 +1131,9 @@ export class CacophonyHttpServer {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: true, epoch: newEpoch }));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+      console.error("Failed to advance epoch:", err);
       res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: message }));
+      res.end(JSON.stringify({ error: "Failed to advance epoch" }));
     }
   });
   return;
@@ -1104,9 +1147,9 @@ export class CacophonyHttpServer {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ success: true, message: "Model health stats reset to clean baseline" }));
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
+    console.error("Failed to reset model health stats:", err);
     res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: message }));
+    res.end(JSON.stringify({ error: "Failed to reset model health stats" }));
   }
   return;
 }
@@ -1138,9 +1181,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(models));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
+        console.error("Failed to list installed models:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: message }));
+        res.end(JSON.stringify({ error: "Failed to list installed models" }));
       }
       return;
     }
@@ -1183,11 +1226,12 @@ export class CacophonyHttpServer {
           res.writeHead(202, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ status: "pulling", model: modelName }));
 
-          void modelManager.pullModel(modelName, onProgress).catch((err) => {
+          void modelManager.pullModel(modelName, onProgress).catch((err: unknown) => {
+            console.error("Model pull failed:", err);
             const sseError = `event: model_pull_progress\ndata: ${JSON.stringify({
               model: modelName,
               status: "error",
-              error: err instanceof Error ? err.message : String(err)
+              error: "Model pull failed"
             })}\n\n`;
             for (const client of this.sseClients) {
               try { client.write(sseError); } catch { /* ignore */ }
@@ -1223,9 +1267,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, modelId, status: "EVICTED" }));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
+        console.error("Failed to delete model:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: message }));
+        res.end(JSON.stringify({ error: "Failed to delete model" }));
       }
       return;
     }
@@ -1290,12 +1334,16 @@ export class CacophonyHttpServer {
           }
 
           const result = await runner.benchmark(modelName);
+          const sanitizedResult = {
+            ...result,
+            error: result.error ? "Benchmark execution failed" : null
+          };
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(result));
+          res.end(JSON.stringify(sanitizedResult));
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          console.error("Failed to benchmark model:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
+          res.end(JSON.stringify({ error: "Failed to benchmark model" }));
         }
       });
       return;
@@ -1309,9 +1357,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(profiles));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
+        console.error("Failed to list model profiles:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: message }));
+        res.end(JSON.stringify({ error: "Failed to list model profiles" }));
       }
       return;
     }
@@ -1342,9 +1390,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, profile: saved }));
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          console.error("Failed to upsert model profile:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
+          res.end(JSON.stringify({ error: "Failed to upsert model profile" }));
         }
       });
       return;
@@ -1379,9 +1427,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, count: autoTunedProfiles.length, profiles: autoTunedProfiles }));
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          console.error("Failed to auto-tune model profiles:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
+          res.end(JSON.stringify({ error: "Failed to auto-tune model profiles" }));
         }
       });
       return;
@@ -1582,9 +1630,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          console.error("Webhook processing failed:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
+          res.end(JSON.stringify({ error: "Failed to process webhook" }));
         }
       });
       return;
@@ -1652,9 +1700,9 @@ export class CacophonyHttpServer {
           res.writeHead(task.created ? 201 : 200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ queued: task.created, task: task.task }));
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          console.error("Failed to process CI failure callback:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: message }));
+          res.end(JSON.stringify({ error: "Failed to process CI failure callback" }));
         }
       });
       return;
@@ -1708,9 +1756,10 @@ export class CacophonyHttpServer {
         const pruned = await checkpointManager.pruneOldCheckpoints(14, 50);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, prunedCount: pruned }));
-      } catch (err) {
+      } catch (err: unknown) {
+        console.error("Failed to prune checkpoints:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: false, error: (err as Error).message }));
+        res.end(JSON.stringify({ success: false, error: "Failed to prune checkpoints" }));
       }
       return;
     }
@@ -1759,9 +1808,9 @@ export class CacophonyHttpServer {
           timestamp: new Date().toISOString()
         }));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
+        console.error("Failed to check promotion status:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: message }));
+        res.end(JSON.stringify({ error: "Failed to check promotion status" }));
       }
       return;
     }
@@ -1773,6 +1822,38 @@ export class CacophonyHttpServer {
   req.on("end", async () => {
     try {
       const payload = JSON.parse(body || "{}");
+      const safeIdentifier = /^[a-zA-Z0-9_.\-\/]+$/;
+      if (payload.owner && !safeIdentifier.test(payload.owner)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid repository owner format" }));
+        return;
+      }
+      if (payload.repo && !safeIdentifier.test(payload.repo)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid repository name format" }));
+        return;
+      }
+      if (payload.baseBranch && !safeIdentifier.test(payload.baseBranch)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid base branch format" }));
+        return;
+      }
+      if (payload.gitRemote && !safeIdentifier.test(payload.gitRemote)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid git remote format" }));
+        return;
+      }
+      if (payload.releaseBranch && !safeIdentifier.test(payload.releaseBranch)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid release branch format" }));
+        return;
+      }
+      if (payload.workspacePath && !safeIdentifier.test(payload.workspacePath)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid workspace path format" }));
+        return;
+      }
+
       const { GitHubPlatformProvider } = await import("../gitea/GitHubPlatformProvider.js");
       const { GitHubPromotionPipeline } = await import("../gitea/GitHubPromotionPipeline.js");
 
@@ -1808,9 +1889,9 @@ export class CacophonyHttpServer {
       res.writeHead(statusCode, { "Content-Type": "application/json" });
       res.end(JSON.stringify(result));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+      console.error("Milestone promotion failed:", err);
       res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: message }));
+      res.end(JSON.stringify({ error: "Failed to promote milestone" }));
     }
   });
   return;

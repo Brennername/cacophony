@@ -1,9 +1,8 @@
-import { exec, execFile } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 
-const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 
 export interface WorktreeDescriptor {
@@ -42,11 +41,16 @@ export class GitWorktreeManager {
   public formatBranchName(taskId: string, options?: TaskBranchOptions): string {
     const priority = (options?.priority || "P1").toLowerCase();
     const rawSlug = options?.slug || "task";
-    const cleanSlug = rawSlug
+    let cleanSlug = rawSlug
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 30);
+      .replace(/[^a-z0-9]+/g, "-");
+    while (cleanSlug.startsWith("-")) {
+      cleanSlug = cleanSlug.slice(1);
+    }
+    while (cleanSlug.endsWith("-")) {
+      cleanSlug = cleanSlug.slice(0, -1);
+    }
+    cleanSlug = cleanSlug.slice(0, 30);
 
     return `task/${priority}-${taskId}-${cleanSlug || "work"}`;
   }
@@ -57,9 +61,9 @@ export class GitWorktreeManager {
   public async initialize(): Promise<void> {
     await fs.mkdir(this.workspacesRoot, { recursive: true });
     try {
-      await execAsync('git config --global --add safe.directory "*"');
-      await execAsync('git config --global user.name "Cacophony Engine"');
-      await execAsync('git config --global user.email "cacophony@engine.local"');
+      await execFileAsync("git", ["config", "--global", "--add", "safe.directory", "*"]);
+      await execFileAsync("git", ["config", "--global", "user.name", "Cacophony Engine"]);
+      await execFileAsync("git", ["config", "--global", "user.email", "cacophony@engine.local"]);
     } catch {
       // non-fatal
     }
@@ -97,7 +101,7 @@ export class GitWorktreeManager {
     }
 
     try {
-      await execAsync("git worktree prune", { cwd: this.repositoryRoot });
+      await execFileAsync("git", ["worktree", "prune"], { cwd: this.repositoryRoot });
     } catch {
       // non-fatal
     }
@@ -105,7 +109,7 @@ export class GitWorktreeManager {
     // Ensure baseBranch is synced to latest repository HEAD to prevent stale worktree checkouts
     try {
       if (targetBase === "main") {
-        await execAsync("git branch -f main HEAD", { cwd: this.repositoryRoot }).catch(() => {});
+        await execFileAsync("git", ["branch", "-f", "main", "HEAD"], { cwd: this.repositoryRoot }).catch(() => {});
       }
     } catch {
       // non-fatal
@@ -113,12 +117,12 @@ export class GitWorktreeManager {
 
     // Ensure branch exists or create from baseBranch
     try {
-      await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" "${targetBase}"`, {
+      await execFileAsync("git", ["worktree", "add", "-B", branchName, worktreePath, targetBase], {
         cwd: this.repositoryRoot
       });
     } catch {
       // If baseBranch doesn't exist, try HEAD
-      await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" HEAD`, {
+      await execFileAsync("git", ["worktree", "add", "-B", branchName, worktreePath, "HEAD"], {
         cwd: this.repositoryRoot
       });
     }
@@ -159,7 +163,7 @@ export class GitWorktreeManager {
    */
   public async commitWorktree(worktreePath: string, commitMessage: string): Promise<string> {
     await execFileAsync("git", ["add", "-A"], { cwd: worktreePath });
-    await execAsync(`git reset HEAD -- node_modules packages/*/dist dist || true`, { cwd: worktreePath }).catch(() => {});
+    await execFileAsync("git", ["reset", "HEAD", "--", "node_modules", "packages/*/dist", "dist"], { cwd: worktreePath }).catch(() => {});
     try {
       const { stdout } = await execFileAsync("git", ["commit", "-m", commitMessage], {
         cwd: worktreePath
@@ -190,7 +194,7 @@ export class GitWorktreeManager {
     try {
       const giteaBase = process.env["GITEA_BASE_URL"];
       if (giteaBase) {
-        const { stdout: currentRemoteUrl } = await execAsync(`git remote get-url "${remote}"`, { cwd: worktreePath }).catch(() => ({ stdout: "" }));
+        const { stdout: currentRemoteUrl } = await execFileAsync("git", ["remote", "get-url", remote], { cwd: worktreePath }).catch(() => ({ stdout: "", stderr: "" }));
         if (currentRemoteUrl.includes("localhost:19634") || currentRemoteUrl.includes("127.0.0.1:19634")) {
           target = currentRemoteUrl.trim().replace(/localhost:19634|127\.0\.0\.1:19634/, giteaBase.replace(/^https?:\/\//, ""));
         }
@@ -199,7 +203,7 @@ export class GitWorktreeManager {
       // non-fatal remote check
     }
 
-    await execAsync(`git push --force -u "${target}" "${branchName}"`, { cwd: worktreePath });
+    await execFileAsync("git", ["push", "--force", "-u", target, branchName], { cwd: worktreePath });
   }
 
   /**
@@ -210,7 +214,7 @@ export class GitWorktreeManager {
     options?: { deleteBranch?: boolean | undefined; branchName?: string | undefined } | undefined
   ): Promise<void> {
     try {
-      await execAsync(`git worktree remove --force "${worktreePath}"`, {
+      await execFileAsync("git", ["worktree", "remove", "--force", worktreePath], {
         cwd: this.repositoryRoot
       });
     } catch {
@@ -223,14 +227,14 @@ export class GitWorktreeManager {
     }
 
     try {
-      await execAsync(`git worktree prune`, { cwd: this.repositoryRoot });
+      await execFileAsync("git", ["worktree", "prune"], { cwd: this.repositoryRoot });
     } catch {
       // ignore
     }
 
     if (options?.deleteBranch && options.branchName) {
       try {
-        await execAsync(`git branch -D "${options.branchName}"`, { cwd: this.repositoryRoot });
+        await execFileAsync("git", ["branch", "-D", options.branchName], { cwd: this.repositoryRoot });
       } catch {
         // ignore if already deleted
       }
@@ -284,25 +288,25 @@ export class GitWorktreeManager {
       }
 
       try {
-        await execAsync("git worktree prune", { cwd: this.repositoryRoot });
+        await execFileAsync("git", ["worktree", "prune"], { cwd: this.repositoryRoot });
       } catch {
         // Ignore error if pruning fails
       }
 
       try {
         if (targetBase === "main") {
-          await execAsync("git branch -f main HEAD", { cwd: this.repositoryRoot }).catch(() => {});
+          await execFileAsync("git", ["branch", "-f", "main", "HEAD"], { cwd: this.repositoryRoot }).catch(() => {});
         }
       } catch {
         // Ignore error if setting base branch fails
       }
 
       try {
-        await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" "${targetBase}"`, {
+        await execFileAsync("git", ["worktree", "add", "-B", branchName, worktreePath, targetBase], {
           cwd: this.repositoryRoot
         });
       } catch {
-        await execAsync(`git worktree add -B "${branchName}" "${worktreePath}" HEAD`, {
+        await execFileAsync("git", ["worktree", "add", "-B", branchName, worktreePath, "HEAD"], {
           cwd: this.repositoryRoot
         });
       }

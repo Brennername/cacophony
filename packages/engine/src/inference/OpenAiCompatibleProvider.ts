@@ -27,7 +27,11 @@ export class OpenAiCompatibleProvider implements IInferenceProvider {
 
   constructor(options: OpenAiCompatibleOptions) {
     this.providerType = options.providerType || "custom";
-    this.baseUrl = options.baseUrl.replace(/\/+$/, "");
+    let url = options.baseUrl;
+    while (url.endsWith("/")) {
+      url = url.slice(0, -1);
+    }
+    this.baseUrl = url;
     this.apiKey = options.apiKey;
     this.defaultHeaders = options.defaultHeaders || {};
   }

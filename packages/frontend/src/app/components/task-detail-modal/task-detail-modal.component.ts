@@ -1276,12 +1276,17 @@ export class TaskDetailModalComponent {
 
   public formatPrLinkText(url: string): string {
     if (!url) return 'View PR';
-    if (url.includes('github.com')) {
-      const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
-      if (match) {
-        return `GitHub PR #${match[3]}`;
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname === 'github.com' || parsed.hostname.endsWith('.github.com')) {
+        const match = parsed.pathname.match(/\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+        if (match) {
+          return `GitHub PR #${match[3]}`;
+        }
+        return 'GitHub PR';
       }
-      return 'GitHub PR';
+    } catch {
+      // Non-standard URL format fallback
     }
     const match = url.match(/\/pulls\/(\d+)/);
     if (match) {

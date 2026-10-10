@@ -85,7 +85,7 @@ export class RustSignatureHarvester {
           }
         } else if (currentBlockKind === "interface") {
           // fn method_name(&self, ...) -> RetType;
-          const methodMatch = line.match(/(?:async\s+)?fn\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*(?:->\s*([^;]+))?/);
+          const methodMatch = line.match(/^\s*(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)(?:\s*->\s*([^{;]+))?/);
           if (methodMatch && methodMatch[1]) {
             currentBlockMethods.push({
               name: methodMatch[1],

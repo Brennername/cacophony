@@ -143,6 +143,10 @@ export class GitHubPromotionPipeline {
       };
     }
 
+    if (!/^[a-zA-Z0-9_.\-\/]+$/.test(remote) || !/^[a-zA-Z0-9_.\-\/]+$/.test(options.releaseBranch)) {
+      throw new Error("Invalid git ref format for push command");
+    }
+
     const pushCmd = `git push ${remote} ${options.releaseBranch}:${options.releaseBranch}`;
     const pushResult = await this.runner.run(pushCmd, {
       cwd: options.workspacePath || process.cwd(),

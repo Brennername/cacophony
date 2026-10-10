@@ -26,7 +26,11 @@ export class GiteaPackageClient {
   private readonly apiToken: string | undefined;
 
   constructor(_client: GiteaApiClient, baseUrl: string, apiToken?: string) {
-    this.baseUrl = baseUrl.replace(/\/+$/, "");
+    let url = baseUrl;
+    while (url.endsWith("/")) {
+      url = url.slice(0, -1);
+    }
+    this.baseUrl = url;
     this.apiToken = apiToken;
   }
 

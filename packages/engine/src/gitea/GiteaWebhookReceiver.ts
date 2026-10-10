@@ -235,7 +235,7 @@ export class GiteaWebhookReceiver {
               MergeTitleField: `Merge PR #${pr.number}: ${pr.title}`
             });
           } catch (mergeErr) {
-            console.error(`[GiteaWebhookReceiver] Squash-merge failed for PR #${pr.number}:`, mergeErr);
+            console.error("[GiteaWebhookReceiver] Squash-merge failed for PR:", pr.number, mergeErr);
           }
         }
 

@@ -11,7 +11,11 @@ export class OidcDiscoveryService {
   private readonly ttlMs: number;
 
   constructor(issuerUrl: string, ttlMs: number = 3600_000) {
-    this.issuerUrl = issuerUrl.replace(/\/+$/, "");
+    let cleanUrl = issuerUrl;
+    while (cleanUrl.endsWith("/")) {
+      cleanUrl = cleanUrl.slice(0, -1);
+    }
+    this.issuerUrl = cleanUrl;
     this.ttlMs = ttlMs;
   }
 

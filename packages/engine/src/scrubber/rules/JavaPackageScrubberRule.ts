@@ -68,11 +68,22 @@ export class JavaPackageScrubberRule implements IScrubberRule {
 
   private deriveExpectedPackage(filePath: string): string | null {
     const normalized = filePath.replace(/\\/g, "/");
-    const markerRegex = /(?:src\/(?:main|test)\/java\/)(.+)\/[^/]+\.java$/;
-    const match = markerRegex.exec(normalized);
-    if (match && match[1]) {
-      return match[1].replace(/\//g, ".");
+    if (!normalized.endsWith(".java")) return null;
+    const prefix = "src/main/java/";
+    const testPrefix = "src/test/java/";
+    let startIdx = normalized.indexOf(prefix);
+    let offset = prefix.length;
+    if (startIdx === -1) {
+      startIdx = normalized.indexOf(testPrefix);
+      offset = testPrefix.length;
     }
-    return null;
+    if (startIdx === -1) return null;
+
+    const afterMarker = normalized.slice(startIdx + offset);
+    const lastSlash = afterMarker.lastIndexOf("/");
+    if (lastSlash === -1) return null;
+
+    const packagePath = afterMarker.slice(0, lastSlash);
+    return packagePath.replace(/\//g, ".");
   }
 }

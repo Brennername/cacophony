@@ -1,5 +1,6 @@
 import type { UserRole, AuthContext, SsoUserProfile } from "@cacophony/shared-types";
 import type { UserSessionRepository, UserSessionRecord } from "@cacophony/db";
+import { randomBytes } from "node:crypto";
 import { OidcDiscoveryService, JwksKeyManager } from "./OidcDiscoveryService.js";
 import { JwtValidator } from "./JwtValidator.js";
 import { SsoProviderFactory } from "./SsoProviderFactory.js";
@@ -28,7 +29,11 @@ export class AuthService {
     this.issuerUrl = options?.issuerUrl || process.env["OIDC_ISSUER_URL"] || "http://localhost:9000/application/o/cacophony/";
 
     if (options?.jwksUri || process.env["OIDC_JWKS_URI"]) {
-      const uri = options?.jwksUri || process.env["OIDC_JWKS_URI"] || `${this.issuerUrl.replace(/\/+$/, "")}/jwks`;
+      let base = this.issuerUrl;
+      while (base.endsWith("/")) {
+        base = base.slice(0, -1);
+      }
+      const uri = options?.jwksUri || process.env["OIDC_JWKS_URI"] || `${base}/jwks`;
       this.jwksKeyManager = new JwksKeyManager(uri);
     }
 
@@ -103,7 +108,7 @@ export class AuthService {
   ): Promise<UserSessionRecord> {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString();
-    const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const sessionId = `sess_${Date.now()}_${randomBytes(8).toString("hex")}`;
 
     const record: UserSessionRecord = {
       sessionId,

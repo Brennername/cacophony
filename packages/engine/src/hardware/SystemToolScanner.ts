@@ -189,6 +189,13 @@ export class SystemToolScanner {
   }
 
   public async checkTool(def: ToolDefinition): Promise<ToolRequirement> {
+    if (!/^[a-zA-Z0-9_-]+$/.test(def.binaryName)) {
+      throw new Error(`Invalid binary name: ${def.binaryName}`);
+    }
+    if (def.versionArgs && !/^[a-zA-Z0-9_ -]+$/.test(def.versionArgs)) {
+      throw new Error(`Invalid version arguments: ${def.versionArgs}`);
+    }
+
     try {
       await this.execFn(`which ${def.binaryName}`);
       let version: string | undefined;

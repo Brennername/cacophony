@@ -186,9 +186,9 @@ export class McpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
+          console.error("[McpServer] Tool execution failed:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: false, error: message }));
+          res.end(JSON.stringify({ success: false, error: "Tool execution failed" }));
         }
       });
       return;

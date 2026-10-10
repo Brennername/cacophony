@@ -177,7 +177,7 @@ export class QueueGroomer {
         lowerTest.includes("verify ci") ||
         lowerTest.includes("bin/cacophony") ||
         lowerTest.startsWith("node bin/") ||
-        /node\s+.*\.ts(\s|$)/.test(lowerTest) ||
+        /\bnode\s+\S+\.ts(?:\s|$)/.test(lowerTest) ||
         lowerTest.startsWith("go ") ||
         lowerTest.startsWith("cargo ") ||
         lowerTest.startsWith("pytest ") ||
@@ -340,16 +340,20 @@ export class QueueGroomer {
    */
   private detectFocusFiles(promptText: string): string[] {
     const matches: string[] = [];
-    const pathRegex = /(?:[a-zA-Z0-9_-]+\/)+[a-zA-Z0-9_.-]+\.(?:ts|js|json|html|css|java)/g;
     const repoRoot = this.getRepoRoot();
 
-    let match: RegExpExecArray | null;
-    while ((match = pathRegex.exec(promptText)) !== null) {
-      const candidate = match[0];
-      const fullPath = path.resolve(repoRoot, candidate);
-      const localPath = path.resolve(this.projectDir, candidate);
-      if (fs.existsSync(fullPath) || fs.existsSync(localPath)) {
-        matches.push(candidate);
+    const candidates = promptText.split(/[\s"'`()<>,;:]+/);
+    for (const candidate of candidates) {
+      if (candidate.includes("/") && /\.(?:ts|js|json|html|css|java)$/.test(candidate)) {
+        if (/^[a-zA-Z0-9_./-]+$/.test(candidate)) {
+          const fullPath = path.resolve(repoRoot, candidate);
+          const localPath = path.resolve(this.projectDir, candidate);
+          if (fs.existsSync(fullPath) || fs.existsSync(localPath)) {
+            if (!matches.includes(candidate)) {
+              matches.push(candidate);
+            }
+          }
+        }
       }
     }
 

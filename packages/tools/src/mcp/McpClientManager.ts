@@ -171,7 +171,11 @@ export class McpClientManager {
       throw new Error(`SSE MCP server '${config.serverName}' requires a 'url'`);
     }
 
-    const toolsEndpoint = `${config.url.replace(/\/+$/, "")}/tools`;
+    let baseUrl = config.url;
+    while (baseUrl.endsWith("/")) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+    const toolsEndpoint = `${baseUrl}/tools`;
     const res = await fetch(toolsEndpoint);
     if (!res.ok) {
       throw new Error(`Failed to discover tools from MCP SSE server at ${toolsEndpoint}: ${res.statusText}`);

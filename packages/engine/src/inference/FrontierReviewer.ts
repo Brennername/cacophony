@@ -410,13 +410,14 @@ export class FrontierReviewer {
     }
 
     // Check for placeholder error throwing or TODO bodies
-    if (/\+.*throw\s+new\s+Error\s*\(\s*[`'"](?:not implemented|todo|stub)/i.test(diffText)) {
+    const addedLines = diffText.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++"));
+    const removedLines = diffText.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---"));
+
+    if (addedLines.some((l) => /throw\s+new\s+Error\s*\(\s*[`'"](?:not implemented|todo|stub)/i.test(l))) {
       issues.push("Detected unimplemented placeholder method body in added lines.");
     }
 
     // Check for net comment-only deletion
-    const addedLines = diffText.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++"));
-    const removedLines = diffText.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---"));
     const addedCodeLines = addedLines.filter((l) => {
       const trimmed = l.slice(1).trim();
       return trimmed.length > 0 && !trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*");

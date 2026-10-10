@@ -51,7 +51,7 @@ export class PromptCompressor {
     }
 
     // Collapse trailing whitespace per line
-    processed = processed.replace(/[ \t]+$/gm, "");
+    processed = processed.split("\n").map((line) => line.trimEnd()).join("\n");
 
     // Collapse multiple consecutive newlines into at most two newlines
     processed = processed.replace(/\n{3,}/g, "\n\n");

@@ -135,7 +135,7 @@ export class TypeScriptMethodSplicer {
         const ifMatch = body.match(/\bif\s*\(/);
         if (ifMatch && ifMatch.index !== undefined) {
           const prelude = body.slice(0, ifMatch.index).trim();
-          if (/^\s*(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/\s*)*$/.test(prelude)) {
+          if (this.isOnlyCommentsAndWhitespace(prelude)) {
             body = body.slice(ifMatch.index).trim();
           }
         }
@@ -233,5 +233,40 @@ export class TypeScriptMethodSplicer {
     };
     if (handler.body) visit(handler.body);
     return fallback;
+  }
+
+  /**
+   * Validates whether a code prelude contains solely comments and whitespace without regex backtracking.
+   */
+  private static isOnlyCommentsAndWhitespace(str: string): boolean {
+    let idx = 0;
+    const len = str.length;
+    while (idx < len) {
+      while (idx < len && /\s/.test(str[idx]!)) {
+        idx++;
+      }
+      if (idx >= len) return true;
+
+      if (str[idx] === "/" && str[idx + 1] === "/") {
+        const nextNewline = str.indexOf("\n", idx + 2);
+        if (nextNewline === -1) {
+          return true;
+        }
+        idx = nextNewline + 1;
+        continue;
+      }
+
+      if (str[idx] === "/" && str[idx + 1] === "*") {
+        const closeComment = str.indexOf("*/", idx + 2);
+        if (closeComment === -1) {
+          return false;
+        }
+        idx = closeComment + 2;
+        continue;
+      }
+
+      return false;
+    }
+    return true;
   }
 }

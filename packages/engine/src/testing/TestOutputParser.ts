@@ -52,10 +52,10 @@ export class TestOutputParser {
       }
 
       // Location match: e.g. at ... (/path/to/file.ts:42:15)
-      const locMatch = line.match(/(?:\/|[A-Za-z]:\\)[^\s:]+\.(?:ts|js|java|go|rs):(\d+)/);
-      if (locMatch && locMatch[0] && locMatch[1]) {
-        currentFile = locMatch[0].split(":")[0] || "";
-        currentLine = parseInt(locMatch[1], 10);
+      const locMatch = line.match(/(?:[( \t]|^)((?:\/|[A-Za-z]:\\)[^\s:()]+\.(?:ts|js|java|go|rs)):(\d+)/);
+      if (locMatch && locMatch[1] && locMatch[2]) {
+        currentFile = locMatch[1];
+        currentLine = parseInt(locMatch[2], 10);
       }
 
       if (inFailureBlock) {

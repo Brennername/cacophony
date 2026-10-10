@@ -37,13 +37,15 @@ export class GoAstScrubberRule implements IScrubberRule {
     const lines = updated.split("\n");
     let indentedModified = false;
     const tabbedLines = lines.map((line) => {
-      const match = line.match(/^( +)(.*)$/);
-      if (match && match[1] && match[2]) {
-        const spaceCount = match[1].length;
-        // Convert multiples of 4 (or 2) spaces to tabs
+      let spaceCount = 0;
+      while (spaceCount < line.length && line[spaceCount] === " ") {
+        spaceCount++;
+      }
+      if (spaceCount > 0) {
+        const rest = line.slice(spaceCount);
         const tabsCount = Math.max(1, Math.floor(spaceCount / 4) || Math.floor(spaceCount / 2));
         indentedModified = true;
-        return "\t".repeat(tabsCount) + match[2];
+        return "\t".repeat(tabsCount) + rest;
       }
       return line;
     });

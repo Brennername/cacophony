@@ -17,6 +17,26 @@ export interface ExtractedCodeBlock {
  *   enclosed in standard markdown code blocks.
  * - Frontier Models: Permits concise structural diffs or targeted code blocks to minimize token overhead.
  */
+export function stripThinkBlocks(text: string): string {
+  let result = "";
+  let cursor = 0;
+  const lower = text.toLowerCase();
+  while (cursor < text.length) {
+    const startIdx = lower.indexOf("<think>", cursor);
+    if (startIdx === -1) {
+      result += text.slice(cursor);
+      break;
+    }
+    result += text.slice(cursor, startIdx);
+    const endIdx = lower.indexOf("</think>", startIdx + 7);
+    if (endIdx === -1) {
+      break;
+    }
+    cursor = endIdx + 8;
+  }
+  return result;
+}
+
 export class AdaptiveOutputFormatter {
   /**
    * Generates output format instruction directives tailored to model tier and archetype.
@@ -95,7 +115,7 @@ export class AdaptiveOutputFormatter {
     if (!rawContent) return blocks;
 
     // Normalize: strip all closed reasoning blocks <think>...</think>
-    let cleaned = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    let cleaned = stripThinkBlocks(rawContent).trim();
 
     // If an unclosed <think> tag remains (e.g. model truncated or emitted another <think>),
     // strip the unclosed trailing block while preserving any prior generated text
@@ -112,35 +132,43 @@ export class AdaptiveOutputFormatter {
       cleaned = rawContent;
     }
 
-    const codeBlockRegex = /```([a-zA-Z0-9_-]*)\s*([\s\S]*?)```/g;
+    let cursor = 0;
+    while (cursor < cleaned.length) {
+      const openIdx = cleaned.indexOf("```", cursor);
+      if (openIdx === -1) break;
 
-    let match: RegExpExecArray | null;
-    while ((match = codeBlockRegex.exec(cleaned)) !== null) {
-      const language = match[1]?.trim() || "text";
-      const code = match[2]?.trim() || "";
+      let lineEnd = cleaned.indexOf("\n", openIdx + 3);
+      if (lineEnd === -1) lineEnd = cleaned.length;
+      const langHeader = cleaned.slice(openIdx + 3, lineEnd).trim();
+      const language = /^[a-zA-Z0-9_-]+$/.test(langHeader) ? langHeader : "text";
+
+      const closeIdx = cleaned.indexOf("```", lineEnd);
+      if (closeIdx === -1) {
+        // Fallback: If no closing ``` was found, handle truncated response
+        const unclosedCode = cleaned.slice(lineEnd).trim();
+        if (blocks.length === 0 && unclosedCode.length > 0) {
+          blocks.push({
+            language,
+            code: unclosedCode,
+            isTruncated: true
+          });
+        }
+        break;
+      }
+
+      const code = cleaned.slice(lineEnd, closeIdx).trim();
       if (code.length > 0) {
-        // If the extracted block itself contains inner markdown code fences, extract from inner content
         if (code.includes("```")) {
           const innerBlocks = this.extractCodeBlocks(code);
           if (innerBlocks.length > 0) {
             blocks.push(...innerBlocks);
+            cursor = closeIdx + 3;
             continue;
           }
         }
         blocks.push({ language, code });
       }
-    }
-
-    // Fallback: If no closed ```...``` block was found but a leading ``` fence exists (truncated response)
-    if (blocks.length === 0 && cleaned.includes("```")) {
-      const unclosedMatch = cleaned.match(/```([a-zA-Z0-9_-]*)\s*([\s\S]+)$/);
-      if (unclosedMatch && unclosedMatch[2]?.trim()) {
-        blocks.push({
-          language: unclosedMatch[1]?.trim() || "text",
-          code: unclosedMatch[2].trim(),
-          isTruncated: true
-        });
-      }
+      cursor = closeIdx + 3;
     }
 
     return blocks;

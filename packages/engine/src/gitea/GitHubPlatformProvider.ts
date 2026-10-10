@@ -20,7 +20,11 @@ export class GitHubPlatformProvider implements IGitPlatformProvider {
 
   constructor(config: GitHubProviderConfig) {
     this.token = config.token;
-    this.baseUrl = (config.baseUrl || "https://api.github.com").replace(/\/+$/, "");
+    let url = config.baseUrl || "https://api.github.com";
+    while (url.endsWith("/")) {
+      url = url.slice(0, -1);
+    }
+    this.baseUrl = url;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

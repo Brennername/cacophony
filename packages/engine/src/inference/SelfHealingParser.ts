@@ -1,4 +1,4 @@
-import { AdaptiveOutputFormatter, type ExtractedCodeBlock } from "./AdaptiveOutputFormatter.js";
+import { AdaptiveOutputFormatter, stripThinkBlocks, type ExtractedCodeBlock } from "./AdaptiveOutputFormatter.js";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 import type { ChatMessage, InferenceRequest } from "@cacophony/shared-types";
 
@@ -70,9 +70,8 @@ export class SelfHealingParser {
 
       // Fallback: If output contains pure TypeScript/JavaScript code without markdown fences
       // Must be a dedicated code block (starts with import or class/interface definition), not conversational chat
-      const cleanedRaw = rawOutput.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-      const hasCodeDeclaration =
-        /^\s*(?:\/\/.*?\n\s*|\/\*[\s\S]*?\*\/\s*)*(?:import|export|class|interface|function|const|let|var)\b/.test(cleanedRaw);
+      const cleanedRaw = stripThinkBlocks(rawOutput).trim();
+      const hasCodeDeclaration = this.startsWithCodeDeclaration(cleanedRaw);
 
       const hasMultipleLinesOfCode =
         cleanedRaw.split("\n").length >= 3 &&
@@ -208,5 +207,39 @@ export class SelfHealingParser {
     }
 
     throw new Error(`Self-healing parsing failed after ${this.maxRetries} attempts.`);
+  }
+
+  /**
+   * Deterministically determines if a string begins with leading comments followed by a code declaration token.
+   * Avoids nested-quantifier regex backtracking.
+   */
+  private startsWithCodeDeclaration(str: string): boolean {
+    let idx = 0;
+    const len = str.length;
+    while (idx < len) {
+      while (idx < len && /\s/.test(str[idx]!)) {
+        idx++;
+      }
+      if (idx >= len) return false;
+
+      if (str[idx] === "/" && str[idx + 1] === "/") {
+        const nextNewline = str.indexOf("\n", idx + 2);
+        if (nextNewline === -1) return false;
+        idx = nextNewline + 1;
+        continue;
+      }
+
+      if (str[idx] === "/" && str[idx + 1] === "*") {
+        const closeComment = str.indexOf("*/", idx + 2);
+        if (closeComment === -1) return false;
+        idx = closeComment + 2;
+        continue;
+      }
+
+      break;
+    }
+
+    const remainder = str.slice(idx);
+    return /^(?:import|export|class|interface|function|const|let|var)\b/.test(remainder);
   }
 }

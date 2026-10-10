@@ -63,8 +63,8 @@ export class GeneratedChangeGuard {
     }
 
     // Check for JSDoc documentation stripping
-    const originalJsDocs = (original.match(/\/\*\*[\s\S]*?\*\//g) || []).length;
-    const replacementJsDocs = (replacement.match(/\/\*\*[\s\S]*?\*\//g) || []).length;
+    const originalJsDocs = this.countJsDocBlocks(original);
+    const replacementJsDocs = this.countJsDocBlocks(replacement);
     if (originalJsDocs > 0 && replacementJsDocs < originalJsDocs && authorizedRemovals.size === 0) {
       const stripped = originalJsDocs - replacementJsDocs;
       issues.push(`Generated replacement stripped ${stripped} JSDoc documentation comment block(s) from ${filePath}.`);
@@ -177,14 +177,84 @@ export class GeneratedChangeGuard {
     return issues;
   }
 
-  private static readonly placeholderPattern = /(?:^[ \t]*\/\/[ \t]*(?:\[[ \t]*)?(?:\.\.\.[ \t]*)?(?:previous\s+code\s+goes\s+here|(?:existing\s+(?:code|implementation)|rest\s+of\s+(?:the\s+)?(?:method|class|file|code)|unchanged\s+(?:methods?|code))(?:\s+(?:goes\s+here|remains?(?:\s+(?:the\s+same|unchanged))?|continues(?:\s+here)?|\.\.\.))?|omitted\s+for\s+brevity)(?:[ \t]*\])?[ \t]*(?:\.\.\.)?[ \t]*$)|(?:^[ \t]*\/\/[ \t]*(?:\[[ \t]*)?\.\.\.(?:[ \t]*\])?[ \t]*$)|(?:\/\*[ \t]*(?:\[[ \t]*)?(?:\.\.\.[ \t]*)?(?:previous\s+code\s+goes\s+here|(?:existing\s+(?:code|implementation)|rest\s+of\s+(?:the\s+)?(?:method|class|file|code)|unchanged\s+(?:methods?|code))(?:\s+(?:goes\s+here|remains?(?:\s+(?:the\s+same|unchanged))?|continues(?:\s+here)?|\.\.\.))?|omitted\s+for\s+brevity|\.\.\.)(?:[ \t]*\])?[ \t]*\*\/)|\bTODO\s*:\s*(?:implement|fill|complete)\b/gim;
+  private static countJsDocBlocks(code: string): number {
+    let count = 0;
+    let cursor = 0;
+    while (cursor < code.length) {
+      const startIdx = code.indexOf("/**", cursor);
+      if (startIdx === -1) break;
+      const endIdx = code.indexOf("*/", startIdx + 3);
+      if (endIdx === -1) break;
+      count++;
+      cursor = endIdx + 2;
+    }
+    return count;
+  }
+
+  private static readonly placeholderKeywords = [
+    "previous code goes here",
+    "existing code goes here",
+    "existing code remains",
+    "existing implementation",
+    "rest of the method",
+    "rest of the class",
+    "rest of the file",
+    "rest of the code",
+    "rest of method",
+    "rest of class",
+    "rest of file",
+    "rest of code",
+    "unchanged method",
+    "unchanged methods",
+    "unchanged code",
+    "omitted for brevity"
+  ];
 
   private static getAddedPlaceholderComments(original: string, replacement: string): string[] {
+    const isPlaceholderLine = (line: string): string | null => {
+      const trimmed = line.trim();
+      if (!trimmed) return null;
+
+      const todoMatch = trimmed.match(/\bTODO\s*:\s*(?:implement|fill|complete)\b/i);
+      if (todoMatch) {
+        return todoMatch[0].toLowerCase();
+      }
+
+      if (trimmed.startsWith("//")) {
+        const commentBody = trimmed.slice(2).trim().replace(/^\[\s*/, "").replace(/\s*\]$/, "").trim().toLowerCase();
+        if (commentBody === "..." || commentBody.startsWith("...")) {
+          return trimmed.toLowerCase();
+        }
+        for (const kw of GeneratedChangeGuard.placeholderKeywords) {
+          if (commentBody.includes(kw)) {
+            return trimmed.toLowerCase();
+          }
+        }
+      }
+
+      if (trimmed.startsWith("/*") && trimmed.endsWith("*/")) {
+        const commentBody = trimmed.slice(2, -2).trim().replace(/^\[\s*/, "").replace(/\s*\]$/, "").trim().toLowerCase();
+        if (commentBody === "..." || commentBody.startsWith("...")) {
+          return trimmed.toLowerCase();
+        }
+        for (const kw of GeneratedChangeGuard.placeholderKeywords) {
+          if (commentBody.includes(kw)) {
+            return trimmed.toLowerCase();
+          }
+        }
+      }
+
+      return null;
+    };
+
     const count = (source: string): Map<string, number> => {
       const found = new Map<string, number>();
-      for (const match of source.matchAll(this.placeholderPattern)) {
-        const key = match[0]!.replace(/\s+/g, " ").trim().toLowerCase();
-        found.set(key, (found.get(key) || 0) + 1);
+      for (const rawLine of source.split(/\r?\n/)) {
+        const marker = isPlaceholderLine(rawLine);
+        if (marker) {
+          const key = marker.replace(/\s+/g, " ").trim();
+          found.set(key, (found.get(key) || 0) + 1);
+        }
       }
       return found;
     };

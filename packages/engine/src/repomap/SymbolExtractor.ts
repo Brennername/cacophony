@@ -167,7 +167,7 @@ export class SymbolExtractor {
     const lines = content.split("\n");
 
     const classRegex = /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:class|interface|record|enum)\s+([A-Za-z0-9_]+)/;
-    const methodRegex = /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:final\s+)?(?:<[^>]+>\s+)?([A-Za-z0-9_<>[\]]+)\s+([A-Za-z0-9_]+)\s*\([^)]*\)\s*(?:throws\s+[^{]+)?\{/;
+    const methodRegex = /^\s*(?:(?:public|protected|private|static|final)\s+)*([A-Za-z0-9_]+(?:<[A-Za-z0-9_,\s]+>)?(?:\[\])?)\s+([A-Za-z0-9_]+)\s*\([^)]*\)(?:\s+throws\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] || "";
