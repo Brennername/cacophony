@@ -11,7 +11,7 @@ import type { TaskRepository } from "@cacophony/db";
 
 test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR Engine", async (t) => {
   await t.test("T29.1: GiteaPermissionGuard Role-Gated Scope Enforcement", () => {
-    // 1. Public Inspector: allowed repository:read, denied repository:write
+
     const inspectorGuard = new GiteaPermissionGuard("public_inspector");
     assert.doesNotThrow(() => inspectorGuard.assertScope("repository", "read"));
     assert.throws(
@@ -23,7 +23,6 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       /Gitea Security Violation: Role 'public_inspector' has 'none' access to scope 'package'./
     );
 
-    // 2. Autonomous Implementer: allowed repository:write, issue:write, denied admin
     const implementerGuard = new GiteaPermissionGuard("autonomous_implementer");
     assert.doesNotThrow(() => implementerGuard.assertScope("repository", "write"));
     assert.doesNotThrow(() => implementerGuard.assertScope("issue", "write"));
@@ -32,7 +31,6 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       /Gitea Security Violation: Role 'autonomous_implementer' has 'none' access to scope 'admin'./
     );
 
-    // 3. Protected Branch Guardrails
     assert.doesNotThrow(() => implementerGuard.assertBranchModificationPermitted("feat/issue-42-auth"));
     assert.doesNotThrow(() => implementerGuard.assertBranchModificationPermitted("fix/timeout-buffer"));
     assert.throws(
@@ -57,7 +55,6 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       guard: inspectorGuard
     });
 
-    // Inspector trying to create a branch should be rejected by guard before network call
     await assert.rejects(
       async () => {
         await client.createBranch("cacophony", "core", {
@@ -67,7 +64,6 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       /Gitea Security Violation: Role 'public_inspector' has 'read' access to scope 'repository'/
     );
 
-    // Implementer trying to target master should be rejected by protected branch guard
     const implementerGuard = new GiteaPermissionGuard("autonomous_implementer");
     const implementerClient = new GiteaApiClient({
       baseUrl: "http://127.0.0.1:19634",
@@ -97,14 +93,12 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
     const secret = "test_webhook_secret_key_123";
     const receiver = new GiteaWebhookReceiver(mockTaskRepo, secret);
 
-    // 1. Signature Verification
     const payload = JSON.stringify({ action: "opened" });
     const crypto = await import("node:crypto");
     const validSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
     assert.strictEqual(receiver.verifySignature(payload, validSignature), true);
     assert.strictEqual(receiver.verifySignature(payload, "invalid_sig"), false);
 
-    // 2. Issue comment command event
     const commentPayload = {
       action: "created",
       repository: {
@@ -116,7 +110,11 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       issue: {
         number: 45,
         title: "Fix Vega APU VRAM reset",
-        body: "Detailed error in sysfs."
+        body: "Detailed error in sysfs.",
+        state: "open",
+        labels: [{ id: 1, name: "cacophony" }, { id: 2, name: "performance" }],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       comment: {
         id: 101,
