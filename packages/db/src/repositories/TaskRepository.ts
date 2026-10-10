@@ -437,4 +437,13 @@ export class TaskRepository {
       ...runtimeMetrics
     };
   }
+
+
+  public async listByBaseCommitHash(baseCommitHash: string): Promise<readonly TaskRecord[]> {
+      const rows = await this.driver.query<TaskRow>(
+        "SELECT * FROM tasks WHERE base_commit_hash = $1",
+        [baseCommitHash]
+      );
+      return rows.map((r) => this.mapRow(r));
+    }
 }
