@@ -156,7 +156,7 @@ export class TaskScheduler {
     void this.recoverOrphanedTasks();
 
     this.loopTimer = setInterval(() => {
-      void this.tick();
+      void this.tick(false);
     }, pollIntervalMs);
   }
 
@@ -210,9 +210,10 @@ export class TaskScheduler {
 
   /**
    * Executes a single scheduling evaluation cycle.
+   * If force is true, runs even if the continuous background polling loop is stopped.
    */
-  public async tick(): Promise<TaskRecord | null> {
-    if (!this.isRunning || this.isPaused || this.mutex.isLocked()) {
+  public async tick(force = true): Promise<TaskRecord | null> {
+    if ((!this.isRunning && !force) || this.isPaused || this.mutex.isLocked()) {
       return null;
     }
 
@@ -509,17 +510,24 @@ export class TaskScheduler {
               durationMs
             );
 
-            if (newFailureCount < this.maxRetries) {
-              console.log(`[TaskScheduler] Task ${targetTask.id} attempt ${newFailureCount}/${this.maxRetries} failed. Requeuing for autonomous remediation.`);
+            const effectiveFailureCount =
+              typeof newFailureCount === "number" ? newFailureCount : targetTask.failureCount + 1;
+
+            if (effectiveFailureCount < this.maxRetries) {
+              console.log(`[TaskScheduler] Task ${targetTask.id} attempt ${effectiveFailureCount}/${this.maxRetries} failed. Requeuing for autonomous remediation.`);
               await this.taskRepo.updateStatus(targetTask.id, "PENDING", durationMs, actualTps);
-              await this.taskRepo.updateLogSnippet(
-                targetTask.id,
-                `[Attempt ${newFailureCount}/${this.maxRetries} Failed]: ${failureReason}`
-              );
+              if (typeof this.taskRepo.updateLogSnippet === "function") {
+                await this.taskRepo.updateLogSnippet(
+                  targetTask.id,
+                  `[Attempt ${effectiveFailureCount}/${this.maxRetries} Failed]: ${failureReason}`
+                );
+              }
             } else {
-              console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries (${newFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
+              console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
               await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, actualTps);
-              await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+              if (typeof this.taskRepo.updateRehabStatus === "function") {
+                await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+              }
               if (this.rehabilitationService) {
                 try {
                   await this.rehabilitationService.rehabilitateTask(targetTask, failureReason, result.commitHash);
@@ -574,6 +582,8 @@ export class TaskScheduler {
           }
 
           const newFailureCount = await this.taskRepo.incrementFailure(targetTask.id);
+          const effectiveFailureCount =
+            typeof newFailureCount === "number" ? newFailureCount : targetTask.failureCount + 1;
           const failureReason = isTimeout
             ? `[TIMEOUT]: ${errorMsg}`
             : `[${classification.category}]: ${errorMsg}`;
@@ -587,17 +597,21 @@ export class TaskScheduler {
             durationMs
           );
 
-          if (newFailureCount < this.maxRetries) {
-            console.log(`[TaskScheduler] Task ${targetTask.id} caught error attempt ${newFailureCount}/${this.maxRetries}. Requeuing for autonomous retry.`);
+          if (effectiveFailureCount < this.maxRetries) {
+            console.log(`[TaskScheduler] Task ${targetTask.id} caught error attempt ${effectiveFailureCount}/${this.maxRetries}. Requeuing for autonomous retry.`);
             await this.taskRepo.updateStatus(targetTask.id, "PENDING", durationMs, recordedTps);
-            await this.taskRepo.updateLogSnippet(
-              targetTask.id,
-              `[Attempt ${newFailureCount}/${this.maxRetries} Error]: ${failureReason}`
-            );
+            if (typeof this.taskRepo.updateLogSnippet === "function") {
+              await this.taskRepo.updateLogSnippet(
+                targetTask.id,
+                `[Attempt ${effectiveFailureCount}/${this.maxRetries} Error]: ${failureReason}`
+              );
+            }
           } else {
-            console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries on error (${newFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
+            console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries on error (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
             await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, recordedTps);
-            await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+            if (typeof this.taskRepo.updateRehabStatus === "function") {
+              await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+            }
             if (this.rehabilitationService) {
               try {
                 await this.rehabilitationService.rehabilitateTask(targetTask, failureReason);

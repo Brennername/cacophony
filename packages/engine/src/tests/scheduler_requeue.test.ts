@@ -24,12 +24,24 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
 
   const createMockEvictionManager = () =>
     ({
+      selectModel: async () => "qwen2.5-coder:7b",
       getEjectedModels: () => new Set<string>(),
       recordRunOutcome: async () => {}
     }) as any;
 
   const createMockTelemetry = () =>
     ({
+      sample: async () => ({
+        edgeTempCelsius: 45,
+        junctionTempCelsius: 50,
+        vramUsedBytes: 1024,
+        vramTotalBytes: 4096,
+        gpuBusyPercent: 10,
+        pptWatts: 15,
+        sclkMhz: 1000,
+        mclkMhz: 1000,
+        timestamp: new Date().toISOString()
+      }),
       getCurrentSnapshot: async () => ({
         timestamp: Date.now(),
         edgeTempC: 45,

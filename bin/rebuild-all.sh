@@ -93,7 +93,7 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}\$"; then
 
   # Copy docs directory (ensures taskcade.md is synchronized for seeding)
   if [ -d "${REPO_ROOT}/docs" ]; then
-    docker cp "${REPO_ROOT}/docs/." "${CONTAINER_NAME}:/app/docs/"
+    docker cp "${REPO_ROOT}/docs/." "${CONTAINER_NAME}:/app/docs/" 2>/dev/null || true
     echo "Documentation synchronized to /app/docs/"
   fi
 

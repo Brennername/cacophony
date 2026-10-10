@@ -50,14 +50,19 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       tokensPerSec: 0
     };
 
+    let currentTaskStatus = "PENDING";
     const mockTaskRepo = {
-      listPending: async () => [mockTask],
+      listPending: async () => (currentTaskStatus === "FAILED" ? [] : [mockTask]),
       updateStatus: async (_id: string, status: string) => {
         updatedStatus = status;
+        currentTaskStatus = status;
       },
       updateModel: async () => {},
+      updateLogSnippet: async () => {},
+      updateRehabStatus: async () => {},
       incrementFailure: async () => {
         failureCountIncremented = true;
+        return 3;
       }
     } as any;
 
@@ -110,9 +115,7 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       return { success: true, tokensPerSec: 25.0 };
     });
 
-    scheduler.start();
     const executed = await scheduler.tick();
-    scheduler.stop();
 
     assert.ok(executed);
     assert.equal(executed?.id, "task-timeout-test");
@@ -142,10 +145,14 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
     };
     let status = "PENDING";
     const taskRepo = {
-      listPending: async () => [task],
-      updateStatus: async (_id: string, value: string) => { status = value; },
+      listPending: async () => (status === "COMPLETED" ? [] : [task]),
+      updateStatus: async (_id: string, value: string) => {
+        status = value;
+      },
       updateModel: async () => {},
-      incrementFailure: async () => {}
+      updateLogSnippet: async () => {},
+      updateRehabStatus: async () => {},
+      incrementFailure: async () => 0
     } as any;
     const stageRepo = {
       recordStageStart: async () => 1,
@@ -173,9 +180,7 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       return { success: true, tokensPerSec: 0 };
     });
 
-    scheduler.start();
     await scheduler.tick();
-    scheduler.stop();
     assert.equal(status, "COMPLETED");
   });
 });
