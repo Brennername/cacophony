@@ -1093,6 +1093,40 @@
   - [ ] T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages containing Unicode emoji codes. [File: packages/engine/src/tests/commit_gen_zero_emoji.test.ts] [Test: npm test -- packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
   - [ ] T98.2.4: Write unit tests verifying task ID metadata is appended in commit body (Closes task-123). [File: packages/engine/src/tests/commit_gen_metadata.test.ts] [Test: npm test -- packages/engine/src/tests/commit_gen_metadata.test.ts]
 
+---
+
+## Phase 99: Commit-to-Task Attribution, Deterministic Task Rehabilitation & Resilient Failure Requeue Pipeline
+*RDF Category: analytics_and_orchestration*
+
+### T99.1: Database Schema & Shared Types for Commit Attribution, Base Commits & Task Rehabilitation
+  - [x] T99.1.1: Extend TaskRecord and EnqueueTaskDto interfaces in packages/shared-types/src/task.ts with commitHash, baseCommitHash, failureReason, parentTaskId, and rehabStatus. [File: packages/shared-types/src/task.ts] [Interface: TaskRecord] [Test: npm run build --workspace=@cacophony/shared-types]
+  - [x] T99.1.2: Define CommitImpactVerdict and ICommitImpactReport interfaces in packages/shared-types/src/analytics.ts covering pass rates, token efficiency, and impact classification. [File: packages/shared-types/src/analytics.ts] [Interface: ICommitImpactReport] [Test: npm run build --workspace=@cacophony/shared-types]
+  - [x] T99.1.3: Author database migration packages/db/src/migrations/016_task_commit_tracking_and_rehab.ts adding commit_hash, base_commit_hash, failure_reason, parent_task_id, and rehab_status with indexes. [File: packages/db/src/migrations/016_task_commit_tracking_and_rehab.ts] [Migration: 016_task_commit_tracking_and_rehab] [Test: npm test --workspace=@cacophony/db]
+  - [x] T99.1.4: Update TaskRepository with updateCommitAttribution, recordFailure, updateRehabStatus, listByCommitHash, and listByParentTaskId. [File: packages/db/src/repositories/TaskRepository.ts] [Class: TaskRepository] [Test: npm test --workspace=@cacophony/db]
+
+### T99.2: Automatic Failure Requeuing & Retry Threshold Governor
+  - [x] T99.2.1: Update TaskScheduler to avoid marking tasks as terminal FAILED on first verification failure; requeue as PENDING up to maxRetries (default 3) with diagnostic feedback. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: TaskScheduler.tick] [Test: npm test -- packages/engine/dist/tests/scheduler_requeue.test.js]
+  - [x] T99.2.2: Capture baseCommitHash and commitHash during AutonomousWorkerPipeline execution and attach to TaskRecord upon merge or failure. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: AutonomousWorkerPipeline.executeTask] [Test: npm run build --workspace=@cacophony/engine]
+  - [x] T99.2.3: Write unit tests verifying task requeue as PENDING under retry threshold, transition to FAILED and rehabilitation trigger at maxRetries limit. [File: packages/engine/src/tests/scheduler_requeue.test.ts] [Test: npm test -- packages/engine/dist/tests/scheduler_requeue.test.js]
+
+### T99.3: Deterministic Task Rehabilitation & Solvability Decomposition Engine
+  - [x] T99.3.1: Implement TaskRehabilitationService in packages/engine/src/scheduler/TaskRehabilitationService.ts to decompose repeatedly failing tasks into smaller atomic units (Types, Implementation, Tests). [File: packages/engine/src/scheduler/TaskRehabilitationService.ts] [Class: TaskRehabilitationService] [Test: npm test -- packages/engine/dist/tests/task_rehabilitation.test.js]
+  - [x] T99.3.2: Record deterministic task decomposition plans directly into docs/taskcade.md under dedicated queue section for complete plan auditability. [File: packages/engine/src/scheduler/TaskRehabilitationService.ts] [Method: recordRehabilitationInTaskcade] [Test: npm test -- packages/engine/dist/tests/task_rehabilitation.test.js]
+  - [x] T99.3.3: Expose REST API endpoint POST /api/tasks/:id/rehabilitate to trigger on-demand deterministic rehabilitation of stalled or failed tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/:id/rehabilitate] [Test: npm test -- packages/engine/dist/tests/task_rehabilitation.test.js]
+  - [x] T99.3.4: Write unit tests verifying multi-file and single-file task decomposition, retry threshold checks, taskcade markdown updates, and idempotency. [File: packages/engine/src/tests/task_rehabilitation.test.ts] [Test: npm test -- packages/engine/dist/tests/task_rehabilitation.test.js]
+
+### T99.4: Commit Impact Attribution & Token Efficiency Analytics Engine
+  - [x] T99.4.1: Implement CommitImpactTracker in packages/engine/src/analytics/CommitImpactTracker.ts tracing commit hashes to task completion outcomes and token expenditure. [File: packages/engine/src/analytics/CommitImpactTracker.ts] [Class: CommitImpactTracker] [Test: npm test -- packages/engine/dist/tests/commit_impact_tracker.test.js]
+  - [x] T99.4.2: Differentiate between genuine code degradation and productive stricter guardrail rejections (e.g. anti-stub AST rejections, build gate enforcements). [File: packages/engine/src/analytics/CommitImpactTracker.ts] [Method: determineVerdict] [Test: npm test -- packages/engine/dist/tests/commit_impact_tracker.test.js]
+  - [x] T99.4.3: Flag noisy commits burning local tokens without delivering passing tasks or guardrail assertions via identifyNoisyCommits. [File: packages/engine/src/analytics/CommitImpactTracker.ts] [Method: identifyNoisyCommits] [Test: npm test -- packages/engine/dist/tests/commit_impact_tracker.test.js]
+  - [x] T99.4.4: Expose REST API endpoint GET /api/analytics/commit-impact to return granular impact reports by commit hash or recent history. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/analytics/commit-impact] [Test: npm run build --workspace=@cacophony/engine]
+  - [x] T99.4.5: Write unit tests validating verdict classification (STRICTER_GUARDRAIL, IMPROVEMENT, DEGRADATION, NOISY_WASTE) and token efficiency calculations. [File: packages/engine/src/tests/commit_impact_tracker.test.ts] [Test: npm test -- packages/engine/dist/tests/commit_impact_tracker.test.js]
+
+---
+
+## Rehabilitated Taskcade Queue
+*Autonomous Deterministic Decompositions from Exceeded Failure Limits*
+
 
 
 

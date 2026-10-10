@@ -9,3 +9,4 @@ export * from "./stack/defaultProfiles.js";
 export * from "./stack/StackDetector.js";
 export * from "./AutonomousWorkerPipeline.js";
 export * from "./HardwareHyperparameterAutoSizer.js";
+export * from "./TaskRehabilitationService.js";

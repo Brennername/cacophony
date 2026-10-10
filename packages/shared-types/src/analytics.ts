@@ -67,3 +67,46 @@ export const RollingWindowMetricsSchema = z.object({
   newestTaskTimestamp: z.string().optional(),
   filteredBy: WindowQualificationFilterSchema,
 });
+
+export const CommitImpactVerdictSchema = z.enum([
+  "IMPROVEMENT",
+  "DEGRADATION",
+  "NEUTRAL",
+  "STRICTER_GUARDRAIL",
+  "NOISY_WASTE"
+]);
+export type CommitImpactVerdict = z.infer<typeof CommitImpactVerdictSchema>;
+
+export interface ICommitImpactReport {
+  readonly commitHash: string;
+  readonly author: string;
+  readonly timestamp: number;
+  readonly subject: string;
+  readonly filesChanged: readonly string[];
+  readonly tasksAttempted: number;
+  readonly tasksPassed: number;
+  readonly tasksFailed: number;
+  readonly passRatePercent: number;
+  readonly deltaVsPriorCommit: number;
+  readonly totalTokensConsumed: number;
+  readonly tokenEfficiency: number;
+  readonly verdict: CommitImpactVerdict;
+  readonly rationale: string;
+}
+
+export const CommitImpactReportSchema = z.object({
+  commitHash: z.string(),
+  author: z.string(),
+  timestamp: z.number(),
+  subject: z.string(),
+  filesChanged: z.array(z.string()),
+  tasksAttempted: z.number(),
+  tasksPassed: z.number(),
+  tasksFailed: z.number(),
+  passRatePercent: z.number(),
+  deltaVsPriorCommit: z.number(),
+  totalTokensConsumed: z.number(),
+  tokenEfficiency: z.number(),
+  verdict: CommitImpactVerdictSchema,
+  rationale: z.string()
+});

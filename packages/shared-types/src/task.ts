@@ -71,6 +71,26 @@ export interface TaskRecord {
   readonly stageState?: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | undefined;
 
   readonly stageArtifacts?: Record<string, any> | undefined;
+
+  readonly commitHash?: string | null;
+
+  readonly baseCommitHash?: string | null;
+
+  readonly failureReason?: string | null;
+
+  readonly parentTaskId?: string | null;
+
+  readonly rehabStatus?: RehabStatus;
+}
+
+export type RehabStatus = "NONE" | "PENDING_REHAB" | "REHABILITATED" | "DECOMPOSED";
+
+export interface ITaskRehabilitationPlan {
+  readonly parentTaskId: string;
+  readonly failureReason: string;
+  readonly culpritCommitHash?: string | null;
+  readonly rationale: string;
+  readonly decomposedTasks: readonly EnqueueTaskDto[];
 }
 
 export interface TaskStageRecord {
@@ -99,6 +119,7 @@ export const EnqueueTaskDtoSchema = z.object({
   focusFiles: z.string().optional(),
   allowedImports: z.array(z.string()).optional(),
   allowEmojis: z.boolean().optional(),
-  disabledScrubbers: z.array(z.string()).optional()
+  disabledScrubbers: z.array(z.string()).optional(),
+  parentTaskId: z.string().optional()
 });
 export type EnqueueTaskDto = z.infer<typeof EnqueueTaskDtoSchema>;

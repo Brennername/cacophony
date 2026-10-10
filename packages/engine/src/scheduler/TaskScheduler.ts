@@ -9,8 +9,15 @@ import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
 import { FailureClassifier, ExecutionTimeoutError } from "../analytics/FailureClassifier.js";
 import type { StreamTapManager } from "../inference/StreamTapManager.js";
+import type { TaskRehabilitationService } from "./TaskRehabilitationService.js";
 
-export type TaskExecutionResult = { success: boolean; tokensPerSec: number };
+export type TaskExecutionResult = {
+  success: boolean;
+  tokensPerSec: number;
+  commitHash?: string | undefined;
+  baseCommitHash?: string | undefined;
+  failureReason?: string | undefined;
+};
 export type TaskExecutionHandler = (groomed: GroomedTask, selectedModel: string, signal?: AbortSignal) => Promise<TaskExecutionResult>;
 
 /**
@@ -31,6 +38,8 @@ export class TaskScheduler {
   private readonly governor: ThermalGovernor;
   private readonly telemetryProvider: IHardwareTelemetryProvider;
   private readonly streamTapManager?: StreamTapManager | undefined;
+  private readonly rehabilitationService?: TaskRehabilitationService | undefined;
+  private readonly maxRetries: number;
 
   private isRunning = false;
   private isPaused = false;
@@ -58,12 +67,16 @@ export class TaskScheduler {
     readonly noProgressTimeoutMs?: number;
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
     readonly autoReplenish?: boolean;
+    readonly rehabilitationService?: TaskRehabilitationService;
+    readonly maxRetries?: number;
   }) {
     this.taskRepo = options.taskRepo;
     this.stageRepo = options.stageRepo;
     this.evictionManager = options.evictionManager;
     this.telemetryProvider = options.telemetryProvider;
     this.streamTapManager = options.streamTapManager;
+    this.rehabilitationService = options.rehabilitationService;
+    this.maxRetries = options.maxRetries ?? 3;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
     // An inactivity cutoff is opt-in. Some models can legitimately spend a long
     // time without emitting tokens or stage events; the hard model deadline is
@@ -462,21 +475,59 @@ export class TaskScheduler {
           if (progressTimer) clearInterval(progressTimer);
 
           const durationMs = Date.now() - stageStartMs;
-          const finalStatus = result.success ? "COMPLETED" : "FAILED";
           const actualTps = result.tokensPerSec;
-          console.log(`[TaskScheduler] Task ${targetTask.id} finished with status ${finalStatus} in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`);
-          await this.taskRepo.updateStatus(targetTask.id, finalStatus, durationMs, actualTps);
-          await this.stageRepo.recordStageCompletion(
-            stageId,
-            result.success ? "SUCCESS" : "FAILURE",
-            result.success ? "Stage completed successfully" : "Stage failed verification",
-            0,
-            0,
-            durationMs
-          );
 
-          if (!result.success) {
-            await this.taskRepo.incrementFailure(targetTask.id);
+          if (result.commitHash) {
+            await this.taskRepo.updateCommitAttribution(
+              targetTask.id,
+              result.commitHash,
+              result.baseCommitHash
+            );
+          }
+
+          if (result.success) {
+            console.log(`[TaskScheduler] Task ${targetTask.id} finished with status COMPLETED in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`);
+            await this.taskRepo.updateStatus(targetTask.id, "COMPLETED", durationMs, actualTps);
+            await this.stageRepo.recordStageCompletion(
+              stageId,
+              "SUCCESS",
+              "Stage completed successfully",
+              0,
+              0,
+              durationMs
+            );
+          } else {
+            const failureReason = result.failureReason || "Stage failed verification";
+            const newFailureCount = await this.taskRepo.incrementFailure(targetTask.id);
+
+            await this.stageRepo.recordStageCompletion(
+              stageId,
+              "FAILURE",
+              failureReason,
+              0,
+              0,
+              durationMs
+            );
+
+            if (newFailureCount < this.maxRetries) {
+              console.log(`[TaskScheduler] Task ${targetTask.id} attempt ${newFailureCount}/${this.maxRetries} failed. Requeuing for autonomous remediation.`);
+              await this.taskRepo.updateStatus(targetTask.id, "PENDING", durationMs, actualTps);
+              await this.taskRepo.updateLogSnippet(
+                targetTask.id,
+                `[Attempt ${newFailureCount}/${this.maxRetries} Failed]: ${failureReason}`
+              );
+            } else {
+              console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries (${newFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
+              await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, actualTps);
+              await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+              if (this.rehabilitationService) {
+                try {
+                  await this.rehabilitationService.rehabilitateTask(targetTask, failureReason, result.commitHash);
+                } catch (rehabErr) {
+                  console.error(`[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`, rehabErr);
+                }
+              }
+            }
           }
 
           // Record run telemetry in ModelHealthRepository for leaderboard metrics
@@ -522,18 +573,39 @@ export class TaskScheduler {
             // non-fatal
           }
 
-          await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, recordedTps);
-          await this.taskRepo.incrementFailure(targetTask.id);
+          const newFailureCount = await this.taskRepo.incrementFailure(targetTask.id);
+          const failureReason = isTimeout
+            ? `[TIMEOUT]: ${errorMsg}`
+            : `[${classification.category}]: ${errorMsg}`;
+
           await this.stageRepo.recordStageCompletion(
             stageId,
             "FAILURE",
-            isTimeout
-              ? `[TIMEOUT]: ${errorMsg}`
-              : `[${classification.category}]: ${errorMsg}`,
+            failureReason,
             0,
             0,
             durationMs
           );
+
+          if (newFailureCount < this.maxRetries) {
+            console.log(`[TaskScheduler] Task ${targetTask.id} caught error attempt ${newFailureCount}/${this.maxRetries}. Requeuing for autonomous retry.`);
+            await this.taskRepo.updateStatus(targetTask.id, "PENDING", durationMs, recordedTps);
+            await this.taskRepo.updateLogSnippet(
+              targetTask.id,
+              `[Attempt ${newFailureCount}/${this.maxRetries} Error]: ${failureReason}`
+            );
+          } else {
+            console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries on error (${newFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
+            await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, recordedTps);
+            await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+            if (this.rehabilitationService) {
+              try {
+                await this.rehabilitationService.rehabilitateTask(targetTask, failureReason);
+              } catch (rehabErr) {
+                console.error(`[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`, rehabErr);
+              }
+            }
+          }
 
           try {
             await this.evictionManager.recordRunOutcome(

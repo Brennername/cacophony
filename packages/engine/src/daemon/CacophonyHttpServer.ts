@@ -1507,6 +1507,53 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c2c. REST API: Granular Commit-to-Task Attribution & Token Efficiency Impact (T99.4)
+    if (url.pathname === "/api/analytics/commit-impact" && req.method === "GET") {
+      const commitHash = url.searchParams.get("commitHash") || undefined;
+      const limit = Number(url.searchParams.get("limit") || "15");
+      const { CommitImpactTracker } = await import("../analytics/CommitImpactTracker.js");
+      const taskRepo = this.daemon.getTaskRepository();
+      const stageRepo = this.daemon.getStageRepository();
+      const tracker = new CommitImpactTracker({ taskRepo, stageRepo });
+
+      if (commitHash) {
+        const report = await tracker.evaluateCommitImpact(commitHash);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(report));
+      } else {
+        const reports = await tracker.generateRecentImpactReport(Number.isNaN(limit) ? 15 : limit);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(reports));
+      }
+      return;
+    }
+
+    // 4c2d. REST API: Deterministic Task Rehabilitation (T99.3)
+    if (url.pathname.match(/^\/api\/tasks\/([^/]+)\/rehabilitate$/) && req.method === "POST") {
+      const match = url.pathname.match(/^\/api\/tasks\/([^/]+)\/rehabilitate$/);
+      const taskId = match![1]!;
+      const taskRepo = this.daemon.getTaskRepository();
+      const targetTask = await taskRepo.getById(taskId);
+
+      if (!targetTask) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: `Task not found: ${taskId}` }));
+        return;
+      }
+
+      const { TaskRehabilitationService } = await import("../scheduler/TaskRehabilitationService.js");
+      const rehabService = new TaskRehabilitationService({ taskRepo });
+      const plan = await rehabService.rehabilitateTask(
+        targetTask,
+        targetTask.failureReason || targetTask.logSnippet || "Manual rehabilitation requested",
+        targetTask.commitHash
+      );
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(plan));
+      return;
+    }
+
     // 4c3. REST API: Fleet Node Registration & Cluster Topology
     if (url.pathname === "/api/fleet/register" && req.method === "POST") {
       let body = "";

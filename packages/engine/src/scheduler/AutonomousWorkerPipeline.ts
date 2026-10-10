@@ -210,11 +210,19 @@ export class AutonomousWorkerPipeline {
     groomed: GroomedTask,
     selectedModel: string,
     signal?: AbortSignal
-  ): Promise<{ success: boolean; tokensPerSec: number }> {
+  ): Promise<{
+    success: boolean;
+    tokensPerSec: number;
+    commitHash?: string | undefined;
+    baseCommitHash?: string | undefined;
+    failureReason?: string | undefined;
+  }> {
     const taskId = groomed.task.id;
     let measuredTps = 0;
     let worktree: WorktreeDescriptor | null = null;
     let executionRoot = this.workspaceRoot;
+    let baseCommitHash: string | undefined = undefined;
+    let commitHash: string | undefined = undefined;
 
     try {
       if (this.streamTapManager) {
@@ -229,9 +237,15 @@ export class AutonomousWorkerPipeline {
             slug: groomed.task.title
           });
           executionRoot = worktree.worktreePath;
+          baseCommitHash = await this.worktreeManager.getHeadCommit(worktree.worktreePath);
         } catch (worktreeErr) {
           console.warn(`[AutonomousWorkerPipeline] Failed to create git worktree, falling back to workspace root:`, worktreeErr);
           executionRoot = this.workspaceRoot;
+          try {
+            baseCommitHash = await this.worktreeManager.getHeadCommit(this.workspaceRoot);
+          } catch {
+            // non-fatal
+          }
         }
       }
 
@@ -1188,6 +1202,11 @@ export class AutonomousWorkerPipeline {
             worktree.worktreePath,
             `feat(${taskId}): ${groomed.task.title}\n\nAutomated commit by Cacophony Engine.`
           );
+          try {
+            commitHash = await this.worktreeManager.getHeadCommit(worktree.worktreePath);
+          } catch {
+            // non-fatal
+          }
 
           await this.worktreeManager.pushBranch(
             worktree.worktreePath,
@@ -1321,7 +1340,12 @@ export class AutonomousWorkerPipeline {
           : (prMerged ? "Code modifications verified and merged locally" : "Git promotion failed")
       );
 
-      return { success: prMerged, tokensPerSec: measuredTps };
+      return {
+        success: prMerged,
+        tokensPerSec: measuredTps,
+        commitHash,
+        baseCommitHash
+      };
     } catch (err) {
       console.error(`[AutonomousWorkerPipeline] Execution error for task '${groomed.enrichedPrompt.slice(0, 40)}':`, err);
       const errMsg = err instanceof Error ? err.stack || err.message : String(err);
@@ -1330,7 +1354,12 @@ export class AutonomousWorkerPipeline {
       } catch {
         // non-fatal
       }
-      return { success: false, tokensPerSec: measuredTps };
+      return {
+        success: false,
+        tokensPerSec: measuredTps,
+        baseCommitHash,
+        failureReason: errMsg.slice(0, 500)
+      };
     } finally {
       if (this.worktreeManager && worktree) {
         try {

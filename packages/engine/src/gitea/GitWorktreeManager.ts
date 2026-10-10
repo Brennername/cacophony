@@ -187,6 +187,15 @@ export class GitWorktreeManager {
   }
 
   /**
+   * Retrieves the current HEAD commit hash from the worktree or repository root.
+   */
+  public async getHeadCommit(worktreePath?: string): Promise<string> {
+    const cwd = worktreePath ?? this.repositoryRoot;
+    const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd });
+    return stdout.trim();
+  }
+
+  /**
    * Pushes the task branch to remote (Gitea).
    */
   public async pushBranch(worktreePath: string, remote = "origin", branchName: string): Promise<void> {

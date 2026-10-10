@@ -1,5 +1,5 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { TaskRecord, TaskStatus, TaskPriority, AgentRole } from "@cacophony/shared-types";
+import type { TaskRecord, TaskStatus, TaskPriority, AgentRole, RehabStatus } from "@cacophony/shared-types";
 
 interface TaskRow {
   readonly id: string;
@@ -20,6 +20,11 @@ interface TaskRow {
   readonly completed_at: string | null;
   readonly duration_ms?: number | null;
   readonly tokens_per_sec?: number | null;
+  readonly commit_hash?: string | null;
+  readonly base_commit_hash?: string | null;
+  readonly failure_reason?: string | null;
+  readonly parent_task_id?: string | null;
+  readonly rehab_status?: string | null;
 }
 
 export class TaskRepository {
@@ -30,30 +35,73 @@ export class TaskRepository {
   }
 
   public async create(task: TaskRecord): Promise<TaskRecord> {
-    await this.driver.execute(
-      `INSERT INTO tasks (
-        id, title, prompt, role, status, priority, model_assigned,
-        test_command, focus_files, target_branch, pr_url, failure_count,
-        created_at, updated_at, completed_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-      [
-        task.id,
-        task.title,
-        task.prompt,
-        task.role,
-        task.status,
-        task.priority,
-        task.modelAssigned,
-        task.testCommand,
-        task.focusFiles,
-        task.targetBranch,
-        task.prUrl,
-        task.failureCount,
-        task.createdAt,
-        task.updatedAt,
-        task.completedAt
-      ]
-    );
+    try {
+      await this.driver.execute(
+        `INSERT INTO tasks (
+          id, title, prompt, role, status, priority, model_assigned,
+          test_command, focus_files, target_branch, pr_url, failure_count,
+          created_at, updated_at, completed_at, commit_hash, base_commit_hash,
+          failure_reason, parent_task_id, rehab_status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+        [
+          task.id,
+          task.title,
+          task.prompt,
+          task.role,
+          task.status,
+          task.priority,
+          task.modelAssigned,
+          task.testCommand,
+          task.focusFiles,
+          task.targetBranch,
+          task.prUrl,
+          task.failureCount,
+          task.createdAt,
+          task.updatedAt,
+          task.completedAt,
+          task.commitHash ?? null,
+          task.baseCommitHash ?? null,
+          task.failureReason ?? null,
+          task.parentTaskId ?? null,
+          task.rehabStatus ?? "NONE"
+        ]
+      );
+    } catch (err: unknown) {
+      const msg = String(err);
+      if (
+        msg.includes("commit_hash") ||
+        msg.includes("has no column named") ||
+        msg.includes("column does not exist")
+      ) {
+        // Fallback for drivers/environments where migration 016 has not yet been applied
+        await this.driver.execute(
+          `INSERT INTO tasks (
+            id, title, prompt, role, status, priority, model_assigned,
+            test_command, focus_files, target_branch, pr_url, failure_count,
+            created_at, updated_at, completed_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          [
+            task.id,
+            task.title,
+            task.prompt,
+            task.role,
+            task.status,
+            task.priority,
+            task.modelAssigned,
+            task.testCommand,
+            task.focusFiles,
+            task.targetBranch,
+            task.prUrl,
+            task.failureCount,
+            task.createdAt,
+            task.updatedAt,
+            task.completedAt
+          ]
+        );
+      } else {
+        throw err;
+      }
+    }
     return task;
   }
 
@@ -285,8 +333,81 @@ export class TaskRepository {
     };
   }
 
-  private mapRow(row: TaskRow): TaskRecord {
+  /**
+   * Attaches git commit hash and base commit hash attribution to a task.
+   */
+  public async updateCommitAttribution(
+    id: string,
+    commitHash: string,
+    baseCommitHash?: string | null
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    if (baseCommitHash !== undefined && baseCommitHash !== null) {
+      await this.driver.execute(
+        "UPDATE tasks SET commit_hash = $1, base_commit_hash = $2, updated_at = $3 WHERE id = $4",
+        [commitHash, baseCommitHash, now, id]
+      );
+    } else {
+      await this.driver.execute(
+        "UPDATE tasks SET commit_hash = $1, updated_at = $2 WHERE id = $3",
+        [commitHash, now, id]
+      );
+    }
+  }
 
+  /**
+   * Records failure with diagnostic categorization and checks retry threshold.
+   */
+  public async recordFailure(
+    id: string,
+    failureReason: string,
+    maxRetries = 3
+  ): Promise<{ shouldRequeue: boolean; failureCount: number }> {
+    const now = new Date().toISOString();
+    await this.driver.execute(
+      "UPDATE tasks SET failure_count = failure_count + 1, failure_reason = $1, updated_at = $2 WHERE id = $3",
+      [failureReason, now, id]
+    );
+    const updated = await this.getById(id);
+    const failureCount = updated ? updated.failureCount : 1;
+    const shouldRequeue = failureCount < maxRetries;
+    return { shouldRequeue, failureCount };
+  }
+
+  /**
+   * Updates rehabilitation lifecycle state for a task.
+   */
+  public async updateRehabStatus(id: string, rehabStatus: RehabStatus): Promise<void> {
+    const now = new Date().toISOString();
+    await this.driver.execute(
+      "UPDATE tasks SET rehab_status = $1, updated_at = $2 WHERE id = $3",
+      [rehabStatus, now, id]
+    );
+  }
+
+  /**
+   * Queries tasks associated with a specific git commit hash.
+   */
+  public async listByCommitHash(commitHash: string): Promise<readonly TaskRecord[]> {
+    const rows = await this.driver.query<TaskRow>(
+      "SELECT * FROM tasks WHERE commit_hash = $1 OR base_commit_hash = $1 ORDER BY updated_at DESC",
+      [commitHash]
+    );
+    return rows.map((r) => this.mapRow(r));
+  }
+
+  /**
+   * Queries child tasks spawned via rehabilitation of a parent task.
+   */
+  public async listByParentTaskId(parentTaskId: string): Promise<readonly TaskRecord[]> {
+    const rows = await this.driver.query<TaskRow>(
+      "SELECT * FROM tasks WHERE parent_task_id = $1 ORDER BY created_at ASC",
+      [parentTaskId]
+    );
+    return rows.map((r) => this.mapRow(r));
+  }
+
+  private mapRow(row: TaskRow): TaskRecord {
     const runtimeMetrics: { durationMs?: number; tokensPerSec?: number } = {};
     if (row.duration_ms != null) runtimeMetrics.durationMs = Number(row.duration_ms);
     if (row.tokens_per_sec != null) runtimeMetrics.tokensPerSec = Number(row.tokens_per_sec);
@@ -308,6 +429,11 @@ export class TaskRepository {
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
       completedAt: row.completed_at ? String(row.completed_at) : null,
+      commitHash: row.commit_hash ?? null,
+      baseCommitHash: row.base_commit_hash ?? null,
+      failureReason: row.failure_reason ?? null,
+      parentTaskId: row.parent_task_id ?? null,
+      rehabStatus: (row.rehab_status as RehabStatus) ?? "NONE",
       ...runtimeMetrics
     };
   }

@@ -175,6 +175,10 @@ export class CacophonyDaemon {
     );
     const governor = new ThermalGovernor();
     const groomer = new QueueGroomer();
+    const { TaskRehabilitationService } = await import("../scheduler/TaskRehabilitationService.js");
+    const rehabilitationService = new TaskRehabilitationService({
+      taskRepo: this.taskRepo
+    });
 
     this.scheduler = new TaskScheduler({
       taskRepo: this.taskRepo,
@@ -184,6 +188,7 @@ export class CacophonyDaemon {
       streamTapManager: this.streamTapManager,
       groomer,
       governor,
+      rehabilitationService,
       defaultTimeoutMs: 2400000,
       perModelTimeoutMs: {
         "qwen2.5-coder:7b-instruct-q4_K_M": 1800000,
