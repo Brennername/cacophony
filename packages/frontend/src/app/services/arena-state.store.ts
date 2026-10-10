@@ -405,12 +405,12 @@ export class ArenaStateStore {
 
   public readonly smoothedTokenVelocity = signal<number>(0);
 
-  private alpha = 0.1;
+  private alpha = 0.25;
 
   private updateSmoothedTokenVelocity(instant: number): void {
-        const smoothed = this.alpha * instant + (1 - this.alpha) * this.smoothedTokenVelocity();
-        this.smoothedTokenVelocity.set(smoothed);
-      }
+    const smoothed = this.alpha * instant + (1 - this.alpha) * this.smoothedTokenVelocity();
+    this.smoothedTokenVelocity.set(smoothed);
+  }
 
 
   private reconnectAttempts = 0;
