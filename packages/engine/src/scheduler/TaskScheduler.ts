@@ -352,22 +352,22 @@ export class TaskScheduler {
         // Guard against assigning a pure reasoning model (deepseek-r1) to non-architect tasks
         if (normalizedAssigned.includes("r1") && role !== "architect" && role !== "reviewer") {
           candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "qwen2.5-coder:7b", "gemma3:4b-it-qat", "qwen2.5-coder:14b"];
-        } else if (targetTask.failureCount > 0 && role !== "architect") {
-          // If the task previously failed, prioritize our strongest coding models with automated repair
+        } else if (normalizedAssigned === "qwen2.5-coder:3b" && role !== "architect" && role !== "reviewer") {
+          // Disqualify 3b models from implementation to prevent superficial stub generation and compilation failures
+          candidateList = [
+            "qwen2.5-coder:7b-instruct-q4_K_M",
+            "qwen2.5-coder:7b",
+            "gemma3:4b-it-qat"
+          ];
+        } else if (targetTask.failureCount > 0 && role !== "architect" && role !== "reviewer") {
+          // If the task previously failed, prioritize our strongest coding models with automated repair and exclude 3b
           candidateList = [
             "qwen2.5-coder:7b-instruct-q4_K_M",
             "qwen2.5-coder:7b",
             "gemma3:4b-it-qat",
             "qwen2.5-coder:14b",
             normalizedAssigned
-          ];
-        } else if (normalizedAssigned === "qwen2.5-coder:3b" && role !== "architect") {
-          // Disqualify 3b models from implementation to prevent superficial stub generation
-          candidateList = [
-            "qwen2.5-coder:7b-instruct-q4_K_M",
-            "qwen2.5-coder:7b",
-            "gemma3:4b-it-qat"
-          ];
+          ].filter((m) => m !== "qwen2.5-coder:3b");
         } else {
           candidateList = [normalizedAssigned];
         }
@@ -393,10 +393,18 @@ export class TaskScheduler {
       try {
         const sample = await this.telemetryProvider.sample();
         if (sample.edgeTempCelsius >= 75 && !normalizedAssigned) {
-          candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat", "qwen2.5-coder:3b"];
+          candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat"];
         }
       } catch {
         // ignore
+      }
+
+      // Ensure 3b models are strictly barred from implementation roles across all candidate branches
+      if (role !== "architect" && role !== "reviewer") {
+        candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
+        if (candidateList.length === 0) {
+          candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat"];
+        }
       }
 
       const selectedModel = await this.evictionManager.selectModel(

@@ -366,6 +366,28 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(!result.repairedCode.includes("from 'vue'"));
     assert.ok(result.repairedCode.includes("from '@angular/core'"));
   });
+
+  it("preserves line index alignment across multiple diagnostic repairs in single pass", () => {
+    const source = [
+      "import { UnusedHelper } from './helper.js';",
+      "import { ActiveHelper } from './active.js';",
+      "export function processItem(item) {",
+      "  return ActiveHelper(item);",
+      "}"
+    ].join("\n");
+
+    const diags = [
+      diagnostic("TS6133", "'UnusedHelper' is declared but its value is never read.", 1),
+      diagnostic("TS7006", "Parameter 'item' implicitly has an 'any' type.", 3)
+    ];
+
+    const result = repairer.repair(source, diags);
+    assert.ok(!result.repairedCode.includes("UnusedHelper"));
+    assert.ok(result.repairedCode.includes("processItem(item: any)"));
+    assert.ok(result.repairsApplied.some((r) => r.includes("UnusedHelper")));
+    assert.ok(result.repairsApplied.some((r) => r.includes("Added ': any' type annotation to implicit parameter 'item'")));
+  });
 });
+
 
 

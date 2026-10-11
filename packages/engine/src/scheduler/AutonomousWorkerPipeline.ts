@@ -822,9 +822,27 @@ export class AutonomousWorkerPipeline {
                 if (rep) candidateCode = rep.updatedContent;
               }
 
-              // Incremental class preservation
-              if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
-                candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+              // Incremental class preservation and AST method splicing
+              if (originalExistingContent && originalExistingContent.trim().length > 0) {
+                if (targetedMethodEdit && targetRel) {
+                  try {
+                    candidateCode = TypeScriptMethodSplicer.splice(
+                      originalExistingContent,
+                      targetRel,
+                      targetedMethodEdit,
+                      candidateCode
+                    );
+                  } catch (spliceErr) {
+                    console.warn(`[AutonomousWorkerPipeline] Targeted AST splice failed during remediation, falling back to class merger:`, spliceErr);
+                    try {
+                      candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+                    } catch {
+                      // Preserve candidateCode if merger fails
+                    }
+                  }
+                } else {
+                  candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+                }
               }
 
               const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel!, originalExistingContent, candidateCode, integrityTaskText);
@@ -1006,9 +1024,27 @@ export class AutonomousWorkerPipeline {
                 if (rep) candidateCode = rep.updatedContent;
               }
 
-              // Incremental class preservation
-              if (!targetedMethodEdit && originalExistingContent && originalExistingContent.trim().length > 0) {
-                candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+              // Incremental class preservation and AST method splicing
+              if (originalExistingContent && originalExistingContent.trim().length > 0) {
+                if (targetedMethodEdit && targetRel) {
+                  try {
+                    candidateCode = TypeScriptMethodSplicer.splice(
+                      originalExistingContent,
+                      targetRel,
+                      targetedMethodEdit,
+                      candidateCode
+                    );
+                  } catch (spliceErr) {
+                    console.warn(`[AutonomousWorkerPipeline] Targeted AST splice failed during test remediation, falling back to class merger:`, spliceErr);
+                    try {
+                      candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+                    } catch {
+                      // Preserve candidateCode if merger fails
+                    }
+                  }
+                } else {
+                  candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+                }
               }
 
               const integrityIssues = GeneratedChangeGuard.inspectReplacement(targetRel || "unknown", originalExistingContent, candidateCode, integrityTaskText);

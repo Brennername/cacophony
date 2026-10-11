@@ -153,7 +153,7 @@ export class CacophonyDaemon {
     this.modelManager = new OllamaModelManager();
     this.tenancyGuard = new ModelTenancyGuard({
       managedModelsEnabled: process.env["MANAGED_MODELS_ENABLED"] !== "false",
-      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-coder-v2:16b,qwen2.5-coder:14b,deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat,qwen2.5-coder:3b")
+      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-coder-v2:16b,qwen2.5-coder:14b,deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
@@ -311,7 +311,7 @@ export class CacophonyDaemon {
               description: "Implement GitHubPlatformProvider communicating with GitHub REST API using configured GITHUB_TOKEN in packages/engine/src/gitea/.",
               priority: "P1",
               role: "implementer",
-              modelAssigned: "qwen2.5-coder:3b"
+              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M"
             },
             {
               id: "backlog-worktree-isolation",
@@ -347,7 +347,7 @@ export class CacophonyDaemon {
 
     // In demo mode, run queue replenishment every 5 seconds to keep live tasks active across diverse models
     if (isDemoMode) {
-      const fleetModels = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat", "qwen2.5-coder:3b"];
+      const fleetModels = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat", "qwen2.5-coder:14b"];
       let replenishIdx = 0;
       this.planningTimer = setInterval(() => {
         if (this.isRunning) {

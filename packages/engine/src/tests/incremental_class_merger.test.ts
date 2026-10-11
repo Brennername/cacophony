@@ -135,4 +135,47 @@ export class CacophonyHttpServer {
     assert.ok(merged.includes("export interface ExtraConfig"));
     assert.ok(merged.includes("export function createHelper"));
   });
+
+  test("should preserve JSDoc documentation comment blocks when newly generated code omits them", () => {
+    const original = [
+      "/**",
+      " * AuthService handles authentication operations.",
+      " */",
+      "export class AuthService {",
+      "  /**",
+      "   * Validates user credentials.",
+      "   */",
+      "  public validate(user: string): boolean {",
+      "    return user === 'admin';",
+      "  }",
+      "",
+      "  /**",
+      "   * Generates authentication token.",
+      "   */",
+      "  public generateToken(): string {",
+      "    return 'token-123';",
+      "  }",
+      "}"
+    ].join("\n");
+
+    const generatedWithoutDocs = [
+      "export class AuthService {",
+      "  public validate(user: string): boolean {",
+      "    return user === 'admin' || user === 'root';",
+      "  }",
+      "",
+      "  public generateToken(): string {",
+      "    return 'token-456';",
+      "  }",
+      "}"
+    ].join("\n");
+
+    const merged = IncrementalClassMerger.merge(original, generatedWithoutDocs);
+    assert.ok(merged.includes("AuthService handles authentication operations"));
+    assert.ok(merged.includes("Validates user credentials"));
+    assert.ok(merged.includes("Generates authentication token"));
+    assert.ok(merged.includes("user === 'root'"));
+    assert.ok(merged.includes("token-456"));
+  });
 });
+

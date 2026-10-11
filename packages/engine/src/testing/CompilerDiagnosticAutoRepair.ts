@@ -590,14 +590,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                   return `{ ${remaining.join(", ")} }`;
                 });
                 if (/import\s*\{\s*\}\s*from\b/.test(cleaned)) {
-                  lines.splice(lineIdx, 1);
+                  lines[lineIdx] = "";
                   repairsApplied.push(`Removed duplicate import statement for '${dupName}' at line ${diag.lineNumber}`);
                 } else {
                   lines[lineIdx] = cleaned;
                   repairsApplied.push(`Removed duplicate imported symbol '${dupName}' from line ${diag.lineNumber}`);
                 }
               } else if (new RegExp(`import\\s+(?:\\*\\s+as\\s+)?${dupName}\\s+from\\b`).test(targetLine)) {
-                lines.splice(lineIdx, 1);
+                lines[lineIdx] = "";
                 repairsApplied.push(`Removed duplicate import statement for '${dupName}' at line ${diag.lineNumber}`);
               }
             }
@@ -628,7 +628,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 }
                 // Default import alone: import X from '...' or namespace: import * as X from '...'
                 if (new RegExp(`^\\s*import\\s+(?:\\*\\s+as\\s+)?${varName}\\s+from\\b`).test(cleaned)) {
-                  lines.splice(lineIdx, 1);
+                  lines[lineIdx] = "";
                   repairsApplied.push(`Removed unused import '${varName}' statement at line ${diag.lineNumber}`);
                   continue;
                 }
@@ -645,7 +645,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                     return `{ ${remaining.join(", ")} }`;
                   });
                   if (/import\s*\{\s*\}\s*from\b/.test(cleaned)) {
-                    lines.splice(lineIdx, 1);
+                    lines[lineIdx] = "";
                     repairsApplied.push(`Removed empty import statement for '${varName}' at line ${diag.lineNumber}`);
                   } else {
                     lines[lineIdx] = cleaned;
@@ -674,7 +674,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
               if (!isTypeOrClass) {
                 if (varName.startsWith("_")) {
                   // Already prefixed with underscore but still failing noUnusedLocals: suppress with @ts-ignore
-                  lines.splice(lineIdx, 0, "// @ts-ignore");
+                  lines[lineIdx] = "// @ts-ignore\n" + lines[lineIdx];
                   repairsApplied.push(`Suppressed unused local '${varName}' with @ts-ignore at line ${diag.lineNumber}`);
                 } else {
                   const parts = targetLine.split(/(['"][^'"]*['"])/);

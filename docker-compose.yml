@@ -42,7 +42,7 @@ services:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw
       - ./workspaces:/app/workspaces:rw
-      - ./docs:/app/docs:ro
+      - ./docs:/app/docs:rw
       - ./.git:/app/.git:rw
       - ./.env:/app/.env:ro
       - /sys:/host/sys:ro
@@ -107,7 +107,7 @@ services:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw
       - ./workspaces:/app/workspaces:rw
-      - ./docs:/app/docs:ro
+      - ./docs:/app/docs:rw
       - ./.git:/app/.git:rw
       - ./.env:/app/.env:ro
     extra_hosts:
@@ -166,7 +166,7 @@ services:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw
       - ./workspaces:/app/workspaces:rw
-      - ./docs:/app/docs:ro
+      - ./docs:/app/docs:rw
       - ./.git:/app/.git:rw
       - ./.env:/app/.env:ro
       - /sys:/host/sys:ro
@@ -218,7 +218,7 @@ services:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw
       - ./workspaces:/app/workspaces:rw
-      - ./docs:/app/docs:ro
+      - ./docs:/app/docs:rw
       - ./.git:/app/.git:rw
       - ./.env:/app/.env:ro
     extra_hosts:

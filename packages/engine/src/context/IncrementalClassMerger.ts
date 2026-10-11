@@ -231,25 +231,54 @@ export class IncrementalClassMerger {
         if (!origMembersByName.has(memberName)) {
           // Genuinely new member
           newMembersToAppend.push(memberText);
-        } else if (isStubbed || newClass.members.length < origClass.members.length) {
-          // Member was modified in partial class: replace in place
+        } else {
+          // Member was modified in partial or full class: track for surgical replacement
           const origMember = origMembersByName.get(memberName)!;
           const origText = origMember.getText(origSf).trim();
           if (origText !== memberText) {
-            membersToReplace.set(origMember, memberText);
+            // Check if original member had JSDoc comments that the newly generated member omitted
+            const origMemberFull = origMember.getFullText(origSf);
+            const origLeadingComment = origMemberFull.slice(0, origMember.getStart(origSf) - origMember.getFullStart()).trim();
+            let replacementText = memberText;
+            if (origLeadingComment.includes("/**") && !memberText.includes("/**")) {
+              const jsDocMatch = origLeadingComment.match(/(\/\*\*[\s\S]*?\*\/)/);
+              if (jsDocMatch) {
+                replacementText = jsDocMatch[1] + "\n  " + memberText;
+              }
+            }
+            membersToReplace.set(origMember, replacementText);
           }
         }
       }
     }
 
     // A full-file response is safe to accept only when it still contains every
-    // original named member. Partial class responses are merged surgically.
+    // original named member and does not strip existing JSDoc documentation comments.
     const generatedMemberNames = new Set<string>();
     for (const member of newClass.members) {
       if (member.name && ts.isIdentifier(member.name)) generatedMemberNames.add(member.name.text);
     }
     const containsAllOriginalMembers = [...origMembersByName.keys()].every((name) => generatedMemberNames.has(name));
-    if (!isStubbed && containsAllOriginalMembers && newClass.members.length >= origClass.members.length) {
+
+    const countJsDocs = (code: string): number => {
+      let count = 0;
+      let cursor = 0;
+      while (cursor < code.length) {
+        const startIdx = code.indexOf("/**", cursor);
+        if (startIdx === -1) break;
+        const endIdx = code.indexOf("*/", startIdx + 3);
+        if (endIdx === -1) break;
+        count++;
+        cursor = endIdx + 2;
+      }
+      return count;
+    };
+
+    const origJsDocCount = countJsDocs(originalCode);
+    const newJsDocCount = countJsDocs(newCode);
+    const preservesAllJsDocs = newJsDocCount >= origJsDocCount;
+
+    if (!isStubbed && containsAllOriginalMembers && newClass.members.length >= origClass.members.length && preservesAllJsDocs) {
       return newCode;
     }
 

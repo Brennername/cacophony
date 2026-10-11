@@ -30,7 +30,7 @@ export class ModelRoleSelector {
     this.implementerModels = config.implementerModels ?? [
       "qwen2.5-coder:7b",
       "qwen2.5-coder:14b",
-      "qwen2.5-coder:3b",
+      "gemma3:4b-it-qat",
     ];
     this.reviewerModels = config.reviewerModels ?? [
       "deepseek-r1:8b",
