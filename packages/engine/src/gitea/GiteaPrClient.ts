@@ -1,9 +1,11 @@
+
+import { TaskBranchOptions } from './GitWorktreeManager.js';
 interface GiteaApiClient { [key: string]: any; (...args: any[]): any; new (...args: any[]): any; }
 const GiteaApiClient: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });
 interface GiteaClientConfig { [key: string]: any; (...args: any[]): any; new (...args: any[]): any; }
 const GiteaClientConfig: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });
 
-import { TaskBranchOptions } from './GitWorktreeManager.js';
+
 
 export class GiteaPrClient {
   private client: GiteaApiClient;
@@ -26,4 +28,21 @@ export class GiteaPrClient {
       throw new Error(`Failed to push branch ${(options as any).branchName}: ${(error as Error).message}`);
     }
   }
+
+
+  public async setCommitStatus(owner: string, repo: string, sha: string, state: 'success' | 'failure', context: string, description?: string): Promise<void> {
+      try {
+        await this.client.createStatus({
+          owner,
+          repo,
+          ref: sha,
+          state,
+          context,
+          description
+        });
+        console.log(`Successfully set commit status for ${sha} to ${state}`);
+      } catch (error) {
+        throw new Error(`Failed to set commit status for ${sha}: ${(error as Error).message}`);
+      }
+    }
 }
