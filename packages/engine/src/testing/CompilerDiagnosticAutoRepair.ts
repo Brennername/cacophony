@@ -131,6 +131,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
 
+    const isTestFile = targetFilePath
+      ? (targetFilePath.endsWith(".test.ts") || targetFilePath.endsWith(".spec.ts"))
+      : (code.includes("describe(") || code.includes("it(") || code.includes("test("));
+
+    const isComponentFile = targetFilePath
+      ? (targetFilePath.includes("/components/") || targetFilePath.includes("/app/"))
+      : currentCode.includes("@Component");
+
     // 1. Repair TS2304 / TS2708: Missing 'jest' test runner global or namespace used as value
     const hasJestMissing = diagnostics.some(
       (d) => (d.errorCode === "TS2304" && /Cannot find name 'jest'/i.test(d.message)) ||
@@ -347,7 +355,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 }
               }
             }
-          } else if (modPath.startsWith("@cacophony/") && !KNOWN_WORKSPACE_PACKAGES.has(modPath)) {
+          } else if (!modPath.startsWith("node:") && !KNOWN_WORKSPACE_PACKAGES.has(modPath) && modPath !== "vue") {
             const escaped = modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             const namedImportRegex = new RegExp(`import(?:\\s+type)?\\s*\\{([^}]+)\\}\\s*from\\s*['"]${escaped}['"];?`, "g");
             if (namedImportRegex.test(currentCode)) {
@@ -355,17 +363,24 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 const memberList = members.split(",").map((m: string) => m.trim().split(/\s+as\s+/)[0]!.trim()).filter(Boolean);
                 let stubs = "";
                 for (const mem of memberList) {
-                  stubs += `type ${mem}<_T = any, _U = any> = any;\nconst ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                  stubs += `// @ts-ignore\nexport type ${mem}<_T = any, _U = any> = any;\n// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
                 }
-                repairsApplied.push(`Replaced hallucinated module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`);
+                repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`);
                 return stubs;
               });
             }
             const defaultImportRegex = new RegExp(`import(?:\\s+type)?\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`, "g");
             if (defaultImportRegex.test(currentCode)) {
               currentCode = currentCode.replace(defaultImportRegex, (_full, mem) => {
-                repairsApplied.push(`Replaced hallucinated module '${modPath}' with fallback declaration: ${mem}`);
-                return `type ${mem}<_T = any, _U = any> = any;\nconst ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration: ${mem}`);
+                return `// @ts-ignore\nexport type ${mem}<_T = any, _U = any> = any;\n// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+              });
+            }
+            const starImportRegex = new RegExp(`import(?:\\s+type)?\\s*\\*\\s+as\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`, "g");
+            if (starImportRegex.test(currentCode)) {
+              currentCode = currentCode.replace(starImportRegex, (_full, mem) => {
+                repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback namespace declaration: ${mem}`);
+                return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
               });
             }
           } else if (modPath === "vue") {
@@ -449,7 +464,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
 
-    // 4e. Repair TS2304: Missing Angular core symbols in Angular components
+    // 4e. Repair TS2304: Missing Angular core symbols in Angular components or decorators
     const angularCoreMatch = diagnostics.find(
       (d) => d.errorCode === "TS2304" && /Cannot find name '(?:EventEmitter|Output|Input|OnInit|OnDestroy|Component|Injectable|signal|computed|effect|Signal)'/i.test(d.message)
     );
@@ -463,9 +478,12 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             (_match, p1, p2, p3) => `${p1} ${p2.trim()}, ${sym} ${p3}`
           );
           repairsApplied.push(`Added missing '${sym}' to '@angular/core' imports`);
-        } else {
+        } else if (isComponentFile || currentCode.includes("@Component")) {
           currentCode = `import { ${sym} } from '@angular/core';\n` + currentCode;
           repairsApplied.push(`Imported '${sym}' from '@angular/core'`);
+        } else {
+          currentCode = `// @ts-ignore\nconst ${sym}: any = (..._args: any[]) => (_target?: any, _key?: any, _desc?: any) => {};\n` + currentCode;
+          repairsApplied.push(`Declared fallback decorator '${sym}'`);
         }
       }
     }
@@ -568,6 +586,32 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
 
+    // 4i. Repair TS2377: Constructors for derived classes must contain a 'super' call
+    const hasMissingSuper = diagnostics.some(
+      (d) => d.errorCode === "TS2377" || /Constructors for derived classes must contain a 'super' call/i.test(d.message)
+    );
+    if (hasMissingSuper) {
+      currentCode = currentCode.replace(
+        /(constructor\s*\([^)]*\)\s*\{)(?!\s*super\s*\()/g,
+        "$1\n    super(...([] as any));"
+      );
+      repairsApplied.push("Injected required 'super(...([] as any))' call into derived class constructor");
+    }
+
+    // 4j. Repair TS17009: 'super' must be called before accessing 'this'
+    const hasSuperAfterThis = diagnostics.some(
+      (d) => d.errorCode === "TS17009" || /'super' must be called before accessing 'this'/i.test(d.message)
+    );
+    if (hasSuperAfterThis) {
+      currentCode = currentCode.replace(
+        /(constructor\s*\([^)]*\)\s*\{)([\s\S]*?)(\bsuper\s*\([^)]*\);?)/,
+        (_match, ctorHead, bodyBeforeSuper, superCall) => {
+          return `${ctorHead}\n    ${superCall}\n${bodyBeforeSuper.replace(superCall, "")}`;
+        }
+      );
+      repairsApplied.push("Moved 'super()' call to beginning of constructor before accessing 'this'");
+    }
+
     // 5. Repair TS2834: Explicit .js file extensions in relative imports
     for (const diag of diagnostics) {
       if (diag.errorCode === "TS2834" || /Relative import paths need explicit file extensions/i.test(diag.message)) {
@@ -598,7 +642,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     currentCode = extendedCode;
 
     // 5b. Repair TS2300: Duplicate identifier in imports
-    const lines = currentCode.split("\n");
+    let lines = currentCode.split("\n");
     const seenDuplicateSymbols = new Set<string>();
     for (const diag of diagnostics) {
       if (diag.errorCode === "TS2300" || /Duplicate identifier '([^']+)'/i.test(diag.message)) {
@@ -773,14 +817,6 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     currentCode = lines.join("\n");
 
     // 8b. Repair TS2339: Property 'X' does not exist on type 'Y'
-    const isTestFile = targetFilePath
-      ? (targetFilePath.endsWith(".test.ts") || targetFilePath.endsWith(".spec.ts"))
-      : (code.includes("describe(") || code.includes("it(") || code.includes("test("));
-
-    const isComponentFile = targetFilePath
-      ? (targetFilePath.includes("/components/") || targetFilePath.includes("/app/"))
-      : currentCode.includes("@Component");
-
     for (const diag of diagnostics) {
       if (diag.errorCode === "TS2339" || /Property '([^']+)' does not exist on type/i.test(diag.message)) {
         const propMatch = diag.message.match(/Property '([^']+)' does not exist on type/i);
@@ -795,6 +831,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             const ifaceRegex = new RegExp(`interface\\s+${typeName}\\s*\\{`);
             if (ifaceRegex.test(currentCode) && !currentCode.includes(`interface ${typeName} {\n  [key: string]: any;`)) {
               currentCode = currentCode.replace(ifaceRegex, `interface ${typeName} {\n  [key: string]: any;`);
+              lines = currentCode.split("\n");
               repairsApplied.push(`Added index signature to local interface '${typeName}' for property '${propName}'`);
             }
           }

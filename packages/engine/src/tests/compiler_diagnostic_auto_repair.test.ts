@@ -433,6 +433,39 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("[key: string]: any;"));
     assert.ok(result.repairsApplied.some((r) => r.includes("Added index signature to local interface 'DataPoint'")));
   });
+
+  it("stubs uninstalled third-party package imports on TS2307", () => {
+    const source = `import { Configuration } from '@tsed/core';\nexport class Config extends Configuration {}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2307",
+      "Cannot find module '@tsed/core' or its corresponding type declarations."
+    )]);
+
+    assert.ok(result.repairedCode.includes("Configuration: any ="));
+    assert.ok(!result.repairedCode.includes("@tsed/core"));
+  });
+
+  it("injects super call into derived class constructor on TS2377", () => {
+    const source = `export class Sub extends Base {\n  constructor(name: string) {\n    this.name = name;\n  }\n}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2377",
+      "Constructors for derived classes must contain a 'super' call."
+    )]);
+
+    assert.ok(result.repairedCode.includes("super(...([] as any));"));
+    assert.ok(result.repairsApplied.some((r) => r.includes("Injected required 'super(...([] as any))'")));
+  });
+
+  it("declares decorator shim for missing Injectable in backend files", () => {
+    const source = `@Injectable()\nexport class RepoService {}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2304",
+      "Cannot find name 'Injectable'."
+    )], "packages/db/src/repositories/RepoService.ts");
+
+    assert.ok(result.repairedCode.includes("const Injectable: any ="));
+    assert.ok(result.repairsApplied.some((r) => r.includes("Declared fallback decorator 'Injectable'")));
+  });
 });
 
 
