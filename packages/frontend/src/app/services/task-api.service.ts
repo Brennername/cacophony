@@ -1,5 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 
+class ToastService {
+  showToast(message: string, type: string) {}
+}
+
 export interface TaskDto {
   id?: string;
   title: string;
@@ -17,6 +21,8 @@ export interface TaskDto {
 export class TaskApiService {
   public readonly loading = signal<boolean>(false);
   public readonly error = signal<string | null>(null);
+
+  constructor(private toastService: ToastService) {}
 
   public async listTasks(): Promise<TaskDto[]> {
     this.loading.set(true);
@@ -103,6 +109,24 @@ export class TaskApiService {
       const msg = err instanceof Error ? err.message : String(err);
       this.error.set(msg);
       return false;
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  public async restartTask(taskName: string): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/processes/${taskName}/restart`, {
+        method: 'POST'
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to restart task`);
+      (this.toastService as any).showToast('Task restarted successfully', 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      (this.toastService as any).showToast('Failed to restart task', 'error');
     } finally {
       this.loading.set(false);
     }
