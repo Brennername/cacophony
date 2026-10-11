@@ -117,7 +117,7 @@ export class FailureClassifier {
     }
 
     if (
-      /cannot find module|module not found|no such package|package\s+[^\r\n]{0,50}?\s+not found|unresolved import|could not find crate|dependency\s+[^\r\n]{0,50}?\s+not found/i.test(
+      /cannot find module|module not found|no such package|package\s+\S+(?:\s+\S+){0,3}\s+not found|unresolved import|could not find crate|dependency\s+\S+(?:\s+\S+){0,3}\s+not found/i.test(
         text
       )
     ) {
@@ -210,13 +210,31 @@ export class FailureClassifier {
       }
     }
 
-    const goRegex = /([-a-zA-Z0-9_./]+\.go):(\d+)(?::\s*([^\r\n]+))?/g;
-    while ((match = goRegex.exec(text)) !== null) {
-      const file = match[1];
-      const line = parseInt(match[2] ?? "0", 10);
-      const message = match[3]?.trim();
-      if (file && line > 0) {
-        locations.push({ file, line, message });
+    // Extract Go test/trace failure locations linearly to prevent polynomial backtracking on arbitrary inputs.
+    const lines = text.split(/\r?\n/);
+    for (const rawLine of lines) {
+      const trimmed = rawLine.trim();
+      let searchStart = 0;
+      while (searchStart < trimmed.length) {
+        const dotGoIdx = trimmed.indexOf(".go:", searchStart);
+        if (dotGoIdx === -1) {
+          break;
+        }
+        const prefix = trimmed.slice(0, dotGoIdx + 3);
+        const lastSpace = prefix.lastIndexOf(" ");
+        const lastTab = prefix.lastIndexOf("\t");
+        const startIdx = Math.max(lastSpace, lastTab) + 1;
+        const file = prefix.slice(startIdx);
+        const rest = trimmed.slice(dotGoIdx + 4);
+        const lineMatch = /^(\d+)(?::\s*([^\r\n]+))?/.exec(rest);
+        if (lineMatch && file) {
+          const line = parseInt(lineMatch[1] ?? "0", 10);
+          const message = lineMatch[2]?.trim();
+          if (line > 0) {
+            locations.push({ file, line, message });
+          }
+        }
+        searchStart = dotGoIdx + 4;
       }
     }
 

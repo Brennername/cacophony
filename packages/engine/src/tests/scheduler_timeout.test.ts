@@ -52,6 +52,18 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
     assert.ok(duration3 < 200, `Go stack location extraction took ${duration3}ms (expected <200ms)`);
     assert.ok(locs.length > 0);
     assert.equal(locs[0]?.line, 42);
+
+    // 4. Repeated whitespace in missing package/dependency payload
+    const maliciousPackageStr = "package\t" + "\t\t".repeat(2500) + "trailing non match";
+    const t3 = Date.now();
+    const result3 = FailureClassifier.classify(maliciousPackageStr);
+    const duration4 = Date.now() - t3;
+    assert.ok(duration4 < 200, `Package classification took ${duration4}ms (expected <200ms)`);
+    assert.notEqual(result3.category, "MISSING_DEPENDENCY");
+
+    const validPackageStr = "Error: package @types/node not found in workspace";
+    const resultValidPackage = FailureClassifier.classify(validPackageStr);
+    assert.equal(resultValidPackage.category, "MISSING_DEPENDENCY");
   });
 
   it("T47.2.1 & T47.2.3: TaskScheduler watchdog aborts stalled tasks and records TIMEOUT failure", async () => {
