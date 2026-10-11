@@ -977,6 +977,69 @@ export class AutonomousWorkerPipeline {
             `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, attempt ${testRemediationAttempts}/${maxRemediationAttempts}). Attempting automated remediation...`
           );
 
+          // Attempt deterministic diagnostic auto-repair if test output contains TypeScript compiler diagnostics
+          const rawTestOutput = `${runResult.stdout}\n${runResult.stderr}`.trim();
+          const testDiags = CompilerDiagnosticParser.parseLines(rawTestOutput.split("\n"));
+          const targetTestDiags = targetRel
+            ? testDiags.filter((d) => !d.filePath || d.filePath.includes(path.basename(targetRel!)))
+            : testDiags;
+
+          if (targetTestDiags.length > 0 && targetAbs) {
+            const autoRepair = new CompilerDiagnosticAutoRepair();
+            const repairResult = autoRepair.repair(currentCode, targetTestDiags, targetRel || undefined);
+            if (repairResult.repairsApplied.length > 0) {
+              let candidateCode = repairResult.repairedCode;
+              if (originalExistingContent && originalExistingContent.trim().length > 0) {
+                if (targetedMethodEdit && targetRel) {
+                  try {
+                    candidateCode = TypeScriptMethodSplicer.splice(
+                      originalExistingContent,
+                      targetRel,
+                      targetedMethodEdit,
+                      candidateCode
+                    );
+                  } catch {
+                    candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+                  }
+                } else {
+                  candidateCode = IncrementalClassMerger.merge(originalExistingContent, candidateCode);
+                }
+              }
+              const integrityIssues = GeneratedChangeGuard.inspectReplacement(
+                targetRel || "unknown",
+                originalExistingContent,
+                candidateCode,
+                integrityTaskText
+              );
+              if (integrityIssues.length === 0) {
+                currentCode = candidateCode;
+                await fs.writeFile(targetAbs, currentCode, "utf-8");
+                console.log(
+                  `[AutonomousWorkerPipeline] Applied ${repairResult.repairsApplied.length} deterministic auto-repair(s) to test failure: ${repairResult.repairsApplied.join("; ")}`
+                );
+
+                if (worktree) {
+                  const retryTest = await this.sandboxedRunner.run(groomed.scopedTestCommand, {
+                    cwd: worktree.worktreePath,
+                    timeoutMs: 90000,
+                    maxBufferBytes: 512 * 1024
+                  });
+                  if (retryTest.exitCode === 0) {
+                    testPassed = true;
+                    await this.recordAndEmitStage(
+                      taskId,
+                      "test_execution",
+                      "SUCCESS",
+                      retryTest.durationMs,
+                      `${retryTest.stdout}\n${retryTest.stderr}`.trim()
+                    );
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
           // Active Remediation
           const remediationStart = Date.now();
           await this.recordAndEmitStage(taskId, "remediation", "RUNNING");

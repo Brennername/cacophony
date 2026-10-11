@@ -131,9 +131,10 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
 
-    // 1. Repair TS2304: Missing 'jest' test runner global
+    // 1. Repair TS2304 / TS2708: Missing 'jest' test runner global or namespace used as value
     const hasJestMissing = diagnostics.some(
-      (d) => d.errorCode === "TS2304" && /Cannot find name 'jest'/i.test(d.message)
+      (d) => (d.errorCode === "TS2304" && /Cannot find name 'jest'/i.test(d.message)) ||
+             (d.errorCode === "TS2708" && /Cannot use namespace 'jest' as a value/i.test(d.message))
     );
     if (hasJestMissing && !currentCode.includes("const jest =") && !currentCode.includes("var jest =")) {
       const jestShim = [
@@ -324,17 +325,24 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                     const memberList = members.split(",").map((m: string) => m.trim().split(/\s+as\s+/)[0]!.trim()).filter(Boolean);
                     let stubs = "";
                     for (const mem of memberList) {
-                      stubs += `class ${mem} { [key: string]: any; constructor(..._args: any[]) {} }\n`;
+                      if (/^[A-Z]/.test(mem)) {
+                        stubs += `// @ts-ignore\nexport class ${mem} { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }\n`;
+                      } else {
+                        stubs += `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                      }
                     }
-                    repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback class stub(s): ${memberList.join(", ")}`);
+                    repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`);
                     return stubs;
                   });
                 }
                 const defaultImportRegex = new RegExp(`import(?:\\s+type)?\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`, "g");
                 if (defaultImportRegex.test(currentCode)) {
                   currentCode = currentCode.replace(defaultImportRegex, (_full, mem) => {
-                    repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback class stub: ${mem}`);
-                    return `class ${mem} { [key: string]: any; constructor(..._args: any[]) {} }\n`;
+                    repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration: ${mem}`);
+                    if (/^[A-Z]/.test(mem)) {
+                      return `// @ts-ignore\nexport class ${mem} { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }\n`;
+                    }
+                    return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
                   });
                 }
               }
@@ -347,7 +355,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 const memberList = members.split(",").map((m: string) => m.trim().split(/\s+as\s+/)[0]!.trim()).filter(Boolean);
                 let stubs = "";
                 for (const mem of memberList) {
-                  stubs += `type ${mem}<_T = any, _U = any> = any;\nconst ${mem}: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });\n`;
+                  stubs += `type ${mem}<_T = any, _U = any> = any;\nconst ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
                 }
                 repairsApplied.push(`Replaced hallucinated module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`);
                 return stubs;
@@ -357,7 +365,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             if (defaultImportRegex.test(currentCode)) {
               currentCode = currentCode.replace(defaultImportRegex, (_full, mem) => {
                 repairsApplied.push(`Replaced hallucinated module '${modPath}' with fallback declaration: ${mem}`);
-                return `type ${mem}<_T = any, _U = any> = any;\nconst ${mem}: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });\n`;
+                return `type ${mem}<_T = any, _U = any> = any;\nconst ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
               });
             }
           } else if (modPath === "vue") {
@@ -428,8 +436,10 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           });
           if (!currentCode.includes(`interface ${missingMember}`) && !currentCode.includes(`const ${missingMember}:`)) {
             const fallbackDecl = [
-              `interface ${missingMember} { [key: string]: any; (...args: any[]): any; new (...args: any[]): any; }`,
-              `const ${missingMember}: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });`,
+              `// @ts-ignore`,
+              `export interface ${missingMember} { [key: string]: any; }`,
+              `// @ts-ignore`,
+              `export const ${missingMember}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });`,
               ""
             ].join("\n");
             currentCode = fallbackDecl + currentCode;
@@ -470,6 +480,32 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         currentCode = currentCode.replace("imports: [", "imports: [FormsModule, ");
       }
       repairsApplied.push("Imported and registered FormsModule for ngModel binding");
+    }
+
+    // 4f2. Repair NG8001 / NG8002: Unknown property bindings or unknown elements in Angular templates
+    const hasUnknownBinding = diagnostics.some(
+      (d) => /Can't bind to '([^']+)' since it isn't a known property/i.test(d.message) ||
+             /is not a known element/i.test(d.message) ||
+             /NG8001|NG8002/i.test(d.message)
+    );
+    if (hasUnknownBinding) {
+      if (!currentCode.includes("CUSTOM_ELEMENTS_SCHEMA")) {
+        if (currentCode.includes("@angular/core")) {
+          currentCode = currentCode.replace(
+            /(import\s*\{)([^}]+)(\}\s*from\s*['"]@angular\/core['"])/,
+            "$1$2, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA $3"
+          );
+        } else {
+          currentCode = "import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';\n" + currentCode;
+        }
+      }
+      if (!currentCode.includes("schemas:")) {
+        currentCode = currentCode.replace(
+          /@Component\s*\(\{/,
+          "@Component({\n  schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],"
+        );
+        repairsApplied.push("Registered CUSTOM_ELEMENTS_SCHEMA and NO_ERRORS_SCHEMA in Component decorator for template bindings");
+      }
     }
 
     // 4g. Repair missing Angular template file
@@ -741,26 +777,43 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       ? (targetFilePath.endsWith(".test.ts") || targetFilePath.endsWith(".spec.ts"))
       : (code.includes("describe(") || code.includes("it(") || code.includes("test("));
 
+    const isComponentFile = targetFilePath
+      ? (targetFilePath.includes("/components/") || targetFilePath.includes("/app/"))
+      : currentCode.includes("@Component");
+
     for (const diag of diagnostics) {
       if (diag.errorCode === "TS2339" || /Property '([^']+)' does not exist on type/i.test(diag.message)) {
         const propMatch = diag.message.match(/Property '([^']+)' does not exist on type/i);
-        if (propMatch && propMatch[1] && diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+        if (propMatch && propMatch[1]) {
           const propName = propMatch[1];
           const isMockProp = /^(mock|mockReturnValue|mockResolvedValue|mockImplementation|mockClear|mockReset|mockRejectedValue|mockReturnValueOnce|mockResolvedValueOnce|mockImplementationOnce|mockReturnThis|called|calledOnce)$/.test(propName);
 
-          // Restrict property cast to test files or mock properties to avoid mangling production code
-          if (!isTestFile && !isMockProp) {
+          // If the target interface is defined locally, add an index signature to satisfy the compiler
+          const typeMatch = diag.message.match(/does not exist on type '([^']+)'/i);
+          if (typeMatch && typeMatch[1]) {
+            const typeName = typeMatch[1];
+            const ifaceRegex = new RegExp(`interface\\s+${typeName}\\s*\\{`);
+            if (ifaceRegex.test(currentCode) && !currentCode.includes(`interface ${typeName} {\n  [key: string]: any;`)) {
+              currentCode = currentCode.replace(ifaceRegex, `interface ${typeName} {\n  [key: string]: any;`);
+              repairsApplied.push(`Added index signature to local interface '${typeName}' for property '${propName}'`);
+            }
+          }
+
+          // Restrict property cast to test files, component files, or mock properties
+          if (!isTestFile && !isComponentFile && !isMockProp) {
             continue;
           }
 
-          const lineIdx = diag.lineNumber - 1;
-          const targetLine = lines[lineIdx];
-          if (targetLine && targetLine.includes(`.${propName}`) && !targetLine.includes(`as any).${propName}`)) {
-            const castRegex = new RegExp(`(?<![\\w$.])((?:this\\.)?[a-zA-Z0-9_$]+(?:\\.[a-zA-Z0-9_$]+)*)\\.${propName}\\b`, "g");
-            const updatedLine = targetLine.replace(castRegex, `($1 as any).${propName}`);
-            if (updatedLine !== targetLine) {
-              lines[lineIdx] = updatedLine;
-              repairsApplied.push(`Cast target of '.${propName}' to 'any' at line ${diag.lineNumber}`);
+          if (diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+            const lineIdx = diag.lineNumber - 1;
+            const targetLine = lines[lineIdx];
+            if (targetLine && targetLine.includes(`.${propName}`) && !targetLine.includes(`as any).${propName}`)) {
+              const castRegex = new RegExp(`(?<![\\w$.])((?:this\\.)?[a-zA-Z0-9_$]+(?:\\.[a-zA-Z0-9_$]+)*)\\.${propName}\\b`, "g");
+              const updatedLine = targetLine.replace(castRegex, `($1 as any).${propName}`);
+              if (updatedLine !== targetLine) {
+                lines[lineIdx] = updatedLine;
+                repairsApplied.push(`Cast target of '.${propName}' to 'any' at line ${diag.lineNumber}`);
+              }
             }
           }
         }

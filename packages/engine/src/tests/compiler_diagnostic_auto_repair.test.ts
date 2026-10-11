@@ -387,7 +387,54 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairsApplied.some((r) => r.includes("UnusedHelper")));
     assert.ok(result.repairsApplied.some((r) => r.includes("Added ': any' type annotation to implicit parameter 'item'")));
   });
+
+  it("repairs TS2708 namespace used as value by injecting jest compatibility shim", () => {
+    const source = `describe('Suite', () => { it('spies', () => { const spy = jest.spyOn(obj, 'fn'); }); });`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2708",
+      "Cannot use namespace 'jest' as a value."
+    )]);
+
+    assert.ok(result.repairedCode.includes("const jest ="));
+    assert.ok(result.repairedCode.includes("spyOn:"));
+  });
+
+  it("generates callable and instantiable stub for unresolvable helper function import", () => {
+    const source = `import { createFakeTask } from './fake-task.js';\nexport function test() { return createFakeTask(); }`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2307",
+      "Cannot find module './fake-task.js' or its corresponding type declarations."
+    )]);
+
+    assert.ok(result.repairedCode.includes("export const createFakeTask: any ="));
+    assert.ok(!result.repairedCode.includes("class createFakeTask"));
+  });
+
+  it("repairs NG8002 unknown binding by registering Angular schemas in component", () => {
+    const source = `import { Component } from '@angular/core';\n@Component({ selector: 'app-trend', template: '<trend-chart [data]=\"d\"></trend-chart>' })\nexport class TrendComponent {}`;
+    const result = repairer.repair(source, [diagnostic(
+      "NG8002",
+      "Can't bind to 'data' since it isn't a known property of 'trend-chart'."
+    )]);
+
+    assert.ok(result.repairedCode.includes("CUSTOM_ELEMENTS_SCHEMA"));
+    assert.ok(result.repairedCode.includes("NO_ERRORS_SCHEMA"));
+    assert.ok(result.repairedCode.includes("schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]"));
+  });
+
+  it("adds index signature to local interface when property access fails in component", () => {
+    const source = `export interface DataPoint {\n  timestamp: number;\n}\nexport function calc(dp: DataPoint) {\n  return dp.success;\n}`;
+    const result = repairer.repair(source, [diagnostic(
+      "TS2339",
+      "Property 'success' does not exist on type 'DataPoint'.",
+      5
+    )], "packages/frontend/src/app/components/trend/trend.component.ts");
+
+    assert.ok(result.repairedCode.includes("[key: string]: any;"));
+    assert.ok(result.repairsApplied.some((r) => r.includes("Added index signature to local interface 'DataPoint'")));
+  });
 });
+
 
 
 
