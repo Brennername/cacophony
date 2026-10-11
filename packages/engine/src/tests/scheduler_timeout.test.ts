@@ -23,6 +23,37 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
     assert.equal(classificationFromMsg.matchedPattern, "timeout_signal");
   });
 
+  it("FailureClassifier resists catastrophic backtracking on adversarial ReDoS payloads", () => {
+    // 1. Context / token repetition payload
+    const maliciousContextStr = "context ".repeat(2500) + "trailing non match";
+    const t0 = Date.now();
+    const result1 = FailureClassifier.classify(maliciousContextStr);
+    const duration1 = Date.now() - t0;
+    assert.ok(duration1 < 200, `Context classification took ${duration1}ms (expected <200ms)`);
+    assert.notEqual(result1.category, "CONTEXT_OVERFLOW");
+
+    const validOverflow = "Error: context window overflow occurred during generation";
+    const resultValid = FailureClassifier.classify(validOverflow);
+    assert.equal(resultValid.category, "CONTEXT_OVERFLOW");
+
+    // 2. Syntax backtick repetition payload
+    const maliciousSyntaxStr = "expected `" + "expected `".repeat(1500) + " found nothing";
+    const t1 = Date.now();
+    const result2 = FailureClassifier.classify(maliciousSyntaxStr);
+    const duration2 = Date.now() - t1;
+    assert.ok(duration2 < 200, `Syntax classification took ${duration2}ms (expected <200ms)`);
+    assert.notEqual(result2.category, "SYNTAX_ERROR");
+
+    // 3. Repeated hyphens in Go stack location payload
+    const maliciousGoStr = "---".repeat(3000) + ".go:42: error";
+    const t2 = Date.now();
+    const locs = FailureClassifier.extractStackLocations(maliciousGoStr);
+    const duration3 = Date.now() - t2;
+    assert.ok(duration3 < 200, `Go stack location extraction took ${duration3}ms (expected <200ms)`);
+    assert.ok(locs.length > 0);
+    assert.equal(locs[0]?.line, 42);
+  });
+
   it("T47.2.1 & T47.2.3: TaskScheduler watchdog aborts stalled tasks and records TIMEOUT failure", async () => {
     let updatedStatus: string | null = null;
     let completionVerdict: string | null = null;

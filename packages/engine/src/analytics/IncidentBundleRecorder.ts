@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { RegressionBurstAlert, TaskOutcome } from "./FailureClusterDetector.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface GitCommitRecord {
   readonly hash: string;
@@ -83,8 +83,10 @@ export class IncidentBundleRecorder {
    */
   public async retrieveRecentGitCommits(count = 10): Promise<readonly GitCommitRecord[]> {
     try {
-      const { stdout } = await execAsync(
-        `git log -n ${count} --pretty=format:"%H|%an|%ad|%s"`,
+      const safeCount = Math.max(1, Math.min(100, Math.floor(Number(count)) || 10));
+      const { stdout } = await execFileAsync(
+        "git",
+        ["log", "-n", String(safeCount), '--pretty=format:%H|%an|%ad|%s'],
         { cwd: this.workspaceRoot, timeout: 5000 }
       );
 

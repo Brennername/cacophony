@@ -1126,6 +1126,33 @@
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t67.2.1 Rehabilitation [2026-10-11T22:16:48.563Z]
+- **Parent Task**: T67.2.1: Add parameterized SSE route GET /api/stream/:taskId in CacophonyHttpServer allow (`taskcade-t67.2.1`)
+- **Failure Count**: 4
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T67.2.1: Add parameterized SSE route GET /api/stream/:taskId in CacophonyHttpServer allow [Role: type_specialist] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+  - [ ] `taskcade-t67.2.1.2`: [Rehab 2/2] Implementation & Test Verification: T67.2.1: Add parameterized SSE route GET /api/stream/:taskId in CacophonyHttpServer allow [Role: implementer] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+
+
+### Task taskcade-t85.4.3 Rehabilitation [2026-10-11T21:56:42.977Z]
+- **Parent Task**: T85.4.3: Integrate trend widget into `DashboardViewComponent` directly adjacent to overal (`taskcade-t85.4.3`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t85.4.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T85.4.3: Integrate trend widget into `DashboardViewComponent` directly adjacent to overal [Role: type_specialist] [Files: packages/frontend/src/app/components/views/dashboard-view.component.ts]
+  - [ ] `taskcade-t85.4.3.2`: [Rehab 2/2] Implementation & Test Verification: T85.4.3: Integrate trend widget into `DashboardViewComponent` directly adjacent to overal [Role: implementer] [Files: packages/frontend/src/app/components/views/dashboard-view.component.ts]
+
+
+### Task taskcade-t88.3.3 Rehabilitation [2026-10-11T21:34:56.580Z]
+- **Parent Task**: T88.3.3: Critical: Start a fresh assessment round whenever the PR head SHA changes and re (`taskcade-t88.3.3`)
+- **Failure Count**: 4
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.3.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T88.3.3: Critical: Start a fresh assessment round whenever the PR head SHA changes and re [Role: type_specialist] [Files: packages/db/src/repositories/ReviewReportRepository.ts]
+  - [ ] `taskcade-t88.3.3.2`: [Rehab 2/2] Implementation & Test Verification: T88.3.3: Critical: Start a fresh assessment round whenever the PR head SHA changes and re [Role: implementer] [Files: packages/db/src/repositories/ReviewReportRepository.ts]
+
+
 ### Task taskcade-t88.1.3 Rehabilitation [2026-10-11T21:22:09.196Z]
 - **Parent Task**: T88.1.3: Critical: Make PR, CI, and webhook callbacks idempotent using stable work-item,  (`taskcade-t88.1.3`)
 - **Failure Count**: 5

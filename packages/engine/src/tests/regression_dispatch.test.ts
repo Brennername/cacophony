@@ -52,6 +52,37 @@ describe("RegressionDispatchSupervisor Suite (T85.3)", () => {
     assert(result.matchedFiles.includes("src/app.ts"));
   });
 
+  it("GitRegressionCorrelator rejects command injection attempts in commitHash", () => {
+    let executedCommand = "";
+    const correlator = new GitRegressionCorrelator("/tmp", (cmd: string) => {
+      executedCommand = cmd;
+      return "file.ts";
+    });
+
+    // Malicious inputs containing shell metacharacters
+    const maliciousPayloads = [
+      "; rm -rf /",
+      "abc && echo pwned",
+      "$(whoami)",
+      "`cat /etc/passwd`",
+      "../../../etc/shadow",
+      "",
+      "not a hex hash!",
+    ];
+
+    for (const payload of maliciousPayloads) {
+      executedCommand = "";
+      const files = correlator.getCommitFiles(payload);
+      assert.deepEqual(files, []);
+      assert.equal(executedCommand, "", `Should not execute command for invalid payload: ${payload}`);
+    }
+
+    // Valid hex commit hash
+    const validFiles = correlator.getCommitFiles("a1b2c3d4e5f6");
+    assert.deepEqual(validFiles, ["file.ts"]);
+    assert.ok(executedCommand.includes("a1b2c3d4e5f6"));
+  });
+
   it("triggers diagnostic task creation on consecutive failure streak", async () => {
     const createdTasks: TaskRecord[] = [];
     const mockRepo = {

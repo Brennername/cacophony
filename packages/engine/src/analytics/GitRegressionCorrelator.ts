@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import type { TaskRecord } from "@cacophony/shared-types";
 
 export interface GitCommitRecord {
@@ -25,14 +25,27 @@ export interface CommitCorrelationResult {
  */
 export class GitRegressionCorrelator {
   private readonly repoDir: string;
-  private readonly runCommand: (cmd: string) => string;
+  private readonly customRunner?: ((cmd: string) => string) | undefined;
 
   constructor(repoDir: string = process.cwd(), commandRunner?: (cmd: string) => string) {
     this.repoDir = repoDir;
-    this.runCommand =
-      commandRunner ??
-      ((cmd: string) =>
-        execSync(cmd, { cwd: this.repoDir, encoding: "utf-8", timeout: 4000 }));
+    this.customRunner = commandRunner;
+  }
+
+  /**
+   * Executes a git command safely using execFileSync with argument array,
+   * completely avoiding shell execution (/bin/sh) and preventing command injection.
+   * If a custom test runner is supplied, it falls back to formatting the command string safely.
+   */
+  private runGit(args: readonly string[]): string {
+    if (this.customRunner) {
+      return this.customRunner(["git", ...args].join(" "));
+    }
+    return execFileSync("git", [...args], {
+      cwd: this.repoDir,
+      encoding: "utf-8",
+      timeout: 4000,
+    });
   }
 
   /**
@@ -40,7 +53,8 @@ export class GitRegressionCorrelator {
    */
   public getRecentCommits(limit: number = 20): GitCommitRecord[] {
     try {
-      const output = this.runCommand(`git log -n ${limit} --pretty=format:"%H|%an|%at|%s"`);
+      const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit)) || 20));
+      const output = this.runGit(["log", "-n", String(safeLimit), '--pretty=format:%H|%an|%at|%s']);
       const lines = output.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
 
       return lines.map((line) => {
@@ -63,7 +77,11 @@ export class GitRegressionCorrelator {
    */
   public getCommitFiles(commitHash: string): string[] {
     try {
-      const output = this.runCommand(`git diff-tree --no-commit-id --name-only -r ${commitHash}`);
+      if (typeof commitHash !== "string" || !/^[a-fA-F0-9]{4,64}$/.test(commitHash.trim())) {
+        return [];
+      }
+      const safeHash = commitHash.trim();
+      const output = this.runGit(["diff-tree", "--no-commit-id", "--name-only", "-r", safeHash]);
       return output.split("\n").map((f) => f.trim()).filter((f) => f.length > 0);
     } catch {
       return [];

@@ -85,7 +85,13 @@ export class FailureClassifier {
       };
     }
 
-    if (/context.*overflow|token.*limit exceeded|out of memory|oom|vram exhausted/i.test(text)) {
+    if (
+      /\bcontext\s+(?:window\s+|length\s+|size\s+)?overflow\b|\btoken\s+(?:count\s+|window\s+|size\s+)?limit\s+exceeded\b|\bout of memory\b|\boom\b|\bvram exhausted\b/i.test(
+        text
+      ) ||
+      (text.toLowerCase().includes("context") && text.toLowerCase().includes("overflow")) ||
+      (text.toLowerCase().includes("token") && text.toLowerCase().includes("limit exceeded"))
+    ) {
       return {
         category: "CONTEXT_OVERFLOW",
         confidence: 0.95,
@@ -96,7 +102,7 @@ export class FailureClassifier {
     }
 
     if (
-      /timeout|timed out|exceeded maximum command duration|executiontimeouterror|watchdog.*timeout|aborted by watchdog/i.test(
+      /timeout|timed out|exceeded maximum command duration|executiontimeouterror|watchdog(?:\s+\w+)?\s+timeout|aborted by watchdog/i.test(
         text
       ) ||
       context?.exitCode === 124
@@ -111,7 +117,7 @@ export class FailureClassifier {
     }
 
     if (
-      /cannot find module|module not found|no such package|package .* not found|unresolved import|could not find crate|dependency.*not found/i.test(
+      /cannot find module|module not found|no such package|package\s+[^\r\n]{0,50}?\s+not found|unresolved import|could not find crate|dependency\s+[^\r\n]{0,50}?\s+not found/i.test(
         text
       )
     ) {
@@ -146,8 +152,8 @@ export class FailureClassifier {
       };
     }
 
-    if (/SyntaxError:|unexpected token|parse error|parsing error|syntax error|expected `.*`, found/i.test(text)) {
-      const match = text.match(/(?:SyntaxError:[^\n]+|syntax error:[^\n]+|expected `[^`]+`, found[^\n]+)/i);
+    if (/SyntaxError:|unexpected token|parse error|parsing error|syntax error|expected `[^`\r\n]+`, found/i.test(text)) {
+      const match = text.match(/(?:SyntaxError:[^\n]+|syntax error:[^\n]+|expected `[^`\r\n]+`, found[^\n]+)/i);
       return {
         category: "SYNTAX_ERROR",
         confidence: 0.95,
@@ -158,7 +164,7 @@ export class FailureClassifier {
     }
 
     if (
-      /AssertionError|assert\.|expect\(.*fail|fail\s+\d+|ERR_ASSERTION|assertion `left == right` failed|--- FAIL:|FAILURE!/i.test(
+      /AssertionError|assert\.|expect\([^\r\n]{0,50}?fail|fail\s+\d+|ERR_ASSERTION|assertion `left == right` failed|--- FAIL:|FAILURE!/i.test(
         text
       )
     ) {
@@ -204,7 +210,7 @@ export class FailureClassifier {
       }
     }
 
-    const goRegex = /([a-zA-Z0-9_\-./]+\.go):(\d+)(?::\s*(.+))?/g;
+    const goRegex = /([-a-zA-Z0-9_./]+\.go):(\d+)(?::\s*([^\r\n]+))?/g;
     while ((match = goRegex.exec(text)) !== null) {
       const file = match[1];
       const line = parseInt(match[2] ?? "0", 10);
@@ -214,7 +220,7 @@ export class FailureClassifier {
       }
     }
 
-    const mvnRegex = /\[ERROR\]\s+([^\s:]+\.java):\[(\d+),(\d+)\](?:\s*(.+))?/g;
+    const mvnRegex = /\[ERROR\]\s+([^\s:]+\.java):\[(\d+),(\d+)\](?:\s*([^\r\n]+))?/g;
     while ((match = mvnRegex.exec(text)) !== null) {
       const file = match[1];
       const line = parseInt(match[2] ?? "0", 10);
