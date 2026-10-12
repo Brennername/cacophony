@@ -73,7 +73,7 @@ export class TaskRepository {
         msg.includes("has no column named") ||
         msg.includes("column does not exist")
       ) {
-        // Fallback for drivers/environments where migration 016 has not yet been applied
+
         await this.driver.execute(
           `INSERT INTO tasks (
             id, title, prompt, role, status, priority, model_assigned,
@@ -252,6 +252,9 @@ export class TaskRepository {
 
   public async deleteTask(id: string): Promise<boolean> {
     await this.driver.execute("DELETE FROM tasks WHERE id = $1", [id]);
+    await this.driver.execute("DELETE FROM task_stages WHERE task_id = $1", [id]);
+    await this.driver.execute("DELETE FROM task_telemetry_correlations WHERE task_id = $1", [id]);
+    await this.driver.execute("DELETE FROM test_execution_runs WHERE task_id = $1", [id]);
     return true;
   }
 
