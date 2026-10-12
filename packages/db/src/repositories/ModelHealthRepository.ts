@@ -187,7 +187,7 @@ export class ModelHealthRepository {
         avg_tokens_per_sec = 0.0,
         status = 'ACTIVE'`
     );
-  }
+}
 
   public async getCurrentEpoch(): Promise<ArenaEpochRecord> {
     const isPostgres = this.driver.getDialect() === "postgres";
