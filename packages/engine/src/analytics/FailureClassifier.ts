@@ -131,7 +131,7 @@ export class FailureClassifier {
       };
     }
 
-    if (/banned import|disallowed root file|forbidden command|security guardrail|rejected unsafe|generated replacement shrinks|left a stub|stripped\s+[^\r\n]{0,60}\s+comment block/i.test(text)) {
+    if (/banned import|disallowed root file|forbidden command|security guardrail|rejected unsafe|generated replacement shrinks|left a stub|stripped\s+\S+(?:\s+\S+){0,4}\s+comment block/i.test(text)) {
       return {
         category: "BANNED_IMPORT",
         confidence: 0.95,
@@ -142,7 +142,7 @@ export class FailureClassifier {
     }
 
     if (
-      /error TS\d+:|cannot find namespace|cannot find name|implicitly has an 'any' type|type\s+[^\r\n]{0,80}\s+not assignable|property\s+[^\r\n]{0,80}\s+does not exist on type|is declared but its value is never read|mismatched types|type mismatch|compilation check failed|package build check failed|tsc -b/i.test(
+      /error TS\d+:|cannot find namespace|cannot find name|implicitly has an 'any' type|type\s+\S+(?:\s+\S+){0,4}\s+not assignable|property\s+\S+(?:\s+\S+){0,4}\s+does not exist on type|is declared but its value is never read|mismatched types|type mismatch|compilation check failed|package build check failed|tsc -b/i.test(
         text
       )
     ) {
