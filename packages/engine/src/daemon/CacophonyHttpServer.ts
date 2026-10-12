@@ -1434,8 +1434,11 @@ export class CacophonyHttpServer {
         if (filterRole && t.role !== filterRole) continue;
 
         const stages = await stageRepo.getStagesForTask(t.id);
-        const failedStage = stages.find((s) => s.stageStatus === "FAILURE") || stages[stages.length - 1];
-        const log = failedStage?.logOutput || "";
+        const richStage = stages.find(
+          (s) => s.stageStatus === "FAILURE" && s.logOutput && s.logOutput !== "Stage failed verification"
+        );
+        const failedStage = richStage || stages.find((s) => s.stageStatus === "FAILURE") || stages[stages.length - 1];
+        const log = `${t.failureReason ?? ""} ${failedStage?.logOutput ?? ""} ${t.logSnippet ?? ""}`.trim();
 
         const classification = FailureClassifier.classify(log, { logOutput: log });
         const cat = classification.category;

@@ -117,11 +117,11 @@ export class FailureClassifier {
     }
 
     if (
-      /cannot find module|module not found|no such package|package\s+\S+(?:\s+\S+){0,3}\s+not found|unresolved import|could not find crate|dependency\s+\S+(?:\s+\S+){0,3}\s+not found/i.test(
+      /cannot find module|module not found|no such package|package\s+\S+(?:\s+\S+){0,3}\s+not found|unresolved import|could not find crate|dependency\s+\S+(?:\s+\S+){0,3}\s+not found|has no exported member|could not find\s+['"]?[^\s'"]+dist\//i.test(
         text
       )
     ) {
-      const match = text.match(/(?:cannot find module|module not found|could not find crate)\s+['"]?([^'"\n]+)['"]?/i);
+      const match = text.match(/(?:cannot find module|module not found|could not find crate|has no exported member)\s+['"]?([^'"\n]+)['"]?/i);
       return {
         category: "MISSING_DEPENDENCY",
         confidence: 0.95,
@@ -131,18 +131,22 @@ export class FailureClassifier {
       };
     }
 
-    if (/banned import|disallowed root file|forbidden command|security guardrail/i.test(text)) {
+    if (/banned import|disallowed root file|forbidden command|security guardrail|rejected unsafe|generated replacement shrinks|left a stub|stripped\s+[^\r\n]{0,60}\s+comment block/i.test(text)) {
       return {
         category: "BANNED_IMPORT",
         confidence: 0.95,
         matchedPattern: "security_guardrail",
-        rootCauseSnippet: "Encountered disallowed dependency or security violation",
+        rootCauseSnippet: "Encountered disallowed dependency or security/integrity violation",
         locations
       };
     }
 
-    if (/error TS\d+:|type.*not assignable|property.*does not exist on type|cannot find name|mismatched types|type mismatch/i.test(text)) {
-      const match = text.match(/(?:error TS\d+:[^\n]+|mismatched types:[^\n]+|type mismatch:[^\n]+)/i);
+    if (
+      /error TS\d+:|cannot find namespace|cannot find name|implicitly has an 'any' type|type\s+[^\r\n]{0,80}\s+not assignable|property\s+[^\r\n]{0,80}\s+does not exist on type|is declared but its value is never read|mismatched types|type mismatch|compilation check failed|package build check failed|tsc -b/i.test(
+        text
+      )
+    ) {
+      const match = text.match(/(?:error TS\d+:[^\n]+|cannot find namespace[^\n]+|cannot find name[^\n]+|mismatched types:[^\n]+|type mismatch:[^\n]+|compilation check failed[^\n]*)/i);
       return {
         category: "TYPE_MISMATCH",
         confidence: 0.9,
@@ -152,8 +156,12 @@ export class FailureClassifier {
       };
     }
 
-    if (/SyntaxError:|unexpected token|parse error|parsing error|syntax error|expected `[^`\r\n]+`, found/i.test(text)) {
-      const match = text.match(/(?:SyntaxError:[^\n]+|syntax error:[^\n]+|expected `[^`\r\n]+`, found[^\n]+)/i);
+    if (
+      /SyntaxError:|unexpected token|parse error|parsing error|syntax error|not parseable|unterminated string literal|expression expected|self-healing parser failed|no code block extracted|expected `[^`\r\n]+`, found/i.test(
+        text
+      )
+    ) {
+      const match = text.match(/(?:SyntaxError:[^\n]+|syntax error:[^\n]+|not parseable[^\n]*|unterminated string literal[^\n]*|expected `[^`\r\n]+`, found[^\n]+)/i);
       return {
         category: "SYNTAX_ERROR",
         confidence: 0.95,
@@ -164,7 +172,7 @@ export class FailureClassifier {
     }
 
     if (
-      /AssertionError|assert\.|expect\([^\r\n]{0,50}?fail|fail\s+\d+|ERR_ASSERTION|assertion `left == right` failed|--- FAIL:|FAILURE!/i.test(
+      /AssertionError|assert\.|expect\([^\r\n]{0,50}?fail|fail\s+\d+|ERR_ASSERTION|assertion `left == right` failed|--- FAIL:|FAILURE!|test command failed|stage failed verification|failed verification/i.test(
         text
       )
     ) {
@@ -172,7 +180,7 @@ export class FailureClassifier {
         category: "ASSERTION_FAILURE",
         confidence: 0.9,
         matchedPattern: "test_runner",
-        rootCauseSnippet: "Automated test assertion failed",
+        rootCauseSnippet: "Automated test or verification assertion failed",
         locations
       };
     }

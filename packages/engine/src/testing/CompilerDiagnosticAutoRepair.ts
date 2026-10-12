@@ -380,7 +380,10 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             if (starImportRegex.test(currentCode)) {
               currentCode = currentCode.replace(starImportRegex, (_full, mem) => {
                 repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback namespace declaration: ${mem}`);
-                return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                if (mem === "ts") {
+                  return `import * as ts from 'typescript';\n`;
+                }
+                return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n// @ts-ignore\nexport namespace ${mem} { export type Node = any; export type SourceFile = any; export type Type = any; export type Symbol = any; }\n`;
               });
             }
           } else if (modPath === "vue") {

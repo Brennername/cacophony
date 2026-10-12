@@ -1126,6 +1126,33 @@
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t74.7.2 Rehabilitation [2026-10-12T04:34:34.206Z]
+- **Parent Task**: T74.7.2: Add POST /api/admin/backup endpoint triggering on-demand database snapshot with  (`taskcade-t74.7.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.7.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.7.2: Add POST /api/admin/backup endpoint triggering on-demand database snapshot with  [Role: type_specialist] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+  - [ ] `taskcade-t74.7.2.2`: [Rehab 2/2] Implementation & Test Verification: T74.7.2: Add POST /api/admin/backup endpoint triggering on-demand database snapshot with  [Role: implementer] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+
+
+### Task taskcade-t72.3.4 Rehabilitation [2026-10-12T02:54:56.349Z]
+- **Parent Task**: T72.3.4: Write unit tests verifying that agents calling the MCP tool successfully registe (`taskcade-t72.3.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.3.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T72.3.4: Write unit tests verifying that agents calling the MCP tool successfully registe [Role: type_specialist] [Files: packages/tools/src/tests/EnqueueTaskcadeTaskTool.test.ts]
+  - [ ] `taskcade-t72.3.4.2`: [Rehab 2/2] Implementation & Test Verification: T72.3.4: Write unit tests verifying that agents calling the MCP tool successfully registe [Role: implementer] [Files: packages/tools/src/tests/EnqueueTaskcadeTaskTool.test.ts]
+
+
+### Task taskcade-t74.2.3 Rehabilitation [2026-10-12T01:45:18.731Z]
+- **Parent Task**: T74.2.3: Implement read-only role (VIEWER) for dashboard access without task mutation cap (`taskcade-t74.2.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 1800000ms for model 'qwen2.5-coder:7b-instruct-q4_K_M'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.2.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.2.3: Implement read-only role (VIEWER) for dashboard access without task mutation cap [Role: type_specialist] [Files: packages/engine/src/auth/AuthService.ts]
+  - [ ] `taskcade-t74.2.3.2`: [Rehab 2/2] Implementation & Test Verification: T74.2.3: Implement read-only role (VIEWER) for dashboard access without task mutation cap [Role: implementer] [Files: packages/engine/src/auth/AuthService.ts]
+
+
 ### Task taskcade-t67.2.1 Rehabilitation [2026-10-11T22:16:48.563Z]
 - **Parent Task**: T67.2.1: Add parameterized SSE route GET /api/stream/:taskId in CacophonyHttpServer allow (`taskcade-t67.2.1`)
 - **Failure Count**: 4
