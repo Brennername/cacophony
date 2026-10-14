@@ -34,6 +34,7 @@ services:
       - GITEA_OAUTH_REDIRECT_URI=${GITEA_OAUTH_REDIRECT_URI:-http://localhost:24072/auth/callback}
       - SYSFS_DRM_PATH=/host/sys/class/drm
       - SYSFS_HWMON_PATH=/host/sys/class/hwmon
+      - OOM_GUARD_THRESHOLD_MB=${OOM_GUARD_THRESHOLD_MB:-1536}
       - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

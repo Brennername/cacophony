@@ -23,7 +23,14 @@ export class OomPredictiveGuard {
     meminfoPath?: string;
     onPressureWarning?: (report: SystemMemoryPressureReport) => void;
   }) {
-    this.thresholdBytes = options?.thresholdBytes ?? OomPredictiveGuard.DEFAULT_THRESHOLD_BYTES;
+    let defaultThreshold = OomPredictiveGuard.DEFAULT_THRESHOLD_BYTES;
+    if (process.env.OOM_GUARD_THRESHOLD_MB) {
+      const parsed = parseInt(process.env.OOM_GUARD_THRESHOLD_MB, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        defaultThreshold = parsed * 1024 * 1024;
+      }
+    }
+    this.thresholdBytes = options?.thresholdBytes ?? defaultThreshold;
     this.meminfoPath = options?.meminfoPath ?? "/proc/meminfo";
     this.onPressureWarning = options?.onPressureWarning;
   }

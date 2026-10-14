@@ -615,18 +615,34 @@ export class TaskScheduler implements IModelPredictor {
    * @param modelName - Specific model identifier to evaluate.
    * @returns boolean true if dispatch is allowed, false if deferred due to constrained VRAM headroom.
    */
-  public async canDispatch(
+  /**
+   * Evaluates whether a task can be safely dispatched given current host memory and VRAM headroom (T68.2.3, T68.6.2).
+   *
+   * @param task - Candidate task record.
+   * @param modelName - Specific model identifier to evaluate.
+   * @returns Detailed eligibility decision with explanation if dispatch is deferred.
+   */
+  public async evaluateDispatchEligibility(
     task: TaskRecord,
     modelName?: string,
-  ): Promise<boolean> {
+  ): Promise<{ allowed: boolean; reason?: string }> {
     const model = modelName ?? task.modelAssigned ?? "qwen2.5-coder:7b";
     const requiredMb = this.vramCatalog.estimateTotalVramMb(model, 4096);
 
-    // If predictive OOM guard detects severe host memory pressure (< 1.5 GB available), defer dispatch (T68.6.2)
+    // If predictive OOM guard detects severe host memory pressure, defer dispatch (T68.6.2)
     if (this.oomGuard) {
       const pressure = this.oomGuard.evaluateSystemMemoryPressure();
       if (pressure.isUnderPressure) {
-        return false;
+        const availableMb = Math.round(
+          pressure.memAvailableBytes / (1024 * 1024),
+        );
+        const thresholdMb = Math.round(
+          pressure.thresholdBytes / (1024 * 1024),
+        );
+        return {
+          allowed: false,
+          reason: `host memory pressure (${availableMb} MB available < threshold ${thresholdMb} MB)`,
+        };
       }
     }
 
@@ -640,14 +656,21 @@ export class TaskScheduler implements IModelPredictor {
         priority: task.priority,
       });
       if (!placement.isLocal) {
-        return true;
+        return { allowed: true };
       }
     }
 
     // If telemetry provider implements checkVramHeadroom, delegate directly (T68.2.1, T68.2.2)
     if (typeof this.telemetryProvider.checkVramHeadroom === "function") {
       const result = this.telemetryProvider.checkVramHeadroom(requiredMb);
-      return typeof result === "boolean" ? result : await result;
+      const allowed = typeof result === "boolean" ? result : await result;
+      if (!allowed) {
+        return {
+          allowed: false,
+          reason: `insufficient VRAM headroom for ${model} (${requiredMb} MB required)`,
+        };
+      }
+      return { allowed: true };
     }
 
     // Fallback to getVramMetrics if supported
@@ -656,7 +679,13 @@ export class TaskScheduler implements IModelPredictor {
         const metrics = await this.telemetryProvider.getVramMetrics();
         if (metrics.totalBytes > 512 * 1024 * 1024) {
           const freeMb = Math.floor(metrics.freeBytes / (1024 * 1024));
-          return freeMb >= requiredMb;
+          if (freeMb < requiredMb) {
+            return {
+              allowed: false,
+              reason: `insufficient VRAM headroom (${freeMb} MB free < ${requiredMb} MB required)`,
+            };
+          }
+          return { allowed: true };
         }
       } catch {
         // Continue to sample() fallback
@@ -672,14 +701,36 @@ export class TaskScheduler implements IModelPredictor {
           sample.vramTotalBytes - sample.vramUsedBytes,
         );
         const freeMb = Math.floor(freeBytes / (1024 * 1024));
-        return freeMb >= requiredMb;
+        if (freeMb < requiredMb) {
+          return {
+            allowed: false,
+            reason: `insufficient VRAM headroom (${freeMb} MB free < ${requiredMb} MB required)`,
+          };
+        }
+        return { allowed: true };
       }
     } catch {
       // Allow dispatch if sampling fails in non-hardware environment
-      return true;
+      return { allowed: true };
     }
 
-    return true;
+    return { allowed: true };
+  }
+
+  /**
+   * Checks whether a task can be safely dispatched given current VRAM headroom (T68.2.3).
+   * Defers dispatching tasks if estimated VRAM requirement + SAFETY_MARGIN exceeds free VRAM.
+   *
+   * @param task - Candidate task record.
+   * @param modelName - Specific model identifier to evaluate.
+   * @returns boolean true if dispatch is allowed, false if deferred due to constrained VRAM headroom.
+   */
+  public async canDispatch(
+    task: TaskRecord,
+    modelName?: string,
+  ): Promise<boolean> {
+    const decision = await this.evaluateDispatchEligibility(task, modelName);
+    return decision.allowed;
   }
 
   /**
@@ -887,18 +938,22 @@ export class TaskScheduler implements IModelPredictor {
           for (const t of pending) {
             const normId = t.id.toLowerCase();
             const shortId = normId.replace("taskcade-", "");
-            const titleCodeMatch = t.title.match(/\b(T\d+(?:\.\d+)+)\b/i);
-            const taskCode = titleCodeMatch ? titleCodeMatch[1]!.toLowerCase() : null;
-            const baseTaskCode = taskCode ? taskCode.split(".").slice(0, 3).join(".") : null;
-            const idBaseMatch = shortId.match(/^(t\d+\.\d+\.\d+)/);
-            const idBaseCode = idBaseMatch ? idBaseMatch[1] : null;
+            // Subtasks (rehab tasks or decomposed units) are created to resolve failed work
+            // and must only be considered complete if their own specific ID is in completedIds,
+            // never by matching a parent task code prefix.
+            const isSubtask = Boolean(t.parentTaskId) || t.title.startsWith("[Rehab");
 
-            const isCompleted =
+            let isCompleted =
               completedIds.has(normId) ||
-              completedIds.has(shortId) ||
-              (taskCode && completedIds.has(taskCode)) ||
-              (baseTaskCode && completedIds.has(baseTaskCode)) ||
-              (idBaseCode && completedIds.has(idBaseCode));
+              completedIds.has(shortId);
+
+            if (!isCompleted && !isSubtask) {
+              const codeMatch = t.title.match(/^(T\d+\.\d+\.\d+):/i);
+              const taskCode = codeMatch ? codeMatch[1]!.toLowerCase() : null;
+              if (taskCode && completedIds.has(taskCode)) {
+                isCompleted = true;
+              }
+            }
 
             if (isCompleted) {
               await this.taskRepo.updateStatus(
@@ -991,20 +1046,28 @@ export class TaskScheduler implements IModelPredictor {
       let targetTask: TaskRecord | null = null;
       let selectedModel: string | null = null;
 
-      // Evaluate tasks in affinity order, verifying VRAM headroom per candidate (T68.2.3)
+      // Evaluate tasks in affinity order, verifying VRAM headroom and system pressure per candidate (T68.2.3, T68.6.2)
       for (const candidateTask of sorted) {
         const candidateModel = await this.selectCandidateModel(
           candidateTask,
           activeVramModel,
         );
-        if (await this.canDispatch(candidateTask, candidateModel)) {
+        const eligibility = await this.evaluateDispatchEligibility(
+          candidateTask,
+          candidateModel,
+        );
+        if (eligibility.allowed) {
           targetTask = candidateTask;
           selectedModel = candidateModel;
           break;
         } else {
           this.logger.warn(
-            `Deferring candidate task ${candidateTask.id} (${candidateModel}): insufficient VRAM headroom`,
-            { taskId: candidateTask.id, candidateModel },
+            `Deferring candidate task ${candidateTask.id} (${candidateModel}): ${eligibility.reason ?? "insufficient resources"}`,
+            {
+              taskId: candidateTask.id,
+              candidateModel,
+              reason: eligibility.reason,
+            },
           );
         }
       }
@@ -1019,16 +1082,24 @@ export class TaskScheduler implements IModelPredictor {
           const completedIds = await this.seedLoader.getCompletedTaskIds();
           const normalizedId = targetTask.id.toLowerCase();
           const shortId = normalizedId.replace("taskcade-", "");
-          const taskCodeMatch = targetTask.title.match(/^(T\d+\.\d+\.\d+):/i);
-          const taskCode = taskCodeMatch
-            ? taskCodeMatch[1]!.toLowerCase()
-            : null;
+          const isSubtask =
+            Boolean(targetTask.parentTaskId) ||
+            targetTask.title.startsWith("[Rehab");
 
-          if (
-            completedIds.has(normalizedId) ||
-            completedIds.has(shortId) ||
-            (taskCode && completedIds.has(taskCode))
-          ) {
+          let isCompleted =
+            completedIds.has(normalizedId) || completedIds.has(shortId);
+
+          if (!isCompleted && !isSubtask) {
+            const taskCodeMatch = targetTask.title.match(/^(T\d+\.\d+\.\d+):/i);
+            const taskCode = taskCodeMatch
+              ? taskCodeMatch[1]!.toLowerCase()
+              : null;
+            if (taskCode && completedIds.has(taskCode)) {
+              isCompleted = true;
+            }
+          }
+
+          if (isCompleted) {
             await this.taskRepo.updateStatus(
               targetTask.id,
               "COMPLETED",

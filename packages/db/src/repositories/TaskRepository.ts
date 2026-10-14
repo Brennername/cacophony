@@ -191,9 +191,13 @@ export class TaskRepository {
     if (existingById) {
       return { created: false, task: existingById };
     }
-    const existingByTitle = await this.getByTitle(task.title);
-    if (existingByTitle) {
-      return { created: false, task: existingByTitle };
+    // Only de-duplicate by title for top-level tasks without a parentTaskId,
+    // to prevent subtasks from being blocked by title collisions with past rehab runs.
+    if (!task.parentTaskId) {
+      const existingByTitle = await this.getByTitle(task.title);
+      if (existingByTitle && !existingByTitle.parentTaskId) {
+        return { created: false, task: existingByTitle };
+      }
     }
     const created = await this.create(task);
     return { created: true, task: created };

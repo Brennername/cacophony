@@ -82,13 +82,17 @@ export class TaskcadeSeedLoader {
       try {
         const text = await fs.readFile(filePath, "utf-8");
         const lines = text.split("\n");
-        const itemRegex = /^[\s]*-[\s]+\[([xX])\][\s]+([A-Za-z0-9_.-]+):/;
+        const itemRegex = /^[\s]*-[\s]+\[([xX])\][\s]+`?([A-Za-z0-9_.-]+)`?:/;
         for (const line of lines) {
           const match = line.match(itemRegex);
           if (match && match[2]) {
             const rawCode = match[2].trim().toLowerCase();
             completedSet.add(rawCode);
-            completedSet.add(`taskcade-${rawCode}`);
+            if (!rawCode.startsWith("taskcade-")) {
+              completedSet.add(`taskcade-${rawCode}`);
+            } else {
+              completedSet.add(rawCode.replace(/^taskcade-/, ""));
+            }
           }
         }
       } catch {
@@ -170,7 +174,7 @@ export class TaskcadeSeedLoader {
     let currentPhase = "General";
     // Regex matching: - [ ] T46.1.1: Title description... [File: ...] [Test: ...]
     const itemRegex =
-      /^[\s]*-[\s]+\[([ xX])\][\s]+([A-Za-z0-9_.-]+):[\s]+(.+)$/;
+      /^[\s]*-[\s]+\[([ xX])\][\s]+`?([A-Za-z0-9_.-]+)`?:[\s]+(.+)$/;
     const phaseRegex = /^##[\s]+(Phase[\s]+[0-9]+:[\s]+[^\n\r]+)$/i;
 
     for (const line of lines) {
@@ -341,7 +345,10 @@ export class TaskcadeSeedLoader {
         priority = "P2";
       }
 
-      const taskId = `taskcade-${taskCode.toLowerCase()}`;
+      const lowerCode = taskCode.toLowerCase();
+      const taskId = lowerCode.startsWith("taskcade-")
+        ? lowerCode
+        : `taskcade-${lowerCode}`;
 
       items.push({
         taskId,

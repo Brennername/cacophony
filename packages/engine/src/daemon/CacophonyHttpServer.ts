@@ -1171,18 +1171,20 @@ export class CacophonyHttpServer {
         // Check if task is already completed in docs/taskcade.md or docs/taskcade-history.md
         const normalizedId = task.id.toLowerCase();
         const shortId = normalizedId.replace("taskcade-", "");
-        const titleCodeMatch = task.title.match(/\b(T\d+(?:\.\d+)+)\b/i);
-        const taskCode = titleCodeMatch ? titleCodeMatch[1]!.toLowerCase() : null;
-        const baseTaskCode = taskCode ? taskCode.split(".").slice(0, 3).join(".") : null;
-        const idBaseMatch = shortId.match(/^(t\d+\.\d+\.\d+)/);
-        const idBaseCode = idBaseMatch ? idBaseMatch[1] : null;
 
-        const isCompleted =
+        const isSubtask = Boolean(task.parentTaskId) || task.title.startsWith("[Rehab");
+        let isCompleted =
           completedTaskIds.has(normalizedId) ||
-          completedTaskIds.has(shortId) ||
-          (taskCode && completedTaskIds.has(taskCode)) ||
-          (baseTaskCode && completedTaskIds.has(baseTaskCode)) ||
-          (idBaseCode && completedTaskIds.has(idBaseCode));
+          completedTaskIds.has(shortId);
+
+        let taskCode: string | null = null;
+        if (!isCompleted && !isSubtask) {
+          const taskCodeMatch = task.title.match(/^(T\d+\.\d+\.\d+):/i);
+          taskCode = taskCodeMatch ? taskCodeMatch[1]!.toLowerCase() : null;
+          if (taskCode && completedTaskIds.has(taskCode)) {
+            isCompleted = true;
+          }
+        }
 
         if (isCompleted) {
           await taskRepo.updateStatus(
@@ -1196,7 +1198,7 @@ export class CacophonyHttpServer {
         }
 
         // Deduplicate: if another pending task with the same task code was already queued
-        const dedupeKey = taskCode || shortId;
+        const dedupeKey = (!isSubtask && taskCode) ? taskCode : shortId;
         if (seenTaskCodes.has(dedupeKey)) {
           await taskRepo.updateStatus(task.id, "CANCELLED");
           deduplicatedCount++;

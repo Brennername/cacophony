@@ -69,6 +69,53 @@ describe("T64.3.4: TaskRepository updateBranchAndPr & CRUD Suite", () => {
         "PR URL must be updated in database",
       );
     });
+
+    test("createIfNotExists should allow subtasks with parentTaskId even when title matches a prior task", async () => {
+      const priorTask: TaskRecord = {
+        id: "task-parent-orig",
+        title: "[Rehab 1/2] Shared Title Objective",
+        prompt: "First task with this title",
+        role: "implementer",
+        status: "FAILED",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: null,
+        focusFiles: null,
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null,
+      };
+      await taskRepo.create(priorTask);
+
+      const subtask: TaskRecord = {
+        id: "task-parent-orig.1",
+        title: "[Rehab 1/2] Shared Title Objective",
+        prompt: "Subtask with identical title to parent or another task",
+        role: "type_specialist",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: null,
+        focusFiles: null,
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null,
+        parentTaskId: "task-parent-orig",
+      };
+
+      const result = await taskRepo.createIfNotExists(subtask);
+      assert.strictEqual(result.created, true, "Subtask must be created in database");
+      assert.strictEqual(result.task.id, "task-parent-orig.1");
+
+      const inDb = await taskRepo.findById("task-parent-orig.1");
+      assert.ok(inDb, "Subtask must exist in tasks table to satisfy foreign keys");
+    });
   });
 
   describe("PGliteDriver In-Memory", () => {

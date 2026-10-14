@@ -109,4 +109,24 @@ describe("OomPredictiveGuard Suite (T68.6)", () => {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it("OomPredictiveGuard respects OOM_GUARD_THRESHOLD_MB environment override", () => {
+    const origEnv = process.env.OOM_GUARD_THRESHOLD_MB;
+    try {
+      process.env.OOM_GUARD_THRESHOLD_MB = "512";
+      const guard = new OomPredictiveGuard();
+      const report = guard.evaluateSystemMemoryPressure();
+      assert.equal(
+        report.thresholdBytes,
+        512 * 1024 * 1024,
+        "Threshold should reflect OOM_GUARD_THRESHOLD_MB (512 MB)",
+      );
+    } finally {
+      if (origEnv !== undefined) {
+        process.env.OOM_GUARD_THRESHOLD_MB = origEnv;
+      } else {
+        delete process.env.OOM_GUARD_THRESHOLD_MB;
+      }
+    }
+  });
 });
