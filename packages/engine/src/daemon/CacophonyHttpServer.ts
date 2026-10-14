@@ -1220,6 +1220,105 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4a4. REST API: POST /api/tasks/:id/retry - Immediately Retry and Requeue Failed Task (T70.4.2)
+    const taskRetryMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/retry$/);
+    if (taskRetryMatch && req.method === "POST") {
+      const taskId = taskRetryMatch[1]!;
+      const taskRepo = this.daemon.getTaskRepository();
+      const requeuedCount = await taskRepo.retryFailedTasks(taskId, true);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: true,
+          taskId,
+          requeued: requeuedCount > 0,
+          requeuedCount,
+        }),
+      );
+      return;
+    }
+
+    // 4a5. REST API: GET /api/tasks/:id/diagnostics - Detailed Post-Mortem Diagnostics (T70.4.2)
+    const taskDiagMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/diagnostics$/,
+    );
+    if (taskDiagMatch && req.method === "GET") {
+      const taskId = taskDiagMatch[1]!;
+      const diagPath = path.resolve(
+        process.cwd(),
+        ".cacophony/diagnostics",
+        `${taskId}.json`,
+      );
+
+      let diskDiagnostic: Record<string, unknown> | null = null;
+      try {
+        const raw = await fs.readFile(diagPath, "utf-8");
+        diskDiagnostic = JSON.parse(raw);
+      } catch {
+        diskDiagnostic = null;
+      }
+
+      const taskRepo = this.daemon.getTaskRepository();
+      const task = await taskRepo.getById(taskId);
+      const stageRepo = this.daemon.getStageRepository();
+      const stages = await stageRepo.getStagesForTask(taskId);
+
+      const genStage = stages.find((s) => s.stageName === "generation");
+      const scrubStage = stages.find(
+        (s) => s.stageName === "deterministic_scrub",
+      );
+      const remStage = stages.find((s) => s.stageName === "remediation");
+      const failedStage = stages.find((s) => s.stageStatus === "FAILURE");
+
+      const synthesized = {
+        taskId,
+        foundOnDisk: Boolean(diskDiagnostic),
+        loggedAt:
+          diskDiagnostic?.["loggedAt"] ||
+          task?.completedAt ||
+          task?.createdAt ||
+          new Date().toISOString(),
+        model: diskDiagnostic?.["model"] || task?.modelAssigned || "unknown",
+        testCommand:
+          diskDiagnostic?.["testCommand"] || task?.testCommand || "",
+        exitCode:
+          diskDiagnostic?.["retryExitCode"] ??
+          (task?.status === "COMPLETED" ? 0 : 1),
+        stderr:
+          (diskDiagnostic?.["retryStderr"] as string) ||
+          remStage?.logOutput ||
+          failedStage?.logOutput ||
+          "",
+        stdout: (diskDiagnostic?.["retryStdout"] as string) || "",
+        preScrubbedOutput:
+          (diskDiagnostic?.["preScrubbedOutput"] as string) ||
+          genStage?.logOutput ||
+          "",
+        scrubberDiff:
+          (diskDiagnostic?.["scrubberDiff"] as string) ||
+          task?.logSnippet ||
+          "",
+        failureReason:
+          (diskDiagnostic?.["failureReason"] as string) ||
+          remStage?.logOutput ||
+          failedStage?.logOutput ||
+          scrubStage?.logOutput ||
+          (task?.status === "FAILED"
+            ? "Task failed during autonomous pipeline execution"
+            : null),
+        stages: stages.map((s) => ({
+          name: s.stageName,
+          status: s.stageStatus,
+          durationMs: s.durationMs,
+          logOutput: s.logOutput,
+        })),
+      };
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(synthesized));
+      return;
+    }
+
     // 4b. REST API: List Historical Completed/Failed Tasks
     if (url.pathname === "/api/history" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();
@@ -2654,6 +2753,74 @@ export class CacophonyHttpServer {
           console.error("Milestone promotion failed:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to promote milestone" }));
+        }
+      });
+      return;
+    }
+
+    // 4g1. REST API: GET & PUT /api/diagnostics/config - Dynamic Telemetry & Tracing Configuration (T70.4.1)
+    if (url.pathname === "/api/diagnostics/config" && req.method === "GET") {
+      const worker = this.daemon.getWorkerPipeline();
+      const debugTaskPipeline =
+        worker?.isDebugTaskPipeline() ??
+        process.env["DEBUG_TASK_PIPELINE"] === "true";
+      const maxRetainedDiagnostics =
+        worker?.getMaxRetainedDiagnostics() ?? 100;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          debugTaskPipeline,
+          diagnosticsDir: ".cacophony/diagnostics",
+          maxRetainedDiagnostics,
+        }),
+      );
+      return;
+    }
+
+    if (url.pathname === "/api/diagnostics/config" && req.method === "PUT") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
+      req.on("end", () => {
+        try {
+          const parsed = JSON.parse(body || "{}");
+          const worker = this.daemon.getWorkerPipeline();
+          if (typeof parsed.debugTaskPipeline === "boolean") {
+            if (worker) {
+              worker.setDebugTaskPipeline(parsed.debugTaskPipeline);
+            } else {
+              process.env["DEBUG_TASK_PIPELINE"] = parsed.debugTaskPipeline
+                ? "true"
+                : "false";
+            }
+          }
+          if (
+            typeof parsed.maxRetainedDiagnostics === "number" &&
+            parsed.maxRetainedDiagnostics > 0
+          ) {
+            worker?.setMaxRetainedDiagnostics(parsed.maxRetainedDiagnostics);
+          }
+          const debugTaskPipeline =
+            worker?.isDebugTaskPipeline() ??
+            process.env["DEBUG_TASK_PIPELINE"] === "true";
+          const maxRetainedDiagnostics =
+            worker?.getMaxRetainedDiagnostics() ?? 100;
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              success: true,
+              debugTaskPipeline,
+              diagnosticsDir: ".cacophony/diagnostics",
+              maxRetainedDiagnostics,
+            }),
+          );
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({ error: "Invalid JSON configuration payload" }),
+          );
         }
       });
       return;

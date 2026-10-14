@@ -21,6 +21,16 @@
               task.status
             }}</span>
             <span class="badge role">{{ task.role }}</span>
+            @if (task.status !== 'RUNNING') {
+              <button
+                class="retry-task-header-btn touch-target"
+                [disabled]="isRetrying()"
+                (click)="retryTask(task.id)"
+                aria-label="Retry task execution"
+              >
+                {{ isRetrying() ? 'Requeuing...' : 'Retry Task' }}
+              </button>
+            }
           </div>
           <h3>{{ task.title }}</h3>
           <span class="task-id">ID: {{ task.id }}</span>
@@ -110,6 +120,13 @@
           (click)="activeTab.set('stderr')"
         >
           Test Stderr
+        </button>
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'diagnostics'"
+          (click)="activeTab.set('diagnostics')"
+        >
+          Diagnostics
         </button>
       </div>
 
@@ -411,6 +428,114 @@
             <div class="stderr-box">
               <pre class="stderr-content font-mono"><code>{{ extractTestStderr(task) }}</code></pre>
             </div>
+          </div>
+        }
+
+        <!-- 8. DEBUG DIAGNOSTICS PANEL (T70.4.2) -->
+        @if (activeTab() === 'diagnostics') {
+          <div class="debug-diagnostics-panel">
+            @if (loadingDiagnostics()) {
+              <div class="loading-state">
+                <span class="pulse-indicator"></span>
+                <span>Loading diagnostic post-mortem telemetry...</span>
+              </div>
+            } @else if (diagnosticData(); as diag) {
+              <div class="diag-header-card">
+                <div class="diag-header-left">
+                  <div class="diag-title-row">
+                    <span class="diag-source-pill" [class.disk]="diag.foundOnDisk">
+                      {{ diag.foundOnDisk ? 'Recorded Post-Mortem' : 'Synthesized Pipeline State' }}
+                    </span>
+                    <span
+                      class="diag-exit-badge"
+                      [class.success]="diag.exitCode === 0"
+                      [class.failure]="diag.exitCode !== 0"
+                    >
+                      Exit Code: {{ diag.exitCode ?? 'N/A' }}
+                    </span>
+                    @if (diag.model) {
+                      <span class="diag-model-pill font-mono">{{ diag.model }}</span>
+                    }
+                  </div>
+                  @if (diag.failureReason) {
+                    <div class="diag-failure-alert">
+                      <span class="alert-label">Failure:</span>
+                      <span class="alert-text">{{ diag.failureReason }}</span>
+                    </div>
+                  }
+                </div>
+                <div class="diag-header-actions">
+                  <button
+                    class="retry-task-btn touch-target"
+                    [disabled]="isRetrying()"
+                    (click)="retryTask(task.id)"
+                  >
+                    {{ isRetrying() ? 'Requeuing...' : 'Retry Task' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Diagnostic Grid Comparison: Pre-scrubbed LLM vs Scrubber Diff vs Stderr -->
+              <div class="diag-sections">
+                <!-- Pre-Scrubbed LLM Generation -->
+                <div class="diag-section">
+                  <div class="header-with-action">
+                    <h4 class="section-title">Pre-Scrubbed LLM Generation</h4>
+                    @if (diag.preScrubbedOutput) {
+                      <button
+                        class="copy-action-btn"
+                        (click)="copyText(diag.preScrubbedOutput, 'Pre-scrubbed output copied!')"
+                      >
+                        Copy
+                      </button>
+                    }
+                  </div>
+                  <pre class="code-box font-mono">{{
+                    diag.preScrubbedOutput || '// No pre-scrubbed raw LLM generation available.'
+                  }}</pre>
+                </div>
+
+                <!-- Scrubber Diffs -->
+                <div class="diag-section">
+                  <div class="header-with-action">
+                    <h4 class="section-title">Scrubber Diff / Transformation</h4>
+                    @if (diag.scrubberDiff) {
+                      <button
+                        class="copy-action-btn"
+                        (click)="copyText(diag.scrubberDiff, 'Scrubber diff copied!')"
+                      >
+                        Copy
+                      </button>
+                    }
+                  </div>
+                  <pre class="code-box diff-box font-mono">{{
+                    diag.scrubberDiff || '// No scrubber diff alterations recorded.'
+                  }}</pre>
+                </div>
+
+                <!-- Test Runner Stderr -->
+                <div class="diag-section">
+                  <div class="header-with-action">
+                    <h4 class="section-title">Test Runner Stderr</h4>
+                    @if (diag.stderr) {
+                      <button
+                        class="copy-action-btn"
+                        (click)="copyText(diag.stderr, 'Test stderr copied!')"
+                      >
+                        Copy
+                      </button>
+                    }
+                  </div>
+                  <pre class="code-box stderr-box font-mono">{{
+                    diag.stderr || '// No runner stderr captured.'
+                  }}</pre>
+                </div>
+              </div>
+            } @else {
+              <div class="empty-state">
+                <p>No diagnostic telemetry recorded for this task.</p>
+              </div>
+            }
           </div>
         }
       </div>

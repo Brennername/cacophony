@@ -261,4 +261,78 @@ describe('TaskDetailModalComponent', () => {
     comp.onBackdropClick(mockBackdropClick);
     expect(store.selectedTask()).toBeNull();
   });
+
+  it('renders debug-diagnostics-panel with post-mortem failure telemetry and handles retry', async () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    store.selectedTask.set({
+      id: 'task-diag-test',
+      title: 'Diagnostic Test Task',
+      status: 'FAILED',
+      priority: 'P0',
+      role: 'implementer',
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+
+    // Switch to diagnostics tab
+    comp.activeTab.set('diagnostics');
+    fixture.detectChanges();
+    expect(comp.activeTab()).toBe('diagnostics');
+
+    // Supply diagnostic post-mortem data
+    comp.diagnosticData.set({
+      taskId: 'task-diag-test',
+      foundOnDisk: true,
+      loggedAt: new Date().toISOString(),
+      model: 'qwen2.5-coder:7b',
+      testCommand: 'npm test',
+      exitCode: 1,
+      stderr: 'FAIL: Expected 42 but received undefined',
+      preScrubbedOutput: 'function computeAnswer() { return undefined; }',
+      scrubberDiff: '--- computeAnswer\n+++ computeAnswer',
+      failureReason: 'Test execution failed verification gates',
+    });
+    comp.loadingDiagnostics.set(false);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const diagPanel = compiled.querySelector('.debug-diagnostics-panel');
+    expect(diagPanel).not.toBeNull();
+
+    const titleRow = compiled.querySelector('.diag-title-row');
+    expect(titleRow?.textContent).toContain('Recorded Post-Mortem');
+    expect(titleRow?.textContent).toContain('Exit Code: 1');
+
+    const failureAlert = compiled.querySelector('.diag-failure-alert');
+    expect(failureAlert?.textContent).toContain('Test execution failed verification gates');
+
+    const codeBoxes = compiled.querySelectorAll('.code-box');
+    expect(codeBoxes.length).toBe(3); // pre-scrubbed, diff, stderr
+
+    // Mock global fetch for retry
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (typeof input === 'string' && input.includes('/retry')) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, taskId: 'task-diag-test', requeued: true }),
+        } as Response;
+      }
+      return origFetch(input, init);
+    };
+
+    try {
+      await comp.retryTask('task-diag-test');
+      expect(comp.copiedMessage()).toContain('re-queued');
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
 });

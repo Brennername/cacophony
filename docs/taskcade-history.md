@@ -3032,9 +3032,9 @@ _Completed & Verified in Commit: HEAD_
 
 ---
 
-## Archived Phase 70: Schematic Code Generators, Import Scaffolding & Zero-Boilerplate Generation Architecture (T70.1, T70.2 & T70.3)
+## Archived Phase 70: Schematic Code Generators, Import Scaffolding & Zero-Boilerplate Generation Architecture
 
-_Completed & Verified in Commit: `ffae736` and `e24e239`_
+_Completed & Verified in Commits: `ffae736`, `e24e239`, and current_
 
 ### T70.1: Deterministic AST Code Skeleton & Scaffold Generator
 
@@ -3056,5 +3056,13 @@ _Completed & Verified in Commit: `ffae736` and `e24e239`_
 - [x] T70.3.2: Verify slot-fill output passes AST validation (AstValidator) before merging into target skeleton file on disk. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: mergeSlotFill] [Test: npm test -- packages/engine/src/tests/schematic_pipeline_integration.test.ts]
 - [x] T70.3.3: Implement schema-level fallback: if a model fails slot-fill verification 2 consecutive times, escalate to frontier fallback model with full schematic context. [File: packages/engine/src/inference/FrontierFallbackRouter.ts] [Method: routeSchematicFallback] [Test: npm test -- packages/engine/src/tests/frontier_fallback.test.ts]
 - [x] T70.3.4: Write integration tests verifying end-to-end task execution with schematic code scaffolding and slot-fill synthesis. [File: packages/engine/src/tests/schematic_pipeline_integration.test.ts] [Test: npm test -- packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+
+### T70.4: Dynamic Telemetry & Diagnostic Tracing Configuration
+
+- [x] T70.4.1: Expose GET /api/diagnostics/config and PUT /api/diagnostics/config in CacophonyHttpServer to toggle debug tracing (DEBUG_TASK_PIPELINE) at runtime without restarting daemon. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: /api/diagnostics/config] [Test: npm test -- packages/engine/src/tests/diagnostics_config.test.ts]
+- [x] T70.4.2: Add task-level retry button and debug inspector in frontend TaskDetailModalComponent showing pre-scrubbed LLM output, scrubber diffs, and test runner stderr. [File: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts] [Template: debug-diagnostics-panel] [Test: npm test --workspace=@cacophony/frontend]
+- [x] T70.4.3: Implement rolling eviction of .cacophony/diagnostics/ keeping maximum 100 recent failed task diagnostic dumps to prevent disk bloat. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: cleanOldDiagnostics] [Test: npm test -- packages/engine/src/tests/diagnostics_config.test.ts]
+- [x] T70.4.4: Write unit and frontend tests validating dynamic diagnostic toggling and failure post-mortem rendering. [File: packages/engine/src/tests/diagnostics_config.test.ts] [Test: npm test -- packages/engine/src/tests/diagnostics_config.test.ts]
+
 
 

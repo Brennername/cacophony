@@ -82,6 +82,9 @@ export class CacophonyDaemon {
     | undefined;
   private fleetHealthMonitor?:
     import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined;
+  private workerPipeline?:
+    | import("../scheduler/AutonomousWorkerPipeline.js").AutonomousWorkerPipeline
+    | undefined;
   private signalHandler?: (() => Promise<void>) | undefined;
   private autoTuneTimer: NodeJS.Timeout | null = null;
   private planningTimer: NodeJS.Timeout | null = null;
@@ -345,6 +348,7 @@ export class CacophonyDaemon {
       repoName: process.env.GIT_REPO_NAME || "cacophony",
       gitRemote: process.env.GIT_REMOTE || "gitea",
     });
+    this.workerPipeline = worker;
 
     this.scheduler.setExecutionHandler(async (groomed, model, signal) => {
       if (isDemoMode && this.telemetryPoller) {
@@ -695,6 +699,12 @@ export class CacophonyDaemon {
   public getFleetHealthMonitor():
     import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined {
     return this.fleetHealthMonitor;
+  }
+
+  public getWorkerPipeline():
+    | import("../scheduler/AutonomousWorkerPipeline.js").AutonomousWorkerPipeline
+    | undefined {
+    return this.workerPipeline;
   }
 
   /**

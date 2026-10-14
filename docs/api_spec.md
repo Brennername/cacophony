@@ -129,6 +129,44 @@ Returns structured automated PR review verdict, SOLID compliance score, and auto
 }
 ```
 
+### POST `/api/tasks/:id/retry`
+
+Immediately retries and requeues a failed or pending task into the active execution queue, bypassing retry count quarantines (`force=true`).
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "taskId": "task-101",
+  "requeued": true,
+  "requeuedCount": 1
+}
+```
+
+### GET `/api/tasks/:id/diagnostics`
+
+Retrieves detailed failure post-mortem diagnostics from `.cacophony/diagnostics/<id>.json` or synthesized stage telemetry, including pre-scrubbed LLM generation, scrubber unified diffs, and test runner stderr.
+
+**Response:** `200 OK`
+
+```json
+{
+  "taskId": "task-101",
+  "foundOnDisk": true,
+  "loggedAt": "2026-10-14T05:00:00.000Z",
+  "model": "qwen2.5-coder:7b",
+  "testCommand": "npm test",
+  "exitCode": 1,
+  "stderr": "FAIL packages/engine/test.ts",
+  "stdout": "",
+  "preScrubbedOutput": "export class Foo {}",
+  "scrubberDiff": "--- original\n+++ scrubbed",
+  "failureReason": "Test assertion failure in test_execution stage",
+  "stages": []
+}
+```
+
 ### POST `/api/tasks/decompose-spec`
 
 Ingests specification documents (`docs/spec.md`, `README.md`, OpenAPI JSON) and autonomously derives topological task sequences.
@@ -342,6 +380,44 @@ Returns shadow git micro-checkpoints for undo/redo state tracking.
 ### GET `/api/diagnostics`
 
 Returns live TypeScript and language server compiler diagnostics.
+
+### GET `/api/diagnostics/config`
+
+Returns dynamic telemetry and deep task pipeline diagnostic tracing configuration without requiring daemon restarts.
+
+**Response:** `200 OK`
+
+```json
+{
+  "debugTaskPipeline": true,
+  "diagnosticsDir": ".cacophony/diagnostics",
+  "maxRetainedDiagnostics": 100
+}
+```
+
+### PUT `/api/diagnostics/config`
+
+Dynamically configures task pipeline diagnostic tracing and rolling eviction cache limits at runtime.
+
+**Request Body:**
+
+```json
+{
+  "debugTaskPipeline": true,
+  "maxRetainedDiagnostics": 100
+}
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "debugTaskPipeline": true,
+  "diagnosticsDir": ".cacophony/diagnostics",
+  "maxRetainedDiagnostics": 100
+}
+```
 
 ### GET `/api/hardware/tools`
 

@@ -2,7 +2,35 @@ import { Component, inject, signal, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
 
-export type TaskModalTab = 'overview' | 'stages' | 'diffs' | 'stream' | 'cognitive' | 'reviews' | 'stderr';
+export type TaskModalTab =
+  | 'overview'
+  | 'stages'
+  | 'diffs'
+  | 'stream'
+  | 'cognitive'
+  | 'reviews'
+  | 'stderr'
+  | 'diagnostics';
+
+export interface TaskDiagnosticData {
+  readonly taskId: string;
+  readonly foundOnDisk: boolean;
+  readonly loggedAt?: string;
+  readonly model?: string;
+  readonly testCommand?: string;
+  readonly exitCode?: number;
+  readonly stderr?: string;
+  readonly stdout?: string;
+  readonly preScrubbedOutput?: string;
+  readonly scrubberDiff?: string;
+  readonly failureReason?: string | null;
+  readonly stages?: Array<{
+    readonly name: string;
+    readonly status: string;
+    readonly durationMs?: number;
+    readonly logOutput?: string;
+  }>;
+}
 
 export interface PrReviewData {
   readonly taskId: string;
@@ -58,6 +86,11 @@ export class TaskDetailModalComponent {
   public readonly prReviewData = signal<PrReviewData | null>(null);
   public readonly loadingReview = signal<boolean>(false);
 
+  // Post-mortem diagnostic state (T70.4.2)
+  public readonly diagnosticData = signal<TaskDiagnosticData | null>(null);
+  public readonly loadingDiagnostics = signal<boolean>(false);
+  public readonly isRetrying = signal<boolean>(false);
+
   // Cognitive trace and distilled opinion state
   public readonly opinionData = signal<{
     taskId: string;
@@ -81,6 +114,7 @@ export class TaskDetailModalComponent {
         this.taskStreamBuffer.set(null);
         this.opinionData.set(null);
         this.prReviewData.set(null);
+        this.diagnosticData.set(null);
         return;
       }
 
@@ -93,7 +127,48 @@ export class TaskDetailModalComponent {
 
       void this.fetchOpinion(task.id);
       void this.fetchPrReview(task.id);
+      void this.fetchDiagnostics(task.id);
     });
+  }
+
+  public async fetchDiagnostics(taskId: string): Promise<void> {
+    this.loadingDiagnostics.set(true);
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/diagnostics`);
+      if (res.ok) {
+        const data = (await res.json()) as TaskDiagnosticData;
+        this.diagnosticData.set(data);
+      } else {
+        this.diagnosticData.set(null);
+      }
+    } catch {
+      this.diagnosticData.set(null);
+    } finally {
+      this.loadingDiagnostics.set(false);
+    }
+  }
+
+  public async retryTask(taskId: string): Promise<void> {
+    if (this.isRetrying()) return;
+    this.isRetrying.set(true);
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/retry`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        this.copiedMessage.set('Task re-queued for execution!');
+        setTimeout(() => this.copiedMessage.set(null), 3000);
+        await this.store.selectTask(taskId);
+      } else {
+        this.copiedMessage.set('Failed to re-queue task');
+        setTimeout(() => this.copiedMessage.set(null), 3000);
+      }
+    } catch {
+      this.copiedMessage.set('Network error re-queuing task');
+      setTimeout(() => this.copiedMessage.set(null), 3000);
+    } finally {
+      this.isRetrying.set(false);
+    }
   }
 
   public async fetchPrReview(taskId: string): Promise<void> {

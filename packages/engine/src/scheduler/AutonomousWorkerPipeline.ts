@@ -110,8 +110,42 @@ export class AutonomousWorkerPipeline {
   private readonly maxRemediationAttempts: number;
   private readonly modelHealthRepo?: ModelHealthRepository | undefined;
   private readonly diagnosticPreFlightChecker: DiagnosticPreFlightChecker;
+  private debugTaskPipeline: boolean;
+  private maxRetainedDiagnostics: number = 100;
+
+  /**
+   * Checks whether deep task pipeline diagnostic tracing is enabled (T70.4.1).
+   */
+  public isDebugTaskPipeline(): boolean {
+    return this.debugTaskPipeline || process.env["DEBUG_TASK_PIPELINE"] === "true";
+  }
+
+  /**
+   * Toggles dynamic task pipeline diagnostic tracing at runtime (T70.4.1).
+   */
+  public setDebugTaskPipeline(enabled: boolean): void {
+    this.debugTaskPipeline = enabled;
+    process.env["DEBUG_TASK_PIPELINE"] = enabled ? "true" : "false";
+  }
+
+  /**
+   * Returns the maximum retained diagnostic dumps threshold (T70.4.3).
+   */
+  public getMaxRetainedDiagnostics(): number {
+    return this.maxRetainedDiagnostics;
+  }
+
+  /**
+   * Configures the maximum retained diagnostic dumps threshold (T70.4.3).
+   */
+  public setMaxRetainedDiagnostics(limit: number): void {
+    if (limit > 0) {
+      this.maxRetainedDiagnostics = limit;
+    }
+  }
 
   constructor(options: AutonomousWorkerPipelineOptions) {
+    this.debugTaskPipeline = process.env["DEBUG_TASK_PIPELINE"] === "true";
     this.remediationPromptFormatter = new RemediationPromptFormatter();
     this.workspaceRoot = options.workspaceRoot;
     this.microModelToolRouter =
@@ -2088,12 +2122,13 @@ export class AutonomousWorkerPipeline {
 
   /**
    * Writes extended diagnostic telemetry to .cacophony/diagnostics/<taskId>.json when enabled.
+   * Dispatches rolling eviction to maintain retention threshold (T70.4.3).
    */
-  private async logDiagnostic(
+  public async logDiagnostic(
     taskId: string,
     payload: Record<string, unknown>,
   ): Promise<void> {
-    const isDebug = process.env["DEBUG_TASK_PIPELINE"] === "true";
+    const isDebug = this.isDebugTaskPipeline();
     if (
       !isDebug &&
       !(payload["prompt"] as string)?.includes("@cacophony-debug")
@@ -2107,9 +2142,75 @@ export class AutonomousWorkerPipeline {
       );
       await fs.mkdir(diagDir, { recursive: true });
       const diagFile = path.resolve(diagDir, `${taskId}.json`);
-      await fs.writeFile(diagFile, JSON.stringify(payload, null, 2), "utf-8");
+      const enrichedPayload = {
+        ...payload,
+        loggedAt: new Date().toISOString(),
+      };
+      await fs.writeFile(
+        diagFile,
+        JSON.stringify(enrichedPayload, null, 2),
+        "utf-8",
+      );
+      await this.cleanOldDiagnostics(this.maxRetainedDiagnostics);
     } catch {
       // non-fatal
+    }
+  }
+
+  /**
+   * Rolling eviction of .cacophony/diagnostics/ keeping maximum limit (default 100)
+   * recent failed task diagnostic dumps to prevent disk bloat (T70.4.3).
+   * Reproducible cache files are sorted by mtime descending and pruned in FIFO order.
+   */
+  public async cleanOldDiagnostics(
+    limit: number = this.maxRetainedDiagnostics,
+  ): Promise<number> {
+    try {
+      const diagDir = path.resolve(
+        this.workspaceRoot,
+        ".cacophony/diagnostics",
+      );
+      let entries: string[] = [];
+      try {
+        entries = await fs.readdir(diagDir);
+      } catch {
+        return 0;
+      }
+
+      const jsonFiles = entries.filter((f) => f.endsWith(".json"));
+      if (jsonFiles.length <= limit) {
+        return 0;
+      }
+
+      const fileStats: Array<{ fullPath: string; mtimeMs: number }> = [];
+      for (const f of jsonFiles) {
+        const fullPath = path.resolve(diagDir, f);
+        try {
+          const stat = await fs.stat(fullPath);
+          fileStats.push({ fullPath, mtimeMs: stat.mtimeMs });
+        } catch {
+          // Ignore unreadable entries
+        }
+      }
+
+      // Sort newest to oldest
+      fileStats.sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+      // Identify files exceeding the retention limit
+      const toEvict = fileStats.slice(limit);
+      let evictedCount = 0;
+      for (const item of toEvict) {
+        try {
+          await fs.unlink(item.fullPath);
+          evictedCount++;
+        } catch {
+          // non-fatal
+        }
+      }
+
+      return evictedCount;
+    } catch {
+      return 0;
     }
   }
 
