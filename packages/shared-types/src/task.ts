@@ -25,7 +25,9 @@ export const AgentRoleSchema = z.enum([
   "doc_writer",
   "type_specialist",
   "security_auditor",
-  "chore_runner"
+  "chore_runner",
+  "fixer",
+  "assessor"
 ]);
 export type AgentRole = z.infer<typeof AgentRoleSchema>;
 
@@ -43,6 +45,39 @@ export type StageName = z.infer<typeof StageNameSchema>;
 export const StageStatusSchema = z.enum(["RUNNING", "SUCCESS", "FAILURE"]);
 export type StageStatus = z.infer<typeof StageStatusSchema>;
 
+export const WorkItemLineageStageSchema = z.enum([
+  "implementation",
+  "assessment",
+  "fix",
+  "verification"
+]);
+export type WorkItemLineageStage = z.infer<typeof WorkItemLineageStageSchema>;
+
+export const WorkItemLineageSchema = z.object({
+  workItemId: z.string().min(1),
+  stage: WorkItemLineageStageSchema,
+  round: z.number().int().nonnegative().default(1),
+  headSha: z.string().nullable().optional(),
+  stageRoundKey: z.string().optional(),
+  findingIds: z.array(z.string()).optional(),
+  fixSourceTaskId: z.string().nullable().optional(),
+  parentWorkItemId: z.string().nullable().optional(),
+});
+export type WorkItemLineage = z.infer<typeof WorkItemLineageSchema>;
+
+/**
+ * Builds a deterministic stage-round key for idempotent workflow executions.
+ */
+export function buildStageRoundKey(
+  workItemId: string,
+  stage: WorkItemLineageStage | string,
+  round: number,
+  headSha?: string | null,
+): string {
+  const shortSha = headSha ? headSha.slice(0, 8) : "head";
+  return `${workItemId}:${stage}:r${round}:${shortSha}`;
+}
+
 export const TaskMetadataHintsSchema = z.object({
   modelAffinity: z.string().optional(),
   temperature: z.number().optional(),
@@ -53,6 +88,7 @@ export const TaskMetadataHintsSchema = z.object({
   stack: z.string().optional(),
   executionGuardrails: z.record(z.any()).optional(),
   customDirectives: z.record(z.string()).optional(),
+  lineage: WorkItemLineageSchema.optional(),
 });
 export type TaskMetadataHints = z.infer<typeof TaskMetadataHintsSchema>;
 
@@ -89,6 +125,14 @@ export const TaskRecordSchema = z.object({
   parentTaskId: z.string().nullable().optional(),
   rehabStatus: RehabStatusSchema.optional(),
   metadataHints: TaskMetadataHintsSchema.nullable().optional(),
+  workItemId: z.string().nullable().optional(),
+  lineageStage: WorkItemLineageStageSchema.nullable().optional(),
+  assessmentRound: z.number().int().nonnegative().optional(),
+  headSha: z.string().nullable().optional(),
+  stageRoundKey: z.string().nullable().optional(),
+  findingIds: z.array(z.string()).optional(),
+  fixSourceTaskId: z.string().nullable().optional(),
+  lineage: WorkItemLineageSchema.nullable().optional(),
 });
 
 export interface TaskRecord {
@@ -131,6 +175,22 @@ export interface TaskRecord {
   readonly rehabStatus?: RehabStatus;
 
   readonly metadataHints?: TaskMetadataHints | null | undefined;
+
+  readonly workItemId?: string | null | undefined;
+
+  readonly lineageStage?: WorkItemLineageStage | null | undefined;
+
+  readonly assessmentRound?: number | undefined;
+
+  readonly headSha?: string | null | undefined;
+
+  readonly stageRoundKey?: string | null | undefined;
+
+  readonly findingIds?: readonly string[] | undefined;
+
+  readonly fixSourceTaskId?: string | null | undefined;
+
+  readonly lineage?: WorkItemLineage | null | undefined;
 }
 
 export interface ITaskRehabilitationPlan {
@@ -169,7 +229,15 @@ export const EnqueueTaskDtoSchema = z.object({
   allowEmojis: z.boolean().optional(),
   disabledScrubbers: z.array(z.string()).optional(),
   parentTaskId: z.string().optional(),
-  metadataHints: TaskMetadataHintsSchema.optional()
+  metadataHints: TaskMetadataHintsSchema.optional(),
+  workItemId: z.string().optional(),
+  lineageStage: WorkItemLineageStageSchema.optional(),
+  assessmentRound: z.number().int().nonnegative().optional(),
+  headSha: z.string().optional(),
+  stageRoundKey: z.string().optional(),
+  findingIds: z.array(z.string()).optional(),
+  fixSourceTaskId: z.string().optional(),
+  lineage: WorkItemLineageSchema.optional(),
 });
 export type EnqueueTaskDto = z.infer<typeof EnqueueTaskDtoSchema>;
 

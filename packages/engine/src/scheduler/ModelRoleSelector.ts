@@ -8,6 +8,18 @@ export interface ModelRoleMappingConfig {
   readonly defaultModel?: string | undefined;
 }
 
+export interface ModelStatsSnapshot {
+  readonly winRate?: number | undefined;
+  readonly totalRuns?: number | undefined;
+  readonly consecutiveFailures?: number | undefined;
+}
+
+export interface ModelRoleSelectionOptions {
+  readonly authoringModel?: string | undefined;
+  readonly excludeModels?: readonly string[] | undefined;
+  readonly modelStats?: Record<string, ModelStatsSnapshot> | undefined;
+}
+
 export class ModelRoleSelector {
   private readonly choreModels: readonly string[];
   private readonly architectModels: readonly string[];
@@ -46,9 +58,31 @@ export class ModelRoleSelector {
   public selectModelForRole(
     role: AgentRole,
     availableModels: readonly string[],
+    options?: ModelRoleSelectionOptions,
   ): string {
     if (availableModels.length === 0) {
       return this.defaultModel;
+    }
+
+    // Filter out authoring and excluded models to ensure independent review (T88.2.1)
+    const exclusions = new Set<string>(options?.excludeModels ?? []);
+    if (options?.authoringModel) {
+      exclusions.add(options.authoringModel);
+      // Normalize model name (without tag suffix if applicable)
+      const baseAuthor = options.authoringModel.split(":")[0];
+      if (baseAuthor) exclusions.add(baseAuthor);
+    }
+
+    let candidates = availableModels.filter(
+      (m) =>
+        !exclusions.has(m) &&
+        !exclusions.has(m.split(":")[0] ?? "") &&
+        (options?.authoringModel ? !m.startsWith(options.authoringModel) && !options.authoringModel.startsWith(m) : true),
+    );
+
+    // Fall back to all available models if exclusion filtered everything out
+    if (candidates.length === 0) {
+      candidates = [...availableModels];
     }
 
     let preferredList: readonly string[];
@@ -62,9 +96,11 @@ export class ModelRoleSelector {
         preferredList = this.architectModels;
         break;
       case "reviewer":
+      case "assessor":
       case "security_auditor":
         preferredList = this.reviewerModels;
         break;
+      case "fixer":
       case "implementer":
       case "test_engineer":
       case "type_specialist":
@@ -73,8 +109,39 @@ export class ModelRoleSelector {
         break;
     }
 
+    // Factor in win rate, sample confidence, and consecutive failures (T88.2.4)
+    if (options?.modelStats && Object.keys(options.modelStats).length > 0) {
+      const stats = options.modelStats;
+      const scoredCandidates = candidates.map((m) => {
+        const s = stats[m] ?? stats[m.split(":")[0] ?? ""];
+        let score = 0.5;
+        if (s) {
+          const winRate = s.winRate ?? 0.5;
+          const totalRuns = s.totalRuns ?? 0;
+          const consecutiveFailures = s.consecutiveFailures ?? 0;
+          const confidence = Math.min(1.0, totalRuns / 5);
+          score = winRate * confidence - consecutiveFailures * 0.25;
+        }
+        return { model: m, score };
+      });
+
+      scoredCandidates.sort((a, b) => b.score - a.score);
+      candidates = scoredCandidates.map((c) => c.model);
+
+      const bestScoredMatch = candidates.find((c) =>
+        preferredList.some(
+          (pref) =>
+            c === pref ||
+            c.startsWith(`${pref}:`) ||
+            c.startsWith(pref) ||
+            pref.startsWith(c),
+        ),
+      );
+      if (bestScoredMatch) return bestScoredMatch;
+    }
+
     for (const pref of preferredList) {
-      const match = availableModels.find(
+      const match = candidates.find(
         (m) =>
           m === pref ||
           m.startsWith(`${pref}:`) ||
@@ -85,7 +152,7 @@ export class ModelRoleSelector {
     }
 
     if (role === "chore_runner") {
-      const smallest = availableModels.find(
+      const smallest = candidates.find(
         (m) =>
           m.includes("1.5b") ||
           m.includes("3b") ||
@@ -95,7 +162,7 @@ export class ModelRoleSelector {
       if (smallest) return smallest;
     }
 
-    return availableModels[0] || this.defaultModel;
+    return candidates[0] || this.defaultModel;
   }
 
   public isMicroTaskRole(role: AgentRole): boolean {

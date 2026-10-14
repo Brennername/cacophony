@@ -2058,14 +2058,18 @@ export class AutonomousWorkerPipeline {
         }
       }
 
+      // T88.1.3: Once implementation branch and PR are published and validated,
+      // transition implementation task to COMPLETED rather than holding open across review cycles.
+      const implementationSucceeded = Boolean(prNumber || prMerged);
+
       await this.recordAndEmitStage(
         taskId,
         "pr_review",
-        prMerged ? "SUCCESS" : "FAILURE",
+        implementationSucceeded ? "SUCCESS" : "FAILURE",
         Date.now() - mergeStart,
         prNumber
-          ? `Pull Request #${prNumber} created and ${prMerged ? "merged" : "pending manual merge"}`
-          : prMerged
+          ? `Pull Request #${prNumber} created and ${prMerged ? "merged" : "published for independent assessment"}`
+          : implementationSucceeded
             ? "Code modifications verified and merged locally"
             : "Git promotion failed",
       );
@@ -2074,11 +2078,11 @@ export class AutonomousWorkerPipeline {
         taskId,
         selectedModel,
         groomed.task.role || "implementer",
-        prMerged,
+        implementationSucceeded,
         measuredTps,
       );
       return {
-        success: prMerged,
+        success: implementationSucceeded,
         tokensPerSec: measuredTps,
         commitHash,
         baseCommitHash,

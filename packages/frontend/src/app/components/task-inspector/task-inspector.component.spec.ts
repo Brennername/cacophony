@@ -178,5 +178,43 @@ describe('TaskInspectorComponent', () => {
     expect(compiled.querySelector('.hud-pill')?.textContent?.trim()).toBe('LIVE');
     expect(compiled.querySelector('.terminal-content')?.textContent).toContain('Live token stream executing...');
   });
+
+  it('T88.2.4: should display assessment round, assessor model, verdict, CI outcome, and queue stage', () => {
+    const taskWithLineage: TaskItem = {
+      id: 'task-lineage-100',
+      title: 'Fix Authentication Token Leak',
+      status: 'RUNNING',
+      priority: 'P0',
+      role: 'fixer',
+      workItemId: 'wi-9090',
+      lineageStage: 'fix',
+      assessmentRound: 2,
+      headSha: 'c0ffee12345678',
+      stageRoundKey: 'wi-9090:fix:r2:c0ffee12',
+      findingIds: ['f-1', 'f-2'],
+      assessmentVerdict: 'REQUEST_CHANGES',
+      assessorModel: 'qwen2.5-coder:7b',
+      ciOutcome: 'PASSED',
+      findingsCount: 2,
+      criticalCount: 1,
+      prUrl: 'http://localhost:3000/org/repo/pulls/12',
+    };
+
+    store.tasks.set([taskWithLineage]);
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const strip = compiled.querySelector('.assessment-lineage-strip');
+    expect(strip).toBeTruthy();
+    expect(strip?.textContent).toContain('R2');
+    expect(strip?.textContent).toContain('qwen2.5-coder:7b');
+    expect(strip?.textContent).toContain('REQUEST_CHANGES');
+    expect(strip?.textContent).toContain('PASSED');
+    expect(strip?.textContent).toContain('fix');
+    expect(strip?.textContent).toContain('wi-9090');
+    expect(strip?.textContent).toContain('c0ffee12');
+    expect(strip?.textContent).toContain('2 (1 crit)');
+  });
 });
 

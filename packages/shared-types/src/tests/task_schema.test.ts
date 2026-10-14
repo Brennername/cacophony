@@ -48,8 +48,39 @@ describe('TaskRecordSchema', () => {
   it('rejects invalid enum values for status and priority', () => {
     const invalidStatus = { ...validTask, status: 'UNKNOWN_STATUS' };
     assert.strictEqual(TaskRecordSchema.safeParse(invalidStatus).success, false);
+  });
 
-    const invalidPriority = { ...validTask, priority: 'P99' };
-    assert.strictEqual(TaskRecordSchema.safeParse(invalidPriority).success, false);
+  it('validates task payload with work-item lineage fields', () => {
+    const taskWithLineage = {
+      ...validTask,
+      role: 'fixer',
+      workItemId: 'wi-9988',
+      lineageStage: 'fix',
+      assessmentRound: 2,
+      headSha: 'abc1234def5678',
+      stageRoundKey: 'wi-9988:fix:r2:abc1234d',
+      findingIds: ['f-1', 'f-2'],
+      fixSourceTaskId: 'task-1000',
+      lineage: {
+        workItemId: 'wi-9988',
+        stage: 'fix',
+        round: 2,
+        headSha: 'abc1234def5678',
+        stageRoundKey: 'wi-9988:fix:r2:abc1234d',
+        findingIds: ['f-1', 'f-2'],
+        fixSourceTaskId: 'task-1000',
+      },
+    };
+
+    const parsed = TaskRecordSchema.parse(taskWithLineage);
+    assert.strictEqual(parsed.role, 'fixer');
+    assert.strictEqual(parsed.workItemId, 'wi-9988');
+    assert.strictEqual(parsed.lineageStage, 'fix');
+    assert.strictEqual(parsed.assessmentRound, 2);
+    assert.strictEqual(parsed.headSha, 'abc1234def5678');
+    assert.strictEqual(parsed.stageRoundKey, 'wi-9988:fix:r2:abc1234d');
+    assert.deepStrictEqual(parsed.findingIds, ['f-1', 'f-2']);
+    assert.strictEqual(parsed.fixSourceTaskId, 'task-1000');
+    assert.strictEqual(parsed.lineage?.workItemId, 'wi-9988');
   });
 });

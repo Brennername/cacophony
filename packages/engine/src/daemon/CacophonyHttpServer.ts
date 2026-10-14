@@ -1171,14 +1171,20 @@ export class CacophonyHttpServer {
         // Check if task is already completed in docs/taskcade.md or docs/taskcade-history.md
         const normalizedId = task.id.toLowerCase();
         const shortId = normalizedId.replace("taskcade-", "");
-        const taskCodeMatch = task.title.match(/^(T\d+\.\d+\.\d+):/i);
-        const taskCode = taskCodeMatch ? taskCodeMatch[1]!.toLowerCase() : null;
+        const titleCodeMatch = task.title.match(/\b(T\d+(?:\.\d+)+)\b/i);
+        const taskCode = titleCodeMatch ? titleCodeMatch[1]!.toLowerCase() : null;
+        const baseTaskCode = taskCode ? taskCode.split(".").slice(0, 3).join(".") : null;
+        const idBaseMatch = shortId.match(/^(t\d+\.\d+\.\d+)/);
+        const idBaseCode = idBaseMatch ? idBaseMatch[1] : null;
 
-        if (
+        const isCompleted =
           completedTaskIds.has(normalizedId) ||
           completedTaskIds.has(shortId) ||
-          (taskCode && completedTaskIds.has(taskCode))
-        ) {
+          (taskCode && completedTaskIds.has(taskCode)) ||
+          (baseTaskCode && completedTaskIds.has(baseTaskCode)) ||
+          (idBaseCode && completedTaskIds.has(idBaseCode));
+
+        if (isCompleted) {
           await taskRepo.updateStatus(
             task.id,
             "COMPLETED",

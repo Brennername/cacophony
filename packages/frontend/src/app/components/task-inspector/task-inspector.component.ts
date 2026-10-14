@@ -109,6 +109,24 @@ export class TaskInspectorComponent {
     return this.activeTask()?.modelAssigned || this.store.telemetry().activeModel || 'Auto-Assigned';
   });
 
+  // T88.2.4: Assessment round, assessor model, verdict, findings, evidence, CI outcome, and queue stage
+  public readonly workItemId = computed(() => this.activeTask()?.workItemId ?? null);
+  public readonly lineageStage = computed(() => this.activeTask()?.lineageStage ?? this.activeTask()?.currentStage ?? 'implementation');
+  public readonly assessmentRound = computed(() => this.activeTask()?.assessmentRound ?? 1);
+  public readonly assessorModel = computed(() => this.activeTask()?.assessorModel ?? 'Independent Reviewer Pool');
+  public readonly assessmentVerdict = computed(() => this.activeTask()?.assessmentVerdict ?? (this.activeTask()?.status === 'COMPLETED' ? 'APPROVED' : 'IN_REVIEW'));
+  public readonly ciOutcome = computed(() => this.activeTask()?.ciOutcome ?? (this.activeTask()?.status === 'FAILED' ? 'FAILED' : 'PASSED'));
+  public readonly findingsCount = computed(() => this.activeTask()?.findingsCount ?? (this.activeTask()?.findingIds?.length ?? 0));
+  public readonly criticalCount = computed(() => this.activeTask()?.criticalCount ?? 0);
+  public readonly headShaShort = computed(() => {
+    const sha = this.activeTask()?.headSha;
+    return sha ? sha.slice(0, 8) : null;
+  });
+  public readonly hasPrDetails = computed(() => {
+    const t = this.activeTask();
+    return Boolean(t?.prUrl || t?.targetBranch || t?.workItemId || t?.assessmentRound);
+  });
+
   // Dynamic 6-stage pipeline stepper mapping
   public readonly pipelineSteps = computed(() => {
     const task = this.activeTask();

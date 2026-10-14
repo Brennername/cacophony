@@ -786,6 +786,62 @@ Retrieves the current release promotion gating status, verifying canary benchmar
 
 Triggers release tag promotion, tag creation in Gitea, and changelog generation.
 
+### POST `/api/webhooks/gitea`
+
+Ingests incoming webhook events from Gitea instances (e.g. `pull_request`, `push`, `pull_request_approved`, `issue_comment`).
+Supports HMAC signature verification using the secret configured in `GITEA_WEBHOOK_SECRET` via headers `x-gitea-signature` or `x-hub-signature-256`.
+
+**Headers:**
+- `x-gitea-event`: Event type name (default: `pull_request`).
+- `x-gitea-signature` or `x-hub-signature-256`: Hexadecimal HMAC-SHA256 signature.
+
+**Response:** `200 OK`
+
+```json
+{
+  "handled": true,
+  "event": "pull_request",
+  "action": "closed"
+}
+```
+
+### POST `/api/ci/failures`
+
+Ingests CI failure callback notifications from GitHub Actions or Gitea Actions runners.
+Requires Bearer token authentication matching `CI_FAILURE_WEBHOOK_TOKEN` in the environment.
+
+**Headers:**
+- `Authorization`: `Bearer <token>`
+- `Content-Type`: `application/json`
+
+**Request Body:**
+
+```json
+{
+  "repository": "Brennername/cacophony",
+  "workflow": "CI",
+  "job": "build-and-test",
+  "commit": "deadbeefcafebabe0123456789abcdef01234567",
+  "run_id": "100234",
+  "run_url": "http://gitea.local/actions/runs/100234",
+  "ref": "refs/heads/feat/auth",
+  "details": "Unit test suite failure during build step",
+  "workItemId": "wi-77",
+  "prNumber": 42,
+  "round": 1
+}
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "status": "QUEUED",
+  "taskId": "task-ci-fail-100234",
+  "message": "CI failure diagnostic task successfully enqueued"
+}
+```
+
 ---
 
 ## 2. Server-Sent Events (SSE) Stream

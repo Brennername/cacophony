@@ -21,7 +21,7 @@ if (isForeignTarget) {
   process.exit(0);
 }
 
-const res = spawnSync('ng', ['test', '--no-watch', ...rawArgs], {
+const res = spawnSync('ng', ['test', '--watch=false'], {
   stdio: 'inherit',
   shell: true,
 });

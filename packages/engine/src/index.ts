@@ -27,4 +27,5 @@ export * from "./hardware/index.js";
 export * from "./bandit/index.js";
 export * from "./analytics/index.js";
 export * from "./utils/index.js";
+export * from "./refactoring/index.js";
 

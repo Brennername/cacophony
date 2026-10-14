@@ -1,0 +1,170 @@
+name: Review Remediation
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull Request Number'
+        required: true
+        type: string
+      branch:
+        description: 'PR Branch Name'
+        required: true
+        type: string
+      work_item_id:
+        description: 'Associated Work Item ID'
+        required: false
+        type: string
+        default: ''
+      round:
+        description: 'Assessment Round'
+        required: false
+        type: string
+        default: '1'
+      fix_envelope_json:
+        description: 'JSON-serialized deterministic fix envelope'
+        required: true
+        type: string
+
+concurrency:
+  group: remediation-${{ github.event.inputs.branch || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate-and-remediate:
+    name: Validate and Apply Deterministic Fix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate and Apply Allowlisted Fix Envelope
+        id: apply-fix
+        env:
+          FIX_ENVELOPE_JSON: ${{ github.event.inputs.fix_envelope_json }}
+          WORK_ITEM_ID: ${{ github.event.inputs.work_item_id }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          ROUND: ${{ github.event.inputs.round }}
+        run: |
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+
+          const raw = process.env.FIX_ENVELOPE_JSON;
+          if (!raw) {
+            console.error("No fix envelope payload provided");
+            process.exit(1);
+          }
+
+          let envelope;
+          try {
+            envelope = JSON.parse(raw);
+          } catch (err) {
+            console.error("Malformed fix envelope JSON:", err.message);
+            process.exit(1);
+          }
+
+          // Allowlist validation: only target files within packages/*/src/**
+          const targetFile = envelope.targetFile || envelope.path;
+          if (!targetFile || typeof targetFile !== "string") {
+            console.error("Invalid targetFile in envelope");
+            process.exit(1);
+          }
+
+          const normalized = path.normalize(targetFile);
+          const isAllowed = /^packages\/[a-zA-Z0-9_\-]+\/src\//.test(normalized) &&
+            !normalized.includes("..") &&
+            !normalized.startsWith(".git") &&
+            !normalized.startsWith(".env");
+
+          if (!isAllowed) {
+            console.error("Target file outside allowlisted source directories: " + normalized);
+            process.exit(1);
+          }
+
+          if (!fs.existsSync(normalized)) {
+            console.error("Target file does not exist: " + normalized);
+            process.exit(1);
+          }
+
+          const fileContent = fs.readFileSync(normalized, "utf-8");
+
+          if (envelope.targetContent && typeof envelope.replacementContent === "string") {
+            if (!fileContent.includes(envelope.targetContent)) {
+              console.error("Target content anchor not found in file: " + normalized);
+              process.exit(1);
+            }
+            const updated = fileContent.replace(envelope.targetContent, envelope.replacementContent);
+            fs.writeFileSync(normalized, updated, "utf-8");
+            console.log("Successfully applied deterministic fix to " + normalized);
+          } else {
+            console.error("Envelope missing targetContent and replacementContent");
+            process.exit(1);
+          }
+          '
+
+      - name: Build and Verify Code Integrity
+        run: npm run build
+
+      - name: Run Unit Tests Verification Gate
+        run: npm test
+
+      - name: Commit and Push Verified Remediation
+        if: success()
+        env:
+          BRANCH: ${{ github.event.inputs.branch }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          ROUND: ${{ github.event.inputs.round }}
+        run: |
+          git config user.name "cacophony-bot"
+          git config user.email "bot@cacophony.local"
+          git commit -am "fix(remediation): apply allowlisted deterministic fix for PR #${PR_NUMBER} (round ${ROUND})"
+          git push origin "$BRANCH"
+
+      - name: Enqueue Separate Fix Task on Remediation Failure
+        if: failure()
+        env:
+          CACOPHONY_URL: ${{ secrets.CACOPHONY_CI_FAILURE_URL }}
+          CACOPHONY_TOKEN: ${{ secrets.CACOPHONY_CI_FAILURE_TOKEN }}
+          WORK_ITEM_ID: ${{ github.event.inputs.work_item_id }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          BRANCH: ${{ github.event.inputs.branch }}
+          ROUND: ${{ github.event.inputs.round }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -n "$CACOPHONY_URL" ] && [ -n "$CACOPHONY_TOKEN" ]; then
+            payload=$(node -e '
+              console.log(JSON.stringify({
+                repository: process.env.GITHUB_REPOSITORY || "cacophony",
+                workflow: "review-remediation",
+                job: "validate-and-remediate",
+                commit: process.env.SHA,
+                ref: process.env.BRANCH,
+                details: "Deterministic remediation could not be verified automatically. Enqueuing P0 fixer task.",
+                workItemId: process.env.WORK_ITEM_ID,
+                prNumber: process.env.PR_NUMBER ? parseInt(process.env.PR_NUMBER, 10) : undefined,
+                round: process.env.ROUND ? parseInt(process.env.ROUND, 10) : 1
+              }));
+            ')
+            curl --fail-with-body --silent --show-error --retry 3 \
+              -H "Authorization: Bearer $CACOPHONY_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "$payload" \
+              "$CACOPHONY_URL" || true
+          fi

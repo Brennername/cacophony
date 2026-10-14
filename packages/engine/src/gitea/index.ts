@@ -23,3 +23,6 @@ export * from "./promoteCli.js";
 export * from "./ConventionalCommitGenerator.js";
 export * from "./AutomatedPrReviewer.js";
 export * from "./GiteaPrClient.js";
+export * from "./AssessmentPolicy.js";
+export * from "./PrAssessmentPublisher.js";
+export * from "./PrFixTaskCoordinator.js";

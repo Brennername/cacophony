@@ -43,8 +43,20 @@ export class TaskRepository {
   }
 
   public async create(task: TaskRecord): Promise<TaskRecord> {
-    const metadataHintsJson = task.metadataHints
-      ? JSON.stringify(task.metadataHints)
+    const mergedHints: TaskMetadataHints = {
+      ...(task.metadataHints || {}),
+      lineage: task.lineage ?? (task.workItemId ? {
+        workItemId: task.workItemId,
+        stage: (task.lineageStage || "implementation") as any,
+        round: task.assessmentRound ?? 1,
+        headSha: task.headSha ?? undefined,
+        stageRoundKey: task.stageRoundKey ?? undefined,
+        findingIds: task.findingIds ? [...task.findingIds] : undefined,
+        fixSourceTaskId: task.fixSourceTaskId ?? undefined,
+      } : undefined),
+    };
+    const metadataHintsJson = (mergedHints.lineage || task.metadataHints)
+      ? JSON.stringify(mergedHints)
       : null;
 
     try {
@@ -544,6 +556,15 @@ export class TaskRepository {
       }
     }
 
+    const lineage = metadataHints?.lineage;
+    const workItemId = (row as any).work_item_id ?? lineage?.workItemId ?? null;
+    const lineageStage = ((row as any).lineage_stage ?? lineage?.stage ?? null) as any;
+    const assessmentRound = (row as any).assessment_round ?? lineage?.round ?? undefined;
+    const headSha = (row as any).head_sha ?? lineage?.headSha ?? null;
+    const stageRoundKey = (row as any).stage_round_key ?? lineage?.stageRoundKey ?? null;
+    const findingIds = lineage?.findingIds ?? undefined;
+    const fixSourceTaskId = lineage?.fixSourceTaskId ?? null;
+
     return {
       id: row.id,
       title: row.title,
@@ -567,8 +588,51 @@ export class TaskRepository {
       parentTaskId: row.parent_task_id ?? null,
       rehabStatus: (row.rehab_status as RehabStatus) ?? "NONE",
       metadataHints,
+      workItemId,
+      lineageStage,
+      assessmentRound,
+      headSha,
+      stageRoundKey,
+      findingIds,
+      fixSourceTaskId,
+      lineage,
       ...runtimeMetrics,
     };
+  }
+
+  /**
+   * Retrieves all tasks associated with a durable work-item lineage identifier.
+   */
+  public async listByWorkItemId(
+    workItemId: string,
+  ): Promise<readonly TaskRecord[]> {
+    const rows = await this.driver.query<TaskRow>(
+      "SELECT * FROM tasks ORDER BY created_at ASC",
+    );
+    const all = rows.map((r) => this.mapRow(r));
+    return all.filter(
+      (t: TaskRecord) =>
+        t.workItemId === workItemId || t.lineage?.workItemId === workItemId,
+    );
+  }
+
+  /**
+   * Retrieves a task by its unique stageRoundKey.
+   */
+  public async findByStageRoundKey(
+    stageRoundKey: string,
+  ): Promise<TaskRecord | null> {
+    const rows = await this.driver.query<TaskRow>(
+      "SELECT * FROM tasks ORDER BY created_at DESC",
+    );
+    const all = rows.map((r) => this.mapRow(r));
+    return (
+      all.find(
+        (t: TaskRecord) =>
+          t.stageRoundKey === stageRoundKey ||
+          t.lineage?.stageRoundKey === stageRoundKey,
+      ) ?? null
+    );
   }
 
 

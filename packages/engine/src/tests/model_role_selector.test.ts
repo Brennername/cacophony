@@ -33,4 +33,32 @@ test("ModelRoleSelector Suite (T92.4.1)", async (t) => {
     const model = selector.selectModelForRole("implementer", availableFleet);
     assert.strictEqual(model, "qwen2.5-coder:7b");
   });
+
+  await t.test("T88.2.1: should route assessor to distinct model from authoring model", () => {
+    const selector = new ModelRoleSelector();
+    // When deepseek-r1:8b authored the code, assessor should be routed to qwen2.5-coder:14b
+    const reviewerModel = selector.selectModelForRole("assessor", availableFleet, {
+      authoringModel: "deepseek-r1:8b",
+    });
+    assert.strictEqual(reviewerModel, "qwen2.5-coder:14b");
+    assert.notStrictEqual(reviewerModel, "deepseek-r1:8b");
+  });
+
+  await t.test("T88.4.1: should route fixer to competent coder model", () => {
+    const selector = new ModelRoleSelector();
+    const fixerModel = selector.selectModelForRole("fixer", availableFleet);
+    assert.strictEqual(fixerModel, "qwen2.5-coder:7b");
+  });
+
+  await t.test("T88.2.4: should penalize model with consecutive failures and choose higher confidence model", () => {
+    const selector = new ModelRoleSelector();
+    const stats = {
+      "qwen2.5-coder:7b": { winRate: 0.2, totalRuns: 10, consecutiveFailures: 3 },
+      "qwen2.5-coder:14b": { winRate: 0.95, totalRuns: 10, consecutiveFailures: 0 },
+    };
+    const model = selector.selectModelForRole("implementer", availableFleet, {
+      modelStats: stats,
+    });
+    assert.strictEqual(model, "qwen2.5-coder:14b");
+  });
 });

@@ -53,6 +53,18 @@ export interface TaskItem {
   createdAt?: string | null;
   updatedAt?: string | null;
   completedAt?: string | null;
+  workItemId?: string | null;
+  lineageStage?: string | null;
+  assessmentRound?: number | null;
+  headSha?: string | null;
+  stageRoundKey?: string | null;
+  findingIds?: string[] | null;
+  fixSourceTaskId?: string | null;
+  assessmentVerdict?: string | null;
+  assessorModel?: string | null;
+  ciOutcome?: string | null;
+  findingsCount?: number | null;
+  criticalCount?: number | null;
 }
 
 export interface ProcessItem {

@@ -736,13 +736,20 @@ export class TaskScheduler implements IModelPredictor {
           for (const t of pending) {
             const normId = t.id.toLowerCase();
             const shortId = normId.replace("taskcade-", "");
-            const codeMatch = t.title.match(/^(T\d+\.\d+\.\d+):/i);
-            const taskCode = codeMatch ? codeMatch[1]!.toLowerCase() : null;
-            if (
+            const titleCodeMatch = t.title.match(/\b(T\d+(?:\.\d+)+)\b/i);
+            const taskCode = titleCodeMatch ? titleCodeMatch[1]!.toLowerCase() : null;
+            const baseTaskCode = taskCode ? taskCode.split(".").slice(0, 3).join(".") : null;
+            const idBaseMatch = shortId.match(/^(t\d+\.\d+\.\d+)/);
+            const idBaseCode = idBaseMatch ? idBaseMatch[1] : null;
+
+            const isCompleted =
               completedIds.has(normId) ||
               completedIds.has(shortId) ||
-              (taskCode && completedIds.has(taskCode))
-            ) {
+              (taskCode && completedIds.has(taskCode)) ||
+              (baseTaskCode && completedIds.has(baseTaskCode)) ||
+              (idBaseCode && completedIds.has(idBaseCode));
+
+            if (isCompleted) {
               await this.taskRepo.updateStatus(
                 t.id,
                 "COMPLETED",

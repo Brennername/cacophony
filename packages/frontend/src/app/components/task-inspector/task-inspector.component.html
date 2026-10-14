@@ -54,6 +54,67 @@
       <span class="drill-hint">Details</span>
     </div>
 
+    <!-- T88.2.4: PR Assessment & Work-Item Lineage Strip -->
+    @if (hasPrDetails()) {
+      <div class="assessment-lineage-strip">
+        <div class="lineage-item">
+          <span class="lineage-label">Round:</span>
+          <span class="lineage-value font-mono">R{{ assessmentRound() }}</span>
+        </div>
+        <div class="lineage-item">
+          <span class="lineage-label">Assessor:</span>
+          <span class="lineage-value font-mono">{{ assessorModel() }}</span>
+        </div>
+        <div class="lineage-item">
+          <span class="lineage-label">Verdict:</span>
+          <span
+            class="lineage-badge"
+            [class.badge-approved]="assessmentVerdict() === 'APPROVED'"
+            [class.badge-changes]="assessmentVerdict() === 'REQUEST_CHANGES' || assessmentVerdict() === 'REMEDIATING'"
+          >
+            {{ assessmentVerdict() }}
+          </span>
+        </div>
+        <div class="lineage-item">
+          <span class="lineage-label">CI:</span>
+          <span
+            class="lineage-badge"
+            [class.badge-ci-pass]="ciOutcome() === 'PASSED' || ciOutcome() === 'success'"
+            [class.badge-ci-fail]="ciOutcome() === 'FAILED' || ciOutcome() === 'failure'"
+          >
+            {{ ciOutcome() }}
+          </span>
+        </div>
+        <div class="lineage-item">
+          <span class="lineage-label">Stage:</span>
+          <span class="lineage-value font-mono">{{ lineageStage() }}</span>
+        </div>
+        @if (workItemId(); as wid) {
+          <div class="lineage-item">
+            <span class="lineage-label">Work Item:</span>
+            <span class="lineage-value font-mono">{{ wid }}</span>
+          </div>
+        }
+        @if (headShaShort(); as sha) {
+          <div class="lineage-item">
+            <span class="lineage-label">Commit:</span>
+            <span class="lineage-value font-mono">{{ sha }}</span>
+          </div>
+        }
+        @if (findingsCount() > 0) {
+          <div class="lineage-item">
+            <span class="lineage-label">Findings:</span>
+            <span class="lineage-value font-mono">{{ findingsCount() }} ({{ criticalCount() }} crit)</span>
+          </div>
+        }
+        @if (task.prUrl) {
+          <a class="lineage-pr-link font-mono" [href]="task.prUrl" target="_blank" rel="noopener">
+            View PR
+          </a>
+        }
+      </div>
+    }
+
     <!-- 6-Stage Granular Segmented Progress Bar -->
     <app-stage-progress-bar
       [progressPercent]="taskProgressPercent()"

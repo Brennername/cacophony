@@ -13,6 +13,8 @@ describe('AgentRoleSchema', () => {
     'type_specialist',
     'security_auditor',
     'chore_runner',
+    'fixer',
+    'assessor',
   ];
 
   it('accepts all canonical agent roles', () => {
