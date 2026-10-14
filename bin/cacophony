@@ -1,14 +1,63 @@
 #!/usr/bin/env node
 import * as path from "node:path";
 import * as fs from "node:fs";
+import * as net from "node:net";
+import { spawnSync, spawn } from "node:child_process";
 
-// Resolve compiled CLI entrypoint from engine dist
-const cliPath = path.resolve(import.meta.dirname, "../packages/engine/dist/cli/runCli.js");
+const args = process.argv.slice(2);
+const command = args[0];
 
-if (!fs.existsSync(cliPath)) {
-  console.error("Error: Cacophony CLI distribution bundle not found. Please run 'npm run build' first.");
-  process.exit(1);
+/**
+ * Checks whether the Unix domain IPC socket is actively accepting connections.
+ */
+async function isSocketOnline(socketPath) {
+  if (!fs.existsSync(socketPath)) return false;
+  return new Promise((resolve) => {
+    const s = net.createConnection(socketPath, () => {
+      s.destroy();
+      resolve(true);
+    });
+    s.on("error", () => resolve(false));
+  });
 }
 
-await import(cliPath);
+/**
+ * Checks whether the Cacophony Engine Docker container is running.
+ */
+function isDockerEngineRunning() {
+  try {
+    const res = spawnSync("docker", ["inspect", "-f", "{{.State.Running}}", "cacophony-engine"], {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "ignore"],
+      timeout: 1000
+    });
+    return res.status === 0 && res.stdout.trim() === "true";
+  } catch {
+    return false;
+  }
+}
+
+const socketPath = process.env.CACOPHONY_IPC_SOCKET || "/tmp/cacophony.sock";
+const localSocketActive = await isSocketOnline(socketPath);
+const isLocalStart = command === "start" || command === "start-daemon";
+
+// When local socket is inactive and Docker container is running, delegate execution into the container
+if (!localSocketActive && !isLocalStart && isDockerEngineRunning()) {
+  const isTty = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const dockerArgs = ["exec", isTty ? "-it" : "-i", "cacophony-engine", "./bin/cacophony", ...args];
+  const child = spawn("docker", dockerArgs, { stdio: "inherit" });
+  child.on("exit", (code) => {
+    process.exit(code ?? 0);
+  });
+} else {
+  // Resolve compiled CLI entrypoint from engine dist
+  const cliPath = path.resolve(import.meta.dirname, "../packages/engine/dist/cli/runCli.js");
+
+  if (!fs.existsSync(cliPath)) {
+    console.error("Error: Cacophony CLI distribution bundle not found. Please run 'npm run build' first.");
+    process.exit(1);
+  }
+
+  await import(cliPath);
+}
 
