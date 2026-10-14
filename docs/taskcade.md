@@ -41,7 +41,13 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 ## Active Sprint Priority Queue & Immediate Execution Order
 
 > [!NOTE]
-> All active sprint phases up to Phase 100 have been fully implemented, verified, and rotated to history.
+> All active sprint phases up to Phase 101 have been fully implemented, verified, and rotated to history.
+
+---
+
+## Phase 101: Test Command Scoping Regression Mitigation, Orphaned Subtask Reconciliation, and Automated Epoch Recovery
+
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-101-test-command-scoping-regression-mitigation-orphaned-subtask-reconciliation-and-automated-epoch-recovery)_
 
 ---
 

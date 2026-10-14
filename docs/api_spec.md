@@ -251,14 +251,17 @@ Reclaims stale running tasks back to `PENDING` state when worker execution excee
 
 ### POST `/api/tasks/groom`
 
-Grooms the task queue by reconciling active and pending task records against merged Gitea pull requests. Any task associated with a merged PR is automatically marked `COMPLETED`.
+Grooms the task queue by reconciling active and pending task records against merged Gitea pull requests and completed tasks archived in `docs/taskcade.md` / `docs/taskcade-history.md`. Normalizes heavy model allocations to lightweight instruct variants and deduplicates pending tasks with redundant task codes.
 
 **Response:** `200 OK`
 
 ```json
 {
-  "groomedCount": 3,
-  "message": "Task queue reconciled against merged pull requests"
+  "success": true,
+  "reconciledPrCount": 3,
+  "normalizedModelCount": 1,
+  "deduplicatedCount": 2,
+  "pendingRemaining": 15
 }
 ```
 

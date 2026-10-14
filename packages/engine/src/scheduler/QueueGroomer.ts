@@ -153,6 +153,12 @@ export class QueueGroomer {
           groomNotes.push(
             `Mapped TypeScript test '${candidateTest}' to its compiled JavaScript output: ${testCommand}`,
           );
+        } else if (/\.(?:js|mjs|cjs)$/.test(candidateTest)) {
+          testCommand = `node --test ${candidateTest}`;
+          modified = true;
+          groomNotes.push(
+            `Scoped test command to compiled test output: ${testCommand}`,
+          );
         } else if (
           candidateTest.startsWith("packages/") &&
           fs.existsSync(testSrc) &&
@@ -166,7 +172,8 @@ export class QueueGroomer {
           );
         } else if (
           candidateTest.startsWith("packages/") &&
-          !candidateTest.includes("/src/")
+          !candidateTest.includes("/src/") &&
+          !/\.(?:js|mjs|cjs|ts|tsx)$/.test(candidateTest)
         ) {
           const packageName = candidateTest.split("/")[1];
           testCommand = `npm run test --workspace=@cacophony/${packageName}`;
@@ -198,10 +205,11 @@ export class QueueGroomer {
             ? this.findClosestEngineTest(candidateTest, task.prompt)
             : null;
         if (closestTest) {
-          testCommand = `node --test packages/engine/dist/tests/${closestTest}`;
+          const compiledClosest = closestTest.replace(/\.ts$/, ".js");
+          testCommand = `node --test packages/engine/dist/tests/${compiledClosest}`;
           modified = true;
           groomNotes.push(
-            `Requested test '${candidateTest}' is missing; selected the unique closest existing engine test '${closestTest}'.`,
+            `Requested test '${candidateTest}' is missing; selected the unique closest existing engine test '${compiledClosest}'.`,
           );
         } else {
           const scoped = this.scopeTestCommand(focusFilesList, activeProfile);
@@ -463,17 +471,41 @@ export class QueueGroomer {
       const parts = firstFile.split("/");
       if (parts.length >= 2 && parts[1]) {
         const pkgName = parts[1];
-        if (pkgName === "engine") {
-          const baseName = path.basename(firstFile, path.extname(firstFile));
-          const testSrcPath = path.resolve(
-            this.projectDir,
-            `packages/engine/src/tests/${baseName}.test.ts`,
-          );
-          if (fs.existsSync(testSrcPath)) {
-            return `node --test packages/engine/dist/tests/${baseName}.test.js`;
-          }
-          return `npm run test --workspace=@cacophony/${pkgName}`;
+
+        // If the focus file is itself a unit test, target its compiled output directly
+        if (
+          firstFile.includes("/tests/") ||
+          firstFile.includes("/__tests__/") ||
+          /\.(?:test|spec)\.(?:ts|tsx|js|mjs|cjs)$/.test(firstFile)
+        ) {
+          const testDist = firstFile
+            .replace("/src/", "/dist/")
+            .replace(/\.(?:ts|tsx)$/, ".js");
+          return `node --test ${testDist}`;
         }
+
+        if (pkgName === "engine" || pkgName === "db" || pkgName === "tools") {
+          const baseName = path.basename(firstFile, path.extname(firstFile));
+          const cleanName = baseName.replace(/\.(?:test|spec)$/, "");
+          const snakeName = cleanName
+            .replace(/([a-z])([A-Z])/g, "$1_$2")
+            .toLowerCase();
+
+          for (const candidateName of [cleanName, snakeName]) {
+            const testSrcPath = path.resolve(
+              this.projectDir,
+              `packages/${pkgName}/src/tests/${candidateName}.test.ts`,
+            );
+            if (fs.existsSync(testSrcPath)) {
+              return `node --test packages/${pkgName}/dist/tests/${candidateName}.test.js`;
+            }
+          }
+
+          return pkgName === "engine"
+            ? `npm run test --workspace=@cacophony/${pkgName}`
+            : `npm test --workspace=@cacophony/${pkgName} --if-present`;
+        }
+
         if (pkgName === "frontend") {
           return `npm run test --workspace=@cacophony/${pkgName}`;
         }

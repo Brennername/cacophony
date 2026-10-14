@@ -3580,6 +3580,14 @@ _Completed & Verified in Commit: `358e767`_
 - [x] T100.3.1: Implement automated regression-burst detection, epoch reset, and queue regrooming engine on consecutive verification failures. [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts, packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm run --workspace=@cacophony/engine test -- packages/engine/src/tests/regression_burst_mitigation.test.ts]
 - [x] T100.4.1: Synchronize `docs/api_spec.md` with PR assessment, epoch advancement, model tuning, and queue management REST endpoints. [File: docs/api_spec.md] [Test: npm run lint]
 
+---
 
+## Archived Phase 101: Test Command Scoping Regression Mitigation, Orphaned Subtask Reconciliation, and Automated Epoch Recovery
 
+_Completed & Verified in Commit: `HEAD`_
 
+- [x] T101.1.1: Fix candidate test scoping in `QueueGroomer` to prevent broad workspace test inflation for compiled JavaScript test targets (`.js`, `.cjs`, `.mjs`) and map TypeScript tests directly to compiled dist outputs. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Test: node --test packages/engine/dist/tests/test_command_scoping.test.js]
+- [x] T101.1.2: Refine `scopeTestCommand` in `QueueGroomer` to directly handle test file focus targets and discover companion test files in PascalCase and snake_case for engine, db, and tools workspaces. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Test: node --test packages/engine/dist/tests/test_command_scoping.test.js]
+- [x] T101.1.3: Author unit regression test suite `test_command_scoping.test.ts` validating direct test scoping, companion resolution, and directory workspace mapping without test inflation. [File: packages/engine/src/tests/test_command_scoping.test.ts] [Test: node --test packages/engine/dist/tests/test_command_scoping.test.js]
+- [x] T101.2.1: Reconcile pending subtasks in `CacophonyHttpServer.ts` (`POST /api/tasks/groom`) against completed tasks archived in `docs/taskcade-history.md` to prevent infinite timeout loops on orphaned subtasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: node --test packages/engine/dist/__tests__/Scheduler.test.js packages/engine/dist/tests/subtask_completion_guard.test.js]
+- [x] T101.3.1: Synchronize `docs/api_spec.md` with `/api/tasks/groom` response contracts and epoch reset capabilities. [File: docs/api_spec.md] [Test: npm run lint]
