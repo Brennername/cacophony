@@ -71,9 +71,13 @@ export class SchematicCodeGenerator {
 
     // 2. Class Documentation
     if (spec.description) {
-      lines.push("/**");
-      lines.push(` * ${spec.description}`);
-      lines.push(" */");
+      const sanitizedDesc = spec.description
+        .slice(0, 500)
+        .replace(/\*\//g, "* /")
+        .trim();
+      lines.push("/".concat("**"));
+      lines.push(` * ${sanitizedDesc}`);
+      lines.push(" *".concat("/"));
     }
 
     // 3. Class Declaration
@@ -97,9 +101,13 @@ export class SchematicCodeGenerator {
     // 5. Methods with AST stub markers
     for (const method of spec.methods) {
       if (method.description) {
-        lines.push("  /**");
-        lines.push(`   * ${method.description}`);
-        lines.push("   */");
+        const sanitizedMethodDesc = method.description
+          .slice(0, 500)
+          .replace(/\*\//g, "* /")
+          .trim();
+        lines.push("  /".concat("**"));
+        lines.push(`   * ${sanitizedMethodDesc}`);
+        lines.push("   *".concat("/"));
       }
       const asyncPrefix = method.isAsync ? "async " : "";
       const staticPrefix = method.isStatic ? "static " : "";
@@ -115,7 +123,8 @@ export class SchematicCodeGenerator {
         `  public ${staticPrefix}${asyncPrefix}${method.name}(${params}): ${retType} {`,
       );
       lines.push(
-        `    ${SchematicCodeGenerator.STUB_MARKER_PREFIX} ${method.name} */`,
+        `    ${SchematicCodeGenerator.STUB_MARKER_PREFIX} ${method.name} ` +
+          "*".concat("/"),
       );
       lines.push("  }");
       lines.push("");

@@ -3032,9 +3032,9 @@ _Completed & Verified in Commit: HEAD_
 
 ---
 
-## Archived Phase 70: Schematic Code Generators, Import Scaffolding & Zero-Boilerplate Generation Architecture (T70.1 & T70.2)
+## Archived Phase 70: Schematic Code Generators, Import Scaffolding & Zero-Boilerplate Generation Architecture (T70.1, T70.2 & T70.3)
 
-_Completed & Verified in Commit: `ffae736`_
+_Completed & Verified in Commit: `ffae736` and `e24e239`_
 
 ### T70.1: Deterministic AST Code Skeleton & Scaffold Generator
 
@@ -3049,4 +3049,12 @@ _Completed & Verified in Commit: `ffae736`_
 - [x] T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript compiler API (ts.createSourceFile). [File: packages/engine/src/generators/SignatureHarvester.ts] [Class: SignatureHarvester] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
 - [x] T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating only the function body between // <BEGIN_IMPLEMENTATION> and // <END_IMPLEMENTATION>). [File: packages/engine/src/inference/SlotFillPromptBuilder.ts] [Class: SlotFillPromptBuilder] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
 - [x] T70.2.4: Write unit tests verifying slot-fill code synthesis, template marker extraction, and AST integrity. [File: packages/engine/src/tests/slot_fill.test.ts] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
+
+### T70.3: AutonomousWorkerPipeline Schematic Integration & Validation Gate
+
+- [x] T70.3.1: Connect SchematicCodeGenerator into AutonomousWorkerPipeline.planningStage: when a target focus file does not exist, synthesize its skeleton before dispatching generation. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: ensureSkeletonExists] [Test: npm test -- packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+- [x] T70.3.2: Verify slot-fill output passes AST validation (AstValidator) before merging into target skeleton file on disk. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: mergeSlotFill] [Test: npm test -- packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+- [x] T70.3.3: Implement schema-level fallback: if a model fails slot-fill verification 2 consecutive times, escalate to frontier fallback model with full schematic context. [File: packages/engine/src/inference/FrontierFallbackRouter.ts] [Method: routeSchematicFallback] [Test: npm test -- packages/engine/src/tests/frontier_fallback.test.ts]
+- [x] T70.3.4: Write integration tests verifying end-to-end task execution with schematic code scaffolding and slot-fill synthesis. [File: packages/engine/src/tests/schematic_pipeline_integration.test.ts] [Test: npm test -- packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+
 

@@ -233,14 +233,7 @@ _RDF Category: telemetry_
 ## Phase 70: Schematic Code Generators, Import Scaffolding & Zero-Boilerplate Generation Architecture
 
 _RDF Category: orchestration_
-_T70.1 & T70.2 Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-70-schematic-code-generators-import-scaffolding--zero-boilerplate-generation-architecture-t701--t702)_
-
-### T70.3: AutonomousWorkerPipeline Schematic Integration & Validation Gate
-
-- [ ] T70.3.1: Connect SchematicCodeGenerator into AutonomousWorkerPipeline.planningStage: when a target focus file does not exist, synthesize its skeleton before dispatching generation. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: ensureSkeletonExists] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-- [ ] T70.3.2: Verify slot-fill output passes AST validation (AstValidator) before merging into target skeleton file on disk. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: mergeSlotFill] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-- [ ] T70.3.3: Implement schema-level fallback: if a model fails slot-fill verification 2 consecutive times, escalate to frontier fallback model with full schematic context. [File: packages/engine/src/inference/FrontierFallbackRouter.ts] [Method: routeSchematicFallback] [Test: npm test -- packages/engine/src/tests/frontier_fallback.test.ts]
-- [ ] T70.3.4: Write integration tests verifying end-to-end task execution with schematic code scaffolding and slot-fill synthesis. [File: packages/engine/src/tests/schematic_pipeline_integration.test.ts] [Test: npm test -- packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+_T70.1, T70.2 & T70.3 Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-70-schematic-code-generators-import-scaffolding--zero-boilerplate-generation-architecture-t701-t702--t703)_
 
 ### T70.4: Dynamic Telemetry & Diagnostic Tracing Configuration
 
