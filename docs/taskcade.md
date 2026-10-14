@@ -142,32 +142,7 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Phase 71: Dataset Schema Versioning & Pluggable Compute / Inference Profiles
 
-_RDF Category: orchestration_
-
-### T71.1: Dataset Schema Versioning & Data Directory Compatibility Migration
-
-- [ ] T71.1.1: Implement dataset migration utility in packages/engine/src/optimization/DatasetVersionMigrator.ts upgrading legacy v1.0.0 arena data directories to v2.0.0 by generating ArenaDatasetManifest and standardizing task record schemas. [File: packages/engine/src/optimization/DatasetVersionMigrator.ts] [Class: DatasetVersionMigrator] [Test: npm test -- packages/engine/src/tests/historical_arena_optimization.test.ts]
-- [ ] T71.1.2: Enforce version compatibility checks in HistoricalArenaIngestionAdapter rejecting unsupported future versions and providing informative error diagnostics. [File: packages/engine/src/optimization/HistoricalArenaIngestionAdapter.ts] [Method: assertCompatibleVersion] [Test: npm test -- packages/engine/src/tests/historical_arena_optimization.test.ts]
-- [ ] T71.1.3: Add CLI subcommand cacophony dataset migrate --dir=<path> to execute non-destructive inplace schema migrations for historical datasets. [File: packages/engine/src/cli/datasetCommand.ts] [Function: runDatasetMigrateCommand] [Test: npm test -- packages/engine/src/tests/dataset_cli.test.ts]
-
-### T71.2: Pluggable Compute Hardware & Inference Provider Profiles
-
-- [ ] T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, TPUs, APUs, and pure CPU scheduling profiles. [File: packages/engine/src/hardware/ComputeHardwareProfile.ts] [Interface: ComputeHardwareProfile] [Test: npm test -- packages/engine/src/tests/hardware_profiles.test.ts]
-- [ ] T71.2.2: Add generic OpenAI-compatible HTTP inference provider alongside native Ollama adapter to support arbitrary OpenAI-compatible server endpoints. [File: packages/engine/src/inference/OpenAICompatibleInferenceProvider.ts] [Class: OpenAICompatibleInferenceProvider] [Test: npm test -- packages/engine/src/tests/openai_inference_provider.test.ts]
-- [ ] T71.2.3: Wire dynamic provider configuration via environment variables and settings (INFERENCE_PROVIDER=ollama|openai_compatible, INFERENCE_BASE_URL, INFERENCE_API_KEY). [File: packages/engine/src/inference/InferenceProviderFactory.ts] [Class: InferenceProviderFactory] [Test: npm test -- packages/engine/src/tests/inference_factory.test.ts]
-
-### T71.3: Visual Showcase Mock Mode & Synthetic Token Streaming Engine
-
-- [x] T71.3.1: Implement MockInferenceStreamProvider emitting synthetic typed code streams with realistic token-per-second cadence and variable chunk sizes without requiring local GPU or Ollama daemon. [File: packages/engine/src/inference/MockInferenceStreamProvider.ts] [Class: MockInferenceStreamProvider] [Test: npm test -- packages/engine/src/tests/mock_inference_stream.test.ts]
-- [x] T71.3.2: Add DEMO_MODE=true environment toggle to CacophonyHttpServer and FallbackTelemetryProvider to serve pre-seeded animated tasks, live simulated hardware gauges, and autonomous stage transitions for public web showcase hosting (e.g. Heroku, Render, Fly.io). [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: configureDemoMode] [Test: npm test -- packages/engine/src/tests/demo_mode.test.ts]
-- [x] T71.3.3: Provide heroku.yml and container deployment recipe in docs/deployment_showcase.md documenting how to host the zero-hardware interactive visual showcase for online viewers. [File: docs/deployment_showcase.md] [Section: Public Demonstration Hosting] [Test: npm test]
-
-### T71.4: Model Name Consistency, Fleet Distribution & 25-Item UI Pagination
-
-- [x] T71.4.1: Synchronize simulated resident model telemetry dynamically with dispatched task model to ensure consistent reporting across dashboard, telemetry badge, and execution history. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: CacophonyDaemon.executeTask] [Test: npm test]
-- [x] T71.4.2: Distribute backlog and replenishment across diverse fleet models (qwen2.5-coder:7b, deepseek-r1:8b, gemma3:4b-it-qat, qwen2.5-coder:3b) to prevent monotony while ensuring strict mock isolation under DEMO_MODE. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: CacophonyDaemon.start] [Test: npm test]
-- [x] T71.4.3: Update GanttTransportComponent timeline header and track label to render the exact executing model identifier. [File: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.ts] [Class: GanttTransportComponent] [Test: npm test]
-- [x] T71.4.4: Implement 25-item responsive pagination across QueueManagerComponent, TaskHistoryComponent, and ModelsViewComponent. [File: packages/frontend/src/app/components/queue-manager/queue-manager.component.ts] [Test: npm test]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-71-dataset-schema-versioning--pluggable-compute--inference-profiles)_
 
 ---
 
@@ -493,6 +468,15 @@ _RDF Category: static_analysis_hardening_
 _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-99-commit-to-task-attribution-deterministic-task-rehabilitation--resilient-failure-requeue-pipeline)_
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t96.5.2 Rehabilitation [2026-10-14T12:04:00.567Z]
+- **Parent Task**: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  (`taskcade-t96.5.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.5.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: type_specialist] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+  - [ ] `taskcade-t96.5.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: implementer] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+
 
 *Autonomous Deterministic Decompositions from Exceeded Failure Limits*
 

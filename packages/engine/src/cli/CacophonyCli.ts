@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { DaemonIPCClient, DEFAULT_SOCKET_PATH } from "../daemon/DaemonIPC.js";
 import { CacophonyDaemon } from "../daemon/CacophonyDaemon.js";
 import { CodeScrubber } from "../scrubber/CodeScrubber.js";
+import { runDatasetMigrateCommand } from "./datasetCommand.js";
 
 export class CacophonyCli {
   private readonly client: DaemonIPCClient;
@@ -93,6 +94,10 @@ export class CacophonyCli {
         // Staging to Production Promotion Pipeline
         case "promote":
           return await this.handlePromote(rest);
+
+        // Historical Dataset Management & Schema Migration
+        case "dataset":
+          return await this.handleDataset(rest);
 
         default:
           console.error(`Unknown command: ${command}`);
@@ -539,6 +544,10 @@ export class CacophonyCli {
     }
   }
 
+  private async handleDataset(args: readonly string[]): Promise<number> {
+    return await runDatasetMigrateCommand(args);
+  }
+
   private printHelp(): void {
     console.log(`
 Cacophony Unified CLI & Command Palette
@@ -578,6 +587,9 @@ Live LLM Stream Audit:
 Code Correction & Scrubber:
   scrub <file> [--write]    Run deterministic scrubbers on a source file
 
+Dataset Management:
+  dataset migrate --dir=<p> Non-destructive schema migration for historical datasets
+
 Staging to Production Promotion:
   promote [--dry-run]       Execute quarantine gauntlet and promote to upstream GitHub
 
@@ -586,3 +598,4 @@ Command Palette:
 `);
   }
 }
+

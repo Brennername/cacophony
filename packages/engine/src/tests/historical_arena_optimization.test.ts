@@ -2,10 +2,12 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import {
   HistoricalArenaIngestionAdapter,
   RuleBacktestRunner,
   StochasticHyperparameterOptimizer,
+  DatasetVersionMigrator,
 } from "../optimization/index.js";
 import { RulePipelineEngine } from "../rules/RulePipelineEngine.js";
 import {
@@ -174,4 +176,116 @@ describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparam
       assert.ok(optResult.bestGenome);
     });
   });
+
+  describe("T71.1: Dataset Schema Versioning & Data Directory Compatibility Migration", () => {
+    it("should migrate legacy v1.0.0 arena data directory to v2.0.0 with manifest.json", async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "arena-v1-legacy-"));
+      try {
+        const completedDir = path.join(tempDir, "completed");
+        fs.mkdirSync(completedDir, { recursive: true });
+
+        // Write legacy task with snake_case fields
+        const legacyTask = {
+          task_id: "legacy-task-1",
+          task_type: "scaffold",
+          model: "qwen2.5-coder:7b",
+          target_branch: "task/legacy-1",
+          source_task_id: "origin-1",
+          test_command: "node --check index.js",
+          focus_files: "index.js",
+          finished_at: "2026-01-01T00:00:00Z",
+        };
+        fs.writeFileSync(
+          path.join(completedDir, "legacy-task-1.json"),
+          JSON.stringify(legacyTask),
+          "utf-8",
+        );
+
+        // Write legacy stats.json without format_version
+        const legacyStats = {
+          total_completed: 1,
+          total_failed: 0,
+          total_processed: 1,
+          failure_reasons: {},
+          last_updated: "2026-01-01T00:00:00Z",
+        };
+        fs.writeFileSync(
+          path.join(tempDir, "stats.json"),
+          JSON.stringify(legacyStats),
+          "utf-8",
+        );
+
+        const migrator = new DatasetVersionMigrator();
+        const result = await migrator.migrate(tempDir, { inplace: true });
+
+        assert.equal(result.manifest.version, "2.0.0");
+        assert.equal(result.manifest.schemaRevision, 2);
+        assert.equal(result.manifest.totalTasks, 1);
+        assert.equal(result.tasksMigrated, 1);
+
+        // Verify manifest.json exists
+        const manifestRaw = fs.readFileSync(path.join(tempDir, "manifest.json"), "utf-8");
+        const manifest = JSON.parse(manifestRaw);
+        assert.equal(manifest.version, "2.0.0");
+
+        // Verify stats.json was updated with format_version
+        const statsRaw = fs.readFileSync(path.join(tempDir, "stats.json"), "utf-8");
+        const stats = JSON.parse(statsRaw);
+        assert.equal(stats.format_version, "2.0.0");
+
+        // Verify standardized task JSON
+        const updatedTaskRaw = fs.readFileSync(path.join(completedDir, "legacy-task-1.json"), "utf-8");
+        const updatedTask = JSON.parse(updatedTaskRaw);
+        assert.equal(updatedTask.id, "legacy-task-1");
+        assert.equal(updatedTask.taskType, "scaffold");
+        assert.equal(updatedTask.targetBranch, "task/legacy-1");
+        assert.equal(updatedTask.testCommand, "node --check index.js");
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it("should assert compatible version and reject unsupported future versions", async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "arena-version-check-"));
+      try {
+        const adapter = new HistoricalArenaIngestionAdapter(tempDir);
+
+        // No manifest, fallback should be compatible (defaults to 2.0.0)
+        const vDefault = await adapter.assertCompatibleVersion(tempDir);
+        assert.ok(vDefault);
+
+        // v1.0.0 should be compatible
+        fs.writeFileSync(
+          path.join(tempDir, "manifest.json"),
+          JSON.stringify({ version: "1.0.0", schemaRevision: 1, totalTasks: 0, createdAt: new Date().toISOString() }),
+          "utf-8",
+        );
+        const vLegacy = await adapter.assertCompatibleVersion(tempDir);
+        assert.equal(vLegacy, "1.0.0");
+
+        // v2.0.0 should be compatible
+        fs.writeFileSync(
+          path.join(tempDir, "manifest.json"),
+          JSON.stringify({ version: "2.0.0", schemaRevision: 2, totalTasks: 0, createdAt: new Date().toISOString() }),
+          "utf-8",
+        );
+        const vCurrent = await adapter.assertCompatibleVersion(tempDir);
+        assert.equal(vCurrent, "2.0.0");
+
+        // v3.0.0 should be rejected as unsupported future version
+        fs.writeFileSync(
+          path.join(tempDir, "manifest.json"),
+          JSON.stringify({ version: "3.0.0", schemaRevision: 3, totalTasks: 0, createdAt: new Date().toISOString() }),
+          "utf-8",
+        );
+        await assert.rejects(
+          async () => adapter.assertCompatibleVersion(tempDir),
+          /Unsupported arena dataset schema version '3.0.0'/,
+        );
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
 });
+

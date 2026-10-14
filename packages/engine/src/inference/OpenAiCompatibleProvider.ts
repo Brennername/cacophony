@@ -6,10 +6,10 @@ import type {
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 
 export interface OpenAiCompatibleOptions {
-  readonly providerType?: InferenceProviderType;
+  readonly providerType?: InferenceProviderType | undefined;
   readonly baseUrl: string;
-  readonly apiKey?: string;
-  readonly defaultHeaders?: Record<string, string>;
+  readonly apiKey?: string | undefined;
+  readonly defaultHeaders?: Record<string, string> | undefined;
 }
 
 /**

@@ -251,3 +251,37 @@ The frontend is an Angular v20+ standalone, zoneless application built mobile-fi
    - Table of spawned non-model test processes (unit tests, linters, builds).
 5. **Gitea Integration Links**:
    - Direct clickable links to PRs, commit diffs, and issue tracking.
+
+---
+
+### 3.8 Pluggable Compute Hardware & Inference Architecture
+
+To avoid tight coupling to single-host local Ollama instances, Cacophony provides a pluggable abstraction layer accommodating diverse compute accelerators and inference runtimes:
+
+1. **Hardware Profile Abstraction (`ComputeHardwareProfile`)**:
+   - `DiscreteGpuHardwareProfile`: Enforces a 512 MB safety reserve buffer, supports FlashAttention, and prefers `q4_k_m` quantization. Throttles on critical VRAM exhaustion (< 1024 MB).
+   - `ApuHardwareProfile`: Calibrated for unified-memory integrated APUs (AMD Vega / Strix Point). Enforces 1024 MB system RAM headroom and throttles when available shared memory drops below 2048 MB.
+   - `TpuHardwareProfile`: Calibrated for edge and cloud TPUs, prioritizing `fp16` quantization and full model offload.
+   - `CpuHardwareProfile`: Pure host CPU fallback with 2048 MB OS memory reserve and informative latency warning diagnostics.
+2. **Pluggable Inference Providers (`IInferenceProvider`)**:
+   - `OllamaProvider`: Native HTTP adapter interfacing with local or networked Ollama instances.
+   - `OpenAICompatibleInferenceProvider`: Universal HTTP driver supporting arbitrary OpenAI-compatible endpoints (`/chat/completions`) including LM Studio, vLLM, LocalAI, Groq, OpenRouter, Together, and OpenAI.
+   - `MockInferenceStreamProvider`: Synthetic token streaming engine for zero-GPU test environments and cloud demonstration showcases.
+3. **Dynamic Provider Resolution (`InferenceProviderFactory`)**:
+   - Resolved automatically from environment variables (`INFERENCE_PROVIDER=ollama|openai_compatible|mock`, `INFERENCE_BASE_URL`, `INFERENCE_API_KEY`) or explicit runtime configuration objects.
+
+---
+
+### 3.9 Dataset Schema Versioning & Historical Arena Ingestion
+
+Historical task telemetry and optimization datasets are version-controlled with backwards compatibility:
+
+1. **Version Specification**:
+   - `CURRENT_ARENA_DATASET_VERSION = "2.0.0"`
+   - `LEGACY_ARENA_DATASET_VERSION = "1.0.0"`
+2. **Automated Migration (`DatasetVersionMigrator`)**:
+   - Scans dataset directories (`completed/`, `failed/`, `exhausted/`), standardizes legacy snake_case fields into typed `HistoricalTaskRecord` structures, updates `stats.json` with `format_version`, and generates `ArenaDatasetManifest` (`manifest.json`).
+   - Accessible programmatically or via CLI: `cacophony dataset migrate --dir=<path>`.
+3. **Ingestion Safeguards (`HistoricalArenaIngestionAdapter`)**:
+   - Inspects `manifest.json` on directory load. Supports legacy v1.0.0 and current v2.0.0 datasets, but strictly rejects unsupported future major schema revisions with actionable error diagnostics.
+

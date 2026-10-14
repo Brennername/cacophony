@@ -85,7 +85,17 @@ All CLI entrypoints are accessible via npm scripts or the root executable binary
   _Entrypoint_: [`packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts`](../packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts)
   _Description_: Runs Genetic or Bayesian hyperparameter optimization against versioned arena dataset archives (defaults to `ARENA_DATASET_DIR` or `./data/arena/`) and exports optimized configurations to `conf/pipelines/optimized/`. Supports dataset schema versions (e.g. `v1.0.0` legacy and `v2.0.0` standard).
 
-### 2.5 Authentik Automated Bootstrapper
+### 2.5 Dataset Schema Management & Migration
+
+- **Migrate Historical Arena Datasets**:
+  ```bash
+  npm run cli -w @cacophony/engine -- dataset migrate --dir=/path/to/arena/data [--target=/path/to/target]
+  # Or: cacophony dataset migrate --dir=/path/to/arena/data
+  ```
+  _Entrypoint_: [`packages/engine/src/cli/datasetCommand.ts`](../packages/engine/src/cli/datasetCommand.ts)
+  _Description_: Non-destructively upgrades historical arena datasets from v1.0.0 legacy structures to the standardized v2.0.0 format, generating `manifest.json` and standardizing task record schemas.
+
+### 2.6 Authentik Automated Bootstrapper
 
 - **Bootstrap Authentik OIDC Application**:
   ```bash

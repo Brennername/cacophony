@@ -58,6 +58,27 @@ export class HistoricalArenaIngestionAdapter {
   }
 
   /**
+   * Asserts that the dataset directory version is compatible with the current engine.
+   * Rejects unsupported future versions (e.g. major version > 2) with diagnostic error.
+   */
+  public async assertCompatibleVersion(
+    basePath = this.defaultBasePath,
+  ): Promise<string> {
+    const version = await this.getDatasetVersion(basePath);
+    const majorMatch = version.match(/^v?(\d+)/);
+    const major = majorMatch ? parseInt(majorMatch[1]!, 10) : 1;
+    const currentMajor = parseInt(CURRENT_ARENA_DATASET_VERSION.split(".")[0]!, 10);
+
+    if (major > currentMajor) {
+      throw new Error(
+        `Unsupported arena dataset schema version '${version}'. Maximum supported version is ${currentMajor}.x.x. Run 'cacophony dataset migrate' to upgrade or update cacophony.`,
+      );
+    }
+
+    return version;
+  }
+
+  /**
    * Reads and parses stats.json summary telemetry.
    */
   public async loadStats(

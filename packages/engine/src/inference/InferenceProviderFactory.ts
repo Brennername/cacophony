@@ -1,50 +1,65 @@
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
+import { IInferenceProvider } from "./IInferenceProvider.js";
+import { OllamaProvider } from "./OllamaProvider.js";
+import { OpenAICompatibleInferenceProvider } from "./OpenAICompatibleInferenceProvider.js";
+import { MockInferenceStreamProvider } from "./MockInferenceStreamProvider.js";
 
-// Mock environment variables for testing
-process.env.INFERENCE_PROVIDER = "ollama";
-process.env.INFERENCE_BASE_URL = "http://example.com/api";
-process.env.INFERENCE_API_KEY = "test-api-key";
+export type SupportedInferenceProviderType = "ollama" | "openai_compatible" | "mock";
 
-class InferenceProvider {
-  constructor(
-    public type: string,
-    public baseUrl: string,
-    public apiKey: string,
-  ) {}
+export interface InferenceProviderConfig {
+  readonly provider?: string | undefined;
+  readonly baseUrl?: string | undefined;
+  readonly apiKey?: string | undefined;
+  readonly defaultHeaders?: Record<string, string> | undefined;
 }
 
-class InferenceProviderFactory {
-  createProvider(): InferenceProvider {
-    const providerType = process.env.INFERENCE_PROVIDER;
-    const baseUrl = process.env.INFERENCE_BASE_URL || "";
-    const apiKey = process.env.INFERENCE_API_KEY || "";
+/**
+ * InferenceProviderFactory
+ *
+ * Dynamically resolves and instantiates the configured inference provider
+ * based on environment variables (INFERENCE_PROVIDER, INFERENCE_BASE_URL, INFERENCE_API_KEY)
+ * or explicit runtime configurations. Accommodates native Ollama, arbitrary OpenAI-compatible
+ * endpoints, and synthetic mock streaming for demonstration showcases.
+ */
+export class InferenceProviderFactory {
+  public static createProvider(config?: InferenceProviderConfig): IInferenceProvider {
+    const providerType = (
+      config?.provider ||
+      process.env["INFERENCE_PROVIDER"] ||
+      (process.env["DEMO_MODE"] === "true" ? "mock" : "ollama")
+    ).toLowerCase();
 
-    if (providerType === "ollama") {
-      return new InferenceProvider("ollama", baseUrl, apiKey);
-    } else if (providerType === "openai_compatible") {
-      return new InferenceProvider("openai_compatible", baseUrl, apiKey);
-    } else {
-      throw new Error("Unsupported inference provider");
+    const baseUrl =
+      config?.baseUrl ||
+      process.env["INFERENCE_BASE_URL"] ||
+      (providerType === "ollama" ? "http://127.0.0.1:11434" : "http://localhost:1234/v1");
+
+    const apiKey = config?.apiKey || process.env["INFERENCE_API_KEY"];
+
+    switch (providerType) {
+      case "ollama":
+        return new OllamaProvider({ baseUrl });
+
+      case "openai_compatible":
+        return new OpenAICompatibleInferenceProvider({
+          baseUrl,
+          apiKey,
+          defaultHeaders: config?.defaultHeaders,
+        });
+
+      case "mock":
+        return new MockInferenceStreamProvider();
+
+      default:
+        throw new Error(
+          `Unsupported inference provider: '${providerType}'. Supported providers are: 'ollama', 'openai_compatible', 'mock'.`,
+        );
     }
   }
+
+  /**
+   * Instance method creating provider, supporting both static and instance invocations.
+   */
+  public createProvider(config?: InferenceProviderConfig): IInferenceProvider {
+    return InferenceProviderFactory.createProvider(config);
+  }
 }
-
-describe("InferenceProviderFactory", () => {
-  it("should create an Ollama provider when INFERENCE_PROVIDER is ollama", () => {
-    const factory = new InferenceProviderFactory();
-    const provider = factory.createProvider();
-    assert.strictEqual(provider.type, "ollama");
-    assert.strictEqual(provider.baseUrl, "http://example.com/api");
-    assert.strictEqual(provider.apiKey, "test-api-key");
-  });
-
-  it("should throw an error for unsupported INFERENCE_PROVIDER", () => {
-    process.env.INFERENCE_PROVIDER = "unsupported";
-    const factory = new InferenceProviderFactory();
-    assert.throws(
-      () => factory.createProvider(),
-      /Unsupported inference provider/,
-    );
-  });
-});

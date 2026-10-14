@@ -19,3 +19,5 @@ export * from "./ReasoningDistillationService.js";
 export * from "./CognitiveHandoffCoordinator.js";
 export * from "./PromptCompressor.js";
 export * from "./RemediationPromptFormatter.js";
+export * from "./OpenAICompatibleInferenceProvider.js";
+export * from "./InferenceProviderFactory.js";
