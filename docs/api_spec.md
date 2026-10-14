@@ -82,6 +82,53 @@ Cancels or removes an enqueued task from the active queue.
 
 Returns stage durations and timeline spans for Gantt transport visualization.
 
+### GET `/api/tasks/:id/opinion`
+
+Returns distilled cognitive opinion, key decisions, identified risks, and reasoning metrics extracted from the task's generation stage transcript.
+
+**Response:** `200 OK`
+
+```json
+{
+  "taskId": "task-101",
+  "hasReasoning": true,
+  "reasoningTranscript": "Analyzed compiler diagnostics and determined missing import...",
+  "thinkingDurationMs": 4200,
+  "opinion": {
+    "summary": "Extracted reasoning transcript and architectural plan.",
+    "keyDecisions": ["Use linear string index scanning instead of regex"],
+    "identifiedRisks": ["Non-linear regex backtracking"],
+    "confidenceScore": 0.95
+  }
+}
+```
+
+### GET `/api/tasks/:id/pr-review`
+
+Returns structured automated PR review verdict, SOLID compliance score, and automated reviewer comments for the task.
+
+**Response:** `200 OK`
+
+```json
+{
+  "taskId": "task-101",
+  "prUrl": "http://localhost:19634/NeXeN/cacophony/pulls/12",
+  "targetBranch": "main",
+  "verdict": "APPROVED",
+  "solidComplianceScore": 98,
+  "reviewNotes": "All verification gates passed.",
+  "comments": [
+    {
+      "path": "packages/engine/src/service.ts",
+      "lineNumber": 1,
+      "comment": "Adherence to architectural guidelines validated.",
+      "severity": "info"
+    }
+  ],
+  "merged": true
+}
+```
+
 ### POST `/api/tasks/decompose-spec`
 
 Ingests specification documents (`docs/spec.md`, `README.md`, OpenAPI JSON) and autonomously derives topological task sequences.
@@ -245,6 +292,12 @@ Retrieves the in-memory or persisted stream buffer output for a specific task ID
   "buffer": "export class Example {\n  ...\n}"
 }
 ```
+
+### GET `/api/stream/:taskId`
+
+Opens a real-time Server-Sent Events (SSE) stream dedicated to the execution of a specific task, streaming inference tokens, stage progression, and diagnostic repairs directly to client inspectors.
+
+**Response:** `200 OK` (`text/event-stream`)
 
 ### GET `/api/models/leaderboard`
 
