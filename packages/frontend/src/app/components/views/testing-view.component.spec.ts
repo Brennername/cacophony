@@ -75,6 +75,7 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
           useValue: {
             restartProcess: vi.fn().mockResolvedValue(true),
             terminateProcess: vi.fn().mockResolvedValue(true),
+            rerunProcess: vi.fn().mockResolvedValue(true),
           },
         },
         {
@@ -214,4 +215,40 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
 
     expect(component.swipedCardId()).toBe('proc-2');
   });
+
+  it('should dispatch rerunProcess when rerunTest is called (T65.7.4)', async () => {
+    const taskApi = TestBed.inject(TaskApiService);
+    const proc = {
+      id: 'proc-1',
+      command: 'npm test -- unit',
+      durationMs: 350,
+      exitCode: 0,
+      status: 'SUCCESS' as const,
+      output: 'Test run output 100% passed',
+    };
+    await component.rerunTest(proc);
+    expect(taskApi.rerunProcess).toHaveBeenCalledWith('proc-1');
+  });
+
+  it('should copy proc.output to clipboard when copyProcLogs is called (T65.7.4)', async () => {
+    const writeTextSpy = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextSpy,
+      },
+    });
+
+    const proc = {
+      id: 'proc-1',
+      command: 'npm test -- unit',
+      durationMs: 350,
+      exitCode: 0,
+      status: 'SUCCESS' as const,
+      output: 'Test run output 100% passed',
+    };
+
+    await component.copyProcLogs(proc);
+    expect(writeTextSpy).toHaveBeenCalledWith('Test run output 100% passed');
+  });
 });
+

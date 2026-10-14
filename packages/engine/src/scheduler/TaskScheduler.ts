@@ -18,6 +18,7 @@ import type {
   TaskPlacementDecision,
 } from "./DistributedTaskDispatcher.js";
 import { ModelVramCatalog } from "../hardware/ModelVramCatalog.js";
+import type { OomPredictiveGuard } from "../hardware/OomPredictiveGuard.js";
 
 export type TaskExecutionResult = {
   success: boolean;
@@ -56,6 +57,16 @@ export class TaskScheduler {
   private lastPlacementDecision?: TaskPlacementDecision | undefined;
   private readonly maxRetries: number;
   private readonly vramCatalog: ModelVramCatalog;
+  private readonly oomGuard?: OomPredictiveGuard | undefined;
+  private ollamaProvider?:
+    | {
+        unloadModel(model: string): Promise<void>;
+        waitForModelEviction?(
+          model: string,
+          timeoutMs?: number,
+        ): Promise<boolean>;
+      }
+    | undefined;
 
   private isRunning = false;
   private isPaused = false;
@@ -85,6 +96,11 @@ export class TaskScheduler {
     readonly sorter?: ModelAffinityTaskSorter;
     readonly dispatcher?: DistributedTaskDispatcher;
     readonly vramCatalog?: ModelVramCatalog;
+    readonly oomGuard?: OomPredictiveGuard;
+    readonly ollamaProvider?: {
+      unloadModel(model: string): Promise<void>;
+      waitForModelEviction?(model: string, timeoutMs?: number): Promise<boolean>;
+    };
     readonly defaultTimeoutMs?: number;
     readonly noProgressTimeoutMs?: number;
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
@@ -100,6 +116,8 @@ export class TaskScheduler {
     this.rehabilitationService = options.rehabilitationService;
     this.dispatcher = options.dispatcher;
     this.vramCatalog = options.vramCatalog ?? new ModelVramCatalog();
+    this.oomGuard = options.oomGuard;
+    this.ollamaProvider = options.ollamaProvider;
     this.maxRetries = options.maxRetries ?? 3;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
     // An inactivity cutoff is opt-in. Some models can legitimately spend a long
@@ -259,6 +277,107 @@ export class TaskScheduler {
   }
 
   /**
+   * Sets or updates the inference/Ollama provider used for explicit model unloads.
+   */
+  public setOllamaProvider(provider: {
+    unloadModel(model: string): Promise<void>;
+    waitForModelEviction?(model: string, timeoutMs?: number): Promise<boolean>;
+  }): void {
+    this.ollamaProvider = provider;
+  }
+
+  /**
+   * Prepares VRAM environment before loading a model for inference (T68.4.2).
+   * Triggers explicit model unload if switching to a disparate model architecture
+   * when available free VRAM headroom is insufficient for co-residency.
+   *
+   * @param targetModel - Target model architecture requested for execution.
+   * @param activeVramModelOverride - Optional active model identifier.
+   * @returns boolean true if explicit model unload was executed, false otherwise.
+   */
+  public async prepareModelExecution(
+    targetModel: string,
+    activeVramModelOverride?: string | null,
+  ): Promise<boolean> {
+    const activeVramModel =
+      activeVramModelOverride !== undefined
+        ? activeVramModelOverride
+        : (await this.queryLoadedModels())[0] ?? null;
+
+    if (
+      !activeVramModel ||
+      activeVramModel === "None" ||
+      activeVramModel === targetModel
+    ) {
+      return false;
+    }
+
+    // Determine model architecture families (e.g. qwen vs gemma vs deepseek)
+    const targetFamily =
+      targetModel.split(":")[0]?.split("-")[0]?.toLowerCase() ?? "";
+    const activeFamily =
+      activeVramModel.split(":")[0]?.split("-")[0]?.toLowerCase() ?? "";
+    const isDisparate = targetFamily !== activeFamily;
+
+    // Estimate memory requirements
+    const targetRequiredMb = this.vramCatalog.estimateTotalVramMb(
+      targetModel,
+      4096,
+    );
+    const activeRequiredMb = this.vramCatalog.estimateTotalVramMb(
+      activeVramModel,
+      4096,
+    );
+    const totalRequiredMb = targetRequiredMb + activeRequiredMb;
+
+    let hasSufficientHeadroom = false;
+    if (typeof this.telemetryProvider.checkVramHeadroom === "function") {
+      hasSufficientHeadroom = await this.telemetryProvider.checkVramHeadroom(
+        totalRequiredMb,
+      );
+    } else {
+      try {
+        const sample = await this.telemetryProvider.sample();
+        if (sample.vramTotalBytes > 0) {
+          const freeMb = Math.floor(
+            Math.max(0, sample.vramTotalBytes - sample.vramUsedBytes) /
+              (1024 * 1024),
+          );
+          hasSufficientHeadroom = freeMb >= targetRequiredMb;
+        }
+      } catch {
+        hasSufficientHeadroom = true;
+      }
+    }
+
+    if (isDisparate && !hasSufficientHeadroom) {
+      console.log(
+        `[TaskScheduler] Disparate architecture switch (${activeVramModel} -> ${targetModel}) with constrained VRAM. Triggering explicit unload.`,
+      );
+      if (this.ollamaProvider) {
+        try {
+          await this.ollamaProvider.unloadModel(activeVramModel);
+          if (typeof this.ollamaProvider.waitForModelEviction === "function") {
+            await this.ollamaProvider.waitForModelEviction(
+              activeVramModel,
+              10000,
+            );
+          }
+          this.cachedLoadedModels = null;
+          return true;
+        } catch (err) {
+          console.warn(
+            `[TaskScheduler] Explicit model unload for '${activeVramModel}' failed:`,
+            err,
+          );
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Queries host Ollama HTTP endpoint for currently loaded models in VRAM (T68.3.1).
    * Caches results with a 5-second TTL to avoid redundant HTTP requests during high-frequency dispatch cycles.
    *
@@ -298,6 +417,14 @@ export class TaskScheduler {
   ): Promise<boolean> {
     const model = modelName ?? task.modelAssigned ?? "qwen2.5-coder:7b";
     const requiredMb = this.vramCatalog.estimateTotalVramMb(model, 4096);
+
+    // If predictive OOM guard detects severe host memory pressure (< 1.5 GB available), defer dispatch (T68.6.2)
+    if (this.oomGuard) {
+      const pressure = this.oomGuard.evaluateSystemMemoryPressure();
+      if (pressure.isUnderPressure) {
+        return false;
+      }
+    }
 
     // If distributed dispatcher is configured and placement targets a remote node,
     // execution is handled by remote host resources (T86.2)
@@ -676,6 +803,9 @@ export class TaskScheduler {
         this.isPaused = true;
         return null;
       }
+
+      // 6b. Explicit model unload on disparate architecture shift under constrained VRAM (T68.4.2)
+      await this.prepareModelExecution(selectedModel, activeVramModel);
 
       // 7. Transition task state to RUNNING
       console.log(

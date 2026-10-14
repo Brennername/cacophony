@@ -238,6 +238,31 @@ Executes deterministic task rehabilitation and subtask decomposition for failed 
 
 Evaluates dynamic rolling window success rates, Discrete velocity, acceleration derivatives, and plateau convergence metrics across arbitrary window sizes (10, 20, 50, 100, 1000).
 
+### GET `/api/analytics/commit-impact`
+
+Evaluates statistical and empirical impact of recent git commits on task execution win rates, identifying regression spikes and isolating problematic changes.
+
+**Query Parameters:**
+
+- `commitHash` (optional): Git SHA to evaluate specific commit impact.
+- `limit` (optional): Number of recent commit impact reports to return (default: 15).
+
+**Response:** `200 OK`
+
+```json
+[
+  {
+    "commitHash": "a1b2c3d",
+    "tasksBefore": 20,
+    "tasksAfter": 20,
+    "winRateBefore": 85.0,
+    "winRateAfter": 65.0,
+    "winRateDelta": -20.0,
+    "classification": "REGRESSION"
+  }
+]
+```
+
 ### GET `/api/bandit/arms`
 
 Retrieves multi-armed bandit model arms with exploration distributions, empirical rewards, and selected arm counts.
@@ -493,6 +518,23 @@ Gracefully terminates a running subprocess. Role-gated: requires `OPERATOR` or `
 }
 ```
 
+### POST `/api/processes/:id/rerun`
+
+Re-runs a completed, failed, or historical test-runner process in a sandboxed runner context. Role-gated: requires `OPERATOR` or `ADMIN` role when authentication is enforced.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "processId": "proc-123",
+  "command": "npm test",
+  "exitCode": 0,
+  "output": "All 105 tests passed",
+  "timestamp": "2026-10-14T04:15:00.000Z"
+}
+```
+
 ### GET `/api/diagnostics`
 
 Returns runtime diagnostics, AST parser health, memory usage, and execution counters.
@@ -536,6 +578,7 @@ Opens a persistent streaming channel broadcasting real-time arena diagnostics an
 - `token`: Incremental token emitted during live LLM stream inference.
 - `telemetry`: 1-second interval hardware APU sensor snapshots.
 - `diagnostics`: Workspace compiler diagnostics emitted by language servers.
+- `system_memory_warning`: Emitted when available system memory drops below the 1.5 GB safety threshold (`{ memAvailableBytes: number, thresholdBytes: number, message: string }`).
 
 ---
 

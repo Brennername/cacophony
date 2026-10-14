@@ -12,6 +12,7 @@ import { BannedImportsScrubberRule } from "./rules/BannedImportsScrubberRule.js"
 import { JavaPackageScrubberRule } from "./rules/JavaPackageScrubberRule.js";
 import { PrettierFormattingScrubberRule } from "./rules/PrettierFormattingScrubberRule.js";
 import { WorkspacePackageImportScrubberRule } from "./rules/WorkspacePackageImportScrubberRule.js";
+import { SyntacticRemediationScrubberRule } from "./rules/SyntacticRemediationScrubberRule.js";
 
 export interface FileScrubResult {
   readonly filePath: string;
@@ -56,6 +57,7 @@ export class CodeScrubber {
     this.rules = rules ?? [
       new EmojiScrubberRule(),
       new WorkspacePackageImportScrubberRule(),
+      new SyntacticRemediationScrubberRule(),
       new EsmRelativeImportScrubberRule(),
       new ExtensionHeuristicScrubberRule(),
       new BannedImportsScrubberRule(),

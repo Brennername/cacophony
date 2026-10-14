@@ -67,6 +67,7 @@ export interface ProcessItem {
   taskTitle?: string | undefined;
   cpuPercent?: number | undefined;
   rssMemoryMb?: number | undefined;
+  output?: string | null | undefined;
 }
 
 export interface GenerationHeartbeatInfo {
@@ -188,6 +189,45 @@ export class ArenaStateStore {
   public readonly schedulerPaused = signal<boolean>(false);
 
   public readonly currentUserRole = signal<'ADMIN' | 'OPERATOR' | 'VIEWER'>('OPERATOR');
+
+  /**
+   * Tracks model warmth state per model ID: 'cold' | 'warming' | 'warm' (T96.4.2).
+   */
+  public readonly modelWarmth = signal<Record<string, 'cold' | 'warming' | 'warm'>>({});
+
+  /**
+   * Tracks the currently dispatched/active task identifier (T96.4.1).
+   */
+  public readonly activeTaskId = signal<string | null>(null);
+
+  /**
+   * Global task execution success rate as a percentage 0-100 (T96.4.3).
+   */
+  public readonly successRate = signal<number>(100);
+
+  /**
+   * Hardware thermal throttle status: 'nominal' | 'throttling' | 'critical' (T96.4.4).
+   */
+  public readonly thermalThrottleState = signal<'nominal' | 'throttling' | 'critical'>('nominal');
+
+  public setActiveTaskId(taskId: string | null): void {
+    this.activeTaskId.set(taskId);
+  }
+
+  public setModelWarmth(modelId: string, warmth: 'cold' | 'warming' | 'warm'): void {
+    this.modelWarmth.update((prev) => ({
+      ...prev,
+      [modelId]: warmth,
+    }));
+  }
+
+  public setSuccessRate(rate: number): void {
+    this.successRate.set(rate);
+  }
+
+  public setThermalThrottleState(state: 'nominal' | 'throttling' | 'critical'): void {
+    this.thermalThrottleState.set(state);
+  }
 
   public readonly canMutateTasks = computed(() => {
     const role = this.currentUserRole();
@@ -674,6 +714,30 @@ export class ArenaStateStore {
               this.astScrubbingBuffer.update((prev) => (prev ? prev + '\n' + content : content).slice(-25000));
             } else if (data.channel === 'review_critique') {
               this.reviewCritiqueBuffer.update((prev) => (prev ? prev + '\n' + content : content).slice(-25000));
+            }
+          }
+          if (data.type === 'task_dispatched') {
+            const taskId = data.taskId || data.id || null;
+            this.activeTaskId.set(taskId);
+          }
+          if (data.type === 'task_completed' || data.type === 'task_failed') {
+            if (data.taskId && this.activeTaskId() === data.taskId) {
+              this.activeTaskId.set(null);
+            }
+          }
+          if (data.type === 'model_warmth') {
+            if (data.modelId && data.warmth) {
+              this.setModelWarmth(data.modelId, data.warmth);
+            }
+          }
+          if (data.type === 'success_rate_updated') {
+            if (typeof data.successRate === 'number') {
+              this.setSuccessRate(data.successRate);
+            }
+          }
+          if (data.type === 'thermal_throttle') {
+            if (data.state) {
+              this.setThermalThrottleState(data.state);
             }
           }
         } catch {

@@ -10,6 +10,7 @@ import type { ModelProfileRepository } from "@cacophony/db";
 export interface OllamaProviderOptions {
   readonly baseUrl?: string | undefined;
   readonly profileRepository?: ModelProfileRepository | undefined;
+  readonly fetchFn?: typeof fetch | undefined;
 }
 
 /**
@@ -23,17 +24,20 @@ export class OllamaProvider implements IInferenceProvider {
   private readonly baseUrl: string;
   private readonly dispatcher: Agent;
   private readonly profileRepo?: ModelProfileRepository | undefined;
+  private readonly fetchFn: typeof fetch;
 
   constructor(options?: string | OllamaProviderOptions) {
     if (typeof options === "string") {
       this.baseUrl = options;
       this.profileRepo = undefined;
+      this.fetchFn = fetch;
     } else {
       this.baseUrl =
         options?.baseUrl ||
         process.env["OLLAMA_BASE_URL"] ||
         "http://127.0.0.1:11434";
       this.profileRepo = options?.profileRepository;
+      this.fetchFn = options?.fetchFn ?? fetch;
     }
     this.dispatcher = new Agent({
       headersTimeout: 0,
@@ -306,7 +310,7 @@ export class OllamaProvider implements IInferenceProvider {
    */
   public async unloadModel(modelName: string): Promise<void> {
     const url = `${this.baseUrl}/api/generate`;
-    const res = await fetch(url, {
+    const res = await this.fetchFn(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       dispatcher: this.dispatcher as any,
@@ -314,7 +318,7 @@ export class OllamaProvider implements IInferenceProvider {
         model: modelName,
         keep_alive: 0,
       }),
-    });
+    } as RequestInit);
 
     if (!res.ok) {
       const errText = await res.text();
@@ -323,4 +327,59 @@ export class OllamaProvider implements IInferenceProvider {
       );
     }
   }
+
+  /**
+   * Polls Ollama GET /api/ps with 500ms backoff verifying the model has been purged from GPU memory (T68.4.3).
+   *
+   * @param modelName - The model tag to verify eviction for.
+   * @param timeoutMs - Maximum duration in milliseconds to poll before timing out (default 10,000ms).
+   * @returns Promise resolving to true if purged, or false if timed out.
+   */
+  public async waitForModelEviction(
+    modelName: string,
+    timeoutMs: number = 10000,
+  ): Promise<boolean> {
+    const url = `${this.baseUrl}/api/ps`;
+    const startTime = Date.now();
+    const pollIntervalMs = 500;
+
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        const res = await this.fetchFn(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          dispatcher: this.dispatcher as any,
+        } as RequestInit);
+
+        if (res.ok) {
+          const body = (await res.json()) as {
+            models?: Array<{ name?: string; model?: string }>;
+          };
+          const activeModels = body.models ?? [];
+          const isResident = activeModels.some(
+            (m) =>
+              m.name === modelName ||
+              m.model === modelName ||
+              (m.name &&
+                (m.name.startsWith(modelName) ||
+                  modelName.startsWith(m.name))) ||
+              (m.model &&
+                (m.model.startsWith(modelName) ||
+                  modelName.startsWith(m.model))),
+          );
+
+          if (!isResident) {
+            return true;
+          }
+        }
+      } catch {
+        // Transient network error; continue polling until timeout
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    }
+
+    return false;
+  }
 }
+

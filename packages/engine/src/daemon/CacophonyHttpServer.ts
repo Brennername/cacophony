@@ -2508,6 +2508,56 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4d.3 REST API: Process Re-run (T65.7.1)
+    const rerunMatch = url.pathname.match(
+      /^\/api\/processes\/([^/]+)\/rerun$/,
+    );
+    if (rerunMatch && req.method === "POST") {
+      const processId = decodeURIComponent(rerunMatch[1] ?? "");
+      const authHeader = req.headers["authorization"] || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token && process.env["REQUIRE_AUTH"] === "true") {
+        const authCtx = await this.authService.authenticateToken(token);
+        if (!authCtx || !this.authService.isAuthorized(authCtx, "OPERATOR")) {
+          res.writeHead(403, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error:
+                "Forbidden: Re-running processes requires OPERATOR or ADMIN role",
+            }),
+          );
+          return;
+        }
+      }
+
+      const commandToRun = processId.startsWith("proc-sys-")
+        ? "echo 'System service rerun acknowledged'"
+        : "npm test";
+
+      const { SandboxedProcessRunner } = await import(
+        "../testing/SandboxedProcessRunner.js"
+      );
+      const runner = new SandboxedProcessRunner();
+      const runResult = await runner.run(commandToRun, {
+        cwd: process.cwd(),
+        timeoutMs: 60000,
+        maxBufferBytes: 512 * 1024,
+      });
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: true,
+          processId,
+          command: commandToRun,
+          exitCode: runResult.exitCode,
+          output: `${runResult.stdout}\n${runResult.stderr}`.trim(),
+          timestamp: new Date().toISOString(),
+        }),
+      );
+      return;
+    }
+
     // 4e. REST API: Repository Architectural Map
     if (url.pathname === "/api/repomap" && req.method === "GET") {
       const symbols = [

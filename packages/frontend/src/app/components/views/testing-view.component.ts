@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArenaStateStore, ProcessItem } from '../../services/arena-state.store';
+import { TaskApiService } from '../../services/task-api.service';
 import { ProcessInspectorComponent } from '../process-inspector/process-inspector.component';
 import { TestRunModalComponent } from '../test-run-modal/test-run-modal.component';
 import { TestFilterToolbarComponent, TestFilterOption } from '../test-filter-toolbar/test-filter-toolbar.component';
@@ -30,6 +31,7 @@ import { ProcessDrawerComponent } from '../process-drawer/process-drawer.compone
 })
 export class TestingViewComponent implements OnInit, OnDestroy {
   public readonly store = inject(ArenaStateStore);
+  public readonly taskApiService = inject(TaskApiService);
   public readonly testRunModal = viewChild(TestRunModalComponent);
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly router = inject(Router, { optional: true });
@@ -384,15 +386,24 @@ export class TestingViewComponent implements OnInit, OnDestroy {
     this.inspectTestRun(proc);
   }
 
-  public copyProcLogs(proc: ProcessItem): void {
+  public async copyProcLogs(proc: ProcessItem): Promise<void> {
+    const textToCopy = proc.output || proc.command;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(proc.command);
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+      } catch {
+        // Fallback or ignore clipboard denial
+      }
     }
   }
 
-  public rerunTest(proc: ProcessItem): void {
-    // Re-run test by appending command notification to stream
+  public async rerunTest(proc: ProcessItem): Promise<void> {
     this.appendOutputLine(`[rerun-triggered] Re-executing test command: ${proc.command}`);
+    try {
+      await this.taskApiService.rerunProcess(proc.id);
+    } catch {
+      // Handled via toast feedback in TaskApiService
+    }
   }
 
   private scrollToBottomIfNeeded(force = false): void {

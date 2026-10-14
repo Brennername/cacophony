@@ -18,6 +18,7 @@ export class ModelEvictionManager {
   private tenancyGuard: ModelTenancyGuard | undefined;
   private modelManager: OllamaModelManager | undefined;
   private cooldownTimer: { [modelId: string]: NodeJS.Timeout } = {};
+  private readonly modelRoles: Map<string, AgentRole> = new Map();
 
   constructor(
     healthRepo: ModelHealthRepository,
@@ -49,6 +50,66 @@ export class ModelEvictionManager {
     return this.explorationRate;
   }
 
+  public getModelRole(modelId: string): AgentRole {
+    return this.modelRoles.get(modelId) ?? "implementer";
+  }
+
+  public setModelRole(modelId: string, role: AgentRole): void {
+    this.modelRoles.set(modelId, role);
+  }
+
+  /**
+   * Tracks per-model rolling success rate and auto-demotes models below 50% pass rate
+   * to shadow review role while promoting reliable models (T69.6.4).
+   */
+  public async evaluateModelPromotionDemotion(
+    modelId: string,
+    minTasks = 4,
+  ): Promise<{
+    role: AgentRole;
+    action: "promoted" | "demoted" | "unchanged";
+    passRate: number;
+  }> {
+    const profile = await this.healthRepo.getProfile(modelId);
+    if (profile.totalTasks < minTasks) {
+      return {
+        role: this.getModelRole(modelId),
+        action: "unchanged",
+        passRate:
+          profile.totalTasks > 0
+            ? profile.totalSuccess / profile.totalTasks
+            : 1.0,
+      };
+    }
+
+    const passRate = profile.totalSuccess / profile.totalTasks;
+    const currentRole = this.getModelRole(modelId);
+
+    if (passRate < 0.5) {
+      this.modelRoles.set(modelId, "reviewer");
+      return {
+        role: "reviewer",
+        action: currentRole !== "reviewer" ? "demoted" : "unchanged",
+        passRate,
+      };
+    }
+
+    if (passRate >= 0.75) {
+      this.modelRoles.set(modelId, "implementer");
+      return {
+        role: "implementer",
+        action: currentRole !== "implementer" ? "promoted" : "unchanged",
+        passRate,
+      };
+    }
+
+    return {
+      role: currentRole,
+      action: "unchanged",
+      passRate,
+    };
+  }
+
   public async recordRunOutcome(
     modelId: string,
     success: boolean,
@@ -62,6 +123,8 @@ export class ModelEvictionManager {
       durationMs,
       tokensPerSec,
     );
+
+    await this.evaluateModelPromotionDemotion(modelId);
 
     if (!success) {
       await this.evaluateModelEviction(modelId);
@@ -134,7 +197,7 @@ export class ModelEvictionManager {
   }
 
   public async selectModel(
-    _role: AgentRole,
+    role: AgentRole,
     candidateModels: readonly string[],
     currentlyLoadedModel: string | null,
   ): Promise<string> {
@@ -178,8 +241,15 @@ export class ModelEvictionManager {
 
     const weights: ModelCandidateWeight[] = activeCandidates.map((p) => {
       const passRate = (p.totalSuccess + 1) / (p.totalTasks + 2);
+      let multiplier = 1.0;
+      const modelRole = this.getModelRole(p.modelId);
+      if (role === "implementer" && modelRole === "reviewer") {
+        multiplier = 0.2;
+      } else if (role === "reviewer" && modelRole === "reviewer") {
+        multiplier = 1.5;
+      }
 
-      const weight = Math.max(0.05, passRate);
+      const weight = Math.max(0.01, passRate * multiplier);
       return {
         modelId: p.modelId,
         weight,

@@ -219,6 +219,20 @@ export class CacophonyDaemon {
       taskRepo: this.taskRepo,
     });
 
+    const { OomPredictiveGuard } =
+      await import("../hardware/OomPredictiveGuard.js");
+    const oomGuard = new OomPredictiveGuard({
+      onPressureWarning: (report) => {
+        if (this.httpServer) {
+          this.httpServer.broadcastSse("system_memory_warning", {
+            memAvailableBytes: report.memAvailableBytes,
+            thresholdBytes: report.thresholdBytes,
+            message: "System memory availability dropped below 1.5 GB",
+          });
+        }
+      },
+    });
+
     this.scheduler = new TaskScheduler({
       taskRepo: this.taskRepo,
       stageRepo: this.stageRepo,
@@ -228,6 +242,7 @@ export class CacophonyDaemon {
       groomer,
       governor,
       rehabilitationService,
+      oomGuard,
       defaultTimeoutMs: 2400000,
       perModelTimeoutMs: {
         "qwen2.5-coder:7b-instruct-q4_K_M": 1800000,
@@ -251,6 +266,8 @@ export class CacophonyDaemon {
     const primaryInferenceProvider = isDemoMode
       ? new MockInferenceStreamProvider(28)
       : new OllamaProvider({ profileRepository: this.modelProfileRepo });
+
+    this.scheduler.setOllamaProvider(primaryInferenceProvider as any);
 
     this.benchmarkRunner = new ModelBenchmarkRunner(
       primaryInferenceProvider as any,

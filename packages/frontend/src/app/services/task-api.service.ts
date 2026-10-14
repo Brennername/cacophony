@@ -232,4 +232,30 @@ export class TaskApiService {
       this.loading.set(false);
     }
   }
+
+  /**
+   * Dispatches POST /api/processes/:id/rerun and displays a transient toast notification (T65.7.2).
+   */
+  public async rerunProcess(processId: string): Promise<boolean> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/processes/${encodeURIComponent(processId)}/rerun`, {
+        method: 'POST'
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to rerun process`);
+      }
+      this.toastService.showToast(`Process ${processId} rerun dispatched`, 'success');
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      this.toastService.showToast(`Failed to rerun process: ${msg}`, 'error');
+      return false;
+    } finally {
+      this.loading.set(false);
+    }
+  }
 }
+
