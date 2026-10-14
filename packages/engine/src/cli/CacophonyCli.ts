@@ -1,10 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as os from "node:os";
 import { spawn } from "node:child_process";
 import { DaemonIPCClient, DEFAULT_SOCKET_PATH } from "../daemon/DaemonIPC.js";
 import { CacophonyDaemon } from "../daemon/CacophonyDaemon.js";
 import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { runDatasetMigrateCommand } from "./datasetCommand.js";
+import { DatabaseBackupService } from "@cacophony/db";
 
 export class CacophonyCli {
   private readonly client: DaemonIPCClient;
@@ -98,6 +100,10 @@ export class CacophonyCli {
         // Historical Dataset Management & Schema Migration
         case "dataset":
           return await this.handleDataset(rest);
+
+        // Database Backup & Retention
+        case "backup":
+          return await this.handleBackup(rest);
 
         default:
           console.error(`Unknown command: ${command}`);
@@ -548,6 +554,64 @@ export class CacophonyCli {
     return await runDatasetMigrateCommand(args);
   }
 
+  private async handleBackup(args: readonly string[]): Promise<number> {
+    const isDryRun = args.includes("--dry-run");
+
+    let retentionCount = 5;
+    const retentionArg = args.find(
+      (a) => a.startsWith("--retention=") || a.startsWith("--retention-count="),
+    );
+    if (retentionArg) {
+      const val = parseInt(retentionArg.split("=")[1] || "", 10);
+      if (!isNaN(val) && val > 0) {
+        retentionCount = val;
+      }
+    }
+
+    let dbDir =
+      process.env["CACOPHONY_DB_DIR"] ||
+      path.join(os.homedir(), ".cacophony", "data");
+    const dbDirArg = args.find((a) => a.startsWith("--db-dir="));
+    if (dbDirArg) {
+      dbDir = dbDirArg.split("=")[1] || dbDir;
+    }
+
+    let backupDir = path.join(path.dirname(dbDir), "backups");
+    const backupDirArg = args.find((a) => a.startsWith("--backup-dir="));
+    if (backupDirArg) {
+      backupDir = backupDirArg.split("=")[1] || backupDir;
+    }
+
+    if (isDryRun) {
+      console.log("[DRY RUN] Cacophony Database Backup Plan:");
+      console.log(`  Source DB Directory: ${dbDir}`);
+      console.log(`  Backup Directory:    ${backupDir}`);
+      console.log(`  Retention Count:     ${retentionCount}`);
+      console.log(
+        `  Exists on disk:      ${fs.existsSync(dbDir) ? "yes" : "no"}`,
+      );
+      console.log(
+        "[DRY RUN] Dry run completed successfully. No files created or pruned.",
+      );
+      return 0;
+    }
+
+    console.log(`Initiating database backup from ${dbDir}...`);
+    const backupService = new DatabaseBackupService({
+      dbDir,
+      backupDir,
+      defaultRetentionCount: retentionCount,
+    });
+
+    const result = await backupService.createSnapshot(retentionCount);
+    console.log(`Snapshot created successfully.`);
+    console.log(`  Path:      ${result.snapshotPath}`);
+    console.log(`  Timestamp: ${result.timestamp}`);
+    console.log(`  Size:      ${(result.sizeBytes / 1024).toFixed(2)} KB`);
+    console.log(`  Pruned:    ${result.prunedSnapshots.length} older snapshot(s)`);
+    return 0;
+  }
+
   private printHelp(): void {
     console.log(`
 Cacophony Unified CLI & Command Palette
@@ -589,6 +653,12 @@ Code Correction & Scrubber:
 
 Dataset Management:
   dataset migrate --dir=<p> Non-destructive schema migration for historical datasets
+
+Database Backup & Recovery:
+  backup [--dry-run]        Create timestamped database snapshot with retention pruning
+         [--retention=N]    Configurable retention count (default: 5)
+         [--db-dir=<p>]     Custom database directory path
+         [--backup-dir=<p>] Custom backup destination directory path
 
 Staging to Production Promotion:
   promote [--dry-run]       Execute quarantine gauntlet and promote to upstream GitHub

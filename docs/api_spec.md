@@ -555,6 +555,25 @@ Returns storage footprint metrics for PGlite/Postgres tables, wal segments, comp
 
 Executes vacuum, table reindexing, and historical telemetry compaction.
 
+### POST `/api/admin/backup`
+
+Creates an on-demand, timestamped directory snapshot of the active database storage files and prunes older snapshots beyond the configured retention limit.
+
+**Query Parameters:**
+
+- `retentionCount` (optional): Maximum number of most recent snapshots to retain (default: 5).
+
+**Response:** `200 OK`
+
+```json
+{
+  "snapshotPath": "/path/to/backups/snapshot-2026-10-14T11-00-00-000Z",
+  "timestamp": "2026-10-14T11-00-00-000Z",
+  "sizeBytes": 1048576,
+  "prunedSnapshots": []
+}
+```
+
 ### GET `/api/config/quotas`
 
 Retrieves per-model inference rate limits, token budgets, and daily execution caps.

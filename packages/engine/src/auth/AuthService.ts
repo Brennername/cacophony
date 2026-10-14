@@ -51,6 +51,7 @@ export class AuthService {
     this.oidcDiscoveryService = new OidcDiscoveryService(this.issuerUrl);
     const hmacSecret =
       options?.jwtSecret ||
+      process.env["JWT_SECRET"] ||
       process.env["VAULT_MASTER_KEY"] ||
       "cacophony-jwt-session-secret";
     this.jwtValidator = new JwtValidator({

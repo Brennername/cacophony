@@ -39,10 +39,14 @@ function isDockerEngineRunning() {
 
 const socketPath = process.env.CACOPHONY_IPC_SOCKET || "/tmp/cacophony.sock";
 const localSocketActive = await isSocketOnline(socketPath);
-const isLocalStart = command === "start" || command === "start-daemon";
+const isLocalOnly =
+  command === "start" ||
+  command === "start-daemon" ||
+  command === "backup" ||
+  Boolean(process.env.CACOPHONY_LOCAL);
 
 // When local socket is inactive and Docker container is running, delegate execution into the container
-if (!localSocketActive && !isLocalStart && isDockerEngineRunning()) {
+if (!localSocketActive && !isLocalOnly && isDockerEngineRunning()) {
   const isTty = Boolean(process.stdin.isTTY && process.stdout.isTTY);
   const dockerArgs = ["exec", isTty ? "-it" : "-i", "cacophony-engine", "./bin/cacophony", ...args];
   const child = spawn("docker", dockerArgs, { stdio: "inherit" });

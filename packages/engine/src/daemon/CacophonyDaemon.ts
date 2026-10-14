@@ -24,6 +24,7 @@ import { StreamTapManager } from "../inference/StreamTapManager.js";
 import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { DaemonIPCServer } from "./DaemonIPC.js";
 import { CacophonyHttpServer } from "./CacophonyHttpServer.js";
+import { StructuredLogger } from "../telemetry/StructuredLogger.js";
 import * as path from "node:path";
 
 export interface DaemonConfig {
@@ -57,6 +58,7 @@ export class CacophonyDaemon {
   private userSessionRepo!: UserSessionRepository;
   private modelProfileRepo!: ModelProfileRepository;
   private telemetryPoller!: TelemetryPoller;
+  private readonly logger = new StructuredLogger("CacophonyDaemon");
   private scheduler!: TaskScheduler;
   private ipcServer!: DaemonIPCServer;
   private httpServer?: CacophonyHttpServer | undefined;
@@ -128,8 +130,8 @@ export class CacophonyDaemon {
       process.env.NODE_ENV === "test" ||
       Boolean(process.env.NODE_TEST_CONTEXT);
     if (isDefaultKey && !isTestOrDemo) {
-      console.error(
-        "[CacophonyDaemon] FATAL: VAULT_MASTER_KEY is set to the default all-zeros placeholder. " +
+      this.logger.error(
+        "FATAL: VAULT_MASTER_KEY is set to the default all-zeros placeholder. " +
           "Generate a real key with: openssl rand -hex 32",
       );
       process.exit(1);
@@ -380,8 +382,9 @@ export class CacophonyDaemon {
       try {
         const reclaimed = await this.taskRepo.reclaimStaleRunningTasks(15);
         if (reclaimed > 0) {
-          console.log(
-            `[CacophonyDaemon] Reclaimed ${reclaimed} stale RUNNING tasks on startup`,
+          this.logger.info(
+            `Reclaimed ${reclaimed} stale RUNNING tasks on startup`,
+            { reclaimed },
           );
         }
       } catch {
@@ -615,10 +618,9 @@ export class CacophonyDaemon {
       try {
         await this.driver.close();
       } catch (err) {
-        console.warn(
-          "[CacophonyDaemon] Error closing database driver on stop:",
-          err,
-        );
+        this.logger.warn("Error closing database driver on stop", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
     this.isRunning = false;
@@ -672,6 +674,10 @@ export class CacophonyDaemon {
     | import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter
     | undefined {
     return this.fallbackRouter;
+  }
+
+  public getHttpServer(): CacophonyHttpServer | undefined {
+    return this.httpServer;
   }
 
   public getModelManager():

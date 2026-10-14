@@ -19,6 +19,7 @@ import type {
 } from "./DistributedTaskDispatcher.js";
 import { ModelVramCatalog } from "../hardware/ModelVramCatalog.js";
 import type { OomPredictiveGuard } from "../hardware/OomPredictiveGuard.js";
+import { StructuredLogger } from "../telemetry/StructuredLogger.js";
 
 export type TaskExecutionResult = {
   success: boolean;
@@ -73,6 +74,7 @@ export class TaskScheduler {
   private drainMode = false;
   private loopTimer: NodeJS.Timeout | null = null;
   private executionHandler: TaskExecutionHandler | null = null;
+  private readonly logger = new StructuredLogger("TaskScheduler");
 
   private readonly perModelTimeoutMs: Readonly<Record<string, number>>;
   private readonly defaultTimeoutMs: number;
@@ -351,8 +353,9 @@ export class TaskScheduler {
     }
 
     if (isDisparate && !hasSufficientHeadroom) {
-      console.log(
-        `[TaskScheduler] Disparate architecture switch (${activeVramModel} -> ${targetModel}) with constrained VRAM. Triggering explicit unload.`,
+      this.logger.info(
+        `Disparate architecture switch (${activeVramModel} -> ${targetModel}) with constrained VRAM. Triggering explicit unload.`,
+        { activeVramModel, targetModel },
       );
       if (this.ollamaProvider) {
         try {
@@ -366,9 +369,9 @@ export class TaskScheduler {
           this.cachedLoadedModels = null;
           return true;
         } catch (err) {
-          console.warn(
-            `[TaskScheduler] Explicit model unload for '${activeVramModel}' failed:`,
-            err,
+          this.logger.warn(
+            `Explicit model unload for '${activeVramModel}' failed`,
+            { error: err instanceof Error ? err.message : String(err) },
           );
         }
       }
@@ -646,8 +649,9 @@ export class TaskScheduler {
               false,
             );
             if (requeuedCount > 0) {
-              console.log(
-                `[TaskScheduler] Automatically requeued ${requeuedCount} failed tasks for retry`,
+              this.logger.info(
+                `Automatically requeued ${requeuedCount} failed tasks for retry`,
+                { requeuedCount },
               );
               const refreshed = await this.taskRepo.listPending();
               pending = refreshed.filter((t) => t.status !== "RUNNING");
@@ -670,8 +674,9 @@ export class TaskScheduler {
               if (res.created) seededCount++;
             }
             if (seededCount > 0) {
-              console.log(
-                `[TaskScheduler] Automatically seeded ${seededCount} uncompleted tasks from taskcade.md`,
+              this.logger.info(
+                `Automatically seeded ${seededCount} uncompleted tasks from taskcade.md`,
+                { seededCount },
               );
               const refreshed = await this.taskRepo.listPending();
               pending = refreshed.filter((t) => t.status !== "RUNNING");
@@ -718,8 +723,9 @@ export class TaskScheduler {
           selectedModel = candidateModel;
           break;
         } else {
-          console.warn(
-            `[TaskScheduler] Deferring candidate task ${candidateTask.id} (${candidateModel}): insufficient VRAM headroom`,
+          this.logger.warn(
+            `Deferring candidate task ${candidateTask.id} (${candidateModel}): insufficient VRAM headroom`,
+            { taskId: candidateTask.id, candidateModel },
           );
         }
       }
@@ -774,9 +780,10 @@ export class TaskScheduler {
           0,
         );
         await this.taskRepo.updateStatus(targetTask.id, "FAILED");
-        console.warn(
-          `[TaskScheduler] Preflight rejected task ${targetTask.id}: ${message}`,
-        );
+        this.logger.warn(`Preflight rejected task ${targetTask.id}: ${message}`, {
+          taskId: targetTask.id,
+          message,
+        });
         return targetTask;
       }
 
@@ -788,12 +795,25 @@ export class TaskScheduler {
           priority: targetTask.priority,
         });
         if (!this.lastPlacementDecision.isLocal) {
-          console.log(
-            `[TaskScheduler] Offloading compute-intensive task ${targetTask.id} (${selectedModel}) to remote fleet node '${this.lastPlacementDecision.nodeId}' (${this.lastPlacementDecision.targetHost ?? "remote"}:${this.lastPlacementDecision.targetPort ?? 24072}): ${this.lastPlacementDecision.reason}`,
+          this.logger.info(
+            `Offloading compute-intensive task ${targetTask.id} (${selectedModel}) to remote fleet node '${this.lastPlacementDecision.nodeId}'`,
+            {
+              taskId: targetTask.id,
+              selectedModel,
+              nodeId: this.lastPlacementDecision.nodeId,
+              targetHost: this.lastPlacementDecision.targetHost,
+              targetPort: this.lastPlacementDecision.targetPort,
+              reason: this.lastPlacementDecision.reason,
+            },
           );
         } else {
-          console.log(
-            `[TaskScheduler] Retaining task ${targetTask.id} (${selectedModel}) locally on orchestrator node: ${this.lastPlacementDecision.reason}`,
+          this.logger.info(
+            `Retaining task ${targetTask.id} (${selectedModel}) locally on orchestrator node: ${this.lastPlacementDecision.reason}`,
+            {
+              taskId: targetTask.id,
+              selectedModel,
+              reason: this.lastPlacementDecision.reason,
+            },
           );
         }
       }
@@ -803,8 +823,12 @@ export class TaskScheduler {
         this.telemetryProvider,
       );
       if (thermalEval.emergencyHalt) {
-        console.error(
-          `[TaskScheduler] OUCH! THERMAL CUTOFF (${thermalEval.tempCelsius}C >= ${this.governor.emergencyShutdownTemp}C). Halting task queue immediately.`,
+        this.logger.error(
+          `Thermal cutoff (${thermalEval.tempCelsius}C >= ${this.governor.emergencyShutdownTemp}C). Halting task queue immediately.`,
+          {
+            tempCelsius: thermalEval.tempCelsius,
+            threshold: this.governor.emergencyShutdownTemp,
+          },
         );
         this.isPaused = true;
         return null;
@@ -814,8 +838,13 @@ export class TaskScheduler {
       await this.prepareModelExecution(selectedModel, activeVramModel);
 
       // 7. Transition task state to RUNNING
-      console.log(
-        `[TaskScheduler] Dispatching task ${targetTask.id} ('${targetTask.title}') to model '${selectedModel}'`,
+      this.logger.info(
+        `Dispatching task ${targetTask.id} ('${targetTask.title}') to model '${selectedModel}'`,
+        {
+          taskId: targetTask.id,
+          title: targetTask.title,
+          selectedModel,
+        },
       );
       await this.taskRepo.updateStatus(targetTask.id, "RUNNING");
       await this.taskRepo.updateModel(targetTask.id, selectedModel);
@@ -914,8 +943,14 @@ export class TaskScheduler {
           }
 
           if (result.success) {
-            console.log(
-              `[TaskScheduler] Task ${targetTask.id} finished with status COMPLETED in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`,
+            this.logger.info(
+              `Task ${targetTask.id} finished with status COMPLETED in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`,
+              {
+                taskId: targetTask.id,
+                durationMs,
+                tokensPerSec: actualTps,
+                status: "COMPLETED",
+              },
             );
             await this.taskRepo.updateStatus(
               targetTask.id,
@@ -953,8 +988,14 @@ export class TaskScheduler {
                 : targetTask.failureCount + 1;
 
             if (effectiveFailureCount < this.maxRetries) {
-              console.log(
-                `[TaskScheduler] Task ${targetTask.id} attempt ${effectiveFailureCount}/${this.maxRetries} failed. Requeuing for autonomous remediation.`,
+              this.logger.info(
+                `Task ${targetTask.id} attempt ${effectiveFailureCount}/${this.maxRetries} failed. Requeuing for autonomous remediation.`,
+                {
+                  taskId: targetTask.id,
+                  attempt: effectiveFailureCount,
+                  maxRetries: this.maxRetries,
+                  failureReason,
+                },
               );
               await this.taskRepo.updateStatus(
                 targetTask.id,
@@ -969,8 +1010,13 @@ export class TaskScheduler {
                 );
               }
             } else {
-              console.log(
-                `[TaskScheduler] Task ${targetTask.id} reached max retries (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`,
+              this.logger.info(
+                `Task ${targetTask.id} reached max retries (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`,
+                {
+                  taskId: targetTask.id,
+                  effectiveFailureCount,
+                  maxRetries: this.maxRetries,
+                },
               );
               await this.taskRepo.updateStatus(
                 targetTask.id,
@@ -992,9 +1038,15 @@ export class TaskScheduler {
                     result.commitHash,
                   );
                 } catch (rehabErr) {
-                  console.error(
-                    `[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`,
-                    rehabErr,
+                  this.logger.error(
+                    `Rehabilitation failed for task ${targetTask.id}`,
+                    {
+                      taskId: targetTask.id,
+                      error:
+                        rehabErr instanceof Error
+                          ? rehabErr.message
+                          : String(rehabErr),
+                    },
                   );
                 }
               }
@@ -1025,9 +1077,14 @@ export class TaskScheduler {
             classification.category === "TIMEOUT" ||
             err instanceof ExecutionTimeoutError;
 
-          console.error(
-            `[TaskScheduler] Task ${targetTask.id} threw error [${classification.category}] after ${durationMs}ms:`,
-            err,
+          this.logger.error(
+            `Task ${targetTask.id} threw error [${classification.category}] after ${durationMs}ms`,
+            {
+              taskId: targetTask.id,
+              category: classification.category,
+              durationMs,
+              error: err instanceof Error ? err.message : String(err),
+            },
           );
 
           // Retrieve any measured tokensPerSec from completed stages (e.g. Stage 2 Generation) or live stream buffer
@@ -1083,8 +1140,14 @@ export class TaskScheduler {
           );
 
           if (effectiveFailureCount < this.maxRetries) {
-            console.log(
-              `[TaskScheduler] Task ${targetTask.id} caught error attempt ${effectiveFailureCount}/${this.maxRetries}. Requeuing for autonomous retry.`,
+            this.logger.info(
+              `Task ${targetTask.id} caught error attempt ${effectiveFailureCount}/${this.maxRetries}. Requeuing for autonomous retry.`,
+              {
+                taskId: targetTask.id,
+                attempt: effectiveFailureCount,
+                maxRetries: this.maxRetries,
+                failureReason,
+              },
             );
             await this.taskRepo.updateStatus(
               targetTask.id,
@@ -1099,8 +1162,13 @@ export class TaskScheduler {
               );
             }
           } else {
-            console.log(
-              `[TaskScheduler] Task ${targetTask.id} reached max retries on error (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`,
+            this.logger.info(
+              `Task ${targetTask.id} reached max retries on error (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`,
+              {
+                taskId: targetTask.id,
+                effectiveFailureCount,
+                maxRetries: this.maxRetries,
+              },
             );
             await this.taskRepo.updateStatus(
               targetTask.id,
@@ -1121,9 +1189,15 @@ export class TaskScheduler {
                   failureReason,
                 );
               } catch (rehabErr) {
-                console.error(
-                  `[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`,
-                  rehabErr,
+                this.logger.error(
+                  `Rehabilitation failed for task ${targetTask.id}`,
+                  {
+                    taskId: targetTask.id,
+                    error:
+                      rehabErr instanceof Error
+                        ? rehabErr.message
+                        : String(rehabErr),
+                  },
                 );
               }
             }

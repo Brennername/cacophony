@@ -11,12 +11,16 @@ import {
   TaskMetadataHintsSchema,
   type TaskMetadataHints,
 } from "@cacophony/shared-types";
+import { DatabaseBackupService } from "@cacophony/db";
+import { StructuredLogger } from "../telemetry/StructuredLogger.js";
 
 
 export interface UnifiedServerConfig {
   readonly httpPort?: number;
   readonly httpHost?: string;
   readonly frontendDistPath?: string;
+  readonly allowedOrigins?: readonly string[];
+  readonly networkMode?: string;
 }
 
 /**
@@ -38,6 +42,7 @@ export class CacophonyHttpServer {
   private untapEpochListener: (() => void) | null = null;
   private readonly authService: AuthService;
   private readonly rateLimiter: RateLimiter;
+  private readonly logger = new StructuredLogger("CacophonyHttpServer");
 
   constructor(daemon: CacophonyDaemon, config: UnifiedServerConfig = {}) {
     this.daemon = daemon;
@@ -244,6 +249,123 @@ export class CacophonyHttpServer {
     this.rateLimiter.stop();
   }
 
+  /**
+   * Returns the ephemeral or configured port the server is actively listening on.
+   */
+  public getPort(): number | null {
+    if (!this.server) return null;
+    const addr = this.server.address();
+    if (!addr || typeof addr === "string") return null;
+    return addr.port;
+  }
+
+  /**
+   * Evaluates an Origin header against the CORS allowlist.
+   * Accepts localhost, RFC 1918 LAN, Docker internal subnets, .local/.lan domains,
+   * and explicitly configured custom domains or allowlist origins.
+   * Returns the allowed origin string or null if rejected.
+   */
+  public resolveAllowedOrigin(originHeader: string | undefined): string | null {
+    if (!originHeader) {
+      return null;
+    }
+
+    try {
+      const parsed = new URL(originHeader);
+      const host = parsed.hostname.toLowerCase();
+
+      // 1. Loopback addresses
+      if (
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host === "::1" ||
+        host === "[::1]"
+      ) {
+        return originHeader;
+      }
+
+      // 2. RFC 1918 Private IPv4 (and Docker bridge subnets)
+      // 10.0.0.0/8
+      if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) {
+        return originHeader;
+      }
+      // 172.16.0.0/12 (includes 172.17.x.x, 172.20.x.x Docker networks)
+      if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)) {
+        return originHeader;
+      }
+      // 192.168.0.0/16
+      if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)) {
+        return originHeader;
+      }
+
+      // 3. Local mDNS and intranet domains
+      if (
+        host.endsWith(".local") ||
+        host.endsWith(".lan") ||
+        host.endsWith(".internal")
+      ) {
+        return originHeader;
+      }
+
+      // 4. Configured custom domain or allowed origins
+      const configuredCustomDomain =
+        process.env["CUSTOM_DOMAIN"]?.toLowerCase();
+      if (
+        configuredCustomDomain &&
+        (host === configuredCustomDomain ||
+          host.endsWith(`.${configuredCustomDomain}`))
+      ) {
+        return originHeader;
+      }
+
+      const envAllowed = (process.env["ALLOWED_ORIGINS"] || "")
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (
+        envAllowed.includes(originHeader.toLowerCase()) ||
+        envAllowed.includes(host)
+      ) {
+        return originHeader;
+      }
+
+      const explicitOrigins = this.config.allowedOrigins || [];
+      if (
+        explicitOrigins.some(
+          (o) =>
+            o.toLowerCase() === originHeader.toLowerCase() ||
+            o.toLowerCase() === host,
+        )
+      ) {
+        return originHeader;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Determines whether authentication is enforced for mutating routes.
+   * Defaults to true in lan_shared or reverse_proxy modes unless explicitly overridden.
+   */
+  public isAuthRequired(): boolean {
+    if (process.env["REQUIRE_AUTH"] === "false") {
+      return false;
+    }
+    if (process.env["REQUIRE_AUTH"] === "true") {
+      return true;
+    }
+    const mode =
+      process.env["NETWORK_MODE"] || this.config.networkMode;
+    if (mode === "lan_shared" || mode === "reverse_proxy") {
+      return true;
+    }
+    return false;
+  }
+
   private async handleRequest(
     req: http.IncomingMessage,
     res: http.ServerResponse,
@@ -280,24 +402,26 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // Dynamic CORS: echo request origin for API clients without ambient credential exposure
-    const requestOrigin = (req.headers.origin as string) || "*";
-    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    // CORS Allowlist validation
+    const requestOrigin = req.headers.origin as string | undefined;
+    const allowedOrigin = this.resolveAllowedOrigin(requestOrigin);
+    if (allowedOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+      res.setHeader("Vary", "Origin");
+    }
     res.setHeader(
       "Access-Control-Allow-Methods",
-      "GET, POST, OPTIONS, PUT, DELETE",
+      "GET, POST, OPTIONS, PUT, DELETE, PATCH",
     );
     res.setHeader(
       "Access-Control-Allow-Headers",
       "Content-Type, Authorization, X-Requested-With",
     );
 
-    // CSP: permissive policy for active development phase.
-    // Strict enforcement deferred to T74.1.2 (Phase 74) once Angular build
-    // pipeline produces nonce-compatible output.
+    // Tightened CSP (removing unsafe-eval and restricting sources to 'self')
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss: http: https:;",
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss: http: https:; frame-ancestors 'self';",
     );
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "SAMEORIGIN");
@@ -308,9 +432,63 @@ export class CacophonyHttpServer {
     );
 
     if (req.method === "OPTIONS") {
+      if (requestOrigin && !allowedOrigin) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "CORS origin rejected" }));
+        return;
+      }
       res.writeHead(204);
       res.end();
       return;
+    }
+
+    // Unified Authentication Gate for Mutating Routes
+    const isMutatingMethod =
+      req.method === "POST" ||
+      req.method === "PUT" ||
+      req.method === "DELETE" ||
+      req.method === "PATCH";
+
+    const isExemptRoute =
+      url.pathname.startsWith("/api/auth/") ||
+      url.pathname === "/api/webhooks/gitea" ||
+      url.pathname === "/api/webhooks/github";
+
+    if (isMutatingMethod && !isExemptRoute && this.isAuthRequired()) {
+      const authHeader = req.headers["authorization"] || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+      if (!token) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "Unauthorized: Missing authentication token",
+          }),
+        );
+        return;
+      }
+
+      const authCtx = await this.authService.authenticateToken(token);
+      if (!authCtx) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "Unauthorized: Invalid or expired authentication token",
+          }),
+        );
+        return;
+      }
+
+      if (!this.authService.isAuthorized(authCtx, "OPERATOR")) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error:
+              "Forbidden: Mutating operations require OPERATOR or ADMIN role",
+          }),
+        );
+        return;
+      }
     }
 
     // 1b. REST API: Dynamic Network Profile Configuration
@@ -343,7 +521,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(report));
       } catch (err: unknown) {
-        console.error("System tool scan failed:", err);
+        this.logger.error("System tool scan failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "System tool scan failed" }));
       }
@@ -682,7 +862,9 @@ export class CacophonyHttpServer {
           res.end(JSON.stringify(task));
 
         } catch (err: unknown) {
-          console.error("Failed to create task:", err);
+          this.logger.error("Failed to create task", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to create task" }));
         }
@@ -819,7 +1001,9 @@ export class CacophonyHttpServer {
             }),
           );
         } catch (err: unknown) {
-          console.error("Spec decomposition failed:", err);
+          this.logger.error("Spec decomposition failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Spec decomposition failed" }));
         }
@@ -879,7 +1063,9 @@ export class CacophonyHttpServer {
           }),
         );
       } catch (err: unknown) {
-        console.error("Taskcade seed failed:", err);
+        this.logger.error("Taskcade seed failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({ success: false, error: "Taskcade seed failed" }),
@@ -1120,7 +1306,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, task: updated }));
         } catch (err: unknown) {
-          console.error("Failed to update task:", err);
+          this.logger.error("Failed to update task", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to update task" }));
         }
@@ -1397,7 +1585,9 @@ export class CacophonyHttpServer {
           }),
         );
       } catch (err: unknown) {
-        console.error("Failed to purge historical tasks:", err);
+        this.logger.error("Failed to purge historical tasks", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
@@ -1478,7 +1668,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, epoch: newEpoch }));
         } catch (err: unknown) {
-          console.error("Failed to advance epoch:", err);
+          this.logger.error("Failed to advance epoch", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to advance epoch" }));
         }
@@ -1499,7 +1691,9 @@ export class CacophonyHttpServer {
           }),
         );
       } catch (err: unknown) {
-        console.error("Failed to reset model health stats:", err);
+        this.logger.error("Failed to reset model health stats", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({ error: "Failed to reset model health stats" }),
@@ -1545,7 +1739,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(models));
       } catch (err: unknown) {
-        console.error("Failed to list installed models:", err);
+        this.logger.error("Failed to list installed models", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Failed to list installed models" }));
       }
@@ -1611,7 +1807,10 @@ export class CacophonyHttpServer {
           void modelManager
             .pullModel(modelName, onProgress)
             .catch((err: unknown) => {
-              console.error("Model pull failed:", err);
+              this.logger.error("Model pull failed", {
+                model: modelName,
+                error: err instanceof Error ? err.message : String(err),
+              });
               const sseError = `event: model_pull_progress\ndata: ${JSON.stringify(
                 {
                   model: modelName,
@@ -1661,7 +1860,10 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, modelId, status: "EVICTED" }));
       } catch (err: unknown) {
-        console.error("Failed to delete model:", err);
+        this.logger.error("Failed to delete model", {
+          modelId,
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Failed to delete model" }));
       }
@@ -1755,7 +1957,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(sanitizedResult));
         } catch (err: unknown) {
-          console.error("Failed to benchmark model:", err);
+          this.logger.error("Failed to benchmark model", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to benchmark model" }));
         }
@@ -1771,7 +1975,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(profiles));
       } catch (err: unknown) {
-        console.error("Failed to list model profiles:", err);
+        this.logger.error("Failed to list model profiles", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Failed to list model profiles" }));
       }
@@ -1814,7 +2020,10 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, profile: saved }));
         } catch (err: unknown) {
-          console.error("Failed to upsert model profile:", err);
+          this.logger.error("Failed to upsert model profile", {
+            profileId,
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to upsert model profile" }));
         }
@@ -1867,7 +2076,9 @@ export class CacophonyHttpServer {
             }),
           );
         } catch (err: unknown) {
-          console.error("Failed to auto-tune model profiles:", err);
+          this.logger.error("Failed to auto-tune model profiles", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({ error: "Failed to auto-tune model profiles" }),
@@ -2318,7 +2529,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err: unknown) {
-          console.error("Webhook processing failed:", err);
+          this.logger.error("Webhook processing failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to process webhook" }));
         }
@@ -2408,7 +2621,9 @@ export class CacophonyHttpServer {
           });
           res.end(JSON.stringify({ queued: task.created, task: task.task }));
         } catch (err: unknown) {
-          console.error("Failed to process CI failure callback:", err);
+          this.logger.error("Failed to process CI failure callback", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({ error: "Failed to process CI failure callback" }),
@@ -2657,7 +2872,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, prunedCount: pruned }));
       } catch (err: unknown) {
-        console.error("Failed to prune checkpoints:", err);
+        this.logger.error("Failed to prune checkpoints", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
@@ -2724,7 +2941,9 @@ export class CacophonyHttpServer {
           }),
         );
       } catch (err: unknown) {
-        console.error("Failed to check promotion status:", err);
+        this.logger.error("Failed to check promotion status", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Failed to check promotion status" }));
       }
@@ -2829,7 +3048,9 @@ export class CacophonyHttpServer {
           res.writeHead(statusCode, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err: unknown) {
-          console.error("Milestone promotion failed:", err);
+          this.logger.error("Milestone promotion failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to promote milestone" }));
         }
@@ -2938,6 +3159,46 @@ export class CacophonyHttpServer {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ compaction, partition, metrics }));
       return;
+    }
+
+    // 4h1. REST API: POST /api/admin/backup - On-demand database snapshot with retention pruning (T74.7.2)
+    if (url.pathname === "/api/admin/backup" && req.method === "POST") {
+      try {
+        const retentionParam = url.searchParams.get("retentionCount");
+        const retentionCount = retentionParam
+          ? parseInt(retentionParam, 10)
+          : undefined;
+
+        const dbPath = this.daemon.getConfig().dbPath;
+        if (!dbPath) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error:
+                "In-memory database cannot be backed up to directory snapshot",
+            }),
+          );
+          return;
+        }
+
+        const backupService = new DatabaseBackupService({
+          dbDir: dbPath,
+          defaultRetentionCount: 5,
+        });
+
+        const result = await backupService.createSnapshot(retentionCount);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+        return;
+      } catch (err: unknown) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+        return;
+      }
     }
 
     // 4i. REST API: Provider Quotas & Circuit Breaker Health

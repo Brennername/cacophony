@@ -21,3 +21,4 @@ export * from "./repositories/TaskTelemetryCorrelationRepository.js";
 export * from "./repositories/ModelProfileRepository.js";
 export * from "./repositories/PrReviewRepository.js";
 export * from "./services/DatabaseMaintenanceService.js";
+export * from "./services/DatabaseBackupService.js";
