@@ -1178,10 +1178,10 @@ export class CacophonyHttpServer {
           completedTaskIds.has(shortId);
 
         let taskCode: string | null = null;
-        if (!isCompleted) {
+        if (!isCompleted && !isSubtask) {
           const taskCodeMatch =
-            task.title.match(/\b(T\d+\.\d+\.\d+):/i) ||
-            task.id.match(/\b(t\d+\.\d+\.\d+)/i);
+            task.title.match(/^(T\d+\.\d+\.\d+):/i) ||
+            task.id.match(/^taskcade-(t\d+\.\d+\.\d+)$/i);
           taskCode = taskCodeMatch ? taskCodeMatch[1]!.toLowerCase() : null;
           if (taskCode && completedTaskIds.has(taskCode)) {
             isCompleted = true;

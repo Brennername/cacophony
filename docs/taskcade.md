@@ -41,7 +41,22 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 ## Active Sprint Priority Queue & Immediate Execution Order
 
 > [!NOTE]
-> All active sprint phases up to Phase 101 have been fully implemented, verified, and rotated to history.
+> Phase 102 is active: Focused strictly on unit testing, component spec coverage, and edge-case verification across frontend components and backend services. Major architectural pipeline implementations will be conducted via frontier models.
+
+---
+
+## Phase 102: Comprehensive Unit Test Expansion & Edge-Case Coverage
+
+- [ ] T102.1.1: Write unit tests verifying `TerminalLogViewerComponent` log line rendering, auto-scrolling, and ANSI escape code sanitation. [Files: packages/frontend/src/app/components/terminal-log-viewer/terminal-log-viewer.component.ts, packages/frontend/src/app/components/terminal-log-viewer/terminal-log-viewer.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
+- [ ] T102.1.2: Write unit tests verifying `ProcessInspectorComponent` process selection, terminal output display, and status badge rendering. [Files: packages/frontend/src/app/components/process-inspector/process-inspector.component.ts, packages/frontend/src/app/components/process-inspector/process-inspector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
+- [ ] T102.1.3: Write unit tests verifying `QueueManagerComponent` status filtering, priority badges, and task cancellation dispatches. [Files: packages/frontend/src/app/components/queue-manager/queue-manager.component.ts, packages/frontend/src/app/components/queue-manager/queue-manager.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
+- [ ] T102.1.4: Write unit tests verifying `ExplorationControlComponent` epsilon slider reactivity, model strategy selection, and budget persistence. [Files: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts, packages/frontend/src/app/components/exploration-control/exploration-control.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
+- [ ] T102.1.5: Write unit tests verifying `AuthCallbackComponent` query parameter token extraction, error state handling, and router navigation. [Files: packages/frontend/src/app/components/auth-callback/auth-callback.component.ts, packages/frontend/src/app/components/auth-callback/auth-callback.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
+- [ ] T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, missing node handling, and APU fallback metrics. [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts, packages/engine/src/tests/amd_vega_telemetry.test.ts] [Test: node --test packages/engine/dist/tests/amd_vega_telemetry.test.js]
+- [ ] T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing across 3B, 7B, 8B, 14B, and 16B parameter scales with dynamic context window limits. [Files: packages/engine/src/hardware/ModelVramCatalog.ts, packages/engine/src/tests/model_vram_catalog.test.ts] [Test: node --test packages/engine/dist/tests/model_vram_catalog.test.js]
+- [ ] T102.2.3: Write unit tests verifying `ThermalGovernor` throttling state transitions, cooldown timers, and recovery thresholds under fluctuating sensor readings. [Files: packages/engine/src/telemetry/ThermalGovernor.ts, packages/engine/src/tests/thermal_governor.test.ts] [Test: node --test packages/engine/dist/tests/thermal_governor.test.js]
+- [ ] T102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expiry, and HTTP 429 rejection responses. [Files: packages/engine/src/daemon/RateLimiter.ts, packages/engine/src/tests/rate_limiter.test.ts] [Test: node --test packages/engine/dist/tests/rate_limiter.test.js]
+- [ ] T102.2.5: Write unit tests verifying `JwtValidator` HS256 signature verification, expired token rejection, and malformed payload handling. [Files: packages/engine/src/auth/JwtValidator.ts, packages/engine/src/tests/jwt_validator.test.ts] [Test: node --test packages/engine/dist/tests/jwt_validator.test.js]
 
 ---
 
@@ -256,5 +271,14 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t97.1.1.2.2 Rehabilitation [2026-10-14T23:26:09.210Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros (`taskcade-t97.1.1.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t97.1.1.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: type_specialist] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+  - [x] `taskcade-t97.1.1.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: implementer] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+
 
 _All active taskcade failure rehabilitations completed and verified. Archived in [`docs/taskcade-history.md`](taskcade-history.md)_

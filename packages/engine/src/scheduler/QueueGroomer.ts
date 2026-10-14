@@ -472,6 +472,10 @@ export class QueueGroomer {
       if (parts.length >= 2 && parts[1]) {
         const pkgName = parts[1];
 
+        if (pkgName === "frontend") {
+          return `npm run test --workspace=@cacophony/frontend`;
+        }
+
         // If the focus file is itself a unit test, target its compiled output directly
         if (
           firstFile.includes("/tests/") ||
