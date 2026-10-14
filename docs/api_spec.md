@@ -78,6 +78,23 @@ Retrieves detailed status, logs, diffs, and execution steps for a specific task.
 
 Cancels or removes an enqueued task from the active queue.
 
+### DELETE `/api/tasks`
+
+Purges pending tasks from the active queue. Supports an optional `?pattern=` query parameter to filter by task ID or title substring.
+
+**Query Parameters:**
+
+- `pattern` (optional): Filter substring to purge only matching pending tasks.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "deletedCount": 584
+}
+```
+
 ### GET `/api/tasks/:id/gantt`
 
 Returns stage durations and timeline spans for Gantt transport visualization.

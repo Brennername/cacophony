@@ -536,31 +536,31 @@ _RDF Category: hardware_and_network_verification_
 
 ### T97.1: Diagnostic Sensor CLI Output Parsing Tests
 
-- [ ] T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values across Tctl, edge, and Package id lines accurately. [File: packages/engine/src/tests/sensors_parser.test.ts] [Test: npm test -- packages/engine/src/tests/sensors_parser.test.ts]
-- [ ] T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and percentage formatting. [File: packages/engine/src/tests/radeontop_parser.test.ts] [Test: npm test -- packages/engine/src/tests/radeontop_parser.test.ts]
-- [ ] T97.1.3: Write unit tests verifying nvidia-smi parser gracefully discards corrupted CSV rows with missing comma delimiters. [File: packages/engine/src/tests/nvidia_corrupt_csv.test.ts] [Test: npm test -- packages/engine/src/tests/nvidia_corrupt_csv.test.ts]
-- [ ] T97.1.4: Write unit tests validating powermetrics parser handles multi-line thermal sampler dumps without throwing exceptions. [File: packages/engine/src/tests/powermetrics_parser.test.ts] [Test: npm test -- packages/engine/src/tests/powermetrics_parser.test.ts]
+- [ ] T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values across Tctl, edge, and Package id lines accurately. [File: packages/engine/src/tests/sensors_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/sensors_parser.test.js]
+- [ ] T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and percentage formatting. [File: packages/engine/src/tests/radeontop_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/radeontop_parser.test.js]
+- [ ] T97.1.3: Write unit tests verifying nvidia-smi parser gracefully discards corrupted CSV rows with missing comma delimiters. [File: packages/engine/src/tests/nvidia_corrupt_csv.test.ts] [Test: npm test -- packages/engine/dist/tests/nvidia_corrupt_csv.test.js]
+- [ ] T97.1.4: Write unit tests validating powermetrics parser handles multi-line thermal sampler dumps without throwing exceptions. [File: packages/engine/src/tests/powermetrics_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/powermetrics_parser.test.js]
 
 ### T97.2: Network Resolver & Reverse Proxy Host Tests
 
-- [ ] T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host with port numbers. [File: packages/engine/src/tests/host_header_port.test.ts] [Test: npm test -- packages/engine/src/tests/host_header_port.test.ts]
-- [ ] T97.2.2: Write unit tests verifying IPv6 localhost (::1) is correctly mapped to localhost in CORS headers. [File: packages/engine/src/tests/ipv6_cors.test.ts] [Test: npm test -- packages/engine/src/tests/ipv6_cors.test.ts]
-- [ ] T97.2.3: Write unit tests verifying local bridge IP resolution detects 172.17.0.1 Docker gateway. [File: packages/engine/src/tests/docker_bridge_gateway.test.ts] [Test: npm test -- packages/engine/src/tests/docker_bridge_gateway.test.ts]
-- [ ] T97.2.4: Write unit tests verifying dynamic origin whitelist rejects non-local external domains. [File: packages/engine/src/tests/origin_whitelist.test.ts] [Test: npm test -- packages/engine/src/tests/origin_whitelist.test.ts]
+- [ ] T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host with port numbers. [File: packages/engine/src/tests/host_header_port.test.ts] [Test: npm test -- packages/engine/dist/tests/host_header_port.test.js]
+- [ ] T97.2.2: Write unit tests verifying IPv6 localhost (::1) is correctly mapped to localhost in CORS headers. [File: packages/engine/src/tests/ipv6_cors.test.ts] [Test: npm test -- packages/engine/dist/tests/ipv6_cors.test.js]
+- [ ] T97.2.3: Write unit tests verifying local bridge IP resolution detects 172.17.0.1 Docker gateway. [File: packages/engine/src/tests/docker_bridge_gateway.test.ts] [Test: npm test -- packages/engine/dist/tests/docker_bridge_gateway.test.js]
+- [ ] T97.2.4: Write unit tests verifying dynamic origin whitelist rejects non-local external domains. [File: packages/engine/src/tests/origin_whitelist.test.ts] [Test: npm test -- packages/engine/dist/tests/origin_whitelist.test.js]
 
 ### T97.3: Thermal Governor Pacing Calculation Tests
 
-- [ ] T97.3.1: Write unit tests verifying ThermalGovernor emergency shutdown threshold halts queue when temp exceeds 105C. [File: packages/engine/src/tests/governor_emergency_halt.test.ts] [Test: npm test -- packages/engine/src/tests/governor_emergency_halt.test.ts]
-- [ ] T97.3.2: Write unit tests verifying pacing delays scale from 0s at Nominal to 10s at Danger zone. [File: packages/engine/src/tests/governor_pacing_scale.test.ts] [Test: npm test -- packages/engine/src/tests/governor_pacing_scale.test.ts]
-- [ ] T97.3.3: Write unit tests validating legacy 3-point thermal governor backwards compatibility. [File: packages/engine/src/tests/governor_legacy_3point.test.ts] [Test: npm test -- packages/engine/src/tests/governor_legacy_3point.test.ts]
-- [ ] T97.3.4: Write unit tests verifying cool-off disabled flag overrides pacing delay back to zero seconds. [File: packages/engine/src/tests/governor_cooloff_disabled.test.ts] [Test: npm test -- packages/engine/src/tests/governor_cooloff_disabled.test.ts]
+- [ ] T97.3.1: Write unit tests verifying ThermalGovernor emergency shutdown threshold halts queue when temp exceeds 105C. [File: packages/engine/src/tests/governor_emergency_halt.test.ts] [Test: npm test -- packages/engine/dist/tests/governor_emergency_halt.test.js]
+- [ ] T97.3.2: Write unit tests verifying pacing delays scale from 0s at Nominal to 10s at Danger zone. [File: packages/engine/src/tests/governor_pacing_scale.test.ts] [Test: npm test -- packages/engine/dist/tests/governor_pacing_scale.test.js]
+- [ ] T97.3.3: Write unit tests validating legacy 3-point thermal governor backwards compatibility. [File: packages/engine/src/tests/governor_legacy_3point.test.ts] [Test: npm test -- packages/engine/dist/tests/governor_legacy_3point.test.js]
+- [ ] T97.3.4: Write unit tests verifying cool-off disabled flag overrides pacing delay back to zero seconds. [File: packages/engine/src/tests/governor_cooloff_disabled.test.ts] [Test: npm test -- packages/engine/dist/tests/governor_cooloff_disabled.test.js]
 
 ### T97.4: Stream Tap Ring Buffer & Eviction Tests
 
-- [ ] T97.4.1: Write unit tests verifying StreamTapManager ring buffer drops oldest lines when capacity exceeds 500 lines. [File: packages/engine/src/tests/stream_ring_buffer.test.ts] [Test: npm test -- packages/engine/src/tests/stream_ring_buffer.test.ts]
-- [ ] T97.4.2: Write unit tests verifying tap unsubscribe frees in-memory listener callback references completely. [File: packages/engine/src/tests/stream_tap_cleanup.test.ts] [Test: npm test -- packages/engine/src/tests/stream_tap_cleanup.test.ts]
-- [ ] T97.4.3: Write unit tests validating SSE broadcast event encoding with special newline characters. [File: packages/engine/src/tests/sse_encoding.test.ts] [Test: npm test -- packages/engine/src/tests/sse_encoding.test.ts]
-- [ ] T97.4.4: Write unit tests verifying StreamTapManager isolates logs across different task IDs. [File: packages/engine/src/tests/stream_tap_isolation.test.ts] [Test: npm test -- packages/engine/src/tests/stream_tap_isolation.test.ts]
+- [ ] T97.4.1: Write unit tests verifying StreamTapManager ring buffer drops oldest lines when capacity exceeds 500 lines. [File: packages/engine/src/tests/stream_ring_buffer.test.ts] [Test: npm test -- packages/engine/dist/tests/stream_ring_buffer.test.js]
+- [ ] T97.4.2: Write unit tests verifying tap unsubscribe frees in-memory listener callback references completely. [File: packages/engine/src/tests/stream_tap_cleanup.test.ts] [Test: npm test -- packages/engine/dist/tests/stream_tap_cleanup.test.js]
+- [ ] T97.4.3: Write unit tests validating SSE broadcast event encoding with special newline characters. [File: packages/engine/src/tests/sse_encoding.test.ts] [Test: npm test -- packages/engine/dist/tests/sse_encoding.test.js]
+- [ ] T97.4.4: Write unit tests verifying StreamTapManager isolates logs across different task IDs. [File: packages/engine/src/tests/stream_tap_isolation.test.ts] [Test: npm test -- packages/engine/dist/tests/stream_tap_isolation.test.js]
 
 ---
 
@@ -570,17 +570,17 @@ _RDF Category: static_analysis_hardening_
 
 ### T98.1: Remediation Prompt Formatting & Scrubbing Tests
 
-- [ ] T98.1.1: Write unit tests verifying RemediationPromptFormatter produces structured markdown with numbered sections. [File: packages/engine/src/tests/remediation_format_sections.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_format_sections.test.ts]
-- [ ] T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs exceeding 2000 characters. [File: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_diagnostic_truncation.test.ts]
-- [ ] T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and concluding pleasantries. [File: packages/engine/src/tests/remediation_directives.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_directives.test.ts]
-- [ ] T98.1.4: Write unit tests validating that clean code replacements preserve indentation and newline conventions. [File: packages/engine/src/tests/remediation_indentation.test.ts] [Test: npm test -- packages/engine/src/tests/remediation_indentation.test.ts]
+- [ ] T98.1.1: Write unit tests verifying RemediationPromptFormatter produces structured markdown with numbered sections. [File: packages/engine/src/tests/remediation_format_sections.test.ts] [Test: npm test -- packages/engine/dist/tests/remediation_format_sections.test.js]
+- [ ] T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs exceeding 2000 characters. [File: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts] [Test: npm test -- packages/engine/dist/tests/remediation_diagnostic_truncation.test.js]
+- [ ] T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and concluding pleasantries. [File: packages/engine/src/tests/remediation_directives.test.ts] [Test: npm test -- packages/engine/dist/tests/remediation_directives.test.js]
+- [ ] T98.1.4: Write unit tests validating that clean code replacements preserve indentation and newline conventions. [File: packages/engine/src/tests/remediation_indentation.test.ts] [Test: npm test -- packages/engine/dist/tests/remediation_indentation.test.js]
 
 ### T98.2: Conventional Commit Message Generator Tests
 
-- [ ] T98.2.1: Write unit tests verifying ConventionalCommitGenerator maps implementer role to feat/fix commits. [File: packages/engine/src/tests/commit_gen_roles.test.ts] [Test: npm test -- packages/engine/src/tests/commit_gen_roles.test.ts]
-- [ ] T98.2.2: Write unit tests verifying commit subject length is clamped to standard 72-character maximum. [File: packages/engine/src/tests/commit_gen_length.test.ts] [Test: npm test -- packages/engine/src/tests/commit_gen_length.test.ts]
-- [ ] T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages containing Unicode emoji codes. [File: packages/engine/src/tests/commit_gen_zero_emoji.test.ts] [Test: npm test -- packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
-- [ ] T98.2.4: Write unit tests verifying task ID metadata is appended in commit body (Closes task-123). [File: packages/engine/src/tests/commit_gen_metadata.test.ts] [Test: npm test -- packages/engine/src/tests/commit_gen_metadata.test.ts]
+- [ ] T98.2.1: Write unit tests verifying ConventionalCommitGenerator maps implementer role to feat/fix commits. [File: packages/engine/src/tests/commit_gen_roles.test.ts] [Test: npm test -- packages/engine/dist/tests/commit_gen_roles.test.js]
+- [ ] T98.2.2: Write unit tests verifying commit subject length is clamped to standard 72-character maximum. [File: packages/engine/src/tests/commit_gen_length.test.ts] [Test: npm test -- packages/engine/dist/tests/commit_gen_length.test.js]
+- [ ] T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages containing Unicode emoji codes. [File: packages/engine/src/tests/commit_gen_zero_emoji.test.ts] [Test: npm test -- packages/engine/dist/tests/commit_gen_zero_emoji.test.js]
+- [ ] T98.2.4: Write unit tests verifying task ID metadata is appended in commit body (Closes task-123). [File: packages/engine/src/tests/commit_gen_metadata.test.ts] [Test: npm test -- packages/engine/dist/tests/commit_gen_metadata.test.js]
 
 ---
 
@@ -619,4 +619,5 @@ _RDF Category: analytics_and_orchestration_
 ## Rehabilitated Taskcade Queue
 
 *Autonomous Deterministic Decompositions from Exceeded Failure Limits*
+
 

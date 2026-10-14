@@ -859,6 +859,27 @@ export class AutonomousWorkerPipeline {
             scrubbedCode,
           );
         }
+
+        // Deterministically decompose inlined Angular templates into separate .html and .css companion files
+        if (targetRelFile.endsWith(".ts") && scrubbedCode.includes("@Component")) {
+          const autoRepair = new CompilerDiagnosticAutoRepair();
+          const decompResult = autoRepair.decomposeInlineTemplates(
+            scrubbedCode,
+            targetAbs,
+          );
+          if (decompResult.repairsApplied.length > 0) {
+            scrubbedCode = decompResult.repairedCode;
+            for (const decomposed of decompResult.decomposedFiles) {
+              await fs.mkdir(path.dirname(decomposed.filePath), { recursive: true });
+              await fs.writeFile(
+                decomposed.filePath,
+                `${decomposed.content}\n`,
+                "utf-8",
+              );
+            }
+          }
+        }
+
         const integrityIssues = GeneratedChangeGuard.inspectReplacement(
           targetRelFile,
           originalExistingContent,

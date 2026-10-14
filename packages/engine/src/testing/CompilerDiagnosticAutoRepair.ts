@@ -1515,10 +1515,8 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             );
 
             try {
-              if (!fs.existsSync(htmlAbsPath)) {
-                fs.mkdirSync(path.dirname(htmlAbsPath), { recursive: true });
-                fs.writeFileSync(htmlAbsPath, `${templateContent}\n`, "utf8");
-              }
+              fs.mkdirSync(path.dirname(htmlAbsPath), { recursive: true });
+              fs.writeFileSync(htmlAbsPath, `${templateContent}\n`, "utf8");
             } catch {
               // Disk write failure is non-fatal in sandboxed or virtual test contexts
             }
@@ -1588,16 +1586,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         );
 
         try {
-          if (!fs.existsSync(cssAbsPath)) {
-            fs.mkdirSync(path.dirname(cssAbsPath), { recursive: true });
-            fs.writeFileSync(
-              cssAbsPath,
-              stylesContent
-                ? `${stylesContent}\n`
-                : "/* component styles */\n",
-              "utf8",
-            );
-          }
+          fs.mkdirSync(path.dirname(cssAbsPath), { recursive: true });
+          fs.writeFileSync(
+            cssAbsPath,
+            stylesContent
+              ? `${stylesContent}\n`
+              : "/* component styles */\n",
+            "utf8",
+          );
         } catch {
           // Disk write failure is non-fatal in sandboxed or virtual test contexts
         }

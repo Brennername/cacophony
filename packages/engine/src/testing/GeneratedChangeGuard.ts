@@ -635,14 +635,19 @@ export class GeneratedChangeGuard {
         issues.push(
           `Generated Angular component in ${filePath} contains an empty or placeholder template.`,
         );
-      }
-      // Enforce file decomposition standards for inline templates over 30 lines
-      const lineCount = tpl.split("\n").length;
-      if (lineCount > 30) {
+      } else {
+        // Enforce file decomposition standards: Angular components must use templateUrl companion files
         issues.push(
-          `Generated Angular component in ${filePath} has an inline template with ${lineCount} lines; Angular standards require decomposing components over 30 lines into separate .html and .css files.`,
+          `Generated Angular component in ${filePath} has an inline template; Angular standards require decomposing components into separate companion .html and .css files with templateUrl.`,
         );
       }
+    }
+
+    const stylesMatch = source.match(/styles\s*:\s*\[[\s\S]*?\]/);
+    if (stylesMatch && stylesMatch[0].replace(/\s+/g, "") !== "styles:[]") {
+      issues.push(
+        `Generated Angular component in ${filePath} has inline styles; Angular standards require decomposing component styles into separate companion .css files with styleUrl.`,
+      );
     }
   }
 
