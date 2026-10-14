@@ -77,7 +77,7 @@ describe('TaskRepository Stage JSON Serialization (T96.5.2)', () => {
 
     const updated = await taskRepo.findById('task-stage-serialize');
     assert.ok(updated);
-    // Task updated_at should have progressed, and logSnippet should remain intact
+
     assert.ok(updated.logSnippet);
   });
 });
