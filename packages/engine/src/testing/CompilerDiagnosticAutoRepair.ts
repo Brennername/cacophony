@@ -854,7 +854,10 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
               (line.includes(`'${cssPath}'`) || line.includes(`"${cssPath}"`))
             ) {
               styleReplaced = true;
-              return line.replace(/styleUrls?:\s*(?:\[[^\]]*\]|['"][^'"]*['"])/, "styles: []");
+              const styleIdx = line.indexOf("styleUrl");
+              const indent = line.slice(0, styleIdx);
+              const hasTrailingComma = line.trimEnd().endsWith(",");
+              return `${indent}styles: []${hasTrailingComma ? "," : ""}`;
             }
             return line;
           });
@@ -872,32 +875,45 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       targetFilePath &&
       (currentCode.includes("styleUrl") || currentCode.includes("styleUrls"))
     ) {
-      const match =
-        currentCode.match(/styleUrls?:\s*['"]([^'"]+\.css)['"]/) ||
-        currentCode.match(/styleUrls?:\s*\[\s*['"]([^'"]+\.css)['"]\s*\]/);
-      if (match) {
-        const relCss = match[1];
-        if (relCss && relCss.startsWith(".")) {
-          const absCss = path.resolve(path.dirname(targetFilePath), relCss);
-          if (!fs.existsSync(absCss)) {
-            try {
-              fs.mkdirSync(path.dirname(absCss), { recursive: true });
-              fs.writeFileSync(
-                absCss,
-                "/* auto-generated component styles */\n",
-                "utf8",
-              );
-              repairsApplied.push(
-                `Created missing stylesheet file at '${relCss}'`,
-              );
-            } catch {
-              currentCode = currentCode
-                .replace(/styleUrls?:\s*['"][^'"]+['"]/g, "styles: []")
-                .replace(/styleUrls?:\s*\[[^\]]*\]/g, "styles: []");
-              repairsApplied.push(
-                `Replaced unresolvable stylesheet '${relCss}' with inline styles`,
-              );
-            }
+      let relCss: string | null = null;
+      for (const line of currentCode.split("\n")) {
+        if (line.includes("styleUrl") && line.includes(".css")) {
+          const singleQuoteMatch = line.match(/'([^']+\.css)'/);
+          const doubleQuoteMatch = line.match(/"([^"]+\.css)"/);
+          relCss = singleQuoteMatch?.[1] ?? doubleQuoteMatch?.[1] ?? null;
+          if (relCss) break;
+        }
+      }
+
+      if (relCss && relCss.startsWith(".")) {
+        const absCss = path.resolve(path.dirname(targetFilePath), relCss);
+        if (!fs.existsSync(absCss)) {
+          try {
+            fs.mkdirSync(path.dirname(absCss), { recursive: true });
+            fs.writeFileSync(
+              absCss,
+              "/* auto-generated component styles */\n",
+              "utf8",
+            );
+            repairsApplied.push(
+              `Created missing stylesheet file at '${relCss}'`,
+            );
+          } catch {
+            const lines = currentCode.split("\n");
+            currentCode = lines
+              .map((line) => {
+                if (line.includes("styleUrl") && line.includes(relCss!)) {
+                  const styleIdx = line.indexOf("styleUrl");
+                  const indent = line.slice(0, styleIdx);
+                  const hasTrailingComma = line.trimEnd().endsWith(",");
+                  return `${indent}styles: []${hasTrailingComma ? "," : ""}`;
+                }
+                return line;
+              })
+              .join("\n");
+            repairsApplied.push(
+              `Replaced unresolvable stylesheet '${relCss}' with inline styles`,
+            );
           }
         }
       }
