@@ -622,9 +622,9 @@ export class GeneratedChangeGuard {
     }
 
     if (!filePath.endsWith(".ts") || !source.includes("@Component")) return;
-    const templateMatch = source.match(/template\s*:\s*[`'"]([\s\S]*?)[`'"]/);
-    if (templateMatch && templateMatch[1] !== undefined) {
-      const tpl = templateMatch[1].trim();
+    const templateMatch = source.match(/template\s*:\s*([`'"])([\s\S]*?)\1/);
+    if (templateMatch && templateMatch[2] !== undefined) {
+      const tpl = templateMatch[2].trim();
       if (
         tpl === "" ||
         /^<div(\s+class=["'][^"']*["'])?>\s*<\/div>$/i.test(tpl) ||

@@ -1,5 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import { CompilerDiagnosticAutoRepair } from "../testing/CompilerDiagnosticAutoRepair.js";
 import type { CompilerDiagnostic } from "../testing/CompilerDiagnosticParser.js";
 
@@ -96,19 +99,33 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("Component, signal"));
   });
 
-  it("repairs missing Angular template files with semantic template", () => {
+  it("repairs missing Angular template files by creating companion template on disk and preserving templateUrl", () => {
+    const tmpDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "cacophony-test-tpl-"),
+    );
+    const compPath = path.join(tmpDir, "bar.component.ts");
     const source = `@Component({\n  selector: 'app-bar',\n  templateUrl: './bar.component.html'\n})\nexport class BarComponent {}`;
-    const result = repairer.repair(source, [
-      diagnostic(
-        "TS2304",
-        "Could not find template file './bar.component.html'.",
-      ),
-    ]);
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2304",
+          "Could not find template file './bar.component.html'.",
+        ),
+      ],
+      compPath,
+    );
 
     assert.ok(
-      result.repairedCode.includes("component-view"),
+      result.repairedCode.includes("templateUrl: './bar.component.html'"),
     );
-    assert.ok(!result.repairedCode.includes("templateUrl"));
+    assert.ok(!result.repairedCode.includes("template:"));
+    assert.ok(
+      result.repairsApplied.some((r) =>
+        r.includes("Created missing template file at './bar.component.html'"),
+      ),
+    );
+    assert.ok(fs.existsSync(path.join(tmpDir, "bar.component.html")));
   });
 
   it("decomposes inline templates and styles into companion component files", () => {
@@ -122,6 +139,19 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("styleUrl: './card.component.css'"));
     assert.equal(result.decomposedFiles.length, 2);
     assert.ok(result.decomposedFiles[0]!.content.includes("Card Header"));
+  });
+
+  it("decomposes inline templates and styles deriving name from selector when targetFilePath is omitted", () => {
+    const source = `@Component({\n  selector: 'app-fancy-card',\n  template: '<div><h3>Header</h3></div>',\n  styles: ['div { color: blue; }']\n})\nexport class FancyCardComponent {}`;
+    const result = repairer.decomposeInlineTemplates(source);
+
+    assert.ok(
+      result.repairedCode.includes("templateUrl: './fancy-card.component.html'"),
+    );
+    assert.ok(
+      result.repairedCode.includes("styleUrl: './fancy-card.component.css'"),
+    );
+    assert.equal(result.decomposedFiles.length, 2);
   });
 
   it("repairs TS1002/TS1005 unterminated string literals and balances unclosed braces at EOF", () => {

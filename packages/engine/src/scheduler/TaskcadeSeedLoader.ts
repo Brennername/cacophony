@@ -115,8 +115,20 @@ export class TaskcadeSeedLoader {
     readonly limit?: number | undefined;
     readonly fleetModels?: readonly string[] | undefined;
   }): Promise<readonly TaskRecord[]> {
-    const content = await fs.readFile(this.taskcadeFilePath, "utf-8");
-    const parsedItems = this.parseMarkdown(content);
+    let content = await fs.readFile(this.taskcadeFilePath, "utf-8");
+    let parsedItems = this.parseMarkdown(content);
+    if (parsedItems.length === 0) {
+      const historyPath = path.resolve(
+        path.dirname(this.taskcadeFilePath),
+        "taskcade-history.md",
+      );
+      try {
+        const histContent = await fs.readFile(historyPath, "utf-8");
+        parsedItems = this.parseMarkdown(histContent);
+      } catch {
+        // Fallback ignored
+      }
+    }
 
     let filtered = parsedItems;
     if (!options?.includeCompleted) {

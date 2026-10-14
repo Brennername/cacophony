@@ -793,12 +793,10 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         if (tplMatch && tplMatch[1]) {
           const tplPath = tplMatch[1];
           let createdOnDisk = false;
-          if (targetFilePath && tplPath.startsWith(".")) {
+          if (targetFilePath && fs.existsSync(path.dirname(targetFilePath))) {
             try {
-              const absTpl = path.resolve(
-                path.dirname(targetFilePath),
-                tplPath,
-              );
+              const baseDir = path.dirname(targetFilePath);
+              const absTpl = path.resolve(baseDir, tplPath);
               if (!fs.existsSync(absTpl)) {
                 fs.mkdirSync(path.dirname(absTpl), { recursive: true });
                 fs.writeFileSync(
@@ -810,25 +808,19 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 repairsApplied.push(
                   `Created missing template file at '${tplPath}' with semantic structure`,
                 );
+              } else {
+                createdOnDisk = true;
               }
             } catch {
               // Disk write fallback
             }
           }
 
-          if (!createdOnDisk) {
-            const escaped = tplPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            const regex = new RegExp(`templateUrl:\\s*['"]${escaped}['"]`, "g");
-            const updated = currentCode.replace(
-              regex,
-              `template: \`<section class="component-view"><header class="component-header"><h2>Component View</h2></header><main class="component-body"><ng-content></ng-content></main></section>\``,
+          // Strictly preserve companion templateUrl under Angular standards
+          if (createdOnDisk) {
+            repairsApplied.push(
+              `Preserved companion templateUrl for '${tplPath}' and generated companion template on disk`,
             );
-            if (updated !== currentCode) {
-              currentCode = updated;
-              repairsApplied.push(
-                `Replaced missing template file '${tplPath}' with semantic inline template`,
-              );
-            }
           }
         }
       }
@@ -1463,7 +1455,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       currentCode = prependCode + currentCode;
     }
 
-    if (targetFilePath && currentCode.includes("@Component")) {
+    if (currentCode.includes("@Component")) {
       const decomp = this.decomposeInlineTemplates(
         currentCode,
         targetFilePath,
@@ -1496,15 +1488,35 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     const decomposedFiles: Array<{ filePath: string; content: string }> = [];
     let updatedCode = currentCode;
 
-    if (!targetFilePath || !currentCode.includes("@Component")) {
+    if (!currentCode.includes("@Component")) {
       return { repairedCode: updatedCode, repairsApplied, decomposedFiles };
     }
 
-    const dir = path.dirname(targetFilePath);
-    const fileName = path.basename(targetFilePath);
-    const baseName = fileName
-      .replace(/\.component\.ts$/, "")
-      .replace(/\.ts$/, "");
+    let dir = process.cwd();
+    let baseName = "component";
+    if (targetFilePath) {
+      dir = path.dirname(targetFilePath);
+      const fileName = path.basename(targetFilePath);
+      baseName = fileName
+        .replace(/\.component\.ts$/, "")
+        .replace(/\.ts$/, "");
+    } else {
+      const selectorMatch = updatedCode.match(
+        /selector\s*:\s*['"](?:app-)?([^'"]+)['"]/,
+      );
+      if (selectorMatch && selectorMatch[1]) {
+        baseName = selectorMatch[1];
+      } else {
+        const classMatch = updatedCode.match(
+          /export\s+class\s+([a-zA-Z0-9_]+)Component/,
+        );
+        if (classMatch && classMatch[1]) {
+          baseName = classMatch[1]
+            .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+            .toLowerCase();
+        }
+      }
+    }
 
     // Decompose inline template: template: `...` or template: '...' or template: "..."
     const templateIdx = updatedCode.indexOf("template:");
@@ -1565,11 +1577,12 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
               `Decomposed inline template into companion file '${htmlRelPath}'`,
             );
 
-            try {
-              fs.mkdirSync(path.dirname(htmlAbsPath), { recursive: true });
-              fs.writeFileSync(htmlAbsPath, `${templateContent}\n`, "utf8");
-            } catch {
-              // Disk write failure is non-fatal in sandboxed or virtual test contexts
+            if (targetFilePath && fs.existsSync(path.dirname(htmlAbsPath))) {
+              try {
+                fs.writeFileSync(htmlAbsPath, `${templateContent}\n`, "utf8");
+              } catch {
+                // Disk write failure is non-fatal in sandboxed or virtual test contexts
+              }
             }
           }
         }
@@ -1606,47 +1619,50 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           }
         }
 
-        const cssRelPath = `./${baseName}.component.css`;
-        const cssAbsPath = path.resolve(dir, `${baseName}.component.css`);
+        if (startQuoteIdx !== -1 && stylesContent.length > 0) {
+          const cssRelPath = `./${baseName}.component.css`;
+          const cssAbsPath = path.resolve(dir, `${baseName}.component.css`);
 
-        decomposedFiles.push({
-          filePath: cssAbsPath,
-          content: stylesContent,
-        });
+          decomposedFiles.push({
+            filePath: cssAbsPath,
+            content: stylesContent,
+          });
 
-        let replaceEnd = closeBracket + 1;
-        let trailingComma = "";
-        for (let i = replaceEnd; i < updatedCode.length; i++) {
-          if (updatedCode[i] === ",") {
-            trailingComma = ",";
-            replaceEnd = i + 1;
-            break;
+          let replaceEnd = closeBracket + 1;
+          let trailingComma = "";
+          for (let i = replaceEnd; i < updatedCode.length; i++) {
+            if (updatedCode[i] === ",") {
+              trailingComma = ",";
+              replaceEnd = i + 1;
+              break;
+            }
+            if (updatedCode[i] === "\n" || updatedCode[i] === "}") break;
+            if (
+              updatedCode[i] !== " " &&
+              updatedCode[i] !== "\t" &&
+              updatedCode[i] !== "\r"
+            )
+              break;
           }
-          if (updatedCode[i] === "\n" || updatedCode[i] === "}") break;
-          if (
-            updatedCode[i] !== " " &&
-            updatedCode[i] !== "\t" &&
-            updatedCode[i] !== "\r"
-          )
-            break;
-        }
 
-        updatedCode = `${updatedCode.slice(0, stylesIdx)}styleUrl: '${cssRelPath}'${trailingComma}${updatedCode.slice(replaceEnd)}`;
-        repairsApplied.push(
-          `Decomposed inline styles into companion file '${cssRelPath}'`,
-        );
-
-        try {
-          fs.mkdirSync(path.dirname(cssAbsPath), { recursive: true });
-          fs.writeFileSync(
-            cssAbsPath,
-            stylesContent
-              ? `${stylesContent}\n`
-              : "/* component styles */\n",
-            "utf8",
+          updatedCode = `${updatedCode.slice(0, stylesIdx)}styleUrl: '${cssRelPath}'${trailingComma}${updatedCode.slice(replaceEnd)}`;
+          repairsApplied.push(
+            `Decomposed inline styles into companion file '${cssRelPath}'`,
           );
-        } catch {
-          // Disk write failure is non-fatal in sandboxed or virtual test contexts
+
+          if (targetFilePath && fs.existsSync(path.dirname(cssAbsPath))) {
+            try {
+              fs.writeFileSync(
+                cssAbsPath,
+                stylesContent
+                  ? `${stylesContent}\n`
+                  : "/* component styles */\n",
+                "utf8",
+              );
+            } catch {
+              // Disk write failure is non-fatal in sandboxed or virtual test contexts
+            }
+          }
         }
       }
     }

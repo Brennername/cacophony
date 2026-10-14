@@ -40,13 +40,15 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 
 ## Active Sprint Priority Queue & Immediate Execution Order
 
-> [!IMPORTANT]
-> **Execution Directives for Next Frontier Model Implementer:**
-> The following phases constitute the highest-priority implementation pipeline above all others, structured for immediate frontier model execution:
->
-> 1. **Priority 1: Phase 66 (Clean Slate Real-History Persistence & Model Stat Reset Daemon)**: Real-history persistence, automated cleanup, and model health resets.
-> 2. **Priority 2: Phase 67 (Real-Time Stream Tap Filtering & Multi-Task Tap Isolation)**: SSE Last-Event-ID catch-up, multi-task tap isolation, and backpressure governor.
-> 3. **Priority 3: Phase 68 (Dynamic Temperature & Top-P Hyperparameter Adaptation Engine)**: Task-type hyperparameter dynamic tuning and model recovery.
+> [!NOTE]
+> All active sprint phases up to Phase 100 have been fully implemented, verified, and rotated to history.
+
+---
+
+## Phase 100: Deterministic Guardrails, AST Inline Template Elimination, Resilient Seed Loading & Automated Regression Mitigation
+
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-100-deterministic-guardrails-ast-inline-template-elimination-resilient-seed-loading--automated-regression-mitigation)_
+
 
 ---
 

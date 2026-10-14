@@ -82,18 +82,14 @@ effect(() => {
 ### Signal-Based Inputs and Outputs
 
 ```typescript
+// user-card.component.ts
 import { Component, input, output, model } from "@angular/core";
 
 @Component({
   selector: "app-user-card",
   standalone: true,
-  template: `
-    <div class="card">
-      <h3>{{ name() }}</h3>
-      <span>{{ role() }}</span>
-      <button (click)="select.emit(id())">Select</button>
-    </div>
-  `,
+  templateUrl: "./user-card.component.html",
+  styleUrl: "./user-card.component.css",
 })
 export class UserCardComponent {
   // Signal inputs (read-only)
@@ -107,28 +103,44 @@ export class UserCardComponent {
   // Two-way binding (model)
   isSelected = model(false);
 }
+```
 
-// Usage:
-// <app-user-card [id]="'123'" [name]="'John'" [(isSelected)]="selected" />
+```html
+<!-- user-card.component.html -->
+<div class="card">
+  <h3>{{ name() }}</h3>
+  <span>{{ role() }}</span>
+  <button (click)="select.emit(id())">Select</button>
+</div>
+```
+
+```css
+/* user-card.component.css */
+.card {
+  padding: 1rem;
+  border-radius: 8px;
+}
 ```
 
 ### Signal Queries (ViewChild/ContentChild)
 
 ```typescript
+// container.component.ts
 import {
   Component,
+  ElementRef,
   viewChild,
   viewChildren,
   contentChild,
 } from "@angular/core";
+import { ItemComponent } from "./item.component";
+import { HeaderDirective } from "./header.directive";
 
 @Component({
   selector: "app-container",
   standalone: true,
-  template: `
-    <input #searchInput />
-    <app-item *ngFor="let item of items()" />
-  `,
+  templateUrl: "./container.component.html",
+  styleUrl: "./container.component.css",
 })
 export class ContainerComponent {
   // Signal-based queries
@@ -139,6 +151,14 @@ export class ContainerComponent {
   focusSearch() {
     this.searchInput()?.nativeElement.focus();
   }
+}
+```
+
+```html
+<!-- container.component.html -->
+<input #searchInput />
+@for (item of items(); track item.id) {
+  <app-item [item]="item" />
 }
 ```
 
@@ -162,6 +182,7 @@ Standalone components are self-contained and don't require NgModule declarations
 ### Creating Standalone Components
 
 ```typescript
+// header.component.ts
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
@@ -170,14 +191,26 @@ import { RouterLink } from "@angular/router";
   selector: "app-header",
   standalone: true,
   imports: [CommonModule, RouterLink], // Direct imports
-  template: `
-    <header>
-      <a routerLink="/">Home</a>
-      <a routerLink="/about">About</a>
-    </header>
-  `,
+  templateUrl: "./header.component.html",
+  styleUrl: "./header.component.css",
 })
 export class HeaderComponent {}
+```
+
+```html
+<!-- header.component.html -->
+<header>
+  <a routerLink="/">Home</a>
+  <a routerLink="/about">About</a>
+</header>
+```
+
+```css
+/* header.component.css */
+header {
+  display: flex;
+  gap: 1rem;
+}
 ```
 
 ### Bootstrapping Without NgModule
@@ -239,16 +272,15 @@ bootstrapApplication(AppComponent, {
 ### Zoneless Component Patterns
 
 ```typescript
+// counter.component.ts
 import { Component, signal, ChangeDetectionStrategy } from "@angular/core";
 
 @Component({
   selector: "app-counter",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div>Count: {{ count() }}</div>
-    <button (click)="increment()">+</button>
-  `,
+  templateUrl: "./counter.component.html",
+  styleUrl: "./counter.component.css",
 })
 export class CounterComponent {
   count = signal(0);
@@ -257,6 +289,19 @@ export class CounterComponent {
     this.count.update((v) => v + 1);
     // No zone.js needed - Signal triggers change detection
   }
+}
+```
+
+```html
+<!-- counter.component.html -->
+<div>Count: {{ count() }}</div>
+<button (click)="increment()">+</button>
+```
+
+```css
+/* counter.component.css */
+button {
+  cursor: pointer;
 }
 ```
 
@@ -295,24 +340,33 @@ export const appConfig: ApplicationConfig = {
 ### Incremental Hydration (v20+)
 
 ```typescript
+// page.component.ts
 import { Component } from "@angular/core";
+import { HeroComponent } from "./hero.component";
+import { CommentsComponent } from "./comments.component";
+import { ChatWidgetComponent } from "./chat-widget.component";
 
 @Component({
   selector: "app-page",
   standalone: true,
-  template: `
-    <app-hero />
-
-    @defer (hydrate on viewport) {
-      <app-comments />
-    }
-
-    @defer (hydrate on interaction) {
-      <app-chat-widget />
-    }
-  `,
+  imports: [HeroComponent, CommentsComponent, ChatWidgetComponent],
+  templateUrl: "./page.component.html",
+  styleUrl: "./page.component.css",
 })
 export class PageComponent {}
+```
+
+```html
+<!-- page.component.html -->
+<app-hero />
+
+@defer (hydrate on viewport) {
+  <app-comments />
+}
+
+@defer (hydrate on interaction) {
+  <app-chat-widget />
+}
 ```
 
 ### Hydration Triggers
@@ -440,22 +494,39 @@ export class ApiService {
 ### Content Projection (Slots)
 
 ```typescript
+// card.component.ts
+import { Component } from "@angular/core";
+
 @Component({
-  selector: 'app-card',
-  template: `
-    <div class="card">
-      <div class="header">
-        <!-- Select by attribute -->
-        <ng-content select="[card-header]"></ng-content>
-      </div>
-      <div class="body">
-        <!-- Default slot -->
-        <ng-content></ng-content>
-      </div>
-    </div>
-  `
+  selector: "app-card",
+  standalone: true,
+  templateUrl: "./card.component.html",
+  styleUrl: "./card.component.css",
 })
 export class CardComponent {}
+```
+
+```html
+<!-- card.component.html -->
+<div class="card">
+  <div class="header">
+    <!-- Select by attribute -->
+    <ng-content select="[card-header]"></ng-content>
+  </div>
+  <div class="body">
+    <!-- Default slot -->
+    <ng-content></ng-content>
+  </div>
+</div>
+```
+
+```css
+/* card.component.css */
+.card {
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 8px;
+}
+```
 
 // Usage
 <app-card>
@@ -473,7 +544,10 @@ export class CardComponent {}
   selector: '[appTooltip]',
   inputs: ['tooltip'] // Signal input alias
 })
-export class TooltipDirective { ... }
+export class TooltipDirective {}
+
+// button.component.ts
+import { Component } from "@angular/core";
 
 @Component({
   selector: 'app-button',
@@ -484,9 +558,22 @@ export class TooltipDirective { ... }
       inputs: ['tooltip: title'] // Map input
     }
   ],
-  template: `<ng-content />`
+  templateUrl: './button.component.html',
+  styleUrl: './button.component.css',
 })
 export class ButtonComponent {}
+```
+
+```html
+<!-- button.component.html -->
+<ng-content />
+```
+
+```css
+/* button.component.css */
+:host {
+  display: inline-block;
+}
 ```
 
 ---
@@ -585,6 +672,7 @@ export class ProductStore {
 ### Current Reactive Forms
 
 ```typescript
+// user-form.component.ts
 import { Component, inject } from "@angular/core";
 import { FormBuilder, Validators, ReactiveFormsModule } from "@angular/forms";
 
@@ -592,13 +680,8 @@ import { FormBuilder, Validators, ReactiveFormsModule } from "@angular/forms";
   selector: "app-user-form",
   standalone: true,
   imports: [ReactiveFormsModule],
-  template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <input formControlName="name" placeholder="Name" />
-      <input formControlName="email" type="email" placeholder="Email" />
-      <button [disabled]="form.invalid">Submit</button>
-    </form>
-  `,
+  templateUrl: "./user-form.component.html",
+  styleUrl: "./user-form.component.css",
 })
 export class UserFormComponent {
   private fb = inject(FormBuilder);
@@ -616,13 +699,36 @@ export class UserFormComponent {
 }
 ```
 
+```html
+<!-- user-form.component.html -->
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <input formControlName="name" placeholder="Name" />
+  <input formControlName="email" type="email" placeholder="Email" />
+  <button [disabled]="form.invalid">Submit</button>
+</form>
+```
+
+```css
+/* user-form.component.css */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+```
+
 ### Signal-Aware Form Patterns (Preview)
 
 ```typescript
 // Future Signal Forms API (experimental)
 import { Component, signal } from '@angular/core';
 
-@Component({...})
+@Component({
+  selector: 'app-signal-form',
+  standalone: true,
+  templateUrl: './signal-form.component.html',
+  styleUrl: './signal-form.component.css',
+})
 export class SignalFormComponent {
   name = signal('');
   email = signal('');
@@ -661,49 +767,72 @@ export class SignalFormComponent {
 ### Defer Blocks for Lazy Loading
 
 ```typescript
-@Component({
-  template: `
-    <!-- Immediate loading -->
-    <app-header />
+// dashboard.component.ts
+import { Component } from '@angular/core';
+import { HeaderComponent } from './header.component';
+import { HeavyChartComponent } from './heavy-chart.component';
+import { SpinnerComponent } from './spinner.component';
 
-    <!-- Lazy load when visible -->
-    @defer (on viewport) {
-      <app-heavy-chart />
-    } @placeholder {
-      <div class="skeleton" />
-    } @loading (minimum 200ms) {
-      <app-spinner />
-    } @error {
-      <p>Failed to load chart</p>
-    }
-  `
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [HeaderComponent, HeavyChartComponent, SpinnerComponent],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.css',
 })
+export class DashboardComponent {}
+```
+
+```html
+<!-- dashboard.component.html -->
+<!-- Immediate loading -->
+<app-header />
+
+<!-- Lazy load when visible -->
+@defer (on viewport) {
+  <app-heavy-chart />
+} @placeholder {
+  <div class="skeleton" />
+} @loading (minimum 200ms) {
+  <app-spinner />
+} @error {
+  <p>Failed to load chart</p>
+}
 ```
 
 ### NgOptimizedImage
 
 ```typescript
+// hero-banner.component.ts
+import { Component } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 
 @Component({
+  selector: 'app-hero-banner',
+  standalone: true,
   imports: [NgOptimizedImage],
-  template: `
-    <img
-      ngSrc="hero.jpg"
-      width="800"
-      height="600"
-      priority
-    />
-
-    <img
-      ngSrc="thumbnail.jpg"
-      width="200"
-      height="150"
-      loading="lazy"
-      placeholder="blur"
-    />
-  `
+  templateUrl: './hero-banner.component.html',
+  styleUrl: './hero-banner.component.css',
 })
+export class HeroBannerComponent {}
+```
+
+```html
+<!-- hero-banner.component.html -->
+<img
+  ngSrc="hero.jpg"
+  width="800"
+  height="600"
+  priority
+/>
+
+<img
+  ngSrc="thumbnail.jpg"
+  width="200"
+  height="150"
+  loading="lazy"
+  placeholder="blur"
+/>
 ```
 
 ---

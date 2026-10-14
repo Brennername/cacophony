@@ -200,13 +200,54 @@ Ingests specification documents (`docs/spec.md`, `README.md`, OpenAPI JSON) and 
 
 Retries failed tasks with a three-failure quarantine safeguard (`force=true` bypasses).
 
+**Query Parameters:**
+- `pattern` (optional string): Filter tasks to requeue by title or ID prefix.
+- `force` (optional boolean, default `false`): When `true`, overrides the 3-failure quarantine and requeues all matching failed tasks.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "requeuedCount": 4,
+  "maxAutomaticFailures": 3,
+  "force": false
+}
+```
+
 ### POST `/api/tasks/seed`
 
-Ingests uncompleted tasks from `docs/taskcade.md` into the active queue.
+Ingests uncompleted tasks from `docs/taskcade.md` into the active queue via `TaskcadeSeedLoader`.
+
+**Query Parameters:**
+- `limit` (optional integer, default `400`): Maximum count of uncompleted tasks to parse and ingest.
+- `phase` (optional string): Restrict ingestion to tasks within a specific phase identifier (e.g. `T100`).
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "totalParsed": 128,
+  "seededCount": 12
+}
+```
 
 ### POST `/api/tasks/reclaim`
 
-Reclaims stale running tasks back to `PENDING` state.
+Reclaims stale running tasks back to `PENDING` state when worker execution exceeds the inactivity threshold.
+
+**Query Parameters:**
+- `timeoutMinutes` (optional integer, default `15`): Inactivity cutoff window in minutes for considering a `RUNNING` task orphaned.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "reclaimedCount": 2
+}
+```
 
 ### POST `/api/tasks/groom`
 
@@ -311,6 +352,33 @@ Advances arena epoch and performs clean-slate model degradation reset, un-ejecti
     "isActive": true
   }
 }
+```
+
+### GET `/api/arena/epochs/:id/history`
+
+Retrieves the snapshotted model health leaderboard and remediation telemetry history for a specific completed or historical epoch.
+
+**Path Parameters:**
+- `id` (integer): Unique epoch sequence identifier.
+
+**Response:** `200 OK`
+
+```json
+[
+  {
+    "modelId": "qwen2.5-coder:7b",
+    "provider": "ollama",
+    "totalTasks": 28,
+    "totalSuccess": 25,
+    "totalFailures": 3,
+    "consecutiveFailures": 0,
+    "avgLatencyMs": 4200,
+    "avgTokensPerSec": 28.5,
+    "status": "ACTIVE",
+    "totalRemediationAttempts": 5,
+    "totalRemediationSuccess": 4
+  }
+]
 ```
 
 ### POST `/api/models/reset-stats`
@@ -486,6 +554,111 @@ Executes an isolated baseline evaluation benchmark against a specific model to r
   "model": "qwen2.5-coder:7b-instruct-q4_K_M",
   "tokensPerSecond": 42.5,
   "latencyMs": 120
+}
+```
+
+### GET `/api/models/profiles`
+
+Lists all model tuning and inference parameter profiles (sampling parameters, context window sizes, temperature, and penalty settings).
+
+**Response:** `200 OK`
+
+```json
+[
+  {
+    "id": "qwen2.5-coder:7b",
+    "modelName": "qwen2.5-coder:7b",
+    "role": "implementer",
+    "numPredict": 8192,
+    "numCtx": 16384,
+    "temperature": 0.1,
+    "topK": 40,
+    "topP": 0.9,
+    "repeatPenalty": 1.1,
+    "autoTuned": true,
+    "isActive": true
+  }
+]
+```
+
+### PUT `/api/models/profiles/:id`
+
+Upserts an inference configuration and tuning profile for a specific model ID and role.
+
+**Path Parameters:**
+- `id` (string): Model profile identifier.
+
+**Request Body:**
+
+```json
+{
+  "modelName": "qwen2.5-coder:7b",
+  "role": "implementer",
+  "numPredict": 8192,
+  "numCtx": 16384,
+  "temperature": 0.1,
+  "topK": 40,
+  "topP": 0.9,
+  "repeatPenalty": 1.1,
+  "autoTuned": false,
+  "isActive": true
+}
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "profile": {
+    "id": "qwen2.5-coder:7b",
+    "modelName": "qwen2.5-coder:7b",
+    "role": "implementer",
+    "numPredict": 8192,
+    "numCtx": 16384,
+    "temperature": 0.1,
+    "topK": 40,
+    "topP": 0.9,
+    "repeatPenalty": 1.1,
+    "autoTuned": false,
+    "isActive": true
+  }
+}
+```
+
+### POST `/api/models/profiles/auto-tune`
+
+Autonomously runs empirical parameter sweep benchmarks to calibrate optimal `numCtx`, `numPredict`, `temperature`, and `repeatPenalty` values against local VRAM budgets.
+
+**Request Body (Optional):**
+
+```json
+{
+  "models": ["qwen2.5-coder:7b", "gemma3:4b-it-qat"]
+}
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "count": 2,
+  "profiles": [
+    {
+      "id": "qwen2.5-coder:7b",
+      "modelName": "qwen2.5-coder:7b",
+      "role": "implementer",
+      "numPredict": 8192,
+      "numCtx": 16384,
+      "temperature": 0.1,
+      "topK": 40,
+      "topP": 0.9,
+      "repeatPenalty": 1.1,
+      "autoTuned": true,
+      "isActive": true
+    }
+  ]
 }
 ```
 

@@ -94,6 +94,25 @@ export class TaskScheduler implements IModelPredictor {
   private lastLoadedModelsTime = 0;
   private static readonly LOADED_MODELS_CACHE_TTL_MS = 5000;
 
+  private consecutiveBurstFailures = 0;
+  private regressionBurstThreshold = 3;
+  private readonly modelHealthRepository?:
+    | {
+        advanceEpoch(
+          name: string,
+          reason: string,
+          notes?: string,
+        ): Promise<any>;
+      }
+    | undefined;
+  private readonly onRegressionBurst?:
+    | ((
+        consecutiveFailures: number,
+        lastTask: TaskRecord,
+        reason: string,
+      ) => Promise<void>)
+    | undefined;
+
   constructor(options: {
     readonly taskRepo: TaskRepository;
     readonly stageRepo: StageRepository;
@@ -118,6 +137,15 @@ export class TaskScheduler implements IModelPredictor {
     readonly rehabilitationService?: TaskRehabilitationService;
     readonly vramPrefetchCoordinator?: VramPrefetchCoordinator;
     readonly maxRetries?: number;
+    readonly modelHealthRepository?: {
+      advanceEpoch(name: string, reason: string, notes?: string): Promise<any>;
+    };
+    readonly regressionBurstThreshold?: number;
+    readonly onRegressionBurst?: (
+      consecutiveFailures: number,
+      lastTask: TaskRecord,
+      reason: string,
+    ) => Promise<void>;
   }) {
     this.taskRepo = options.taskRepo;
     this.stageRepo = options.stageRepo;
@@ -133,6 +161,9 @@ export class TaskScheduler implements IModelPredictor {
     this.maxRetries = options.maxRetries ?? 3;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
     this.noProgressTimeoutMs = options.noProgressTimeoutMs;
+    this.modelHealthRepository = options.modelHealthRepository;
+    this.regressionBurstThreshold = options.regressionBurstThreshold ?? 3;
+    this.onRegressionBurst = options.onRegressionBurst;
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
       "qwen2.5-coder:3b": 360_000,
       "gemma3:4b-it-qat": 420_000,
@@ -191,6 +222,124 @@ export class TaskScheduler implements IModelPredictor {
       this.perModelTimeoutMs[model] ??
       this.defaultTimeoutMs
     );
+  }
+
+  /**
+   * Returns the count of consecutive task failures in the current burst window.
+   */
+  public getConsecutiveBurstFailures(): number {
+    return this.consecutiveBurstFailures;
+  }
+
+  /**
+   * Sets the consecutive failure threshold that triggers regression burst mitigation.
+   */
+  public setRegressionBurstThreshold(threshold: number): void {
+    this.regressionBurstThreshold = Math.max(1, threshold);
+  }
+
+  /**
+   * Regrooms the task queue by reclaiming stale running tasks and refreshing pending tasks.
+   */
+  public async regroomQueue(): Promise<{
+    reclaimedCount: number;
+    groomedCount: number;
+  }> {
+    let reclaimedCount = 0;
+    if (typeof this.taskRepo.reclaimStaleRunningTasks === "function") {
+      try {
+        reclaimedCount = await this.taskRepo.reclaimStaleRunningTasks(15);
+      } catch (err) {
+        this.logger.warn("Failed to reclaim stale tasks during queue grooming", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    let groomedCount = 0;
+    try {
+      const pendingTasks = await this.taskRepo.listPending();
+      for (const t of pendingTasks) {
+        if (this.groomer) {
+          this.groomer.groom(t);
+          groomedCount++;
+        }
+      }
+    } catch (err) {
+      this.logger.warn("Failed to re-groom pending tasks", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
+    this.logger.info("Completed queue regrooming", {
+      reclaimedCount,
+      groomedCount,
+    });
+    return { reclaimedCount, groomedCount };
+  }
+
+  /**
+   * Handles regression bursts: regrooms the queue, advances telemetry epoch, and invokes callbacks.
+   */
+  public async handleRegressionBurst(
+    lastTask: TaskRecord,
+    reason: string,
+  ): Promise<void> {
+    const burstCount = this.consecutiveBurstFailures;
+    this.logger.warn(
+      `Regression burst detected: ${burstCount} consecutive failures encountered. Triggering queue regroom and telemetry epoch reset.`,
+      {
+        consecutiveFailures: burstCount,
+        threshold: this.regressionBurstThreshold,
+        taskId: lastTask.id,
+        reason,
+      },
+    );
+
+    // 1. Regroom queue to clean up stale states and reclaim stuck executions
+    await this.regroomQueue();
+
+    // 2. Advance / reset telemetry epoch if health repo is wired
+    if (this.modelHealthRepository) {
+      try {
+        const epochName = `Epoch-${Date.now()}`;
+        const epochReason = `Regression burst mitigation: ${burstCount} consecutive failures (last: ${lastTask.id})`;
+        const notes = `Automated mitigation triggered for failure reason: ${reason}`;
+        await this.modelHealthRepository.advanceEpoch(
+          epochName,
+          epochReason,
+          notes,
+        );
+        this.logger.info(
+          "Advanced telemetry epoch for regression burst mitigation",
+          {
+            epochName,
+          },
+        );
+      } catch (epochErr) {
+        this.logger.error(
+          "Failed to advance epoch during regression burst mitigation",
+          {
+            error:
+              epochErr instanceof Error ? epochErr.message : String(epochErr),
+          },
+        );
+      }
+    }
+
+    // 3. Notify custom callback if registered
+    if (this.onRegressionBurst) {
+      try {
+        await this.onRegressionBurst(burstCount, lastTask, reason);
+      } catch (cbErr) {
+        this.logger.error("Error in onRegressionBurst callback", {
+          error: cbErr instanceof Error ? cbErr.message : String(cbErr),
+        });
+      }
+    }
+
+    // 4. Reset consecutive burst failure count after mitigation completes
+    this.consecutiveBurstFailures = 0;
   }
 
   /**
@@ -1076,6 +1225,7 @@ export class TaskScheduler implements IModelPredictor {
           }
 
           if (result.success) {
+            this.consecutiveBurstFailures = 0;
             this.logger.info(
               `Task ${targetTask.id} finished with status COMPLETED in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`,
               {
@@ -1100,6 +1250,7 @@ export class TaskScheduler implements IModelPredictor {
               durationMs,
             );
           } else {
+            this.consecutiveBurstFailures++;
             const failureReason =
               result.failureReason || "Stage failed verification";
             const newFailureCount = await this.taskRepo.incrementFailure(
@@ -1183,6 +1334,10 @@ export class TaskScheduler implements IModelPredictor {
                   );
                 }
               }
+            }
+
+            if (this.consecutiveBurstFailures >= this.regressionBurstThreshold) {
+              await this.handleRegressionBurst(targetTask, failureReason);
             }
           }
 
@@ -1348,6 +1503,11 @@ export class TaskScheduler implements IModelPredictor {
             );
           } catch {
             // ignore
+          }
+
+          this.consecutiveBurstFailures++;
+          if (this.consecutiveBurstFailures >= this.regressionBurstThreshold) {
+            await this.handleRegressionBurst(targetTask, failureReason);
           }
         }
       }

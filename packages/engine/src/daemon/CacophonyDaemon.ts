@@ -244,6 +244,8 @@ export class CacophonyDaemon {
     this.scheduler = new TaskScheduler({
       taskRepo: this.taskRepo,
       stageRepo: this.stageRepo,
+      modelHealthRepository: this.healthRepo,
+      regressionBurstThreshold: 3,
       evictionManager,
       telemetryProvider,
       streamTapManager: this.streamTapManager,

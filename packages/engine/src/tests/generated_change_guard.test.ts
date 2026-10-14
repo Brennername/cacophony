@@ -335,6 +335,59 @@ test("GeneratedChangeGuard validates JSON files and rejects malformed syntax", (
   );
   assert.ok(
     invalidIssues.some((i) => i.includes("Generated JSON replacement is not valid")),
-    `Expected JSON parse error, got: ${JSON.stringify(invalidIssues)}`,
   );
+});
+
+test("GeneratedChangeGuard rejects inline template and inline styles enforcing Angular companion file decomposition", () => {
+  const inlineTemplateComponent = `@Component({
+  selector: 'app-user-badge',
+  template: '<div class="badge"><span>Badge</span></div>'
+})
+export class UserBadgeComponent {}`;
+
+  const inlineStylesComponent = `@Component({
+  selector: 'app-user-badge',
+  templateUrl: './user-badge.component.html',
+  styles: ['.badge { color: red; }']
+})
+export class UserBadgeComponent {}`;
+
+  const validDecomposedComponent = `@Component({
+  selector: 'app-user-badge',
+  templateUrl: './user-badge.component.html',
+  styleUrl: './user-badge.component.css'
+})
+export class UserBadgeComponent {}`;
+
+  const tplIssues = GeneratedChangeGuard.inspectReplacement(
+    "src/app/user-badge.component.ts",
+    "",
+    inlineTemplateComponent,
+    "Add user badge component",
+  );
+  assert.ok(
+    tplIssues.some((i) =>
+      i.includes("has an inline template; Angular standards require decomposing"),
+    ),
+  );
+
+  const styleIssues = GeneratedChangeGuard.inspectReplacement(
+    "src/app/user-badge.component.ts",
+    "",
+    inlineStylesComponent,
+    "Add user badge component",
+  );
+  assert.ok(
+    styleIssues.some((i) =>
+      i.includes("has inline styles; Angular standards require decomposing"),
+    ),
+  );
+
+  const validIssues = GeneratedChangeGuard.inspectReplacement(
+    "src/app/user-badge.component.ts",
+    "",
+    validDecomposedComponent,
+    "Add user badge component",
+  );
+  assert.deepEqual(validIssues, []);
 });

@@ -3567,6 +3567,19 @@ _Completed & Verified in Commit: `4e0d391`_
 - [x] T76.3.3: Add storage quota slider configuring maxDiskStorageGb with visual gauge indicating current disk usage vs quota. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts] [Test: npm test]
 - [x] T76.3.4: Write frontend unit tests validating form bindings, validation rules, and PUT /api/models/config payload generation. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.spec.ts] [Test: npm test]
 
+---
+
+## Archived Phase 100: Deterministic Guardrails, AST Inline Template Elimination, Resilient Seed Loading & Automated Regression Mitigation
+
+_Completed & Verified in Commit: `358e767`_
+
+- [x] T100.1.1: Decompose inline templates in developer documentation (`docs/SKILL.md`) to strictly use standalone companion files (`templateUrl` and `styleUrl`). [File: docs/SKILL.md] [Test: npm run --workspace=@cacophony/engine test -- packages/engine/src/tests/compiler_diagnostic_auto_repair.test.ts]
+- [x] T100.1.2: Eliminate inline template fallback in `CompilerDiagnosticAutoRepair` to preserve `templateUrl` and generate companion HTML on disk. [File: packages/engine/src/testing/CompilerDiagnosticAutoRepair.ts] [Test: npm run --workspace=@cacophony/engine test -- packages/engine/src/tests/compiler_diagnostic_auto_repair.test.ts]
+- [x] T100.1.3: Harden AST-level change guardrails in `GeneratedChangeGuard` to reject inline templates and enforce companion file decomposition. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm run --workspace=@cacophony/engine test -- packages/engine/src/tests/generated_change_guard.test.ts]
+- [x] T100.2.1: Implement TaskcadeSeedLoader fallback to history and resilient empty queue handling. [File: packages/engine/src/scheduler/TaskcadeSeedLoader.ts] [Test: npm run --workspace=@cacophony/engine test -- packages/engine/src/tests/seed_loader.test.ts]
+- [x] T100.3.1: Implement automated regression-burst detection, epoch reset, and queue regrooming engine on consecutive verification failures. [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts, packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm run --workspace=@cacophony/engine test -- packages/engine/src/tests/regression_burst_mitigation.test.ts]
+- [x] T100.4.1: Synchronize `docs/api_spec.md` with PR assessment, epoch advancement, model tuning, and queue management REST endpoints. [File: docs/api_spec.md] [Test: npm run lint]
+
 
 
 
