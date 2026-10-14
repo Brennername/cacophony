@@ -294,6 +294,33 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t98.1.3.2 Rehabilitation [2026-10-14T16:49:01.541Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu (`taskcade-t98.1.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu [Role: type_specialist] [Files: packages/engine/src/tests/remediation_directives.test.ts]
+  - [ ] `taskcade-t98.1.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu [Role: implementer] [Files: packages/engine/src/tests/remediation_directives.test.ts]
+
+
+### Task taskcade-t98.1.3.1 Rehabilitation [2026-10-14T16:48:31.117Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu (`taskcade-t98.1.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu [Role: type_specialist] [Files: packages/engine/src/tests/remediation_directives.test.ts]
+  - [ ] `taskcade-t98.1.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu [Role: implementer] [Files: packages/engine/src/tests/remediation_directives.test.ts]
+
+
+### Task taskcade-t98.1.2.1 Rehabilitation [2026-10-14T16:47:52.191Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e (`taskcade-t98.1.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e [Role: type_specialist] [Files: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts]
+  - [ ] `taskcade-t98.1.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e [Role: implementer] [Files: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts]
+
+
 ### Task taskcade-t98.1.2.2 Rehabilitation [2026-10-14T16:46:43.604Z]
 - **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e (`taskcade-t98.1.2.2`)
 - **Failure Count**: 3

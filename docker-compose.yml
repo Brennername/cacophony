@@ -278,6 +278,7 @@ services:
       - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_REGISTRATION_TOKEN:-}
       - GITEA_RUNNER_NAME=cacophony-local-runner
       - GITEA_RUNNER_LABELS=ubuntu-latest:docker://node:22-bookworm
+      - CONFIG_FILE=/data/config.yaml
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - gitea-runner-data:/data
