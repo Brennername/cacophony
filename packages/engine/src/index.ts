@@ -26,3 +26,5 @@ export * from "./optimization/index.js";
 export * from "./hardware/index.js";
 export * from "./bandit/index.js";
 export * from "./analytics/index.js";
+export * from "./utils/index.js";
+

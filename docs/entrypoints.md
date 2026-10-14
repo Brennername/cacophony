@@ -115,7 +115,13 @@ Base URL: `http://<host>:24161` (Supports reverse proxy headers `X-Forwarded-Hos
 - `POST /api/tasks` — Enqueue a new code or review task into the single-concurrency scheduler.
 - `GET /api/tasks/:id` — Get detailed task status, prompts, logs, and stage breakdown.
 - `DELETE /api/tasks/:id` — Cancel or delete an enqueued task.
+- `DELETE /api/tasks` — Purge pending tasks with optional `?pattern=` title/id filter.
 - `GET /api/tasks/:id/gantt` — Fetch high-precision timestamp spans for Gantt transport timeline.
+- `POST /api/tasks/groom` — Reconciles active and pending task records against merged Gitea pull requests.
+- `POST /api/tasks/seed` — Ingests uncompleted tasks from `docs/taskcade.md` into the active queue.
+- `POST /api/tasks/reclaim` — Reclaims stale running tasks back to `PENDING` state.
+- `POST /api/tasks/requeue` — Retries failed tasks with a three-failure quarantine safeguard (`force=true` bypasses).
+- `POST /api/tasks/:id/rehabilitate` — Executes deterministic task rehabilitation and subtask decomposition.
 
 ### 3.2 Real-Time SSE Streams
 
@@ -137,6 +143,9 @@ Base URL: `http://<host>:24161` (Supports reverse proxy headers `X-Forwarded-Hos
 
 - `GET /api/models` — List active model health profiles, eviction counts, and win rates.
 - `GET /api/models/leaderboard` — Dynamic model leaderboard calculated from database task runs.
+- `GET /api/arena/epochs` — Lists all arena epochs and degradation reset states.
+- `POST /api/models/epoch` & `POST /api/arena/epoch` — Advances arena epoch and resets model degradation baselines.
+- `POST /api/models/reset-stats` — Resets failure counts and un-ejects degraded models to baseline.
 - `POST /api/models/bandit/configure` — Adjust exploration rate ($\epsilon$), active policy (Epsilon-Greedy, UCB-1, Thompson Sampling), or reset priors.
 
 ### 3.5 Repository, Code Diagnostics & Git Checkpoints

@@ -1,17 +1,30 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-
 import { ModelManagementConfigSchema } from '../config.js';
 
 describe('ModelManagementConfigSchema', () => {
-  it('should have default values for protected models', async () => {
+  it('should have default values for protected models', () => {
     const config = ModelManagementConfigSchema.parse({});
-    assert.strictEqual(config.protectedModels, ['model1', 'model2']);
+    assert.deepStrictEqual(config.protectedModels, [
+      'deepseek-r1:8b-4k',
+      'qwen2.5-coder:7b-instruct-q4_K_M',
+    ]);
+    assert.strictEqual(config.managedModelsEnabled, true);
+    assert.strictEqual(config.autoEvictionEnabled, true);
   });
 
-  it('should have default storage quotas', async () => {
+  it('should have default storage quotas and enforce positive limit', () => {
     const config = ModelManagementConfigSchema.parse({});
-    assert.strictEqual((config as any).storageQuotas.default, 100);
-    assert.strictEqual((config as any).storageQuotas.protected, 500);
+    assert.strictEqual(config.maxDiskStorageGb, 50);
+
+    const invalidResult = ModelManagementConfigSchema.safeParse({
+      maxDiskStorageGb: -10,
+    });
+    assert.strictEqual(invalidResult.success, false);
+
+    const customConfig = ModelManagementConfigSchema.parse({
+      maxDiskStorageGb: 120,
+    });
+    assert.strictEqual(customConfig.maxDiskStorageGb, 120);
   });
 });

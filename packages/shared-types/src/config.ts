@@ -25,7 +25,7 @@ export const CacophonySystemConfigSchema = z.object({
   eviction_thresholds: z.object({
     consecutive_failures: z.number().int().min(1).default(3),
     cooldown_period_seconds: z.number().int().default(1800)
-  }),
+  }).default({}),
   thermal_limits: z.object({
     nominal_max: z.number().default(70),
     warm_max: z.number().default(80),
@@ -35,8 +35,8 @@ export const CacophonySystemConfigSchema = z.object({
       warm: z.number().default(5),
       elevated: z.number().default(15),
       danger_pause: z.number().default(10)
-    })
-  }),
+    }).default({})
+  }).default({}),
   execution_guards: z.object({
     blacklisted_commands: z.array(z.string()),
     max_command_timeout_ms: z.number().int().default(180000)
@@ -45,7 +45,7 @@ export const CacophonySystemConfigSchema = z.object({
     enforce_js_extension_on_relative_ts_imports: z.boolean().default(true),
     strip_unicode_emojis: z.boolean().default(true),
     banned_dependencies: z.array(z.string()).default([])
-  }),
+  }).default({}),
   directives: z.array(z.string())
 });
 

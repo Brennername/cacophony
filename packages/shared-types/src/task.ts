@@ -57,6 +57,40 @@ export const TaskMetadataHintsSchema = z.object({
 export type TaskMetadataHints = z.infer<typeof TaskMetadataHintsSchema>;
 
 
+export const RehabStatusSchema = z.enum(["NONE", "PENDING_REHAB", "REHABILITATED", "DECOMPOSED"]);
+export type RehabStatus = z.infer<typeof RehabStatusSchema>;
+
+export const TaskRecordSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  prompt: z.string().min(1),
+  role: AgentRoleSchema,
+  status: TaskStatusSchema,
+  priority: TaskPrioritySchema,
+  modelAssigned: z.string().nullable().optional(),
+  testCommand: z.string().nullable().optional(),
+  focusFiles: z.string().nullable().optional(),
+  targetBranch: z.string().nullable().optional(),
+  prUrl: z.string().nullable().optional(),
+  failureCount: z.number().int().nonnegative().default(0),
+  progressPercent: z.number().min(0).max(100).optional(),
+  logSnippet: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  completedAt: z.string().nullable().optional(),
+  durationMs: z.number().optional(),
+  tokensPerSec: z.number().optional(),
+  currentStage: StageNameSchema.optional(),
+  stageState: z.enum(["PENDING", "RUNNING", "COMPLETED", "FAILED"]).optional(),
+  stageArtifacts: z.record(z.any()).optional(),
+  commitHash: z.string().nullable().optional(),
+  baseCommitHash: z.string().nullable().optional(),
+  failureReason: z.string().nullable().optional(),
+  parentTaskId: z.string().nullable().optional(),
+  rehabStatus: RehabStatusSchema.optional(),
+  metadataHints: TaskMetadataHintsSchema.nullable().optional(),
+});
+
 export interface TaskRecord {
   readonly id: string;
   readonly title: string;
@@ -98,8 +132,6 @@ export interface TaskRecord {
 
   readonly metadataHints?: TaskMetadataHints | null | undefined;
 }
-
-export type RehabStatus = "NONE" | "PENDING_REHAB" | "REHABILITATED" | "DECOMPOSED";
 
 export interface ITaskRehabilitationPlan {
   readonly parentTaskId: string;

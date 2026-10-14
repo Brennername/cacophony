@@ -3321,3 +3321,45 @@ _RDF Category: orchestration_
 - [x] T72.3.3: Document markdown task metadata syntax and hint conventions in docs/taskcade_metadata_spec.md for human developers and autonomous groomer agents. [File: docs/taskcade_metadata_spec.md] [Section: Specification Syntax] [Test: npm test]
 - [x] T72.3.4: Write unit tests verifying that agents calling the MCP tool successfully register tasks with all metadata specifiers preserved. [File: packages/tools/src/tests/EnqueueTaskcadeTaskTool.test.ts] [Test: npm test -- packages/tools/dist/tests/*.test.js]
 
+---
+
+## Archived Phase 96: Granular Test Suites, Strict Typing Hardening & Edge-Case Guardrails
+
+_Completed & Verified in Monorepo Integration Test Run_
+
+### T96.1: Core Utility & Math Unit Tests
+
+- [x] T96.1.1: Write unit tests verifying moving average calculations across empty, single-element, and large numeric streams. [File: packages/engine/src/tests/math_utils.test.ts] [Test: npm test -- packages/engine/src/tests/math_utils.test.ts]
+- [x] T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain bounds within min/max delay limits. [File: packages/engine/src/tests/backoff_utils.test.ts] [Test: npm test -- packages/engine/src/tests/backoff_utils.test.ts]
+- [x] T96.1.3: Write unit tests validating token throughput rate calculation clamped against zero division when duration is 0ms. [File: packages/engine/src/tests/throughput_math.test.ts] [Test: npm test -- packages/engine/src/tests/throughput_math.test.ts]
+- [x] T96.1.4: Write unit tests verifying percentage rounding precision and boundary clamping [0.0, 100.0]. [File: packages/engine/src/tests/percent_math.test.ts] [Test: npm test -- packages/engine/src/tests/percent_math.test.ts]
+
+### T96.2: Schema Validation & Zod Parser Unit Tests
+
+- [x] T96.2.1: Write unit tests verifying TaskRecordSchema validates valid task payloads and rejects missing required fields. [File: packages/shared-types/src/tests/task_schema.test.ts] [Test: npm test -- packages/shared-types]
+- [x] T96.2.2: Write unit tests verifying CacophonySystemConfigSchema enforces default execution mode 'auto' and positive concurrency. [File: packages/shared-types/src/tests/config_schema.test.ts] [Test: npm test -- packages/shared-types]
+- [x] T96.2.3: Write unit tests validating ModelManagementConfigSchema defaults for protected models and storage quotas. [File: packages/shared-types/src/tests/model_config_schema.test.ts] [Test: npm test -- packages/shared-types]
+- [x] T96.2.4: Write unit tests verifying AgentRoleSchema enum rejects unknown string identifiers. [File: packages/shared-types/src/tests/agent_role_schema.test.ts] [Test: npm test -- packages/shared-types]
+
+### T96.3: AST Context Slicer & Tokenizer Edge-Case Tests
+
+- [x] T96.3.1: Write unit tests validating AstContextSlicer handles complex generic interface declarations without syntax corruption. [File: packages/engine/src/tests/ast_generic_slicing.test.ts] [Test: npm test -- packages/engine/src/tests/ast_generic_slicing.test.ts]
+- [x] T96.3.2: Write unit tests verifying AstContextSlicer correctly preserves decorators (@Component, @Injectable) when generating class skeletons. [File: packages/engine/src/tests/ast_decorator_slicing.test.ts] [Test: npm test -- packages/engine/src/tests/ast_decorator_slicing.test.ts]
+- [x] T96.3.3: Write unit tests verifying ImportPruningEngine correctly resolves type-only imports vs value imports. [File: packages/engine/src/tests/import_type_pruning.test.ts] [Test: npm test -- packages/engine/src/tests/import_type_pruning.test.ts]
+- [x] T96.3.4: Write unit tests validating FocusedDiffBuilder handles multi-line string replacements with exact indentation preservation. [File: packages/engine/src/tests/diff_indentation.test.ts] [Test: npm test -- packages/engine/src/tests/diff_indentation.test.ts]
+
+### T96.4: Frontend UI State Store & Reactive Signals Unit Tests
+
+- [x] T96.4.1: Write unit tests verifying ArenaStateStore activeTaskId signal transitions reactively upon task dispatch events. [File: packages/frontend/src/app/services/arena_state_dispatch.spec.ts] [Test: npm test]
+- [x] T96.4.2: Write unit tests verifying ArenaStateStore modelWarmth signal updates when warm model SSE payload arrives. [File: packages/frontend/src/app/services/arena_state_warmth.spec.ts] [Test: npm test]
+- [x] T96.4.3: Write unit tests verifying ArenaStateStore successRate signal updates accurately on success_rate_updated SSE events. [File: packages/frontend/src/app/services/arena_state_success.spec.ts] [Test: npm test]
+- [x] T96.4.4: Write unit tests verifying ArenaStateStore thermalThrottleState signal triggers warning badge in UI state. [File: packages/frontend/src/app/services/arena_state_thermal.spec.ts] [Test: npm test]
+
+### T96.5: Database Query Builder & Parameter Escaping Tests
+
+- [x] T96.5.1: Write unit tests verifying TaskRepository.create handles SQL string escaping and special characters in prompts safely. [File: packages/db/src/tests/task_sql_escaping.test.ts] [Test: npm test -- packages/db]
+- [x] T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes JSON log output without truncating special symbols. [File: packages/db/src/tests/stage_json_serialization.test.ts] [Test: npm test -- packages/db]
+- [x] T96.5.3: Write unit tests validating StageRepository stage span queries return chronological ordering without gaps. [File: packages/db/src/tests/stage_chronology.test.ts] [Test: npm test -- packages/db]
+- [x] T96.5.4: Write unit tests verifying PGlite driver handles concurrent statement execution queueing without deadlocking. [File: packages/db/src/tests/pglite_concurrent_queue.test.ts] [Test: npm test -- packages/db]
+
+

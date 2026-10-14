@@ -152,6 +152,11 @@ export class AstContextSlicer {
     node: ts.ClassDeclaration,
     sourceFile: ts.SourceFile,
   ): string {
+    const decorators = (ts.getDecorators ? ts.getDecorators(node) : undefined) ??
+      (node.modifiers?.filter((m): m is ts.Decorator => m.kind === ts.SyntaxKind.Decorator) ?? []);
+    const decoratorStrings = decorators.map((d) => d.getText(sourceFile));
+    const decoratorPrefix = decoratorStrings.length > 0 ? `${decoratorStrings.join("\n")}\n` : "";
+
     const isExported = node.modifiers?.some(
       (m) => m.kind === ts.SyntaxKind.ExportKeyword,
     );
@@ -200,7 +205,7 @@ export class AstContextSlicer {
       }
     }
 
-    return `${exportPrefix}${abstractPrefix}class ${className} {\n${members.join("\n")}\n}`;
+    return `${decoratorPrefix}${exportPrefix}${abstractPrefix}class ${className} {\n${members.join("\n")}\n}`;
   }
 
   private sliceFunctionDeclaration(

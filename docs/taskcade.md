@@ -350,42 +350,7 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Phase 96: Granular Test Suites, Strict Typing Hardening & Edge-Case Guardrails
 
-_RDF Category: verification_and_hardening_
-
-### T96.1: Core Utility & Math Unit Tests
-
-- [ ] T96.1.1: Write unit tests verifying moving average calculations across empty, single-element, and large numeric streams. [File: packages/engine/src/tests/math_utils.test.ts] [Test: npm test -- packages/engine/src/tests/math_utils.test.ts]
-- [ ] T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain bounds within min/max delay limits. [File: packages/engine/src/tests/backoff_utils.test.ts] [Test: npm test -- packages/engine/src/tests/backoff_utils.test.ts]
-- [ ] T96.1.3: Write unit tests validating token throughput rate calculation clamped against zero division when duration is 0ms. [File: packages/engine/src/tests/throughput_math.test.ts] [Test: npm test -- packages/engine/src/tests/throughput_math.test.ts]
-- [ ] T96.1.4: Write unit tests verifying percentage rounding precision and boundary clamping [0.0, 100.0]. [File: packages/engine/src/tests/percent_math.test.ts] [Test: npm test -- packages/engine/src/tests/percent_math.test.ts]
-
-### T96.2: Schema Validation & Zod Parser Unit Tests
-
-- [ ] T96.2.1: Write unit tests verifying TaskRecordSchema validates valid task payloads and rejects missing required fields. [File: packages/shared-types/src/tests/task_schema.test.ts] [Test: npm test -- packages/shared-types]
-- [ ] T96.2.2: Write unit tests verifying CacophonySystemConfigSchema enforces default execution mode 'auto' and positive concurrency. [File: packages/shared-types/src/tests/config_schema.test.ts] [Test: npm test -- packages/shared-types]
-- [ ] T96.2.3: Write unit tests validating ModelManagementConfigSchema defaults for protected models and storage quotas. [File: packages/shared-types/src/tests/model_config_schema.test.ts] [Test: npm test -- packages/shared-types]
-- [ ] T96.2.4: Write unit tests verifying AgentRoleSchema enum rejects unknown string identifiers. [File: packages/shared-types/src/tests/agent_role_schema.test.ts] [Test: npm test -- packages/shared-types]
-
-### T96.3: AST Context Slicer & Tokenizer Edge-Case Tests
-
-- [ ] T96.3.1: Write unit tests validating AstContextSlicer handles complex generic interface declarations without syntax corruption. [File: packages/engine/src/tests/ast_generic_slicing.test.ts] [Test: npm test -- packages/engine/src/tests/ast_generic_slicing.test.ts]
-- [ ] T96.3.2: Write unit tests verifying AstContextSlicer correctly preserves decorators (@Component, @Injectable) when generating class skeletons. [File: packages/engine/src/tests/ast_decorator_slicing.test.ts] [Test: npm test -- packages/engine/src/tests/ast_decorator_slicing.test.ts]
-- [ ] T96.3.3: Write unit tests verifying ImportPruningEngine correctly resolves type-only imports vs value imports. [File: packages/engine/src/tests/import_type_pruning.test.ts] [Test: npm test -- packages/engine/src/tests/import_type_pruning.test.ts]
-- [ ] T96.3.4: Write unit tests validating FocusedDiffBuilder handles multi-line string replacements with exact indentation preservation. [File: packages/engine/src/tests/diff_indentation.test.ts] [Test: npm test -- packages/engine/src/tests/diff_indentation.test.ts]
-
-### T96.4: Frontend UI State Store & Reactive Signals Unit Tests
-
-- [x] T96.4.1: Write unit tests verifying ArenaStateStore activeTaskId signal transitions reactively upon task dispatch events. [File: packages/frontend/src/app/services/arena_state_dispatch.spec.ts] [Test: npm test]
-- [x] T96.4.2: Write unit tests verifying ArenaStateStore modelWarmth signal updates when warm model SSE payload arrives. [File: packages/frontend/src/app/services/arena_state_warmth.spec.ts] [Test: npm test]
-- [x] T96.4.3: Write unit tests verifying ArenaStateStore successRate signal updates accurately on success_rate_updated SSE events. [File: packages/frontend/src/app/services/arena_state_success.spec.ts] [Test: npm test]
-- [x] T96.4.4: Write unit tests verifying ArenaStateStore thermalThrottleState signal triggers warning badge in UI state. [File: packages/frontend/src/app/services/arena_state_thermal.spec.ts] [Test: npm test]
-
-### T96.5: Database Query Builder & Parameter Escaping Tests
-
-- [ ] T96.5.1: Write unit tests verifying TaskRepository.create handles SQL string escaping and special characters in prompts safely. [File: packages/db/src/tests/task_sql_escaping.test.ts] [Test: npm test -- packages/db]
-- [ ] T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes JSON log output without truncating special symbols. [File: packages/db/src/tests/stage_json_serialization.test.ts] [Test: npm test -- packages/db]
-- [ ] T96.5.3: Write unit tests validating StageRepository stage span queries return chronological ordering without gaps. [File: packages/db/src/tests/stage_chronology.test.ts] [Test: npm test -- packages/db]
-- [ ] T96.5.4: Write unit tests verifying PGlite driver handles concurrent statement execution queueing without deadlocking. [File: packages/db/src/tests/pglite_concurrent_queue.test.ts] [Test: npm test -- packages/db]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-96-granular-test-suites-strict-typing-hardening--edge-case-guardrails)_
 
 ---
 
@@ -395,10 +360,10 @@ _RDF Category: hardware_and_network_verification_
 
 ### T97.1: Diagnostic Sensor CLI Output Parsing Tests
 
-- [ ] T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values across Tctl, edge, and Package id lines accurately. [File: packages/engine/src/tests/sensors_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/sensors_parser.test.js]
-- [ ] T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and percentage formatting. [File: packages/engine/src/tests/radeontop_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/radeontop_parser.test.js]
-- [ ] T97.1.3: Write unit tests verifying nvidia-smi parser gracefully discards corrupted CSV rows with missing comma delimiters. [File: packages/engine/src/tests/nvidia_corrupt_csv.test.ts] [Test: npm test -- packages/engine/dist/tests/nvidia_corrupt_csv.test.js]
-- [ ] T97.1.4: Write unit tests validating powermetrics parser handles multi-line thermal sampler dumps without throwing exceptions. [File: packages/engine/src/tests/powermetrics_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/powermetrics_parser.test.js]
+- [x] T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values across Tctl, edge, and Package id lines accurately. [File: packages/engine/src/tests/sensors_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/sensors_parser.test.js]
+- [x] T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and percentage formatting. [File: packages/engine/src/tests/radeontop_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/radeontop_parser.test.js]
+- [x] T97.1.3: Write unit tests verifying nvidia-smi parser gracefully discards corrupted CSV rows with missing comma delimiters. [File: packages/engine/src/tests/nvidia_corrupt_csv.test.ts] [Test: npm test -- packages/engine/dist/tests/nvidia_corrupt_csv.test.js]
+- [x] T97.1.4: Write unit tests validating powermetrics parser handles multi-line thermal sampler dumps without throwing exceptions. [File: packages/engine/src/tests/powermetrics_parser.test.ts] [Test: npm test -- packages/engine/dist/tests/powermetrics_parser.test.js]
 
 ### T97.2: Network Resolver & Reverse Proxy Host Tests
 
@@ -449,13 +414,40 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t97.1.2 Rehabilitation [2026-10-14T13:19:02.193Z]
+- **Parent Task**: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  (`taskcade-t97.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t97.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: type_specialist] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+  - [x] `taskcade-t97.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: implementer] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+
+
+### Task taskcade-t96.1.2 Rehabilitation [2026-10-14T12:54:33.070Z]
+- **Parent Task**: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun (`taskcade-t96.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t96.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: type_specialist] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+  - [x] `taskcade-t96.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: implementer] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+
+
+### Task taskcade-t97.1.1 Rehabilitation [2026-10-14T12:38:59.333Z]
+- **Parent Task**: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros (`taskcade-t97.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t97.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: type_specialist] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+  - [x] `taskcade-t97.1.1.2`: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: implementer] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+
+
 ### Task taskcade-t96.5.2 Rehabilitation [2026-10-14T12:04:00.567Z]
 - **Parent Task**: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  (`taskcade-t96.5.2`)
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t96.5.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: type_specialist] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
-  - [ ] `taskcade-t96.5.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: implementer] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+  - [x] `taskcade-t96.5.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: type_specialist] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+  - [x] `taskcade-t96.5.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: implementer] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
 
 
 *Autonomous Deterministic Decompositions from Exceeded Failure Limits*

@@ -1408,6 +1408,57 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       currentCode = lines.join("\n");
     }
 
+    // 10. Repair TS2531 / TS2532 / TS18047 / TS18048: Object or symbol is possibly 'null' or 'undefined'
+    for (const diag of diagnostics) {
+      if (
+        diag.errorCode === "TS2531" ||
+        diag.errorCode === "TS2532" ||
+        diag.errorCode === "TS18047" ||
+        diag.errorCode === "TS18048" ||
+        /is possibly '(?:null|undefined)'/i.test(diag.message)
+      ) {
+        if (diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+          const lineIdx = diag.lineNumber - 1;
+          const targetLine = lines[lineIdx];
+          if (!targetLine) continue;
+
+          const symMatch = diag.message.match(
+            /'([^']+)'\s+is possibly '(?:null|undefined)'/i,
+          );
+          const symbolName = symMatch ? symMatch[1] : null;
+
+          let updatedLine = targetLine;
+          if (symbolName) {
+            const indexRegex = new RegExp(`\\b${symbolName}\\s*\\[`, "g");
+            updatedLine = updatedLine.replace(indexRegex, `${symbolName}![`);
+
+            const propRegex = new RegExp(`\\b${symbolName}\\s*\\.`, "g");
+            updatedLine = updatedLine.replace(propRegex, `${symbolName}!.`);
+          } else {
+            if (diag.columnNumber > 0 && diag.columnNumber <= targetLine.length) {
+              const colIdx = diag.columnNumber - 1;
+              const charAtCol = targetLine[colIdx];
+              if (charAtCol === "[" || charAtCol === ".") {
+                updatedLine =
+                  targetLine.slice(0, colIdx) + "!" + targetLine.slice(colIdx);
+              }
+            }
+            if (updatedLine === targetLine) {
+              updatedLine = targetLine.replace(/([a-zA-Z0-9_$]+)\[/g, "$1![");
+            }
+          }
+
+          if (updatedLine !== targetLine) {
+            lines[lineIdx] = updatedLine;
+            repairsApplied.push(
+              `Applied non-null assertion for '${symbolName ?? "object"}' at line ${diag.lineNumber}`,
+            );
+          }
+        }
+      }
+    }
+    currentCode = lines.join("\n");
+
     if (prependCode) {
       currentCode = prependCode + currentCode;
     }
