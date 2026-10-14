@@ -123,7 +123,51 @@ test("T47.6: TaskcadeSeedLoader Suite", async (t) => {
       assert.ok(item.prompt.includes("[FOCUS FILE]: packages/engine/src/tests/seed_loader.test.ts"));
       assert.ok(!item.prompt.includes("[BypassRules:"));
       assert.ok(!item.prompt.includes("[Temp:"));
+
+      // Verify structured metadataHints extraction (T72.1.1 & T72.1.2)
+      assert.ok(item.metadataHints, "metadataHints must be populated");
+      assert.strictEqual(item.metadataHints?.modelAffinity, "qwen2.5-coder:7b");
+      assert.strictEqual(item.metadataHints?.temperature, 0.2);
+      assert.deepStrictEqual(item.metadataHints?.ruleBypassFlags, ["no_any"]);
+    },
+  );
+
+  await t.test(
+    "T72.1.1: Parses full set of metadata annotations: MaxTokens, Timeout, BypassRules, Stack, Model, Temp",
+    () => {
+      const markdown = `
+## Phase 72: Full Specifiers
+- [ ] T72.1.1: Granular specifier test [Role: implementer] [Model: qwen2.5-coder:7b-instruct-q4_K_M] [Temp: 0.7] [MaxTokens: 8192] [Timeout: 60000] [BypassRules: emoji_scrubber, no_any] [Stack: typescript-angular]
+`;
+      const loader = new TaskcadeSeedLoader("/fake/path");
+      const parsed = loader.parseMarkdown(markdown);
+
+      assert.strictEqual(parsed.length, 1);
+      const item = parsed[0]!;
+
+      assert.strictEqual(item.taskId, "taskcade-t72.1.1");
+      assert.strictEqual(item.role, "implementer");
+      assert.ok(item.metadataHints, "metadataHints should be defined");
+      assert.strictEqual(
+        item.metadataHints?.modelAffinity,
+        "qwen2.5-coder:7b-instruct-q4_K_M",
+      );
+      assert.strictEqual(item.metadataHints?.temperature, 0.7);
+      assert.strictEqual(item.metadataHints?.maxTokens, 8192);
+      assert.strictEqual(item.metadataHints?.timeoutMs, 60000);
+      assert.deepStrictEqual(item.metadataHints?.ruleBypassFlags, [
+        "emoji_scrubber",
+        "no_any",
+      ]);
+      assert.strictEqual(item.metadataHints?.stack, "typescript-angular");
+
+      // Verify clean stripping
+      assert.ok(!item.title.includes("[MaxTokens:"));
+      assert.ok(!item.title.includes("[Timeout:"));
+      assert.ok(!item.title.includes("[Stack:"));
+      assert.ok(!item.prompt.includes("[MaxTokens:"));
     },
   );
 });
+
 

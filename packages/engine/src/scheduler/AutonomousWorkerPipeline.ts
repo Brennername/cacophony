@@ -331,7 +331,9 @@ export class AutonomousWorkerPipeline {
     failureReason?: string | undefined;
   }> {
     const taskId = groomed.task.id;
+    const task = groomed.task;
     let measuredTps = 0;
+
     let worktree: WorktreeDescriptor | null = null;
     let executionRoot = this.workspaceRoot;
     let baseCommitHash: string | undefined = undefined;
@@ -605,10 +607,11 @@ export class AutonomousWorkerPipeline {
           {
             model: selectedModel,
             messages: [{ role: "user", content: inferencePrompt }],
-            temperature: 0.1,
-            maxTokens: requestedMaxTokens,
+            temperature: task.metadataHints?.temperature ?? 0.1,
+            maxTokens: task.metadataHints?.maxTokens ?? requestedMaxTokens,
           },
           (chunk) => {
+
             heartbeatTracker.recordToken(1);
             if (this.streamTapManager) {
               this.streamTapManager.emitToken(taskId, chunk);
@@ -803,8 +806,10 @@ export class AutonomousWorkerPipeline {
             modifiedFiles: [targetAbs],
             fileContents: fileContentsMap,
             simulate: false,
+            bypassRules: task.metadataHints?.ruleBypassFlags,
           },
         );
+
 
         const scrubDuration = Date.now() - scrubStart;
 
@@ -1134,7 +1139,8 @@ export class AutonomousWorkerPipeline {
                   },
                   { role: "user", content: remediationPrompt },
                 ],
-                temperature: 0.1,
+                temperature: task.metadataHints?.temperature ?? 0.1,
+                maxTokens: task.metadataHints?.maxTokens ?? requestedMaxTokens,
               },
             );
 
@@ -1153,8 +1159,10 @@ export class AutonomousWorkerPipeline {
                   modifiedFiles: [targetAbs],
                   fileContents: candidateMap,
                   simulate: false,
+                  bypassRules: task.metadataHints?.ruleBypassFlags,
                 },
               );
+
               if (
                 scrubOutcome.repairsApplied &&
                 scrubOutcome.repairsApplied.length > 0
@@ -1500,7 +1508,8 @@ export class AutonomousWorkerPipeline {
                   },
                   { role: "user", content: remediationPrompt },
                 ],
-                temperature: 0.1,
+                temperature: task.metadataHints?.temperature ?? 0.1,
+                maxTokens: task.metadataHints?.maxTokens ?? requestedMaxTokens,
               },
             );
 
@@ -1519,8 +1528,10 @@ export class AutonomousWorkerPipeline {
                   modifiedFiles: [targetAbs],
                   fileContents: candidateMap,
                   simulate: false,
+                  bypassRules: task.metadataHints?.ruleBypassFlags,
                 },
               );
+
               if (
                 scrubOutcome.repairsApplied &&
                 scrubOutcome.repairsApplied.length > 0

@@ -17,6 +17,7 @@ import { migration015 } from "./015_arena_epochs.js";
 import { migration016 } from "./016_task_commit_tracking_and_rehab.js";
 import { migration017 } from "./017_remediation_telemetry.js";
 import { migration018 } from "./018_task_history_indexes.js";
+import { migration019 } from "./019_task_metadata_hints.js";
 
 export class MigrationRegistry {
   private static readonly migrations: Migration[] = [
@@ -38,7 +39,9 @@ export class MigrationRegistry {
     migration016,
     migration017,
     migration018,
+    migration019,
   ];
+
 
   public static getAllMigrations(): readonly Migration[] {
     return [...MigrationRegistry.migrations];

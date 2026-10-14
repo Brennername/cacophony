@@ -12,6 +12,8 @@ import { RegexTool } from "./implementations/RegexTool.js";
 import { RunCommandTool } from "./implementations/RunCommandTool.js";
 import { LspGetDiagnosticsTool, LspFindDefinitionTool } from "./implementations/LspTools.js";
 import { QueryDataShapeTool, QueryFunctionalInterfaceTool, QueryOverloadMapTool } from "./implementations/SignatureTools.js";
+import { EnqueueTaskcadeTaskTool } from "./implementations/EnqueueTaskcadeTaskTool.js";
+
 
 /**
  * Registry holding and orchestrating all available Cacophony tools.
@@ -91,5 +93,7 @@ export class ToolRegistry {
     this.registerTool(new QueryDataShapeTool());
     this.registerTool(new QueryFunctionalInterfaceTool());
     this.registerTool(new QueryOverloadMapTool());
+    this.registerTool(new EnqueueTaskcadeTaskTool());
   }
+
 }

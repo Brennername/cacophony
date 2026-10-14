@@ -41,6 +41,8 @@ export class RulePipelineEngine {
     if (direct) return direct;
 
     const aliasMap: Record<string, string> = {
+      emoji_scrubber: "strip_emojis",
+      strip_emojis: "strip_emojis",
       empty_file_guard: "empty_files",
       banned_import_scrubber: "banned_imports",
       placeholder_stub_detector: "placeholder_stubs",
@@ -51,6 +53,7 @@ export class RulePipelineEngine {
       ast_param_align: "ast_parameter_correction",
       file_placement: "file_placement_and_naming",
     };
+
 
     const mapped = aliasMap[ruleId];
     return mapped ? this.rules.get(mapped) : undefined;
@@ -108,8 +111,35 @@ export class RulePipelineEngine {
 
     const workingFileContents = new Map<string, string>(context.fileContents);
 
+    const bypassSet = new Set<string>(
+      (context.bypassRules ?? []).map((r) => r.toLowerCase().trim()),
+    );
+
     for (const ruleDecl of hookDecl.rules) {
       if (ruleDecl.enabled === false || ruleDecl.severity === "disabled") {
+        continue;
+      }
+
+      // Check for rule bypass directives (T72.2.1)
+      const ruleIdNorm = ruleDecl.ruleId.toLowerCase();
+      const isBypassed =
+        bypassSet.has(ruleIdNorm) ||
+        (ruleIdNorm === "strip_emojis" &&
+          (bypassSet.has("emoji_scrubber") || bypassSet.has("strip_emojis"))) ||
+        (ruleIdNorm === "banned_imports" &&
+          (bypassSet.has("banned_import_scrubber") ||
+            bypassSet.has("banned_imports"))) ||
+        (ruleIdNorm === "empty_files" &&
+          (bypassSet.has("empty_file_guard") ||
+            bypassSet.has("empty_files"))) ||
+        (ruleIdNorm === "placeholder_stubs" &&
+          (bypassSet.has("placeholder_stub_detector") ||
+            bypassSet.has("placeholder_stubs"))) ||
+        (ruleIdNorm === "whitespace_normalizer" &&
+          (bypassSet.has("whitespace_and_eol_normalizer") ||
+            bypassSet.has("whitespace_normalizer")));
+
+      if (isBypassed) {
         continue;
       }
 
@@ -179,4 +209,17 @@ export class RulePipelineEngine {
       ruleResults,
     };
   }
+
+  /**
+   * Executes a rule pipeline against a specified lifecycle hook.
+   * Direct convenience alias for executePipelineHook (T72.2.1).
+   */
+  public async executePipeline(
+    pipeline: RulePipelineDeclaration,
+    hook: RuleLifecycleHook,
+    context: RuleEvaluationContext,
+  ): Promise<PipelineExecutionOutcome> {
+    return this.executePipelineHook(pipeline, hook, context);
+  }
 }
+

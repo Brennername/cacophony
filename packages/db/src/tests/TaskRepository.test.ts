@@ -127,5 +127,58 @@ describe("T64.3.4: TaskRepository updateBranchAndPr & CRUD Suite", () => {
         "PR URL must be updated on PGlite",
       );
     });
+
+    test("T72.1.3: should persist and deserialize metadataHints structured JSON (SQLite & PGlite)", async () => {
+      const taskWithHints: TaskRecord = {
+        id: "task-hints-pglite",
+        title: "Test Task with Granular Metadata Hints",
+        prompt: "Verify metadataHints are persisted and parsed accurately",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: "qwen2.5-coder:7b",
+        testCommand: "npm test",
+        focusFiles: "packages/db/src/repositories/TaskRepository.ts",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null,
+        metadataHints: {
+          modelAffinity: "qwen2.5-coder:7b-instruct-q4_K_M",
+          temperature: 0.2,
+          maxTokens: 4096,
+          timeoutMs: 30000,
+          ruleBypassFlags: ["emoji_scrubber", "no_any"],
+          stack: "node",
+          customDirectives: {
+            cachePolicy: "aggressive",
+          },
+        },
+      };
+
+      await taskRepo.create(taskWithHints);
+      const retrieved = await taskRepo.findById("task-hints-pglite");
+      assert.ok(retrieved, "Task with metadata hints must exist");
+      assert.ok(retrieved?.metadataHints, "metadataHints must not be null");
+      assert.strictEqual(
+        retrieved?.metadataHints?.modelAffinity,
+        "qwen2.5-coder:7b-instruct-q4_K_M",
+      );
+      assert.strictEqual(retrieved?.metadataHints?.temperature, 0.2);
+      assert.strictEqual(retrieved?.metadataHints?.maxTokens, 4096);
+      assert.strictEqual(retrieved?.metadataHints?.timeoutMs, 30000);
+      assert.deepStrictEqual(retrieved?.metadataHints?.ruleBypassFlags, [
+        "emoji_scrubber",
+        "no_any",
+      ]);
+      assert.strictEqual(retrieved?.metadataHints?.stack, "node");
+      assert.strictEqual(
+        retrieved?.metadataHints?.customDirectives?.["cachePolicy"],
+        "aggressive",
+      );
+    });
   });
 });
+

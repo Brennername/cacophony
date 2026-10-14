@@ -490,9 +490,15 @@ export class TaskScheduler {
     task: TaskRecord,
     activeVramModel: string | null,
   ): Promise<string> {
+    // Explicit model pinning via metadataHints (T72.2.3)
+    if (task.metadataHints?.modelAffinity) {
+      return TaskScheduler.normalizeModelName(task.metadataHints.modelAffinity);
+    }
+
     const normalizedAssigned = task.modelAssigned
       ? TaskScheduler.normalizeModelName(task.modelAssigned)
       : null;
+
 
     const role = task.role as AgentRole;
     let candidateList: string[];

@@ -5,6 +5,7 @@ import type {
   TaskPriority,
   AgentRole,
   RehabStatus,
+  TaskMetadataHints,
 } from "@cacophony/shared-types";
 
 interface TaskRow {
@@ -31,6 +32,7 @@ interface TaskRow {
   readonly failure_reason?: string | null;
   readonly parent_task_id?: string | null;
   readonly rehab_status?: string | null;
+  readonly metadata_hints?: string | null;
 }
 
 export class TaskRepository {
@@ -41,14 +43,18 @@ export class TaskRepository {
   }
 
   public async create(task: TaskRecord): Promise<TaskRecord> {
+    const metadataHintsJson = task.metadataHints
+      ? JSON.stringify(task.metadataHints)
+      : null;
+
     try {
       await this.driver.execute(
         `INSERT INTO tasks (
           id, title, prompt, role, status, priority, model_assigned,
           test_command, focus_files, target_branch, pr_url, failure_count,
           created_at, updated_at, completed_at, commit_hash, base_commit_hash,
-          failure_reason, parent_task_id, rehab_status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+          failure_reason, parent_task_id, rehab_status, metadata_hints
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
         [
           task.id,
           task.title,
@@ -70,44 +76,80 @@ export class TaskRepository {
           task.failureReason ?? null,
           task.parentTaskId ?? null,
           task.rehabStatus ?? "NONE",
+          metadataHintsJson,
         ],
       );
     } catch (err: unknown) {
       const msg = String(err);
       if (
+        msg.includes("metadata_hints") ||
         msg.includes("commit_hash") ||
         msg.includes("has no column named") ||
         msg.includes("column does not exist")
       ) {
-        await this.driver.execute(
-          `INSERT INTO tasks (
-            id, title, prompt, role, status, priority, model_assigned,
-            test_command, focus_files, target_branch, pr_url, failure_count,
-            created_at, updated_at, completed_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-          [
-            task.id,
-            task.title,
-            task.prompt,
-            task.role,
-            task.status,
-            task.priority,
-            task.modelAssigned,
-            task.testCommand,
-            task.focusFiles,
-            task.targetBranch,
-            task.prUrl,
-            task.failureCount,
-            task.createdAt,
-            task.updatedAt,
-            task.completedAt,
-          ],
-        );
+        try {
+          await this.driver.execute(
+            `INSERT INTO tasks (
+              id, title, prompt, role, status, priority, model_assigned,
+              test_command, focus_files, target_branch, pr_url, failure_count,
+              created_at, updated_at, completed_at, commit_hash, base_commit_hash,
+              failure_reason, parent_task_id, rehab_status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+            [
+              task.id,
+              task.title,
+              task.prompt,
+              task.role,
+              task.status,
+              task.priority,
+              task.modelAssigned,
+              task.testCommand,
+              task.focusFiles,
+              task.targetBranch,
+              task.prUrl,
+              task.failureCount,
+              task.createdAt,
+              task.updatedAt,
+              task.completedAt,
+              task.commitHash ?? null,
+              task.baseCommitHash ?? null,
+              task.failureReason ?? null,
+              task.parentTaskId ?? null,
+              task.rehabStatus ?? "NONE",
+            ],
+          );
+        } catch {
+          await this.driver.execute(
+            `INSERT INTO tasks (
+              id, title, prompt, role, status, priority, model_assigned,
+              test_command, focus_files, target_branch, pr_url, failure_count,
+              created_at, updated_at, completed_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+            [
+              task.id,
+              task.title,
+              task.prompt,
+              task.role,
+              task.status,
+              task.priority,
+              task.modelAssigned,
+              task.testCommand,
+              task.focusFiles,
+              task.targetBranch,
+              task.prUrl,
+              task.failureCount,
+              task.createdAt,
+              task.updatedAt,
+              task.completedAt,
+            ],
+          );
+        }
       } else {
         throw err;
       }
     }
     return task;
+
   }
 
   public async getById(id: string): Promise<TaskRecord | null> {
@@ -493,6 +535,15 @@ export class TaskRepository {
     if (row.tokens_per_sec != null)
       runtimeMetrics.tokensPerSec = Number(row.tokens_per_sec);
 
+    let metadataHints: TaskMetadataHints | null = null;
+    if (row.metadata_hints) {
+      try {
+        metadataHints = JSON.parse(row.metadata_hints) as TaskMetadataHints;
+      } catch {
+        metadataHints = null;
+      }
+    }
+
     return {
       id: row.id,
       title: row.title,
@@ -515,9 +566,11 @@ export class TaskRepository {
       failureReason: row.failure_reason ?? null,
       parentTaskId: row.parent_task_id ?? null,
       rehabStatus: (row.rehab_status as RehabStatus) ?? "NONE",
+      metadataHints,
       ...runtimeMetrics,
     };
   }
+
 
   public async listByBaseCommitHash(
     baseCommitHash: string,

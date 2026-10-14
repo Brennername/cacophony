@@ -26,9 +26,9 @@ describe("Tool Execution Suite & Security Tests", () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
-  it("should register all 15 standard tools in ToolRegistry", () => {
+  it("should register all 16 standard tools in ToolRegistry", () => {
     const defs = registry.getAllDefinitions();
-    assert.strictEqual(defs.length, 15);
+    assert.strictEqual(defs.length, 16);
     const names = defs.map((d) => d.name);
     assert.ok(names.includes("view_file"));
     assert.ok(names.includes("replace_file_content"));
@@ -45,7 +45,9 @@ describe("Tool Execution Suite & Security Tests", () => {
     assert.ok(names.includes("run_command"));
     assert.ok(names.includes("lsp_get_diagnostics"));
     assert.ok(names.includes("lsp_find_definition"));
+    assert.ok(names.includes("enqueue_taskcade_task"));
   });
+
 
   it("should safely write and view file contents with line numbers", async () => {
     const writeResult = await registry.executeTool(

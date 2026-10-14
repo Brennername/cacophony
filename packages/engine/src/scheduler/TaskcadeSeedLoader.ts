@@ -5,6 +5,7 @@ import type {
   TaskRecord,
   AgentRole,
   TaskPriority,
+  TaskMetadataHints,
 } from "@cacophony/shared-types";
 
 export interface ParsedTaskcadeItem {
@@ -17,7 +18,9 @@ export interface ParsedTaskcadeItem {
   readonly testCommand: string | null;
   readonly completed: boolean;
   readonly phaseName: string;
+  readonly metadataHints?: TaskMetadataHints | undefined;
 }
+
 
 /**
  * TaskcadeSeedLoader
@@ -172,11 +175,17 @@ export class TaskcadeSeedLoader {
       const taskCode = match[2]?.trim() || "";
       const rawBody = match[3]?.trim() || "";
 
-      // Extract [File: ...] / [Files: ...], [Test: ...], [Role: ...], and [Priority: ...] annotations
+      // Extract [File: ...] / [Files: ...], [Test: ...], [Role: ...], [Priority: ...], and granular metadata annotations
       const fileMatch = rawBody.match(/\[Files?:\s*([^\]]+)\]/i);
       const testMatch = rawBody.match(/\[Test:\s*([^\]]+)\]/i);
       const roleMatch = rawBody.match(/\[Role:\s*([^\]]+)\]/i);
       const priorityMatch = rawBody.match(/\[Priority:\s*([^\]]+)\]/i);
+      const modelMatch = rawBody.match(/\[Model:\s*([^\]]+)\]/i);
+      const tempMatch = rawBody.match(/\[Temp:\s*([^\]]+)\]/i);
+      const maxTokensMatch = rawBody.match(/\[MaxTokens:\s*([^\]]+)\]/i);
+      const timeoutMatch = rawBody.match(/\[Timeout:\s*([^\]]+)\]/i);
+      const bypassMatch = rawBody.match(/\[BypassRules:\s*([^\]]+)\]/i);
+      const stackMatch = rawBody.match(/\[Stack:\s*([^\]]+)\]/i);
 
       let cleanPrompt = rawBody
         .replace(/\[Files?:\s*[^\]]+\]/gi, "")
@@ -185,7 +194,10 @@ export class TaskcadeSeedLoader {
         .replace(/\[Priority:\s*[^\]]+\]/gi, "")
         .replace(/\[BypassRules:\s*[^\]]+\]/gi, "")
         .replace(/\[Temp:\s*[^\]]+\]/gi, "")
+        .replace(/\[MaxTokens:\s*[^\]]+\]/gi, "")
+        .replace(/\[Timeout:\s*[^\]]+\]/gi, "")
         .replace(/\[Model:\s*[^\]]+\]/gi, "")
+        .replace(/\[Stack:\s*[^\]]+\]/gi, "")
         .replace(/\[Method:\s*[^\]]+\]/gi, "")
         .replace(/\[Class:\s*[^\]]+\]/gi, "")
         .replace(/\[Route:\s*[^\]]+\]/gi, "")
@@ -197,6 +209,38 @@ export class TaskcadeSeedLoader {
         .replace(/\[Type:\s*[^\]]+\]/gi, "")
         .replace(/\[Signal:\s*[^\]]+\]/gi, "")
         .trim();
+
+      let metadataHints: TaskMetadataHints | undefined = undefined;
+      const modelAffinity = modelMatch && modelMatch[1] ? modelMatch[1].trim() : undefined;
+      const parsedTemp = tempMatch && tempMatch[1] ? parseFloat(tempMatch[1].trim()) : undefined;
+      const temperature = parsedTemp !== undefined && !Number.isNaN(parsedTemp) ? parsedTemp : undefined;
+      const parsedMaxTokens = maxTokensMatch && maxTokensMatch[1] ? parseInt(maxTokensMatch[1].trim(), 10) : undefined;
+      const maxTokens = parsedMaxTokens !== undefined && !Number.isNaN(parsedMaxTokens) ? parsedMaxTokens : undefined;
+      const parsedTimeout = timeoutMatch && timeoutMatch[1] ? parseInt(timeoutMatch[1].trim(), 10) : undefined;
+      const timeoutMs = parsedTimeout !== undefined && !Number.isNaN(parsedTimeout) ? parsedTimeout : undefined;
+      const ruleBypassFlags = bypassMatch && bypassMatch[1]
+        ? bypassMatch[1].split(/[,\s]+/).map((s) => s.trim()).filter(Boolean)
+        : undefined;
+      const stack = stackMatch && stackMatch[1] ? stackMatch[1].trim() : undefined;
+
+      if (
+        modelAffinity !== undefined ||
+        temperature !== undefined ||
+        maxTokens !== undefined ||
+        timeoutMs !== undefined ||
+        (ruleBypassFlags !== undefined && ruleBypassFlags.length > 0) ||
+        stack !== undefined
+      ) {
+        metadataHints = {
+          ...(modelAffinity ? { modelAffinity } : {}),
+          ...(temperature !== undefined ? { temperature } : {}),
+          ...(maxTokens !== undefined ? { maxTokens } : {}),
+          ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+          ...(ruleBypassFlags && ruleBypassFlags.length > 0 ? { ruleBypassFlags } : {}),
+          ...(stack ? { stack } : {}),
+        };
+      }
+
 
       const focusFiles =
         fileMatch && fileMatch[1]
@@ -297,6 +341,7 @@ export class TaskcadeSeedLoader {
         testCommand,
         completed,
         phaseName: currentPhase,
+        metadataHints,
       });
     }
 
@@ -315,7 +360,7 @@ export class TaskcadeSeedLoader {
       role: item.role,
       status: "PENDING",
       priority: item.priority,
-      modelAssigned,
+      modelAssigned: item.metadataHints?.modelAffinity ?? modelAssigned,
       testCommand: item.testCommand,
       focusFiles: item.focusFiles,
       targetBranch: null,
@@ -324,6 +369,8 @@ export class TaskcadeSeedLoader {
       createdAt: now,
       updatedAt: now,
       completedAt: null,
+      metadataHints: item.metadataHints ?? null,
     };
   }
 }
+

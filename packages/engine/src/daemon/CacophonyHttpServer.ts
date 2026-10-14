@@ -7,6 +7,11 @@ import type { CacophonyDaemon } from "./CacophonyDaemon.js";
 import { AuthService } from "../auth/AuthService.js";
 import { RateLimiter } from "./RateLimiter.js";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
+import {
+  TaskMetadataHintsSchema,
+  type TaskMetadataHints,
+} from "@cacophony/shared-types";
+
 
 export interface UnifiedServerConfig {
   readonly httpPort?: number;
@@ -624,6 +629,26 @@ export class CacophonyHttpServer {
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body);
+
+          let metadataHints: TaskMetadataHints | null = null;
+          if (payload.metadataHints) {
+            const parsedHints = TaskMetadataHintsSchema.safeParse(
+              payload.metadataHints,
+            );
+            if (parsedHints.success) {
+              metadataHints = parsedHints.data;
+            } else {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(
+                JSON.stringify({
+                  error: "Invalid metadataHints",
+                  details: parsedHints.error.format(),
+                }),
+              );
+              return;
+            }
+          }
+
           const taskRepo = this.daemon.getTaskRepository();
           const task = await taskRepo.create({
             id:
@@ -649,9 +674,11 @@ export class CacophonyHttpServer {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             completedAt: null,
+            metadataHints,
           });
           res.writeHead(201, { "Content-Type": "application/json" });
           res.end(JSON.stringify(task));
+
         } catch (err: unknown) {
           console.error("Failed to create task:", err);
           res.writeHead(400, { "Content-Type": "application/json" });

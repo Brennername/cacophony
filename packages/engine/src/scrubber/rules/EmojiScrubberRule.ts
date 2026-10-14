@@ -44,9 +44,12 @@ export class EmojiScrubberRule implements IScrubberRule {
     if (
       options?.disabledRules?.includes(this.name) ||
       options?.disabledRules?.includes("all") ||
+      options?.disabledRules?.includes("emoji_scrubber") ||
+      options?.disabledRules?.includes("strip_emojis") ||
       content.includes("@cacophony-disable-scrubber: EmojiScrubberRule") ||
       content.includes("@cacophony-disable-scrubber: all")
     ) {
+
       return {
         modified: false,
         content,

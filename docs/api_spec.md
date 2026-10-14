@@ -56,9 +56,17 @@ Enqueues a new autonomous unit of work.
   "role": "implementer",
   "priority": "P0",
   "focusFiles": ["packages/engine/src/inference/SessionManager.ts"],
-  "testCommand": "npm test --workspace=@cacophony/engine"
+  "testCommand": "npm test --workspace=@cacophony/engine",
+  "metadataHints": {
+    "modelAffinity": "qwen2.5-coder:14b",
+    "temperature": 0.1,
+    "maxTokens": 4096,
+    "timeoutMs": 600000,
+    "ruleBypassFlags": ["emoji_scrubber"]
+  }
 }
 ```
+
 
 **Response:** `201 Created`
 

@@ -78,7 +78,10 @@ export interface RuleEvaluationContext {
   readonly fileContents: ReadonlyMap<string, string>;
   readonly simulate?: boolean;
   readonly environment?: Readonly<Record<string, string>>;
+  readonly bypassRules?: readonly string[] | undefined;
 }
+
+
 
 /**
  * Result of executing a single repair rule.

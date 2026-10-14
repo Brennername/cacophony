@@ -43,6 +43,20 @@ export type StageName = z.infer<typeof StageNameSchema>;
 export const StageStatusSchema = z.enum(["RUNNING", "SUCCESS", "FAILURE"]);
 export type StageStatus = z.infer<typeof StageStatusSchema>;
 
+export const TaskMetadataHintsSchema = z.object({
+  modelAffinity: z.string().optional(),
+  temperature: z.number().optional(),
+  maxTokens: z.number().optional(),
+  contextBudget: z.number().optional(),
+  timeoutMs: z.number().optional(),
+  ruleBypassFlags: z.array(z.string()).optional(),
+  stack: z.string().optional(),
+  executionGuardrails: z.record(z.any()).optional(),
+  customDirectives: z.record(z.string()).optional(),
+});
+export type TaskMetadataHints = z.infer<typeof TaskMetadataHintsSchema>;
+
+
 export interface TaskRecord {
   readonly id: string;
   readonly title: string;
@@ -81,6 +95,8 @@ export interface TaskRecord {
   readonly parentTaskId?: string | null;
 
   readonly rehabStatus?: RehabStatus;
+
+  readonly metadataHints?: TaskMetadataHints | null | undefined;
 }
 
 export type RehabStatus = "NONE" | "PENDING_REHAB" | "REHABILITATED" | "DECOMPOSED";
@@ -120,6 +136,8 @@ export const EnqueueTaskDtoSchema = z.object({
   allowedImports: z.array(z.string()).optional(),
   allowEmojis: z.boolean().optional(),
   disabledScrubbers: z.array(z.string()).optional(),
-  parentTaskId: z.string().optional()
+  parentTaskId: z.string().optional(),
+  metadataHints: TaskMetadataHintsSchema.optional()
 });
 export type EnqueueTaskDto = z.infer<typeof EnqueueTaskDtoSchema>;
+

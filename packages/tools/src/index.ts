@@ -13,5 +13,7 @@ export * from "./implementations/AstInspectTool.js";
 export * from "./implementations/RegexTool.js";
 export * from "./implementations/RunCommandTool.js";
 export * from "./implementations/LspTools.js";
+export * from "./implementations/EnqueueTaskcadeTaskTool.js";
 export * from "./mcp/McpServer.js";
+
 export * from "./mcp/McpClientManager.js";
