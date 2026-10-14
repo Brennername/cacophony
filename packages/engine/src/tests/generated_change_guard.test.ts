@@ -286,3 +286,55 @@ export class MetricService {
     `Expected JSDoc stripped issue, got: ${JSON.stringify(issues)}`,
   );
 });
+
+test("GeneratedChangeGuard accepts valid markdown documentation prose without TypeScript parse errors", () => {
+  const originalMd = "# Architecture Documentation\n\nInitial overview.";
+  const replacementMd = `# Architecture Documentation
+
+## Overview
+This specification details the task directive schema:
+- [Role: type_specialist]
+- [Model: qwen2.5-coder:7b]
+- [Temp: 0.2]
+
+### Details
+All models operate under strict AST scrubbing guardrails.
+`;
+
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "docs/taskcade_metadata_spec.md",
+    originalMd,
+    replacementMd,
+    "Document taskcade metadata syntax and hint conventions",
+  );
+
+  assert.deepEqual(
+    issues,
+    [],
+    `Expected no issues for valid markdown prose, got: ${JSON.stringify(issues)}`,
+  );
+});
+
+test("GeneratedChangeGuard validates JSON files and rejects malformed syntax", () => {
+  const validJson = JSON.stringify({ name: "cacophony", version: "1.0.0" }, null, 2);
+  const invalidJson = `{ name: "cacophony", invalid: `;
+
+  const validIssues = GeneratedChangeGuard.inspectReplacement(
+    "config.json",
+    "",
+    validJson,
+    "Update configuration",
+  );
+  assert.deepEqual(validIssues, []);
+
+  const invalidIssues = GeneratedChangeGuard.inspectReplacement(
+    "config.json",
+    "",
+    invalidJson,
+    "Update configuration",
+  );
+  assert.ok(
+    invalidIssues.some((i) => i.includes("Generated JSON replacement is not valid")),
+    `Expected JSON parse error, got: ${JSON.stringify(invalidIssues)}`,
+  );
+});

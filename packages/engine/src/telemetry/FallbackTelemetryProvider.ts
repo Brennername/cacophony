@@ -27,6 +27,29 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
     return "CPU_FALLBACK";
   }
 
+  public async getVramMetrics(): Promise<{ totalBytes: number; usedBytes: number; freeBytes: number }> {
+    const sample = await this.sample();
+    const freeBytes = Math.max(0, sample.vramTotalBytes - sample.vramUsedBytes);
+    return {
+      totalBytes: sample.vramTotalBytes,
+      usedBytes: sample.vramUsedBytes,
+      freeBytes,
+    };
+  }
+
+  public async checkVramHeadroom(requiredMb: number): Promise<boolean> {
+    if (this.simulationMode) {
+      return true;
+    }
+    const metrics = await this.getVramMetrics();
+    if (metrics.totalBytes <= 512 * 1024 * 1024) {
+      return true;
+    }
+    const freeMb = Math.floor(metrics.freeBytes / (1024 * 1024));
+    const safetyMarginMb = 1024;
+    return freeMb >= (requiredMb + safetyMarginMb);
+  }
+
   public async isAvailable(): Promise<boolean> {
     return true;
   }
@@ -90,9 +113,9 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
   private sampleSimulated(): GpuMetrics {
     return {
       gpuBusyPercent: 15.0,
-      vramUsedBytes: 1572864000,
-      vramTotalBytes: 4294967296,
-      vramPercent: 36.6,
+      vramUsedBytes: 2147483648,
+      vramTotalBytes: 17179869184,
+      vramPercent: 12.5,
       gttUsedBytes: 524288000,
       gttTotalBytes: 8589934592,
       edgeTempCelsius: 52.0,

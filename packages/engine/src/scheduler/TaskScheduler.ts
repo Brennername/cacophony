@@ -17,6 +17,7 @@ import type {
   DistributedTaskDispatcher,
   TaskPlacementDecision,
 } from "./DistributedTaskDispatcher.js";
+import { ModelVramCatalog } from "../hardware/ModelVramCatalog.js";
 
 export type TaskExecutionResult = {
   success: boolean;
@@ -54,6 +55,7 @@ export class TaskScheduler {
   private readonly dispatcher?: DistributedTaskDispatcher | undefined;
   private lastPlacementDecision?: TaskPlacementDecision | undefined;
   private readonly maxRetries: number;
+  private readonly vramCatalog: ModelVramCatalog;
 
   private isRunning = false;
   private isPaused = false;
@@ -67,6 +69,9 @@ export class TaskScheduler {
   private readonly autoReplenish: boolean;
   private seedLoader?:
     import("./TaskcadeSeedLoader.js").TaskcadeSeedLoader | undefined;
+  private cachedLoadedModels: readonly string[] | null = null;
+  private lastLoadedModelsTime = 0;
+  private static readonly LOADED_MODELS_CACHE_TTL_MS = 5000;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
@@ -79,6 +84,7 @@ export class TaskScheduler {
     readonly governor?: ThermalGovernor;
     readonly sorter?: ModelAffinityTaskSorter;
     readonly dispatcher?: DistributedTaskDispatcher;
+    readonly vramCatalog?: ModelVramCatalog;
     readonly defaultTimeoutMs?: number;
     readonly noProgressTimeoutMs?: number;
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
@@ -93,6 +99,7 @@ export class TaskScheduler {
     this.streamTapManager = options.streamTapManager;
     this.rehabilitationService = options.rehabilitationService;
     this.dispatcher = options.dispatcher;
+    this.vramCatalog = options.vramCatalog ?? new ModelVramCatalog();
     this.maxRetries = options.maxRetries ?? 3;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
     // An inactivity cutoff is opt-in. Some models can legitimately spend a long
@@ -252,6 +259,201 @@ export class TaskScheduler {
   }
 
   /**
+   * Queries host Ollama HTTP endpoint for currently loaded models in VRAM (T68.3.1).
+   * Caches results with a 5-second TTL to avoid redundant HTTP requests during high-frequency dispatch cycles.
+   *
+   * @param forceRefresh When true, bypasses the 5-second cache and executes an immediate probe.
+   * @returns Array of loaded model names (normalized), or empty array if no model is loaded.
+   */
+  public async queryLoadedModels(
+    forceRefresh = false,
+  ): Promise<readonly string[]> {
+    const now = Date.now();
+    if (
+      !forceRefresh &&
+      this.cachedLoadedModels !== null &&
+      now - this.lastLoadedModelsTime < TaskScheduler.LOADED_MODELS_CACHE_TTL_MS
+    ) {
+      return this.cachedLoadedModels;
+    }
+
+    const activeModel = await this.probe.getLoadedModel();
+    const models = activeModel ? [activeModel] : [];
+    this.cachedLoadedModels = models;
+    this.lastLoadedModelsTime = now;
+    return models;
+  }
+
+  /**
+   * Checks whether a task can be safely dispatched given current VRAM headroom (T68.2.3).
+   * Defers dispatching tasks if estimated VRAM requirement + SAFETY_MARGIN exceeds free VRAM.
+   *
+   * @param task - Candidate task record.
+   * @param modelName - Specific model identifier to evaluate.
+   * @returns boolean true if dispatch is allowed, false if deferred due to constrained VRAM headroom.
+   */
+  public async canDispatch(
+    task: TaskRecord,
+    modelName?: string,
+  ): Promise<boolean> {
+    const model = modelName ?? task.modelAssigned ?? "qwen2.5-coder:7b";
+    const requiredMb = this.vramCatalog.estimateTotalVramMb(model, 4096);
+
+    // If distributed dispatcher is configured and placement targets a remote node,
+    // execution is handled by remote host resources (T86.2)
+    if (this.dispatcher) {
+      const placement = this.dispatcher.selectPlacement({
+        taskId: task.id,
+        model,
+        estimatedVramMb: requiredMb,
+        priority: task.priority,
+      });
+      if (!placement.isLocal) {
+        return true;
+      }
+    }
+
+    // If telemetry provider implements checkVramHeadroom, delegate directly (T68.2.1, T68.2.2)
+    if (typeof this.telemetryProvider.checkVramHeadroom === "function") {
+      const result = this.telemetryProvider.checkVramHeadroom(requiredMb);
+      return typeof result === "boolean" ? result : await result;
+    }
+
+    // Fallback to getVramMetrics if supported
+    if (typeof this.telemetryProvider.getVramMetrics === "function") {
+      try {
+        const metrics = await this.telemetryProvider.getVramMetrics();
+        if (metrics.totalBytes > 512 * 1024 * 1024) {
+          const freeMb = Math.floor(metrics.freeBytes / (1024 * 1024));
+          return freeMb >= requiredMb;
+        }
+      } catch {
+        // Continue to sample() fallback
+      }
+    }
+
+    // Fallback to sample()
+    try {
+      const sample = await this.telemetryProvider.sample();
+      if (sample.vramTotalBytes > 512 * 1024 * 1024) {
+        const freeBytes = Math.max(
+          0,
+          sample.vramTotalBytes - sample.vramUsedBytes,
+        );
+        const freeMb = Math.floor(freeBytes / (1024 * 1024));
+        return freeMb >= requiredMb;
+      }
+    } catch {
+      // Allow dispatch if sampling fails in non-hardware environment
+      return true;
+    }
+
+    return true;
+  }
+
+  /**
+   * Resolves target model candidate for a task given role, assignments, failure history,
+   * thermal load, and model eviction manager.
+   *
+   * @param task - Candidate task record.
+   * @param activeVramModel - Model currently loaded in host VRAM.
+   * @returns Selected model identifier.
+   */
+  public async selectCandidateModel(
+    task: TaskRecord,
+    activeVramModel: string | null,
+  ): Promise<string> {
+    const normalizedAssigned = task.modelAssigned
+      ? TaskScheduler.normalizeModelName(task.modelAssigned)
+      : null;
+
+    const role = task.role as AgentRole;
+    let candidateList: string[];
+
+    if (normalizedAssigned) {
+      if (
+        normalizedAssigned.includes("r1") &&
+        role !== "architect" &&
+        role !== "reviewer"
+      ) {
+        candidateList = [
+          "qwen2.5-coder:7b-instruct-q4_K_M",
+          "qwen2.5-coder:7b",
+          "gemma3:4b-it-qat",
+          "qwen2.5-coder:14b",
+        ];
+      } else if (
+        normalizedAssigned === "qwen2.5-coder:3b" &&
+        role !== "architect" &&
+        role !== "reviewer"
+      ) {
+        candidateList = [
+          "qwen2.5-coder:7b-instruct-q4_K_M",
+          "qwen2.5-coder:7b",
+          "gemma3:4b-it-qat",
+        ];
+      } else if (
+        task.failureCount > 0 &&
+        role !== "architect" &&
+        role !== "reviewer"
+      ) {
+        candidateList = [
+          "qwen2.5-coder:7b-instruct-q4_K_M",
+          "qwen2.5-coder:7b",
+          "gemma3:4b-it-qat",
+          "qwen2.5-coder:14b",
+          normalizedAssigned,
+        ].filter((m) => m !== "qwen2.5-coder:3b");
+      } else {
+        candidateList = [normalizedAssigned];
+      }
+    } else if (role === "architect" || role === "reviewer") {
+      candidateList = [
+        "deepseek-r1:8b",
+        "qwen2.5-coder:14b",
+        "qwen2.5-coder:7b-instruct-q4_K_M",
+        "qwen2.5-coder:7b",
+      ];
+    } else {
+      candidateList = [
+        "qwen2.5-coder:7b-instruct-q4_K_M",
+        "qwen2.5-coder:7b",
+        "gemma3:4b-it-qat",
+        "qwen2.5-coder:14b",
+        "deepseek-coder-v2:16b",
+      ];
+    }
+
+    try {
+      const sample = await this.telemetryProvider.sample();
+      if (sample.edgeTempCelsius >= 75 && !normalizedAssigned) {
+        candidateList = [
+          "qwen2.5-coder:7b-instruct-q4_K_M",
+          "gemma3:4b-it-qat",
+        ];
+      }
+    } catch {
+      // ignore
+    }
+
+    if (role !== "architect" && role !== "reviewer") {
+      candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
+      if (candidateList.length === 0) {
+        candidateList = [
+          "qwen2.5-coder:7b-instruct-q4_K_M",
+          "gemma3:4b-it-qat",
+        ];
+      }
+    }
+
+    return this.evictionManager.selectModel(
+      task.role as AgentRole,
+      candidateList,
+      activeVramModel,
+    );
+  }
+
+  /**
    * Executes a single scheduling evaluation cycle.
    * If force is true, runs even if the continuous background polling loop is stopped.
    */
@@ -359,13 +561,39 @@ export class TaskScheduler {
     const releaseLock = await this.mutex.acquire();
 
     try {
-      // 2. Query host Ollama currently active model in VRAM
-      const activeVramModel = await this.probe.getLoadedModel();
+      // 2. Query host Ollama currently active model in VRAM (cached with 5-second TTL per T68.3.1)
+      const loadedModels = await this.queryLoadedModels();
+      const activeVramModel = loadedModels.length > 0 ? loadedModels[0]! : null;
 
-      // 3. Sort pending tasks by Model Affinity & Effective Priority
-      const sorted = this.sorter.sort(pending, activeVramModel);
-      const targetTask = sorted[0];
-      if (!targetTask) return null;
+      // 3. Sort pending tasks by Model Affinity & Effective Priority (T68.3.2)
+      let sorted = this.sorter.sort(pending, activeVramModel);
+      // Apply starvation cap (max 5 consecutive warm executions) to interleave non-warm candidates (T68.3.3)
+      sorted = this.groomer.applyStarvationCap(sorted, activeVramModel, 5);
+      if (sorted.length === 0) return null;
+
+      let targetTask: TaskRecord | null = null;
+      let selectedModel: string | null = null;
+
+      // Evaluate tasks in affinity order, verifying VRAM headroom per candidate (T68.2.3)
+      for (const candidateTask of sorted) {
+        const candidateModel = await this.selectCandidateModel(
+          candidateTask,
+          activeVramModel,
+        );
+        if (await this.canDispatch(candidateTask, candidateModel)) {
+          targetTask = candidateTask;
+          selectedModel = candidateModel;
+          break;
+        } else {
+          console.warn(
+            `[TaskScheduler] Deferring candidate task ${candidateTask.id} (${candidateModel}): insufficient VRAM headroom`,
+          );
+        }
+      }
+
+      if (!targetTask || !selectedModel) {
+        return null;
+      }
 
       // 3b. Pre-dispatch safeguard: ensure targetTask was not completed in taskcade.md or history
       if (this.seedLoader) {
@@ -418,101 +646,6 @@ export class TaskScheduler {
         );
         return targetTask;
       }
-
-      const normalizedAssigned = targetTask.modelAssigned
-        ? TaskScheduler.normalizeModelName(targetTask.modelAssigned)
-        : null;
-
-      const role = targetTask.role as AgentRole;
-      let candidateList: string[];
-
-      if (normalizedAssigned) {
-        // Guard against assigning a pure reasoning model (deepseek-r1) to non-architect tasks
-        if (
-          normalizedAssigned.includes("r1") &&
-          role !== "architect" &&
-          role !== "reviewer"
-        ) {
-          candidateList = [
-            "qwen2.5-coder:7b-instruct-q4_K_M",
-            "qwen2.5-coder:7b",
-            "gemma3:4b-it-qat",
-            "qwen2.5-coder:14b",
-          ];
-        } else if (
-          normalizedAssigned === "qwen2.5-coder:3b" &&
-          role !== "architect" &&
-          role !== "reviewer"
-        ) {
-          // Disqualify 3b models from implementation to prevent superficial stub generation and compilation failures
-          candidateList = [
-            "qwen2.5-coder:7b-instruct-q4_K_M",
-            "qwen2.5-coder:7b",
-            "gemma3:4b-it-qat",
-          ];
-        } else if (
-          targetTask.failureCount > 0 &&
-          role !== "architect" &&
-          role !== "reviewer"
-        ) {
-          // If the task previously failed, prioritize our strongest coding models with automated repair and exclude 3b
-          candidateList = [
-            "qwen2.5-coder:7b-instruct-q4_K_M",
-            "qwen2.5-coder:7b",
-            "gemma3:4b-it-qat",
-            "qwen2.5-coder:14b",
-            normalizedAssigned,
-          ].filter((m) => m !== "qwen2.5-coder:3b");
-        } else {
-          candidateList = [normalizedAssigned];
-        }
-      } else if (role === "architect" || role === "reviewer") {
-        candidateList = [
-          "deepseek-r1:8b",
-          "qwen2.5-coder:14b",
-          "qwen2.5-coder:7b-instruct-q4_K_M",
-          "qwen2.5-coder:7b",
-        ];
-      } else {
-        // Implementer, coder, test_engineer: dispatch strictly to capable coding models
-        candidateList = [
-          "qwen2.5-coder:7b-instruct-q4_K_M",
-          "qwen2.5-coder:7b",
-          "gemma3:4b-it-qat",
-          "qwen2.5-coder:14b",
-          "deepseek-coder-v2:16b",
-        ];
-      }
-
-      // Telemetry heuristic: If APU temperature is warm or elevated (>= 75C), prefer cooler-running lighter model
-      try {
-        const sample = await this.telemetryProvider.sample();
-        if (sample.edgeTempCelsius >= 75 && !normalizedAssigned) {
-          candidateList = [
-            "qwen2.5-coder:7b-instruct-q4_K_M",
-            "gemma3:4b-it-qat",
-          ];
-        }
-      } catch {
-        // ignore
-      }
-
-      // Ensure 3b models are strictly barred from implementation roles across all candidate branches
-      if (role !== "architect" && role !== "reviewer") {
-        candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
-        if (candidateList.length === 0) {
-          candidateList = [
-            "qwen2.5-coder:7b-instruct-q4_K_M",
-            "gemma3:4b-it-qat",
-          ];
-        }
-      }
-
-      const selectedModel = await this.evictionManager.selectModel(
-        targetTask.role as AgentRole,
-        candidateList,
-        activeVramModel,
-      );
 
       // 5b. Evaluate Distributed Fleet Placement for compute-intensive tasks (T86.2.2)
       if (this.dispatcher) {

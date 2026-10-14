@@ -198,5 +198,11 @@ export interface IHardwareTelemetryProvider {
    * Retrieves thermal temperature and throttling status.
    */
   getThermalMetrics?(): Promise<{ temperatureCelsius: number; isThrottled: boolean }>;
+
+  /**
+   * Checks whether the hardware device has sufficient VRAM headroom
+   * for the specified memory allocation plus safety buffer.
+   */
+  checkVramHeadroom?(requiredMb: number): boolean | Promise<boolean>;
 }
 

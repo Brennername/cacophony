@@ -15,24 +15,18 @@ export class GeneratedChangeGuard {
     taskText: string,
   ): readonly string[] {
     const issues: string[] = [];
+    const isScript = /\.[cm]?[jt]sx?$/i.test(filePath);
 
-    const replacementSource = ts.createSourceFile(
-      filePath,
-      replacement,
-      ts.ScriptTarget.Latest,
-      true,
-    );
-    const parseDiagnostics =
-      (
-        replacementSource as ts.SourceFile & {
-          parseDiagnostics?: readonly ts.Diagnostic[];
-        }
-      ).parseDiagnostics ?? [];
-    if (parseDiagnostics.length > 0) {
-      issues.push(
-        `Generated replacement is not parseable: ${parseDiagnostics[0]!.messageText.toString()}.`,
-      );
-      return issues;
+    // Validate JSON structure if editing a JSON configuration or manifest
+    if (/\.json$/i.test(filePath)) {
+      try {
+        JSON.parse(replacement);
+      } catch (err: unknown) {
+        issues.push(
+          `Generated JSON replacement is not valid: ${err instanceof Error ? err.message : String(err)}.`,
+        );
+        return issues;
+      }
     }
 
     const addedPlaceholders = this.getAddedPlaceholderComments(
@@ -53,8 +47,45 @@ export class GeneratedChangeGuard {
       );
     }
 
-    // Check for Angular placeholder/empty templates in newly created or modified components
+    // Check for Angular placeholder/empty templates in newly created or modified components/templates
     this.inspectAngularComponentTemplates(filePath, replacement, issues);
+
+    // Non-script documentation (Markdown), style, and data files do not require AST checks
+    if (!isScript) {
+      const oldLines = original.split(/\r?\n/).length;
+      const newLines = replacement.split(/\r?\n/).length;
+      const authorizedRemovals = this.getAuthorizedRemovals(taskText);
+
+      if (
+        oldLines >= 80 &&
+        newLines < oldLines * 0.6 &&
+        authorizedRemovals.size === 0
+      ) {
+        issues.push(
+          `Generated replacement shrinks ${filePath} from ${oldLines} to ${newLines} lines.`,
+        );
+      }
+      return issues;
+    }
+
+    const replacementSource = ts.createSourceFile(
+      filePath,
+      replacement,
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const parseDiagnostics =
+      (
+        replacementSource as ts.SourceFile & {
+          parseDiagnostics?: readonly ts.Diagnostic[];
+        }
+      ).parseDiagnostics ?? [];
+    if (parseDiagnostics.length > 0) {
+      issues.push(
+        `Generated replacement is not parseable: ${parseDiagnostics[0]!.messageText.toString()}.`,
+      );
+      return issues;
+    }
 
     // Check for naked module-root function executions in library and service modules
     this.inspectModuleRootExecutions(filePath, replacementSource, issues);

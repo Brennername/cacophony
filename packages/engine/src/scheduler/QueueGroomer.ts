@@ -581,4 +581,95 @@ export class QueueGroomer {
     }
     return scored[0]!.entry;
   }
+
+  /**
+   * Prioritizes pending tasks matching the warm in-memory model (T68.3.2)
+   * while capping consecutive warm executions via applyStarvationCap (T68.3.3).
+   *
+   * @param tasks - List of candidate task records.
+   * @param warmModel - Currently resident model name in host VRAM.
+   * @returns Groomed list of tasks prioritized for warm model execution.
+   */
+  public sortByWarmModelAffinity(
+    tasks: readonly TaskRecord[],
+    warmModel: string | null,
+  ): TaskRecord[] {
+    if (!warmModel || tasks.length <= 1) {
+      return [...tasks];
+    }
+
+    const normalizedWarm = warmModel.trim().toLowerCase();
+    const isWarmMatch = (t: TaskRecord): boolean => {
+      if (!t.modelAssigned) return false;
+      const assigned = t.modelAssigned.trim().toLowerCase();
+      return assigned.includes(normalizedWarm) || normalizedWarm.includes(assigned);
+    };
+
+    const warmTasks = tasks.filter(isWarmMatch);
+    const otherTasks = tasks.filter((t) => !isWarmMatch(t));
+
+    return this.applyStarvationCap([...warmTasks, ...otherTasks], warmModel, 5);
+  }
+
+  /**
+   * Enforces a ceiling on consecutive warm-model task execution (T68.3.3).
+   * When pending tasks requiring disparate models are present, this interleaves
+   * an alternative task after every maxConsecutive warm tasks to prevent starvation.
+   *
+   * @param tasks - Candidate tasks to evaluate.
+   * @param warmModel - Active resident model name.
+   * @param maxConsecutive - Maximum consecutive warm model tasks (default: 5).
+   * @returns Re-ordered task list with starvation cap enforced.
+   */
+  public applyStarvationCap(
+    tasks: readonly TaskRecord[],
+    warmModel: string | null,
+    maxConsecutive: number = 5,
+  ): TaskRecord[] {
+    if (!warmModel || tasks.length <= 1 || maxConsecutive <= 0) {
+      return [...tasks];
+    }
+
+    const normalizedWarm = warmModel.trim().toLowerCase();
+    const isWarmMatch = (t: TaskRecord): boolean => {
+      if (!t.modelAssigned) return false;
+      const assigned = t.modelAssigned.trim().toLowerCase();
+      return assigned.includes(normalizedWarm) || normalizedWarm.includes(assigned);
+    };
+
+    const warmPool = tasks.filter(isWarmMatch);
+    const otherPool = tasks.filter((t) => !isWarmMatch(t));
+
+    if (warmPool.length === 0 || otherPool.length === 0) {
+      return [...tasks];
+    }
+
+    const result: TaskRecord[] = [];
+    let warmIndex = 0;
+    let otherIndex = 0;
+
+    while (warmIndex < warmPool.length || otherIndex < otherPool.length) {
+      // Dispatch up to maxConsecutive warm tasks
+      let batchCount = 0;
+      while (warmIndex < warmPool.length && batchCount < maxConsecutive) {
+        result.push(warmPool[warmIndex]!);
+        warmIndex++;
+        batchCount++;
+      }
+
+      // If alternative tasks remain, yield a slot to prevent starvation
+      if (otherIndex < otherPool.length) {
+        result.push(otherPool[otherIndex]!);
+        otherIndex++;
+      } else if (warmIndex < warmPool.length) {
+        // No more alternative tasks left; flush remaining warm tasks
+        while (warmIndex < warmPool.length) {
+          result.push(warmPool[warmIndex]!);
+          warmIndex++;
+        }
+      }
+    }
+
+    return result;
+  }
 }

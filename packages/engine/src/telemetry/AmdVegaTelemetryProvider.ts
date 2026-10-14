@@ -40,6 +40,56 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
   }
 
   /**
+   * Safety buffer in megabytes required above any model footprint allocation
+   * to prevent APU system freeze or kernel out-of-memory killing (T68.2.2).
+   */
+  public static readonly SAFETY_MARGIN_MB: number = 1024;
+  public readonly SAFETY_MARGIN_MB: number = 1024;
+
+  /**
+   * Retrieves VRAM capacity, used bytes, and free bytes directly from sysfs DRM nodes.
+   */
+  public async getVramMetrics(): Promise<{ totalBytes: number; usedBytes: number; freeBytes: number }> {
+    const drmDir = this.findAmdgpuDrmDir();
+    if (!drmDir) {
+      return { totalBytes: 0, usedBytes: 0, freeBytes: 0 };
+    }
+    const totalBytes = this.readSysfsInt(path.join(drmDir, "mem_info_vram_total")) ?? 0;
+    const usedBytes = this.readSysfsInt(path.join(drmDir, "mem_info_vram_used")) ?? 0;
+    const freeBytes = Math.max(0, totalBytes - usedBytes);
+    return { totalBytes, usedBytes, freeBytes };
+  }
+
+  /**
+   * Evaluates if there is sufficient free VRAM headroom to allocate requiredMb
+   * while preserving a strict 1024 MB safety buffer above the allocation (T68.2.1).
+   *
+   * @param requiredMb - Required model memory footprint in megabytes.
+   * @returns boolean true if free VRAM >= (requiredMb + SAFETY_MARGIN_MB).
+   */
+  public checkVramHeadroom(requiredMb: number): boolean {
+    const drmDir = this.findAmdgpuDrmDir();
+    if (!drmDir) {
+      // In CI or environments without physical amdgpu DRM sysfs, allow execution
+      return true;
+    }
+
+    const rawTotal = this.readSysfsInt(path.join(drmDir, "mem_info_vram_total"));
+    const rawUsed = this.readSysfsInt(path.join(drmDir, "mem_info_vram_used"));
+
+    if (rawTotal === null || rawTotal === 0) {
+      return true;
+    }
+
+    const usedBytes = rawUsed ?? 0;
+    const freeBytes = Math.max(0, rawTotal - usedBytes);
+    const freeMb = Math.floor(freeBytes / (1024 * 1024));
+    const requiredWithMarginMb = requiredMb + this.SAFETY_MARGIN_MB;
+
+    return freeMb >= requiredWithMarginMb;
+  }
+
+  /**
    * Discovers whether amdgpu hwmon and drm device nodes exist on the system.
    */
   public async isAvailable(): Promise<boolean> {
