@@ -1,70 +1,175 @@
-import { TaskBranchOptions } from "./GitWorktreeManager.js";
-interface GiteaApiClient {
-  [key: string]: any;
-  (...args: any[]): any;
-  new (...args: any[]): any;
-}
-const GiteaApiClient: any = Object.assign((...args: any[]) => ({ ...args }), {
-  [Symbol.iterator]: function* () {},
-});
-interface GiteaClientConfig {
-  [key: string]: any;
-  (...args: any[]): any;
-  new (...args: any[]): any;
-}
-const GiteaClientConfig: any = Object.assign(
-  (...args: any[]) => ({ ...args }),
-  { [Symbol.iterator]: function* () {} },
-);
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { GiteaApiClient, type GiteaClientConfig } from "./GiteaApiClient.js";
+import type {
+  GiteaPullRequest,
+  CreatePullRequestRequest,
+  SubmitReviewRequest,
+  CreateCommitStatusRequest,
+  GiteaCommitStatus,
+} from "./giteaTypes.js";
 
+const execFileAsync = promisify(execFile);
+
+export interface OpenPullRequestOptions {
+  readonly owner: string;
+  readonly repo: string;
+  readonly title: string;
+  readonly body: string;
+  readonly head: string;
+  readonly base?: string | undefined;
+}
+
+export interface SubmitReviewOptions {
+  readonly owner: string;
+  readonly repo: string;
+  readonly prIndex: number;
+  readonly review: SubmitReviewRequest;
+}
+
+export interface SetCommitStatusOptions {
+  readonly owner: string;
+  readonly repo: string;
+  readonly sha: string;
+  readonly status: CreateCommitStatusRequest;
+}
+
+export interface MergePullRequestOptions {
+  readonly owner: string;
+  readonly repo: string;
+  readonly prIndex: number;
+  readonly mergeStyle?: "squash" | "merge" | "rebase" | undefined;
+  readonly deleteBranch?: boolean | undefined;
+}
+
+/**
+ * Autonomous Gitea Pull Request Publisher & Manager.
+ * Orchestrates branch pushes, PR lifecycle operations, code review submissions,
+ * commit status checks, and automated squash-merging via Gitea REST API.
+ */
 export class GiteaPrClient {
-  private client: GiteaApiClient;
+  private readonly client: GiteaApiClient;
+  private readonly apiToken?: string | undefined;
 
-  constructor(config: GiteaClientConfig) {
-    this.client = new GiteaApiClient(config);
+  constructor(configOrClient: GiteaClientConfig | GiteaApiClient) {
+    if (configOrClient instanceof GiteaApiClient) {
+      this.client = configOrClient;
+    } else {
+      this.client = new GiteaApiClient(configOrClient);
+      this.apiToken = configOrClient.apiToken;
+    }
   }
 
   /**
-   * Pushes a task branch to the Gitea remote origin using the configured authentication token.
-   *
-   * @param {TaskBranchOptions} options - The options for pushing the task branch.
-   * @returns {Promise<void>} A promise that resolves when the branch has been successfully pushed.
+   * Pushes a local task branch to the Gitea remote origin.
    */
-  public async pushTaskBranch(options: TaskBranchOptions): Promise<void> {
+  public async pushBranch(
+    worktreePath: string,
+    branchName: string,
+    remote = "origin",
+  ): Promise<void> {
     try {
-      await this.client.pushBranch(options);
-      console.log(
-        `Successfully pushed branch ${(options as any).branchName} to Gitea remote origin.`,
+      await execFileAsync(
+        "git",
+        ["push", "--force", "-u", remote, branchName],
+        {
+          cwd: worktreePath,
+        },
       );
-    } catch (error) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       throw new Error(
-        `Failed to push branch ${(options as any).branchName}: ${(error as Error).message}`,
+        `Failed to push branch ${branchName} to ${remote}: ${errorMsg}`,
       );
     }
   }
 
+  /**
+   * Opens a new Pull Request on Gitea.
+   */
+  public async openPullRequest(
+    options: OpenPullRequestOptions,
+  ): Promise<GiteaPullRequest> {
+    const req: CreatePullRequestRequest = {
+      title: options.title,
+      body: options.body,
+      head: options.head,
+      base: options.base ?? "main",
+    };
+
+    return this.client.createPullRequest(options.owner, options.repo, req);
+  }
+
+  /**
+   * Submits a structured code review (APPROVED, REQUEST_CHANGES, COMMENT) to a PR.
+   */
+  public async submitReview(options: SubmitReviewOptions): Promise<void> {
+    return this.client.submitPullRequestReview(
+      options.owner,
+      options.repo,
+      options.prIndex,
+      options.review,
+    );
+  }
+
+  /**
+   * Sets commit status (success, failure, pending) for a commit SHA.
+   */
   public async setCommitStatus(
-    owner: string,
-    repo: string,
-    sha: string,
-    state: "success" | "failure",
-    context: string,
-    description?: string,
+    options: SetCommitStatusOptions,
+  ): Promise<GiteaCommitStatus> {
+    return this.client.createCommitStatus(
+      options.owner,
+      options.repo,
+      options.sha,
+      options.status,
+    );
+  }
+
+  /**
+   * Executes a merge (default squash) on an approved PR and optionally deletes remote branch.
+   */
+  public async mergePullRequest(
+    options: MergePullRequestOptions,
   ): Promise<void> {
-    try {
-      await this.client.createStatus({
-        owner,
-        repo,
-        ref: sha,
-        state,
-        context,
-        description,
-      });
-      console.log(`Successfully set commit status for ${sha} to ${state}`);
-    } catch (error) {
-      throw new Error(
-        `Failed to set commit status for ${sha}: ${(error as Error).message}`,
-      );
+    const mergeStyle = options.mergeStyle ?? "squash";
+    await this.client.mergePullRequest(
+      options.owner,
+      options.repo,
+      options.prIndex,
+      {
+        Do: mergeStyle,
+      },
+    );
+
+    if (options.deleteBranch) {
+      try {
+        const pr = await this.client.getPullRequest(
+          options.owner,
+          options.repo,
+          options.prIndex,
+        );
+        if (pr?.head?.ref) {
+          // Gitea REST API to delete branch: DELETE /api/v1/repos/{owner}/{repo}/branches/{branch}
+          const baseUrl = (this.client as any).baseUrl;
+          const headers: Record<string, string> = {
+            Accept: "application/json",
+          };
+          const token = this.apiToken || (this.client as any).apiToken;
+          if (token) {
+            headers["Authorization"] = `token ${token}`;
+          }
+          await fetch(
+            `${baseUrl}/api/v1/repos/${options.owner}/${options.repo}/branches/${encodeURIComponent(pr.head.ref)}`,
+            {
+              method: "DELETE",
+              headers,
+            },
+          ).catch(() => {});
+        }
+      } catch {
+        // non-fatal remote branch deletion
+      }
     }
   }
 }

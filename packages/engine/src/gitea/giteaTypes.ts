@@ -118,3 +118,23 @@ export interface GiteaPackage {
   readonly version: string;
   readonly created_at: string;
 }
+
+export type CommitStatusState =
+  "pending" | "success" | "error" | "failure" | "warning";
+
+export interface CreateCommitStatusRequest {
+  readonly state: CommitStatusState;
+  readonly target_url?: string | undefined;
+  readonly description?: string | undefined;
+  readonly context?: string | undefined;
+}
+
+export interface GiteaCommitStatus {
+  readonly id: number;
+  readonly status: CommitStatusState;
+  readonly context: string;
+  readonly description: string;
+  readonly target_url: string;
+  readonly created_at: string;
+  readonly updated_at: string;
+}

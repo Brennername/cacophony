@@ -118,6 +118,10 @@ export class TaskRepository {
     return row ? this.mapRow(row) : null;
   }
 
+  public async findById(id: string): Promise<TaskRecord | null> {
+    return this.getById(id);
+  }
+
   public async getByTitle(title: string): Promise<TaskRecord | null> {
     const row = await this.driver.queryOne<TaskRow>(
       "SELECT * FROM tasks WHERE title = $1 LIMIT 1",
@@ -189,6 +193,17 @@ export class TaskRepository {
       "UPDATE tasks SET target_branch = $1, pr_url = $2, updated_at = $3 WHERE id = $4",
       [targetBranch, prUrl, now, id],
     );
+  }
+
+  /**
+   * Updates task branch and PR URL metadata (T64.3.4).
+   */
+  public async updateBranchAndPr(
+    taskId: string,
+    branchName: string,
+    prUrl: string,
+  ): Promise<void> {
+    return this.updatePr(taskId, branchName, prUrl);
   }
 
   public async updateLogSnippet(id: string, logSnippet: string): Promise<void> {

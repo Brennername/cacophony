@@ -35,6 +35,7 @@ import { GenerationHeartbeatTracker } from "../inference/GenerationHeartbeatTrac
 import { MicroModelToolRouter } from "../inference/MicroModelToolRouter.js";
 import { MonorepoBuildGate } from "../gitea/MonorepoBuildGate.js";
 import { DiagnosticPreFlightChecker } from "../testing/DiagnosticPreFlightChecker.js";
+import { ConventionalCommitGenerator } from "../gitea/ConventionalCommitGenerator.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -1753,9 +1754,20 @@ export class AutonomousWorkerPipeline {
             );
           }
 
+          const rawScope = groomed.task.focusFiles
+            ? (groomed.task.focusFiles.split(",")[0]?.split("/")[1] ?? "core")
+            : "core";
+          const commitMsg =
+            new ConventionalCommitGenerator().formatCommitMessage({
+              taskId,
+              role: groomed.task.role || "implementer",
+              scope: rawScope,
+              description: groomed.task.title,
+              body: "Automated commit by Cacophony Engine.",
+            });
           await this.worktreeManager.commitWorktree(
             worktree.worktreePath,
-            `feat(${taskId}): ${groomed.task.title}\n\nAutomated commit by Cacophony Engine.`,
+            commitMsg,
           );
           try {
             commitHash = await this.worktreeManager.getHeadCommit(

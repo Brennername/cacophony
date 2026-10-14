@@ -1,0 +1,45 @@
+@if (isOpen()) {
+  <div class="dialog-backdrop" (click)="cancel()">
+    <div
+      class="dialog-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      aria-describedby="dialog-desc"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="dialog-header">
+        <h3 id="dialog-title" class="dialog-title">{{ title() }}</h3>
+      </div>
+
+      <div class="dialog-body">
+        <p id="dialog-desc" class="dialog-message">{{ message() }}</p>
+        @if (activeService() || serviceName()) {
+          <div class="service-pill-container">
+            <span class="service-label">Target Service:</span>
+            <span class="service-tag">{{ activeService() || serviceName() }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancel()"
+        >
+          {{ cancelText() }}
+        </button>
+        <button
+          type="button"
+          class="btn"
+          [class.btn-danger]="isDangerous()"
+          [class.btn-primary]="!isDangerous()"
+          (click)="confirm()"
+        >
+          {{ confirmText() }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -104,4 +104,74 @@ export class AutomatedPrWorkflow {
       "> Automatically generated and verified by Cacophony Autonomous Engine.",
     ].join("\n");
   }
+
+  /**
+   * Evaluates whether a PR meets the strict preconditions for automated merging:
+   * 1. Commit status check must be 'success' (green tests)
+   * 2. Review verdict must be 'APPROVE' or 'APPROVED'
+   */
+  public evaluateMergeEligibility(
+    commitStatus: string,
+    reviewVerdict: string,
+  ): boolean {
+    const isStatusGreen = commitStatus.toLowerCase() === "success";
+    const isReviewApproved =
+      reviewVerdict.toUpperCase() === "APPROVE" ||
+      reviewVerdict.toUpperCase() === "APPROVED";
+
+    return isStatusGreen && isReviewApproved;
+  }
+
+  /**
+   * Executes squash-merge on an approved PR and cleans up remote task branch.
+   */
+  public async executeSquashMerge(
+    owner: string,
+    repo: string,
+    prIndex: number,
+    options?: {
+      readonly branchName?: string | undefined;
+      readonly commitTitle?: string | undefined;
+      readonly commitMessage?: string | undefined;
+    },
+  ): Promise<{
+    readonly success: boolean;
+    readonly merged: boolean;
+    readonly error?: string;
+  }> {
+    try {
+      await this.giteaClient.mergePullRequest(owner, repo, prIndex, {
+        Do: "squash",
+        MergeTitleField: options?.commitTitle,
+        MergeMessageField: options?.commitMessage,
+      });
+
+      // Cleanup remote branch if requested
+      if (options?.branchName) {
+        try {
+          const baseUrl = (this.giteaClient as any).baseUrl;
+          const token = (this.giteaClient as any).apiToken;
+          const headers: Record<string, string> = {
+            Accept: "application/json",
+          };
+          if (token) headers["Authorization"] = `token ${token}`;
+
+          await fetch(
+            `${baseUrl}/api/v1/repos/${owner}/${repo}/branches/${encodeURIComponent(options.branchName)}`,
+            {
+              method: "DELETE",
+              headers,
+            },
+          ).catch(() => {});
+        } catch {
+          // non-fatal remote branch deletion
+        }
+      }
+
+      return { success: true, merged: true };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, merged: false, error: message };
+    }
+  }
 }

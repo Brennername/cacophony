@@ -28,13 +28,13 @@
 2. **Archival Procedure**: When an entire phase or major milestone is fully verified, its completed checklist items are transferred from `docs/taskcade.md` to `docs/taskcade-history.md`.
 3. **Traceability**: Each archived phase preserves its task IDs, descriptions, subtask trees, associated git commit hashes, and verification scope.
 4. **Token Efficiency**: Active planning and execution in `docs/taskcade.md` remain uncluttered, allowing AI agents and human operators to focus directly on pending work without context exhaustion.
-5. **Reference**: See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45, 46, 48-54, 58, 61, 63, 73, 75, 77-80, 82, 86, and 89-95.
+5. **Reference**: See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45-64, 73, 75, 77-86, and 89-95.
 
 ---
 
 ## Active Milestone Era: Gitea Deep API Integration, Dynamic Branching, Least-Privilege Guardrails & Webhook Orchestration
 
-_See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45-63, 73, 75, 77-86, and 89-95._
+_See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 through 44, plus fully verified Phases 45-64, 73, 75, 77-86, and 89-95._
 
 ---
 
@@ -44,9 +44,9 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 > **Execution Directives for Next Frontier Model Implementer:**
 > The following phases constitute the highest-priority implementation pipeline above all others, structured for immediate frontier model execution:
 >
-> 1. **Priority 1: Phase 64 (Gitea Autonomous Worktree Management, PR Automation & Review Verdicts)**: Autonomous worktree pooling, branch management, and automated PR review loops.
-> 2. **Priority 2: Phase 65 (Mobile-First Testing View Polish, Responsive Process Manager & Live Test Telemetry)**: High-density mobile-first test table, gesture triggers, and live process metrics.
-> 3. **Priority 3: Phase 66 (Clean Slate Real-History Persistence & Model Stat Reset Daemon)**: Real-history persistence, automated cleanup, and model health resets.
+> 1. **Priority 1: Phase 65 (Mobile-First Testing View Polish, Responsive Process Manager & Live Test Telemetry)**: High-density mobile-first test table, gesture triggers, and live process metrics.
+> 2. **Priority 2: Phase 66 (Clean Slate Real-History Persistence & Model Stat Reset Daemon)**: Real-history persistence, automated cleanup, and model health resets.
+> 3. **Priority 3: Phase 67 (SSE Stream Resiliency, Reconnection Protocol & Backpressure Buffering)**: SSE Last-Event-ID catch-up, reconnection replay buffers, and backpressure governor.
 
 ---
 
@@ -100,49 +100,7 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Phase 64: Gitea Autonomous Worktree Management, PR Automation & Review Verdicts
 
-_RDF Category: orchestration_
-
-### T64.1: Ephemeral Git Worktree Provisioning per Task Execution
-
-- [ ] T64.1.1: Create GitWorktreeManager in packages/engine/src/gitea/GitWorktreeManager.ts using git worktree add to spawn isolated working directories. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Class: GitWorktreeManager] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
-- [ ] T64.1.2: Create ephemeral task branch 'task/<priority>-<taskId>' based on master/main branch HEAD. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: createWorktree] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
-- [ ] T64.1.3: Clean up and remove git worktree upon task completion or cancellation using git worktree remove --force. [File: packages/engine/src/gitea/GitWorktreeManager.ts] [Method: removeWorktree] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
-- [ ] T64.1.4: Write unit tests verifying worktree creation, isolated file modification, and clean teardown without affecting main repository. [File: packages/engine/src/tests/worktree_manager.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_manager.test.ts]
-
-### T64.2: Structured Conventional Commit Generator with Zero Emojis
-
-- [ ] T64.2.1: Create ConventionalCommitGenerator in packages/engine/src/gitea/ConventionalCommitGenerator.ts generating structured commit messages. [File: packages/engine/src/gitea/ConventionalCommitGenerator.ts] [Class: ConventionalCommitGenerator] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
-- [ ] T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, reviewer -> test, doc_writer -> docs. [File: packages/engine/src/gitea/ConventionalCommitGenerator.ts] [Method: resolveCommitType] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
-- [ ] T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicode emojis or pictographs prior to execution. [File: packages/engine/src/gitea/ConventionalCommitGenerator.ts] [Method: formatCommitMessage] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
-- [ ] T64.2.4: Write unit tests verifying commit message adheres to conventional commits standard and contains task ID metadata. [File: packages/engine/src/tests/commit_generator.test.ts] [Test: npm test -- packages/engine/src/tests/commit_generator.test.ts]
-
-### T64.3: Autonomous Gitea Pull Request Publisher via Gitea REST API
-
-- [ ] T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interacting with Gitea API (POST /api/v1/repos/{owner}/{repo}/pulls). [File: packages/engine/src/gitea/GiteaPrClient.ts] [Class: GiteaPrClient] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
-- [ ] T64.3.2: Push task branch to Gitea remote origin using configured authentication token from secret vault. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: pushBranch] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
-- [ ] T64.3.3: Open pull request with title matching task title and body formatted with markdown task description, stage timing, and test verification logs. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: openPullRequest] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
-- [ ] T64.3.4: Store opened PR URL in task.prUrl and broadcast 'pr_created' SSE notification to frontend. [File: packages/db/src/repositories/TaskRepository.ts] [Method: updateBranchAndPr] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
-
-### T64.4: Automated Review Stage Assigning Reviewer Role Model to Inspect Diffs
-
-- [ ] T64.4.1: Implement automated PR review stage in AutonomousWorkerPipeline dispatching git diff to reviewer model (e.g. deepseek-r1:8b). [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-- [ ] T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standards, and zero-emoji compliance. [File: packages/engine/src/gitea/AutomatedPrReviewer.ts] [Class: AutomatedPrReviewer] [Test: npm test -- packages/engine/src/tests/pr_reviewer.test.ts]
-- [ ] T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detailed review commentary. [File: packages/engine/src/gitea/AutomatedPrReviewer.ts] [Method: parseReviewVerdict] [Test: npm test -- packages/engine/src/tests/pr_reviewer.test.ts]
-- [ ] T64.4.4: Write unit tests verifying review prompt formatting and verdict parsing from model review output. [File: packages/engine/src/tests/pr_reviewer.test.ts] [Test: npm test -- packages/engine/src/tests/pr_reviewer.test.ts]
-
-### T64.5: Gitea PR Review Submission and Status Check Integration
-
-- [ ] T64.5.1: Submit review comment and status to Gitea via POST /api/v1/repos/{owner}/{repo}/pulls/{index}/reviews. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: submitReview] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
-- [ ] T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 'success' (green) or 'failure' (red) based on test run. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: setCommitStatus] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
-- [ ] T64.5.3: Persist review record in pr_reviews database table for auditability and compliance tracking. [File: packages/db/src/repositories/PrReviewRepository.ts] [Method: recordReview] [Test: npm test -- packages/db/src/tests/PrReviewRepository.test.ts]
-- [ ] T64.5.4: Write integration tests verifying review verdict and commit status checks appear correctly on Gitea PR. [File: packages/engine/src/tests/gitea_review_flow.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_review_flow.test.ts]
-
-### T64.6: Automated Squash-Merge Workflow on Green Test and Approved Review
-
-- [ ] T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in GiteaPrClient. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: mergePullRequest] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
-- [ ] T64.6.2: Verify preconditions prior to merge: test status check must be 'success' and review verdict must be 'APPROVE'. [File: packages/engine/src/gitea/AutomatedPrWorkflow.ts] [Method: evaluateMergeEligibility] [Test: npm test -- packages/engine/src/tests/gitea_workflow.test.ts]
-- [ ] T64.6.3: Execute squash-merge via Gitea API (POST /api/v1/repos/{owner}/{repo}/pulls/{index}/merge); delete remote task branch automatically. [File: packages/engine/src/gitea/GiteaPrClient.ts] [Method: mergePullRequest] [Test: npm test -- packages/engine/src/tests/gitea_pr_client.test.ts]
-- [ ] T64.6.4: Write integration tests verifying that PR meeting all criteria is automatically merged into master and task branch cleaned up. [File: packages/engine/src/tests/automated_merge.test.ts] [Test: npm test -- packages/engine/src/tests/automated_merge.test.ts]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-64-gitea-autonomous-worktree-management-pr-automation--review-verdicts)_
 
 ---
 
@@ -2838,8 +2796,8 @@ _RDF Category: analytics_and_orchestration_
 - **Failure Count**: 6
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t63.6.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T63.6.1: Run instant in-memory TypeScript diagnostic check on remediated code before exec [Role: type_specialist] [Files: packages/engine/src/testing/DiagnosticPreFlightChecker.ts]
-  - [ ] `taskcade-t63.6.1.2`: [Rehab 2/2] Implementation & Test Verification: T63.6.1: Run instant in-memory TypeScript diagnostic check on remediated code before exec [Role: implementer] [Files: packages/engine/src/testing/DiagnosticPreFlightChecker.ts]
+  - [x] `taskcade-t63.6.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T63.6.1: Run instant in-memory TypeScript diagnostic check on remediated code before exec [Role: type_specialist] [Files: packages/engine/src/testing/DiagnosticPreFlightChecker.ts]
+  - [x] `taskcade-t63.6.1.2`: [Rehab 2/2] Implementation & Test Verification: T63.6.1: Run instant in-memory TypeScript diagnostic check on remediated code before exec [Role: implementer] [Files: packages/engine/src/testing/DiagnosticPreFlightChecker.ts]
 
 ### Task taskcade-t59.4.2 Rehabilitation [2026-10-11T13:08:40.767Z]
 

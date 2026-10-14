@@ -20,3 +20,6 @@ export * from "./PromotionSanitizer.js";
 export * from "./ReleaseBundlerService.js";
 export * from "./GitHubPromotionPipeline.js";
 export * from "./promoteCli.js";
+export * from "./ConventionalCommitGenerator.js";
+export * from "./AutomatedPrReviewer.js";
+export * from "./GiteaPrClient.js";

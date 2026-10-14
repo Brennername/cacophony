@@ -118,13 +118,48 @@ Reads or updates the active multi-armed bandit exploration policy (`thompson_sam
 
 Lists all arena epochs and active degradation reset states.
 
-### POST `/api/arena/epoch`
+### POST `/api/arena/epoch` & POST `/api/models/epoch`
 
-Advances arena epoch and performs clean-slate model degradation reset.
+Advances arena epoch and performs clean-slate model degradation reset, un-ejecting evicted models and snapshotting the previous epoch to history.
+
+**Request Body (Optional)**:
+
+```json
+{
+  "name": "Epoch 2",
+  "reason": "Mitigate regression cascades and reset baseline",
+  "notes": "All degraded models un-ejected to ACTIVE"
+}
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "epoch": {
+    "epochId": 2,
+    "name": "Epoch 2",
+    "reason": "Mitigate regression cascades and reset baseline",
+    "notes": "All degraded models un-ejected to ACTIVE",
+    "startedAt": "2026-10-14T03:19:15.000Z",
+    "isActive": true
+  }
+}
+```
 
 ### POST `/api/models/reset-stats`
 
-Resets model health metrics and failure tallies to baseline.
+Resets model health metrics and failure tallies to baseline across all registered models.
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "message": "All model health metrics reset to clean baseline."
+}
+```
 
 ### GET & PUT `/api/models/config`
 
@@ -148,7 +183,31 @@ Returns paginated historical task records, stage execution durations, and model 
 
 ### GET `/api/models/leaderboard`
 
-Returns dynamic model leaderboard metrics, win rates, tokens/second, eviction counts, and remediation recovery telemetry (`totalRemediationAttempts`, `totalRemediationSuccess`, and `remediationRecoveryRate`).
+Returns dynamic model leaderboard metrics, win rates, tokens/second, eviction counts, and remediation recovery telemetry.
+
+**Response Payload**:
+
+```json
+{
+  "leaderboard": [
+    {
+      "modelId": "qwen2.5-coder:7b",
+      "provider": "ollama",
+      "totalTasks": 24,
+      "totalSuccesses": 20,
+      "totalFailures": 4,
+      "consecutiveFailures": 0,
+      "winRate": 83.3,
+      "avgLatencyMs": 1420,
+      "tokensPerSec": 28.4,
+      "status": "HEALTHY",
+      "totalRemediationAttempts": 6,
+      "totalRemediationSuccess": 5,
+      "remediationRecoveryRate": 83.33
+    }
+  ]
+}
+```
 
 ### GET `/api/analytics/failures`
 
@@ -185,6 +244,7 @@ Opens a persistent streaming channel broadcasting real-time arena diagnostics an
 **Event Types:**
 
 - `stage`: Emitted when a task transitions to a new stage (`planning`, `generation`, `test`, `review`).
+- `pr_created`: Emitted when an autonomous Pull Request is opened on Gitea (`{ taskId: string, branchName: string, prUrl: string }`).
 - `token`: Incremental token emitted during live LLM stream inference.
 - `telemetry`: 1-second interval hardware APU sensor snapshots.
 - `diagnostics`: Workspace compiler diagnostics emitted by language servers.

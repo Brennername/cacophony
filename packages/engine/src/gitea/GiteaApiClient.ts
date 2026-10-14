@@ -12,6 +12,8 @@ import type {
   CreateIssueCommentRequest,
   GiteaComment,
   GiteaPackage,
+  CreateCommitStatusRequest,
+  GiteaCommitStatus,
 } from "./giteaTypes.js";
 import { GiteaPermissionGuard } from "./GiteaPermissionGuard.js";
 
@@ -264,6 +266,25 @@ export class GiteaApiClient {
         throw err;
       }
     }
+  }
+
+  /**
+   * Sets commit status (e.g. pending, success, failure) for a specific git commit SHA.
+   */
+  public async createCommitStatus(
+    owner: string,
+    repo: string,
+    sha: string,
+    status: CreateCommitStatusRequest,
+  ): Promise<GiteaCommitStatus> {
+    this.guard?.assertScope("repository", "write");
+    return this.request<GiteaCommitStatus>(
+      `/api/v1/repos/${owner}/${repo}/statuses/${sha}`,
+      {
+        method: "POST",
+        body: JSON.stringify(status),
+      },
+    );
   }
 
   /**
