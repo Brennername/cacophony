@@ -1,0 +1,20 @@
+<div class="view-container">
+  <div class="view-header">
+    <h1>Task Execution History & Audit Log</h1>
+    <p class="subtitle">Postmortem reviews, failure categorizations, and git undo checkpoints</p>
+  </div>
+
+  <div class="history-grid">
+    <section class="grid-card-wrapper full-width">
+      <app-trend-chart />
+    </section>
+
+    <section class="grid-card-wrapper full-width">
+      <app-task-history />
+    </section>
+
+    <section class="grid-card-wrapper full-width">
+      <app-checkpoint-timeline [checkpoints]="repoService.checkpoints()" />
+    </section>
+  </div>
+</div>

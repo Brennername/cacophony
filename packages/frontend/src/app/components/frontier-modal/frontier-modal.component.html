@@ -1,0 +1,58 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="close()">
+    <div class="modal-content cacophony-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3>Frontier Task Decomposition</h3>
+          <span class="subtext">Deconstruct complex epics into atomic arena tasks</span>
+        </div>
+        <button class="close-btn" (click)="close()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="input-label">High-Level Feature Goal</label>
+        <textarea
+          class="goal-input"
+          rows="4"
+          placeholder="e.g. Build an OAuth2 Gitea SSO provider with JWT verification..."
+          [value]="goalText()"
+          (input)="goalText.set($any($event.target).value)"
+        ></textarea>
+
+        <button
+          class="btn btn-primary decompose-btn"
+          [disabled]="isAnalyzing() || !goalText().trim()"
+          (click)="simulateDecomposition()"
+        >
+          {{ isAnalyzing() ? 'Analyzing with Frontier Model...' : 'Decompose with Frontier Model' }}
+        </button>
+
+        @if (previews().length > 0) {
+          <div class="preview-section">
+            <h4>Decomposed Tasks Preview ({{ previews().length }})</h4>
+            <div class="preview-list">
+              @for (p of previews(); track p.title) {
+                <div class="preview-item">
+                  <span class="p-badge" [ngClass]="p.priority">{{ p.priority }}</span>
+                  <span class="p-title">{{ p.title }}</span>
+                  <span class="p-role">{{ p.role }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="close()">Cancel</button>
+        <button
+          class="btn btn-primary"
+          [disabled]="previews().length === 0"
+          (click)="commitTasks()"
+        >
+          Commit to Arena Queue
+        </button>
+      </div>
+    </div>
+  </div>
+}

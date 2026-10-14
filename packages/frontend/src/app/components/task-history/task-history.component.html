@@ -1,0 +1,112 @@
+<div class="cacophony-card history-card">
+  <div class="card-header">
+    <div>
+      <h2>Task History & Model Leaderboard</h2>
+      <span class="subtext">Audited runs, failure taxonomy & direct Gitea links</span>
+    </div>
+    <div class="success-rate-gauge">
+      <span class="rate-val">{{ successRate() }}%</span>
+      <span class="rate-label">Success Rate</span>
+    </div>
+  </div>
+
+  <!-- Model Leaderboard Row -->
+  <div class="leaderboard-grid">
+    @for (entry of leaderboard(); track entry.modelId) {
+      <div class="leader-item">
+        <div class="model-name">
+          <span class="dot" [ngClass]="entry.status.toLowerCase()"></span>
+          <strong>{{ entry.modelId }}</strong>
+        </div>
+        <div class="stats">
+          <span>{{ entry.successRate }}% win</span>
+          <span
+            ><span class="fixed-tks">{{ formatTks(entry.avgTokensPerSec) }}</span> tok/s</span
+          >
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- History Table -->
+  <div class="table-container">
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Task</th>
+          <th>Model</th>
+          <th>Runtime</th>
+          <th>Velocity</th>
+          <th>Completed</th>
+          <th>Gitea PR</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of paginatedHistoryItems(); track item.id) {
+          <tr class="clickable-row" (click)="drillDown(item.id)">
+            <td>
+              <span class="status-badge" [ngClass]="item.status.toLowerCase()">
+                {{ item.status }}
+              </span>
+            </td>
+            <td class="task-cell">
+              <div class="task-title-text">
+                {{ item.title }} <span class="drill-tag">Details &nearr;</span>
+              </div>
+              @if (item.failureReason) {
+                <div class="failure-reason">{{ item.failureReason }}</div>
+              }
+            </td>
+            <td class="model-cell">{{ item.model }}</td>
+            <td class="runtime-cell font-mono tabular">
+              {{ formatDuration(item.durationMs) }}
+            </td>
+            <td class="velocity-cell font-mono tabular">
+              @if (item.tokensPerSec > 0) {
+                <span>{{ formatTks(item.tokensPerSec) }} tok/s</span>
+              } @else {
+                <span class="text-muted">--</span>
+              }
+            </td>
+            <td class="timestamp-cell font-mono tabular">
+              {{ formatTimestamp(item.timestamp) }}
+            </td>
+            <td class="link-cell">
+              @if (item.prUrl) {
+                <a [href]="item.prUrl" target="_blank" rel="noopener" class="gitea-link">
+                  PR #{{ item.prNumber || 'View' }}
+                </a>
+              } @else {
+                <span class="text-muted">--</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Footer -->
+  @if (totalPages() > 1) {
+    <div class="pagination-bar">
+      <button
+        class="page-btn"
+        [disabled]="currentPage() === 1"
+        (click)="setPage(currentPage() - 1)"
+      >
+        Previous
+      </button>
+      <span class="page-info font-mono">
+        Page {{ currentPage() }} of {{ totalPages() }} ({{ historyItems().length }} records)
+      </span>
+      <button
+        class="page-btn"
+        [disabled]="currentPage() === totalPages()"
+        (click)="setPage(currentPage() + 1)"
+      >
+        Next
+      </button>
+    </div>
+  }
+</div>

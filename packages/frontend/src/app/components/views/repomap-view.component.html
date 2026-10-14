@@ -1,0 +1,18 @@
+<div class="view-container">
+  <div class="view-header">
+    <h1>Repository Architecture & Symbol Map</h1>
+    <p class="subtitle">
+      AST dependency graphs, structural symbols, and live language server diagnostics
+    </p>
+  </div>
+
+  <div class="repomap-grid">
+    <section class="grid-card-wrapper full-width">
+      <app-repo-map-viewer [nodes]="repoService.repoSymbols()" />
+    </section>
+
+    <section class="grid-card-wrapper full-width">
+      <app-lsp-test-loop-panel />
+    </section>
+  </div>
+</div>

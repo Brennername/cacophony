@@ -1,0 +1,37 @@
+<nav class="tabs-container" aria-label="Active Sessions">
+  <div class="tabs-scroll-area">
+    @for (tab of tabs(); track tab.id) {
+      <div
+        class="tab-item"
+        [class.active]="activeTabId() === tab.id"
+        (click)="selectTab(tab.id)"
+        role="button"
+        tabindex="0"
+        (keydown.enter)="selectTab(tab.id)"
+      >
+        <div class="tab-content">
+          <span class="tab-title">{{ tab.title }}</span>
+          <span class="tab-branch">[{{ tab.branch }}]</span>
+          @if (tab.activeModel) {
+            <span class="tab-model font-mono">{{ tab.activeModel }}</span>
+          }
+          @if (tab.isModified) {
+            <span class="tab-dot" aria-label="Modified">•</span>
+          }
+        </div>
+        @if (tabs().length > 1) {
+          <button class="tab-close-btn" (click)="closeTab($event, tab.id)" aria-label="Close tab">
+            ×
+          </button>
+        }
+      </div>
+    }
+    <button class="new-tab-btn" (click)="createNewTab()" aria-label="New Session Tab">
+      + New Tab
+    </button>
+    <div class="epoch-indicator-badge" title="Active Arena Telemetry Epoch">
+      <span class="epoch-dot"></span>
+      <span class="epoch-label">Epoch {{ metricsService.currentEpoch()?.epochId || 1 }}</span>
+    </div>
+  </div>
+</nav>

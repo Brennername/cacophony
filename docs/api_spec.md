@@ -71,6 +71,48 @@ Cancels or removes an enqueued task from the active queue.
 ### GET `/api/tasks/:id/gantt`
 Returns stage durations and timeline spans for Gantt transport visualization.
 
+### POST `/api/tasks/decompose-spec`
+Ingests specification documents (`docs/spec.md`, `README.md`, OpenAPI JSON) and autonomously derives topological task sequences.
+
+### POST `/api/tasks/requeue`
+Retries failed tasks with a three-failure quarantine safeguard (`force=true` bypasses).
+
+### POST `/api/tasks/seed`
+Ingests uncompleted tasks from `docs/taskcade.md` into the active queue.
+
+### POST `/api/tasks/reclaim`
+Reclaims stale running tasks back to `PENDING` state.
+
+### POST `/api/tasks/groom`
+Grooms task queue by reconciling completed tasks against merged Gitea PRs.
+
+### GET `/api/analytics/window-success`
+Evaluates dynamic rolling window success rates, Discrete velocity, acceleration derivatives, and plateau convergence metrics across arbitrary window sizes (10, 20, 50, 100, 1000).
+
+### GET `/api/bandit/arms`
+Retrieves multi-armed bandit model arms with exploration distributions, empirical rewards, and selected arm counts.
+
+### GET & POST `/api/bandit/policy`
+Reads or updates the active multi-armed bandit exploration policy (`thompson_sampling`, `ucb1`, `epsilon_greedy`).
+
+### GET `/api/arena/epochs`
+Lists all arena epochs and active degradation reset states.
+
+### POST `/api/arena/epoch`
+Advances arena epoch and performs clean-slate model degradation reset.
+
+### POST `/api/models/reset-stats`
+Resets model health metrics and failure tallies to baseline.
+
+### GET & PUT `/api/models/config`
+Reads and updates model tenancy configurations (disk quotas, auto-eviction, model whitelist).
+
+### POST `/api/fleet/heartbeat`
+Receives periodic UDP/HTTP worker node health heartbeats (VRAM usage, APU/GPU thermals, task assignments).
+
+### GET `/api/fleet/nodes`
+Lists active and registered fleet worker nodes with availability and load states.
+
 ### GET `/api/history`
 Returns paginated historical task records, stage execution durations, and model win rates.
 

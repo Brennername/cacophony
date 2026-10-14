@@ -1,0 +1,18 @@
+<div class="view-container">
+  <div class="view-header">
+    <div>
+      <h1>Spawned Subprocess Monitor</h1>
+      <p class="subtitle">
+        Deterministic test loops, TypeScript compiler runs, linters, and git worktrees
+      </p>
+    </div>
+    <div class="header-stat">
+      <span class="stat-num">{{ store.processes().length }}</span>
+      <span class="stat-label">Active & Recorded Runs</span>
+    </div>
+  </div>
+
+  <div class="view-body">
+    <app-process-inspector />
+  </div>
+</div>

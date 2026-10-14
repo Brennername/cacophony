@@ -1,0 +1,72 @@
+<div class="dashboard-grid">
+  <!-- Arena Execution Reliability & Success Meter KPI Strip (Full Width Above) -->
+  <section class="grid-card-wrapper full-width">
+    <div class="cacophony-card success-banner-card">
+      <div class="banner-inner">
+        <div class="meter-col">
+          <app-success-meter [successPercentage]="rollingSuccessRate()" />
+        </div>
+        <div class="summary-col">
+          <div class="summary-header">
+            <div class="title-cluster">
+              <h3 class="banner-title">Arena Execution Reliability</h3>
+              <span class="reliability-badge" [ngClass]="reliabilityStatusClass()">
+                {{ reliabilityStatus() }}
+              </span>
+            </div>
+            <div class="arena-state-indicator">
+              <span class="status-dot"></span>
+              <span class="state-label"
+                >Scheduler {{ store.schedulerPaused() ? 'PAUSED' : 'ACTIVE' }}</span
+              >
+            </div>
+          </div>
+          <p class="summary-subtitle">
+            Rolling execution pass rate across autonomous model fleet generations and automated
+            remediation runs
+          </p>
+          <div class="kpi-pills-row">
+            <div class="kpi-pill">
+              <span class="kpi-label">Pass Rate</span>
+              <span class="kpi-val highlight">{{ rollingSuccessRate() }}%</span>
+            </div>
+            <div class="kpi-pill">
+              <span class="kpi-label">Concluded Runs</span>
+              <span class="kpi-val">{{ totalConcluded() }}</span>
+            </div>
+            <div class="kpi-pill">
+              <span class="kpi-label">Passed / Remediated</span>
+              <span class="kpi-val nominal">{{ totalPassed() }}</span>
+            </div>
+            <div class="kpi-pill">
+              <span class="kpi-label">Failed / Timed Out</span>
+              <span class="kpi-val danger">{{ totalFailed() }}</span>
+            </div>
+            <div class="kpi-pill">
+              <span class="kpi-label">Queue Depth</span>
+              <span class="kpi-val">{{ store.pendingCount() }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="trend-col">
+          <app-windowed-success-trend />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hardware Telemetry Diagnostics (North-to-South Stacked) -->
+  <section class="grid-card-wrapper full-width">
+    <app-hardware-monitor />
+  </section>
+
+  <!-- Active Running Task Stepper & Log Stream (North-to-South Stacked) -->
+  <section class="grid-card-wrapper full-width">
+    <app-task-inspector />
+  </section>
+
+  <!-- Compact Queue Snapshot (Full Width Below) -->
+  <section class="grid-card-wrapper full-width">
+    <app-queue-manager />
+  </section>
+</div>

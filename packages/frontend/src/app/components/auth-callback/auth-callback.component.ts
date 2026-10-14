@@ -10,24 +10,8 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-auth-callback',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="cacophony-card auth-card">
-      <h2>Verifying Gitea SSO Session...</h2>
-      <p class="subtext">Exchanging authorization code for secure session JWT.</p>
-    </div>
-  `,
-  styles: [`
-    .auth-card {
-      max-width: 450px;
-      margin: 4rem auto;
-      text-align: center;
-      padding: 2.5rem;
-    }
-    .subtext {
-      margin-top: 0.5rem;
-      color: var(--text-secondary);
-    }
-  `],
+  templateUrl: './auth-callback.component.html',
+  styleUrl: './auth-callback.component.css',
 })
 export class AuthCallbackComponent implements OnInit {
   private readonly auth = inject(AuthService);

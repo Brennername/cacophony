@@ -1,0 +1,75 @@
+<div class="repomap-container" (wheel)="onWheel($event)">
+  <div class="repomap-toolbar">
+    <span class="toolbar-title">Repository Architectural Graph</span>
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="Filter symbols..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        class="filter-input"
+      />
+    </div>
+  </div>
+
+  <div class="repomap-viewport" (click)="onClick($event)">
+    <svg class="graph-svg" viewBox="0 0 800 400">
+      <!-- Render connecting edges -->
+      @for (node of filteredNodes(); track node.id; let idx = $index) {
+        @if (idx > 0) {
+          <line
+            [attr.x1]="getNodeX(idx - 1)"
+            [attr.y1]="getNodeY(idx - 1)"
+            [attr.x2]="getNodeX(idx)"
+            [attr.y2]="getNodeY(idx)"
+            stroke="var(--border-color, #475569)"
+            stroke-width="1.5"
+            stroke-dasharray="3 3"
+          />
+        }
+      }
+
+      <!-- Render symbol nodes -->
+      @for (node of filteredNodes(); track node.id; let idx = $index) {
+        <g
+          class="node-group"
+          [class.selected]="selectedNodeId() === node.id"
+          (click)="selectNode(node)"
+          tabindex="0"
+          role="button"
+          (keydown.enter)="selectNode(node)"
+        >
+          <circle
+            [attr.cx]="getNodeX(idx)"
+            [attr.cy]="getNodeY(idx)"
+            [attr.r]="12 + node.centrality * 14"
+            [attr.fill]="getNodeColor(node.kind)"
+            class="node-circle"
+          />
+          <text
+            [attr.x]="getNodeX(idx)"
+            [attr.y]="getNodeY(idx) + 24"
+            text-anchor="middle"
+            class="node-label"
+          >
+            {{ node.name }}
+          </text>
+        </g>
+      }
+    </svg>
+  </div>
+
+  @if (selectedNode(); as node) {
+    <footer class="node-details-drawer">
+      <div class="detail-item">
+        <strong>Symbol:</strong> <code>{{ node.name }}</code> ({{ node.kind }})
+      </div>
+      <div class="detail-item">
+        <strong>Path:</strong> <span>{{ node.filePath }}</span>
+      </div>
+      <div class="detail-item">
+        <strong>Centrality Rank:</strong> <span>{{ (node.centrality * 100).toFixed(1) }}%</span>
+      </div>
+    </footer>
+  }
+</div>

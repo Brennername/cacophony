@@ -1,0 +1,111 @@
+<div class="cacophony-card gantt-card">
+  <div class="transport-header">
+    <div class="title-group">
+      <h2>Execution Timeline</h2>
+      <span class="subtext">
+        {{ isRunning() ? 'LIVE STREAMING' : effectiveTotalMs() > 0 ? 'COMPLETED' : 'IDLE' }}
+        @if (modelName()) {
+          • <span class="font-mono text-brand">{{ modelName() }}</span>
+        }
+        • {{ formatTime(currentPlayheadMs()) }} elapsed / {{ formatTime(effectiveTotalMs()) }} total
+      </span>
+    </div>
+
+    <div class="transport-controls">
+      <button class="transport-btn" (click)="zoomIn()" title="Zoom In scale">+</button>
+      <span class="zoom-level font-mono">{{ zoomLevel() }}x</span>
+      <button class="transport-btn" (click)="zoomOut()" title="Zoom Out scale">-</button>
+      <button
+        class="transport-btn"
+        [class.active]="!isFitted() && panOffsetMs() === 0"
+        (click)="recenter()"
+        title="Lock playhead to center"
+      >
+        Center
+      </button>
+      <button
+        class="transport-btn reset"
+        [class.active]="isFitted()"
+        (click)="toggleFit()"
+        title="Toggle between fit in view and full scale"
+      >
+        {{ isFitted() ? 'Full' : 'Fit' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Top Timeline Latency Ruler with Waypoints -->
+  <div class="timeline-ruler font-mono">
+    <div class="ruler-waypoint" style="left: 0%">{{ formatTime(effectiveStartMs()) }}</div>
+    <div class="ruler-waypoint" style="left: 25%">
+      {{ formatTime(effectiveStartMs() + visibleWindowMs() * 0.25) }}
+    </div>
+    <div class="ruler-waypoint center-waypoint" style="left: 50%">
+      {{ formatTime(effectiveStartMs() + visibleWindowMs() * 0.5) }}
+    </div>
+    <div class="ruler-waypoint" style="left: 75%">
+      {{ formatTime(effectiveStartMs() + visibleWindowMs() * 0.75) }}
+    </div>
+    <div class="ruler-waypoint" style="left: 100%">{{ formatTime(effectiveEndMs()) }}</div>
+  </div>
+
+  <!-- Multi-Track Canvas with Drag-to-Pan Hand Navigation -->
+  <div
+    #canvasContainer
+    class="tracks-canvas"
+    [class.grabbing]="isDragging()"
+    (mousedown)="onMouseDown($event)"
+    (mousemove)="onMouseMove($event)"
+    (mouseup)="onMouseUp()"
+    (mouseleave)="onMouseUp()"
+  >
+    <div class="tracks-inner">
+      <!-- Dedicated overlay positioned exactly over the track lanes (from 93px to 100%) -->
+      <div class="lane-overlay">
+        <!-- Center Alignment Guideline at 50% of the lane area -->
+        <div class="center-guideline" style="left: 50%" title="Center Alignment Line (50%)">
+          <span class="center-tag">CENTER</span>
+        </div>
+
+        <!-- Live Playhead Red Line (advances 0% to 50%, then locks in center) -->
+        <div
+          class="live-playhead"
+          [style.left.%]="playheadPercent()"
+          [title]="'Playhead: ' + currentPlayheadMs().toFixed(0) + 'ms'"
+        >
+          <div class="playhead-cap"></div>
+          <div class="playhead-badge font-mono">{{ formatTime(currentPlayheadMs()) }}</div>
+        </div>
+      </div>
+
+      <!-- Vertical Tracks -->
+      @for (track of trackDefinitions; track track.category) {
+        <div class="track-row">
+          <div class="track-label-col">
+            <span class="track-name">
+              {{ track.label }}
+              @if (track.category === 'inference' && modelName()) {
+                <span class="track-model-name font-mono">[{{ modelName() }}]</span>
+              }
+            </span>
+            <span class="track-sub">{{ track.category | uppercase }}</span>
+          </div>
+
+          <div class="track-lane">
+            @for (span of getSpansForCategory(track.category); track span.id) {
+              <div
+                class="span-bar"
+                [ngClass]="[span.category, span.status.toLowerCase()]"
+                [style.left.%]="getSpanLeftPercent(span)"
+                [style.width.%]="getSpanWidthPercent(span)"
+                [title]="span.name + ' (' + getDisplayDuration(span) + 'ms) [' + span.status + ']'"
+              >
+                <span class="span-label"> {{ span.name }} ({{ getDisplayDuration(span) }}ms) </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

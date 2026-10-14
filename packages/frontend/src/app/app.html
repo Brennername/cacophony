@@ -1,20 +1,163 @@
-<!-- Navigation Bar -->
-<nav>
-  <ul>
-    <li><a href="/dashboard" [class.active]="isActive('/dashboard')">Dashboard</a></li>
-    <li><a href="/testing" [class.active]="isActive('/testing')">Testing</a></li> <!-- Updated label and route -->
-    <li><a href="/reports" [class.active]="isActive('/reports')">Reports</a></li>
-  </ul>
-</nav>
+<div class="app-layout">
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <div class="brand-group">
+      <!-- Mobile Hamburger Toggle -->
+      <button
+        class="mobile-menu-btn"
+        (click)="toggleMobileDrawer()"
+        aria-label="Toggle navigation drawer"
+      >
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
 
-<!-- Main Content Area -->
-<div class="content">
-  <router-outlet></router-outlet>
-</div>
+      <a routerLink="/dashboard" class="brand-link">
+        <span class="brand-logo">CACOPHONY</span>
+        <span class="arena-tag">Local Model Arena</span>
+      </a>
+    </div>
 
-<script>
-  // Function to check if the current route is active
-  function isActive(path) {
-    return window.location.pathname === path;
+    <!-- Desktop Navigation Links -->
+    <nav class="desktop-nav" aria-label="Desktop primary navigation">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
+      <a routerLink="/queue" routerLinkActive="active" class="nav-link">Queue</a>
+      <a routerLink="/history" routerLinkActive="active" class="nav-link">History</a>
+      <a routerLink="/models" routerLinkActive="active" class="nav-link">Models</a>
+      <a routerLink="/repomap" routerLinkActive="active" class="nav-link">Repo Map</a>
+      <a routerLink="/processes" routerLinkActive="active" class="nav-link">Processes</a>
+      <a routerLink="/fleet" routerLinkActive="active" class="nav-link">Fleet</a>
+      <a routerLink="/settings" routerLinkActive="active" class="nav-link">Settings</a>
+    </nav>
+
+    <!-- Right Side Header Controls -->
+    <div class="controls-group">
+      @if (authService.session().isAuthenticated) {
+        <span class="user-pill">{{ authService.session().username }}</span>
+      } @else {
+        <button class="btn btn-outline nav-auth-btn" (click)="authService.login()">Sign In</button>
+      }
+
+      <button class="btn btn-outline decompose-btn" (click)="openFrontierModal()">Decompose</button>
+
+      <button
+        class="btn btn-outline theme-toggle"
+        (click)="themeService.toggleTheme()"
+        aria-label="Toggle color theme"
+      >
+        {{ themeService.currentTheme() | uppercase }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Backdrop & Slide-out Menu -->
+  @if (drawerOpen()) {
+    <div class="drawer-backdrop" (click)="closeDrawer()" role="presentation"></div>
   }
-</script>
+  <aside class="mobile-drawer" [class.open]="drawerOpen()" aria-label="Mobile navigation drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">Navigation Menu</span>
+      <button class="drawer-close-btn" (click)="closeDrawer()" aria-label="Close navigation drawer">
+        &times;
+      </button>
+    </div>
+
+    <nav class="drawer-nav">
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        (click)="closeDrawer()"
+        class="drawer-link"
+      >
+        Dashboard
+      </a>
+      <a routerLink="/queue" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
+        Queue Management
+      </a>
+      <a
+        routerLink="/history"
+        routerLinkActive="active"
+        (click)="closeDrawer()"
+        class="drawer-link"
+      >
+        Task History & Checkpoints
+      </a>
+      <a routerLink="/models" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
+        Model Leaderboard
+      </a>
+      <a
+        routerLink="/repomap"
+        routerLinkActive="active"
+        (click)="closeDrawer()"
+        class="drawer-link"
+      >
+        Repo Architecture
+      </a>
+      <a
+        routerLink="/processes"
+        routerLinkActive="active"
+        (click)="closeDrawer()"
+        class="drawer-link"
+      >
+        Spawned Processes
+      </a>
+      <a routerLink="/fleet" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
+        Fleet Accelerators
+      </a>
+      <a
+        routerLink="/settings"
+        routerLinkActive="active"
+        (click)="closeDrawer()"
+        class="drawer-link"
+      >
+        System Settings
+      </a>
+    </nav>
+
+    <div class="drawer-footer">
+      <button class="btn btn-primary w-full" (click)="openFrontierModal(); closeDrawer()">
+        Decompose Feature
+      </button>
+    </div>
+  </aside>
+
+  <!-- Session Control Bar (Tabs & Safety Mode) -->
+  <div class="session-control-bar">
+    <app-session-tabs />
+    <app-execution-mode-selector />
+  </div>
+
+  <!-- Compact Root Telemetry Bar (T57.5.2) -->
+  <app-telemetry-bar />
+
+  <!-- Main Routed View Outlet -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Mobile Bottom Navigation Bar (< 768px) with WCAG > 48px Tap Targets -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile bottom navigation">
+    <a routerLink="/dashboard" routerLinkActive="active" class="bottom-tab">
+      <span class="tab-label">Home</span>
+    </a>
+    <a routerLink="/queue" routerLinkActive="active" class="bottom-tab">
+      <span class="tab-label">Queue</span>
+    </a>
+    <a routerLink="/history" routerLinkActive="active" class="bottom-tab">
+      <span class="tab-label">History</span>
+    </a>
+    <a routerLink="/models" routerLinkActive="active" class="bottom-tab">
+      <span class="tab-label">Models</span>
+    </a>
+    <button class="bottom-tab more-tab" (click)="toggleMobileDrawer()">
+      <span class="tab-label">More</span>
+    </button>
+  </nav>
+
+  <!-- Frontier Decomposition Modal -->
+  <app-frontier-modal #frontierModal (committed)="onTasksCommitted($event)" />
+
+  <!-- Deep Task Drill-Down Dialog -->
+  <app-task-detail-modal />
+</div>

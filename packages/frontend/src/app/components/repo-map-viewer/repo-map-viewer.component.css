@@ -1,0 +1,77 @@
+.repomap-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-surface, #1e1e24);
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #2d2d38);
+  overflow: hidden;
+}
+.repomap-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-color, #2d2d38);
+  background: var(--bg-card, #18181f);
+}
+.toolbar-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary, #f8fafc);
+}
+.filter-input {
+  background: var(--bg-input, #0f172a);
+  border: 1px solid var(--border-color, #334155);
+  color: var(--text-primary, #f8fafc);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+.repomap-viewport {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+.graph-svg {
+  width: 100%;
+  height: 100%;
+}
+.node-group {
+  cursor: pointer;
+  outline: none;
+}
+.node-circle {
+  transition: all 0.2s ease;
+  stroke: transparent;
+  stroke-width: 2px;
+}
+.node-group:hover .node-circle {
+  stroke: var(--color-primary, #38bdf8);
+}
+.node-group.selected .node-circle {
+  stroke: var(--color-warning, #f59e0b);
+  stroke-width: 3px;
+}
+.node-label {
+  font-size: 11px;
+  fill: var(--text-muted, #94a3b8);
+  font-family: monospace;
+  user-select: none;
+}
+.node-details-drawer {
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--border-color, #2d2d38);
+  background: var(--bg-card, #18181f);
+  font-size: 0.85rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.detail-item strong {
+  color: var(--text-muted, #94a3b8);
+  margin-right: 0.35rem;
+}

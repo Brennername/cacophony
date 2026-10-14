@@ -251,6 +251,7 @@ services:
       - GITEA__mailer__SMTP_PORT=1025
       - GITEA__mailer__FROM=cacophony-gitea@local.internal
       - GITEA__oauth2__ENABLE=true
+      - GITEA__actions__ENABLED=true
     ports:
       - "${PORT_GITEA_HTTP:-19634}:3000"
       - "${PORT_GITEA_SSH:-17883}:2222"
@@ -265,6 +266,25 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+
+  cacophony-gitea-runner:
+    profiles:
+      - gitea-runner
+    image: gitea/act_runner:latest
+    container_name: cacophony-gitea-runner
+    restart: unless-stopped
+    environment:
+      - GITEA_INSTANCE_URL=http://cacophony-gitea:3000
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_REGISTRATION_TOKEN:-}
+      - GITEA_RUNNER_NAME=cacophony-local-runner
+      - GITEA_RUNNER_LABELS=ubuntu-latest:docker://node:22-bookworm
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitea-runner-data:/data
+    depends_on:
+      - cacophony-gitea
+    networks:
+      - cacophony-net
 
   cacophony-mailpit:
     image: axllent/mailpit:latest
@@ -353,6 +373,8 @@ volumes:
   gitea-data:
     driver: local
   gitea-config:
+    driver: local
+  gitea-runner-data:
     driver: local
   redis-data:
     driver: local

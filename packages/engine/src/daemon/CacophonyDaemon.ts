@@ -70,6 +70,7 @@ export class CacophonyDaemon {
   private autoTuner?: import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined;
   private banditScheduler?: import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined;
   private fleetCoordinator?: import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator | undefined;
+  private fleetHealthMonitor?: import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined;
   private signalHandler?: (() => Promise<void>) | undefined;
   private autoTuneTimer: NodeJS.Timeout | null = null;
   private planningTimer: NodeJS.Timeout | null = null;
@@ -255,6 +256,10 @@ export class CacophonyDaemon {
 
     const { FleetMasterCoordinator } = await import("../fleet/FleetMasterCoordinator.js");
     this.fleetCoordinator = new FleetMasterCoordinator();
+
+    const { FleetHealthMonitor } = await import("../fleet/FleetHealthMonitor.js");
+    this.fleetHealthMonitor = new FleetHealthMonitor();
+    this.fleetHealthMonitor.startLivenessCheck();
 
     const worker = new AutonomousWorkerPipeline({
       workspaceRoot: process.cwd(),
@@ -477,6 +482,9 @@ export class CacophonyDaemon {
     if (this.telemetryPoller) {
       this.telemetryPoller.stop();
     }
+    if (this.fleetHealthMonitor) {
+      this.fleetHealthMonitor.stopLivenessCheck();
+    }
     if (this.ipcServer) {
       await this.ipcServer.stop();
     }
@@ -564,6 +572,10 @@ export class CacophonyDaemon {
 
   public getFleetCoordinator(): import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator | undefined {
     return this.fleetCoordinator;
+  }
+
+  public getFleetHealthMonitor(): import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined {
+    return this.fleetHealthMonitor;
   }
 
   /**

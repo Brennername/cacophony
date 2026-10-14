@@ -1,0 +1,29 @@
+<div class="success-meter-wrapper" [class]="colorClass">
+  <svg
+    class="radial-gauge"
+    [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight"
+    [attr.width]="svgWidth"
+    [attr.height]="svgHeight"
+  >
+    <circle
+      class="gauge-bg"
+      [attr.cx]="centerX"
+      [attr.cy]="centerY"
+      [attr.r]="radius"
+      [attr.stroke-width]="strokeWidth"
+    />
+    <circle
+      class="gauge-progress"
+      [attr.cx]="centerX"
+      [attr.cy]="centerY"
+      [attr.r]="radius"
+      [attr.stroke-width]="strokeWidth"
+      [attr.stroke-dasharray]="circumference"
+      [attr.stroke-dashoffset]="dashoffset"
+    />
+  </svg>
+  <div class="meter-text">
+    <span class="percentage">{{ displayPercentage }}%</span>
+    <span class="label">Success Rate</span>
+  </div>
+</div>

@@ -1,0 +1,40 @@
+<div class="mode-selector-container" role="radiogroup" aria-label="Execution Safety Mode">
+  <div
+    class="mode-option"
+    [class.selected]="selectedMode() === 'plan'"
+    (click)="selectMode('plan')"
+    role="radio"
+    [attr.aria-checked]="selectedMode() === 'plan'"
+    tabindex="0"
+    (keydown.enter)="selectMode('plan')"
+  >
+    <span class="mode-badge">Plan</span>
+    <span class="mode-desc">Read-only, no disk edits</span>
+  </div>
+
+  <div
+    class="mode-option"
+    [class.selected]="selectedMode() === 'build'"
+    (click)="selectMode('build')"
+    role="radio"
+    [attr.aria-checked]="selectedMode() === 'build'"
+    tabindex="0"
+    (keydown.enter)="selectMode('build')"
+  >
+    <span class="mode-badge">Build</span>
+    <span class="mode-desc">Apply edits & tests (confirm commit)</span>
+  </div>
+
+  <div
+    class="mode-option"
+    [class.selected]="selectedMode() === 'auto'"
+    (click)="selectMode('auto')"
+    role="radio"
+    [attr.aria-checked]="selectedMode() === 'auto'"
+    tabindex="0"
+    (keydown.enter)="selectMode('auto')"
+  >
+    <span class="mode-badge">Auto</span>
+    <span class="mode-desc">Autonomous closed loop</span>
+  </div>
+</div>

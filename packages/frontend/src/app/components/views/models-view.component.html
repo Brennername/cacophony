@@ -1,0 +1,444 @@
+<div class="view-container">
+  <div class="view-header">
+    <div>
+      <h1>Candidate Model Leaderboard & Fleet Management</h1>
+      <p class="subtitle">
+        Empirical win rates, hardware memory footprints, and multi-tenant eviction controls
+      </p>
+    </div>
+    <div class="header-actions-group">
+      <div class="epoch-control-inline">
+        <label for="epoch-filter-select" class="epoch-filter-label">Epoch:</label>
+        <select
+          id="epoch-filter-select"
+          class="epoch-select-input"
+          [value]="selectedEpoch()"
+          (change)="onEpochSelected($event)"
+        >
+          <option value="current">
+            Current Epoch (Epoch {{ metricsService.currentEpoch()?.epochId || 1 }})
+          </option>
+          @for (ep of metricsService.epochs(); track ep.epochId) {
+            <option [value]="ep.epochId">Epoch {{ ep.epochId }}: {{ ep.name }}</option>
+          }
+          <option value="all">All Time</option>
+        </select>
+        <button
+          class="action-btn-secondary"
+          (click)="openEpochModal()"
+          title="Advance to a fresh epoch and reset model stats"
+        >
+          Start New Epoch
+        </button>
+        <button
+          class="action-btn-secondary"
+          (click)="resetStatsCurrentEpoch()"
+          title="Reset failure degradation without advancing epoch"
+        >
+          Reset Stats
+        </button>
+      </div>
+      <button class="action-btn-primary" (click)="showPullModal.set(true)">+ Pull Model</button>
+      <button class="action-btn-secondary" (click)="showTuningPanel.set(!showTuningPanel())">
+        {{ showTuningPanel() ? 'Hide Tuning' : 'Model Tuning' }}
+      </button>
+      <button class="action-btn-secondary" (click)="showTenancyPanel.set(!showTenancyPanel())">
+        {{ showTenancyPanel() ? 'Hide Guardrails' : 'Tenancy Rules' }}
+      </button>
+    </div>
+    <div class="header-stats-group">
+      <div class="header-stat">
+        <span class="stat-num tabular">{{ fleetService.installedModels().length }}</span>
+        <span class="stat-label">Installed Models</span>
+      </div>
+      <div class="header-stat">
+        <span class="stat-num tabular">{{ fleetService.protectedCount() }}</span>
+        <span class="stat-label">Protected Whitelisted</span>
+      </div>
+      <div class="header-stat">
+        <span class="stat-num tabular">{{ metricsService.rollingSuccessRate() }}%</span>
+        <span class="stat-label">Fleet Pass Rate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Model Tuning Profile Configuration Panel (Collapsible) -->
+  @if (showTuningPanel()) {
+    <app-model-tuning-panel
+      [profiles]="fleetService.profiles()"
+      (onSaveProfile)="fleetService.saveProfile($event)"
+      (onAutoTune)="fleetService.autoTuneProfiles()"
+    />
+  }
+
+  <!-- Tenancy Configuration Panel (Collapsible) -->
+  @if (showTenancyPanel()) {
+    <app-tenancy-config-panel
+      [config]="fleetService.config()"
+      (onUpdateConfig)="onUpdateTenancyConfig($event)"
+    />
+  }
+
+  <!-- Installed Local Models Hardware Fleet Section -->
+  @if (fleetService.installedModels().length > 0) {
+    <div class="installed-fleet-section">
+      <div class="section-title-row">
+        <h2 class="section-title">Installed Hardware Model Fleet</h2>
+        <button
+          class="refresh-fleet-btn"
+          (click)="fleetService.fetchInstalledModels()"
+          title="Refresh models"
+        >
+          ↻ Refresh Fleet
+        </button>
+      </div>
+
+      <div class="fleet-cards-grid">
+        @for (model of fleetService.installedModels(); track model.name) {
+          <div class="cacophony-card fleet-card" [class.warm]="model.isLoadedInVram">
+            <div class="fleet-card-header">
+              <div class="model-tag-group">
+                <span class="fleet-model-name font-mono">{{ model.name }}</span>
+                @if (model.isLoadedInVram) {
+                  <span class="badge-warm">WARM IN VRAM</span>
+                }
+                @if (model.isProtected) {
+                  <span class="badge-protected" title="Protected from automated deletion"
+                    >PROTECTED</span
+                  >
+                }
+              </div>
+              <span class="fleet-size tabular">{{ formatBytes(model.sizeBytes) }}</span>
+            </div>
+
+            <div class="fleet-details-row">
+              @if (model.details.parameterSize) {
+                <span class="detail-pill">Params: {{ model.details.parameterSize }}</span>
+              }
+              @if (model.details.quantizationLevel) {
+                <span class="detail-pill">Quant: {{ model.details.quantizationLevel }}</span>
+              }
+              @if (model.details.family) {
+                <span class="detail-pill">Arch: {{ model.details.family }}</span>
+              }
+            </div>
+
+            <div class="fleet-actions-row">
+              <button
+                class="card-btn benchmark"
+                [disabled]="fleetService.loading()"
+                (click)="benchmarkModel(model.name)"
+              >
+                Benchmark
+              </button>
+              <button class="card-btn inspect" (click)="selectModel(model.name)">Inspect</button>
+              <button
+                class="card-btn delete"
+                [disabled]="model.isProtected"
+                [title]="
+                  model.isProtected
+                    ? 'Protected model cannot be deleted'
+                    : 'Delete model from local storage'
+                "
+                (click)="deleteModel(model.name)"
+              >
+                {{ model.isProtected ? 'Protected' : 'Delete' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Pull Model Modal -->
+  @if (showPullModal()) {
+    <app-model-pull-modal
+      [isPulling]="fleetService.pullingModelName() !== null"
+      [progress]="fleetService.pullProgress()"
+      [terminalLogs]="fleetService.pullTerminalLogs()"
+      (onPull)="startPullModel($event)"
+      (onClose)="showPullModal.set(false)"
+      (onClearLogs)="fleetService.pullTerminalLogs.set([])"
+    />
+  }
+
+  <app-exploration-control />
+
+  <!-- Deep Model Inspection Profile Panel when a Model is Selected -->
+  @if (selectedModelId(); as modelId) {
+    <div class="cacophony-card model-detail-panel">
+      <div class="detail-header">
+        <div class="detail-title-group">
+          <span class="detail-badge font-mono">{{ modelId }}</span>
+          <span
+            class="status-tag"
+            [ngClass]="(selectedModelEntry()?.status || 'HEALTHY').toLowerCase()"
+          >
+            {{ selectedModelEntry()?.status || 'HEALTHY' }}
+          </span>
+          @if (selectedModelEntry()?.provider; as prov) {
+            <span class="provider-pill">{{ prov }}</span>
+          }
+        </div>
+        <button class="close-detail-btn" (click)="clearSelection()" title="Close model detail">
+          &times;
+        </button>
+      </div>
+
+      <div class="detail-metrics-grid">
+        <!-- Win/Loss Breakdown -->
+        <div class="metric-box">
+          <span class="box-label">Success vs Failures</span>
+          <div class="box-val-row">
+            <span class="box-num text-success tabular">{{ selectedSuccessCount() }}</span>
+            <span class="slash">/</span>
+            <span class="box-num text-danger tabular">{{ selectedFailureCount() }}</span>
+          </div>
+          <span class="box-sub tabular">
+            {{ selectedModelEntry()?.consecutiveFailures || 0 }} consecutive failures
+          </span>
+        </div>
+
+        <!-- Win Rate -->
+        <div class="metric-box">
+          <span class="box-label">Empirical Win Rate</span>
+          <span class="box-num text-brand tabular">{{ selectedWinRate() }}%</span>
+          <div class="mini-bar">
+            <div class="mini-bar-fill" [style.width.%]="selectedWinRate()"></div>
+          </div>
+        </div>
+
+        <!-- Velocity & High Water Mark -->
+        <div class="metric-box">
+          <span class="box-label">Velocity / High-Water Mark</span>
+          <div class="box-val-row">
+            <span class="box-num tabular">{{
+              formatTks(selectedModelEntry()?.avgTokensPerSec)
+            }}</span>
+            <span class="unit">avg</span>
+            <span class="slash">/</span>
+            <span class="box-num text-hwm tabular">{{ formatTks(selectedModelHwm()) }}</span>
+            <span class="unit">peak</span>
+          </div>
+          <span class="box-sub">Tokens per second</span>
+        </div>
+
+        <!-- Average Latency -->
+        <div class="metric-box">
+          <span class="box-label">Mean Latency</span>
+          <span class="box-num tabular">{{ selectedLatency() }}ms</span>
+          <span class="box-sub">Inference run duration</span>
+        </div>
+      </div>
+
+      <!-- Circumstances & Distribution (Roles and Priorities) -->
+      <div class="circumstances-row">
+        <div class="sub-card">
+          <h3>Task Types & Roles</h3>
+          <div class="chips-container">
+            @for (r of roleBreakdown(); track r.role) {
+              <div class="chip">
+                <span class="chip-name">{{ r.role }}</span>
+                <span class="chip-count font-mono tabular">{{ r.count }}</span>
+              </div>
+            } @empty {
+              <span class="empty-subtext">No role assignments recorded yet</span>
+            }
+          </div>
+        </div>
+
+        <div class="sub-card">
+          <h3>Priority Distribution</h3>
+          <div class="chips-container">
+            @for (p of priorityBreakdown(); track p.priority) {
+              <div class="chip priority" [class]="p.priority.toLowerCase()">
+                <span class="chip-name">{{ p.priority }}</span>
+                <span class="chip-count font-mono tabular">{{ p.count }}</span>
+              </div>
+            } @empty {
+              <span class="empty-subtext">No priorities recorded yet</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Historical Runs for This Model -->
+      <div class="historical-runs-section">
+        <div class="section-title-row">
+          <h3>Execution History for {{ modelId }}</h3>
+          <span class="subtext tabular"
+            >{{ selectedModelTasks().length }} total tasks executed</span
+          >
+        </div>
+
+        <div class="runs-list">
+          @for (task of paginatedModelTasks(); track task.id) {
+            <div class="run-row" (click)="drillDownTask(task)">
+              <div class="run-left">
+                <span class="status-pill" [ngClass]="task.status.toLowerCase()">
+                  {{ task.status }}
+                </span>
+                <span class="run-title">{{ task.title }}</span>
+              </div>
+
+              <div class="run-meta">
+                @if (task.role) {
+                  <span class="meta-tag role">{{ task.role }}</span>
+                }
+                @if (task.priority) {
+                  <span class="meta-tag priority">{{ task.priority }}</span>
+                }
+                <span class="meta-tag time font-mono tabular">{{
+                  formatDuration(task.durationMs)
+                }}</span>
+                <button class="inspect-btn" title="Inspect task details">Details ↗</button>
+              </div>
+            </div>
+          } @empty {
+            <div class="empty-runs">
+              <span
+                >No completed tasks for this candidate yet. Active tasks are executing in the
+                arena.</span
+              >
+            </div>
+          }
+
+          @if (totalModelTaskPages() > 1) {
+            <div class="pagination-bar">
+              <button
+                class="page-btn"
+                [disabled]="modelTaskPage() === 1"
+                (click)="setModelTaskPage(modelTaskPage() - 1)"
+              >
+                Previous
+              </button>
+              <span class="page-info font-mono">
+                Page {{ modelTaskPage() }} of {{ totalModelTaskPages() }} ({{
+                  selectedModelTasks().length
+                }}
+                tasks)
+              </span>
+              <button
+                class="page-btn"
+                [disabled]="modelTaskPage() === totalModelTaskPages()"
+                (click)="setModelTaskPage(modelTaskPage() + 1)"
+              >
+                Next
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Candidate Model Leaderboard Grid -->
+  <div class="models-grid">
+    @for (entry of metricsService.leaderboard(); track entry.modelId) {
+      <div
+        class="cacophony-card model-card clickable"
+        [class.selected]="selectedModelId() === entry.modelId"
+        (click)="selectModel(entry.modelId)"
+        title="Click to view detailed statistics and task history"
+      >
+        <div class="model-top">
+          <div class="model-badge">
+            <span class="dot" [ngClass]="entry.status.toLowerCase()"></span>
+            <span class="model-name">{{ entry.modelId }}</span>
+          </div>
+          <span class="status-tag" [ngClass]="entry.status.toLowerCase()">
+            {{ entry.status }}
+          </span>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-col">
+            <span class="metric-label">Win Rate</span>
+            <span class="metric-value win tabular">{{ entry.successRate }}%</span>
+          </div>
+          <div class="metric-col">
+            <span class="metric-label">Velocity</span>
+            <span class="metric-value font-mono">
+              <span class="fixed-tks tabular">{{ formatTks(entry.avgTokensPerSec) }}</span> tok/s
+            </span>
+          </div>
+          <div class="metric-col">
+            <span class="metric-label">Total Runs</span>
+            <span class="metric-value tabular">{{ entry.totalRuns }}</span>
+          </div>
+        </div>
+
+        <div class="bar-container">
+          <div class="bar-fill" [style.width.%]="entry.successRate"></div>
+        </div>
+
+        <div class="card-footer-action">
+          <span class="inspect-link">
+            {{ selectedModelId() === entry.modelId ? 'Viewing Profile' : 'Inspect Profile ↗' }}
+          </span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Epoch Advancement Modal -->
+  @if (showEpochModal()) {
+    <div class="modal-backdrop" (click)="closeEpochModal()">
+      <div class="modal-dialog epoch-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Start New Arena Epoch</h2>
+          <button class="close-btn" (click)="closeEpochModal()" aria-label="Close modal">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Advancing the active epoch snapshots existing metrics, restores evicted models to active
+            status, and re-establishes a clean slate for empirical model competition.
+          </p>
+          <div class="form-group">
+            <label for="epoch-name">Epoch Name</label>
+            <input
+              id="epoch-name"
+              type="text"
+              class="form-input"
+              [value]="epochNameInput()"
+              (input)="onEpochNameInput($event)"
+              placeholder="e.g. Epoch 2: Post-Pipeline Fix"
+            />
+          </div>
+          <div class="form-group">
+            <label for="epoch-reason">Reason for Epoch Reset</label>
+            <input
+              id="epoch-reason"
+              type="text"
+              class="form-input"
+              [value]="epochReasonInput()"
+              (input)="onEpochReasonInput($event)"
+              placeholder="e.g. Pipeline auto-repair deployed"
+            />
+          </div>
+          <div class="form-group">
+            <label for="epoch-notes">Notes (Optional)</label>
+            <textarea
+              id="epoch-notes"
+              class="form-textarea"
+              [value]="epochNotesInput()"
+              (input)="onEpochNotesInput($event)"
+              placeholder="Additional context or experimental hypothesis"
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="action-btn-secondary" (click)="closeEpochModal()">Cancel</button>
+          <button
+            class="action-btn-primary"
+            [disabled]="isSubmittingEpoch()"
+            (click)="submitNewEpoch()"
+          >
+            {{ isSubmittingEpoch() ? 'Advancing Epoch...' : 'Confirm New Epoch' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

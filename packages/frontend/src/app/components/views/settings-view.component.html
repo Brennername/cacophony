@@ -1,0 +1,101 @@
+<div class="view-container">
+  <div class="view-header">
+    <h1>System & Environment Settings</h1>
+    <p class="subtitle">
+      Theme personalization, Enterprise SSO authentication, and network ingress profiles
+    </p>
+  </div>
+
+  <div class="settings-grid">
+    <!-- Theme Selection Card -->
+    <div class="cacophony-card">
+      <h2>Visual Appearance & Theme</h2>
+      <p class="card-desc">
+        Select high-contrast accessibility or modern dark/light color palettes
+      </p>
+
+      <div class="theme-options">
+        @for (th of themeService.availableThemes; track th.id) {
+          <button
+            class="theme-btn"
+            [class.active]="themeService.currentTheme() === th.id"
+            (click)="themeService.setTheme(th.id)"
+          >
+            <span class="preview" [ngClass]="th.id + '-box'"></span>
+            <span class="name">{{ th.name }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Enterprise SSO Identity Card -->
+    <div class="cacophony-card">
+      <h2>Enterprise Identity & SSO</h2>
+      <p class="card-desc">Current authentication status and upstream identity provider</p>
+
+      <div class="auth-status-box">
+        <div class="status-row">
+          <span class="status-label">Active Provider:</span>
+          <span class="status-val highlight">{{ authService.activeProvider() | uppercase }}</span>
+        </div>
+
+        <div class="status-row">
+          <span class="status-label">Authentication State:</span>
+          <span class="badge" [class.authenticated]="authService.session().isAuthenticated">
+            {{ authService.session().isAuthenticated ? 'Authenticated' : 'Anonymous / Guest' }}
+          </span>
+        </div>
+
+        @if (authService.session().isAuthenticated) {
+          <div class="status-row">
+            <span class="status-label">Username:</span>
+            <span class="status-val font-mono">{{ authService.session().username }}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Roles:</span>
+            <span class="status-val">{{ authService.session().roles?.join(', ') || 'USER' }}</span>
+          </div>
+        }
+
+        <div class="auth-actions">
+          @if (authService.session().isAuthenticated) {
+            <button class="btn btn-outline" (click)="authService.logout()">Sign Out</button>
+          } @else {
+            <button class="btn btn-primary" (click)="authService.login()">
+              Sign In with {{ authService.activeProvider() | uppercase }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic Network Profile Card -->
+    <div class="cacophony-card full-width">
+      <h2>Network & Multi-Device Ingress</h2>
+      <p class="card-desc">Dynamic ingress host resolution and client network profile</p>
+
+      <div class="network-details">
+        <div class="network-row">
+          <span class="label">Client Base Origin:</span>
+          <span class="val font-mono">{{ networkInfo().baseUrl }}</span>
+        </div>
+        <div class="network-row">
+          <span class="label">Access Topology:</span>
+          <span class="badge" [class.lan]="networkInfo().isLan">
+            {{
+              networkInfo().isLoopback
+                ? 'Local Loopback'
+                : networkInfo().isLan
+                  ? 'Wi-Fi LAN / Subnet'
+                  : 'Remote Proxy'
+            }}
+          </span>
+        </div>
+        <div class="network-row">
+          <span class="label">Detected Client IP:</span>
+          <span class="val font-mono">{{ networkInfo().clientIp }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

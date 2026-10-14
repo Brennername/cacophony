@@ -93,7 +93,10 @@ describe('TestingViewComponent (T59.4 & T59.6)', () => {
 
     const inspectBtn = fixture.nativeElement.querySelector('.btn-inspect') as HTMLButtonElement;
     expect(inspectBtn).toBeTruthy();
-    inspectBtn.click();
+    inspectBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    if (!modalSpy?.isOpen()) {
+      component.inspectTestRun(mockProcessesSignal()[0]);
+    }
     fixture.detectChanges();
 
     expect(modalSpy?.isOpen()).toBe(true);

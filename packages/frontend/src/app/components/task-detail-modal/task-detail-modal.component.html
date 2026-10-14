@@ -1,0 +1,446 @@
+@if (store.selectedTask(); as task) {
+  <div
+    class="modal-backdrop"
+    (pointerdown)="onBackdropPointerDown($event)"
+    (mousedown)="onBackdropMouseDown($event)"
+    (click)="onBackdropClick($event)"
+  >
+    <div
+      class="modal-content cacophony-card"
+      [style.width.px]="customWidth()"
+      [style.height.px]="customHeight()"
+      (pointerdown)="$event.stopPropagation()"
+      (mousedown)="$event.stopPropagation()"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="modal-header">
+        <div class="header-titles">
+          <div class="badge-row">
+            <span class="badge priority">{{ task.priority }}</span>
+            <span class="badge status" [ngClass]="task.status.toLowerCase()">{{
+              task.status
+            }}</span>
+            <span class="badge role">{{ task.role }}</span>
+          </div>
+          <h3>{{ task.title }}</h3>
+          <span class="task-id">ID: {{ task.id }}</span>
+        </div>
+        <button class="close-btn touch-target" (click)="close()" aria-label="Close dialog">
+          &times;
+        </button>
+      </div>
+
+      <!-- Pull Request Notification Banner -->
+      @if (task.prUrl || prReviewData(); as review) {
+        <div class="pr-banner" [ngClass]="(prReviewData()?.verdict || 'APPROVED').toLowerCase()">
+          <div class="pr-banner-left">
+            <span class="pr-banner-icon">PR</span>
+            <div class="pr-banner-info">
+              <span class="pr-branch-pill font-mono">{{
+                task.targetBranch || prReviewData()?.targetBranch || 'main'
+              }}</span>
+              @if (task.prUrl || prReviewData()?.prUrl; as url) {
+                <a [href]="url" target="_blank" rel="noopener" class="pr-banner-link font-mono">
+                  {{ formatPrLinkText(url) }}
+                </a>
+              }
+            </div>
+          </div>
+          <div class="pr-banner-right">
+            <span
+              class="pr-verdict-badge font-mono"
+              [ngClass]="(prReviewData()?.verdict || 'APPROVED').toLowerCase()"
+            >
+              {{ prReviewData()?.verdict || 'APPROVED' }}
+            </span>
+            @if (prReviewData()?.solidComplianceScore; as score) {
+              <span class="solid-pill font-mono">SOLID: {{ score }}/100</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Tab Bar Navigation (Mobile-first horizontal scroll) -->
+      <div class="tab-bar">
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'overview'"
+          (click)="activeTab.set('overview')"
+        >
+          Overview
+        </button>
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'stages'"
+          (click)="activeTab.set('stages')"
+        >
+          Stages ({{ task.stages?.length ?? 0 }})
+        </button>
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'diffs'"
+          (click)="activeTab.set('diffs')"
+        >
+          Code Diffs
+        </button>
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'stream'"
+          (click)="activeTab.set('stream')"
+        >
+          Stream Log
+        </button>
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'cognitive'"
+          (click)="activeTab.set('cognitive')"
+        >
+          Cognitive Trace
+        </button>
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'reviews'"
+          (click)="activeTab.set('reviews')"
+        >
+          PR Reviews
+        </button>
+        <button
+          class="tab-btn touch-target"
+          [class.active]="activeTab() === 'stderr'"
+          (click)="activeTab.set('stderr')"
+        >
+          Test Stderr
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (copiedMessage()) {
+          <div class="copy-banner">{{ copiedMessage() }}</div>
+        }
+
+        <!-- 1. OVERVIEW TAB -->
+        @if (activeTab() === 'overview') {
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Model Assigned</span>
+              <span class="meta-val font-mono">{{ task.modelAssigned || 'None' }}</span>
+            </div>
+            <div class="meta-item">
+              <div class="label-with-copy">
+                <span class="meta-label">Test Command</span>
+                @if (task.testCommand) {
+                  <button
+                    class="copy-action-btn"
+                    (click)="copyText(task.testCommand, 'Test command copied!')"
+                  >
+                    Copy
+                  </button>
+                }
+              </div>
+              <span class="meta-val font-mono">{{ task.testCommand || 'None' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Focus Files</span>
+              <span class="meta-val font-mono">{{ task.focusFiles || 'All workspace' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Created At</span>
+              <span class="meta-val font-mono">{{ formatModalTimestamp(task.createdAt) }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Completed At</span>
+              <span class="meta-val font-mono">{{ formatModalTimestamp(task.completedAt) }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Pull Request</span>
+              @if (task.prUrl) {
+                <a [href]="task.prUrl" target="_blank" rel="noopener" class="pr-link"
+                  >View in Gitea</a
+                >
+              } @else {
+                <span class="meta-val">None</span>
+              }
+            </div>
+          </div>
+
+          <!-- Task Directive / Prompt -->
+          <div class="section-block">
+            <div class="header-with-action">
+              <h4 class="section-title">Architectural Directive / Prompt</h4>
+              @if (task.prompt) {
+                <button class="copy-action-btn" (click)="copyText(task.prompt, 'Prompt copied!')">
+                  Copy Prompt
+                </button>
+              }
+            </div>
+            <div class="prompt-box">
+              <pre class="prompt-text">{{
+                task.prompt || 'No extended prompt directive supplied.'
+              }}</pre>
+            </div>
+          </div>
+        }
+
+        <!-- 2. STAGES TAB -->
+        @if (activeTab() === 'stages') {
+          <div class="section-block">
+            @if (task.stages && task.stages.length > 0) {
+              <div class="stages-list">
+                @for (st of task.stages; track st.id) {
+                  <div class="stage-item" [ngClass]="st.stageStatus.toLowerCase()">
+                    <div class="stage-top">
+                      <span class="stage-name">{{ st.stageName | uppercase }}</span>
+                      @if (st.startedAt) {
+                        <span class="stage-time font-mono">{{
+                          formatStageTime(st.startedAt)
+                        }}</span>
+                      }
+                      <span class="stage-status">{{ st.stageStatus }}</span>
+                      <span class="stage-duration font-mono">{{
+                        st.durationMs ? st.durationMs + 'ms' : 'Active'
+                      }}</span>
+                    </div>
+                    @if (st.logOutput) {
+                      <pre class="stage-log"><code>{{ st.logOutput }}</code></pre>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-tab-state">No execution stages recorded yet.</div>
+            }
+          </div>
+        }
+
+        <!-- 3. CODE DIFFS TAB -->
+        @if (activeTab() === 'diffs') {
+          <div class="section-block">
+            <div class="header-with-action">
+              <h4 class="section-title">Applied Code Modifications</h4>
+              <button
+                class="copy-action-btn"
+                (click)="copyText(task.logSnippet || '', 'Diffs copied!')"
+              >
+                Copy Diffs
+              </button>
+            </div>
+            <div class="diff-box">
+              <pre
+                class="diff-content font-mono"
+              ><code>{{ task.logSnippet || '// No code diffs currently recorded for this task.' }}</code></pre>
+            </div>
+          </div>
+        }
+
+        <!-- 4. STREAM LOG TAB -->
+        @if (activeTab() === 'stream') {
+          <div class="section-block">
+            <div class="header-with-action">
+              <h4 class="section-title">Live Terminal & Inference Output Stream</h4>
+              <button
+                class="copy-action-btn"
+                (click)="copyText(getStreamContent(task), 'Terminal log copied!')"
+              >
+                Copy Logs
+              </button>
+            </div>
+            <div class="full-terminal-box">
+              <div class="terminal-bar">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+                <span class="terminal-title font-mono">{{ task.id }} (LLM Token Stream)</span>
+              </div>
+              <pre class="full-terminal-content"><code>{{ getStreamContent(task) }}</code></pre>
+            </div>
+          </div>
+        }
+
+        <!-- 5. COGNITIVE TRACE TAB (Reasoning & Consensus Distillation) -->
+        @if (activeTab() === 'cognitive') {
+          <div class="section-block">
+            @if (task.status === 'RUNNING' && store.liveReasoningBuffer(); as liveThoughts) {
+              <!-- Live Streaming Cognitive Trace -->
+              <div class="cognitive-trace-container">
+                <div class="header-with-action">
+                  <div class="opinion-title-row">
+                    <span class="opinion-tag">LIVE STREAMING COGNITIVE TRACE</span>
+                    <span class="confidence-badge font-mono">LIVE IN VRAM</span>
+                  </div>
+                  <button
+                    class="copy-action-btn"
+                    (click)="copyText(liveThoughts, 'Cognitive trace copied!')"
+                  >
+                    Copy Thoughts
+                  </button>
+                </div>
+                <div class="thoughts-terminal-box">
+                  <pre class="thoughts-content font-mono"><code>{{ liveThoughts }}</code></pre>
+                </div>
+              </div>
+            } @else if (opinionData(); as op) {
+              <!-- Distilled Opinion Card -->
+              <div class="distilled-opinion-card">
+                <div class="opinion-header">
+                  <div class="opinion-title-row">
+                    <span class="opinion-tag">DISTILLED ARCHITECTURAL OPINION</span>
+                    <span class="confidence-badge font-mono"
+                      >Confidence: {{ Math.round(op.opinion.confidenceScore * 100) }}%</span
+                    >
+                  </div>
+                  <p class="opinion-summary">{{ op.opinion.summary }}</p>
+                </div>
+
+                @if (op.opinion.keyDecisions.length > 0) {
+                  <div class="opinion-section">
+                    <span class="opinion-subhead">Key Decisions</span>
+                    <ul class="opinion-list">
+                      @for (decision of op.opinion.keyDecisions; track decision) {
+                        <li>{{ decision }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (op.opinion.identifiedRisks.length > 0) {
+                  <div class="opinion-section risks">
+                    <span class="opinion-subhead">Identified Risks & Edge Cases</span>
+                    <ul class="opinion-list">
+                      @for (risk of op.opinion.identifiedRisks; track risk) {
+                        <li>{{ risk }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+
+              <!-- Raw <think> Stream Output -->
+              <div class="cognitive-trace-container">
+                <div class="header-with-action">
+                  <h4 class="section-title">Raw &lt;think&gt; Cognitive Trace</h4>
+                  @if (op.reasoningTranscript) {
+                    <button
+                      class="copy-action-btn"
+                      (click)="copyText(op.reasoningTranscript, 'Cognitive trace copied!')"
+                    >
+                      Copy Thoughts
+                    </button>
+                  }
+                </div>
+                <div class="thoughts-terminal-box">
+                  <pre
+                    class="thoughts-content font-mono"
+                  ><code>{{ op.reasoningTranscript || '// No internal reasoning emitted for this model.' }}</code></pre>
+                </div>
+              </div>
+            } @else if (loadingOpinion()) {
+              <div class="empty-tab-state">Distilling model cognitive trace and opinion...</div>
+            } @else {
+              <div class="empty-tab-state">
+                No cognitive trace or reasoning data recorded for this task.
+              </div>
+            }
+          </div>
+        }
+
+        <!-- 6. PR REVIEWS TAB -->
+        @if (activeTab() === 'reviews') {
+          <div class="section-block">
+            @if (prReviewData(); as review) {
+              <div class="pr-reviews-container">
+                <div class="review-header-card" [ngClass]="review.verdict.toLowerCase()">
+                  <div class="review-summary-row">
+                    <span class="verdict-tag font-mono">{{ review.verdict }}</span>
+                    <span class="score-badge font-mono"
+                      >SOLID Adherence: {{ review.solidComplianceScore }}/100</span
+                    >
+                    @if (review.merged) {
+                      <span class="merged-badge font-mono">MERGED</span>
+                    }
+                  </div>
+                  <p class="review-notes-text">{{ review.reviewNotes }}</p>
+                </div>
+
+                @if (review.comments && review.comments.length > 0) {
+                  <div class="review-comments-section">
+                    <h4 class="section-title">
+                      Line-Level Architectural Feedback ({{ review.comments.length }})
+                    </h4>
+                    <div class="comments-list">
+                      @for (comment of review.comments; track comment.path + comment.lineNumber) {
+                        <div class="comment-item" [ngClass]="comment.severity">
+                          <div class="comment-item-header">
+                            <span class="comment-path font-mono"
+                              >{{ comment.path }}:{{ comment.lineNumber }}</span
+                            >
+                            <span class="comment-severity font-mono">{{
+                              comment.severity | uppercase
+                            }}</span>
+                          </div>
+                          <p class="comment-body">{{ comment.comment }}</p>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else if (loadingReview()) {
+              <div class="empty-tab-state">
+                Fetching automated PR review and SOLID compliance evaluation...
+              </div>
+            } @else {
+              <div class="empty-tab-state">
+                No automated Pull Request review recorded for this task.
+              </div>
+            }
+          </div>
+        }
+
+        <!-- 7. TEST STDERR TAB -->
+        @if (activeTab() === 'stderr') {
+          <div class="section-block">
+            <div class="header-with-action">
+              <h4 class="section-title">Automated Test Execution Stderr</h4>
+              <button
+                class="copy-action-btn"
+                (click)="copyText(extractTestStderr(task), 'Stderr copied!')"
+              >
+                Copy Stderr
+              </button>
+            </div>
+            <div class="stderr-box">
+              <pre class="stderr-content font-mono"><code>{{ extractTestStderr(task) }}</code></pre>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline touch-target" (click)="close()">Close</button>
+        <div
+          class="modal-resize-grip"
+          (pointerdown)="startResize($event)"
+          (mousedown)="$event.stopPropagation()"
+          (click)="$event.stopPropagation()"
+          title="Drag to resize dialog"
+          aria-label="Resize dialog"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 1L1 11M11 5L5 11M11 9L9 11"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+}

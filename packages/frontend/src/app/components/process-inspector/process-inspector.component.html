@@ -1,0 +1,41 @@
+<div class="cacophony-card process-card">
+  <div class="header">
+    <div>
+      <h2>Spawned Process Inspector</h2>
+      <span class="subtext">Non-model test runners, linters, builds, and git worktrees</span>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="process-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Command</th>
+          <th>Duration</th>
+          <th>Exit Code</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (proc of processes(); track proc.id) {
+          <tr>
+            <td>
+              <span class="status-indicator" [ngClass]="proc.status.toLowerCase()">
+                {{ proc.status }}
+              </span>
+            </td>
+            <td class="command-cell">
+              <code>{{ proc.command }}</code>
+            </td>
+            <td class="num-cell">{{ proc.durationMs }}ms</td>
+            <td class="num-cell">
+              <span class="exit-badge" [ngClass]="proc.exitCode === 0 ? 'ok' : 'err'">
+                {{ proc.exitCode ?? '...' }}
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,127 @@
+<div class="view-container">
+  <div class="view-header">
+    <div>
+      <h1>Distributed Fleet Nodes & Accelerators</h1>
+      <p class="subtitle">
+        Multi-machine coordinator topology, heterogeneous GPUs, and thermal telemetry
+      </p>
+    </div>
+    <div class="header-stat">
+      <span class="stat-num">{{ nodes().length }}</span>
+      <span class="stat-label">Active Cluster Nodes</span>
+    </div>
+  </div>
+
+  <div class="fleet-grid">
+    @for (node of nodes(); track node.nodeId) {
+      <div class="cacophony-card node-card">
+        <div class="node-header">
+          <div class="node-title">
+            <span class="status-dot" [ngClass]="node.status.toLowerCase()"></span>
+            <strong>{{ node.hostname }}</strong>
+            <span class="node-ip font-mono">{{ node.ipAddress }}</span>
+          </div>
+          <span class="gpu-badge">{{ node.gpuType }}</span>
+        </div>
+
+        <div class="node-stats">
+          <div class="stat-col">
+            <span class="label">GPU Load</span>
+            <span class="val font-mono">{{ node.gpuBusyPercent }}%</span>
+          </div>
+          <div class="stat-col">
+            <span class="label">VRAM</span>
+            <span class="val font-mono">{{ node.vramUsedMb }} / {{ node.vramTotalMb }} MB</span>
+          </div>
+          <div class="stat-col">
+            <span class="label">Temperature</span>
+            <span class="val font-mono" [class.warn]="node.temperatureCelsius >= 80">
+              {{ node.temperatureCelsius }}°C
+            </span>
+          </div>
+          <div class="stat-col">
+            <span class="label">Tasks</span>
+            <span class="val font-mono">{{ node.activeTasksCount }} running</span>
+          </div>
+        </div>
+
+        <div class="bar-container">
+          <div class="bar-fill" [style.width.%]="node.gpuBusyPercent"></div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div
+    class="cacophony-card diagnostic-tools-card"
+    [class.all-good]="diagnosticReport()?.allRequiredInstalled"
+  >
+    <div class="tools-header">
+      <div class="tools-title">
+        <h3>
+          {{
+            diagnosticReport()?.allRequiredInstalled
+              ? 'Host Monitoring Utilities Verified'
+              : 'Recommended Hardware Diagnostic & Sensor Utilities'
+          }}
+        </h3>
+        <p class="subtitle">
+          {{
+            diagnosticReport()?.allRequiredInstalled
+              ? 'All native Linux monitoring tools are detected. VRAM bus, thermal sensors, and GPU compute ring inspection are fully enabled.'
+              : 'Install missing native Linux monitoring tools to enable live VRAM bus, thermal sensors, and GPU compute ring inspection.'
+          }}
+        </p>
+      </div>
+      @if (!diagnosticReport()?.allRequiredInstalled) {
+        <button class="copy-btn" (click)="copyInstallCommand()">{{ copyButtonText() }}</button>
+      }
+    </div>
+
+    @if (!diagnosticReport()?.allRequiredInstalled && diagnosticReport()?.unifiedInstallCommand) {
+      <div class="code-snippet font-mono">
+        <code>{{ diagnosticReport()?.unifiedInstallCommand }}</code>
+      </div>
+    }
+
+    @if (
+      diagnosticReport()?.missingCapabilities && diagnosticReport()!.missingCapabilities.length > 0
+    ) {
+      <div class="missing-capabilities-box">
+        <span class="missing-title">Disabled Capabilities Due to Missing Tools:</span>
+        <ul class="missing-list">
+          @for (cap of diagnosticReport()!.missingCapabilities; track cap) {
+            <li>{{ cap }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="tools-pills">
+      @if (diagnosticReport()?.tools) {
+        @for (tool of diagnosticReport()!.tools; track tool.binaryName) {
+          <span
+            class="tool-pill"
+            [class.installed]="tool.installed"
+            [class.missing]="!tool.installed"
+          >
+            <span class="status-indicator"></span>
+            <strong>{{ tool.binaryName }}:</strong>
+            {{
+              tool.installed ? tool.version || 'installed' : 'missing (' + tool.packageName + ')'
+            }}
+          </span>
+        }
+      } @else {
+        <span class="tool-pill"
+          ><strong>radeontop:</strong> AMD VRAM & GTT aperture bus monitor</span
+        >
+        <span class="tool-pill"><strong>sensors:</strong> SoC voltage & package thermals</span>
+        <span class="tool-pill"
+          ><strong>btop:</strong> Real-time swap, memory & thread monitor</span
+        >
+        <span class="tool-pill"><strong>vulkaninfo:</strong> Compute queue & heap inspector</span>
+      }
+    </div>
+  </div>
+</div>

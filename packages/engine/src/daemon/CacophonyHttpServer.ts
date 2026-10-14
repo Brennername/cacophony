@@ -1659,6 +1659,38 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c3b. REST API: POST /api/fleet/heartbeat - Worker Node Telemetry Heartbeat (T86.1.3)
+    if (url.pathname === "/api/fleet/heartbeat" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", () => {
+        try {
+          const payload = JSON.parse(body);
+          if (!payload || !payload.nodeId) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required nodeId in heartbeat payload" }));
+            return;
+          }
+
+          const monitor = this.daemon.getFleetHealthMonitor();
+          if (monitor) {
+            monitor.recordHeartbeat(payload);
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            success: true,
+            nodeId: payload.nodeId,
+            recordedAt: new Date().toISOString()
+          }));
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON in heartbeat request body" }));
+        }
+      });
+      return;
+    }
+
     if (url.pathname === "/api/fleet/nodes" && req.method === "GET") {
       const coordinator = this.daemon.getFleetCoordinator();
       const remoteNodes = coordinator ? coordinator.listNodes() : [];

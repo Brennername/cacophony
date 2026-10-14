@@ -1,0 +1,90 @@
+<div class="windowed-trend-card" aria-label="Windowed execution success trend">
+  <div class="trend-header">
+    <div class="header-titles">
+      <span class="trend-title">Windowed Convergence Trend</span>
+      @if (isRegressionDetected()) {
+        <span class="regression-alert">Regression Detected</span>
+      }
+    </div>
+
+    <!-- Interactive Window Controls (T85.4.2) -->
+    <div class="trend-controls">
+      <div class="control-group">
+        <label for="window-size-select" class="control-label">Window:</label>
+        <select
+          id="window-size-select"
+          class="trend-select"
+          [ngModel]="windowSize()"
+          (ngModelChange)="setWindowSize($event)"
+          aria-label="Select sliding window size"
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="1000">1000</option>
+          <option value="total">Total</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="filter-select" class="control-label">Filter:</label>
+        <select
+          id="filter-select"
+          class="trend-select"
+          [ngModel]="qualificationFilter()"
+          (ngModelChange)="setFilter($event)"
+          aria-label="Select qualification filter"
+        >
+          <option value="all">All Qualified</option>
+          <option value="role">By Role</option>
+          <option value="model">By Model</option>
+          <option value="branch">By Branch</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Responsive SVG Trend Line (T85.4.1) -->
+  <div class="chart-wrapper">
+    <svg
+      class="trend-svg"
+      viewBox="0 0 300 80"
+      preserveAspectRatio="none"
+      role="img"
+      aria-label="Success rate trend line graph"
+    >
+      <!-- Grid line baselines -->
+      <line x1="0" y1="20" x2="300" y2="20" class="grid-line" stroke-dasharray="2,2" />
+      <line x1="0" y1="40" x2="300" y2="40" class="grid-line" stroke-dasharray="2,2" />
+      <line x1="0" y1="60" x2="300" y2="60" class="grid-line" stroke-dasharray="2,2" />
+
+      <!-- Target benchmark reference line (80%) -->
+      <line x1="0" y1="16" x2="300" y2="16" class="benchmark-line" stroke-dasharray="4,3" />
+
+      <!-- Trend Area Fill -->
+      <polygon [attr.points]="svgAreaPoints()" class="trend-area" />
+
+      <!-- Dynamic Trend Line -->
+      <polyline
+        [attr.points]="svgPolylinePoints()"
+        class="trend-stroke"
+        [ngClass]="trendColorClass()"
+      />
+    </svg>
+
+    <div class="chart-legend">
+      <div class="legend-item">
+        <span class="legend-color stroke-nominal"></span>
+        <span class="legend-text">Window Rate: {{ currentWindowRate() }}%</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color stroke-benchmark"></span>
+        <span class="legend-text">Target: 80%</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-text">Sample Depth: {{ sampleDepth() }}</span>
+      </div>
+    </div>
+  </div>
+</div>

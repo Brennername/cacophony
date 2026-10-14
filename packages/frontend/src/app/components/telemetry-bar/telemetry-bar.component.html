@@ -1,0 +1,20 @@
+<div class="telemetry-bar-container" aria-label="System telemetry status bar">
+  <!-- Success Rate Status Pill (T57.5.2) -->
+  <div class="telemetry-pill success-pill" [ngClass]="statusColorClass()">
+    <span class="pill-dot"></span>
+    <span class="pill-label">Success</span>
+    <span class="pill-value tabular">{{ rollingSuccessRate() }}%</span>
+  </div>
+
+  <!-- Active Model Pill -->
+  <div class="telemetry-pill model-pill">
+    <span class="pill-label">Model</span>
+    <span class="pill-value truncate">{{ activeModel() }}</span>
+  </div>
+
+  <!-- Thermal & VRAM Indicators (hidden on ultra-compact mobile viewports) -->
+  <div class="telemetry-pill hardware-pill hide-on-mobile">
+    <span class="pill-label">GPU</span>
+    <span class="pill-value tabular">{{ gpuBusy() }}% / {{ edgeTemp() }}C</span>
+  </div>
+</div>

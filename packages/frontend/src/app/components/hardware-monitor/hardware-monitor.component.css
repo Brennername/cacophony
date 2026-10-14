@@ -1,0 +1,474 @@
+:host {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.monitor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.device-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.device-tag {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.1rem 0.4rem;
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+.header-title-group h2 {
+  font-size: 1.125rem;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.subtext {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.model-badge {
+  display: inline-flex;
+  flex-direction: column;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 120px;
+  box-sizing: border-box;
+}
+
+.model-badge.clickable {
+  cursor: pointer;
+}
+
+.model-badge.clickable:hover {
+  border-color: var(--color-brand);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.model-badge-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.model-badge .badge-label {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.625rem;
+}
+
+.badge-link-hint {
+  font-size: 0.625rem;
+  color: var(--color-brand);
+}
+
+.fixed-model-name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-accent);
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* High-Water Mark Meter */
+.hwm-badge {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 140px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.hwm-badge.clickable {
+  cursor: pointer;
+}
+
+.hwm-badge.clickable:hover {
+  border-color: #10b981;
+}
+
+.hwm-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.hwm-peak {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.hwm-bar-track {
+  position: relative;
+  height: 4px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: 0.1rem 0;
+}
+
+.hwm-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, #3b82f6, #10b981);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.hwm-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #10b981;
+  transform: translateX(-100%);
+}
+
+.hwm-numbers {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fixed-val {
+  display: inline-block;
+  min-width: 4ch;
+  text-align: right;
+  font-weight: 600;
+}
+
+.num-live {
+  color: #10b981;
+}
+
+.num-run {
+  color: var(--text-secondary);
+}
+
+.hwm-numbers .slash {
+  color: var(--border-strong);
+}
+
+.hwm-numbers .unit {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  margin-left: 0.1rem;
+}
+
+.velocity-historic-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.625rem;
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.hist-label {
+  color: var(--text-muted);
+  font-size: 0.5625rem;
+  font-weight: 600;
+}
+
+.hist-val {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.variance-badge {
+  font-weight: 700;
+  font-size: 0.625rem;
+  padding: 0.05rem 0.25rem;
+  border-radius: 2px;
+  background: var(--bg-surface-elevated, rgba(255, 255, 255, 0.05));
+}
+
+.variance-badge.text-green {
+  color: #10b981;
+}
+
+.variance-badge.text-red {
+  color: #ef4444;
+}
+
+.mhz-gauge-wrapper {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+/* Sensor Grid */
+.sensors-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .sensors-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .sensors-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.sensor-block {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sensor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+}
+
+.sensor-header .name {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.val-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sensor-header .val {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.fixed-temp {
+  min-width: 6ch;
+  text-align: right;
+}
+.fixed-vram {
+  min-width: 14ch;
+  text-align: right;
+}
+.fixed-load {
+  min-width: 4ch;
+  text-align: right;
+}
+.fixed-cpu {
+  min-width: 5ch;
+  text-align: right;
+}
+.fixed-ram {
+  min-width: 14ch;
+  text-align: right;
+}
+.fixed-gtt {
+  min-width: 10ch;
+  text-align: right;
+}
+
+.zone-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.zone-badge.blue {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+.zone-badge.green {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+.zone-badge.yellow {
+  background: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+}
+.zone-badge.orange {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+}
+.zone-badge.red {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.zone-badge.fire {
+  background: rgba(255, 0, 51, 0.3);
+  color: #ff0033;
+  animation: pulse-danger 1.5s infinite;
+}
+
+@keyframes pulse-danger {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(255, 0, 51, 0.6);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 2px rgba(255, 0, 51, 0.2);
+  }
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.progress-fill.brand {
+  background: var(--color-brand);
+}
+.progress-fill.emerald {
+  background: #10b981;
+}
+.progress-fill.amber {
+  background: #f59e0b;
+}
+.progress-fill.cyan {
+  background: #06b6d4;
+}
+.progress-fill.purple {
+  background: #a855f7;
+}
+
+.sub-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.text-danger {
+  color: #ff0033;
+  font-weight: 700;
+}
+
+/* Area-Under-Curve (AOC) Sparklines */
+.chart-container {
+  width: 100%;
+  height: 38px;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.sparkline {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.aoc-fill {
+  stroke: none;
+}
+
+.aoc-line {
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.line-brand {
+  stroke: var(--color-brand);
+}
+.line-emerald {
+  stroke: #10b981;
+}
+.line-amber {
+  stroke: #f59e0b;
+}
+.line-cyan {
+  stroke: #06b6d4;
+}
+.line-purple {
+  stroke: #a855f7;
+}

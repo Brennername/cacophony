@@ -1324,6 +1324,12 @@ export class AutonomousWorkerPipeline {
             throw new Error(`Pre-PR verification failed: ${summary}`);
           }
 
+          // Anti-hallucination guardrail: verify worktree contains actual modified files
+          const worktreeStatus = await this.worktreeManager.getStatus(worktree.worktreePath);
+          if (!worktreeStatus || worktreeStatus.trim().length === 0) {
+            throw new Error(`Pre-PR verification failed: task ${taskId} produced zero file modifications in worktree`);
+          }
+
           await this.worktreeManager.commitWorktree(
             worktree.worktreePath,
             `feat(${taskId}): ${groomed.task.title}\n\nAutomated commit by Cacophony Engine.`

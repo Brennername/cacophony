@@ -1,0 +1,28 @@
+.view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 100%;
+}
+
+.view-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.view-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.view-body > * {
+  flex: 1;
+}

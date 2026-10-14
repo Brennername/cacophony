@@ -1,0 +1,330 @@
+<div class="cacophony-card monitor-card">
+  <!-- Header: Hardware Identification & Active Model High-Water Mark HUD -->
+  <div class="card-header">
+    <div class="header-title-group">
+      <div class="device-selector-row">
+        <h2>Hardware Sensors & APU Telemetry</h2>
+        <div class="device-tags-list">
+          <span class="device-tag primary">AMD Cezanne Vega (Local APU)</span>
+          @for (acc of accelerators(); track acc.id) {
+            @if (!acc.isPrimaryApu) {
+              <span class="device-tag secondary">{{ acc.name }} ({{ acc.pciBus }})</span>
+            }
+          }
+        </div>
+      </div>
+      <span class="subtext">Direct sysfs kernel telemetry & active accelerator pipeline</span>
+    </div>
+
+    <div class="header-badges">
+      <!-- Active Model Badge with Link to Model Stats Page -->
+      <div
+        class="model-badge clickable"
+        (click)="navigateToModelStats(metrics().activeModel)"
+        title="Click to view full performance telemetry for this model"
+      >
+        <div class="model-badge-top">
+          <span class="badge-label">Active Model</span>
+          <span class="badge-link-hint">↗</span>
+        </div>
+        <span class="badge-val fixed-model-name">{{ metrics().activeModel }}</span>
+      </div>
+
+      <!-- Token Velocity High-Water Mark Meter with Live vs Historic Comparison -->
+      <div
+        class="hwm-badge clickable"
+        (click)="navigateToModelStats(metrics().activeModel)"
+        title="Current token velocity vs recorded high-water mark peak and model historical average"
+      >
+        <div class="hwm-header">
+          <span class="hwm-label">Velocity / HWM</span>
+          <span class="hwm-peak font-mono">PEAK: {{ highWaterMark().toFixed(1) }} tok/s</span>
+        </div>
+        <div class="hwm-bar-track">
+          <div class="hwm-bar-fill" [style.width.%]="velocityPercentOfHwm()"></div>
+          <div class="hwm-marker" [style.left.%]="100" title="High-Water Mark"></div>
+        </div>
+        <div class="hwm-numbers font-mono">
+          <span class="fixed-val num-live" title="Live Velocity">{{
+            currentLiveVelocity().toFixed(1)
+          }}</span>
+          <span class="slash">/</span>
+          <span class="fixed-val num-run" title="Current Run Velocity">{{
+            currentRunVelocity().toFixed(1)
+          }}</span>
+          <span class="unit">tok/s</span>
+        </div>
+        <!-- Historic Baseline & Comparison Variance Badge -->
+        <div class="velocity-historic-row font-mono">
+          <span class="hist-label">HIST AVG:</span>
+          <span class="hist-val">{{ historicVelocity().toFixed(1) }} tok/s</span>
+          @if (velocityVariancePercent() !== null) {
+            <span
+              class="variance-badge"
+              [class.text-green]="velocityVariancePercent()! >= 0"
+              [class.text-red]="velocityVariancePercent()! < 0"
+            >
+              {{ velocityVariancePercent()! >= 0 ? '+' : ''
+              }}{{ velocityVariancePercent()!.toFixed(0) }}%
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Primary Telemetry 6-Card Grid -->
+  <div class="sensors-grid">
+    <!-- 1. APU / Edge Temperature Card -->
+    <div class="sensor-block" [ngClass]="tempZoneClass()">
+      <div class="sensor-header">
+        <span class="name">APU Temperature</span>
+        <div class="val-group">
+          <span class="val font-mono fixed-temp">{{ metrics().edgeTempCelsius.toFixed(1) }}°C</span>
+          <span class="gap-5"></span>
+          <span class="zone-badge" [ngClass]="tempZoneClass()">{{ tempZoneLabel() }}</span>
+        </div>
+      </div>
+
+      <!-- Multi-gradient temperature progress bar (105C = 100%) -->
+      <div class="progress-bar temp-track">
+        <div
+          class="progress-fill temp-fill"
+          [style.width.%]="tempPercentOfMax()"
+          [style.background]="tempFillColor()"
+        ></div>
+      </div>
+
+      <div class="sub-stat-row">
+        <span>Range: 0 - 105°C</span>
+        <span [class.text-danger]="metrics().edgeTempCelsius >= 100">
+          Cutoff: 105°C {{ metrics().edgeTempCelsius >= 105 ? '(HALT TRIGGERED)' : '' }}
+        </span>
+      </div>
+
+      <!-- Moving Temperature Sparkline with Cold-to-Hot Danger Gradient -->
+      <div class="chart-container">
+        <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="tempDangerAoc" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25" />
+              <stop offset="60%" stop-color="#10b981" stop-opacity="0.30" />
+              <stop offset="75%" stop-color="#eab308" stop-opacity="0.40" />
+              <stop offset="85%" stop-color="#f97316" stop-opacity="0.55" />
+              <stop offset="93%" stop-color="#ef4444" stop-opacity="0.75" />
+              <stop offset="100%" stop-color="#ff0033" stop-opacity="0.95" />
+            </linearGradient>
+          </defs>
+          <path
+            class="aoc-fill"
+            [attr.d]="getAreaPath(store.tempHistory(), 20, 105)"
+            fill="url(#tempDangerAoc)"
+          />
+          <path
+            class="aoc-line"
+            [attr.d]="getLinePath(store.tempHistory(), 20, 105)"
+            [attr.stroke]="tempFillColor()"
+          />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 2. VRAM Utilization Card -->
+    <div class="sensor-block">
+      <div class="sensor-header">
+        <span class="name">VRAM Memory</span>
+        <span class="val font-mono fixed-vram"
+          >{{ metrics().vramUsedMb }} / {{ metrics().vramTotalMb }} MB ({{
+            metrics().vramPercent.toFixed(1)
+          }}%)</span
+        >
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill brand" [style.width.%]="metrics().vramPercent"></div>
+      </div>
+      <div class="sub-stat-row">
+        <span>Avail: {{ metrics().vramAvailMb }} MB</span>
+        <span>Clock: {{ metrics().mclkMhz }} MHz</span>
+      </div>
+      <div class="chart-container">
+        <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="vramAoc" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path
+            class="aoc-fill"
+            [attr.d]="getAreaPath(store.vramHistory(), 0, 100)"
+            fill="url(#vramAoc)"
+          />
+          <path class="aoc-line line-brand" [attr.d]="getLinePath(store.vramHistory(), 0, 100)" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 3. GPU / APU Load Card -->
+    <div class="sensor-block">
+      <div class="sensor-header">
+        <span class="name">GPU Load</span>
+        <span class="val font-mono fixed-load">{{ metrics().gpuBusyPercent }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill emerald" [style.width.%]="metrics().gpuBusyPercent"></div>
+      </div>
+      <div class="sub-stat-row">
+        <span>Core: {{ metrics().sclkMhz }} MHz</span>
+        <span>Power: {{ metrics().pptPowerW }} W</span>
+      </div>
+
+      <!-- Real-Time Processor Core SCLK MHz Tri-Metric Rolling Gauge -->
+      <div class="mhz-gauge-wrapper">
+        <app-tri-metric-gauge
+          [liveValue]="metrics().sclkMhz"
+          unit="MHz"
+          label="Core Frequency"
+          [minRange]="0"
+          [maxRange]="2200"
+          [digits]="0"
+        />
+      </div>
+      <div class="chart-container">
+        <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="gpuAoc" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#10b981" stop-opacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path
+            class="aoc-fill"
+            [attr.d]="getAreaPath(store.gpuLoadHistory(), 0, 100)"
+            fill="url(#gpuAoc)"
+          />
+          <path
+            class="aoc-line line-emerald"
+            [attr.d]="getLinePath(store.gpuLoadHistory(), 0, 100)"
+          />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 4. CPU Load & Host System Card -->
+    <div class="sensor-block">
+      <div class="sensor-header">
+        <span class="name">CPU Load</span>
+        <span class="val font-mono fixed-cpu">{{ metrics().cpuBusyPercent.toFixed(1) }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill amber" [style.width.%]="metrics().cpuBusyPercent"></div>
+      </div>
+      <div class="sub-stat-row">
+        <span>VDDGFX: {{ metrics().vddgfxMv }} mV</span>
+        <span>Power: {{ metrics().pptPowerW }} W</span>
+      </div>
+      <div class="chart-container">
+        <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="cpuAoc" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path
+            class="aoc-fill"
+            [attr.d]="getAreaPath(store.cpuLoadHistory(), 0, 100)"
+            fill="url(#cpuAoc)"
+          />
+          <path
+            class="aoc-line line-amber"
+            [attr.d]="getLinePath(store.cpuLoadHistory(), 0, 100)"
+          />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 5. System RAM (Memory) Card -->
+    <div class="sensor-block">
+      <div class="sensor-header">
+        <span class="name">System Memory (RAM)</span>
+        <span class="val font-mono fixed-ram"
+          >{{ metrics().systemMemoryUsedMb }} / {{ metrics().systemMemoryTotalMb }} MB ({{
+            metrics().systemMemoryPercent.toFixed(1)
+          }}%)</span
+        >
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill cyan" [style.width.%]="metrics().systemMemoryPercent"></div>
+      </div>
+      <div class="sub-stat-row">
+        <span
+          >Free:
+          {{ Math.max(0, metrics().systemMemoryTotalMb - metrics().systemMemoryUsedMb) }} MB</span
+        >
+        <span>Usage: {{ metrics().systemMemoryPercent.toFixed(1) }}%</span>
+      </div>
+      <div class="chart-container">
+        <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="sysMemAoc" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path
+            class="aoc-fill"
+            [attr.d]="getAreaPath(store.sysMemHistory(), 0, 100)"
+            fill="url(#sysMemAoc)"
+          />
+          <path class="aoc-line line-cyan" [attr.d]="getLinePath(store.sysMemHistory(), 0, 100)" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 6. GTT Shared Memory Card -->
+    <div class="sensor-block">
+      <div class="sensor-header">
+        <span class="name">GTT Shared Memory</span>
+        <span class="val font-mono fixed-gtt"
+          >{{ metrics().gttUsedMb }} / {{ metrics().gttTotalMb }} MB</span
+        >
+      </div>
+      <div class="progress-bar">
+        <div
+          class="progress-fill purple"
+          [style.width.%]="
+            metrics().gttTotalMb ? (metrics().gttUsedMb / metrics().gttTotalMb) * 100 : 0
+          "
+        ></div>
+      </div>
+      <div class="sub-stat-row">
+        <span>SOC/VDDNB: {{ metrics().vddnbMv }} mV</span>
+        <span
+          >Alloc:
+          {{
+            metrics().gttTotalMb
+              ? ((metrics().gttUsedMb / metrics().gttTotalMb) * 100).toFixed(1)
+              : 0
+          }}%</span
+        >
+      </div>
+      <div class="chart-container">
+        <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="gttAoc" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#a855f7" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#a855f7" stop-opacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path
+            class="aoc-fill"
+            [attr.d]="getAreaPath(store.gttHistory(), 0, 100)"
+            fill="url(#gttAoc)"
+          />
+          <path class="aoc-line line-purple" [attr.d]="getLinePath(store.gttHistory(), 0, 100)" />
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>

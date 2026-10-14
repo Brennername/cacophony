@@ -1,0 +1,67 @@
+<div class="tri-metric-container">
+  @if (label()) {
+    <div class="gauge-header">
+      <span class="gauge-label">{{ label() }}</span>
+      <span class="gauge-live font-mono">
+        <span class="live-val">{{ liveValue().toFixed(digits()) }}</span>
+        <span class="unit-text">{{ unit() }}</span>
+      </span>
+    </div>
+  }
+
+  <!-- Multi-Point Gauge Track -->
+  <div class="gauge-track">
+    <!-- Live Fill Bar -->
+    <div class="live-fill" [style.width.%]="livePercent()"></div>
+
+    <!-- Trough (Low) Marker in Red -->
+    <div
+      class="metric-marker marker-trough"
+      [style.left.%]="troughPercent()"
+      [title]="'Trough Low: ' + trough().toFixed(digits()) + ' ' + unit()"
+    >
+      <div class="marker-pin pin-red"></div>
+    </div>
+
+    <!-- Average Marker in Green -->
+    <div
+      class="metric-marker marker-avg"
+      [style.left.%]="avgPercent()"
+      [title]="'Window Average: ' + avg().toFixed(digits()) + ' ' + unit()"
+    >
+      <div class="marker-pin pin-green"></div>
+    </div>
+
+    <!-- Peak (High) Marker in Red -->
+    <div
+      class="metric-marker marker-peak"
+      [style.left.%]="peakPercent()"
+      [title]="'Peak High: ' + peak().toFixed(digits()) + ' ' + unit()"
+    >
+      <div class="marker-pin pin-red"></div>
+    </div>
+
+    <!-- Live Needle / Progress Head -->
+    <div
+      class="progress-head"
+      [style.left.%]="livePercent()"
+      [title]="'Live: ' + liveValue().toFixed(digits()) + ' ' + unit()"
+    ></div>
+  </div>
+
+  <!-- KPI Readouts Row: Low (Red) | Avg (Green) | Peak (Red) -->
+  <div class="metric-stats-row font-mono">
+    <div class="stat-item stat-trough" title="Average Low / Trough">
+      <span class="stat-label">LOW</span>
+      <span class="stat-val text-red">{{ trough().toFixed(digits()) }}</span>
+    </div>
+    <div class="stat-item stat-avg" title="Window Running Average">
+      <span class="stat-label">AVG</span>
+      <span class="stat-val text-green">{{ avg().toFixed(digits()) }}</span>
+    </div>
+    <div class="stat-item stat-peak" title="Window Peak">
+      <span class="stat-label">PEAK</span>
+      <span class="stat-val text-red">{{ peak().toFixed(digits()) }}</span>
+    </div>
+  </div>
+</div>

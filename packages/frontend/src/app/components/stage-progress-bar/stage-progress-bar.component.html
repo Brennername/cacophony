@@ -1,0 +1,56 @@
+<div class="stage-progress-container">
+  <div class="header-row">
+    <div class="stage-info">
+      <span class="active-badge">{{ activeStageLabel() }}</span>
+      <span class="step-counter">Stage {{ currentStageNumber() }} / {{ stages().length }}</span>
+    </div>
+    <div class="velocity-meter">
+      @if (isLiveActive()) {
+        <span class="live-pill active">LIVE</span>
+      } @else if (hasRun()) {
+        <span class="live-pill paused">PAUSED</span>
+      }
+      <span class="velocity-val fixed-tks">{{ formattedTokensPerSec() }}</span>
+      <span class="velocity-unit">tok/s</span>
+      @if (formattedRunTokensPerSec(); as runVal) {
+        <span class="run-caption font-mono"
+          >(run <span class="fixed-tks">{{ runVal }}</span
+          >)</span
+        >
+      }
+      <span class="overall-percent">{{ progressPercent() }}%</span>
+    </div>
+  </div>
+
+  <!-- Segmented Stage Progress Bar -->
+  <div class="segmented-bar">
+    @for (stage of stages(); track stage.index) {
+      <div
+        class="stage-segment"
+        [ngClass]="stage.status.toLowerCase()"
+        [title]="stage.label + ' (' + stage.status + ')'"
+        (click)="selectStage(stage)"
+      >
+        <div class="segment-fill"></div>
+      </div>
+    }
+  </div>
+
+  <!-- Expandable Stage Drawer Details -->
+  @if (expandedStage(); as selected) {
+    <div class="stage-drawer">
+      <div class="drawer-header">
+        <strong>Stage Details: {{ selected.label }}</strong>
+        <button class="close-btn" (click)="expandedStage.set(null)">&times;</button>
+      </div>
+      <div class="drawer-stats">
+        <span
+          >Status:
+          <strong [ngClass]="selected.status.toLowerCase()">{{ selected.status }}</strong></span
+        >
+        <span>Duration: {{ selected.durationMs ?? 0 }}ms</span>
+        <span>Tokens: {{ selected.tokensReceived ?? 0 }} received</span>
+      </div>
+    </div>
+  }
+</div>

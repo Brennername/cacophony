@@ -1,0 +1,32 @@
+<div class="timeline-container">
+  <header class="timeline-header">
+    <span class="timeline-title">Conversation Stream</span>
+    <div class="metrics-badge">
+      <span>Total Tokens: {{ totalTokens() }}</span>
+    </div>
+  </header>
+
+  <div class="messages-list">
+    @for (msg of messages(); track msg.id) {
+      <article class="message-card" [class]="msg.role">
+        <div class="message-meta">
+          <span class="role-badge">{{ msg.role.toUpperCase() }}</span>
+          @if (msg.tokens) {
+            <span class="tokens-badge">{{ msg.tokens }} tokens</span>
+          }
+          @if (msg.toolName) {
+            <span class="tool-badge">Tool: {{ msg.toolName }}</span>
+          }
+        </div>
+
+        <div class="message-body">
+          <pre class="content-text">{{ msg.content }}</pre>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty-state">
+        <p>No messages in this session yet. Submit a prompt below to begin.</p>
+      </div>
+    }
+  </div>
+</div>

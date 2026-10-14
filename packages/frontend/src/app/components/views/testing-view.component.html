@@ -1,0 +1,238 @@
+<div class="testing-view-container">
+  <!-- View Header -->
+  <header class="view-header">
+    <div class="header-titles">
+      <h1>Live Test Execution & Subprocess Engine</h1>
+      <p class="subtitle">
+        Real-time test runner stdout/stderr, subprocess lifecycle, and pass/fail metrics
+      </p>
+    </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="copyLog()"
+        [attr.aria-label]="copiedFeedback() ? 'Copied' : 'Copy test output log'"
+      >
+        {{ copiedFeedback() ? 'Copied to Clipboard' : 'Copy Output Log' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="clearLog()"
+        aria-label="Clear test output log"
+      >
+        Clear Log
+      </button>
+    </div>
+  </header>
+
+  <!-- Summary Metric Counters (T59.2.3) -->
+  <section class="summary-counters" aria-label="Test execution metrics">
+    <div class="counter-card">
+      <span class="counter-label">Total Tests Run</span>
+      <span class="counter-value">{{ totalTestsRun() }}</span>
+    </div>
+    <div class="counter-card nominal">
+      <span class="counter-label">Passed</span>
+      <span class="counter-value">{{ passedCount() }}</span>
+    </div>
+    <div class="counter-card danger">
+      <span class="counter-label">Failed</span>
+      <span class="counter-value">{{ failedCount() }}</span>
+    </div>
+    <div class="counter-card brand">
+      <span class="counter-label">Pass Rate</span>
+      <span class="counter-value">{{ passRatePercent() }}%</span>
+    </div>
+    <div class="counter-card">
+      <span class="counter-label">Avg Duration</span>
+      <span class="counter-value">{{ avgDurationMs() }}ms</span>
+    </div>
+  </section>
+
+  <!-- Active Test Execution Card (T59.2.2) -->
+  <section class="active-test-card" aria-label="Active test execution">
+    <div class="card-header">
+      <div class="card-title-group">
+        <span class="pulse-indicator" [class.active]="isActiveTestRunning()"></span>
+        <h2>Active Test Subprocess</h2>
+      </div>
+      <span class="status-pill" [ngClass]="activeTestStatus().toLowerCase()">
+        {{ activeTestStatus() }}
+      </span>
+    </div>
+
+    <div class="card-body">
+      <div class="meta-row">
+        <span class="meta-key">Command:</span>
+        <code class="meta-code">{{ activeTestCommand() }}</code>
+      </div>
+      @if (activeTestTargetFiles().length > 0) {
+        <div class="meta-row">
+          <span class="meta-key">Focus Files:</span>
+          <div class="focus-files-list">
+            @for (file of activeTestTargetFiles(); track file) {
+              <span class="file-pill">{{ file }}</span>
+            }
+          </div>
+        </div>
+      }
+      <div class="meta-row">
+        <span class="meta-key">Elapsed Duration:</span>
+        <span class="duration-display">{{ activeTestDurationMs() }}ms</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Test Output Terminal (T59.3.1, T59.3.2, T59.3.3) -->
+  <section class="test-terminal-section" aria-label="Live test output terminal">
+    <div class="terminal-toolbar">
+      <div class="toolbar-title">
+        <span class="terminal-dot red"></span>
+        <span class="terminal-dot yellow"></span>
+        <span class="terminal-dot green"></span>
+        <span class="terminal-label">test-runner-stream</span>
+      </div>
+      <div class="toolbar-controls">
+        <button
+          type="button"
+          class="toolbar-toggle"
+          [class.active]="autoScroll()"
+          (click)="toggleAutoScroll()"
+          [attr.aria-pressed]="autoScroll()"
+        >
+          Auto-Scroll: {{ autoScroll() ? 'ON' : 'OFF' }}
+        </button>
+        <span class="line-counter">{{ testOutput().length }} lines</span>
+      </div>
+    </div>
+
+    <div #terminalContainer class="terminal-body" role="log" aria-live="polite">
+      @if (testOutput().length === 0) {
+        <div class="terminal-empty">
+          <span>Waiting for test subprocess stream output...</span>
+        </div>
+      } @else {
+        <div class="terminal-lines">
+          @for (line of testOutput(); track $index) {
+            <div class="terminal-line">
+              <span class="line-number">{{ $index + 1 }}</span>
+              <span class="line-text" [ngClass]="classifyLine(line)">{{ line }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Historical Test Filter Controls (T59.4.3) -->
+  <section class="filter-controls-section" aria-label="Test run filters">
+    <div class="filter-tabs" role="tablist">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="filterStatus() === 'ALL'"
+        (click)="filterTests('ALL')"
+        role="tab"
+        [attr.aria-selected]="filterStatus() === 'ALL'"
+      >
+        ALL ({{ store.processes().length }})
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="filterStatus() === 'PASSED'"
+        (click)="filterTests('PASSED')"
+        role="tab"
+        [attr.aria-selected]="filterStatus() === 'PASSED'"
+      >
+        PASSED ({{ passedCount() }})
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="filterStatus() === 'FAILED'"
+        (click)="filterTests('FAILED')"
+        role="tab"
+        [attr.aria-selected]="filterStatus() === 'FAILED'"
+      >
+        FAILED ({{ failedCount() }})
+      </button>
+    </div>
+
+    <div class="search-box">
+      <input
+        type="search"
+        class="search-input"
+        placeholder="Filter by command or task ID..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        aria-label="Filter test runs"
+      />
+    </div>
+  </section>
+
+  <!-- Historical Test Runs Table (T59.4.1, T59.4.2) -->
+  <section class="history-table-section" aria-label="Historical test executions">
+    <div class="table-container history-table">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Task Title</th>
+            <th>Test Command</th>
+            <th>Duration</th>
+            <th>Timestamp</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody class="table-rows">
+          @if (filteredProcesses().length === 0) {
+            <tr>
+              <td colspan="6" class="empty-cell">No historical test runs match filter criteria.</td>
+            </tr>
+          } @else {
+            @for (proc of filteredProcesses(); track proc.id) {
+              <tr class="test-run-row" (click)="inspectTestRun(proc)">
+                <td>
+                  <span class="status-badge" [ngClass]="proc.status.toLowerCase()">
+                    {{ proc.status === 'SUCCESS' ? 'PASSED' : proc.status }}
+                  </span>
+                </td>
+                <td class="task-title-cell">
+                  <span class="task-title">{{ proc.taskTitle || proc.id }}</span>
+                </td>
+                <td class="command-cell">
+                  <code>{{ proc.command }}</code>
+                </td>
+                <td class="duration-cell tabular">{{ proc.durationMs || 0 }}ms</td>
+                <td class="timestamp-cell">
+                  {{ proc.startedAt | date: 'HH:mm:ss' }}
+                </td>
+                <td class="actions-cell">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm btn-inspect"
+                    (click)="inspectTestRun(proc); $event.stopPropagation()"
+                    aria-label="Inspect test execution details"
+                  >
+                    Inspect
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Historical Subprocess Inspector Table -->
+  <section class="processes-table-section">
+    <app-process-inspector />
+  </section>
+
+  <!-- Deep Test Run Inspection Modal (T59.6) -->
+  <app-test-run-modal #testRunModal />
+</div>

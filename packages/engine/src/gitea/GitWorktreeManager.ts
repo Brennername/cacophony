@@ -159,9 +159,18 @@ export class GitWorktreeManager {
   }
 
   /**
+   * Retrieves the git status porcelain output from the worktree.
+   */
+  public async getStatus(worktreePath?: string): Promise<string> {
+    const cwd = worktreePath ?? this.repositoryRoot;
+    const { stdout } = await execFileAsync("git", ["status", "--porcelain"], { cwd });
+    return stdout.trim();
+  }
+
+  /**
    * Commits all changes staged in the worktree.
    */
-  public async commitWorktree(worktreePath: string, commitMessage: string): Promise<string> {
+  public async commitWorktree(worktreePath: string, commitMessage: string, allowEmpty = false): Promise<string> {
     await execFileAsync("git", ["add", "-A"], { cwd: worktreePath });
     await execFileAsync("git", ["reset", "HEAD", "--", "node_modules", "packages/*/dist", "dist"], { cwd: worktreePath }).catch(() => {});
     try {
@@ -175,6 +184,9 @@ export class GitWorktreeManager {
         (err?.stderr && err.stderr.includes("nothing to commit")) ||
         (err?.message && err.message.includes("nothing to commit"))
       ) {
+        if (!allowEmpty) {
+          throw new Error("Nothing to commit: worktree contains zero modified files");
+        }
         const { stdout } = await execFileAsync(
           "git",
           ["commit", "--allow-empty", "-m", commitMessage],

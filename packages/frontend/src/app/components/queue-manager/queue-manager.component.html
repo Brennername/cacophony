@@ -1,0 +1,106 @@
+<div class="cacophony-card queue-card">
+  <div class="card-header">
+    <div>
+      <h2>Task Queue & Scheduling</h2>
+      <span class="subtext">{{ pendingCount() }} tasks pending</span>
+      <span class="role-pill">{{ currentUserRole() }}</span>
+    </div>
+    <div class="actions" *ngIf="canMutateTasks()">
+      <button
+        class="btn"
+        [ngClass]="schedulerPaused() ? 'btn-primary' : 'btn-outline'"
+        (click)="toggleScheduler()"
+      >
+        {{ schedulerPaused() ? 'Resume Scheduler' : 'Pause Scheduler' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Add Task Form (Restricted to OPERATOR and ADMIN) -->
+  <form class="add-form" *ngIf="canMutateTasks()" (ngSubmit)="submitTask()">
+    <input
+      type="text"
+      class="input-title"
+      placeholder="New task title or directive..."
+      [value]="newTitle()"
+      (input)="newTitle.set($any($event.target).value)"
+    />
+    <select
+      class="select-priority"
+      [value]="newPriority()"
+      (change)="newPriority.set($any($event.target).value)"
+    >
+      <option value="P0">P0 (Urgent)</option>
+      <option value="P1">P1 (Normal)</option>
+      <option value="P2">P2 (Low)</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Enqueue</button>
+  </form>
+
+  <!-- Task List with 25-item Pagination -->
+  <div class="task-list">
+    @for (task of paginatedTasks(); track task.id; let idx = $index) {
+      <div class="task-row clickable" (click)="drillDown(task)">
+        <div class="priority-col">
+          <span class="tag" [ngClass]="task.priority">{{ task.priority }}</span>
+        </div>
+        <div class="info-col">
+          <span class="title">{{ task.title }}</span>
+          <div class="meta-row">
+            <span class="role-badge">{{ task.role }}</span>
+            <span class="model-tag font-mono">{{ task.modelAssigned || 'Auto' }}</span>
+            @if (task.createdAt) {
+              <span class="time-tag font-mono tabular">{{
+                formatCreatedTime(task.createdAt)
+              }}</span>
+            }
+          </div>
+        </div>
+        <div class="status-col">
+          <span class="status-pill" [ngClass]="task.status.toLowerCase()">
+            {{ task.status }}
+          </span>
+        </div>
+        <div class="order-col">
+          <button
+            class="icon-btn"
+            [disabled]="(currentPage() - 1) * pageSize + idx === 0"
+            (click)="move(task.id, 'up')"
+          >
+            ▲
+          </button>
+          <button
+            class="icon-btn"
+            [disabled]="(currentPage() - 1) * pageSize + idx === tasks().length - 1"
+            (click)="move(task.id, 'down')"
+          >
+            ▼
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Pagination Footer -->
+  @if (totalPages() > 1) {
+    <div class="pagination-bar">
+      <button
+        class="page-btn"
+        [disabled]="currentPage() === 1"
+        (click)="setPage(currentPage() - 1)"
+      >
+        Previous
+      </button>
+      <span class="page-info font-mono">
+        Page {{ currentPage() }} of {{ totalPages() }} ({{ tasks().length }} tasks)
+      </span>
+      <button
+        class="page-btn"
+        [disabled]="currentPage() === totalPages()"
+        (click)="setPage(currentPage() + 1)"
+      >
+        Next
+      </button>
+    </div>
+  }
+</div>

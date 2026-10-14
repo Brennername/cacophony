@@ -1,0 +1,188 @@
+<div class="cacophony-card inspector-card">
+  <div class="header-row">
+    <div>
+      <h2>Active Task Inspector</h2>
+      <span class="subtext">Real-time LLM stage pipeline & token stream</span>
+    </div>
+    @if (activeTask(); as task) {
+      <div class="speed-hud">
+        @if (heartbeatStatus(); as hb) {
+          <div
+            class="heartbeat-badge"
+            [ngClass]="hb.badgeClass"
+            [title]="'Generation Watchdog: ' + hb.state"
+          >
+            <span class="heartbeat-dot"></span>
+            <span class="heartbeat-text font-mono">{{ hb.label }}</span>
+          </div>
+        }
+        <div class="speed-badge" [class.live-active]="isStreamActive()">
+          <span class="hud-pill" [class.live]="isStreamActive()" [class.paused]="!isStreamActive()">
+            {{ isStreamActive() ? 'LIVE' : 'PAUSED' }}
+          </span>
+          <div class="hud-metric">
+            <span class="metric-caption"></span>
+            <span class="num fixed-tks">{{ formattedLiveVelocity() }}</span>
+          </div>
+          <span class="hud-slash">/</span>
+          <div class="hud-metric">
+            <span class="metric-caption">RUN</span>
+            <span class="num fixed-tks">{{ formattedRunVelocity() }}</span>
+          </div>
+          <span class="unit">tok/s</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (activeTask(); as task) {
+    <div
+      class="task-info-banner clickable"
+      (click)="drillDown(task)"
+      title="Click to drill down into task details"
+    >
+      <span class="badge priority">{{ task.priority }}</span>
+      <span class="task-title">{{ task.title }}</span>
+      <span class="badge model-badge font-mono">{{ activeTaskModel() }}</span>
+      <span class="badge role">{{ task.role }}</span>
+      <span class="drill-hint">Details</span>
+    </div>
+
+    <!-- 6-Stage Granular Segmented Progress Bar -->
+    <app-stage-progress-bar
+      [progressPercent]="taskProgressPercent()"
+      [tokensPerSec]="liveVelocity() > 0 ? liveVelocity() : runVelocity()"
+      [runTokensPerSec]="runVelocity()"
+      [isLive]="isStreamActive()"
+      [currentStageNumber]="currentStageIndex() + 1"
+      [activeStageLabel]="activeStageDisplayLabel()"
+      [stages]="stageProgressBarItems()"
+    />
+
+    <!-- Stage Stepper Pipeline -->
+    <div class="stepper-container">
+      @for (step of pipelineSteps(); track step.name; let idx = $index; let last = $last) {
+        <div
+          class="step"
+          [class.done]="step.status === 'SUCCESS'"
+          [class.active]="step.status === 'RUNNING'"
+          [class.failed]="step.status === 'FAILURE'"
+        >
+          <div class="circle">{{ idx + 1 }}</div>
+          <span>{{ step.label }}</span>
+          @if (
+            (step.name === 'remediation' || step.name === 'pr_review') &&
+            (step.status === 'RUNNING' || step.status === 'SUCCESS')
+          ) {
+            <span class="stage-pr-indicator" title="Pull Request Gate">
+              PR
+              @if (task.targetBranch) {
+                <span class="branch-pill font-mono">{{ task.targetBranch }}</span>
+              }
+            </span>
+          }
+        </div>
+        @if (!last) {
+          <div class="line" [class.done]="step.status === 'SUCCESS'"></div>
+        }
+      }
+    </div>
+
+    <!-- Live Terminal Stream Preview (Dual Channel: Code vs Cognitive Trace) -->
+    <div class="terminal-box">
+      <div class="terminal-bar">
+        <div class="stream-channel-tabs">
+          <button
+            class="stream-tab-btn"
+            [class.active]="activeStreamChannel() === 'combined'"
+            (click)="activeStreamChannel.set('combined')"
+          >
+            Output Stream
+          </button>
+          <button
+            class="stream-tab-btn cognitive"
+            [class.active]="activeStreamChannel() === 'cognitive'"
+            (click)="activeStreamChannel.set('cognitive')"
+          >
+            Cognitive Trace
+            @if (liveReasoningBuffer().length > 0) {
+              <span class="trace-indicator"></span>
+            }
+          </button>
+          <button
+            class="stream-tab-btn testing"
+            [class.active]="activeStreamChannel() === 'testing'"
+            (click)="activeStreamChannel.set('testing')"
+          >
+            Test Execution
+            @if (liveTestOutput().length > 0) {
+              <span class="trace-indicator test-ind"></span>
+            }
+          </button>
+          <button
+            class="stream-tab-btn ast"
+            [class.active]="activeStreamChannel() === 'ast'"
+            (click)="activeStreamChannel.set('ast')"
+          >
+            AST Scrubbing
+            @if (liveAstScrubbing().length > 0) {
+              <span class="trace-indicator ast-ind"></span>
+            }
+          </button>
+          <button
+            class="stream-tab-btn review"
+            [class.active]="activeStreamChannel() === 'review'"
+            (click)="activeStreamChannel.set('review')"
+          >
+            PR Review
+            @if (liveReviewCritique().length > 0) {
+              <span class="trace-indicator review-ind"></span>
+            }
+          </button>
+        </div>
+        <span class="terminal-title">task: {{ task.id }}</span>
+        <button class="expand-btn" (click)="drillDown(task)">Expand Log</button>
+      </div>
+      @if (activeStreamChannel() === 'cognitive') {
+        <pre
+          #terminalContent
+          class="terminal-content cognitive-content"
+        ><code>{{ liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...' }}</code></pre>
+      } @else if (activeStreamChannel() === 'testing') {
+        <pre
+          #terminalContent
+          class="terminal-content test-content"
+        ><code>{{ liveTestOutput() || '// Awaiting test runner stdout/stderr stream...' }}</code></pre>
+      } @else if (activeStreamChannel() === 'ast') {
+        <pre
+          #terminalContent
+          class="terminal-content ast-content"
+        ><code>{{ liveAstScrubbing() || '// Awaiting deterministic AST rule engine & diagnostic repairs...' }}</code></pre>
+      } @else if (activeStreamChannel() === 'review') {
+        <pre
+          #terminalContent
+          class="terminal-content review-content"
+        ><code>{{ liveReviewCritique() || '// Awaiting PR review evaluation & gate status...' }}</code></pre>
+      } @else {
+        <pre
+          #terminalContent
+          class="terminal-content"
+        ><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+      }
+    </div>
+
+    <!-- Interactive Gantt Transport Timeline -->
+    <app-gantt-transport
+      [taskId]="activeTask()?.id ?? null"
+      [modelName]="activeTaskModel()"
+      [spans]="activeTaskSpans()"
+      [totalDurationMs]="activeTaskTotalDuration()"
+      [isRunning]="isStreamActive() || activeTask()?.status === 'RUNNING'"
+    />
+  } @else {
+    <div class="empty-state">
+      <p>No active tasks currently executing in the arena.</p>
+      <span class="subtext">Scheduler is ready for incoming tasks.</span>
+    </div>
+  }
+</div>

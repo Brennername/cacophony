@@ -1,0 +1,46 @@
+<div class="panel-container">
+  <div class="test-loop-section">
+    <div class="section-header">
+      <span class="section-title">Automated Test Feedback Loop</span>
+      <button class="rerun-btn" (click)="reRunTests.emit()">Run Scoped Tests</button>
+    </div>
+
+    <div class="test-status-card" [class]="testState().status">
+      <div class="status-summary">
+        <span class="status-badge">{{ testState().status.toUpperCase() }}</span>
+        <span class="runner-tag">Runner: {{ testState().runnerName }}</span>
+        <span class="counts-tag"
+          >{{ testState().passedCount }} pass • {{ testState().failedCount }} fail</span
+        >
+        <span class="duration-tag">{{ testState().durationMs }}ms</span>
+      </div>
+
+      @if (testState().failureSnippet) {
+        <div class="failure-drawer">
+          <pre class="failure-text">{{ testState().failureSnippet }}</pre>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="diagnostics-section">
+    <div class="section-header">
+      <span class="section-title">LSP Compiler Diagnostics ({{ diagnostics().length }})</span>
+    </div>
+
+    <div class="diagnostics-list">
+      @for (d of diagnostics(); track d.id) {
+        <div class="diagnostic-item" [class]="d.severity">
+          <div class="diag-header">
+            <span class="severity-tag">{{ d.severity.toUpperCase() }}</span>
+            <span class="code-tag">TS{{ d.code }}</span>
+            <span class="location-tag">{{ d.filePath }}:{{ d.line }}:{{ d.character }}</span>
+          </div>
+          <p class="diag-message">{{ d.message }}</p>
+        </div>
+      } @empty {
+        <div class="clean-state">No compiler diagnostics detected (Clean Workspace).</div>
+      }
+    </div>
+  </div>
+</div>

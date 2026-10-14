@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-process-drawer',
-  template: '<div class="component-container">{{ processCount }} System Processes Active - {{ totalMemoryUsage.toFixed(2) }} GB RSS</div>',
-  styles: []
+  templateUrl: './process-drawer.component.html',
+  styleUrl: './process-drawer.component.css',
 })
 export class ProcessDrawerComponent implements OnInit {
   processes: { id: number; name: string; memoryUsage: number }[] = [];

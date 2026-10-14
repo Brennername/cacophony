@@ -1,0 +1,26 @@
+<div class="terminal-container">
+  <div class="terminal-header">
+    <div class="window-controls">
+      <span class="control-dot close"></span>
+      <span class="control-dot minimize"></span>
+      <span class="control-dot expand"></span>
+    </div>
+    <span class="terminal-title">{{ title() }}</span>
+    <div class="actions">
+      <button class="clear-btn" (click)="onClear.emit()">Clear</button>
+    </div>
+  </div>
+
+  <div #terminalBody class="terminal-body">
+    @if (lines().length === 0) {
+      <div class="empty-state">Awaiting output stream...</div>
+    } @else {
+      @for (line of lines(); track $index) {
+        <div class="log-line" [ngClass]="getLineClass(line)">
+          <span class="line-number tabular">{{ $index + 1 }}</span>
+          <span class="line-text">{{ line }}</span>
+        </div>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,10 @@
+.auth-card {
+  max-width: 450px;
+  margin: 4rem auto;
+  text-align: center;
+  padding: 2.5rem;
+}
+.subtext {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+}
