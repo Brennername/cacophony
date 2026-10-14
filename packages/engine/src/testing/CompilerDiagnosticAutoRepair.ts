@@ -324,26 +324,40 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         prependCode += hookShim;
         repairsApplied.push(`Injected 'node:test' runner function imports`);
       } else {
-        const importRegex =
-          /(import\s*\{)([^}]+)(\}\s*from\s*['"]node:test['"])/;
-        if (importRegex.test(currentCode)) {
-          currentCode = currentCode.replace(importRegex, (_m, p1, p2, p3) => {
-            const existing = p2
-              .split(",")
-              .map((s: string) => s.trim())
-              .filter(Boolean);
-            for (const fn of missingTestFns) {
-              const baseName = fn.split(" as ")[0]!.trim();
-              if (
-                !existing.some(
-                  (e: string) => e === fn || e.startsWith(baseName),
-                )
-              ) {
-                existing.push(fn);
+        const lines = currentCode.split("\n");
+        let repaired = false;
+        const newLines = lines.map((line) => {
+          if (
+            !repaired &&
+            line.trim().startsWith("import") &&
+            (line.includes("'node:test'") || line.includes('"node:test"'))
+          ) {
+            const openBrace = line.indexOf("{");
+            const closeBrace = line.indexOf("}");
+            if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
+              const existing = line
+                .slice(openBrace + 1, closeBrace)
+                .split(",")
+                .map((s: string) => s.trim())
+                .filter(Boolean);
+              for (const fn of missingTestFns) {
+                const baseName = fn.split(" as ")[0]!.trim();
+                if (
+                  !existing.some(
+                    (e: string) => e === fn || e.startsWith(baseName),
+                  )
+                ) {
+                  existing.push(fn);
+                }
               }
+              repaired = true;
+              return `${line.slice(0, openBrace + 1)} ${existing.join(", ")} ${line.slice(closeBrace)}`;
             }
-            return `${p1} ${existing.join(", ")} ${p3}`;
-          });
+          }
+          return line;
+        });
+        if (repaired) {
+          currentCode = newLines.join("\n");
           repairsApplied.push(
             `Added missing test runner functions to 'node:test' import: ${missingTestFns.join(", ")}`,
           );
@@ -358,12 +372,20 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         /Cannot find module 'vscode'/i.test(d.message),
     );
     if (hasVscodeMissing) {
-      const updated = currentCode.replace(
-        /import(?:\s+type)?\s+(?:\{[^}]*\}|[a-zA-Z0-9_$*]+|\*\s+as\s+[a-zA-Z0-9_$]+)\s+from\s+['"]vscode['"];?\n?/g,
-        "import * as ts from 'typescript';\n",
-      );
-      if (updated !== currentCode) {
-        currentCode = updated;
+      const lines = currentCode.split("\n");
+      let replaced = false;
+      const newLines = lines.map((line) => {
+        if (
+          line.trim().startsWith("import") &&
+          (line.includes("'vscode'") || line.includes('"vscode"'))
+        ) {
+          replaced = true;
+          return "import * as ts from 'typescript';";
+        }
+        return line;
+      });
+      if (replaced) {
+        currentCode = newLines.join("\n");
         repairsApplied.push(
           "Replaced hallucinated 'vscode' import with 'typescript'",
         );
@@ -523,12 +545,16 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
               );
             }
           } else if (modPath === "vue") {
-            const updated = currentCode.replace(
-              /import(?:\s+type)?\s+(?:\{[^}]*\}|[a-zA-Z0-9_$*]+|\*\s+as\s+[a-zA-Z0-9_$]+)\s+from\s+['"]vue['"];?\n?/g,
-              "",
+            const lines = currentCode.split("\n");
+            const newLines = lines.filter(
+              (line) =>
+                !(
+                  line.trim().startsWith("import") &&
+                  (line.includes("'vue'") || line.includes('"vue"'))
+                ),
             );
-            if (updated !== currentCode) {
-              currentCode = updated;
+            if (newLines.length !== lines.length) {
+              currentCode = newLines.join("\n");
               repairsApplied.push(
                 "Removed hallucinated 'vue' import statement in Angular project",
               );
@@ -545,12 +571,16 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         /Cannot find module 'express'/i.test(d.message),
     );
     if (hasExpressMissing) {
-      const updated = currentCode.replace(
-        /import(?:\s+type)?\s+(?:\{[^}]*\}|[a-zA-Z0-9_$*]+|\*\s+as\s+[a-zA-Z0-9_$]+)\s+from\s+['"]express['"];?\n?/g,
-        "",
+      const lines = currentCode.split("\n");
+      const newLines = lines.filter(
+        (line) =>
+          !(
+            line.trim().startsWith("import") &&
+            (line.includes("'express'") || line.includes('"express"'))
+          ),
       );
-      if (updated !== currentCode) {
-        currentCode = updated;
+      if (newLines.length !== lines.length) {
+        currentCode = newLines.join("\n");
         repairsApplied.push("Removed hallucinated 'express' import statement");
       }
     }
@@ -653,13 +683,28 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       if (symMatch && symMatch[1]) {
         const sym = symMatch[1];
         if (currentCode.includes("@angular/core")) {
-          currentCode = currentCode.replace(
-            /(import\s*\{)([^}]+)(\}\s*from\s*['"]@angular\/core['"])/,
-            (_match, p1, p2, p3) => `${p1} ${p2.trim()}, ${sym} ${p3}`,
-          );
-          repairsApplied.push(
-            `Added missing '${sym}' to '@angular/core' imports`,
-          );
+          const lines = currentCode.split("\n");
+          let updated = false;
+          const newLines = lines.map((line) => {
+            if (
+              !updated &&
+              line.trim().startsWith("import") &&
+              (line.includes("'@angular/core'") || line.includes('"@angular/core"'))
+            ) {
+              const closeBrace = line.indexOf("}");
+              if (closeBrace !== -1) {
+                updated = true;
+                return `${line.slice(0, closeBrace).trimEnd()}, ${sym} ${line.slice(closeBrace)}`;
+              }
+            }
+            return line;
+          });
+          if (updated) {
+            currentCode = newLines.join("\n");
+            repairsApplied.push(
+              `Added missing '${sym}' to '@angular/core' imports`,
+            );
+          }
         } else if (isComponentFile || currentCode.includes("@Component")) {
           currentCode =
             `import { ${sym} } from '@angular/core';\n` + currentCode;
@@ -703,10 +748,25 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     if (hasUnknownBinding) {
       if (!currentCode.includes("CUSTOM_ELEMENTS_SCHEMA")) {
         if (currentCode.includes("@angular/core")) {
-          currentCode = currentCode.replace(
-            /(import\s*\{)([^}]+)(\}\s*from\s*['"]@angular\/core['"])/,
-            "$1$2, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA $3",
-          );
+          const lines = currentCode.split("\n");
+          let updated = false;
+          const newLines = lines.map((line) => {
+            if (
+              !updated &&
+              line.trim().startsWith("import") &&
+              (line.includes("'@angular/core'") || line.includes('"@angular/core"'))
+            ) {
+              const closeBrace = line.indexOf("}");
+              if (closeBrace !== -1) {
+                updated = true;
+                return `${line.slice(0, closeBrace).trimEnd()}, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA ${line.slice(closeBrace)}`;
+              }
+            }
+            return line;
+          });
+          if (updated) {
+            currentCode = newLines.join("\n");
+          }
         } else {
           currentCode =
             "import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';\n" +
@@ -786,19 +846,20 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         const cssMatch = diag.message.match(/['"]([^'"]+\.css)['"]/i);
         if (cssMatch && cssMatch[1]) {
           const cssPath = cssMatch[1];
-          const escaped = cssPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const styleUrlRegex = new RegExp(
-            `styleUrl:\\s*['"]${escaped}['"]`,
-            "g",
-          );
-          const styleUrlsRegex = new RegExp(
-            `styleUrls:\\s*\\[[^\\]]*${escaped}[^\\]]*\\]`,
-            "g",
-          );
-          let updated = currentCode.replace(styleUrlRegex, `styles: []`);
-          updated = updated.replace(styleUrlsRegex, `styles: []`);
-          if (updated !== currentCode) {
-            currentCode = updated;
+          const lines = currentCode.split("\n");
+          let styleReplaced = false;
+          const newLines = lines.map((line) => {
+            if (
+              line.includes("styleUrl") &&
+              (line.includes(`'${cssPath}'`) || line.includes(`"${cssPath}"`))
+            ) {
+              styleReplaced = true;
+              return line.replace(/styleUrls?:\s*(?:\[[^\]]*\]|['"][^'"]*['"])/, "styles: []");
+            }
+            return line;
+          });
+          if (styleReplaced) {
+            currentCode = newLines.join("\n");
             repairsApplied.push(
               `Replaced missing stylesheet '${cssPath}' with inline styles`,
             );
@@ -811,11 +872,11 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       targetFilePath &&
       (currentCode.includes("styleUrl") || currentCode.includes("styleUrls"))
     ) {
-      const match = currentCode.match(
-        /styleUrls?:\s*(?:['"]([^'"]+\.css)['"]|\[\s*['"]([^'"]+\.css)['"]\s*\])/,
-      );
+      const match =
+        currentCode.match(/styleUrls?:\s*['"]([^'"]+\.css)['"]/) ||
+        currentCode.match(/styleUrls?:\s*\[\s*['"]([^'"]+\.css)['"]\s*\]/);
       if (match) {
-        const relCss = match[1] || match[2];
+        const relCss = match[1];
         if (relCss && relCss.startsWith(".")) {
           const absCss = path.resolve(path.dirname(targetFilePath), relCss);
           if (!fs.existsSync(absCss)) {
@@ -830,10 +891,9 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 `Created missing stylesheet file at '${relCss}'`,
               );
             } catch {
-              currentCode = currentCode.replace(
-                /styleUrls?:\s*(?:['"][^'"]+['"]|\[[^\]]*\])/g,
-                "styles: []",
-              );
+              currentCode = currentCode
+                .replace(/styleUrls?:\s*['"][^'"]+['"]/g, "styles: []")
+                .replace(/styleUrls?:\s*\[[^\]]*\]/g, "styles: []");
               repairsApplied.push(
                 `Replaced unresolvable stylesheet '${relCss}' with inline styles`,
               );
@@ -852,13 +912,22 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         ),
     );
     if (hasMissingSuper) {
-      currentCode = currentCode.replace(
-        /(constructor\s*\([^)]*\)\s*\{)(?!\s*super\s*\()/g,
-        "$1\n    super(...([] as any));",
-      );
-      repairsApplied.push(
-        "Injected required 'super(...([] as any))' call into derived class constructor",
-      );
+      const ctorIdx = currentCode.indexOf("constructor(");
+      if (ctorIdx !== -1) {
+        const braceIdx = currentCode.indexOf("{", ctorIdx);
+        if (braceIdx !== -1) {
+          const bodyPreview = currentCode.slice(braceIdx + 1, braceIdx + 100);
+          if (!bodyPreview.includes("super(")) {
+            currentCode =
+              currentCode.slice(0, braceIdx + 1) +
+              "\n    super(...([] as any));" +
+              currentCode.slice(braceIdx + 1);
+            repairsApplied.push(
+              "Injected required 'super(...([] as any))' call into derived class constructor",
+            );
+          }
+        }
+      }
     }
 
     // 4j. Repair TS17009: 'super' must be called before accessing 'this'
@@ -868,15 +937,25 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         /'super' must be called before accessing 'this'/i.test(d.message),
     );
     if (hasSuperAfterThis) {
-      currentCode = currentCode.replace(
-        /(constructor\s*\([^)]*\)\s*\{)([\s\S]*?)(\bsuper\s*\([^)]*\);?)/,
-        (_match, ctorHead, bodyBeforeSuper, superCall) => {
-          return `${ctorHead}\n    ${superCall}\n${bodyBeforeSuper.replace(superCall, "")}`;
-        },
-      );
-      repairsApplied.push(
-        "Moved 'super()' call to beginning of constructor before accessing 'this'",
-      );
+      const ctorIdx = currentCode.indexOf("constructor(");
+      if (ctorIdx !== -1) {
+        const braceIdx = currentCode.indexOf("{", ctorIdx);
+        const superIdx = currentCode.indexOf("super(", braceIdx);
+        if (braceIdx !== -1 && superIdx !== -1 && superIdx > braceIdx) {
+          const semiIdx = currentCode.indexOf(";", superIdx);
+          const endSuperIdx =
+            semiIdx !== -1
+              ? semiIdx + 1
+              : currentCode.indexOf(")", superIdx) + 1;
+          const superCall = currentCode.slice(superIdx, endSuperIdx).trim();
+          const bodyBeforeSuper = currentCode.slice(braceIdx + 1, superIdx);
+          const bodyAfterSuper = currentCode.slice(endSuperIdx);
+          currentCode = `${currentCode.slice(0, braceIdx + 1)}\n    ${superCall}\n${bodyBeforeSuper}${bodyAfterSuper}`;
+          repairsApplied.push(
+            "Moved 'super()' call to beginning of constructor before accessing 'this'",
+          );
+        }
+      }
     }
 
     // 5. Repair TS2834: Explicit .js file extensions in relative imports
@@ -1361,84 +1440,151 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       .replace(/\.ts$/, "");
 
     // Decompose inline template: template: `...` or template: '...' or template: "..."
-    const templateRegex =
-      /template\s*:\s*(?:`([\s\S]*?)`|'([\s\S]*?)'|"([\s\S]*?)")\s*(,)?/;
-    const templateMatch = updatedCode.match(templateRegex);
-    if (templateMatch) {
-      const templateContent = (
-        templateMatch[1] ??
-        templateMatch[2] ??
-        templateMatch[3] ??
-        ""
-      ).trim();
-      if (templateContent.length > 0) {
-        const htmlRelPath = `./${baseName}.component.html`;
-        const htmlAbsPath = path.resolve(dir, `${baseName}.component.html`);
-
-        decomposedFiles.push({
-          filePath: htmlAbsPath,
-          content: templateContent,
-        });
-        const trailingComma = templateMatch[4] ? "," : "";
-        updatedCode = updatedCode.replace(
-          templateRegex,
-          `templateUrl: '${htmlRelPath}'${trailingComma}`,
-        );
-        repairsApplied.push(
-          `Decomposed inline template into companion file '${htmlRelPath}'`,
-        );
-
-        try {
-          if (!fs.existsSync(htmlAbsPath)) {
-            fs.mkdirSync(path.dirname(htmlAbsPath), { recursive: true });
-            fs.writeFileSync(htmlAbsPath, `${templateContent}\n`, "utf8");
+    const templateIdx = updatedCode.indexOf("template:");
+    if (templateIdx !== -1) {
+      let startQuoteIdx = -1;
+      let quoteChar = "";
+      for (let i = templateIdx + "template:".length; i < updatedCode.length; i++) {
+        const ch = updatedCode[i];
+        if (ch === "`" || ch === "'" || ch === '"') {
+          startQuoteIdx = i;
+          quoteChar = ch;
+          break;
+        }
+        if (ch !== " " && ch !== "\t" && ch !== "\r" && ch !== "\n") {
+          break;
+        }
+      }
+      if (startQuoteIdx !== -1) {
+        let endQuoteIdx = -1;
+        for (let i = startQuoteIdx + 1; i < updatedCode.length; i++) {
+          if (updatedCode[i] === quoteChar && updatedCode[i - 1] !== "\\") {
+            endQuoteIdx = i;
+            break;
           }
-        } catch {
-          // Disk write failure is non-fatal in sandboxed or virtual test contexts
+        }
+        if (endQuoteIdx !== -1) {
+          const templateContent = updatedCode
+            .slice(startQuoteIdx + 1, endQuoteIdx)
+            .trim();
+          if (templateContent.length > 0) {
+            const htmlRelPath = `./${baseName}.component.html`;
+            const htmlAbsPath = path.resolve(dir, `${baseName}.component.html`);
+
+            decomposedFiles.push({
+              filePath: htmlAbsPath,
+              content: templateContent,
+            });
+
+            let replaceEnd = endQuoteIdx + 1;
+            let trailingComma = "";
+            for (let i = replaceEnd; i < updatedCode.length; i++) {
+              if (updatedCode[i] === ",") {
+                trailingComma = ",";
+                replaceEnd = i + 1;
+                break;
+              }
+              if (updatedCode[i] === "\n" || updatedCode[i] === "}") break;
+              if (
+                updatedCode[i] !== " " &&
+                updatedCode[i] !== "\t" &&
+                updatedCode[i] !== "\r"
+              )
+                break;
+            }
+
+            updatedCode = `${updatedCode.slice(0, templateIdx)}templateUrl: '${htmlRelPath}'${trailingComma}${updatedCode.slice(replaceEnd)}`;
+            repairsApplied.push(
+              `Decomposed inline template into companion file '${htmlRelPath}'`,
+            );
+
+            try {
+              if (!fs.existsSync(htmlAbsPath)) {
+                fs.mkdirSync(path.dirname(htmlAbsPath), { recursive: true });
+                fs.writeFileSync(htmlAbsPath, `${templateContent}\n`, "utf8");
+              }
+            } catch {
+              // Disk write failure is non-fatal in sandboxed or virtual test contexts
+            }
+          }
         }
       }
     }
 
     // Decompose inline styles: styles: [`...`] or styles: ['...']
-    const stylesRegex =
-      /styles\s*:\s*\[\s*(?:`([\s\S]*?)`|'([\s\S]*?)'|"([\s\S]*?)")\s*\]\s*(,)?/;
-    const stylesMatch = updatedCode.match(stylesRegex);
-    if (stylesMatch) {
-      const stylesContent = (
-        stylesMatch[1] ??
-        stylesMatch[2] ??
-        stylesMatch[3] ??
-        ""
-      ).trim();
-      const cssRelPath = `./${baseName}.component.css`;
-      const cssAbsPath = path.resolve(dir, `${baseName}.component.css`);
-
-      decomposedFiles.push({
-        filePath: cssAbsPath,
-        content: stylesContent,
-      });
-      const trailingComma = stylesMatch[4] ? "," : "";
-      updatedCode = updatedCode.replace(
-        stylesRegex,
-        `styleUrl: '${cssRelPath}'${trailingComma}`,
-      );
-      repairsApplied.push(
-        `Decomposed inline styles into companion file '${cssRelPath}'`,
-      );
-
-      try {
-        if (!fs.existsSync(cssAbsPath)) {
-          fs.mkdirSync(path.dirname(cssAbsPath), { recursive: true });
-          fs.writeFileSync(
-            cssAbsPath,
-            stylesContent
-              ? `${stylesContent}\n`
-              : "/* component styles */\n",
-            "utf8",
-          );
+    const stylesIdx = updatedCode.indexOf("styles:");
+    if (stylesIdx !== -1) {
+      const openBracket = updatedCode.indexOf("[", stylesIdx);
+      const closeBracket = updatedCode.indexOf("]", openBracket);
+      if (
+        openBracket !== -1 &&
+        closeBracket !== -1 &&
+        closeBracket > openBracket
+      ) {
+        let startQuoteIdx = -1;
+        let quoteChar = "";
+        for (let i = openBracket + 1; i < closeBracket; i++) {
+          const ch = updatedCode[i];
+          if (ch === "`" || ch === "'" || ch === '"') {
+            startQuoteIdx = i;
+            quoteChar = ch;
+            break;
+          }
         }
-      } catch {
-        // Disk write failure is non-fatal in sandboxed or virtual test contexts
+        let stylesContent = "";
+        if (startQuoteIdx !== -1) {
+          const endQuoteIdx = updatedCode.lastIndexOf(quoteChar, closeBracket);
+          if (endQuoteIdx > startQuoteIdx) {
+            stylesContent = updatedCode
+              .slice(startQuoteIdx + 1, endQuoteIdx)
+              .trim();
+          }
+        }
+
+        const cssRelPath = `./${baseName}.component.css`;
+        const cssAbsPath = path.resolve(dir, `${baseName}.component.css`);
+
+        decomposedFiles.push({
+          filePath: cssAbsPath,
+          content: stylesContent,
+        });
+
+        let replaceEnd = closeBracket + 1;
+        let trailingComma = "";
+        for (let i = replaceEnd; i < updatedCode.length; i++) {
+          if (updatedCode[i] === ",") {
+            trailingComma = ",";
+            replaceEnd = i + 1;
+            break;
+          }
+          if (updatedCode[i] === "\n" || updatedCode[i] === "}") break;
+          if (
+            updatedCode[i] !== " " &&
+            updatedCode[i] !== "\t" &&
+            updatedCode[i] !== "\r"
+          )
+            break;
+        }
+
+        updatedCode = `${updatedCode.slice(0, stylesIdx)}styleUrl: '${cssRelPath}'${trailingComma}${updatedCode.slice(replaceEnd)}`;
+        repairsApplied.push(
+          `Decomposed inline styles into companion file '${cssRelPath}'`,
+        );
+
+        try {
+          if (!fs.existsSync(cssAbsPath)) {
+            fs.mkdirSync(path.dirname(cssAbsPath), { recursive: true });
+            fs.writeFileSync(
+              cssAbsPath,
+              stylesContent
+                ? `${stylesContent}\n`
+                : "/* component styles */\n",
+              "utf8",
+            );
+          }
+        } catch {
+          // Disk write failure is non-fatal in sandboxed or virtual test contexts
+        }
       }
     }
 

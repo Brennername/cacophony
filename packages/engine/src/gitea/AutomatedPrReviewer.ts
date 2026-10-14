@@ -135,44 +135,61 @@ export class AutomatedPrReviewer {
         const trimmed = line.trim();
         if (!trimmed.startsWith("-")) continue;
 
-        // Bounded finding match: - [SEVERITY] [file:line] description
-        const findingMatch = trimmed.match(
-          /^-\s*\[(BLOCKER|WARNING|INFO)\](?:\s*\[([^\]]+)\])?\s*:?\s*(.*)$/i,
-        );
-        if (findingMatch) {
-          const rawSeverity = (findingMatch[1] || "INFO").toLowerCase();
-          const severity: "info" | "warning" | "blocker" =
-            rawSeverity === "blocker"
-              ? "blocker"
-              : rawSeverity === "warning"
-                ? "warning"
-                : "info";
+        // Deterministic linear finding parsing: - [SEVERITY] [file:line] description
+        let rest = trimmed.slice(1).trim();
+        let rawSeverity = "info";
+        let loc = "";
 
-          const loc = findingMatch[2] || "";
-          let filePath: string | undefined = undefined;
-          let lineNum: number | undefined = undefined;
-
-          if (loc.includes(":")) {
-            const parts = loc.split(":");
-            filePath = parts[0];
-            const parsed = parseInt(parts[1] || "", 10);
-            if (!Number.isNaN(parsed)) lineNum = parsed;
-          } else if (loc) {
-            filePath = loc;
+        if (rest.startsWith("[")) {
+          const closeBracket = rest.indexOf("]");
+          if (closeBracket !== -1) {
+            rawSeverity = rest.slice(1, closeBracket).trim().toLowerCase();
+            rest = rest.slice(closeBracket + 1).trim();
           }
+        }
 
-          const message = findingMatch[3]?.trim() || trimmed;
-
-          findings.push({
-            path: filePath,
-            line: lineNum,
-            severity,
-            message,
-          });
-
-          if (severity === "blocker" && detectedVerdict === "APPROVE") {
-            detectedVerdict = "REQUEST_CHANGES";
+        if (rest.startsWith("[")) {
+          const closeBracket = rest.indexOf("]");
+          if (closeBracket !== -1) {
+            loc = rest.slice(1, closeBracket).trim();
+            rest = rest.slice(closeBracket + 1).trim();
           }
+        }
+
+        if (rest.startsWith(":")) {
+          rest = rest.slice(1).trim();
+        }
+
+        const severity: "info" | "warning" | "blocker" =
+          rawSeverity === "blocker"
+            ? "blocker"
+            : rawSeverity === "warning"
+              ? "warning"
+              : "info";
+
+        let filePath: string | undefined = undefined;
+        let lineNum: number | undefined = undefined;
+
+        if (loc.includes(":")) {
+          const parts = loc.split(":");
+          filePath = parts[0];
+          const parsed = parseInt(parts[1] || "", 10);
+          if (!Number.isNaN(parsed)) lineNum = parsed;
+        } else if (loc) {
+          filePath = loc;
+        }
+
+        const message = rest || trimmed;
+
+        findings.push({
+          path: filePath,
+          line: lineNum,
+          severity,
+          message,
+        });
+
+        if (severity === "blocker" && detectedVerdict === "APPROVE") {
+          detectedVerdict = "REQUEST_CHANGES";
         }
       }
     }

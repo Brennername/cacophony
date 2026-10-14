@@ -226,20 +226,7 @@ _RDF Category: telemetry_
 ## Phase 70: Schematic Code Generators, Import Scaffolding & Zero-Boilerplate Generation Architecture
 
 _RDF Category: orchestration_
-
-### T70.1: Deterministic AST Code Skeleton & Scaffold Generator
-
-- [x] T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/SchematicCodeGenerator.ts generating typed skeleton source files with verified imports, classes, and exported function signatures. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Class: SchematicCodeGenerator] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [x] T70.1.2: Generate type-safe method stubs containing parameter contracts, return types, and docstrings, leaving only scoped implementation bodies for local models to fulfill. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Method: generateStubs] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [x] T70.1.3: Define declarative schematic templates for common workspace patterns (ScrubberRule, TelemetryProvider, HttpRouteHandler, RepositoryService, AngularStandaloneComponent). [File: packages/engine/src/generators/SchematicTemplates.ts] [Class: SchematicTemplates] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [x] T70.1.4: Write unit tests verifying that SchematicCodeGenerator produces syntactically valid TypeScript passing AstValidator. [File: packages/engine/src/tests/schematic_generator.test.ts] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-
-### T70.2: Import Injection & Slot-Fill Scaffolding Engine
-
-- [x] T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated files so local 3B/7B models never have to synthesize boilerplate imports. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Method: injectImports] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [x] T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript compiler API (ts.createSourceFile). [File: packages/engine/src/generators/SignatureHarvester.ts] [Class: SignatureHarvester] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [x] T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating only the function body between // <BEGIN_IMPLEMENTATION> and // <END_IMPLEMENTATION>). [File: packages/engine/src/inference/SlotFillPromptBuilder.ts] [Class: SlotFillPromptBuilder] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
-- [x] T70.2.4: Write unit tests verifying slot-fill code synthesis, template marker extraction, and AST integrity. [File: packages/engine/src/tests/slot_fill.test.ts] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
+_T70.1 & T70.2 Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-70-schematic-code-generators-import-scaffolding--zero-boilerplate-generation-architecture-t701--t702)_
 
 ### T70.3: AutonomousWorkerPipeline Schematic Integration & Validation Gate
 
