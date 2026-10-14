@@ -47,10 +47,10 @@ export class RemediationPromptFormatter {
     const ext = options.targetFilePath.endsWith(".ts")
       ? "typescript"
       : options.targetFilePath.endsWith(".js")
-      ? "javascript"
-      : options.targetFilePath.endsWith(".json")
-      ? "json"
-      : "text";
+        ? "javascript"
+        : options.targetFilePath.endsWith(".json")
+          ? "json"
+          : "text";
     sections.push("```" + ext);
     sections.push(options.currentCode.trim());
     sections.push("```");
@@ -62,7 +62,7 @@ export class RemediationPromptFormatter {
       for (const diag of options.compilerDiagnostics) {
         const codeSuffix = diag.errorCode ? `, ${diag.errorCode}` : "";
         sections.push(
-          `- [Line ${diag.lineNumber}, Col ${diag.columnNumber}] [${diag.severity.toUpperCase()}] ${diag.message} (${diag.filePath}${codeSuffix})`
+          `- [Line ${diag.lineNumber}, Col ${diag.columnNumber}] [${diag.severity.toUpperCase()}] ${diag.message} (${diag.filePath}${codeSuffix})`,
         );
       }
     } else {
@@ -104,7 +104,7 @@ export class RemediationPromptFormatter {
       "- Preserve all existing interfaces, methods, and types in the file. Do NOT truncate or drop existing functionality.",
       "- Testing Standards: If modifying or creating a test file, use strictly 'node:test' and 'node:assert/strict'. NEVER import 'jest', '@jest/globals', 'chai', or 'mocha'.",
       "- Module Imports: Ensure all imports, types, and dependencies exist and resolve correctly. All internal relative imports must end with '.js'. NEVER import 'vscode' or non-existent external libraries.",
-      "- Enclose the entire updated file content in a single standard markdown code block: ```typescript ... ```."
+      "- Enclose the entire updated file content in a single standard markdown code block: ```typescript ... ```.",
     ].join("\n");
   }
 }

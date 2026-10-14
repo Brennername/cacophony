@@ -32,16 +32,16 @@ Other workflow domains can provide different adapters without adding domain logi
 
 The kernel accesses external capabilities through narrow interfaces:
 
-| Port | Kernel contract | Existing or replaceable adapters |
-|---|---|---|
-| Work store | Create, update, query, and recover work items and runs | PGlite, PostgreSQL, SQLite |
-| Inference | Generate, stream, cancel, and report model usage | Ollama and frontier providers |
-| Tool execution | Invoke named capabilities with validated inputs and scoped grants | MCP and isolated process/container tools |
-| Artifact storage | Persist and retrieve immutable inputs, outputs, and evidence | Local volume or object storage |
-| Event delivery | Publish lifecycle events and progress | SSE, webhooks, message broker |
-| Verification | Evaluate declared acceptance criteria and return evidence | Domain-provided verifier |
-| Decision gate | Request, record, and resume after a human or delegated decision | Dashboard or external review service |
-| Runtime capacity | Report available memory, accelerators, and process capacity | Hardware and container adapters |
+| Port             | Kernel contract                                                   | Existing or replaceable adapters         |
+| ---------------- | ----------------------------------------------------------------- | ---------------------------------------- |
+| Work store       | Create, update, query, and recover work items and runs            | PGlite, PostgreSQL, SQLite               |
+| Inference        | Generate, stream, cancel, and report model usage                  | Ollama and frontier providers            |
+| Tool execution   | Invoke named capabilities with validated inputs and scoped grants | MCP and isolated process/container tools |
+| Artifact storage | Persist and retrieve immutable inputs, outputs, and evidence      | Local volume or object storage           |
+| Event delivery   | Publish lifecycle events and progress                             | SSE, webhooks, message broker            |
+| Verification     | Evaluate declared acceptance criteria and return evidence         | Domain-provided verifier                 |
+| Decision gate    | Request, record, and resume after a human or delegated decision   | Dashboard or external review service     |
+| Runtime capacity | Report available memory, accelerators, and process capacity       | Hardware and container adapters          |
 
 Adapters own provider-specific configuration and translation. Kernel contracts use shared domain types and do not expose provider SDK types.
 
@@ -49,11 +49,11 @@ Adapters own provider-specific configuration and translation. Kernel contracts u
 
 The modularization is incremental and should preserve the current application while making a reusable build possible.
 
-| Build target | Contents | Excluded concerns |
-|---|---|---|
-| build:core | Orchestration contracts, scheduler, generic run lifecycle, queue policies, provider ports, persistence ports, and telemetry contracts | Frontend, Git, parsers, compiler and test-runner adapters |
-| build:coding | Coding domain adapter and its Git, AST, language, compiler, test, and PR integrations | Other domain implementations |
-| build | Core, coding adapter, current daemon, and dashboard | None; remains the compatibility build for Cacophony |
+| Build target | Contents                                                                                                                              | Excluded concerns                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| build:core   | Orchestration contracts, scheduler, generic run lifecycle, queue policies, provider ports, persistence ports, and telemetry contracts | Frontend, Git, parsers, compiler and test-runner adapters |
+| build:coding | Coding domain adapter and its Git, AST, language, compiler, test, and PR integrations                                                 | Other domain implementations                              |
+| build        | Core, coding adapter, current daemon, and dashboard                                                                                   | None; remains the compatibility build for Cacophony       |
 
 A future package boundary such as packages/engine-core is a candidate, not a required first edit. First identify dependency direction and contracts; then move code in small, behavior-preserving steps. The existing Cacophony daemon remains the composition root that selects adapters.
 

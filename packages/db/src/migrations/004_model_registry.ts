@@ -36,5 +36,5 @@ export const migration004: Migration = {
 
   async down(driver: IDatabaseDriver): Promise<void> {
     await driver.execRaw("DROP TABLE IF EXISTS model_registry_entries;");
-  }
+  },
 };

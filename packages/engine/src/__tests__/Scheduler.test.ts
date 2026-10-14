@@ -5,7 +5,13 @@ import { ModelAffinityTaskSorter } from "../scheduler/ModelAffinityTaskSorter.js
 import { ModelEvictionManager } from "../scheduler/ModelEvictionManager.js";
 import { QueueGroomer } from "../scheduler/QueueGroomer.js";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
-import { PGliteDriver, TaskRepository, StageRepository, ModelHealthRepository, MigrationRunner } from "@cacophony/db";
+import {
+  PGliteDriver,
+  TaskRepository,
+  StageRepository,
+  ModelHealthRepository,
+  MigrationRunner,
+} from "@cacophony/db";
 import { FallbackTelemetryProvider } from "../telemetry/FallbackTelemetryProvider.js";
 import type { TaskRecord } from "@cacophony/shared-types";
 
@@ -40,7 +46,12 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
   describe("ModelAffinityTaskSorter", () => {
     const sorter = new ModelAffinityTaskSorter(3600);
 
-    const makeTask = (id: string, priority: "P0" | "P1" | "P2", model: string | null, ageMs: number): TaskRecord => ({
+    const makeTask = (
+      id: string,
+      priority: "P0" | "P1" | "P2",
+      model: string | null,
+      ageMs: number,
+    ): TaskRecord => ({
       id,
       title: id,
       prompt: "test",
@@ -55,7 +66,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       failureCount: 0,
       createdAt: new Date(Date.now() - ageMs).toISOString(),
       updatedAt: new Date().toISOString(),
-      completedAt: null
+      completedAt: null,
     });
 
     test("should prioritize task matching currently active VRAM model", () => {
@@ -69,8 +80,18 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
 
     test("should respect P0 priority over model affinity", () => {
       const activeModel = "qwen2.5-coder:7b";
-      const tAffinity = makeTask("task-affinity", "P1", "qwen2.5-coder:7b", 1000);
-      const tEmergency = makeTask("task-emergency", "P0", "deepseek-r1:8b", 1000);
+      const tAffinity = makeTask(
+        "task-affinity",
+        "P1",
+        "qwen2.5-coder:7b",
+        1000,
+      );
+      const tEmergency = makeTask(
+        "task-emergency",
+        "P0",
+        "deepseek-r1:8b",
+        1000,
+      );
 
       const sorted = sorter.sort([tAffinity, tEmergency], activeModel);
       assert.equal(sorted[0]?.id, "task-emergency");
@@ -78,8 +99,18 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
 
     test("should auto-escalate aging tasks to prevent starvation", () => {
       // 4000 seconds old (> 3600 max wait)
-      const tStarved = makeTask("task-starved", "P2", "deepseek-r1:8b", 4000 * 1000);
-      const tNewP1 = makeTask("task-new-p1", "P1", "qwen2.5-coder:7b", 500 * 1000);
+      const tStarved = makeTask(
+        "task-starved",
+        "P2",
+        "deepseek-r1:8b",
+        4000 * 1000,
+      );
+      const tNewP1 = makeTask(
+        "task-new-p1",
+        "P1",
+        "qwen2.5-coder:7b",
+        500 * 1000,
+      );
 
       const sorted = sorter.sort([tNewP1, tStarved], "qwen2.5-coder:7b");
       assert.equal(sorted[0]?.id, "task-starved");
@@ -109,7 +140,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const selected = await evictionManager.selectModel(
         "implementer",
         ["qwen2.5-coder:7b", "gemma3:4b"],
-        "qwen2.5-coder:7b"
+        "qwen2.5-coder:7b",
       );
       assert.equal(selected, "qwen2.5-coder:7b");
     });
@@ -119,7 +150,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const selected = await exploratoryManager.selectModel(
         "implementer",
         ["qwen2.5-coder:7b", "gemma3:4b"],
-        "qwen2.5-coder:7b"
+        "qwen2.5-coder:7b",
       );
       assert.ok(["qwen2.5-coder:7b", "gemma3:4b"].includes(selected));
     });
@@ -137,7 +168,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const selected = await evictionManager.selectModel(
         "implementer",
         [failingModel, "healthy-model:7b"],
-        null
+        null,
       );
       assert.equal(selected, "healthy-model:7b");
     });
@@ -162,11 +193,14 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.scopedTestCommand, "npm test --workspace=@cacophony/db --if-present");
+      assert.equal(
+        groomed.scopedTestCommand,
+        "npm test --workspace=@cacophony/db --if-present",
+      );
       assert.ok(groomed.enrichedPrompt.includes("[ARCHITECTURAL DIRECTIVES]"));
     });
 
@@ -186,14 +220,23 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task, { allowedImports: ["redis"] });
-      assert.ok(groomed.enrichedPrompt.includes("Approved Libraries: Feature is authorized to import: redis"));
-      assert.ok(groomed.enrichedPrompt.includes("Zero Emojis: Strictly NO emojis"));
-      assert.ok(groomed.groomNotes.some((n) => n.includes("Injected approved library directives: redis")));
-
+      assert.ok(
+        groomed.enrichedPrompt.includes(
+          "Approved Libraries: Feature is authorized to import: redis",
+        ),
+      );
+      assert.ok(
+        groomed.enrichedPrompt.includes("Zero Emojis: Strictly NO emojis"),
+      );
+      assert.ok(
+        groomed.groomNotes.some((n) =>
+          n.includes("Injected approved library directives: redis"),
+        ),
+      );
     });
 
     test("should adapt directives when allowEmojis is specified for a feature", () => {
@@ -212,12 +255,16 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task, { allowEmojis: true });
-      assert.ok(groomed.enrichedPrompt.includes("Feature Exemption: Emojis permitted"));
-      assert.ok(!groomed.enrichedPrompt.includes("Zero Emojis: Strictly NO emojis"));
+      assert.ok(
+        groomed.enrichedPrompt.includes("Feature Exemption: Emojis permitted"),
+      );
+      assert.ok(
+        !groomed.enrichedPrompt.includes("Zero Emojis: Strictly NO emojis"),
+      );
     });
 
     test("should scope explicit test file commands and strip quotes from focus files", () => {
@@ -229,21 +276,36 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         status: "PENDING",
         priority: "P1",
         modelAssigned: null,
-        testCommand: "npm test -- packages/engine/src/tests/gitea_integration.test.ts",
+        testCommand:
+          "npm test -- packages/engine/src/tests/gitea_integration.test.ts",
         focusFiles: '"packages/engine/src/gitea/GitWorktreeManager.ts"',
         targetBranch: null,
         prUrl: null,
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.focusFiles[0], "packages/engine/src/gitea/GitWorktreeManager.ts");
-      assert.equal(groomed.scopedTestCommand, "node --test packages/engine/dist/tests/gitea_integration.test.js");
-      assert.ok(groomed.enrichedPrompt.includes("Integrity Rule: Always work and test with genuine integrity"));
-      assert.ok(groomed.enrichedPrompt.includes("Module Imports: Import only from valid installed workspace packages"));
+      assert.equal(
+        groomed.focusFiles[0],
+        "packages/engine/src/gitea/GitWorktreeManager.ts",
+      );
+      assert.equal(
+        groomed.scopedTestCommand,
+        "node --test packages/engine/dist/tests/gitea_integration.test.js",
+      );
+      assert.ok(
+        groomed.enrichedPrompt.includes(
+          "Integrity Rule: Always work and test with genuine integrity",
+        ),
+      );
+      assert.ok(
+        groomed.enrichedPrompt.includes(
+          "Module Imports: Import only from valid installed workspace packages",
+        ),
+      );
     });
 
     test("should fall back to the package test suite when the requested test file does not exist yet", () => {
@@ -255,18 +317,22 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         status: "PENDING",
         priority: "P1",
         modelAssigned: null,
-        testCommand: "npm test -- packages/engine/src/tests/non_existent_future.test.ts",
+        testCommand:
+          "npm test -- packages/engine/src/tests/non_existent_future.test.ts",
         focusFiles: "packages/engine/src/gitea/GitWorktreeManager.ts",
         targetBranch: null,
         prUrl: null,
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.scopedTestCommand, "npm run test --workspace=@cacophony/engine");
+      assert.equal(
+        groomed.scopedTestCommand,
+        "npm run test --workspace=@cacophony/engine",
+      );
       assert.deepEqual(groomed.preflightIssues, []);
     });
 
@@ -280,19 +346,28 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         priority: "P1",
         modelAssigned: null,
         testCommand: "npm test",
-        focusFiles: "packages/engine/src/scheduler/QueueGroomer.ts packages/engine/src/scheduler/TaskScheduler.ts",
+        focusFiles:
+          "packages/engine/src/scheduler/QueueGroomer.ts packages/engine/src/scheduler/TaskScheduler.ts",
         targetBranch: null,
         prUrl: null,
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task);
-      assert.deepEqual(groomed.focusFiles, ["packages/engine/src/scheduler/QueueGroomer.ts"]);
+      assert.deepEqual(groomed.focusFiles, [
+        "packages/engine/src/scheduler/QueueGroomer.ts",
+      ]);
       assert.deepEqual(groomed.preflightIssues, []);
-      assert.ok(groomed.groomNotes.some((n) => n.includes("Selected primary target 'packages/engine/src/scheduler/QueueGroomer.ts' from 2 declared focus files")));
+      assert.ok(
+        groomed.groomNotes.some((n) =>
+          n.includes(
+            "Selected primary target 'packages/engine/src/scheduler/QueueGroomer.ts' from 2 declared focus files",
+          ),
+        ),
+      );
     });
 
     test("should clear test command for non-executable markdown files when test suite does not exist", () => {
@@ -304,14 +379,15 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         status: "PENDING",
         priority: "P2",
         modelAssigned: null,
-        testCommand: "npm test -- packages/engine/src/tests/non_existent_doc.test.ts",
+        testCommand:
+          "npm test -- packages/engine/src/tests/non_existent_doc.test.ts",
         focusFiles: "docs/architecture/overview.md",
         targetBranch: null,
         prUrl: null,
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task);
@@ -334,11 +410,14 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.scopedTestCommand, "npm run test --workspace=@cacophony/frontend");
+      assert.equal(
+        groomed.scopedTestCommand,
+        "npm run test --workspace=@cacophony/frontend",
+      );
     });
 
     test("should scope non-runnable node typescript CLI commands to package test suite", () => {
@@ -357,14 +436,16 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.scopedTestCommand, "npm run test --workspace=@cacophony/engine");
+      assert.equal(
+        groomed.scopedTestCommand,
+        "npm run test --workspace=@cacophony/engine",
+      );
     });
   });
-
 
   describe("TaskScheduler Execution Cycle", () => {
     let driver: PGliteDriver;
@@ -389,7 +470,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         taskRepo,
         stageRepo,
         evictionManager,
-        telemetryProvider
+        telemetryProvider,
       });
     });
 
@@ -414,7 +495,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       await taskRepo.create(task);
@@ -452,7 +533,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       await taskRepo.create(task);

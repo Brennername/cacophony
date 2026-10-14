@@ -24,7 +24,9 @@ export class StructuredTestOutputParser extends TestOutputParser {
       const assertionRaw = match[1] ?? "";
       const filePath = match[2] ?? "";
       const rawLine = match[3] ?? "0";
-      const assertion = assertionRaw.includes("at ") ? (assertionRaw.split("at ")[1] ?? assertionRaw) : assertionRaw;
+      const assertion = assertionRaw.includes("at ")
+        ? (assertionRaw.split("at ")[1] ?? assertionRaw)
+        : assertionRaw;
       const lineNumber = parseInt(rawLine, 10);
 
       filePaths.push(filePath);

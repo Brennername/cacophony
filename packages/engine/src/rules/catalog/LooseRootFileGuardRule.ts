@@ -18,9 +18,13 @@ import { BaseRepairRule } from "../BaseRepairRule.js";
 export class LooseRootFileGuardRule extends BaseRepairRule {
   readonly id = "loose_root_files";
   readonly name = "Loose Root File Guard";
-  readonly description = "Prevents LLMs from creating loose source or test files directly in the repository root directory.";
+  readonly description =
+    "Prevents LLMs from creating loose source or test files directly in the repository root directory.";
   readonly defaultSeverity: RuleSeverity = "soft_warning";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   private readonly allowedRootFiles = new Set([
     "package.json",
@@ -36,7 +40,7 @@ export class LooseRootFileGuardRule extends BaseRepairRule {
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    options?: { allowedRootFiles?: string[] }
+    options?: { allowedRootFiles?: string[] },
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -76,6 +80,12 @@ export class LooseRootFileGuardRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

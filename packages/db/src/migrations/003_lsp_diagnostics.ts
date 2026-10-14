@@ -35,5 +35,5 @@ export const migration003: Migration = {
 
   async down(driver: IDatabaseDriver): Promise<void> {
     await driver.execRaw("DROP TABLE IF EXISTS lsp_diagnostic_snapshots;");
-  }
+  },
 };

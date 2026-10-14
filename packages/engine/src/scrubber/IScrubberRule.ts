@@ -35,6 +35,9 @@ export interface IScrubberRule {
   /**
    * Applies deterministic transformations or checks on source content.
    */
-  scrub(content: string, filePath: string, options?: ScrubRuleOptions): ScrubRuleResult;
+  scrub(
+    content: string,
+    filePath: string,
+    options?: ScrubRuleOptions,
+  ): ScrubRuleResult;
 }
-

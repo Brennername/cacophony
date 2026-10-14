@@ -1,5 +1,8 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { HardwareTelemetrySnapshot, ThermalZone } from "@cacophony/shared-types";
+import type {
+  HardwareTelemetrySnapshot,
+  ThermalZone,
+} from "@cacophony/shared-types";
 
 interface TelemetryRow {
   readonly timestamp: string;
@@ -32,7 +35,9 @@ export class TelemetryRepository {
   /**
    * Persists a telemetry snapshot to the database.
    */
-  public async insertSnapshot(snapshot: HardwareTelemetrySnapshot): Promise<void> {
+  public async insertSnapshot(
+    snapshot: HardwareTelemetrySnapshot,
+  ): Promise<void> {
     await this.driver.execute(
       `INSERT INTO telemetry_snapshots (
         timestamp, gpu_busy_pct, vram_used_bytes, vram_total_bytes,
@@ -51,8 +56,8 @@ export class TelemetryRepository {
         snapshot.gpu.socMilliVolts,
         snapshot.gpu.pptWatts,
         snapshot.gpu.sclkMhz,
-        snapshot.activeModel?.name ?? null
-      ]
+        snapshot.activeModel?.name ?? null,
+      ],
     );
   }
 
@@ -61,7 +66,7 @@ export class TelemetryRepository {
    */
   public async getLatestSnapshot(): Promise<HardwareTelemetrySnapshot | null> {
     const row = await this.driver.queryOne<TelemetryRow>(
-      "SELECT * FROM telemetry_snapshots ORDER BY timestamp DESC LIMIT 1"
+      "SELECT * FROM telemetry_snapshots ORDER BY timestamp DESC LIMIT 1",
     );
     return row ? this.mapRow(row) : null;
   }
@@ -69,10 +74,12 @@ export class TelemetryRepository {
   /**
    * Retrieves the last N telemetry snapshots for charting and graphs.
    */
-  public async getRecentSnapshots(limit = 60): Promise<readonly HardwareTelemetrySnapshot[]> {
+  public async getRecentSnapshots(
+    limit = 60,
+  ): Promise<readonly HardwareTelemetrySnapshot[]> {
     const rows = await this.driver.query<TelemetryRow>(
       "SELECT * FROM telemetry_snapshots ORDER BY timestamp DESC LIMIT $1",
-      [limit]
+      [limit],
     );
     return [...rows].reverse().map((r: TelemetryRow) => this.mapRow(r));
   }
@@ -83,7 +90,7 @@ export class TelemetryRepository {
   public async pruneOlderThan(cutoffIso: string): Promise<number> {
     const res = await this.driver.execute(
       "DELETE FROM telemetry_snapshots WHERE timestamp < $1",
-      [cutoffIso]
+      [cutoffIso],
     );
     return res.rowsAffected;
   }
@@ -118,7 +125,7 @@ export class TelemetryRepository {
         COALESCE(AVG(ppt_watts), 0) as avg_power,
         COALESCE(MAX(ppt_watts), 0) as max_power
       FROM telemetry_snapshots WHERE timestamp >= $1`,
-      [sinceIso]
+      [sinceIso],
     );
 
     if (!row) {
@@ -129,7 +136,7 @@ export class TelemetryRepository {
         avgTempC: 0,
         peakTempC: 0,
         avgPowerWatts: 0,
-        peakPowerWatts: 0
+        peakPowerWatts: 0,
       };
     }
 
@@ -140,14 +147,15 @@ export class TelemetryRepository {
       avgTempC: Number(Number(row.avg_temp).toFixed(1)),
       peakTempC: Number(row.max_temp),
       avgPowerWatts: Number(Number(row.avg_power).toFixed(1)),
-      peakPowerWatts: Number(row.max_power)
+      peakPowerWatts: Number(row.max_power),
     };
   }
 
   private mapRow(row: TelemetryRow): HardwareTelemetrySnapshot {
     const vramUsed = Number(row.vram_used_bytes);
     const vramTotal = Number(row.vram_total_bytes);
-    const vramPct = vramTotal > 0 ? Number(((vramUsed / vramTotal) * 100).toFixed(1)) : 0;
+    const vramPct =
+      vramTotal > 0 ? Number(((vramUsed / vramTotal) * 100).toFixed(1)) : 0;
     const temp = Number(row.edge_temp_c);
 
     let thermalZone: ThermalZone = "Nominal";
@@ -176,16 +184,18 @@ export class TelemetryRepository {
         vddgfxMilliVolts: Number(row.vddgfx_mv),
         socMilliVolts: Number(row.soc_mv),
         pptWatts: Number(row.ppt_watts),
-        sclkMhz: Number(row.sclk_mhz)
+        sclkMhz: Number(row.sclk_mhz),
       },
       thermalZone,
       pacingDelaySeconds,
-      activeModel: row.current_model ? {
-        name: row.current_model,
-        model: row.current_model,
-        sizeBytes: 0,
-        vramSizeBytes: 0
-      } : null
+      activeModel: row.current_model
+        ? {
+            name: row.current_model,
+            model: row.current_model,
+            sizeBytes: 0,
+            vramSizeBytes: 0,
+          }
+        : null,
     };
   }
 }

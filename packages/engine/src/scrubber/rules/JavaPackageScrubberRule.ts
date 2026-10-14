@@ -1,4 +1,8 @@
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "../IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "../IScrubberRule.js";
 
 /**
  * JavaPackageScrubberRule
@@ -18,7 +22,11 @@ export class JavaPackageScrubberRule implements IScrubberRule {
     return filePath.endsWith(".java") || stack.startsWith("java");
   }
 
-  public scrub(content: string, filePath: string, options?: ScrubRuleOptions): ScrubRuleResult {
+  public scrub(
+    content: string,
+    filePath: string,
+    options?: ScrubRuleOptions,
+  ): ScrubRuleResult {
     const issuesFixed: string[] = [];
     const issuesDetected: string[] = [];
 
@@ -27,7 +35,9 @@ export class JavaPackageScrubberRule implements IScrubberRule {
       options?.disabledRules?.includes(this.name) ||
       options?.disabledRules?.includes("all") ||
       options?.allowPackageMismatch ||
-      content.includes("@cacophony-disable-scrubber: JavaPackageScrubberRule") ||
+      content.includes(
+        "@cacophony-disable-scrubber: JavaPackageScrubberRule",
+      ) ||
       content.includes("@cacophony-disable-scrubber: all") ||
       content.includes("@cacophony-allow-package-mismatch")
     ) {
@@ -35,7 +45,7 @@ export class JavaPackageScrubberRule implements IScrubberRule {
         modified: false,
         content,
         issuesFixed,
-        issuesDetected: ["Java package scrubbing skipped via exemption flag."]
+        issuesDetected: ["Java package scrubbing skipped via exemption flag."],
       };
     }
 
@@ -50,16 +60,32 @@ export class JavaPackageScrubberRule implements IScrubberRule {
     if (match) {
       const existingPackage = match[1];
       if (existingPackage !== expectedPackage) {
-        issuesDetected.push(`Mismatched Java package declaration: '${existingPackage}', expected '${expectedPackage}'`);
-        const cleaned = content.replace(packageRegex, `package ${expectedPackage};`);
-        issuesFixed.push(`Corrected Java package declaration to '${expectedPackage}'`);
-        return { modified: true, content: cleaned, issuesFixed, issuesDetected };
+        issuesDetected.push(
+          `Mismatched Java package declaration: '${existingPackage}', expected '${expectedPackage}'`,
+        );
+        const cleaned = content.replace(
+          packageRegex,
+          `package ${expectedPackage};`,
+        );
+        issuesFixed.push(
+          `Corrected Java package declaration to '${expectedPackage}'`,
+        );
+        return {
+          modified: true,
+          content: cleaned,
+          issuesFixed,
+          issuesDetected,
+        };
       }
     } else {
       // Missing package declaration
-      issuesDetected.push(`Missing Java package declaration. Expected '${expectedPackage}'`);
+      issuesDetected.push(
+        `Missing Java package declaration. Expected '${expectedPackage}'`,
+      );
       const cleaned = `package ${expectedPackage};\n\n${content.trimStart()}`;
-      issuesFixed.push(`Injected missing Java package declaration: 'package ${expectedPackage};'`);
+      issuesFixed.push(
+        `Injected missing Java package declaration: 'package ${expectedPackage};'`,
+      );
       return { modified: true, content: cleaned, issuesFixed, issuesDetected };
     }
 

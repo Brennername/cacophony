@@ -4,7 +4,7 @@ import {
   TelemetryBar,
   ContextInspectorPane,
   StreamingLogDrawer,
-  type MarkdownMessage
+  type MarkdownMessage,
 } from "./TuiPanes.js";
 import type { TuiThemeName } from "./TuiTheme.js";
 import type { HardwareTelemetrySnapshot } from "@cacophony/shared-types";
@@ -44,7 +44,11 @@ export class TerminalApp {
   constructor(options: TerminalAppOptions = {}) {
     const termWidth = options.width ?? (process.stdout?.columns || 120);
     const termHeight = options.height ?? (process.stdout?.rows || 36);
-    this.buffer = new ScreenBuffer(termWidth, termHeight, options.theme || "dark");
+    this.buffer = new ScreenBuffer(
+      termWidth,
+      termHeight,
+      options.theme || "dark",
+    );
   }
 
   public registerCommand(item: CommandPaletteItem): void {
@@ -117,7 +121,10 @@ export class TerminalApp {
         this.selectedPaletteIndex = Math.max(0, this.selectedPaletteIndex - 1);
       } else if (keyName === "down") {
         const matches = this.getFilteredCommands();
-        this.selectedPaletteIndex = Math.min(matches.length - 1, this.selectedPaletteIndex + 1);
+        this.selectedPaletteIndex = Math.min(
+          matches.length - 1,
+          this.selectedPaletteIndex + 1,
+        );
       } else if (keyName === "return") {
         const matches = this.getFilteredCommands();
         const selected = matches[this.selectedPaletteIndex];
@@ -156,7 +163,9 @@ export class TerminalApp {
 
     // Remaining height split between conversation/context and bottom drawer
     const availableHeight = h - 5;
-    const drawerHeight = this.logDrawer.isVisible ? Math.max(6, Math.floor(availableHeight * 0.28)) : 0;
+    const drawerHeight = this.logDrawer.isVisible
+      ? Math.max(6, Math.floor(availableHeight * 0.28))
+      : 0;
     const mainHeight = availableHeight - drawerHeight;
 
     // Left: Conversation Pane (70% width)
@@ -167,18 +176,26 @@ export class TerminalApp {
       x: 0,
       y: 5,
       width: leftWidth,
-      height: mainHeight
+      height: mainHeight,
     };
-    this.conversationPane.render(this.buffer, convBounds, this.activePane === "conversation");
+    this.conversationPane.render(
+      this.buffer,
+      convBounds,
+      this.activePane === "conversation",
+    );
 
     // Right: Context & File Inspector
     const contextBounds: BoxDimensions = {
       x: leftWidth,
       y: 5,
       width: rightWidth,
-      height: mainHeight
+      height: mainHeight,
     };
-    this.contextInspector.render(this.buffer, contextBounds, this.activePane === "context");
+    this.contextInspector.render(
+      this.buffer,
+      contextBounds,
+      this.activePane === "context",
+    );
 
     // Bottom: Drawer
     if (this.logDrawer.isVisible) {
@@ -186,9 +203,13 @@ export class TerminalApp {
         x: 0,
         y: 5 + mainHeight,
         width: w,
-        height: drawerHeight
+        height: drawerHeight,
       };
-      this.logDrawer.render(this.buffer, drawerBounds, this.activePane === "drawer");
+      this.logDrawer.render(
+        this.buffer,
+        drawerBounds,
+        this.activePane === "drawer",
+      );
     }
 
     // Modal: Command Palette overlay
@@ -208,7 +229,7 @@ export class TerminalApp {
 
     this.buffer.drawBox(
       { x: modalX, y: modalY, width: modalW, height: modalH },
-      { title: "Search Commands (Ctrl+P)", isActive: true }
+      { title: "Search Commands (Ctrl+P)", isActive: true },
     );
 
     const innerX = modalX + 2;
@@ -220,7 +241,7 @@ export class TerminalApp {
       innerY,
       `> ${this.commandPaletteFilter}_`,
       palette.title,
-      innerW
+      innerW,
     );
 
     const items = this.getFilteredCommands();
@@ -236,7 +257,7 @@ export class TerminalApp {
         innerY + 2 + i,
         `${prefix}${item.label.padEnd(20)} ${item.description}`,
         style,
-        innerW
+        innerW,
       );
     }
   }
@@ -245,7 +266,9 @@ export class TerminalApp {
     if (!this.commandPaletteFilter) return this.commandPaletteItems;
     const q = this.commandPaletteFilter.toLowerCase();
     return this.commandPaletteItems.filter(
-      (it) => it.label.toLowerCase().includes(q) || it.description.toLowerCase().includes(q)
+      (it) =>
+        it.label.toLowerCase().includes(q) ||
+        it.description.toLowerCase().includes(q),
     );
   }
 }

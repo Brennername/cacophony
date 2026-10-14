@@ -8,7 +8,10 @@ import {
   StochasticHyperparameterOptimizer,
 } from "../optimization/index.js";
 import { RulePipelineEngine } from "../rules/RulePipelineEngine.js";
-import { HistoricalTaskRecord, RulePipelineDeclaration } from "@cacophony/shared-types";
+import {
+  HistoricalTaskRecord,
+  RulePipelineDeclaration,
+} from "@cacophony/shared-types";
 
 describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparameter Optimization", () => {
   const arenaBasePath =
@@ -20,7 +23,10 @@ describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparam
   describe("T26.1: Historical Arena Telemetry Ingestion & Mitigation Paradox", () => {
     it("should parse arena dataset stats.json and produce Mitigation Paradox Report", async (t) => {
       if (!hasLiveDataset) {
-        t.skip("Skipping live arena dataset assertions: stats.json not found at " + arenaBasePath);
+        t.skip(
+          "Skipping live arena dataset assertions: stats.json not found at " +
+            arenaBasePath,
+        );
         return;
       }
       const adapter = new HistoricalArenaIngestionAdapter(arenaBasePath);
@@ -38,14 +44,26 @@ describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparam
 
       // Demonstrates: Real test failures are only ~4.6%, but rigid verification rejection accounted for ~35%+ of failures!
       assert.equal(paradox.realTestFailureCount, 167);
-      assert.ok(paradox.realTestFailurePct < 5.0, "Real test failures should be < 5%");
-      assert.ok(paradox.verifierRejectionCount > 1200, "Verifier rejections should be > 1200");
-      assert.ok(paradox.counterfactualPassRatePct > paradox.rawPassRatePct, "Counterfactual pass rate should exceed raw baseline");
+      assert.ok(
+        paradox.realTestFailurePct < 5.0,
+        "Real test failures should be < 5%",
+      );
+      assert.ok(
+        paradox.verifierRejectionCount > 1200,
+        "Verifier rejections should be > 1200",
+      );
+      assert.ok(
+        paradox.counterfactualPassRatePct > paradox.rawPassRatePct,
+        "Counterfactual pass rate should exceed raw baseline",
+      );
     });
 
     it("should load task records from historical arena completed and failed folders", async (t) => {
       if (!hasLiveDataset) {
-        t.skip("Skipping live arena dataset assertions: stats.json not found at " + arenaBasePath);
+        t.skip(
+          "Skipping live arena dataset assertions: stats.json not found at " +
+            arenaBasePath,
+        );
         return;
       }
       const adapter = new HistoricalArenaIngestionAdapter(arenaBasePath);
@@ -58,7 +76,10 @@ describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparam
 
     it("should load postmortems from historical arena", async (t) => {
       if (!hasLiveDataset) {
-        t.skip("Skipping live arena dataset assertions: stats.json not found at " + arenaBasePath);
+        t.skip(
+          "Skipping live arena dataset assertions: stats.json not found at " +
+            arenaBasePath,
+        );
         return;
       }
       const adapter = new HistoricalArenaIngestionAdapter(arenaBasePath);
@@ -136,11 +157,15 @@ describe("Phase 26: Decoupled Historical Arena Ingestion & Stochastic Hyperparam
         },
       ];
 
-      const optResult = await optimizer.optimize("openai/qwen2.5-coder:7b-4k", tasks, {
-        strategy: "genetic_evolution",
-        generations: 3,
-        populationSize: 4,
-      });
+      const optResult = await optimizer.optimize(
+        "openai/qwen2.5-coder:7b-4k",
+        tasks,
+        {
+          strategy: "genetic_evolution",
+          generations: 3,
+          populationSize: 4,
+        },
+      );
 
       assert.equal(optResult.targetModel, "openai/qwen2.5-coder:7b-4k");
       assert.equal(optResult.strategy, "genetic_evolution");

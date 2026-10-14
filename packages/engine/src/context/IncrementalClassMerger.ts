@@ -39,8 +39,18 @@ export class IncrementalClassMerger {
     let newSf: ts.SourceFile;
 
     try {
-      origSf = ts.createSourceFile("original.ts", originalCode, ts.ScriptTarget.ES2022, true);
-      newSf = ts.createSourceFile("new.ts", newCode, ts.ScriptTarget.ES2022, true);
+      origSf = ts.createSourceFile(
+        "original.ts",
+        originalCode,
+        ts.ScriptTarget.ES2022,
+        true,
+      );
+      newSf = ts.createSourceFile(
+        "new.ts",
+        newCode,
+        ts.ScriptTarget.ES2022,
+        true,
+      );
     } catch {
       // If AST parsing fails and originalCode is substantial, protect originalCode
       if (originalCode.length > 500) {
@@ -88,7 +98,12 @@ export class IncrementalClassMerger {
         const bodyLines: string[] = [];
         for (const line of lines) {
           const t = line.trim();
-          if (t.startsWith("import ") || t.startsWith("import{") || t.startsWith("export type ") || t.startsWith("export interface ")) {
+          if (
+            t.startsWith("import ") ||
+            t.startsWith("import{") ||
+            t.startsWith("export type ") ||
+            t.startsWith("export interface ")
+          ) {
             importLines.push(line);
           } else {
             bodyLines.push(line);
@@ -105,7 +120,7 @@ export class IncrementalClassMerger {
           const markers = [
             "// 5. Static Angular Frontend Serving",
             "this.serveStatic(",
-            "// Static asset fallback"
+            "// Static asset fallback",
           ];
           let markerIdx = -1;
           for (const m of markers) {
@@ -140,7 +155,12 @@ export class IncrementalClassMerger {
         if (looksLikeClassMember) {
           const wrappedCode = `${importLines.join("\n")}\nclass ${origClassName} {\n${bodyLines.join("\n")}\n}`;
           try {
-            const wrappedSf = ts.createSourceFile("wrapped.ts", wrappedCode, ts.ScriptTarget.ES2022, true);
+            const wrappedSf = ts.createSourceFile(
+              "wrapped.ts",
+              wrappedCode,
+              ts.ScriptTarget.ES2022,
+              true,
+            );
             for (const stmt of wrappedSf.statements) {
               if (ts.isClassDeclaration(stmt)) {
                 newClasses.set(origClassName, stmt);
@@ -172,18 +192,24 @@ export class IncrementalClassMerger {
         }
       }
 
-      const hasExportedDeclarations = newDeclarations.some((decl) => /^\s*export\s+/.test(decl));
+      const hasExportedDeclarations = newDeclarations.some((decl) =>
+        /^\s*export\s+/.test(decl),
+      );
       if (origClasses.size > 0 && hasExportedDeclarations) {
         let merged = originalCode;
         if (newImportLines.length > 0) {
           merged = newImportLines.join("\n") + "\n" + merged;
         }
-        merged = merged.trimEnd() + "\n\n" + newDeclarations.join("\n\n") + "\n";
+        merged =
+          merged.trimEnd() + "\n\n" + newDeclarations.join("\n\n") + "\n";
         return merged;
       }
 
       // Safety guard: If original file is large and newCode is small/fragmented, NEVER destroy originalCode
-      if (originalCode.length > 2000 && newCode.length < originalCode.length * 0.7) {
+      if (
+        originalCode.length > 2000 &&
+        newCode.length < originalCode.length * 0.7
+      ) {
         return originalCode;
       }
       return newCode;
@@ -238,10 +264,16 @@ export class IncrementalClassMerger {
           if (origText !== memberText) {
             // Check if original member had JSDoc comments that the newly generated member omitted
             const origMemberFull = origMember.getFullText(origSf);
-            const origLeadingComment = origMemberFull.slice(0, origMember.getStart(origSf) - origMember.getFullStart()).trim();
+            const origLeadingComment = origMemberFull
+              .slice(0, origMember.getStart(origSf) - origMember.getFullStart())
+              .trim();
             let replacementText = memberText;
-            if (origLeadingComment.includes("/**") && !memberText.includes("/**")) {
-              const jsDocMatch = origLeadingComment.match(/(\/\*\*[\s\S]*?\*\/)/);
+            if (
+              origLeadingComment.includes("/**") &&
+              !memberText.includes("/**")
+            ) {
+              const jsDocMatch =
+                origLeadingComment.match(/(\/\*\*[\s\S]*?\*\/)/);
               if (jsDocMatch) {
                 replacementText = jsDocMatch[1] + "\n  " + memberText;
               }
@@ -256,9 +288,12 @@ export class IncrementalClassMerger {
     // original named member and does not strip existing JSDoc documentation comments.
     const generatedMemberNames = new Set<string>();
     for (const member of newClass.members) {
-      if (member.name && ts.isIdentifier(member.name)) generatedMemberNames.add(member.name.text);
+      if (member.name && ts.isIdentifier(member.name))
+        generatedMemberNames.add(member.name.text);
     }
-    const containsAllOriginalMembers = [...origMembersByName.keys()].every((name) => generatedMemberNames.has(name));
+    const containsAllOriginalMembers = [...origMembersByName.keys()].every(
+      (name) => generatedMemberNames.has(name),
+    );
 
     const countJsDocs = (code: string): number => {
       let count = 0;
@@ -278,7 +313,12 @@ export class IncrementalClassMerger {
     const newJsDocCount = countJsDocs(newCode);
     const preservesAllJsDocs = newJsDocCount >= origJsDocCount;
 
-    if (!isStubbed && containsAllOriginalMembers && newClass.members.length >= origClass.members.length && preservesAllJsDocs) {
+    if (
+      !isStubbed &&
+      containsAllOriginalMembers &&
+      newClass.members.length >= origClass.members.length &&
+      preservesAllJsDocs
+    ) {
       return newCode;
     }
 
@@ -303,14 +343,24 @@ export class IncrementalClassMerger {
     // Collect new top-level functions, interfaces, type aliases
     const origTopLevelNames = new Set<string>();
     for (const stmt of origSf.statements) {
-      if ((ts.isFunctionDeclaration(stmt) || ts.isInterfaceDeclaration(stmt) || ts.isTypeAliasDeclaration(stmt)) && stmt.name) {
+      if (
+        (ts.isFunctionDeclaration(stmt) ||
+          ts.isInterfaceDeclaration(stmt) ||
+          ts.isTypeAliasDeclaration(stmt)) &&
+        stmt.name
+      ) {
         origTopLevelNames.add(stmt.name.text);
       }
     }
 
     const newTopLevelToAdd: string[] = [];
     for (const stmt of newSf.statements) {
-      if ((ts.isFunctionDeclaration(stmt) || ts.isInterfaceDeclaration(stmt) || ts.isTypeAliasDeclaration(stmt)) && stmt.name) {
+      if (
+        (ts.isFunctionDeclaration(stmt) ||
+          ts.isInterfaceDeclaration(stmt) ||
+          ts.isTypeAliasDeclaration(stmt)) &&
+        stmt.name
+      ) {
         if (!origTopLevelNames.has(stmt.name.text)) {
           newTopLevelToAdd.push(stmt.getText(newSf).trim());
         }
@@ -332,7 +382,7 @@ export class IncrementalClassMerger {
     // 1. Apply in-place member replacements (sorted descending by position)
     if (membersToReplace.size > 0) {
       const sortedReplacements = Array.from(membersToReplace.entries()).sort(
-        (a, b) => b[0].getStart(origSf) - a[0].getStart(origSf)
+        (a, b) => b[0].getStart(origSf) - a[0].getStart(origSf),
       );
       for (const [origElem, newText] of sortedReplacements) {
         const start = origElem.getStart(origSf);
@@ -353,10 +403,18 @@ export class IncrementalClassMerger {
 
     // 4. Inject new class members before the closing brace of the target class
     if (newMembersToAppend.length > 0) {
-      const reParsedSf = ts.createSourceFile("reparsed.ts", merged, ts.ScriptTarget.ES2022, true);
+      const reParsedSf = ts.createSourceFile(
+        "reparsed.ts",
+        merged,
+        ts.ScriptTarget.ES2022,
+        true,
+      );
       let reParsedClass: ts.ClassDeclaration | null = null;
       for (const stmt of reParsedSf.statements) {
-        if (ts.isClassDeclaration(stmt) && stmt.name?.text === matchingClassName) {
+        if (
+          ts.isClassDeclaration(stmt) &&
+          stmt.name?.text === matchingClassName
+        ) {
           reParsedClass = stmt;
           break;
         }
@@ -374,12 +432,15 @@ export class IncrementalClassMerger {
                 m
                   .split("\n")
                   .map((line) => (line.trim() ? indent + line : line))
-                  .join("\n")
+                  .join("\n"),
               )
               .join("\n\n") +
             "\n";
 
-          merged = merged.slice(0, closingBraceIdx) + formattedMembers + merged.slice(closingBraceIdx);
+          merged =
+            merged.slice(0, closingBraceIdx) +
+            formattedMembers +
+            merged.slice(closingBraceIdx);
         }
       }
     }

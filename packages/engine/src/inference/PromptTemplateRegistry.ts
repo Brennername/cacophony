@@ -27,7 +27,9 @@ export class PromptTemplateRegistry {
   /**
    * Formats the Pass 1 prompt for architectural structuring and hash-stubbing.
    */
-  public static createPass1ArchitectPrompt(params: Pass1ArchitectPromptParams): string {
+  public static createPass1ArchitectPrompt(
+    params: Pass1ArchitectPromptParams,
+  ): string {
     return `You are an expert TypeScript architect. Design the high-level class architecture and method stubs for the following requirement:
 
 Task Goal: ${params.taskPrompt}
@@ -45,7 +47,9 @@ Directives:
   /**
    * Formats the Pass 2 prompt for focused method body generation.
    */
-  public static createPass2ImplementerPrompt(params: Pass2ImplementerPromptParams): string {
+  public static createPass2ImplementerPrompt(
+    params: Pass2ImplementerPromptParams,
+  ): string {
     return `You are a high-speed TypeScript implementer. Implement the method body for the following targeted method:
 
 Target Method: ${params.methodName}
@@ -70,7 +74,9 @@ Directives:
    * Cleans and extracts the method body from the model output.
    */
   public static extractMethodFromOutput(output: string): string {
-    const codeBlockMatch = output.match(/```(?:typescript|ts)?\s*([\s\S]*?)```/);
+    const codeBlockMatch = output.match(
+      /```(?:typescript|ts)?\s*([\s\S]*?)```/,
+    );
     const raw = codeBlockMatch ? codeBlockMatch[1] : output;
     return (raw || "").trim();
   }

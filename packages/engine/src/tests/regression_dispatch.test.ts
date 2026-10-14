@@ -5,7 +5,11 @@ import { GitRegressionCorrelator } from "../analytics/GitRegressionCorrelator.js
 import { RegressionDispatchSupervisor } from "../scheduler/RegressionDispatchSupervisor.js";
 
 describe("RegressionDispatchSupervisor Suite (T85.3)", () => {
-  const createMockTask = (id: string, status: "COMPLETED" | "FAILED", focusFiles = "src/app.ts"): TaskRecord => ({
+  const createMockTask = (
+    id: string,
+    status: "COMPLETED" | "FAILED",
+    focusFiles = "src/app.ts",
+  ): TaskRecord => ({
     id,
     title: `Task ${id}`,
     prompt: `Prompt for ${id}`,
@@ -48,7 +52,10 @@ describe("RegressionDispatchSupervisor Suite (T85.3)", () => {
     const result = correlator.correlateFailure(failed, commits);
 
     assert.equal(result.confidenceScore, 0.9);
-    assert.equal(result.culpritCommit?.hash, "c222222222222222222222222222222222222222");
+    assert.equal(
+      result.culpritCommit?.hash,
+      "c222222222222222222222222222222222222222",
+    );
     assert(result.matchedFiles.includes("src/app.ts"));
   });
 
@@ -74,7 +81,11 @@ describe("RegressionDispatchSupervisor Suite (T85.3)", () => {
       executedCommand = "";
       const files = correlator.getCommitFiles(payload);
       assert.deepEqual(files, []);
-      assert.equal(executedCommand, "", `Should not execute command for invalid payload: ${payload}`);
+      assert.equal(
+        executedCommand,
+        "",
+        `Should not execute command for invalid payload: ${payload}`,
+      );
     }
 
     // Valid hex commit hash
@@ -136,10 +147,13 @@ describe("RegressionDispatchSupervisor Suite (T85.3)", () => {
       filteredBy: {},
     };
 
-    const intervention = await supervisor.triggerPlateauIntervention(plateauMetrics);
+    const intervention =
+      await supervisor.triggerPlateauIntervention(plateauMetrics);
     assert(intervention !== null);
     assert.equal(intervention?.priority, "P0");
-    assert(intervention?.title.includes("[P0 Architecture] Plateau Intervention"));
+    assert(
+      intervention?.title.includes("[P0 Architecture] Plateau Intervention"),
+    );
     assert.equal(createdTasks.length, 1);
   });
 });

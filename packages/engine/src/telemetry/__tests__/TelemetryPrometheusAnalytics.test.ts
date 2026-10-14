@@ -30,7 +30,7 @@ class MockTelemetryProvider implements IHardwareTelemetryProvider {
       socMilliVolts: 943,
       pptWatts: 35,
       sclkMhz: 2100,
-      mclkMhz: 1600
+      mclkMhz: 1600,
     };
   }
 }
@@ -59,12 +59,16 @@ describe("Phase 35: Hardware Telemetry Capture, Prometheus Exporter & Success An
     await poller.pollOnce();
     await poller.pollOnce();
 
-    const history = await repo.getAggregatedHistory(new Date(Date.now() - 3600_000).toISOString());
+    const history = await repo.getAggregatedHistory(
+      new Date(Date.now() - 3600_000).toISOString(),
+    );
     assert.ok(history.count >= 2);
     assert.equal(history.avgGpuBusy, 42);
     assert.equal(history.peakTempC, 64);
 
-    const pruned = await repo.pruneOlderThan(new Date(Date.now() + 10_000).toISOString());
+    const pruned = await repo.pruneOlderThan(
+      new Date(Date.now() + 10_000).toISOString(),
+    );
     assert.ok(pruned >= 2);
 
     await driver.close();
@@ -87,7 +91,7 @@ describe("Phase 35: Hardware Telemetry Capture, Prometheus Exporter & Success An
       avgTokensPerSec: 38.5,
       thermalThrottleEvents: 0,
       durationMs: 31000,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     });
 
     const service = new TelemetryCorrelationService(corrRepo);

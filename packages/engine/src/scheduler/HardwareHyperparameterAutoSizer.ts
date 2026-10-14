@@ -45,8 +45,12 @@ export class HardwareHyperparameterAutoSizer {
   /**
    * Evaluates hardware profile and synthesizes optimized hyperparameters and environment flags.
    */
-  public static computeOptimalProfile(profile: HardwareProfileInput): AutoSizedHyperparameters {
-    const { totalMb, safeMb, reservedMb } = this.computeSafeAllocation(profile.totalVramBytes);
+  public static computeOptimalProfile(
+    profile: HardwareProfileInput,
+  ): AutoSizedHyperparameters {
+    const { totalMb, safeMb, reservedMb } = this.computeSafeAllocation(
+      profile.totalVramBytes,
+    );
 
     let contextWindowTokens: number;
     let maxPredictTokens: number;
@@ -135,16 +139,24 @@ export class HardwareHyperparameterAutoSizer {
     };
   }
 
-  private static determineFlashAttention(profile: HardwareProfileInput): boolean {
+  private static determineFlashAttention(
+    profile: HardwareProfileInput,
+  ): boolean {
     if (profile.flashAttentionCapable !== undefined) {
       return profile.flashAttentionCapable;
     }
     // Apple Silicon and modern CUDA support flash attention
-    if (profile.category === "APPLE_SILICON" || profile.category === "NVIDIA_CUDA") {
+    if (
+      profile.category === "APPLE_SILICON" ||
+      profile.category === "NVIDIA_CUDA"
+    ) {
       return true;
     }
     // Older AMD Vega APU does not support Flash Attention reliably
-    if (profile.category === "AMD_APU_VEGA" || profile.category === "CPU_FALLBACK") {
+    if (
+      profile.category === "AMD_APU_VEGA" ||
+      profile.category === "CPU_FALLBACK"
+    ) {
       return false;
     }
     return true;

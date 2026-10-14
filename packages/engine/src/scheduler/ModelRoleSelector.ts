@@ -40,7 +40,10 @@ export class ModelRoleSelector {
     this.defaultModel = config.defaultModel ?? "qwen2.5-coder:7b";
   }
 
-  public selectModelForRole(role: AgentRole, availableModels: readonly string[]): string {
+  public selectModelForRole(
+    role: AgentRole,
+    availableModels: readonly string[],
+  ): string {
     if (availableModels.length === 0) {
       return this.defaultModel;
     }
@@ -69,14 +72,18 @@ export class ModelRoleSelector {
 
     for (const pref of preferredList) {
       const match = availableModels.find(
-        (m) => m === pref || m.startsWith(`${pref}:`) || pref.startsWith(m)
+        (m) => m === pref || m.startsWith(`${pref}:`) || pref.startsWith(m),
       );
       if (match) return match;
     }
 
     if (role === "chore_runner") {
-      const smallest = availableModels.find((m) =>
-        m.includes("1.5b") || m.includes("3b") || m.includes("135m") || m.includes("0.5b")
+      const smallest = availableModels.find(
+        (m) =>
+          m.includes("1.5b") ||
+          m.includes("3b") ||
+          m.includes("135m") ||
+          m.includes("0.5b"),
       );
       if (smallest) return smallest;
     }

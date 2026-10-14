@@ -11,7 +11,7 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
     const policy = new EpsilonGreedyPolicy({
       initialEpsilon: 0.3,
       minEpsilon: 0.05,
-      decayRate: 0.5
+      decayRate: 0.5,
     });
 
     assert.equal(policy.getEpsilon(), 0.3);
@@ -29,7 +29,7 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
   test("ThompsonSamplingPolicy should select candidate models and reset arms to uniform priors", () => {
     const policy = new ThompsonSamplingPolicy({
       uniformPriorAlpha: 2,
-      uniformPriorBeta: 2
+      uniformPriorBeta: 2,
     });
 
     const armA: BanditArmRecord = {
@@ -43,7 +43,7 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
       alpha: 47,
       beta: 7,
       averageTokensPerSec: 30,
-      averageVramMb: 4096
+      averageVramMb: 4096,
     };
 
     const armB: BanditArmRecord = {
@@ -57,11 +57,14 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
       alpha: 12,
       beta: 42,
       averageTokensPerSec: 25,
-      averageVramMb: 4096
+      averageVramMb: 4096,
     };
 
     const outcome = policy.selectArm([armA, armB]);
-    assert.ok(outcome.selectedModel === "model-a" || outcome.selectedModel === "model-b");
+    assert.ok(
+      outcome.selectedModel === "model-a" ||
+        outcome.selectedModel === "model-b",
+    );
 
     policy.stepEpoch(1);
     assert.equal(policy.getEpoch(), 1);
@@ -106,7 +109,7 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
     manager.broadcastEpochAdvanced({
       epochId: 2,
       name: "Epoch 2: Architecture Upgrade",
-      reason: "Pipeline fixes deployed"
+      reason: "Pipeline fixes deployed",
     });
 
     assert.equal(received.length, 1);
@@ -118,7 +121,7 @@ describe("Epoch Bandit Policy Reset & Broadcast Suite (T82.4)", () => {
     manager.broadcastEpochAdvanced({
       epochId: 3,
       name: "Epoch 3",
-      reason: "Next phase"
+      reason: "Next phase",
     });
 
     assert.equal(received.length, 1);

@@ -1,7 +1,7 @@
 import type {
   InferenceRequest,
   InferenceResponse,
-  InferenceProviderType
+  InferenceProviderType,
 } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 
@@ -44,7 +44,7 @@ export class OpenAiCompatibleProvider implements IInferenceProvider {
     const startMs = Date.now();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...this.defaultHeaders
+      ...this.defaultHeaders,
     };
 
     if (this.apiKey) {
@@ -57,19 +57,26 @@ export class OpenAiCompatibleProvider implements IInferenceProvider {
       headers,
       body: JSON.stringify({
         model: request.model,
-        messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
+        messages: request.messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
         temperature: request.temperature ?? 0.2,
-        max_tokens: request.maxTokens
-      })
+        max_tokens: request.maxTokens,
+      }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Inference request failed for '${this.providerType}' (${res.status}): ${errText}`);
+      throw new Error(
+        `Inference request failed for '${this.providerType}' (${res.status}): ${errText}`,
+      );
     }
 
     const data = (await res.json()) as {
-      readonly choices?: readonly { readonly message?: { readonly content: string } }[];
+      readonly choices?: readonly {
+        readonly message?: { readonly content: string };
+      }[];
       readonly usage?: {
         readonly prompt_tokens: number;
         readonly completion_tokens: number;
@@ -80,8 +87,12 @@ export class OpenAiCompatibleProvider implements IInferenceProvider {
     const latencyMs = Math.max(1, Date.now() - startMs);
     const tokensPrompt = data.usage?.prompt_tokens ?? 0;
     const tokensCompletion = data.usage?.completion_tokens ?? 0;
-    const totalTokens = data.usage?.total_tokens ?? (tokensPrompt + tokensCompletion);
-    const tokensPerSec = tokensCompletion > 0 ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2)) : 0;
+    const totalTokens =
+      data.usage?.total_tokens ?? tokensPrompt + tokensCompletion;
+    const tokensPerSec =
+      tokensCompletion > 0
+        ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2))
+        : 0;
 
     return {
       content: data.choices?.[0]?.message?.content ?? "",
@@ -90,13 +101,13 @@ export class OpenAiCompatibleProvider implements IInferenceProvider {
       tokensCompletion,
       totalTokens,
       latencyMs,
-      tokensPerSec
+      tokensPerSec,
     };
   }
 
   public async stream(
     request: InferenceRequest,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
   ): Promise<InferenceResponse> {
     const res = await this.generate(request);
     onChunk(res.content);

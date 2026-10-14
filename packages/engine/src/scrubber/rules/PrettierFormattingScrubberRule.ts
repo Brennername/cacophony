@@ -1,4 +1,8 @@
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "../IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "../IScrubberRule.js";
 
 /**
  * PrettierFormattingScrubberRule
@@ -17,7 +21,7 @@ export class PrettierFormattingScrubberRule implements IScrubberRule {
     ".json",
     ".md",
     ".html",
-    ".css"
+    ".css",
   ];
 
   public isApplicable(_stack: string, filePath: string): boolean {
@@ -27,7 +31,7 @@ export class PrettierFormattingScrubberRule implements IScrubberRule {
   public scrub(
     content: string,
     _filePath: string,
-    options?: ScrubRuleOptions
+    options?: ScrubRuleOptions,
   ): ScrubRuleResult {
     const issuesFixed: string[] = [];
     const issuesDetected: string[] = [];
@@ -36,14 +40,16 @@ export class PrettierFormattingScrubberRule implements IScrubberRule {
     if (
       options?.disabledRules?.includes(this.name) ||
       options?.disabledRules?.includes("all") ||
-      content.includes("@cacophony-disable-scrubber: PrettierFormattingScrubberRule") ||
+      content.includes(
+        "@cacophony-disable-scrubber: PrettierFormattingScrubberRule",
+      ) ||
       content.includes("@cacophony-disable-scrubber: all")
     ) {
       return {
         modified: false,
         content,
         issuesFixed,
-        issuesDetected: ["Prettier formatting skipped via rule disable flag."]
+        issuesDetected: ["Prettier formatting skipped via rule disable flag."],
       };
     }
 
@@ -83,7 +89,7 @@ export class PrettierFormattingScrubberRule implements IScrubberRule {
         modified: formatted !== content,
         content: formatted,
         issuesFixed,
-        issuesDetected
+        issuesDetected,
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -91,7 +97,7 @@ export class PrettierFormattingScrubberRule implements IScrubberRule {
         modified: false,
         content,
         issuesFixed,
-        issuesDetected: [`Formatting failed: ${msg}`]
+        issuesDetected: [`Formatting failed: ${msg}`],
       };
     }
   }

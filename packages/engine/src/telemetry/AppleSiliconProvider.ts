@@ -1,6 +1,10 @@
 import * as os from "node:os";
 import { execSync } from "node:child_process";
-import type { GpuMetrics, HardwareDeviceCategory, ThermalZone } from "@cacophony/shared-types";
+import type {
+  GpuMetrics,
+  HardwareDeviceCategory,
+  ThermalZone,
+} from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 
 export type AppleThermalPressure = "Nominal" | "Fair" | "Serious" | "Critical";
@@ -82,9 +86,10 @@ export class AppleSiliconProvider implements IHardwareTelemetryProvider {
     try {
       // powermetrics output format or thermal pressure sysctl
       const output = this.runCommand(
-        "powermetrics -n 1 -i 100 --samplers thermal 2>/dev/null || echo 'Current pressure level: Nominal'"
+        "powermetrics -n 1 -i 100 --samplers thermal 2>/dev/null || echo 'Current pressure level: Nominal'",
       );
-      if (output.includes("Critical") || output.includes("4")) return "Critical";
+      if (output.includes("Critical") || output.includes("4"))
+        return "Critical";
       if (output.includes("Serious") || output.includes("3")) return "Serious";
       if (output.includes("Fair") || output.includes("2")) return "Fair";
       return "Nominal";
@@ -113,7 +118,9 @@ export class AppleSiliconProvider implements IHardwareTelemetryProvider {
   /**
    * Computes pacing delay for ThermalGovernor to prevent thermal throttling.
    */
-  public mapThermalPressureToPacingDelay(pressure: AppleThermalPressure): number {
+  public mapThermalPressureToPacingDelay(
+    pressure: AppleThermalPressure,
+  ): number {
     switch (pressure) {
       case "Critical":
         return 20;
@@ -151,7 +158,8 @@ export class AppleSiliconProvider implements IHardwareTelemetryProvider {
     const totalMem = this.mockTotalMem ?? os.totalmem();
     const freeMem = this.mockFreeMem ?? os.freemem();
     const usedMem = Math.max(0, totalMem - freeMem);
-    const vramPercent = totalMem > 0 ? Number(((usedMem / totalMem) * 100).toFixed(1)) : 0;
+    const vramPercent =
+      totalMem > 0 ? Number(((usedMem / totalMem) * 100).toFixed(1)) : 0;
 
     const thermal = this.getThermalState();
 
@@ -176,7 +184,10 @@ export class AppleSiliconProvider implements IHardwareTelemetryProvider {
     // Compute load from load averages
     const cores = os.cpus().length || 8;
     const load1Min = os.loadavg()[0] ?? 0;
-    const gpuBusyPercent = Math.min(100, Math.max(0, Number(((load1Min / cores) * 100).toFixed(1))));
+    const gpuBusyPercent = Math.min(
+      100,
+      Math.max(0, Number(((load1Min / cores) * 100).toFixed(1))),
+    );
 
     return {
       gpuBusyPercent,
@@ -193,7 +204,11 @@ export class AppleSiliconProvider implements IHardwareTelemetryProvider {
     };
   }
 
-  public async getVramMetrics(): Promise<{ totalBytes: number; usedBytes: number; freeBytes: number }> {
+  public async getVramMetrics(): Promise<{
+    totalBytes: number;
+    usedBytes: number;
+    freeBytes: number;
+  }> {
     const total = this.mockTotalMem ?? os.totalmem();
     const free = this.mockFreeMem ?? os.freemem();
     return {
@@ -203,10 +218,18 @@ export class AppleSiliconProvider implements IHardwareTelemetryProvider {
     };
   }
 
-  public async getThermalMetrics(): Promise<{ temperatureCelsius: number; isThrottled: boolean }> {
+  public async getThermalMetrics(): Promise<{
+    temperatureCelsius: number;
+    isThrottled: boolean;
+  }> {
     const state = this.getThermalState();
     return {
-      temperatureCelsius: state.pressure === "Critical" ? 98 : state.pressure === "Serious" ? 86 : 50,
+      temperatureCelsius:
+        state.pressure === "Critical"
+          ? 98
+          : state.pressure === "Serious"
+            ? 86
+            : 50,
       isThrottled: state.isBackpressured,
     };
   }

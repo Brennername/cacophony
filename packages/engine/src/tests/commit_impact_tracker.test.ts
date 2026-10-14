@@ -11,22 +11,22 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
       author: "EngineDev",
       timestamp: 1700000000000,
       subject: "feat: add anti-stub AST validation",
-      filesChanged: ["packages/engine/src/rules/StubDetector.ts"]
+      filesChanged: ["packages/engine/src/rules/StubDetector.ts"],
     },
     {
       hash: "commit-2222222222222222222222222222222222222222",
       author: "EngineDev",
       timestamp: 1700005000000,
       subject: "refactor: optimize token streaming",
-      filesChanged: ["packages/engine/src/inference/StreamTapManager.ts"]
+      filesChanged: ["packages/engine/src/inference/StreamTapManager.ts"],
     },
     {
       hash: "commit-3333333333333333333333333333333333333333",
       author: "EngineDev",
       timestamp: 1700010000000,
       subject: "chore: noisy experiment burning tokens",
-      filesChanged: ["packages/engine/src/experimental.ts"]
-    }
+      filesChanged: ["packages/engine/src/experimental.ts"],
+    },
   ];
 
   const createMockTask = (options: {
@@ -56,7 +56,7 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
     commitHash: options.commitHash ?? null,
     baseCommitHash: options.baseCommitHash ?? null,
     failureReason: options.failureReason ?? null,
-    durationMs: options.durationMs ?? 10_000
+    durationMs: options.durationMs ?? 10_000,
   });
 
   it("identifies STRICTER_GUARDRAIL when failures are driven by integrity and build gates", async () => {
@@ -66,20 +66,23 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
         status: "FAILED",
         commitHash: mockCommits[0]!.hash,
         focusFiles: "packages/engine/src/rules/StubDetector.ts",
-        failureReason: "Anti-stub integrity check failed: detected placeholder TODO"
+        failureReason:
+          "Anti-stub integrity check failed: detected placeholder TODO",
       }),
       createMockTask({
         id: "T2",
         status: "FAILED",
         commitHash: mockCommits[0]!.hash,
         focusFiles: "packages/engine/src/rules/StubDetector.ts",
-        failureReason: "Pre-PR verification failed: MonorepoBuildGate rejected incomplete scaffold"
-      })
+        failureReason:
+          "Pre-PR verification failed: MonorepoBuildGate rejected incomplete scaffold",
+      }),
     ];
 
     const mockTaskRepo: any = {
-      listByCommitHash: async (h: string) => tasks.filter((t) => t.commitHash === h),
-      listRecent: async () => tasks
+      listByCommitHash: async (h: string) =>
+        tasks.filter((t) => t.commitHash === h),
+      listRecent: async () => tasks,
     };
 
     const mockCorrelator = new GitRegressionCorrelator("/tmp", () => "");
@@ -88,7 +91,7 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
 
     const tracker = new CommitImpactTracker({
       taskRepo: mockTaskRepo,
-      correlator: mockCorrelator
+      correlator: mockCorrelator,
     });
 
     const report = await tracker.evaluateCommitImpact(mockCommits[0]!.hash);
@@ -107,31 +110,32 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
         id: "T10",
         status: "COMPLETED",
         baseCommitHash: mockCommits[1]!.hash,
-        durationMs: 5000
+        durationMs: 5000,
       }),
       createMockTask({
         id: "T11",
         status: "COMPLETED",
         baseCommitHash: mockCommits[1]!.hash,
-        durationMs: 6000
+        durationMs: 6000,
       }),
       createMockTask({
         id: "T12",
         status: "COMPLETED",
         baseCommitHash: mockCommits[1]!.hash,
-        durationMs: 4000
+        durationMs: 4000,
       }),
       createMockTask({
         id: "T13",
         status: "FAILED",
         baseCommitHash: mockCommits[1]!.hash,
-        failureReason: "Minor assertion failure"
-      })
+        failureReason: "Minor assertion failure",
+      }),
     ];
 
     const mockTaskRepo: any = {
-      listByCommitHash: async (h: string) => tasks.filter((t) => t.baseCommitHash === h),
-      listRecent: async () => tasks
+      listByCommitHash: async (h: string) =>
+        tasks.filter((t) => t.baseCommitHash === h),
+      listRecent: async () => tasks,
     };
 
     const mockCorrelator = new GitRegressionCorrelator("/tmp", () => "");
@@ -140,10 +144,13 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
 
     const tracker = new CommitImpactTracker({
       taskRepo: mockTaskRepo,
-      correlator: mockCorrelator
+      correlator: mockCorrelator,
     });
 
-    const report = await tracker.evaluateCommitImpact(mockCommits[1]!.hash, 50.0);
+    const report = await tracker.evaluateCommitImpact(
+      mockCommits[1]!.hash,
+      50.0,
+    );
 
     assert.equal(report.tasksAttempted, 4);
     assert.equal(report.tasksPassed, 3);
@@ -160,13 +167,14 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
         status: "FAILED",
         commitHash: mockCommits[2]!.hash,
         failureReason: "Random timeout",
-        durationMs: 600_000 // simulates 30k tokens
-      })
+        durationMs: 600_000, // simulates 30k tokens
+      }),
     ];
 
     const mockTaskRepo: any = {
-      listByCommitHash: async (h: string) => tasks.filter((t) => t.commitHash === h),
-      listRecent: async () => tasks
+      listByCommitHash: async (h: string) =>
+        tasks.filter((t) => t.commitHash === h),
+      listRecent: async () => tasks,
     };
 
     const mockCorrelator = new GitRegressionCorrelator("/tmp", () => "");
@@ -175,7 +183,7 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
 
     const tracker = new CommitImpactTracker({
       taskRepo: mockTaskRepo,
-      correlator: mockCorrelator
+      correlator: mockCorrelator,
     });
 
     const report = await tracker.evaluateCommitImpact(mockCommits[2]!.hash);
@@ -191,24 +199,24 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
         id: "T30",
         status: "FAILED",
         baseCommitHash: "commit-bad",
-        failureReason: "Uncaught ReferenceError: foo is not defined"
+        failureReason: "Uncaught ReferenceError: foo is not defined",
       }),
       createMockTask({
         id: "T31",
         status: "FAILED",
         baseCommitHash: "commit-bad",
-        failureReason: "Crash in core engine"
+        failureReason: "Crash in core engine",
       }),
       createMockTask({
         id: "T32",
         status: "COMPLETED",
-        baseCommitHash: "commit-bad"
-      })
+        baseCommitHash: "commit-bad",
+      }),
     ];
 
     const mockTaskRepo: any = {
       listByCommitHash: async () => tasks,
-      listRecent: async () => tasks
+      listRecent: async () => tasks,
     };
 
     const mockCorrelator = new GitRegressionCorrelator("/tmp", () => "");
@@ -218,14 +226,14 @@ describe("CommitImpactTracker Test Suite (T99.4)", () => {
         author: "Dev",
         timestamp: 1700000000000,
         subject: "bad commit",
-        filesChanged: ["src/broken.ts"]
-      }
+        filesChanged: ["src/broken.ts"],
+      },
     ];
     (mockCorrelator as any).getCommitFiles = () => ["src/broken.ts"];
 
     const tracker = new CommitImpactTracker({
       taskRepo: mockTaskRepo,
-      correlator: mockCorrelator
+      correlator: mockCorrelator,
     });
 
     const report = await tracker.evaluateCommitImpact("commit-bad", 70.0);

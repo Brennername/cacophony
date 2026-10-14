@@ -17,7 +17,9 @@ export class GiteaSsoAdapter implements ISsoProvider {
     return this.provider.getAuthorizationUrl(state);
   }
 
-  public async exchangeCode(code: string): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
+  public async exchangeCode(
+    code: string,
+  ): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
     const session = await this.provider.handleCallback(code);
     return {
       accessToken: session.token,
@@ -28,8 +30,8 @@ export class GiteaSsoAdapter implements ISsoProvider {
         displayName: session.user.fullName || session.user.username,
         groups: ["gitea-users"],
         roles: ["OPERATOR", "VIEWER"],
-        provider: "gitea"
-      }
+        provider: "gitea",
+      },
     };
   }
 
@@ -39,7 +41,11 @@ export class GiteaSsoAdapter implements ISsoProvider {
       return { valid: false, error: "Token verification failed" };
     }
 
-    const payload = res.payload as { sub?: string; username?: string; email?: string };
+    const payload = res.payload as {
+      sub?: string;
+      username?: string;
+      email?: string;
+    };
 
     return {
       valid: true,
@@ -49,8 +55,8 @@ export class GiteaSsoAdapter implements ISsoProvider {
         email: String(payload.email || "user@gitea.local"),
         groups: ["gitea-users"],
         roles: ["OPERATOR", "VIEWER"],
-        provider: "gitea"
-      }
+        provider: "gitea",
+      },
     };
   }
 
@@ -65,7 +71,7 @@ export class GiteaSsoAdapter implements ISsoProvider {
       displayName: "Gitea User",
       groups: ["gitea-users"],
       roles: ["OPERATOR", "VIEWER"],
-      provider: "gitea"
+      provider: "gitea",
     };
   }
 }

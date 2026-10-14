@@ -37,13 +37,17 @@ export class GitHubIssueSyncDaemon {
   constructor(
     private readonly taskRepo: {
       getByTitle: (title: string) => Promise<TaskRecord | null>;
-      createIfNotExists: (task: TaskRecord) => Promise<{ created: boolean; task: TaskRecord }>;
+      createIfNotExists: (
+        task: TaskRecord,
+      ) => Promise<{ created: boolean; task: TaskRecord }>;
       listRecent?: (limit?: number) => Promise<readonly TaskRecord[]>;
     },
-    options?: GitHubIssueSyncDaemonOptions
+    options?: GitHubIssueSyncDaemonOptions,
   ) {
-    this.repoOwner = options?.repoOwner || process.env.GITHUB_REPO_OWNER || "NeXeN";
-    this.repoName = options?.repoName || process.env.GITHUB_REPO_NAME || "cacophony";
+    this.repoOwner =
+      options?.repoOwner || process.env.GITHUB_REPO_OWNER || "NeXeN";
+    this.repoName =
+      options?.repoName || process.env.GITHUB_REPO_NAME || "cacophony";
     this.githubToken = options?.githubToken || process.env.GITHUB_TOKEN || "";
     this.pollIntervalMs = options?.pollIntervalMs ?? 300_000; // 5 minutes default
     this.targetLabel = options?.targetLabel || "arena:auto";
@@ -102,8 +106,8 @@ export class GitHubIssueSyncDaemon {
       headers: {
         Accept: "application/vnd.github.v3+json",
         Authorization: `Bearer ${this.githubToken}`,
-        "User-Agent": "Cacophony-Arena-Sync"
-      }
+        "User-Agent": "Cacophony-Arena-Sync",
+      },
     });
 
     if (!response.ok) {
@@ -117,7 +121,10 @@ export class GitHubIssueSyncDaemon {
   /**
    * Checks whether an issue has already been enqueued or completed in the arena.
    */
-  public async isDuplicate(_issueNumber: number, title: string): Promise<boolean> {
+  public async isDuplicate(
+    _issueNumber: number,
+    title: string,
+  ): Promise<boolean> {
     const existing = await this.taskRepo.getByTitle(title);
     return existing !== null;
   }
@@ -126,10 +133,14 @@ export class GitHubIssueSyncDaemon {
    * Transforms a GitHub issue into a typed TaskRecord.
    */
   public parseIssueToTask(issue: GitHubIssue): TaskRecord {
-    const focusFileMatch = (issue.body || "").match(/(?:Focus File|Focus Files|File):\s*`?([a-zA-Z0-9_./\\-]+)`?/i);
+    const focusFileMatch = (issue.body || "").match(
+      /(?:Focus File|Focus Files|File):\s*`?([a-zA-Z0-9_./\\-]+)`?/i,
+    );
     const focusFiles = focusFileMatch ? focusFileMatch[1] : null;
 
-    const testMatch = (issue.body || "").match(/(?:Test|Test Command):\s*`?([^`\n]+)`?/i);
+    const testMatch = (issue.body || "").match(
+      /(?:Test|Test Command):\s*`?([^`\n]+)`?/i,
+    );
     const testCommand = testMatch ? testMatch[1]!.trim() : "npm test";
 
     return {
@@ -147,14 +158,17 @@ export class GitHubIssueSyncDaemon {
       failureCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      completedAt: null
+      completedAt: null,
     };
   }
 
   /**
    * Posts an automated verification status comment on a GitHub issue.
    */
-  public async postVerificationStatus(issueNumber: number, comment: string): Promise<void> {
+  public async postVerificationStatus(
+    issueNumber: number,
+    comment: string,
+  ): Promise<void> {
     if (!this.githubToken) return;
     try {
       const url = `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/issues/${issueNumber}/comments`;
@@ -164,9 +178,9 @@ export class GitHubIssueSyncDaemon {
           Accept: "application/vnd.github.v3+json",
           Authorization: `Bearer ${this.githubToken}`,
           "User-Agent": "Cacophony-Arena-Sync",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ body: comment })
+        body: JSON.stringify({ body: comment }),
       });
     } catch {
       // non-fatal
@@ -186,9 +200,9 @@ export class GitHubIssueSyncDaemon {
           Accept: "application/vnd.github.v3+json",
           Authorization: `Bearer ${this.githubToken}`,
           "User-Agent": "Cacophony-Arena-Sync",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ state: "closed" })
+        body: JSON.stringify({ state: "closed" }),
       });
     } catch {
       // non-fatal

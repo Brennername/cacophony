@@ -14,16 +14,21 @@ export interface ModelEfficiencyScore {
  * Service calculating thermal impact, inference velocity, and efficiency scores per model family.
  */
 export class TelemetryCorrelationService {
-  private readonly correlationRepo: TaskTelemetryCorrelationRepository | undefined;
+  private readonly correlationRepo:
+    TaskTelemetryCorrelationRepository | undefined;
 
-  constructor(correlationRepo?: TaskTelemetryCorrelationRepository | undefined) {
+  constructor(
+    correlationRepo?: TaskTelemetryCorrelationRepository | undefined,
+  ) {
     this.correlationRepo = correlationRepo;
   }
 
   /**
    * Calculates efficiency score based on tokens/sec and thermal profile.
    */
-  public async getModelEfficiencyScores(): Promise<readonly ModelEfficiencyScore[]> {
+  public async getModelEfficiencyScores(): Promise<
+    readonly ModelEfficiencyScore[]
+  > {
     if (!this.correlationRepo) {
       return [];
     }
@@ -39,7 +44,10 @@ export class TelemetryCorrelationService {
       // Pacing score: higher is better (more tokens/sec, lower temperatures)
       const tempPenalty = Math.max(0, s.avgPeakTemp - 60) * 0.5;
       const throttlePenalty = s.throttleEventCount * 2.0;
-      const thermalPacingScore = Math.max(0, Number((s.avgTokensPerSec - tempPenalty - throttlePenalty).toFixed(1)));
+      const thermalPacingScore = Math.max(
+        0,
+        Number((s.avgTokensPerSec - tempPenalty - throttlePenalty).toFixed(1)),
+      );
 
       return {
         modelId: s.modelId,
@@ -48,7 +56,7 @@ export class TelemetryCorrelationService {
         avgTokensPerSec: s.avgTokensPerSec,
         avgPeakTemp: s.avgPeakTemp,
         throttleEventCount: s.throttleEventCount,
-        thermalPacingScore
+        thermalPacingScore,
       };
     });
   }

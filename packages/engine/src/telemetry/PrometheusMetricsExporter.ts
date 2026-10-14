@@ -27,22 +27,32 @@ export class PrometheusMetricsExporter {
     const lines: string[] = [];
 
     // Hardware Telemetry Gauges
-    lines.push("# HELP cacophony_gpu_busy_percent Current GPU utilization percentage");
+    lines.push(
+      "# HELP cacophony_gpu_busy_percent Current GPU utilization percentage",
+    );
     lines.push("# TYPE cacophony_gpu_busy_percent gauge");
 
-    lines.push("# HELP cacophony_vram_used_bytes Total VRAM memory consumed in bytes");
+    lines.push(
+      "# HELP cacophony_vram_used_bytes Total VRAM memory consumed in bytes",
+    );
     lines.push("# TYPE cacophony_vram_used_bytes gauge");
 
-    lines.push("# HELP cacophony_vram_total_bytes Total available physical VRAM in bytes");
+    lines.push(
+      "# HELP cacophony_vram_total_bytes Total available physical VRAM in bytes",
+    );
     lines.push("# TYPE cacophony_vram_total_bytes gauge");
 
-    lines.push("# HELP cacophony_apu_temp_celsius APU edge thermal reading in degrees Celsius");
+    lines.push(
+      "# HELP cacophony_apu_temp_celsius APU edge thermal reading in degrees Celsius",
+    );
     lines.push("# TYPE cacophony_apu_temp_celsius gauge");
 
     lines.push("# HELP cacophony_power_watts Package PPT power draw in Watts");
     lines.push("# TYPE cacophony_power_watts gauge");
 
-    lines.push("# HELP cacophony_core_clock_mhz Core engine clock speed in MHz");
+    lines.push(
+      "# HELP cacophony_core_clock_mhz Core engine clock speed in MHz",
+    );
     lines.push("# TYPE cacophony_core_clock_mhz gauge");
 
     lines.push("# HELP cacophony_vram_clock_mhz Memory clock speed in MHz");
@@ -68,13 +78,17 @@ export class PrometheusMetricsExporter {
     }
 
     // Task & Model Health Counters
-    lines.push("# HELP cacophony_tasks_total Total tasks by execution status and model");
+    lines.push(
+      "# HELP cacophony_tasks_total Total tasks by execution status and model",
+    );
     lines.push("# TYPE cacophony_tasks_total counter");
 
     if (this.taskRepo) {
       try {
         const pending = await this.taskRepo.listPending();
-        lines.push(`cacophony_tasks_total{status="PENDING",role="all"} ${pending.length}`);
+        lines.push(
+          `cacophony_tasks_total{status="PENDING",role="all"} ${pending.length}`,
+        );
       } catch {
         lines.push('cacophony_tasks_total{status="PENDING",role="all"} 0');
       }
@@ -86,8 +100,12 @@ export class PrometheusMetricsExporter {
       try {
         const profiles = await this.modelHealthRepo.listProfiles();
         for (const p of profiles) {
-          lines.push(`cacophony_tasks_total{status="COMPLETED",model="${p.modelId}"} ${p.totalSuccess}`);
-          lines.push(`cacophony_tasks_total{status="FAILED",model="${p.modelId}"} ${p.totalFailures}`);
+          lines.push(
+            `cacophony_tasks_total{status="COMPLETED",model="${p.modelId}"} ${p.totalSuccess}`,
+          );
+          lines.push(
+            `cacophony_tasks_total{status="FAILED",model="${p.modelId}"} ${p.totalFailures}`,
+          );
         }
       } catch {
         // ignore

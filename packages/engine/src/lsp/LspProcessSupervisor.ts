@@ -6,7 +6,7 @@ import {
   type LspLocation,
   type LspSymbolInformation,
   type Position,
-  DiagnosticSeverity
+  DiagnosticSeverity,
 } from "./ILspClient.js";
 
 interface JsonRpcMessage {
@@ -15,7 +15,11 @@ interface JsonRpcMessage {
   readonly method?: string;
   readonly params?: unknown;
   readonly result?: unknown;
-  readonly error?: { readonly code: number; readonly message: string; readonly data?: unknown };
+  readonly error?: {
+    readonly code: number;
+    readonly message: string;
+    readonly data?: unknown;
+  };
 }
 
 /**
@@ -30,9 +34,17 @@ export class LspProcessSupervisor implements ILspClient {
   private readonly options: LspClientOptions;
   private process: ChildProcess | null = null;
   private nextRequestId = 1;
-  private readonly pendingRequests = new Map<number, { resolve: (res: unknown) => void; reject: (err: Error) => void }>();
-  private readonly notificationHandlers = new Map<string, Set<(params: unknown) => void>>();
-  private readonly diagnosticHandlers = new Set<(diagnostics: readonly LspDiagnostic[]) => void>();
+  private readonly pendingRequests = new Map<
+    number,
+    { resolve: (res: unknown) => void; reject: (err: Error) => void }
+  >();
+  private readonly notificationHandlers = new Map<
+    string,
+    Set<(params: unknown) => void>
+  >();
+  private readonly diagnosticHandlers = new Set<
+    (diagnostics: readonly LspDiagnostic[]) => void
+  >();
   private readonly diagnosticStore = new Map<string, LspDiagnostic[]>();
   private buffer = Buffer.alloc(0);
 
@@ -50,11 +62,14 @@ export class LspProcessSupervisor implements ILspClient {
       return;
     }
 
-    const [cmd, ...args] = [this.options.serverCommand, ...(this.options.serverArgs || [])];
+    const [cmd, ...args] = [
+      this.options.serverCommand,
+      ...(this.options.serverArgs || []),
+    ];
     this.process = spawn(cmd, args, {
       cwd: this.options.workspaceRoot,
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env }
+      env: { ...process.env },
     });
 
     this.process.stdout?.on("data", (chunk: Buffer) => {
@@ -70,7 +85,11 @@ export class LspProcessSupervisor implements ILspClient {
     });
 
     this.process.on("exit", (code: number | null) => {
-      this.rejectAllPending(new Error(`Language server '${this.serverName}' exited with code ${code}`));
+      this.rejectAllPending(
+        new Error(
+          `Language server '${this.serverName}' exited with code ${code}`,
+        ),
+      );
       this.process = null;
     });
 
@@ -83,10 +102,10 @@ export class LspProcessSupervisor implements ILspClient {
           publishDiagnostics: { relatedInformation: true },
           definition: { dynamicRegistration: true },
           references: { dynamicRegistration: true },
-          documentSymbol: { dynamicRegistration: true }
-        }
+          documentSymbol: { dynamicRegistration: true },
+        },
       },
-      initializationOptions: this.options.initializationOptions || {}
+      initializationOptions: this.options.initializationOptions || {},
     });
 
     await this.sendNotification("initialized", {});
@@ -116,7 +135,10 @@ export class LspProcessSupervisor implements ILspClient {
     await this.start();
   }
 
-  public async sendRequest<TResult = unknown>(method: string, params?: unknown): Promise<TResult> {
+  public async sendRequest<TResult = unknown>(
+    method: string,
+    params?: unknown,
+  ): Promise<TResult> {
     if (!this.process || !this.process.stdin) {
       throw new Error(`Language server '${this.serverName}' is not running`);
     }
@@ -126,19 +148,22 @@ export class LspProcessSupervisor implements ILspClient {
       jsonrpc: "2.0",
       id,
       method,
-      params
+      params,
     };
 
     return new Promise<TResult>((resolve, reject) => {
       this.pendingRequests.set(id, {
         resolve: resolve as (res: unknown) => void,
-        reject
+        reject,
       });
       this.writeMessage(message);
     });
   }
 
-  public async sendNotification(method: string, params?: unknown): Promise<void> {
+  public async sendNotification(
+    method: string,
+    params?: unknown,
+  ): Promise<void> {
     if (!this.process || !this.process.stdin) {
       throw new Error(`Language server '${this.serverName}' is not running`);
     }
@@ -146,12 +171,15 @@ export class LspProcessSupervisor implements ILspClient {
     const message: JsonRpcMessage = {
       jsonrpc: "2.0",
       method,
-      params
+      params,
     };
     this.writeMessage(message);
   }
 
-  public onNotification(method: string, handler: (params: unknown) => void): () => void {
+  public onNotification(
+    method: string,
+    handler: (params: unknown) => void,
+  ): () => void {
     if (!this.notificationHandlers.has(method)) {
       this.notificationHandlers.set(method, new Set());
     }
@@ -160,7 +188,9 @@ export class LspProcessSupervisor implements ILspClient {
     return () => handlers.delete(handler);
   }
 
-  public onDiagnostics(handler: (diagnostics: readonly LspDiagnostic[]) => void): () => void {
+  public onDiagnostics(
+    handler: (diagnostics: readonly LspDiagnostic[]) => void,
+  ): () => void {
     this.diagnosticHandlers.add(handler);
     return () => this.diagnosticHandlers.delete(handler);
   }
@@ -176,30 +206,47 @@ export class LspProcessSupervisor implements ILspClient {
     return all;
   }
 
-  public async findDefinition(uri: string, position: Position): Promise<readonly LspLocation[]> {
-    const res = await this.sendRequest<LspLocation | LspLocation[] | null>("textDocument/definition", {
-      textDocument: { uri },
-      position
-    });
+  public async findDefinition(
+    uri: string,
+    position: Position,
+  ): Promise<readonly LspLocation[]> {
+    const res = await this.sendRequest<LspLocation | LspLocation[] | null>(
+      "textDocument/definition",
+      {
+        textDocument: { uri },
+        position,
+      },
+    );
 
     if (!res) return [];
     return Array.isArray(res) ? res : [res];
   }
 
-  public async findReferences(uri: string, position: Position): Promise<readonly LspLocation[]> {
-    const res = await this.sendRequest<LspLocation[] | null>("textDocument/references", {
-      textDocument: { uri },
-      position,
-      context: { includeDeclaration: true }
-    });
+  public async findReferences(
+    uri: string,
+    position: Position,
+  ): Promise<readonly LspLocation[]> {
+    const res = await this.sendRequest<LspLocation[] | null>(
+      "textDocument/references",
+      {
+        textDocument: { uri },
+        position,
+        context: { includeDeclaration: true },
+      },
+    );
 
     return res || [];
   }
 
-  public async documentSymbols(uri: string): Promise<readonly LspSymbolInformation[]> {
-    const res = await this.sendRequest<LspSymbolInformation[] | null>("textDocument/documentSymbol", {
-      textDocument: { uri }
-    });
+  public async documentSymbols(
+    uri: string,
+  ): Promise<readonly LspSymbolInformation[]> {
+    const res = await this.sendRequest<LspSymbolInformation[] | null>(
+      "textDocument/documentSymbol",
+      {
+        textDocument: { uri },
+      },
+    );
 
     return res || [];
   }
@@ -241,7 +288,9 @@ export class LspProcessSupervisor implements ILspClient {
       this.buffer = this.buffer.subarray(messageEnd);
 
       try {
-        const msg = JSON.parse(messageBytes.toString("utf-8")) as JsonRpcMessage;
+        const msg = JSON.parse(
+          messageBytes.toString("utf-8"),
+        ) as JsonRpcMessage;
         this.dispatchMessage(msg);
       } catch {
         // Ignore JSON parse errors on malformed chunks
@@ -256,7 +305,9 @@ export class LspProcessSupervisor implements ILspClient {
       this.pendingRequests.delete(reqId);
 
       if (msg.error) {
-        pending.reject(new Error(`LSP Error ${msg.error.code}: ${msg.error.message}`));
+        pending.reject(
+          new Error(`LSP Error ${msg.error.code}: ${msg.error.message}`),
+        );
       } else {
         pending.resolve(msg.result);
       }
@@ -265,7 +316,9 @@ export class LspProcessSupervisor implements ILspClient {
 
     if (msg.method) {
       if (msg.method === "textDocument/publishDiagnostics") {
-        this.handlePublishDiagnostics(msg.params as { uri: string; diagnostics: LspDiagnostic[] });
+        this.handlePublishDiagnostics(
+          msg.params as { uri: string; diagnostics: LspDiagnostic[] },
+        );
       }
 
       const handlers = this.notificationHandlers.get(msg.method);
@@ -277,7 +330,10 @@ export class LspProcessSupervisor implements ILspClient {
     }
   }
 
-  private handlePublishDiagnostics(params: { uri: string; diagnostics: LspDiagnostic[] }): void {
+  private handlePublishDiagnostics(params: {
+    uri: string;
+    diagnostics: LspDiagnostic[];
+  }): void {
     if (!params || !params.uri) return;
     const normalized: LspDiagnostic[] = (params.diagnostics || []).map((d) => ({
       uri: params.uri,
@@ -285,7 +341,7 @@ export class LspProcessSupervisor implements ILspClient {
       severity: d.severity || DiagnosticSeverity.Error,
       code: d.code,
       source: d.source,
-      message: d.message
+      message: d.message,
     }));
 
     this.diagnosticStore.set(params.uri, normalized);

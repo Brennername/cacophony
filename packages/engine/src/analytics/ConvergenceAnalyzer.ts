@@ -10,7 +10,8 @@ export interface PlateauResult {
   readonly reason: string;
 }
 
-export type FailureResolutionStrategy = "IN_SITU_MITIGATION" | "ARCHITECTURAL_TRIAGE";
+export type FailureResolutionStrategy =
+  "IN_SITU_MITIGATION" | "ARCHITECTURAL_TRIAGE";
 
 export interface FailureModeAnalysis {
   readonly signature: string;
@@ -31,7 +32,9 @@ export class ConvergenceAnalyzer {
    * Computes the first discrete derivative (velocity) and second discrete derivative (acceleration)
    * across chronological rate samples.
    */
-  public static calculateDerivatives(rates: readonly number[]): DerivativeResult {
+  public static calculateDerivatives(
+    rates: readonly number[],
+  ): DerivativeResult {
     if (rates.length < 2) {
       return { velocityDelta: 0.0, accelerationDelta: 0.0 };
     }
@@ -59,9 +62,11 @@ export class ConvergenceAnalyzer {
   public static detectPlateau(
     shortWindowRate: number,
     longWindowRate: number,
-    epsilon: number = 2.5
+    epsilon: number = 2.5,
   ): PlateauResult {
-    const deltaRate = Number(Math.abs(shortWindowRate - longWindowRate).toFixed(2));
+    const deltaRate = Number(
+      Math.abs(shortWindowRate - longWindowRate).toFixed(2),
+    );
     const isPlateaued = deltaRate <= epsilon;
 
     let reason: string;
@@ -85,7 +90,9 @@ export class ConvergenceAnalyzer {
    * Identifies recurring failure modes from error log snippets and classifies them into
    * immediate in-situ mitigation versus architectural model triage.
    */
-  public static evaluateFailureMode(errorLogs: readonly string[]): FailureModeAnalysis {
+  public static evaluateFailureMode(
+    errorLogs: readonly string[],
+  ): FailureModeAnalysis {
     if (errorLogs.length === 0) {
       return {
         signature: "NONE",
@@ -104,13 +111,30 @@ export class ConvergenceAnalyzer {
 
     for (const log of errorLogs) {
       const lower = log.toLowerCase();
-      if (lower.includes("cannot find module") || lower.includes("syntaxerror") || lower.includes("unexpected token")) {
+      if (
+        lower.includes("cannot find module") ||
+        lower.includes("syntaxerror") ||
+        lower.includes("unexpected token")
+      ) {
         signatures.SYNTAX_OR_IMPORT++;
-      } else if (lower.includes("ts2322") || lower.includes("ts2345") || lower.includes("type '") || lower.includes("is not assignable")) {
+      } else if (
+        lower.includes("ts2322") ||
+        lower.includes("ts2345") ||
+        lower.includes("type '") ||
+        lower.includes("is not assignable")
+      ) {
         signatures.TYPE_MISMATCH++;
-      } else if (lower.includes("stub") || lower.includes("todo") || lower.includes("not implemented")) {
+      } else if (
+        lower.includes("stub") ||
+        lower.includes("todo") ||
+        lower.includes("not implemented")
+      ) {
         signatures.EMPTY_STUB++;
-      } else if (lower.includes("timeout") || lower.includes("killed") || lower.includes("deadlock")) {
+      } else if (
+        lower.includes("timeout") ||
+        lower.includes("killed") ||
+        lower.includes("deadlock")
+      ) {
         signatures.TIMEOUT_HANG++;
       }
     }

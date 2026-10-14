@@ -22,13 +22,16 @@ export class AstContextSlicer {
     this.projectDir = projectDir;
   }
 
-  public extractImportedSymbols(consumerContent: string, consumerFilePath = "consumer.ts"): readonly ImportedIdentifier[] {
+  public extractImportedSymbols(
+    consumerContent: string,
+    consumerFilePath = "consumer.ts",
+  ): readonly ImportedIdentifier[] {
     const sourceFile = ts.createSourceFile(
       consumerFilePath,
       consumerContent,
       ts.ScriptTarget.ES2022,
       true,
-      ts.ScriptKind.TS
+      ts.ScriptKind.TS,
     );
 
     const imports: ImportedIdentifier[] = [];
@@ -45,7 +48,7 @@ export class AstContextSlicer {
                 importedName: element.propertyName?.text ?? element.name.text,
                 localAlias: element.name.text,
                 moduleSpecifier,
-                isTypeOnly: isTypeOnly || Boolean(element.isTypeOnly)
+                isTypeOnly: isTypeOnly || Boolean(element.isTypeOnly),
               });
             }
           } else if (ts.isNamespaceImport(node.importClause.namedBindings)) {
@@ -53,16 +56,15 @@ export class AstContextSlicer {
               importedName: "*",
               localAlias: node.importClause.namedBindings.name.text,
               moduleSpecifier,
-              isTypeOnly
+              isTypeOnly,
             });
           }
         } else if (node.importClause?.name) {
-
           imports.push({
             importedName: "default",
             localAlias: node.importClause.name.text,
             moduleSpecifier,
-            isTypeOnly
+            isTypeOnly,
           });
         }
       }
@@ -76,14 +78,14 @@ export class AstContextSlicer {
   public generateTypeSkeleton(
     dependencyContent: string,
     referencedSymbolNames: readonly string[] = [],
-    dependencyFilePath = "dep.ts"
+    dependencyFilePath = "dep.ts",
   ): SlicedDependencyResult {
     const sourceFile = ts.createSourceFile(
       dependencyFilePath,
       dependencyContent,
       ts.ScriptTarget.ES2022,
       true,
-      ts.ScriptKind.TS
+      ts.ScriptKind.TS,
     );
 
     const skeletons: string[] = [];
@@ -91,38 +93,29 @@ export class AstContextSlicer {
     const filterBySymbols = symbolSet.size > 0 && !symbolSet.has("*");
 
     const visit = (node: ts.Node) => {
-
       if (ts.isInterfaceDeclaration(node)) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
           skeletons.push(node.getText(sourceFile));
         }
-      }
-
-      else if (ts.isTypeAliasDeclaration(node)) {
+      } else if (ts.isTypeAliasDeclaration(node)) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
           skeletons.push(node.getText(sourceFile));
         }
-      }
-
-      else if (ts.isClassDeclaration(node) && node.name) {
+      } else if (ts.isClassDeclaration(node) && node.name) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
           const classSkeleton = this.sliceClassDeclaration(node, sourceFile);
           skeletons.push(classSkeleton);
         }
-      }
-
-      else if (ts.isFunctionDeclaration(node) && node.name) {
+      } else if (ts.isFunctionDeclaration(node) && node.name) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
           const fnSkeleton = this.sliceFunctionDeclaration(node, sourceFile);
           skeletons.push(fnSkeleton);
         }
-      }
-
-      else if (ts.isEnumDeclaration(node)) {
+      } else if (ts.isEnumDeclaration(node)) {
         const name = node.name.text;
         if (!filterBySymbols || symbolSet.has(name)) {
           skeletons.push(node.getText(sourceFile));
@@ -132,29 +125,40 @@ export class AstContextSlicer {
 
     ts.forEachChild(sourceFile, visit);
 
-    const skeletonContent = skeletons.length > 0
-      ? skeletons.join("\n\n")
-      : "// [AST Context Slicer: No referenced top-level exports matching requested symbols]";
+    const skeletonContent =
+      skeletons.length > 0
+        ? skeletons.join("\n\n")
+        : "// [AST Context Slicer: No referenced top-level exports matching requested symbols]";
 
     const originalLength = dependencyContent.length;
     const skeletonLength = skeletonContent.length;
-    const reductionRatio = originalLength > 0
-      ? Number(((originalLength - skeletonLength) / originalLength).toFixed(4))
-      : 0;
+    const reductionRatio =
+      originalLength > 0
+        ? Number(
+            ((originalLength - skeletonLength) / originalLength).toFixed(4),
+          )
+        : 0;
 
     return {
       dependencyFilePath,
       skeletonContent,
       originalLength,
       skeletonLength,
-      reductionRatio
+      reductionRatio,
     };
   }
 
-  private sliceClassDeclaration(node: ts.ClassDeclaration, sourceFile: ts.SourceFile): string {
-    const isExported = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  private sliceClassDeclaration(
+    node: ts.ClassDeclaration,
+    sourceFile: ts.SourceFile,
+  ): string {
+    const isExported = node.modifiers?.some(
+      (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+    );
     const exportPrefix = isExported ? "export " : "";
-    const isAbstract = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.AbstractKeyword);
+    const isAbstract = node.modifiers?.some(
+      (m) => m.kind === ts.SyntaxKind.AbstractKeyword,
+    );
     const abstractPrefix = isAbstract ? "abstract " : "";
     const className = node.name?.text ?? "AnonymousClass";
 
@@ -164,19 +168,33 @@ export class AstContextSlicer {
       if (ts.isPropertyDeclaration(member)) {
         const propName = member.name.getText(sourceFile);
         const typeStr = member.type ? member.type.getText(sourceFile) : "any";
-        const isReadonly = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword);
-        const isStatic = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword);
+        const isReadonly = member.modifiers?.some(
+          (m) => m.kind === ts.SyntaxKind.ReadonlyKeyword,
+        );
+        const isStatic = member.modifiers?.some(
+          (m) => m.kind === ts.SyntaxKind.StaticKeyword,
+        );
         const prefix = `${isStatic ? "static " : ""}${isReadonly ? "readonly " : ""}`;
         members.push(`  ${prefix}${propName}: ${typeStr};`);
       } else if (ts.isConstructorDeclaration(member)) {
-        const params = member.parameters.map((p) => p.getText(sourceFile)).join(", ");
+        const params = member.parameters
+          .map((p) => p.getText(sourceFile))
+          .join(", ");
         members.push(`  constructor(${params});`);
       } else if (ts.isMethodDeclaration(member)) {
         const methodName = member.name.getText(sourceFile);
-        const params = member.parameters.map((p) => p.getText(sourceFile)).join(", ");
-        const returnType = member.type ? member.type.getText(sourceFile) : "void";
-        const isStatic = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword);
-        const isAsync = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword);
+        const params = member.parameters
+          .map((p) => p.getText(sourceFile))
+          .join(", ");
+        const returnType = member.type
+          ? member.type.getText(sourceFile)
+          : "void";
+        const isStatic = member.modifiers?.some(
+          (m) => m.kind === ts.SyntaxKind.StaticKeyword,
+        );
+        const isAsync = member.modifiers?.some(
+          (m) => m.kind === ts.SyntaxKind.AsyncKeyword,
+        );
         const prefix = `${isStatic ? "static " : ""}${isAsync ? "async " : ""}`;
         members.push(`  ${prefix}${methodName}(${params}): ${returnType};`);
       }
@@ -185,10 +203,17 @@ export class AstContextSlicer {
     return `${exportPrefix}${abstractPrefix}class ${className} {\n${members.join("\n")}\n}`;
   }
 
-  private sliceFunctionDeclaration(node: ts.FunctionDeclaration, sourceFile: ts.SourceFile): string {
-    const isExported = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  private sliceFunctionDeclaration(
+    node: ts.FunctionDeclaration,
+    sourceFile: ts.SourceFile,
+  ): string {
+    const isExported = node.modifiers?.some(
+      (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+    );
     const exportPrefix = isExported ? "export " : "";
-    const isAsync = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword);
+    const isAsync = node.modifiers?.some(
+      (m) => m.kind === ts.SyntaxKind.AsyncKeyword,
+    );
     const asyncPrefix = isAsync ? "async " : "";
     const fnName = node.name?.text ?? "anonymous";
     const params = node.parameters.map((p) => p.getText(sourceFile)).join(", ");

@@ -1,6 +1,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { GpuMetrics, HardwareDeviceCategory } from "@cacophony/shared-types";
+import type {
+  GpuMetrics,
+  HardwareDeviceCategory,
+} from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 
 /**
@@ -21,7 +24,8 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
 
   constructor(
     drmPath: string = process.env["SYSFS_DRM_PATH"] || "/sys/class/drm",
-    hwmonBasePath: string = process.env["SYSFS_HWMON_PATH"] || "/sys/class/hwmon"
+    hwmonBasePath: string = process.env["SYSFS_HWMON_PATH"] ||
+      "/sys/class/hwmon",
   ) {
     this.drmPath = drmPath;
     this.hwmonBasePath = hwmonBasePath;
@@ -89,32 +93,45 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
       const rawBusy = this.readSysfsInt(path.join(drmDir, "gpu_busy_percent"));
       if (rawBusy !== null) gpuBusy = rawBusy;
 
-      const rawVramUsed = this.readSysfsInt(path.join(drmDir, "mem_info_vram_used"));
+      const rawVramUsed = this.readSysfsInt(
+        path.join(drmDir, "mem_info_vram_used"),
+      );
       if (rawVramUsed !== null) vramUsed = rawVramUsed;
 
-      const rawVramTotal = this.readSysfsInt(path.join(drmDir, "mem_info_vram_total"));
+      const rawVramTotal = this.readSysfsInt(
+        path.join(drmDir, "mem_info_vram_total"),
+      );
       if (rawVramTotal !== null) vramTotal = rawVramTotal;
 
-      const rawGttUsed = this.readSysfsInt(path.join(drmDir, "mem_info_gtt_used"));
+      const rawGttUsed = this.readSysfsInt(
+        path.join(drmDir, "mem_info_gtt_used"),
+      );
       if (rawGttUsed !== null) gttUsed = rawGttUsed;
 
-      const rawGttTotal = this.readSysfsInt(path.join(drmDir, "mem_info_gtt_total"));
+      const rawGttTotal = this.readSysfsInt(
+        path.join(drmDir, "mem_info_gtt_total"),
+      );
       if (rawGttTotal !== null) gttTotal = rawGttTotal;
     }
 
     // Read active VRAM (mclk) and sclk frequencies from pp_dpm files if available
     let mclkMhz = 0;
     if (drmDir) {
-      const activeMclk = this.readActiveDpmFreq(path.join(drmDir, "pp_dpm_mclk"));
+      const activeMclk = this.readActiveDpmFreq(
+        path.join(drmDir, "pp_dpm_mclk"),
+      );
       if (activeMclk !== null) mclkMhz = activeMclk;
 
       if (sclkMhz === 0) {
-        const activeSclk = this.readActiveDpmFreq(path.join(drmDir, "pp_dpm_sclk"));
+        const activeSclk = this.readActiveDpmFreq(
+          path.join(drmDir, "pp_dpm_sclk"),
+        );
         if (activeSclk !== null) sclkMhz = activeSclk;
       }
     }
 
-    const vramPercent = vramTotal > 0 ? Number(((vramUsed / vramTotal) * 100).toFixed(1)) : 0.0;
+    const vramPercent =
+      vramTotal > 0 ? Number(((vramUsed / vramTotal) * 100).toFixed(1)) : 0.0;
 
     return {
       gpuBusyPercent: gpuBusy,
@@ -129,7 +146,7 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
       vddnbMilliVolts: soc,
       pptWatts,
       sclkMhz,
-      mclkMhz
+      mclkMhz,
     };
   }
 
@@ -222,8 +239,16 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
   /**
    * Scans DRM directory tree to locate all card* device directories.
    */
-  public enumerateAllDevices(): readonly { readonly cardName: string; readonly deviceDir: string; readonly vramTotalBytes: number }[] {
-    const devices: { cardName: string; deviceDir: string; vramTotalBytes: number }[] = [];
+  public enumerateAllDevices(): readonly {
+    readonly cardName: string;
+    readonly deviceDir: string;
+    readonly vramTotalBytes: number;
+  }[] {
+    const devices: {
+      cardName: string;
+      deviceDir: string;
+      vramTotalBytes: number;
+    }[] = [];
     if (!fs.existsSync(this.drmPath)) {
       return devices;
     }
@@ -239,7 +264,7 @@ export class AmdVegaTelemetryProvider implements IHardwareTelemetryProvider {
             devices.push({
               cardName: entry,
               deviceDir,
-              vramTotalBytes: vramTotal
+              vramTotalBytes: vramTotal,
             });
           }
         }

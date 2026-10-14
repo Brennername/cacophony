@@ -41,7 +41,7 @@ export class EpsilonGreedyPolicy implements IBanditPolicy {
     }
 
     const sorted = [...arms].sort(
-      (a, b) => this.calculateMeanWinRate(b) - this.calculateMeanWinRate(a)
+      (a, b) => this.calculateMeanWinRate(b) - this.calculateMeanWinRate(a),
     );
     const best = sorted[0]!;
 
@@ -59,7 +59,7 @@ export class EpsilonGreedyPolicy implements IBanditPolicy {
     this.currentEpoch += epochsToAdvance;
     this.currentEpsilon = Math.max(
       this.minEpsilon,
-      this.initialEpsilon * Math.pow(this.decayRate, this.currentEpoch)
+      this.initialEpsilon * Math.pow(this.decayRate, this.currentEpoch),
     );
     return this.currentEpsilon;
   }

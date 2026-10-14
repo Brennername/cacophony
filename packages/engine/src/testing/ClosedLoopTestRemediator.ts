@@ -1,6 +1,12 @@
-import type { AutomatedTestLoopRunner, TestRunResult } from "./AutomatedTestLoopRunner.js";
+import type {
+  AutomatedTestLoopRunner,
+  TestRunResult,
+} from "./AutomatedTestLoopRunner.js";
 import type { GitUndoManager } from "../git/GitUndoManager.js";
-import { FailureClassifier, type ClassificationResult } from "../analytics/FailureClassifier.js";
+import {
+  FailureClassifier,
+  type ClassificationResult,
+} from "../analytics/FailureClassifier.js";
 
 export interface RemediationOptions {
   readonly maxAttempts?: number | undefined; // default 3
@@ -18,7 +24,7 @@ export interface RemediationResult {
 export type CodeRemediationHandler = (
   remediationSnippet: string,
   attempt: number,
-  classification?: ClassificationResult
+  classification?: ClassificationResult,
 ) => Promise<void>;
 
 /**
@@ -36,7 +42,7 @@ export class ClosedLoopTestRemediator {
   constructor(
     private readonly testRunner: AutomatedTestLoopRunner,
     private readonly undoManager?: GitUndoManager | undefined,
-    options: RemediationOptions = {}
+    options: RemediationOptions = {},
   ) {
     this.maxAttempts = options.maxAttempts ?? 3;
     this.rollbackOnFailure = options.rollbackOnFailure ?? true;
@@ -45,7 +51,11 @@ export class ClosedLoopTestRemediator {
   public async executeLoop(
     workspaceRoot: string,
     remediationHandler: CodeRemediationHandler,
-    contextOptions: { taskId?: string; sessionId?: string; changedFiles?: readonly string[] } = {}
+    contextOptions: {
+      taskId?: string;
+      sessionId?: string;
+      changedFiles?: readonly string[];
+    } = {},
   ): Promise<RemediationResult> {
     let attempt = 1;
     let latestRun: TestRunResult | null = null;
@@ -56,7 +66,7 @@ export class ClosedLoopTestRemediator {
         taskId: contextOptions.taskId,
         sessionId: contextOptions.sessionId,
         changedFiles: contextOptions.changedFiles,
-        attemptNumber: attempt
+        attemptNumber: attempt,
       });
 
       if (latestRun.passed) {
@@ -65,13 +75,16 @@ export class ClosedLoopTestRemediator {
           totalAttempts: attempt,
           rolledBack: false,
           finalTestResult: latestRun,
-          classification: latestClassification
+          classification: latestClassification,
         };
       }
 
       latestClassification = FailureClassifier.classify(
         latestRun.stderr || latestRun.stdout,
-        { exitCode: latestRun.exitCode, logOutput: latestRun.remediationSnippet }
+        {
+          exitCode: latestRun.exitCode,
+          logOutput: latestRun.remediationSnippet,
+        },
       );
 
       if (attempt < this.maxAttempts) {
@@ -80,15 +93,25 @@ export class ClosedLoopTestRemediator {
         if (latestClassification.category !== "UNKNOWN") {
           targetedSnippet = `[FAILURE TAXONOMY]: ${latestClassification.category} (Confidence: ${Math.round(latestClassification.confidence * 100)}%)\n${targetedSnippet}`;
         }
-        if (latestClassification.locations && latestClassification.locations.length > 0) {
+        if (
+          latestClassification.locations &&
+          latestClassification.locations.length > 0
+        ) {
           const locs = latestClassification.locations
-            .map((l) => `  - ${l.file}:${l.line}${l.message ? ` (${l.message})` : ""}`)
+            .map(
+              (l) =>
+                `  - ${l.file}:${l.line}${l.message ? ` (${l.message})` : ""}`,
+            )
             .join("\n");
           targetedSnippet = `${targetedSnippet}\n\n[DETECTED ERROR LOCATIONS]:\n${locs}`;
         }
 
         // Invoke remediation callback to generate and apply targeted code fix
-        await remediationHandler(targetedSnippet, attempt, latestClassification);
+        await remediationHandler(
+          targetedSnippet,
+          attempt,
+          latestClassification,
+        );
       }
 
       attempt++;
@@ -97,7 +120,10 @@ export class ClosedLoopTestRemediator {
     // All attempts failed
     let rolledBack = false;
     if (this.rollbackOnFailure && this.undoManager) {
-      const undoRes = await this.undoManager.undo(workspaceRoot, contextOptions.sessionId);
+      const undoRes = await this.undoManager.undo(
+        workspaceRoot,
+        contextOptions.sessionId,
+      );
       rolledBack = undoRes.success;
     }
 
@@ -106,7 +132,7 @@ export class ClosedLoopTestRemediator {
       totalAttempts: this.maxAttempts,
       rolledBack,
       finalTestResult: latestRun!,
-      classification: latestClassification
+      classification: latestClassification,
     };
   }
 }

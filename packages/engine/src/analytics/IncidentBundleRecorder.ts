@@ -2,7 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { RegressionBurstAlert, TaskOutcome } from "./FailureClusterDetector.js";
+import type {
+  RegressionBurstAlert,
+  TaskOutcome,
+} from "./FailureClusterDetector.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -39,7 +42,9 @@ export class IncidentBundleRecorder {
 
   constructor(options: IncidentBundleRecorderOptions = {}) {
     this.workspaceRoot = options.workspaceRoot ?? process.cwd();
-    this.storageDir = options.storageDir ?? path.join(this.workspaceRoot, "data", "diagnostics");
+    this.storageDir =
+      options.storageDir ??
+      path.join(this.workspaceRoot, "data", "diagnostics");
   }
 
   /**
@@ -47,7 +52,7 @@ export class IncidentBundleRecorder {
    */
   public async captureBundle(
     alert: RegressionBurstAlert,
-    customOutcomes?: readonly TaskOutcome[]
+    customOutcomes?: readonly TaskOutcome[],
   ): Promise<{ bundlePath: string; bundle: IncidentBundle }> {
     await fs.mkdir(this.storageDir, { recursive: true });
 
@@ -81,13 +86,18 @@ export class IncidentBundleRecorder {
   /**
    * Retrieves the latest N git commits from the workspace repository.
    */
-  public async retrieveRecentGitCommits(count = 10): Promise<readonly GitCommitRecord[]> {
+  public async retrieveRecentGitCommits(
+    count = 10,
+  ): Promise<readonly GitCommitRecord[]> {
     try {
-      const safeCount = Math.max(1, Math.min(100, Math.floor(Number(count)) || 10));
+      const safeCount = Math.max(
+        1,
+        Math.min(100, Math.floor(Number(count)) || 10),
+      );
       const { stdout } = await execFileAsync(
         "git",
-        ["log", "-n", String(safeCount), '--pretty=format:%H|%an|%ad|%s'],
-        { cwd: this.workspaceRoot, timeout: 5000 }
+        ["log", "-n", String(safeCount), "--pretty=format:%H|%an|%ad|%s"],
+        { cwd: this.workspaceRoot, timeout: 5000 },
       );
 
       if (!stdout || stdout.trim().length === 0) {
@@ -98,7 +108,8 @@ export class IncidentBundleRecorder {
         .trim()
         .split("\n")
         .map((line) => {
-          const [hash = "", author = "", date = "", ...msgParts] = line.split("|");
+          const [hash = "", author = "", date = "", ...msgParts] =
+            line.split("|");
           return {
             hash: hash.trim(),
             author: author.trim(),
@@ -118,12 +129,17 @@ export class IncidentBundleRecorder {
   public async listBundles(): Promise<readonly IncidentBundle[]> {
     try {
       const files = await fs.readdir(this.storageDir);
-      const jsonFiles = files.filter((f) => f.startsWith("incident-") && f.endsWith(".json"));
+      const jsonFiles = files.filter(
+        (f) => f.startsWith("incident-") && f.endsWith(".json"),
+      );
       const bundles: IncidentBundle[] = [];
 
       for (const file of jsonFiles) {
         try {
-          const raw = await fs.readFile(path.join(this.storageDir, file), "utf-8");
+          const raw = await fs.readFile(
+            path.join(this.storageDir, file),
+            "utf-8",
+          );
           bundles.push(JSON.parse(raw) as IncidentBundle);
         } catch {
           // ignore corrupted files
@@ -131,7 +147,8 @@ export class IncidentBundleRecorder {
       }
 
       return bundles.sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       );
     } catch {
       return [];

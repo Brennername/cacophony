@@ -28,7 +28,7 @@ export class SymbolGraph {
       symbol,
       outgoingEdges: new Set<string>(),
       incomingEdges: new Set<string>(),
-      rank: 1.0
+      rank: 1.0,
     };
     this.nodes.set(symbol.id, node);
 

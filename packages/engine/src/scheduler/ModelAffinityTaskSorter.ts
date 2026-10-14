@@ -21,7 +21,10 @@ export class ModelAffinityTaskSorter {
    * @param tasks List of pending tasks
    * @param currentlyLoadedModel Model currently loaded in Ollama VRAM (if any)
    */
-  public sort(tasks: readonly TaskRecord[], currentlyLoadedModel: string | null): readonly TaskRecord[] {
+  public sort(
+    tasks: readonly TaskRecord[],
+    currentlyLoadedModel: string | null,
+  ): readonly TaskRecord[] {
     const now = Date.now();
 
     return [...tasks].sort((a, b) => {

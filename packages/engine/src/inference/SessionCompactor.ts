@@ -30,9 +30,9 @@ export class SessionCompactor {
   constructor(config: CompactionConfig) {
     this.config = {
       ...config,
-      warningThresholdRatio: config.warningThresholdRatio ?? 0.70,
+      warningThresholdRatio: config.warningThresholdRatio ?? 0.7,
       compactionThresholdRatio: config.compactionThresholdRatio ?? 0.85,
-      preserveRecentTurns: config.preserveRecentTurns ?? 4
+      preserveRecentTurns: config.preserveRecentTurns ?? 4,
     };
   }
 
@@ -40,7 +40,9 @@ export class SessionCompactor {
    * Evaluates if session tokens exceed compaction threshold.
    */
   public shouldCompact(currentTokens: number): boolean {
-    const threshold = this.config.maxContextTokens * (this.config.compactionThresholdRatio ?? 0.85);
+    const threshold =
+      this.config.maxContextTokens *
+      (this.config.compactionThresholdRatio ?? 0.85);
     return currentTokens >= threshold;
   }
 
@@ -49,14 +51,17 @@ export class SessionCompactor {
    */
   public compact(messages: readonly ChatMessage[]): CompactionResult {
     const initialTokens = this.estimateTokens(messages);
-    if (!this.shouldCompact(initialTokens) || messages.length <= (this.config.preserveRecentTurns ?? 4) + 1) {
+    if (
+      !this.shouldCompact(initialTokens) ||
+      messages.length <= (this.config.preserveRecentTurns ?? 4) + 1
+    ) {
       return {
         compacted: false,
         preTokens: initialTokens,
         postTokens: initialTokens,
         tokenSavings: 0,
         summary: "",
-        messages
+        messages,
       };
     }
 
@@ -77,13 +82,14 @@ export class SessionCompactor {
       ...systemMessages,
       {
         role: "user",
-        content: `[SESSION COMPACTION SUMMARY - PAST TURNS CONDENSED]:\n${summary}`
+        content: `[SESSION COMPACTION SUMMARY - PAST TURNS CONDENSED]:\n${summary}`,
       },
       {
         role: "assistant",
-        content: "Understood. I have absorbed the conversation context and will proceed from the active state."
+        content:
+          "Understood. I have absorbed the conversation context and will proceed from the active state.",
       },
-      ...recentMessages
+      ...recentMessages,
     ];
 
     const postTokens = this.estimateTokens(compactedMessages);
@@ -95,7 +101,7 @@ export class SessionCompactor {
       postTokens,
       tokenSavings,
       summary,
-      messages: compactedMessages
+      messages: compactedMessages,
     };
   }
 
@@ -116,7 +122,9 @@ export class SessionCompactor {
 
     const userGoals: string[] = [];
     for (const turn of turns) {
-      const fileMatches = turn.content.matchAll(/(?:file|path|src|packages)\/[\w\-./]+\.\w+/g);
+      const fileMatches = turn.content.matchAll(
+        /(?:file|path|src|packages)\/[\w\-./]+\.\w+/g,
+      );
       for (const match of fileMatches) {
         modifiedFiles.add(match[0]);
       }
@@ -130,7 +138,9 @@ export class SessionCompactor {
       summaryLines.push(`- Goals covered: ${userGoals.slice(0, 3).join("; ")}`);
     }
     if (modifiedFiles.size > 0) {
-      summaryLines.push(`- Targeted files: ${Array.from(modifiedFiles).slice(0, 3).join(", ")}`);
+      summaryLines.push(
+        `- Targeted files: ${Array.from(modifiedFiles).slice(0, 3).join(", ")}`,
+      );
     }
 
     return summaryLines.join("\n") || "- Historical steps completed.";

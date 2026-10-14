@@ -18,22 +18,30 @@ export class OrderProcessor {
     assert.equal(StubCommentSanitizer.hasResidualStubs(codeWithStubs), true);
     const markers = StubCommentSanitizer.findResidualMarkers(codeWithStubs);
     assert.equal(markers.length, 2);
-    assert.ok(markers.some((m) => m.includes("CACOPHONY_HASH_STUB:1a2b3c4d:execute")));
+    assert.ok(
+      markers.some((m) => m.includes("CACOPHONY_HASH_STUB:1a2b3c4d:execute")),
+    );
     assert.ok(markers.some((m) => m.includes("CACOPHONY_CAGE:scope-lock")));
   });
 
-  await t.test("sanitizes code and strips all comments without corrupting structure", () => {
-    const result = StubCommentSanitizer.sanitize(codeWithStubs);
-    assert.equal(result.removedCount, 2);
-    assert.equal(result.residualMarkers.length, 0);
-    assert.ok(!result.sanitizedCode.includes("CACOPHONY_HASH_STUB"));
-    assert.ok(!result.sanitizedCode.includes("CACOPHONY_CAGE"));
-    assert.ok(result.sanitizedCode.includes('console.log("running order");'));
-    assert.equal(StubCommentSanitizer.hasResidualStubs(result.sanitizedCode), false);
-  });
+  await t.test(
+    "sanitizes code and strips all comments without corrupting structure",
+    () => {
+      const result = StubCommentSanitizer.sanitize(codeWithStubs);
+      assert.equal(result.removedCount, 2);
+      assert.equal(result.residualMarkers.length, 0);
+      assert.ok(!result.sanitizedCode.includes("CACOPHONY_HASH_STUB"));
+      assert.ok(!result.sanitizedCode.includes("CACOPHONY_CAGE"));
+      assert.ok(result.sanitizedCode.includes('console.log("running order");'));
+      assert.equal(
+        StubCommentSanitizer.hasResidualStubs(result.sanitizedCode),
+        false,
+      );
+    },
+  );
 
   await t.test("returns untouched code when no stubs exist", () => {
-    const cleanCode = 'export const PI = 3.14159;\n';
+    const cleanCode = "export const PI = 3.14159;\n";
     const result = StubCommentSanitizer.sanitize(cleanCode);
     assert.equal(result.removedCount, 0);
     assert.equal(result.residualMarkers.length, 0);

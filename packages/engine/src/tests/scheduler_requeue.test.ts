@@ -19,14 +19,14 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
     failureCount,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    completedAt: null
+    completedAt: null,
   });
 
   const createMockEvictionManager = () =>
     ({
       selectModel: async () => "qwen2.5-coder:7b",
       getEjectedModels: () => new Set<string>(),
-      recordRunOutcome: async () => {}
+      recordRunOutcome: async () => {},
     }) as any;
 
   const createMockTelemetry = () =>
@@ -40,7 +40,7 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
         pptWatts: 15,
         sclkMhz: 1000,
         mclkMhz: 1000,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }),
       getCurrentSnapshot: async () => ({
         timestamp: Date.now(),
@@ -49,8 +49,8 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
         apuPowerWatts: 15,
         memoryUsedBytes: 1024,
         memoryTotalBytes: 4096,
-        inferenceTokensPerSec: 25
-      })
+        inferenceTokensPerSec: 25,
+      }),
     }) as any;
 
   it("requeues task as PENDING when failureCount is below maxRetries", async () => {
@@ -73,12 +73,12 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
       incrementFailure: async () => {
         failureCount++;
         return failureCount;
-      }
+      },
     } as any;
 
     const mockStageRepo = {
       recordStageStart: async () => 1,
-      recordStageCompletion: async () => {}
+      recordStageCompletion: async () => {},
     } as any;
 
     const scheduler = new TaskScheduler({
@@ -86,14 +86,14 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
       stageRepo: mockStageRepo,
       evictionManager: createMockEvictionManager(),
       telemetryProvider: createMockTelemetry(),
-      maxRetries: 3
+      maxRetries: 3,
     });
 
     scheduler.setExecutionHandler(async () => {
       return {
         success: false,
         tokensPerSec: 10,
-        failureReason: "Compilation error: missing symbol"
+        failureReason: "Compilation error: missing symbol",
       };
     });
 
@@ -124,12 +124,12 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
       incrementFailure: async () => {
         failureCount++;
         return failureCount;
-      }
+      },
     } as any;
 
     const mockStageRepo = {
       recordStageStart: async () => 1,
-      recordStageCompletion: async () => {}
+      recordStageCompletion: async () => {},
     } as any;
 
     const mockRehabService = {
@@ -140,9 +140,9 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
           parentTaskId: failedTask.id,
           failureReason: "Repeated verification failure",
           rationale: "Decomposed",
-          decomposedTasks: []
+          decomposedTasks: [],
         };
-      }
+      },
     } as any;
 
     const scheduler = new TaskScheduler({
@@ -151,14 +151,14 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
       evictionManager: createMockEvictionManager(),
       telemetryProvider: createMockTelemetry(),
       rehabilitationService: mockRehabService,
-      maxRetries: 3
+      maxRetries: 3,
     });
 
     scheduler.setExecutionHandler(async () => {
       return {
         success: false,
         tokensPerSec: 10,
-        failureReason: "Repeated verification failure"
+        failureReason: "Repeated verification failure",
       };
     });
 
@@ -184,22 +184,26 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
         finalStatus = status;
       },
       updateModel: async () => {},
-      updateCommitAttribution: async (_id: string, commitHash: string, baseCommit?: string | null) => {
+      updateCommitAttribution: async (
+        _id: string,
+        commitHash: string,
+        baseCommit?: string | null,
+      ) => {
         updatedCommitHash = commitHash;
         updatedBaseCommit = baseCommit ?? "";
-      }
+      },
     } as any;
 
     const mockStageRepo = {
       recordStageStart: async () => 1,
-      recordStageCompletion: async () => {}
+      recordStageCompletion: async () => {},
     } as any;
 
     const scheduler = new TaskScheduler({
       taskRepo: mockTaskRepo,
       stageRepo: mockStageRepo,
       evictionManager: createMockEvictionManager(),
-      telemetryProvider: createMockTelemetry()
+      telemetryProvider: createMockTelemetry(),
     });
 
     scheduler.setExecutionHandler(async () => {
@@ -207,7 +211,7 @@ describe("TaskScheduler Resilience & Deterministic Rehabilitation (T99.2)", () =
         success: true,
         tokensPerSec: 35.5,
         commitHash: "hash-new-commit-456",
-        baseCommitHash: "hash-base-commit-123"
+        baseCommitHash: "hash-base-commit-123",
       };
     });
 

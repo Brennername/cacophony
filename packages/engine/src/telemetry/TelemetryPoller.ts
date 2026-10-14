@@ -1,5 +1,8 @@
 import type { TelemetryRepository } from "@cacophony/db";
-import type { HardwareTelemetrySnapshot, OllamaModelInfo } from "@cacophony/shared-types";
+import type {
+  HardwareTelemetrySnapshot,
+  OllamaModelInfo,
+} from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 import { ThermalGovernor } from "./ThermalGovernor.js";
 
@@ -37,7 +40,9 @@ export class TelemetryPoller {
     this.repository = options.repository;
     this.governor = options.governor ?? new ThermalGovernor();
     this.pollIntervalMs = options.pollIntervalMs ?? 1000;
-    this.ollamaBaseUrl = options.ollamaBaseUrl ?? (process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434");
+    this.ollamaBaseUrl =
+      options.ollamaBaseUrl ??
+      (process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434");
   }
 
   public setSimulatedActiveModel(modelName: string | null): void {
@@ -111,7 +116,7 @@ export class TelemetryPoller {
         gpu,
         thermalZone: thermalEval.zone,
         pacingDelaySeconds: thermalEval.pacingDelaySeconds,
-        activeModel
+        activeModel,
       };
 
       this.latestSnapshot = snapshot;
@@ -152,7 +157,7 @@ export class TelemetryPoller {
         model: this.simulatedActiveModel,
         sizeBytes: 4294967296,
         vramSizeBytes: 3221225472,
-        details: { format: "gguf", family: "qwen2" }
+        details: { format: "gguf", family: "qwen2" },
       };
     }
     try {
@@ -174,14 +179,18 @@ export class TelemetryPoller {
         }[];
       };
 
-      if (Array.isArray(data.models) && data.models.length > 0 && data.models[0]) {
+      if (
+        Array.isArray(data.models) &&
+        data.models.length > 0 &&
+        data.models[0]
+      ) {
         const m = data.models[0];
         return {
           name: m.name,
           model: m.model,
           sizeBytes: m.size ?? 0,
           vramSizeBytes: m.size_vram ?? 0,
-          details: m.details
+          details: m.details,
         };
       }
       return null;

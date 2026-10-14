@@ -1,6 +1,7 @@
 import { IModelInferenceCaller } from "./MultiModelConsensusCoordinator.js";
 
-export type TaskGenerationStrategy = "MONOLITHIC_FILE_GENERATION" | "HASH_STUB_SPLICING";
+export type TaskGenerationStrategy =
+  "MONOLITHIC_FILE_GENERATION" | "HASH_STUB_SPLICING";
 
 export interface TaskRoutingContext {
   readonly taskTitle: string;
@@ -36,7 +37,7 @@ export class MicroModelToolRouter {
 
   constructor(
     inferenceCaller?: IModelInferenceCaller,
-    defaultModel: string = MicroModelToolRouter.DEFAULT_MICRO_MODEL
+    defaultModel: string = MicroModelToolRouter.DEFAULT_MICRO_MODEL,
   ) {
     this.inferenceCaller = inferenceCaller;
     this.defaultModel = defaultModel;
@@ -47,13 +48,17 @@ export class MicroModelToolRouter {
    */
   public async routeTaskStrategy(
     context: TaskRoutingContext,
-    preferredModel?: string
+    preferredModel?: string,
   ): Promise<StrategyRouteDecision> {
     const startTime = Date.now();
     const modelToUse = preferredModel ?? this.defaultModel;
 
     // Fast heuristic pre-check when explicit file line count is already known
-    if (context.existingFileLines !== undefined && context.existingFileLines >= MicroModelToolRouter.LINE_THRESHOLD_FOR_SPLICING) {
+    if (
+      context.existingFileLines !== undefined &&
+      context.existingFileLines >=
+        MicroModelToolRouter.LINE_THRESHOLD_FOR_SPLICING
+    ) {
       return {
         strategy: "HASH_STUB_SPLICING",
         modelUsed: "heuristic-line-guard",
@@ -86,7 +91,7 @@ Existing Methods: ${context.existingMethodCount ?? "unknown"}`;
       const output = await this.inferenceCaller.generate(
         modelToUse,
         systemPrompt,
-        userPrompt
+        userPrompt,
       );
 
       const decision = this.parseClassification(output);
@@ -98,7 +103,11 @@ Existing Methods: ${context.existingMethodCount ?? "unknown"}`;
         reasoning: decision.reasoning,
       };
     } catch {
-      return this.evaluateHeuristic(context, startTime, "heuristic-error-fallback");
+      return this.evaluateHeuristic(
+        context,
+        startTime,
+        "heuristic-error-fallback",
+      );
     }
   }
 
@@ -120,8 +129,12 @@ Existing Methods: ${context.existingMethodCount ?? "unknown"}`;
         ) {
           return {
             strategy: parsed.strategy,
-            confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.85,
-            reasoning: typeof parsed.reasoning === "string" ? parsed.reasoning : "Classified by micro-model",
+            confidence:
+              typeof parsed.confidence === "number" ? parsed.confidence : 0.85,
+            reasoning:
+              typeof parsed.reasoning === "string"
+                ? parsed.reasoning
+                : "Classified by micro-model",
           };
         }
       }
@@ -129,9 +142,13 @@ Existing Methods: ${context.existingMethodCount ?? "unknown"}`;
       // Fall through to keyword detection
     }
 
-    const isSplicing = /HASH_STUB|SPLICING|LARGE|COMPLEX|MULTI_METHOD/i.test(output);
+    const isSplicing = /HASH_STUB|SPLICING|LARGE|COMPLEX|MULTI_METHOD/i.test(
+      output,
+    );
     return {
-      strategy: isSplicing ? "HASH_STUB_SPLICING" : "MONOLITHIC_FILE_GENERATION",
+      strategy: isSplicing
+        ? "HASH_STUB_SPLICING"
+        : "MONOLITHIC_FILE_GENERATION",
       confidence: 0.75,
       reasoning: "Heuristic parse from micro-model text output",
     };
@@ -143,24 +160,28 @@ Existing Methods: ${context.existingMethodCount ?? "unknown"}`;
   private evaluateHeuristic(
     context: TaskRoutingContext,
     startTime: number,
-    modelTag: string
+    modelTag: string,
   ): StrategyRouteDecision {
     const isLargeFile =
       context.existingFileLines !== undefined &&
-      context.existingFileLines >= MicroModelToolRouter.LINE_THRESHOLD_FOR_SPLICING;
+      context.existingFileLines >=
+        MicroModelToolRouter.LINE_THRESHOLD_FOR_SPLICING;
 
     const hasMultiMethods =
-      context.existingMethodCount !== undefined && context.existingMethodCount >= 3;
+      context.existingMethodCount !== undefined &&
+      context.existingMethodCount >= 3;
 
     const indicatesMethodEdit =
       /\b(?:add method|implement method|update method|modify method|refactor method|calculate|process)\b/i.test(
-        context.taskPrompt
+        context.taskPrompt,
       );
 
     const useSplicing = isLargeFile || hasMultiMethods || indicatesMethodEdit;
 
     return {
-      strategy: useSplicing ? "HASH_STUB_SPLICING" : "MONOLITHIC_FILE_GENERATION",
+      strategy: useSplicing
+        ? "HASH_STUB_SPLICING"
+        : "MONOLITHIC_FILE_GENERATION",
       modelUsed: modelTag,
       latencyMs: Date.now() - startTime,
       confidence: 0.9,

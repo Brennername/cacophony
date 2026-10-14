@@ -46,13 +46,13 @@ export class GiteaPackageClient {
    */
   public async publishGenericPackage(
     owner: string,
-    artifact: PackageArtifactMetadata
+    artifact: PackageArtifactMetadata,
   ): Promise<PublishedArtifactRecord> {
     const sha256 = this.calculateSha256(artifact.contentBuffer);
     const url = `${this.baseUrl}/api/packages/${owner}/generic/${artifact.packageName}/${artifact.packageVersion}/${artifact.filename}`;
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/octet-stream"
+      "Content-Type": "application/octet-stream",
     };
 
     if (this.apiToken) {
@@ -62,12 +62,14 @@ export class GiteaPackageClient {
     const response = await fetch(url, {
       method: "PUT",
       headers,
-      body: artifact.contentBuffer
+      body: artifact.contentBuffer,
     });
 
     if (!response.ok && response.status !== 201 && response.status !== 200) {
       const errText = await response.text();
-      throw new Error(`Failed to upload package to Gitea registry (${response.status}): ${errText}`);
+      throw new Error(
+        `Failed to upload package to Gitea registry (${response.status}): ${errText}`,
+      );
     }
 
     return {
@@ -75,7 +77,7 @@ export class GiteaPackageClient {
       version: artifact.packageVersion,
       sha256,
       sizeBytes: artifact.contentBuffer.byteLength,
-      publishedAt: new Date().toISOString()
+      publishedAt: new Date().toISOString(),
     };
   }
 
@@ -88,7 +90,7 @@ export class GiteaPackageClient {
       `- **Package**: \`${record.packageName}\` v\`${record.version}\``,
       `- **SHA-256 Checksum**: \`${record.sha256}\``,
       `- **Payload Size**: \`${record.sizeBytes}\` bytes`,
-      `- **Timestamp**: \`${record.publishedAt}\``
+      `- **Timestamp**: \`${record.publishedAt}\``,
     ].join("\n");
   }
 }

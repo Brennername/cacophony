@@ -1,7 +1,7 @@
 import { Agent } from "undici";
 import type {
   OllamaInstalledModel,
-  OllamaPullProgressEvent
+  OllamaPullProgressEvent,
 } from "@cacophony/shared-types";
 
 /**
@@ -67,12 +67,15 @@ export class OllamaModelManager {
   private readonly baseUrl: string;
   private readonly dispatcher: Agent;
 
-  constructor(baseUrl: string = process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434") {
+  constructor(
+    baseUrl: string = process.env["OLLAMA_BASE_URL"] ||
+      "http://127.0.0.1:11434",
+  ) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.dispatcher = new Agent({
       headersTimeout: 0,
       bodyTimeout: 0,
-      connectTimeout: 30000
+      connectTimeout: 30000,
     });
   }
 
@@ -83,21 +86,21 @@ export class OllamaModelManager {
    * @returns Array of OllamaInstalledModel objects.
    */
   public async listInstalledModels(
-    protectedModels: readonly string[] = []
+    protectedModels: readonly string[] = [],
   ): Promise<OllamaInstalledModel[]> {
     const [tagsRes, psRes] = await Promise.all([
       fetch(`${this.baseUrl}/api/tags`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        dispatcher: this.dispatcher as any
+        dispatcher: this.dispatcher as any,
       }).catch(() => null),
       fetch(`${this.baseUrl}/api/ps`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        dispatcher: this.dispatcher as any
-      }).catch(() => null)
+        dispatcher: this.dispatcher as any,
+      }).catch(() => null),
     ]);
 
     let rawTags: RawOllamaTagEntry[] = [];
@@ -118,7 +121,7 @@ export class OllamaModelManager {
     return rawTags.map((t) => {
       const modelName = t.name || t.model;
       const isProtected = protectedModels.some(
-        (pattern) => pattern === modelName || modelName.startsWith(pattern)
+        (pattern) => pattern === modelName || modelName.startsWith(pattern),
       );
       const isLoadedInVram = loadedModelNames.has(modelName);
 
@@ -134,10 +137,10 @@ export class OllamaModelManager {
           family: t.details?.family || "",
           families: t.details?.families || [],
           parameterSize: t.details?.parameter_size || "",
-          quantizationLevel: t.details?.quantization_level || ""
+          quantizationLevel: t.details?.quantization_level || "",
         },
         isProtected,
-        isLoadedInVram
+        isLoadedInVram,
       };
     });
   }
@@ -150,23 +153,27 @@ export class OllamaModelManager {
    */
   public async pullModel(
     modelName: string,
-    onProgress?: (event: OllamaPullProgressEvent) => void
+    onProgress?: (event: OllamaPullProgressEvent) => void,
   ): Promise<void> {
     const res = await fetch(`${this.baseUrl}/api/pull`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dispatcher: this.dispatcher as any,
-      body: JSON.stringify({ model: modelName, stream: true })
+      body: JSON.stringify({ model: modelName, stream: true }),
     });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      throw new Error(`Failed to pull model '${modelName}': HTTP ${res.status} ${errText}`);
+      throw new Error(
+        `Failed to pull model '${modelName}': HTTP ${res.status} ${errText}`,
+      );
     }
 
     if (!res.body) {
-      throw new Error(`Failed to pull model '${modelName}': Empty response body from Ollama`);
+      throw new Error(
+        `Failed to pull model '${modelName}': Empty response body from Ollama`,
+      );
     }
 
     const reader = res.body.getReader();
@@ -196,27 +203,42 @@ export class OllamaModelManager {
             };
 
             if (rawEvent.error) {
-              throw new Error(`Ollama pull error for '${modelName}': ${rawEvent.error}`);
+              throw new Error(
+                `Ollama pull error for '${modelName}': ${rawEvent.error}`,
+              );
             }
 
             const percent =
               rawEvent.total && rawEvent.completed && rawEvent.total > 0
-                ? Math.min(100, Math.round((rawEvent.completed / rawEvent.total) * 1000) / 10)
+                ? Math.min(
+                    100,
+                    Math.round((rawEvent.completed / rawEvent.total) * 1000) /
+                      10,
+                  )
                 : undefined;
 
             const progressEvent: OllamaPullProgressEvent = {
               status: rawEvent.status || "downloading",
-              ...(rawEvent.digest !== undefined ? { digest: rawEvent.digest } : {}),
-              ...(rawEvent.total !== undefined ? { total: rawEvent.total } : {}),
-              ...(rawEvent.completed !== undefined ? { completed: rawEvent.completed } : {}),
-              ...(percent !== undefined ? { percent } : {})
+              ...(rawEvent.digest !== undefined
+                ? { digest: rawEvent.digest }
+                : {}),
+              ...(rawEvent.total !== undefined
+                ? { total: rawEvent.total }
+                : {}),
+              ...(rawEvent.completed !== undefined
+                ? { completed: rawEvent.completed }
+                : {}),
+              ...(percent !== undefined ? { percent } : {}),
             };
 
             if (onProgress) {
               onProgress(progressEvent);
             }
           } catch (err: unknown) {
-            if (err instanceof Error && err.message.startsWith("Ollama pull error")) {
+            if (
+              err instanceof Error &&
+              err.message.startsWith("Ollama pull error")
+            ) {
               throw err;
             }
             // Ignore malformed intermediate JSON lines
@@ -239,12 +261,14 @@ export class OllamaModelManager {
       headers: { "Content-Type": "application/json" },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dispatcher: this.dispatcher as any,
-      body: JSON.stringify({ model: modelName })
+      body: JSON.stringify({ model: modelName }),
     });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      throw new Error(`Failed to delete model '${modelName}': HTTP ${res.status} ${errText}`);
+      throw new Error(
+        `Failed to delete model '${modelName}': HTTP ${res.status} ${errText}`,
+      );
     }
 
     return true;
@@ -261,12 +285,14 @@ export class OllamaModelManager {
       headers: { "Content-Type": "application/json" },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dispatcher: this.dispatcher as any,
-      body: JSON.stringify({ model: modelName })
+      body: JSON.stringify({ model: modelName }),
     });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      throw new Error(`Failed to inspect model '${modelName}': HTTP ${res.status} ${errText}`);
+      throw new Error(
+        `Failed to inspect model '${modelName}': HTTP ${res.status} ${errText}`,
+      );
     }
 
     return (await res.json()) as OllamaModelInfo;

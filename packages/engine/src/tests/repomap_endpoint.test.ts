@@ -20,10 +20,13 @@ describe("GET /api/repomap Integration Suite", () => {
       getStreamTapManager: () => null,
       getTaskRepository: () => ({ listPending: async () => [] }),
       getTelemetryPoller: () => null,
-      getUserSessionRepository: () => null
+      getUserSessionRepository: () => null,
     };
 
-    server = new CacophonyHttpServer(mockDaemon, { httpPort: 0, httpHost: "127.0.0.1" });
+    server = new CacophonyHttpServer(mockDaemon, {
+      httpPort: 0,
+      httpHost: "127.0.0.1",
+    });
     await server.start();
     const address = (server as any).server.address();
     const baseUrl = `http://127.0.0.1:${address.port}`;

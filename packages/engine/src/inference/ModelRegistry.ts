@@ -34,7 +34,10 @@ export class ModelRegistry implements IModelRegistry {
     return this.models.get(modelId);
   }
 
-  public async listModels(filter?: { provider?: InferenceProviderType; isLocal?: boolean }): Promise<readonly ModelSpec[]> {
+  public async listModels(filter?: {
+    provider?: InferenceProviderType;
+    isLocal?: boolean;
+  }): Promise<readonly ModelSpec[]> {
     let list = Array.from(this.models.values());
     if (filter?.provider) {
       list = list.filter((m) => m.provider === filter.provider);
@@ -50,7 +53,9 @@ export class ModelRegistry implements IModelRegistry {
 
     // Probe Ollama (11434)
     try {
-      const res = await fetch("http://localhost:11434/api/tags", { signal: AbortSignal.timeout(1000) });
+      const res = await fetch("http://localhost:11434/api/tags", {
+        signal: AbortSignal.timeout(1000),
+      });
       if (res.ok) {
         const data = (await res.json()) as { models?: Array<{ name: string }> };
         for (const m of data.models || []) {
@@ -64,7 +69,7 @@ export class ModelRegistry implements IModelRegistry {
             diffFormatCapability: false,
             costPer1kTokens: 0,
             isLocal: true,
-            tags: ["local", "ollama"]
+            tags: ["local", "ollama"],
           });
         }
       }
@@ -74,7 +79,9 @@ export class ModelRegistry implements IModelRegistry {
 
     // Probe LM Studio (1234)
     try {
-      const res = await fetch("http://localhost:1234/v1/models", { signal: AbortSignal.timeout(1000) });
+      const res = await fetch("http://localhost:1234/v1/models", {
+        signal: AbortSignal.timeout(1000),
+      });
       if (res.ok) {
         const data = (await res.json()) as { data?: Array<{ id: string }> };
         for (const m of data.data || []) {
@@ -88,7 +95,7 @@ export class ModelRegistry implements IModelRegistry {
             diffFormatCapability: false,
             costPer1kTokens: 0,
             isLocal: true,
-            tags: ["local", "lmstudio"]
+            tags: ["local", "lmstudio"],
           });
         }
       }
@@ -141,7 +148,7 @@ export class ModelRegistry implements IModelRegistry {
       diffFormatCapability: false,
       costPer1kTokens: 0,
       isLocal: true,
-      tags: ["local", "coding", "default"]
+      tags: ["local", "coding", "default"],
     });
 
     this.models.set("deepseek-coder:6.7b", {
@@ -154,7 +161,7 @@ export class ModelRegistry implements IModelRegistry {
       diffFormatCapability: false,
       costPer1kTokens: 0,
       isLocal: true,
-      tags: ["local", "coding"]
+      tags: ["local", "coding"],
     });
 
     // Default frontier candidates
@@ -168,7 +175,7 @@ export class ModelRegistry implements IModelRegistry {
       diffFormatCapability: true,
       costPer1kTokens: 0.003,
       isLocal: false,
-      tags: ["frontier", "reasoning"]
+      tags: ["frontier", "reasoning"],
     });
 
     this.models.set("gpt-4o", {
@@ -181,7 +188,7 @@ export class ModelRegistry implements IModelRegistry {
       diffFormatCapability: true,
       costPer1kTokens: 0.0025,
       isLocal: false,
-      tags: ["frontier", "multimodal"]
+      tags: ["frontier", "multimodal"],
     });
 
     this.models.set("gemini-2.0-flash", {
@@ -194,7 +201,7 @@ export class ModelRegistry implements IModelRegistry {
       diffFormatCapability: true,
       costPer1kTokens: 0.0001,
       isLocal: false,
-      tags: ["frontier", "long-context"]
+      tags: ["frontier", "long-context"],
     });
   }
 }

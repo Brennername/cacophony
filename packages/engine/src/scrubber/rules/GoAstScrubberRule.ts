@@ -1,4 +1,8 @@
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "../IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "../IScrubberRule.js";
 
 /**
  * GoAstScrubberRule
@@ -15,7 +19,11 @@ export class GoAstScrubberRule implements IScrubberRule {
     return filePath.endsWith(".go");
   }
 
-  public scrub(content: string, _filePath: string, options?: ScrubRuleOptions): ScrubRuleResult {
+  public scrub(
+    content: string,
+    _filePath: string,
+    options?: ScrubRuleOptions,
+  ): ScrubRuleResult {
     let modified = false;
     const issuesFixed: string[] = [];
     const issuesDetected: string[] = [];
@@ -24,7 +32,8 @@ export class GoAstScrubberRule implements IScrubberRule {
 
     // 1. Emoji scrubbing
     if (!options?.allowEmojis) {
-      const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+      const emojiRegex =
+        /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
       if (emojiRegex.test(updated)) {
         issuesDetected.push("Forbidden emojis detected in Go source");
         updated = updated.replace(emojiRegex, "");
@@ -43,7 +52,10 @@ export class GoAstScrubberRule implements IScrubberRule {
       }
       if (spaceCount > 0) {
         const rest = line.slice(spaceCount);
-        const tabsCount = Math.max(1, Math.floor(spaceCount / 4) || Math.floor(spaceCount / 2));
+        const tabsCount = Math.max(
+          1,
+          Math.floor(spaceCount / 4) || Math.floor(spaceCount / 2),
+        );
         indentedModified = true;
         return "\t".repeat(tabsCount) + rest;
       }
@@ -60,7 +72,7 @@ export class GoAstScrubberRule implements IScrubberRule {
       modified,
       content: updated,
       issuesFixed,
-      issuesDetected
+      issuesDetected,
     };
   }
 }

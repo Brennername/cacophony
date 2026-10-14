@@ -36,7 +36,9 @@ export class TaskTelemetryCorrelationRepository {
     this.driver = driver;
   }
 
-  public async recordCorrelation(record: TaskTelemetryCorrelationRecord): Promise<void> {
+  public async recordCorrelation(
+    record: TaskTelemetryCorrelationRecord,
+  ): Promise<void> {
     await this.driver.execute(
       `INSERT INTO task_telemetry_correlations (
         id, task_id, model_id, avg_gpu_busy, peak_edge_temp,
@@ -52,26 +54,30 @@ export class TaskTelemetryCorrelationRepository {
         record.avgTokensPerSec,
         record.thermalThrottleEvents,
         record.durationMs,
-        record.createdAt
-      ]
+        record.createdAt,
+      ],
     );
   }
 
-  public async getCorrelationsForModel(modelId: string): Promise<readonly TaskTelemetryCorrelationRecord[]> {
+  public async getCorrelationsForModel(
+    modelId: string,
+  ): Promise<readonly TaskTelemetryCorrelationRecord[]> {
     const rows = await this.driver.query<CorrelationRow>(
       "SELECT * FROM task_telemetry_correlations WHERE model_id = $1 ORDER BY created_at DESC",
-      [modelId]
+      [modelId],
     );
     return rows.map((r) => this.mapRow(r));
   }
 
-  public async getModelEfficiencySummary(): Promise<readonly {
-    readonly modelId: string;
-    readonly totalRuns: number;
-    readonly avgTokensPerSec: number;
-    readonly avgPeakTemp: number;
-    readonly throttleEventCount: number;
-  }[]> {
+  public async getModelEfficiencySummary(): Promise<
+    readonly {
+      readonly modelId: string;
+      readonly totalRuns: number;
+      readonly avgTokensPerSec: number;
+      readonly avgPeakTemp: number;
+      readonly throttleEventCount: number;
+    }[]
+  > {
     const rows = await this.driver.query<{
       readonly model_id: string;
       readonly total_runs: number | string;
@@ -86,7 +92,7 @@ export class TaskTelemetryCorrelationRepository {
         COALESCE(AVG(peak_edge_temp), 0) as avg_temp,
         COALESCE(SUM(thermal_throttle_events), 0) as total_throttles
       FROM task_telemetry_correlations
-      GROUP BY model_id`
+      GROUP BY model_id`,
     );
 
     return rows.map((r) => ({
@@ -94,7 +100,7 @@ export class TaskTelemetryCorrelationRepository {
       totalRuns: Number(r.total_runs),
       avgTokensPerSec: Number(Number(r.avg_tps).toFixed(1)),
       avgPeakTemp: Number(Number(r.avg_temp).toFixed(1)),
-      throttleEventCount: Number(r.total_throttles)
+      throttleEventCount: Number(r.total_throttles),
     }));
   }
 
@@ -109,7 +115,7 @@ export class TaskTelemetryCorrelationRepository {
       avgTokensPerSec: Number(row.avg_tokens_per_sec),
       thermalThrottleEvents: Number(row.thermal_throttle_events),
       durationMs: Number(row.duration_ms),
-      createdAt: String(row.created_at)
+      createdAt: String(row.created_at),
     };
   }
 }

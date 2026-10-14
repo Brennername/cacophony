@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 
 // Define the new dataset manifest schema version
-const NEW_SCHEMA_VERSION = 'v2.0.0';
+const NEW_SCHEMA_VERSION = "v2.0.0";
 
 // Interface for the old dataset manifest
 interface LegacyArenaDatasetManifest {
@@ -22,12 +22,14 @@ export function migrateDatasetVersion(legacyDir: string, newDir: string): void {
   }
 
   // Read the legacy dataset manifest file
-  const legacyManifestPath = join(legacyDir, 'arena_dataset_manifest.json');
+  const legacyManifestPath = join(legacyDir, "arena_dataset_manifest.json");
   if (existsSync(legacyManifestPath)) {
-    const legacyManifestContent = readFileSync(legacyManifestPath, 'utf-8');
+    const legacyManifestContent = readFileSync(legacyManifestPath, "utf-8");
 
     // Parse the legacy manifest content
-    const legacyManifest: LegacyArenaDatasetManifest = JSON.parse(legacyManifestContent);
+    const legacyManifest: LegacyArenaDatasetManifest = JSON.parse(
+      legacyManifestContent,
+    );
 
     // Create a new dataset manifest with the updated schema version
     const newManifest: ArenaDatasetManifest = {
@@ -36,8 +38,12 @@ export function migrateDatasetVersion(legacyDir: string, newDir: string): void {
     };
 
     // Write the new manifest to the new directory
-    const newManifestPath = join(newDir, 'arena_dataset_manifest.json');
-    writeFileSync(newManifestPath, JSON.stringify(newManifest, null, 2), 'utf-8');
+    const newManifestPath = join(newDir, "arena_dataset_manifest.json");
+    writeFileSync(
+      newManifestPath,
+      JSON.stringify(newManifest, null, 2),
+      "utf-8",
+    );
 
     console.log(`Migrated dataset version from ${legacyDir} to ${newDir}`);
   } else {
@@ -46,7 +52,7 @@ export function migrateDatasetVersion(legacyDir: string, newDir: string): void {
 }
 
 // Example usage
-const legacyDataDir = '/path/to/legacy/data';
-const newDataDir = '/path/to/new/data';
+const legacyDataDir = "/path/to/legacy/data";
+const newDataDir = "/path/to/new/data";
 
 migrateDatasetVersion(legacyDataDir, newDataDir);

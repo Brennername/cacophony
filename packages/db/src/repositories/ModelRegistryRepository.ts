@@ -18,7 +18,9 @@ export interface ModelRegistryRecord {
 export class ModelRegistryRepository {
   constructor(private readonly driver: IDatabaseDriver) {}
 
-  public async upsert(record: Omit<ModelRegistryRecord, "created_at" | "updated_at">): Promise<void> {
+  public async upsert(
+    record: Omit<ModelRegistryRecord, "created_at" | "updated_at">,
+  ): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.query(
       `INSERT INTO model_registry_entries (
@@ -49,29 +51,31 @@ export class ModelRegistryRepository {
         record.is_local,
         record.tags_json,
         now,
-        now
-      ]
+        now,
+      ],
     );
   }
 
-  public async getById(modelId: string): Promise<ModelRegistryRecord | undefined> {
+  public async getById(
+    modelId: string,
+  ): Promise<ModelRegistryRecord | undefined> {
     const rows = await this.driver.query<ModelRegistryRecord>(
       `SELECT * FROM model_registry_entries WHERE model_id = $1`,
-      [modelId]
+      [modelId],
     );
     return rows[0];
   }
 
   public async listAll(): Promise<readonly ModelRegistryRecord[]> {
     return this.driver.query<ModelRegistryRecord>(
-      `SELECT * FROM model_registry_entries ORDER BY is_local DESC, cost_per_1k_tokens ASC`
+      `SELECT * FROM model_registry_entries ORDER BY is_local DESC, cost_per_1k_tokens ASC`,
     );
   }
 
   public async delete(modelId: string): Promise<void> {
     await this.driver.execute(
       `DELETE FROM model_registry_entries WHERE model_id = $1`,
-      [modelId]
+      [modelId],
     );
   }
 }

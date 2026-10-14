@@ -2,7 +2,7 @@ import type {
   CodeSignatureRecord,
   CallableSignature,
   PropertySignature,
-  FunctionParameterSignature
+  FunctionParameterSignature,
 } from "@cacophony/shared-types";
 
 /**
@@ -16,12 +16,17 @@ import type {
  * - Package comments / docstrings
  */
 export class GoSignatureHarvester {
-  public harvest(filePath: string, content: string): readonly CodeSignatureRecord[] {
+  public harvest(
+    filePath: string,
+    content: string,
+  ): readonly CodeSignatureRecord[] {
     const records: CodeSignatureRecord[] = [];
     const lines = content.split("\n");
 
-    const funcRegex = /^\s*func\s+(?:\(([^)]+)\)\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^{]*)\{?/;
-    const typeDefRegex = /^\s*type\s+([A-Za-z0-9_]+)\s+(struct|interface)\s*\{?/;
+    const funcRegex =
+      /^\s*func\s+(?:\(([^)]+)\)\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^{]*)\{?/;
+    const typeDefRegex =
+      /^\s*type\s+([A-Za-z0-9_]+)\s+(struct|interface)\s*\{?/;
 
     let currentBlockName = "";
     let currentBlockKind: "type" | "interface" = "type";
@@ -53,7 +58,7 @@ export class GoSignatureHarvester {
           kind: currentBlockKind,
           callables: currentBlockMethods,
           properties: currentBlockFields,
-          rawCompressed: `type ${currentBlockName} ${currentBlockKind === "interface" ? "interface" : "struct"} { ${currentBlockFields.map((f) => `${f.name} ${f.type}`).join("; ")} }`
+          rawCompressed: `type ${currentBlockName} ${currentBlockKind === "interface" ? "interface" : "struct"} { ${currentBlockFields.map((f) => `${f.name} ${f.type}`).join("; ")} }`,
         });
         inBlock = false;
         continue;
@@ -69,18 +74,20 @@ export class GoSignatureHarvester {
               name: parts[0],
               type: parts[1],
               isOptional: false,
-              isReadonly: false
+              isReadonly: false,
             });
           }
         } else if (currentBlockKind === "interface") {
           // Interface method: MethodName(param Type) ReturnType
-          const ifaceMethodMatch = line.match(/^([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^;]*)/);
+          const ifaceMethodMatch = line.match(
+            /^([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^;]*)/,
+          );
           if (ifaceMethodMatch && ifaceMethodMatch[1]) {
             currentBlockMethods.push({
               name: ifaceMethodMatch[1],
               parameters: this.parseGoParams(ifaceMethodMatch[2] || ""),
               returnType: ifaceMethodMatch[3]?.trim() || "void",
-              isAsync: false
+              isAsync: false,
             });
           }
         }
@@ -100,7 +107,7 @@ export class GoSignatureHarvester {
           name: receiver ? `${receiver}.${funcName}` : funcName,
           parameters: params,
           returnType,
-          isAsync: false
+          isAsync: false,
         };
 
         records.push({
@@ -111,7 +118,7 @@ export class GoSignatureHarvester {
           kind: "function",
           callables: [callable],
           properties: [],
-          rawCompressed: `func ${receiver ? `(${receiver}) ` : ""}${funcName}(${params.map((p) => `${p.name}: ${p.type}`).join(", ")}): ${returnType}`
+          rawCompressed: `func ${receiver ? `(${receiver}) ` : ""}${funcName}(${params.map((p) => `${p.name}: ${p.type}`).join(", ")}): ${returnType}`,
         });
       }
     }
@@ -130,7 +137,7 @@ export class GoSignatureHarvester {
         params.push({
           name: tokens[0],
           type: tokens[1],
-          isOptional: false
+          isOptional: false,
         });
       }
     }

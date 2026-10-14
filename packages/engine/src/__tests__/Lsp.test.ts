@@ -28,23 +28,32 @@ describe("LSP Client & Diagnostic Subsystem", () => {
       const diagnostics = [
         {
           uri: "file:///workspace/src/app.ts",
-          range: { start: { line: 10, character: 4 }, end: { line: 10, character: 15 } },
+          range: {
+            start: { line: 10, character: 4 },
+            end: { line: 10, character: 15 },
+          },
           severity: DiagnosticSeverity.Error,
           code: 2304,
           source: "typescript",
-          message: "Cannot find name 'foo'."
+          message: "Cannot find name 'foo'.",
         },
         {
           uri: "file:///workspace/src/app.ts",
-          range: { start: { line: 20, character: 2 }, end: { line: 20, character: 10 } },
+          range: {
+            start: { line: 20, character: 2 },
+            end: { line: 20, character: 10 },
+          },
           severity: DiagnosticSeverity.Warning,
           code: 6133,
           source: "typescript",
-          message: "'bar' is declared but never read."
-        }
+          message: "'bar' is declared but never read.",
+        },
       ];
 
-      const normalized = ingestor.ingest("file:///workspace/src/app.ts", diagnostics);
+      const normalized = ingestor.ingest(
+        "file:///workspace/src/app.ts",
+        diagnostics,
+      );
       assert.equal(normalized.length, 2);
       assert.equal(normalized[0]?.severity, "ERROR");
       assert.equal(normalized[0]?.code, "2304");
@@ -56,7 +65,9 @@ describe("LSP Client & Diagnostic Subsystem", () => {
       assert.equal(errors.length, 1);
       assert.equal(errors[0]?.message, "Cannot find name 'foo'.");
 
-      const feedback = ingestor.formatForFeedback("file:///workspace/src/app.ts");
+      const feedback = ingestor.formatForFeedback(
+        "file:///workspace/src/app.ts",
+      );
       assert.ok(feedback.includes("[LSP COMPILER DIAGNOSTICS DETECTED]"));
       assert.ok(feedback.includes("Cannot find name 'foo'."));
       assert.ok(feedback.includes(":11:5"));
@@ -64,7 +75,9 @@ describe("LSP Client & Diagnostic Subsystem", () => {
 
     test("should return empty feedback string when no errors exist", () => {
       ingestor.clear("file:///workspace/src/app.ts");
-      const emptyFeedback = ingestor.formatForFeedback("file:///workspace/src/app.ts");
+      const emptyFeedback = ingestor.formatForFeedback(
+        "file:///workspace/src/app.ts",
+      );
       assert.equal(emptyFeedback, "");
     });
   });

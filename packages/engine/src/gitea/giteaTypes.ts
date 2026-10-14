@@ -73,7 +73,8 @@ export interface SubmitReviewRequest {
 }
 
 export interface MergePullRequestRequest {
-  readonly Do: "merge" | "rebase" | "rebase-merge" | "squash" | "manually-merged";
+  readonly Do:
+    "merge" | "rebase" | "rebase-merge" | "squash" | "manually-merged";
   readonly MergeTitleField?: string | undefined;
   readonly MergeMessageField?: string | undefined;
 }

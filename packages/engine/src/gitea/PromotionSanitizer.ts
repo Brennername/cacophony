@@ -1,4 +1,5 @@
-export type ViolationType = "secret_leak" | "prohibited_emoji" | "banned_import" | "loose_root_file";
+export type ViolationType =
+  "secret_leak" | "prohibited_emoji" | "banned_import" | "loose_root_file";
 
 export interface SanitizerViolation {
   readonly type: ViolationType;
@@ -37,13 +38,14 @@ const DEFAULT_PERMITTED_ROOT_FILES = new Set([
   ".env",
   "angular.json",
   ".prettierrc",
-  ".prettierignore"
+  ".prettierignore",
 ]);
 
 const DEFAULT_BANNED_IMPORTS = ["acorn", "eventsource"];
 
 // Comprehensive unicode emoji regex
-const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
+const EMOJI_REGEX =
+  /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
 
 /**
  * PromotionSanitizer
@@ -59,7 +61,8 @@ export class PromotionSanitizer {
   private readonly bannedImports: readonly string[];
 
   constructor(options?: PromotionSanitizerOptions) {
-    this.permittedRootFiles = options?.permittedRootFiles ?? DEFAULT_PERMITTED_ROOT_FILES;
+    this.permittedRootFiles =
+      options?.permittedRootFiles ?? DEFAULT_PERMITTED_ROOT_FILES;
     this.bannedImports = options?.bannedImports ?? DEFAULT_BANNED_IMPORTS;
   }
 
@@ -71,18 +74,39 @@ export class PromotionSanitizer {
     const lines = content.split(/\r?\n/);
 
     const secretPatterns: Array<{ name: string; regex: RegExp }> = [
-      { name: "AWS Access Key", regex: /(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/ },
-      { name: "GitHub Personal Access Token", regex: /(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36,255}|github_pat_[A-Za-z0-9_]{82}/ },
+      {
+        name: "AWS Access Key",
+        regex:
+          /(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/,
+      },
+      {
+        name: "GitHub Personal Access Token",
+        regex:
+          /(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36,255}|github_pat_[A-Za-z0-9_]{82}/,
+      },
       { name: "Slack Token", regex: /xox[baprs]-[0-9a-zA-Z-]{24,}/ },
-      { name: "OpenAI / Anthropic API Key", regex: /sk-(?:ant-)?[A-Za-z0-9_-]{20,}/ },
-      { name: "Private Key Header", regex: /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----/ },
-      { name: "Hardcoded Credential Assignment", regex: /(?:bearer|api[_-]?key|secret_key|private_key|auth_token)\s*[:=]\s*['"][a-zA-Z0-9_\-\.]{30,}['"]/i }
+      {
+        name: "OpenAI / Anthropic API Key",
+        regex: /sk-(?:ant-)?[A-Za-z0-9_-]{20,}/,
+      },
+      {
+        name: "Private Key Header",
+        regex: /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----/,
+      },
+      {
+        name: "Hardcoded Credential Assignment",
+        regex:
+          /(?:bearer|api[_-]?key|secret_key|private_key|auth_token)\s*[:=]\s*['"][a-zA-Z0-9_\-\.]{30,}['"]/i,
+      },
     ];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;
       // If diff format, only inspect added lines (starting with '+', excluding '+++')
-      if (content.includes("diff --git") && (!line.startsWith("+") || line.startsWith("+++"))) {
+      if (
+        content.includes("diff --git") &&
+        (!line.startsWith("+") || line.startsWith("+++"))
+      ) {
         continue;
       }
 
@@ -95,7 +119,7 @@ export class PromotionSanitizer {
             message: `Potential secret leak detected (${pattern.name})`,
             file: fileName,
             line: i + 1,
-            match: match[0].slice(0, 12) + "..."
+            match: match[0].slice(0, 12) + "...",
           });
         }
       }
@@ -113,7 +137,10 @@ export class PromotionSanitizer {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;
-      if (content.includes("diff --git") && (!line.startsWith("+") || line.startsWith("+++"))) {
+      if (
+        content.includes("diff --git") &&
+        (!line.startsWith("+") || line.startsWith("+++"))
+      ) {
         continue;
       }
 
@@ -125,7 +152,7 @@ export class PromotionSanitizer {
           message: `Prohibited unicode emoji detected: '${match[0]}'`,
           file: fileName,
           line: i + 1,
-          match: match[0]
+          match: match[0],
         });
       }
     }
@@ -136,7 +163,11 @@ export class PromotionSanitizer {
   /**
    * Scans content for banned package imports and checks list of file paths for loose root files.
    */
-  public scanHygiene(content?: string, filePaths?: readonly string[], fileName?: string): SanitizerViolation[] {
+  public scanHygiene(
+    content?: string,
+    filePaths?: readonly string[],
+    fileName?: string,
+  ): SanitizerViolation[] {
     const violations: SanitizerViolation[] = [];
 
     // 1. Banned imports check
@@ -144,12 +175,17 @@ export class PromotionSanitizer {
       const lines = content.split(/\r?\n/);
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]!;
-        if (content.includes("diff --git") && (!line.startsWith("+") || line.startsWith("+++"))) {
+        if (
+          content.includes("diff --git") &&
+          (!line.startsWith("+") || line.startsWith("+++"))
+        ) {
           continue;
         }
 
         for (const banned of this.bannedImports) {
-          const importPattern = new RegExp(`(?:from\\s+['"]${banned}(?:/.*)?['"]|require\\(['"]${banned}(?:/.*)?['"]\\))`);
+          const importPattern = new RegExp(
+            `(?:from\\s+['"]${banned}(?:/.*)?['"]|require\\(['"]${banned}(?:/.*)?['"]\\))`,
+          );
           if (importPattern.test(line)) {
             violations.push({
               type: "banned_import",
@@ -157,7 +193,7 @@ export class PromotionSanitizer {
               message: `Banned dependency import detected: '${banned}'`,
               file: fileName,
               line: i + 1,
-              match: banned
+              match: banned,
             });
           }
         }
@@ -175,7 +211,7 @@ export class PromotionSanitizer {
               severity: "error",
               message: `Unpermitted loose root file detected in repository root: '${normalized}'`,
               file: normalized,
-              match: normalized
+              match: normalized,
             });
           }
         }
@@ -205,20 +241,24 @@ export class PromotionSanitizer {
     }
 
     const totalErrors = violations.filter((v) => v.severity === "error").length;
-    const totalWarnings = violations.filter((v) => v.severity === "warning").length;
+    const totalWarnings = violations.filter(
+      (v) => v.severity === "warning",
+    ).length;
     const passed = totalErrors === 0;
 
     const summary = passed
       ? "Promotion sanitization passed with 0 violations."
       : `Promotion sanitization failed with ${totalErrors} error(s): ` +
-        violations.map((v) => `${v.type}${v.file ? ` in ${v.file}` : ""}: ${v.message}`).join("; ");
+        violations
+          .map((v) => `${v.type}${v.file ? ` in ${v.file}` : ""}: ${v.message}`)
+          .join("; ");
 
     return {
       passed,
       violations,
       totalErrors,
       totalWarnings,
-      summary
+      summary,
     };
   }
 }

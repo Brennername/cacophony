@@ -21,7 +21,7 @@ export class StubCommentSanitizer {
    */
   public static readonly STUB_COMMENT_PATTERN = new RegExp(
     `\\/\\*\\s*\\[(?:${HashStubGenerator.STUB_PREFIX}|CACOPHONY_CAGE):[^\\]]+\\]\\s*\\*\\/|\\/\\/\\s*\\[(?:${HashStubGenerator.STUB_PREFIX}|CACOPHONY_CAGE):[^\\]]+\\][^\\r\\n]*`,
-    "g"
+    "g",
   );
 
   /**
@@ -29,7 +29,7 @@ export class StubCommentSanitizer {
    */
   public static readonly RESIDUAL_MARKER_PATTERN = new RegExp(
     `\\[(?:${HashStubGenerator.STUB_PREFIX}|CACOPHONY_CAGE):[^\\]]+\\]`,
-    "g"
+    "g",
   );
 
   /**
@@ -68,7 +68,11 @@ export class StubCommentSanitizer {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;
       // If line became pure whitespace and was preceded by a blank line, skip extra blank line
-      if (line.trim() === "" && cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1]!.trim() === "") {
+      if (
+        line.trim() === "" &&
+        cleanedLines.length > 0 &&
+        cleanedLines[cleanedLines.length - 1]!.trim() === ""
+      ) {
         continue;
       }
       cleanedLines.push(line);

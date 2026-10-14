@@ -25,7 +25,11 @@ export class VaultRepository {
   /**
    * Sets or updates an encrypted secret in the vault.
    */
-  public async setSecret(key: string, encryptedValue: string, iv: string): Promise<void> {
+  public async setSecret(
+    key: string,
+    encryptedValue: string,
+    iv: string,
+  ): Promise<void> {
     const now = new Date().toISOString();
     const id = `sec_${key.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
 
@@ -36,7 +40,7 @@ export class VaultRepository {
          encrypted_value = EXCLUDED.encrypted_value,
          iv = EXCLUDED.iv,
          updated_at = EXCLUDED.updated_at`,
-      [id, key, encryptedValue, iv, now, now]
+      [id, key, encryptedValue, iv, now, now],
     );
   }
 
@@ -46,7 +50,7 @@ export class VaultRepository {
   public async getSecret(key: string): Promise<SecretVaultRecord | null> {
     const row = await this.driver.queryOne<VaultRow>(
       "SELECT * FROM secret_vault WHERE secret_key = $1",
-      [key]
+      [key],
     );
     return row ? this.mapRow(row) : null;
   }
@@ -56,7 +60,7 @@ export class VaultRepository {
    */
   public async listKeys(): Promise<readonly string[]> {
     const rows = await this.driver.query<{ readonly secret_key: string }>(
-      "SELECT secret_key FROM secret_vault ORDER BY secret_key ASC"
+      "SELECT secret_key FROM secret_vault ORDER BY secret_key ASC",
     );
     return rows.map((r) => r.secret_key);
   }
@@ -67,7 +71,7 @@ export class VaultRepository {
   public async deleteSecret(key: string): Promise<boolean> {
     const result = await this.driver.execute(
       "DELETE FROM secret_vault WHERE secret_key = $1",
-      [key]
+      [key],
     );
     return result.rowsAffected > 0;
   }
@@ -79,7 +83,7 @@ export class VaultRepository {
       encryptedValue: row.encrypted_value,
       iv: row.iv,
       createdAt: String(row.created_at),
-      updatedAt: String(row.updated_at)
+      updatedAt: String(row.updated_at),
     };
   }
 }

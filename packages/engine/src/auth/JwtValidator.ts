@@ -23,7 +23,10 @@ export class JwtValidator {
   private readonly jwksKeyManager: JwksKeyManager | undefined;
   private readonly hmacSecret: string | undefined;
 
-  constructor(options?: { jwksKeyManager?: JwksKeyManager | undefined; hmacSecret?: string | undefined }) {
+  constructor(options?: {
+    jwksKeyManager?: JwksKeyManager | undefined;
+    hmacSecret?: string | undefined;
+  }) {
     this.jwksKeyManager = options?.jwksKeyManager;
     this.hmacSecret = options?.hmacSecret;
   }
@@ -33,7 +36,7 @@ export class JwtValidator {
    */
   public async validate(
     token: string,
-    options?: JwtValidationOptions
+    options?: JwtValidationOptions,
   ): Promise<JwtValidationResult> {
     if (!token || typeof token !== "string") {
       return { valid: false, error: "Empty or invalid token format" };
@@ -41,7 +44,10 @@ export class JwtValidator {
 
     const parts = token.split(".");
     if (parts.length !== 3) {
-      return { valid: false, error: "Invalid JWT structure: expected 3 dot-separated segments" };
+      return {
+        valid: false,
+        error: "Invalid JWT structure: expected 3 dot-separated segments",
+      };
     }
 
     const headerB64 = parts[0];
@@ -55,10 +61,17 @@ export class JwtValidator {
     let payload: Record<string, unknown>;
 
     try {
-      header = JSON.parse(Buffer.from(headerB64, "base64url").toString("utf-8"));
-      payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8"));
+      header = JSON.parse(
+        Buffer.from(headerB64, "base64url").toString("utf-8"),
+      );
+      payload = JSON.parse(
+        Buffer.from(payloadB64, "base64url").toString("utf-8"),
+      );
     } catch (err: unknown) {
-      return { valid: false, error: "Failed to decode base64url JSON header or payload" };
+      return {
+        valid: false,
+        error: "Failed to decode base64url JSON header or payload",
+      };
     }
 
     const alg = header.alg;
@@ -73,7 +86,10 @@ export class JwtValidator {
 
     if (alg === "HS256") {
       if (!this.hmacSecret) {
-        return { valid: false, error: "HS256 token rejected: No HMAC secret configured" };
+        return {
+          valid: false,
+          error: "HS256 token rejected: No HMAC secret configured",
+        };
       }
       const expectedSig = crypto
         .createHmac("sha256", this.hmacSecret)
@@ -84,23 +100,34 @@ export class JwtValidator {
         crypto.timingSafeEqual(signature, expectedSig);
     } else if (alg === "RS256" || alg === "ES256") {
       if (!this.jwksKeyManager) {
-        return { valid: false, error: `${alg} verification requires a configured JwksKeyManager` };
+        return {
+          valid: false,
+          error: `${alg} verification requires a configured JwksKeyManager`,
+        };
       }
       const keyObj = await this.jwksKeyManager.getKey(header.kid);
       if (!keyObj) {
-        return { valid: false, error: `Public key not found for kid: ${header.kid ?? "default"}` };
+        return {
+          valid: false,
+          error: `Public key not found for kid: ${header.kid ?? "default"}`,
+        };
       }
 
       try {
         const cryptoKey = crypto.createPublicKey({
           key: keyObj as crypto.JsonWebKey,
-          format: "jwk"
+          format: "jwk",
         });
-        const verifier = crypto.createVerify(alg === "RS256" ? "RSA-SHA256" : "SHA256");
+        const verifier = crypto.createVerify(
+          alg === "RS256" ? "RSA-SHA256" : "SHA256",
+        );
         verifier.update(signedData);
         signatureValid = verifier.verify(cryptoKey, signature);
       } catch (err: unknown) {
-        return { valid: false, error: `Cryptographic verification error: ${err instanceof Error ? err.message : String(err)}` };
+        return {
+          valid: false,
+          error: `Cryptographic verification error: ${err instanceof Error ? err.message : String(err)}`,
+        };
       }
     } else {
       return { valid: false, error: `Unsupported algorithm: ${alg}` };
@@ -117,7 +144,10 @@ export class JwtValidator {
     // Check expiration (exp)
     if (typeof payload.exp === "number") {
       if (nowSec - clockTolerance > payload.exp) {
-        return { valid: false, error: `Token expired at ${payload.exp}, current time is ${nowSec}` };
+        return {
+          valid: false,
+          error: `Token expired at ${payload.exp}, current time is ${nowSec}`,
+        };
       }
     }
 
@@ -130,7 +160,10 @@ export class JwtValidator {
 
     // Check issuer (iss)
     if (options?.expectedIssuer && payload.iss !== options.expectedIssuer) {
-      return { valid: false, error: `Issuer mismatch: expected ${options.expectedIssuer}, got ${payload.iss}` };
+      return {
+        valid: false,
+        error: `Issuer mismatch: expected ${options.expectedIssuer}, got ${payload.iss}`,
+      };
     }
 
     // Check audience (aud)
@@ -140,13 +173,19 @@ export class JwtValidator {
         ? aud.includes(options.expectedAudience)
         : aud === options.expectedAudience;
       if (!audMatches) {
-        return { valid: false, error: `Audience mismatch: expected ${options.expectedAudience}, got ${payload.aud}` };
+        return {
+          valid: false,
+          error: `Audience mismatch: expected ${options.expectedAudience}, got ${payload.aud}`,
+        };
       }
     }
 
     // Check nonce if requested
     if (options?.expectedNonce && payload.nonce !== options.expectedNonce) {
-      return { valid: false, error: `Nonce mismatch: expected ${options.expectedNonce}, got ${payload.nonce}` };
+      return {
+        valid: false,
+        error: `Nonce mismatch: expected ${options.expectedNonce}, got ${payload.nonce}`,
+      };
     }
 
     return { valid: true, payload };
@@ -161,7 +200,9 @@ export class JwtValidator {
     }
     const header = { alg: "HS256", typ: "JWT" };
     const headerB64 = Buffer.from(JSON.stringify(header)).toString("base64url");
-    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString(
+      "base64url",
+    );
     const signedData = `${headerB64}.${payloadB64}`;
     const signature = crypto
       .createHmac("sha256", this.hmacSecret)

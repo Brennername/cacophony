@@ -1,5 +1,8 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { InferenceProviderType, ModelStatus } from "@cacophony/shared-types";
+import type {
+  InferenceProviderType,
+  ModelStatus,
+} from "@cacophony/shared-types";
 
 interface ModelHealthRow {
   readonly model_id: string;
@@ -12,6 +15,8 @@ interface ModelHealthRow {
   readonly avg_tokens_per_sec: number;
   readonly status: string;
   readonly last_used_at: string | null;
+  readonly total_remediation_attempts?: number;
+  readonly total_remediation_success?: number;
 }
 
 interface ArenaEpochRow {
@@ -38,6 +43,9 @@ export interface ModelHealthProfile {
   avgTokensPerSec: number;
   status: ModelStatus;
   lastUsedAt: string | null;
+  totalRemediationAttempts: number;
+  totalRemediationSuccess: number;
+  remediationRecoveryRate: number;
 }
 
 export interface ArenaEpochRecord {
@@ -57,7 +65,10 @@ export class ModelHealthRepository {
   private readonly driver: IDatabaseDriver;
   private isProtectedCheck?: ((modelId: string) => boolean) | undefined;
 
-  constructor(driver: IDatabaseDriver, isProtectedCheck?: ((modelId: string) => boolean) | undefined) {
+  constructor(
+    driver: IDatabaseDriver,
+    isProtectedCheck?: ((modelId: string) => boolean) | undefined,
+  ) {
     this.driver = driver;
     this.isProtectedCheck = isProtectedCheck;
   }
@@ -66,10 +77,13 @@ export class ModelHealthRepository {
     this.isProtectedCheck = checker;
   }
 
-  public async getProfile(modelId: string, provider: InferenceProviderType = "ollama"): Promise<ModelHealthProfile> {
+  public async getProfile(
+    modelId: string,
+    provider: InferenceProviderType = "ollama",
+  ): Promise<ModelHealthProfile> {
     const existing = await this.driver.queryOne<ModelHealthRow>(
       "SELECT * FROM model_health_profiles WHERE model_id = $1",
-      [modelId]
+      [modelId],
     );
 
     if (existing) {
@@ -79,15 +93,16 @@ export class ModelHealthRepository {
     await this.driver.execute(
       `INSERT INTO model_health_profiles (
         model_id, provider, total_tasks, total_success, total_failures,
-        consecutive_failures, avg_latency_ms, avg_tokens_per_sec, status, last_used_at
-      ) VALUES ($1, $2, 0, 0, 0, 0, 0.0, 0.0, 'ACTIVE', NULL)
+        consecutive_failures, avg_latency_ms, avg_tokens_per_sec, status, last_used_at,
+        total_remediation_attempts, total_remediation_success
+      ) VALUES ($1, $2, 0, 0, 0, 0, 0.0, 0.0, 'ACTIVE', NULL, 0, 0)
       ON CONFLICT (model_id) DO NOTHING`,
-      [modelId, provider]
+      [modelId, provider],
     );
 
     const created = await this.driver.queryOne<ModelHealthRow>(
       "SELECT * FROM model_health_profiles WHERE model_id = $1",
-      [modelId]
+      [modelId],
     );
     return this.mapRow(created!);
   }
@@ -97,7 +112,7 @@ export class ModelHealthRepository {
     provider: InferenceProviderType,
     success: boolean,
     latencyMs: number,
-    tokensPerSec: number
+    tokensPerSec: number,
   ): Promise<ModelHealthProfile> {
     const profile = await this.getProfile(modelId, provider);
 
@@ -106,15 +121,21 @@ export class ModelHealthRepository {
     const totalFailures = profile.totalFailures + (success ? 0 : 1);
     const consecutiveFailures = success ? 0 : profile.consecutiveFailures + 1;
 
-    const avgLatencyMs = profile.avgLatencyMs === 0
-      ? latencyMs
-      : Math.round((profile.avgLatencyMs * 0.8) + (latencyMs * 0.2));
-    const avgTokensPerSec = profile.avgTokensPerSec === 0
-      ? tokensPerSec
-      : Number(((profile.avgTokensPerSec * 0.8) + (tokensPerSec * 0.2)).toFixed(2));
+    const avgLatencyMs =
+      profile.avgLatencyMs === 0
+        ? latencyMs
+        : Math.round(profile.avgLatencyMs * 0.8 + latencyMs * 0.2);
+    const avgTokensPerSec =
+      profile.avgTokensPerSec === 0
+        ? tokensPerSec
+        : Number(
+            (profile.avgTokensPerSec * 0.8 + tokensPerSec * 0.2).toFixed(2),
+          );
 
     let status = profile.status;
-    const isProtected = this.isProtectedCheck ? this.isProtectedCheck(modelId) : false;
+    const isProtected = this.isProtectedCheck
+      ? this.isProtectedCheck(modelId)
+      : false;
     if (consecutiveFailures >= 3 && status === "ACTIVE" && !isProtected) {
       status = "EJECTED";
     }
@@ -136,8 +157,8 @@ export class ModelHealthRepository {
         avgTokensPerSec,
         status,
         now,
-        modelId
-      ]
+        modelId,
+      ],
     );
 
     return {
@@ -150,28 +171,73 @@ export class ModelHealthRepository {
       avgLatencyMs,
       avgTokensPerSec,
       status,
-      lastUsedAt: now
+      lastUsedAt: now,
+      totalRemediationAttempts: profile.totalRemediationAttempts,
+      totalRemediationSuccess: profile.totalRemediationSuccess,
+      remediationRecoveryRate: profile.remediationRecoveryRate,
     };
   }
 
-  public async updateStatus(modelId: string, status: ModelStatus): Promise<void> {
+  public async recordRemediation(
+    modelId: string,
+    success: boolean,
+    provider: InferenceProviderType = "ollama",
+  ): Promise<ModelHealthProfile> {
+    const profile = await this.getProfile(modelId, provider);
+    const totalRemediationAttempts = profile.totalRemediationAttempts + 1;
+    const totalRemediationSuccess =
+      profile.totalRemediationSuccess + (success ? 1 : 0);
+    const now = new Date().toISOString();
+
+    await this.driver.execute(
+      `UPDATE model_health_profiles SET
+        total_remediation_attempts = $1,
+        total_remediation_success = $2,
+        last_used_at = $3
+       WHERE model_id = $4`,
+      [totalRemediationAttempts, totalRemediationSuccess, now, modelId],
+    );
+
+    const remediationRecoveryRate =
+      totalRemediationAttempts > 0
+        ? Number(
+            (
+              (totalRemediationSuccess / totalRemediationAttempts) *
+              100
+            ).toFixed(2),
+          )
+        : 0.0;
+
+    return {
+      ...profile,
+      totalRemediationAttempts,
+      totalRemediationSuccess,
+      remediationRecoveryRate,
+      lastUsedAt: now,
+    };
+  }
+
+  public async updateStatus(
+    modelId: string,
+    status: ModelStatus,
+  ): Promise<void> {
     const resetFailures = status === "ACTIVE" ? 0 : undefined;
     if (resetFailures !== undefined) {
       await this.driver.execute(
         "UPDATE model_health_profiles SET status = $1, consecutive_failures = $2 WHERE model_id = $3",
-        [status, resetFailures, modelId]
+        [status, resetFailures, modelId],
       );
     } else {
       await this.driver.execute(
         "UPDATE model_health_profiles SET status = $1 WHERE model_id = $2",
-        [status, modelId]
+        [status, modelId],
       );
     }
   }
 
   public async listProfiles(): Promise<readonly ModelHealthProfile[]> {
     const rows = await this.driver.query<ModelHealthRow>(
-      "SELECT * FROM model_health_profiles ORDER BY total_success DESC, total_tasks DESC"
+      "SELECT * FROM model_health_profiles ORDER BY total_success DESC, total_tasks DESC",
     );
     return rows.map((r) => this.mapRow(r));
   }
@@ -185,15 +251,17 @@ export class ModelHealthRepository {
         consecutive_failures = 0,
         avg_latency_ms = 0.0,
         avg_tokens_per_sec = 0.0,
-        status = 'ACTIVE'`
+        total_remediation_attempts = 0,
+        total_remediation_success = 0,
+        status = 'ACTIVE'`,
     );
-}
+  }
 
   public async getCurrentEpoch(): Promise<ArenaEpochRecord> {
     const isPostgres = this.driver.getDialect() === "postgres";
     const activeCondition = isPostgres ? "is_active = true" : "is_active = 1";
     const row = await this.driver.queryOne<ArenaEpochRow>(
-      `SELECT * FROM arena_epochs WHERE ${activeCondition} ORDER BY epoch_id DESC LIMIT 1`
+      `SELECT * FROM arena_epochs WHERE ${activeCondition} ORDER BY epoch_id DESC LIMIT 1`,
     );
 
     if (row) {
@@ -209,17 +277,21 @@ export class ModelHealthRepository {
         "Initial self-hosting bootstrap epoch",
         now,
         this.driver.getDialect() === "postgres" ? true : 1,
-        "Pre-failure cascade bootstrap trials"
-      ]
+        "Pre-failure cascade bootstrap trials",
+      ],
     );
 
     const created = await this.driver.queryOne<ArenaEpochRow>(
-      "SELECT * FROM arena_epochs ORDER BY epoch_id DESC LIMIT 1"
+      "SELECT * FROM arena_epochs ORDER BY epoch_id DESC LIMIT 1",
     );
     return this.mapEpochRow(created!);
   }
 
-  public async advanceEpoch(name: string, reason: string, notes = ""): Promise<ArenaEpochRecord> {
+  public async advanceEpoch(
+    name: string,
+    reason: string,
+    notes = "",
+  ): Promise<ArenaEpochRecord> {
     const current = await this.getCurrentEpoch();
     const now = new Date().toISOString();
 
@@ -228,8 +300,9 @@ export class ModelHealthRepository {
       await this.driver.execute(
         `INSERT INTO model_health_epoch_history (
           epoch_id, model_id, provider, total_tasks, total_success, total_failures,
-          consecutive_failures, avg_latency_ms, avg_tokens_per_sec, status, snapshotted_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          consecutive_failures, avg_latency_ms, avg_tokens_per_sec, status, snapshotted_at,
+          total_remediation_attempts, total_remediation_success
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [
           current.epochId,
           p.modelId,
@@ -241,15 +314,26 @@ export class ModelHealthRepository {
           p.avgLatencyMs,
           p.avgTokensPerSec,
           p.status,
-          now
-        ]
+          now,
+          p.totalRemediationAttempts,
+          p.totalRemediationSuccess,
+        ],
       );
     }
 
     const inactiveVal = this.driver.getDialect() === "postgres" ? false : 0;
-    const taskCount = profiles.reduce((total, profile) => total + profile.totalTasks, 0);
-    const successCount = profiles.reduce((total, profile) => total + profile.totalSuccess, 0);
-    const failureCount = profiles.reduce((total, profile) => total + profile.totalFailures, 0);
+    const taskCount = profiles.reduce(
+      (total, profile) => total + profile.totalTasks,
+      0,
+    );
+    const successCount = profiles.reduce(
+      (total, profile) => total + profile.totalSuccess,
+      0,
+    );
+    const failureCount = profiles.reduce(
+      (total, profile) => total + profile.totalFailures,
+      0,
+    );
     await this.driver.execute(
       `UPDATE arena_epochs SET
         is_active = $1,
@@ -258,14 +342,21 @@ export class ModelHealthRepository {
         success_count = $4,
         failure_count = $5
        WHERE epoch_id = $6`,
-      [inactiveVal, now, taskCount, successCount, failureCount, current.epochId]
+      [
+        inactiveVal,
+        now,
+        taskCount,
+        successCount,
+        failureCount,
+        current.epochId,
+      ],
     );
 
     const activeVal = this.driver.getDialect() === "postgres" ? true : 1;
     await this.driver.execute(
       `INSERT INTO arena_epochs (name, reason, started_at, is_active, notes)
        VALUES ($1, $2, $3, $4, $5)`,
-      [name, reason, now, activeVal, notes]
+      [name, reason, now, activeVal, notes],
     );
 
     await this.resetAllStats();
@@ -275,15 +366,17 @@ export class ModelHealthRepository {
 
   public async listEpochs(): Promise<readonly ArenaEpochRecord[]> {
     const rows = await this.driver.query<ArenaEpochRow>(
-      "SELECT * FROM arena_epochs ORDER BY epoch_id ASC"
+      "SELECT * FROM arena_epochs ORDER BY epoch_id ASC",
     );
     return rows.map((r) => this.mapEpochRow(r));
   }
 
-  public async getEpochHistory(epochId: number): Promise<readonly ModelHealthProfile[]> {
+  public async getEpochHistory(
+    epochId: number,
+  ): Promise<readonly ModelHealthProfile[]> {
     const rows = await this.driver.query<ModelHealthRow>(
       "SELECT * FROM model_health_epoch_history WHERE epoch_id = $1 ORDER BY total_success DESC, total_tasks DESC",
-      [epochId]
+      [epochId],
     );
     return rows.map((r) => this.mapRow(r));
   }
@@ -299,11 +392,25 @@ export class ModelHealthRepository {
       taskCount: Number(row.task_count || 0),
       successCount: Number(row.success_count || 0),
       failureCount: Number(row.failure_count || 0),
-      notes: row.notes ? String(row.notes) : null
+      notes: row.notes ? String(row.notes) : null,
     };
   }
 
   private mapRow(row: ModelHealthRow): ModelHealthProfile {
+    const totalRemediationAttempts = Number(
+      row.total_remediation_attempts || 0,
+    );
+    const totalRemediationSuccess = Number(row.total_remediation_success || 0);
+    const remediationRecoveryRate =
+      totalRemediationAttempts > 0
+        ? Number(
+            (
+              (totalRemediationSuccess / totalRemediationAttempts) *
+              100
+            ).toFixed(2),
+          )
+        : 0.0;
+
     return {
       modelId: row.model_id,
       provider: row.provider as InferenceProviderType,
@@ -314,21 +421,17 @@ export class ModelHealthRepository {
       avgLatencyMs: Number(row.avg_latency_ms),
       avgTokensPerSec: Number(row.avg_tokens_per_sec),
       status: row.status as ModelStatus,
-      lastUsedAt: row.last_used_at ? String(row.last_used_at) : null
+      lastUsedAt: row.last_used_at ? String(row.last_used_at) : null,
+      totalRemediationAttempts,
+      totalRemediationSuccess,
+      remediationRecoveryRate,
     };
   }
 
-
-  public async computeRemediationRecoveryRate(modelId: string): Promise<number> {
-      const profile = await this.getProfile(modelId);
-      const totalRemediationAttempts = profile.totalTasks;
-      const totalRemediationSuccess = profile.totalSuccess;
-
-      if (totalRemediationAttempts === 0) {
-        return 0;
-      }
-
-      const remediationRecoveryRate = (totalRemediationSuccess / totalRemediationAttempts) * 100;
-      return Number(remediationRecoveryRate.toFixed(2));
-    }
+  public async computeRemediationRecoveryRate(
+    modelId: string,
+  ): Promise<number> {
+    const profile = await this.getProfile(modelId);
+    return profile.remediationRecoveryRate;
+  }
 }

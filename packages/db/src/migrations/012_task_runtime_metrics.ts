@@ -17,16 +17,16 @@ export const migration012: Migration = {
     const isPostgres = driver.getDialect() === "postgres";
     if (isPostgres) {
       await driver.execute(
-        "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS duration_ms INTEGER DEFAULT 0"
+        "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS duration_ms INTEGER DEFAULT 0",
       );
       await driver.execute(
-        "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tokens_per_sec REAL DEFAULT 0.0"
+        "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tokens_per_sec REAL DEFAULT 0.0",
       );
     } else {
       // SQLite syntax: ALTER TABLE ... ADD COLUMN ... (without IF NOT EXISTS)
       try {
         await driver.execute(
-          "ALTER TABLE tasks ADD COLUMN duration_ms INTEGER DEFAULT 0"
+          "ALTER TABLE tasks ADD COLUMN duration_ms INTEGER DEFAULT 0",
         );
       } catch (err: unknown) {
         const msg = String(err);
@@ -36,7 +36,7 @@ export const migration012: Migration = {
       }
       try {
         await driver.execute(
-          "ALTER TABLE tasks ADD COLUMN tokens_per_sec REAL DEFAULT 0.0"
+          "ALTER TABLE tasks ADD COLUMN tokens_per_sec REAL DEFAULT 0.0",
         );
       } catch (err: unknown) {
         const msg = String(err);
@@ -49,8 +49,12 @@ export const migration012: Migration = {
   down: async (driver: IDatabaseDriver): Promise<void> => {
     const isPostgres = driver.getDialect() === "postgres";
     if (isPostgres) {
-      await driver.execute("ALTER TABLE tasks DROP COLUMN IF EXISTS duration_ms");
-      await driver.execute("ALTER TABLE tasks DROP COLUMN IF EXISTS tokens_per_sec");
+      await driver.execute(
+        "ALTER TABLE tasks DROP COLUMN IF EXISTS duration_ms",
+      );
+      await driver.execute(
+        "ALTER TABLE tasks DROP COLUMN IF EXISTS tokens_per_sec",
+      );
     } else {
       try {
         await driver.execute("ALTER TABLE tasks DROP COLUMN duration_ms");
@@ -63,5 +67,5 @@ export const migration012: Migration = {
         // ignore if not supported
       }
     }
-  }
+  },
 };

@@ -1,6 +1,9 @@
 import * as os from "node:os";
 import * as fs from "node:fs";
-import type { GpuMetrics, HardwareDeviceCategory } from "@cacophony/shared-types";
+import type {
+  GpuMetrics,
+  HardwareDeviceCategory,
+} from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 
 /**
@@ -51,11 +54,15 @@ export class CpuFallbackProvider implements IHardwareTelemetryProvider {
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
     const usedMem = Math.max(0, totalMem - freeMem);
-    const memPercent = totalMem > 0 ? Number(((usedMem / totalMem) * 100).toFixed(1)) : 0;
+    const memPercent =
+      totalMem > 0 ? Number(((usedMem / totalMem) * 100).toFixed(1)) : 0;
 
     const cores = os.cpus().length || 1;
     const load1Min = os.loadavg()[0] ?? 0;
-    const cpuUtilization = Math.min(100, Math.max(0, Number(((load1Min / cores) * 100).toFixed(1))));
+    const cpuUtilization = Math.min(
+      100,
+      Math.max(0, Number(((load1Min / cores) * 100).toFixed(1))),
+    );
 
     const edgeTemp = this.sampleHostCpuTemp();
 
@@ -74,7 +81,11 @@ export class CpuFallbackProvider implements IHardwareTelemetryProvider {
     };
   }
 
-  public async getVramMetrics(): Promise<{ totalBytes: number; usedBytes: number; freeBytes: number }> {
+  public async getVramMetrics(): Promise<{
+    totalBytes: number;
+    usedBytes: number;
+    freeBytes: number;
+  }> {
     const total = os.totalmem();
     const free = os.freemem();
     return {
@@ -84,7 +95,10 @@ export class CpuFallbackProvider implements IHardwareTelemetryProvider {
     };
   }
 
-  public async getThermalMetrics(): Promise<{ temperatureCelsius: number; isThrottled: boolean }> {
+  public async getThermalMetrics(): Promise<{
+    temperatureCelsius: number;
+    isThrottled: boolean;
+  }> {
     const temp = this.sampleHostCpuTemp();
     return {
       temperatureCelsius: temp,

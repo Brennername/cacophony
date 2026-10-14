@@ -1,4 +1,7 @@
-import type { OidcDiscoveryConfig, JwksDocument } from "@cacophony/shared-types";
+import type {
+  OidcDiscoveryConfig,
+  JwksDocument,
+} from "@cacophony/shared-types";
 
 /**
  * Service to dynamically discover and cache OpenID Connect endpoint configurations
@@ -31,10 +34,12 @@ export class OidcDiscoveryService {
     const wellKnownUrl = `${this.issuerUrl}/.well-known/openid-configuration`;
     try {
       const res = await fetch(wellKnownUrl, {
-        headers: { Accept: "application/json" }
+        headers: { Accept: "application/json" },
       });
       if (!res.ok) {
-        throw new Error(`Failed to fetch OIDC configuration from ${wellKnownUrl}: HTTP ${res.status}`);
+        throw new Error(
+          `Failed to fetch OIDC configuration from ${wellKnownUrl}: HTTP ${res.status}`,
+        );
       }
       const data = (await res.json()) as OidcDiscoveryConfig;
       this.cachedConfig = data;
@@ -51,7 +56,7 @@ export class OidcDiscoveryService {
         token_endpoint: `${this.issuerUrl}/token`,
         userinfo_endpoint: `${this.issuerUrl}/userinfo`,
         jwks_uri: `${this.issuerUrl}/jwks`,
-        end_session_endpoint: `${this.issuerUrl}/end-session`
+        end_session_endpoint: `${this.issuerUrl}/end-session`,
       };
       this.cachedConfig = fallbackConfig;
       this.lastFetchTimeMs = now;
@@ -101,10 +106,12 @@ export class JwksKeyManager {
 
     try {
       const res = await fetch(this.jwksUri, {
-        headers: { Accept: "application/json" }
+        headers: { Accept: "application/json" },
       });
       if (!res.ok) {
-        throw new Error(`Failed to fetch JWKS from ${this.jwksUri}: HTTP ${res.status}`);
+        throw new Error(
+          `Failed to fetch JWKS from ${this.jwksUri}: HTTP ${res.status}`,
+        );
       }
       const data = (await res.json()) as JwksDocument;
       this.cachedJwks = data;
@@ -121,7 +128,9 @@ export class JwksKeyManager {
   /**
    * Finds a matching key by kid or returns the first key matching use='sig'.
    */
-  public async getKey(kid?: string): Promise<JwksDocument["keys"][number] | undefined> {
+  public async getKey(
+    kid?: string,
+  ): Promise<JwksDocument["keys"][number] | undefined> {
     const jwks = await this.getJwks();
     if (kid) {
       return jwks.keys.find((k) => k.kid === kid);

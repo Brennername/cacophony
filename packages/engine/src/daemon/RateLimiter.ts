@@ -30,7 +30,7 @@ const DEFAULT_CONFIG: RateLimiterConfig = {
   maxTokens: 120,
   refillRatePerSecond: 20,
   maxMutatingTokens: 30,
-  mutatingRefillRatePerSecond: 5
+  mutatingRefillRatePerSecond: 5,
 };
 
 /**
@@ -62,7 +62,10 @@ export class RateLimiter {
    */
   public start(): void {
     if (this.evictionTimer) return;
-    this.evictionTimer = setInterval(() => this.evictStaleEntries(), RateLimiter.EVICTION_INTERVAL_MS);
+    this.evictionTimer = setInterval(
+      () => this.evictStaleEntries(),
+      RateLimiter.EVICTION_INTERVAL_MS,
+    );
     // Avoid holding the event loop open for cleanup timers
     this.evictionTimer.unref();
   }
@@ -139,7 +142,7 @@ export class RateLimiter {
     const fresh: ClientBucket = {
       readTokens: this.config.maxTokens,
       mutatingTokens: this.config.maxMutatingTokens,
-      lastRefillMs: nowMs
+      lastRefillMs: nowMs,
     };
     this.buckets.set(clientIp, fresh);
     return fresh;
@@ -155,12 +158,13 @@ export class RateLimiter {
 
     bucket.readTokens = Math.min(
       this.config.maxTokens,
-      bucket.readTokens + elapsedSeconds * this.config.refillRatePerSecond
+      bucket.readTokens + elapsedSeconds * this.config.refillRatePerSecond,
     );
 
     bucket.mutatingTokens = Math.min(
       this.config.maxMutatingTokens,
-      bucket.mutatingTokens + elapsedSeconds * this.config.mutatingRefillRatePerSecond
+      bucket.mutatingTokens +
+        elapsedSeconds * this.config.mutatingRefillRatePerSecond,
     );
 
     bucket.lastRefillMs = nowMs;
@@ -168,7 +172,12 @@ export class RateLimiter {
 
   /** Determines whether the HTTP method is a state-mutating operation. */
   private isMutatingMethod(method: string): boolean {
-    return method === "POST" || method === "PUT" || method === "DELETE" || method === "PATCH";
+    return (
+      method === "POST" ||
+      method === "PUT" ||
+      method === "DELETE" ||
+      method === "PATCH"
+    );
   }
 
   /** Evicts bucket entries that haven't been accessed within the stale threshold. */

@@ -42,7 +42,7 @@ export class GiteaOAuthProvider {
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
       response_type: "code",
-      state
+      state,
     });
 
     return `${this.config.giteaPublicUrl.replace(/\/+$/, "")}/login/oauth/authorize?${params.toString()}`;
@@ -57,17 +57,19 @@ export class GiteaOAuthProvider {
       this.config.clientId,
       this.config.clientSecret,
       code,
-      this.config.redirectUri
+      this.config.redirectUri,
     );
 
-    const user = await this.client.getAuthenticatedUser(tokenResponse.access_token);
+    const user = await this.client.getAuthenticatedUser(
+      tokenResponse.access_token,
+    );
     const expiresAt = Date.now() + 24 * 3600 * 1000; // 24 hours
 
     const payload = {
       sub: String(user.id),
       username: user.login,
       email: user.email,
-      exp: Math.floor(expiresAt / 1000)
+      exp: Math.floor(expiresAt / 1000),
     };
 
     const sessionJwt = this.signJwt(payload, this.config.jwtSecret);
@@ -78,16 +80,19 @@ export class GiteaOAuthProvider {
         id: user.id,
         username: user.login,
         email: user.email,
-        ...(user.full_name ? { fullName: user.full_name } : {})
+        ...(user.full_name ? { fullName: user.full_name } : {}),
       },
-      expiresAt
+      expiresAt,
     };
   }
 
   /**
    * Validates and verifies incoming session JWT.
    */
-  public verifySessionJwt(token: string): { valid: boolean; payload?: Record<string, unknown> } {
+  public verifySessionJwt(token: string): {
+    valid: boolean;
+    payload?: Record<string, unknown>;
+  } {
     try {
       const parts = token.split(".");
       if (parts.length !== 3) return { valid: false };
@@ -105,7 +110,9 @@ export class GiteaOAuthProvider {
         return { valid: false };
       }
 
-      const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8"));
+      const payload = JSON.parse(
+        Buffer.from(payloadB64, "base64url").toString("utf-8"),
+      );
       if (payload.exp && payload.exp * 1000 < Date.now()) {
         return { valid: false };
       }
@@ -119,7 +126,9 @@ export class GiteaOAuthProvider {
   private signJwt(payload: Record<string, unknown>, secret: string): string {
     const header = { alg: "HS256", typ: "JWT" };
     const headerB64 = Buffer.from(JSON.stringify(header)).toString("base64url");
-    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString(
+      "base64url",
+    );
     const dataToSign = `${headerB64}.${payloadB64}`;
     const sigB64 = crypto
       .createHmac("sha256", secret)

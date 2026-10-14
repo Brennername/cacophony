@@ -1249,6 +1249,9 @@ export class CacophonyHttpServer {
         consecutiveFailures: p.consecutiveFailures,
         avgLatencyMs: p.avgLatencyMs,
         avgTokensPerSec: p.avgTokensPerSec || 0.0,
+        totalRemediationAttempts: p.totalRemediationAttempts,
+        totalRemediationSuccess: p.totalRemediationSuccess,
+        remediationRecoveryRate: p.remediationRecoveryRate,
         status:
           p.status === "EJECTED"
             ? "EVICTED"

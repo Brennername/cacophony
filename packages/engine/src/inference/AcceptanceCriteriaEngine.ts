@@ -31,12 +31,16 @@ export class AcceptanceCriteriaEngine {
    */
   public deriveCriteria(
     requirement: RequirementNode,
-    _constraints: readonly string[] = []
+    _constraints: readonly string[] = [],
   ): readonly AcceptanceCriterion[] {
     const criteria: AcceptanceCriterion[] = [];
     const targetLayer = this.resolveTargetLayer(requirement);
 
-    if (requirement.type === "api_endpoint" && requirement.httpMethod && requirement.routePath) {
+    if (
+      requirement.type === "api_endpoint" &&
+      requirement.httpMethod &&
+      requirement.routePath
+    ) {
       // 1. Success scenario
       criteria.push({
         id: `${requirement.id}-crit-1`,
@@ -46,7 +50,7 @@ export class AcceptanceCriteriaEngine {
         when: `Client executes ${requirement.httpMethod} ${requirement.routePath}`,
         then: `Server returns 200 OK with valid schema payload`,
         expectedStatusCode: 200,
-        targetLayer: "backend"
+        targetLayer: "backend",
       });
 
       // 2. Validation / Error scenario
@@ -60,7 +64,7 @@ export class AcceptanceCriteriaEngine {
           then: `Server returns 400 Bad Request with descriptive error message`,
           expectedStatusCode: 400,
           expectedError: "Invalid payload parameters",
-          targetLayer: "backend"
+          targetLayer: "backend",
         });
       }
     } else if (targetLayer === "frontend") {
@@ -71,7 +75,7 @@ export class AcceptanceCriteriaEngine {
         given: `Component is initialized with default signal inputs`,
         when: `User interacts with the element or triggers event`,
         then: `UI updates reactively and adheres to WCAG mobile-first touch target 44x44px`,
-        targetLayer: "frontend"
+        targetLayer: "frontend",
       });
     } else {
       criteria.push({
@@ -81,7 +85,7 @@ export class AcceptanceCriteriaEngine {
         given: `Domain service is configured with valid dependencies`,
         when: `Operation '${requirement.title}' is invoked`,
         then: `Invariants are enforced and expected result is returned`,
-        targetLayer
+        targetLayer,
       });
     }
 
@@ -93,7 +97,7 @@ export class AcceptanceCriteriaEngine {
    */
   public generateTestTemplate(
     criterion: AcceptanceCriterion,
-    options?: { moduleName?: string; targetPath?: string }
+    options?: { moduleName?: string; targetPath?: string },
   ): TestTemplateResult {
     const moduleName = options?.moduleName || "TargetService";
 
@@ -123,13 +127,13 @@ export class AcceptanceCriteriaEngine {
         "    expect(rootEl).not.toBeNull();",
         "  });",
         "});",
-        ""
+        "",
       ].join("\n");
 
       return {
         fileName,
         testCode,
-        framework: "angular_spec"
+        framework: "angular_spec",
       };
     }
 
@@ -150,24 +154,38 @@ export class AcceptanceCriteriaEngine {
       "    // Then: " + criterion.then,
       "  });",
       "});",
-      ""
+      "",
     ].join("\n");
 
     return {
       fileName,
       testCode,
-      framework: "node:test"
+      framework: "node:test",
     };
   }
 
-  private resolveTargetLayer(requirement: RequirementNode): "backend" | "frontend" | "database" | "e2e" {
+  private resolveTargetLayer(
+    requirement: RequirementNode,
+  ): "backend" | "frontend" | "database" | "e2e" {
     const cat = requirement.category.toLowerCase();
     const title = requirement.title.toLowerCase();
 
-    if (cat.includes("frontend") || cat.includes("ui") || cat.includes("component") || title.includes("component") || title.includes("modal")) {
+    if (
+      cat.includes("frontend") ||
+      cat.includes("ui") ||
+      cat.includes("component") ||
+      title.includes("component") ||
+      title.includes("modal")
+    ) {
       return "frontend";
     }
-    if (cat.includes("database") || cat.includes("schema") || cat.includes("migration") || title.includes("table") || title.includes("repository")) {
+    if (
+      cat.includes("database") ||
+      cat.includes("schema") ||
+      cat.includes("migration") ||
+      title.includes("table") ||
+      title.includes("repository")
+    ) {
       return "database";
     }
     if (cat.includes("e2e") || title.includes("end-to-end")) {

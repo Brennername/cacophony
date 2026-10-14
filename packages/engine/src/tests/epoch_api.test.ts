@@ -25,8 +25,8 @@ class MockEpochHealthRepo {
       taskCount: 15,
       successCount: 12,
       failureCount: 3,
-      notes: ""
-    }
+      notes: "",
+    },
   ];
 
   public history = [
@@ -39,8 +39,8 @@ class MockEpochHealthRepo {
       totalFailures: 3,
       successRate: 0.8,
       status: "ACTIVE",
-      snapshotAt: new Date().toISOString()
-    }
+      snapshotAt: new Date().toISOString(),
+    },
   ];
 
   public async getCurrentEpoch() {
@@ -67,7 +67,7 @@ class MockEpochHealthRepo {
       taskCount: 0,
       successCount: 0,
       failureCount: 0,
-      notes: notes || ""
+      notes: notes || "",
     };
     this.epochs.push(newEpoch);
     return newEpoch;
@@ -134,7 +134,10 @@ describe("Arena Epoch REST API Integration Suite (T82.3)", () => {
 
   async function startServer(): Promise<void> {
     const mockDaemon = new MockDaemonForEpochs();
-    server = new CacophonyHttpServer(mockDaemon as any, { httpPort: 0, httpHost: "127.0.0.1" });
+    server = new CacophonyHttpServer(mockDaemon as any, {
+      httpPort: 0,
+      httpHost: "127.0.0.1",
+    });
     await server.start();
     const address = (server as any).server.address();
     baseUrl = `http://127.0.0.1:${address.port}`;
@@ -159,8 +162,8 @@ describe("Arena Epoch REST API Integration Suite (T82.3)", () => {
       body: JSON.stringify({
         name: "Epoch 2: Architecture Upgrade",
         reason: "Clean slate reset after pipeline repair",
-        notes: "Restoring active models"
-      })
+        notes: "Restoring active models",
+      }),
     });
 
     assert.equal(res.status, 200);
@@ -179,7 +182,7 @@ describe("Arena Epoch REST API Integration Suite (T82.3)", () => {
   test("POST /api/models/reset-stats should reset model health stats", async () => {
     await startServer();
     const res = await fetch(`${baseUrl}/api/models/reset-stats`, {
-      method: "POST"
+      method: "POST",
     });
     assert.equal(res.status, 200);
     const data = (await res.json()) as any;

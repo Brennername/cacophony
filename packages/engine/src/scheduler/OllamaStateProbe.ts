@@ -7,7 +7,10 @@ export class OllamaStateProbe {
   private readonly baseUrl: string;
   private simulatedModel: string | null = null;
 
-  constructor(baseUrl: string = process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434") {
+  constructor(
+    baseUrl: string = process.env["OLLAMA_BASE_URL"] ||
+      "http://127.0.0.1:11434",
+  ) {
     this.baseUrl = baseUrl;
   }
 
@@ -26,7 +29,9 @@ export class OllamaStateProbe {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 1000);
 
-      const res = await fetch(`${this.baseUrl}/api/ps`, { signal: controller.signal });
+      const res = await fetch(`${this.baseUrl}/api/ps`, {
+        signal: controller.signal,
+      });
       clearTimeout(timeoutId);
 
       if (!res.ok) return null;
@@ -37,7 +42,11 @@ export class OllamaStateProbe {
         }[];
       };
 
-      if (Array.isArray(data.models) && data.models.length > 0 && data.models[0]?.name) {
+      if (
+        Array.isArray(data.models) &&
+        data.models.length > 0 &&
+        data.models[0]?.name
+      ) {
         return this.normalizeModelName(data.models[0].name);
       }
       return null;
@@ -47,6 +56,9 @@ export class OllamaStateProbe {
   }
 
   private normalizeModelName(rawName: string): string {
-    return rawName.replace(/^openai\//, "").replace(/^ollama_chat\//, "").trim();
+    return rawName
+      .replace(/^openai\//, "")
+      .replace(/^ollama_chat\//, "")
+      .trim();
   }
 }

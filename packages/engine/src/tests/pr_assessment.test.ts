@@ -25,104 +25,126 @@ test("PrAssessmentCoordinator Suite (T94.3.2)", async (t) => {
     completedAt: null,
   };
 
-  await t.test("does not enqueue remediation when consensus verdict is APPROVE", async () => {
-    const createdTasks: TaskRecord[] = [];
-    const mockRepo = {
-      create: async (task: TaskRecord) => {
-        createdTasks.push(task);
-        return task;
-      },
-    } as unknown as TaskRepository;
-
-    const postedComments: string[] = [];
-    const mockGitea = {
-      postReviewComment: async (_owner: string, _repo: string, _pr: number, comment: string) => {
-        postedComments.push(comment);
-      },
-    } as unknown as GiteaApiClient;
-
-    const coordinator = new PrAssessmentCoordinator(mockRepo, mockGitea);
-
-    const approveSynthesis: ConsensusReviewSynthesis = {
-      consensusVerdict: "APPROVE",
-      approvalCount: 3,
-      requestChangesCount: 0,
-      unifiedFindings: [],
-      markdownComment: "Approved cleanly",
-    };
-
-    const outcome = await coordinator.handleAssessment({
-      task: mockTask,
-      prNumber: 1,
-      synthesis: approveSynthesis,
-      owner: "cacophony",
-      repo: "main",
-    });
-
-    assert.equal(outcome.verdict, "APPROVE");
-    assert.equal(outcome.remediationEnqueued, false);
-    assert.equal(outcome.commentPosted, true);
-    assert.equal(createdTasks.length, 0);
-    assert.equal(postedComments.length, 1);
-  });
-
-  await t.test("enqueues P0 remediation task when consensus verdict is REQUEST_CHANGES", async () => {
-    const createdTasks: TaskRecord[] = [];
-    const mockRepo = {
-      create: async (task: TaskRecord) => {
-        createdTasks.push(task);
-        return task;
-      },
-    } as unknown as TaskRepository;
-
-    const postedComments: string[] = [];
-    const mockGitea = {
-      postReviewComment: async (_owner: string, _repo: string, _pr: number, comment: string) => {
-        postedComments.push(comment);
-      },
-    } as unknown as GiteaApiClient;
-
-    const coordinator = new PrAssessmentCoordinator(mockRepo, mockGitea);
-
-    const requestChangesSynthesis: ConsensusReviewSynthesis = {
-      consensusVerdict: "REQUEST_CHANGES",
-      approvalCount: 1,
-      requestChangesCount: 2,
-      unifiedFindings: [
-        {
-          path: "src/auth/jwt.ts",
-          lineNumber: 42,
-          ruleId: "EXPIRATION_CHECK_MISSING",
-          severity: "blocker",
-          message: "Token expiration verification is missing",
-          suggestion: "Add maxAge check against exp claim",
-          reportingModels: ["deepseek-r1:8b"],
-          reportingPersonas: ["SecurityAuditor"],
+  await t.test(
+    "does not enqueue remediation when consensus verdict is APPROVE",
+    async () => {
+      const createdTasks: TaskRecord[] = [];
+      const mockRepo = {
+        create: async (task: TaskRecord) => {
+          createdTasks.push(task);
+          return task;
         },
-      ],
-      markdownComment: "Changes requested on token expiration",
-    };
+      } as unknown as TaskRepository;
 
-    const outcome = await coordinator.handleAssessment({
-      task: mockTask,
-      prNumber: 1,
-      synthesis: requestChangesSynthesis,
-      owner: "cacophony",
-      repo: "main",
-    });
+      const postedComments: string[] = [];
+      const mockGitea = {
+        postReviewComment: async (
+          _owner: string,
+          _repo: string,
+          _pr: number,
+          comment: string,
+        ) => {
+          postedComments.push(comment);
+        },
+      } as unknown as GiteaApiClient;
 
-    assert.equal(outcome.verdict, "REQUEST_CHANGES");
-    assert.equal(outcome.remediationEnqueued, true);
-    assert.ok(outcome.remediationTaskId);
-    assert.equal(createdTasks.length, 1);
+      const coordinator = new PrAssessmentCoordinator(mockRepo, mockGitea);
 
-    const remediationTask = createdTasks[0]!;
-    assert.equal(remediationTask.priority, "P0");
-    assert.equal(remediationTask.role, "implementer");
-    assert.equal(remediationTask.currentStage, "remediation");
-    assert.ok(remediationTask.focusFiles?.includes("src/auth/jwt.ts"));
-    assert.ok(remediationTask.prompt.includes("src/auth/jwt.ts (line 42)"));
-    assert.ok(remediationTask.prompt.includes("Token expiration verification is missing"));
-    assert.ok(remediationTask.prompt.includes("Add maxAge check against exp claim"));
-  });
+      const approveSynthesis: ConsensusReviewSynthesis = {
+        consensusVerdict: "APPROVE",
+        approvalCount: 3,
+        requestChangesCount: 0,
+        unifiedFindings: [],
+        markdownComment: "Approved cleanly",
+      };
+
+      const outcome = await coordinator.handleAssessment({
+        task: mockTask,
+        prNumber: 1,
+        synthesis: approveSynthesis,
+        owner: "cacophony",
+        repo: "main",
+      });
+
+      assert.equal(outcome.verdict, "APPROVE");
+      assert.equal(outcome.remediationEnqueued, false);
+      assert.equal(outcome.commentPosted, true);
+      assert.equal(createdTasks.length, 0);
+      assert.equal(postedComments.length, 1);
+    },
+  );
+
+  await t.test(
+    "enqueues P0 remediation task when consensus verdict is REQUEST_CHANGES",
+    async () => {
+      const createdTasks: TaskRecord[] = [];
+      const mockRepo = {
+        create: async (task: TaskRecord) => {
+          createdTasks.push(task);
+          return task;
+        },
+      } as unknown as TaskRepository;
+
+      const postedComments: string[] = [];
+      const mockGitea = {
+        postReviewComment: async (
+          _owner: string,
+          _repo: string,
+          _pr: number,
+          comment: string,
+        ) => {
+          postedComments.push(comment);
+        },
+      } as unknown as GiteaApiClient;
+
+      const coordinator = new PrAssessmentCoordinator(mockRepo, mockGitea);
+
+      const requestChangesSynthesis: ConsensusReviewSynthesis = {
+        consensusVerdict: "REQUEST_CHANGES",
+        approvalCount: 1,
+        requestChangesCount: 2,
+        unifiedFindings: [
+          {
+            path: "src/auth/jwt.ts",
+            lineNumber: 42,
+            ruleId: "EXPIRATION_CHECK_MISSING",
+            severity: "blocker",
+            message: "Token expiration verification is missing",
+            suggestion: "Add maxAge check against exp claim",
+            reportingModels: ["deepseek-r1:8b"],
+            reportingPersonas: ["SecurityAuditor"],
+          },
+        ],
+        markdownComment: "Changes requested on token expiration",
+      };
+
+      const outcome = await coordinator.handleAssessment({
+        task: mockTask,
+        prNumber: 1,
+        synthesis: requestChangesSynthesis,
+        owner: "cacophony",
+        repo: "main",
+      });
+
+      assert.equal(outcome.verdict, "REQUEST_CHANGES");
+      assert.equal(outcome.remediationEnqueued, true);
+      assert.ok(outcome.remediationTaskId);
+      assert.equal(createdTasks.length, 1);
+
+      const remediationTask = createdTasks[0]!;
+      assert.equal(remediationTask.priority, "P0");
+      assert.equal(remediationTask.role, "implementer");
+      assert.equal(remediationTask.currentStage, "remediation");
+      assert.ok(remediationTask.focusFiles?.includes("src/auth/jwt.ts"));
+      assert.ok(remediationTask.prompt.includes("src/auth/jwt.ts (line 42)"));
+      assert.ok(
+        remediationTask.prompt.includes(
+          "Token expiration verification is missing",
+        ),
+      );
+      assert.ok(
+        remediationTask.prompt.includes("Add maxAge check against exp claim"),
+      );
+    },
+  );
 });

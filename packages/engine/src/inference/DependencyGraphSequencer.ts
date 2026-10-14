@@ -36,13 +36,15 @@ export class DependencyGraphSequencer {
     service: 4,
     route: 5,
     component: 6,
-    test: 7
+    test: 7,
   };
 
   /**
    * Arranges tasks in topologically sorted dependency order adhering to architectural layering.
    */
-  public sequenceTasks(tasks: readonly DecomposedTaskNode[]): readonly DecomposedTaskNode[] {
+  public sequenceTasks(
+    tasks: readonly DecomposedTaskNode[],
+  ): readonly DecomposedTaskNode[] {
     const taskMap = new Map<string, DecomposedTaskNode>();
     for (const task of tasks) {
       taskMap.set(task.id, task);
@@ -70,7 +72,9 @@ export class DependencyGraphSequencer {
     }
 
     // Queue nodes with in-degree 0, sorted by architectural layer
-    const available: DecomposedTaskNode[] = sanitizedTasks.filter((t) => inDegree.get(t.id) === 0);
+    const available: DecomposedTaskNode[] = sanitizedTasks.filter(
+      (t) => inDegree.get(t.id) === 0,
+    );
     this.sortTasksByLayer(available);
 
     const ordered: DecomposedTaskNode[] = [];
@@ -107,7 +111,7 @@ export class DependencyGraphSequencer {
    * Detects and breaks circular task dependencies.
    */
   public resolveCircularDependencies(
-    tasks: readonly DecomposedTaskNode[]
+    tasks: readonly DecomposedTaskNode[],
   ): readonly DecomposedTaskNode[] {
     const taskMap = new Map<string, DecomposedTaskNode>();
     for (const t of tasks) {
@@ -126,8 +130,10 @@ export class DependencyGraphSequencer {
         const depNode = taskMap.get(depId);
         if (depNode && depNode.dependencies.includes(task.id)) {
           // Break cycle by respecting layer priority: lower layer number wins
-          const currentPriority = DependencyGraphSequencer.LAYER_PRIORITY[task.category] || 99;
-          const depPriority = DependencyGraphSequencer.LAYER_PRIORITY[depNode.category] || 99;
+          const currentPriority =
+            DependencyGraphSequencer.LAYER_PRIORITY[task.category] || 99;
+          const depPriority =
+            DependencyGraphSequencer.LAYER_PRIORITY[depNode.category] || 99;
           if (currentPriority > depPriority) {
             cleanedDeps.push(depId);
           }
@@ -138,7 +144,7 @@ export class DependencyGraphSequencer {
 
       sanitized.push({
         ...task,
-        dependencies: cleanedDeps
+        dependencies: cleanedDeps,
       });
     }
 

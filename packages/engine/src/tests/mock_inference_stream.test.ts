@@ -9,7 +9,7 @@ describe("T71.3: MockInferenceStreamProvider & Synthetic Token Streaming", () =>
 
     const res = await provider.generate({
       messages: [{ role: "user", content: "Implement autonomous telemetry" }],
-      model: "demo-synthetic:7b"
+      model: "demo-synthetic:7b",
     });
 
     assert.ok(res.content.includes("AutonomousTelemetryService"));
@@ -24,12 +24,15 @@ describe("T71.3: MockInferenceStreamProvider & Synthetic Token Streaming", () =>
     const res = await provider.stream(
       {
         messages: [{ role: "user", content: "Stream synthetic code" }],
-        model: "demo-synthetic:7b"
+        model: "demo-synthetic:7b",
       },
-      (chunk) => chunks.push(chunk)
+      (chunk) => chunks.push(chunk),
     );
 
-    assert.ok(chunks.length > 5, "Should stream multiple discrete token chunks");
+    assert.ok(
+      chunks.length > 5,
+      "Should stream multiple discrete token chunks",
+    );
     assert.equal(chunks.join(""), res.content);
     assert.ok(res.tokensPerSec > 0);
   });

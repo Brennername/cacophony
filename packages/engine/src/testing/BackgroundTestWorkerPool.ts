@@ -36,7 +36,10 @@ export class BackgroundTestWorkerPool {
   private readonly defaultTimeoutMs: number;
   private readonly emitter = new EventEmitter();
 
-  private activeJobs = new Map<string, { process: ChildProcess; startTime: number; command: string }>();
+  private activeJobs = new Map<
+    string,
+    { process: ChildProcess; startTime: number; command: string }
+  >();
   private queue: TestJobRequest[] = [];
   private isShuttingDown = false;
 
@@ -147,7 +150,10 @@ export class BackgroundTestWorkerPool {
   /**
    * Registers a listener for asynchronous test completion events.
    */
-  public onTestCompleted(listener: (result: TestJobResult) => void, taskId?: string): () => void {
+  public onTestCompleted(
+    listener: (result: TestJobResult) => void,
+    taskId?: string,
+  ): () => void {
     const eventName = taskId ? `test_completed:${taskId}` : "test_completed";
     this.emitter.on(eventName, listener);
     return () => {

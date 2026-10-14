@@ -57,30 +57,56 @@ export interface IGitPlatformProvider {
   /**
    * Creates a new branch from an existing base branch.
    */
-  createBranch(owner: string, repo: string, options: CreateGitBranchOptions): Promise<GitPlatformBranch>;
+  createBranch(
+    owner: string,
+    repo: string,
+    options: CreateGitBranchOptions,
+  ): Promise<GitPlatformBranch>;
 
   /**
    * Opens a new Pull Request.
    */
-  openPullRequest(owner: string, repo: string, options: CreateGitPullRequestOptions): Promise<GitPlatformPullRequest>;
+  openPullRequest(
+    owner: string,
+    repo: string,
+    options: CreateGitPullRequestOptions,
+  ): Promise<GitPlatformPullRequest>;
 
   /**
    * Retrieves pull request details.
    */
-  getPullRequest(owner: string, repo: string, prNumber: number): Promise<GitPlatformPullRequest>;
+  getPullRequest(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<GitPlatformPullRequest>;
 
   /**
    * Retrieves pull request diff.
    */
-  getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string>;
+  getPullRequestDiff(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<string>;
 
   /**
    * Submits a code review with verdict and line comments on a pull request.
    */
-  submitReview(owner: string, repo: string, prNumber: number, options: SubmitGitReviewOptions): Promise<{ readonly id: number; readonly status: string }>;
+  submitReview(
+    owner: string,
+    repo: string,
+    prNumber: number,
+    options: SubmitGitReviewOptions,
+  ): Promise<{ readonly id: number; readonly status: string }>;
 
   /**
    * Merges an approved pull request.
    */
-  mergePullRequest(owner: string, repo: string, prNumber: number, options?: MergeGitPullRequestOptions): Promise<boolean>;
+  mergePullRequest(
+    owner: string,
+    repo: string,
+    prNumber: number,
+    options?: MergeGitPullRequestOptions,
+  ): Promise<boolean>;
 }

@@ -24,7 +24,7 @@ export class ModelEvictionManager {
     evictionThreshold = 3,
     explorationRate = 0.25,
     tenancyGuard?: ModelTenancyGuard,
-    modelManager?: OllamaModelManager
+    modelManager?: OllamaModelManager,
   ) {
     this.healthRepo = healthRepo;
     this.evictionThreshold = evictionThreshold;
@@ -53,16 +53,24 @@ export class ModelEvictionManager {
     modelId: string,
     success: boolean,
     durationMs: number,
-    tokensPerSec: number = 30.0
+    tokensPerSec: number = 30.0,
   ): Promise<void> {
-    await this.healthRepo.recordRun(modelId, "ollama", success, durationMs, tokensPerSec);
+    await this.healthRepo.recordRun(
+      modelId,
+      "ollama",
+      success,
+      durationMs,
+      tokensPerSec,
+    );
 
     if (!success) {
       await this.evaluateModelEviction(modelId);
     }
   }
 
-  public async evaluateModelEviction(modelId: string): Promise<{ evicted: boolean; reason?: string }> {
+  public async evaluateModelEviction(
+    modelId: string,
+  ): Promise<{ evicted: boolean; reason?: string }> {
     const profile = await this.healthRepo.getProfile(modelId);
     if (profile.consecutiveFailures < this.evictionThreshold) {
       return { evicted: false };
@@ -73,7 +81,7 @@ export class ModelEvictionManager {
       if (!check.allowed) {
         return {
           evicted: false,
-          ...(check.reason ? { reason: check.reason } : {})
+          ...(check.reason ? { reason: check.reason } : {}),
         };
       }
     }
@@ -92,14 +100,20 @@ export class ModelEvictionManager {
         await this.modelManager.deleteModel(modelId);
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        return { evicted: true, reason: `Marked EJECTED but deletion failed: ${errorMsg}` };
+        return {
+          evicted: true,
+          reason: `Marked EJECTED but deletion failed: ${errorMsg}`,
+        };
       }
     }
 
-    const timer = setTimeout(() => {
-      delete this.cooldownTimer[modelId];
-      void this.healthRepo.updateStatus(modelId, "ACTIVE");
-    }, 5 * 60 * 1000);
+    const timer = setTimeout(
+      () => {
+        delete this.cooldownTimer[modelId];
+        void this.healthRepo.updateStatus(modelId, "ACTIVE");
+      },
+      5 * 60 * 1000,
+    );
 
     if (typeof timer.unref === "function") {
       timer.unref();
@@ -122,22 +136,29 @@ export class ModelEvictionManager {
   public async selectModel(
     _role: AgentRole,
     candidateModels: readonly string[],
-    currentlyLoadedModel: string | null
+    currentlyLoadedModel: string | null,
   ): Promise<string> {
     if (candidateModels.length === 0) {
       throw new Error("No candidate models provided for selection.");
     }
 
     const profiles = await Promise.all(
-      candidateModels.map((m) => this.healthRepo.getProfile(m))
+      candidateModels.map((m) => this.healthRepo.getProfile(m)),
     );
 
-    const underSampled = profiles.filter((p) => p.status !== "EJECTED" && p.totalTasks === 0 && p.modelId !== currentlyLoadedModel);
-    const shouldExplore = this.explorationRate > 0 && (underSampled.length > 0 || Math.random() < this.explorationRate);
+    const underSampled = profiles.filter(
+      (p) =>
+        p.status !== "EJECTED" &&
+        p.totalTasks === 0 &&
+        p.modelId !== currentlyLoadedModel,
+    );
+    const shouldExplore =
+      this.explorationRate > 0 &&
+      (underSampled.length > 0 || Math.random() < this.explorationRate);
 
     if (currentlyLoadedModel && !shouldExplore) {
       const activeMatch = profiles.find(
-        (p) => p.modelId === currentlyLoadedModel && p.status === "ACTIVE"
+        (p) => p.modelId === currentlyLoadedModel && p.status === "ACTIVE",
       );
       if (activeMatch) {
         return activeMatch.modelId;
@@ -151,12 +172,11 @@ export class ModelEvictionManager {
         await this.healthRepo.updateStatus(p.modelId, "ACTIVE");
       }
       activeCandidates = await Promise.all(
-        candidateModels.map((m) => this.healthRepo.getProfile(m))
+        candidateModels.map((m) => this.healthRepo.getProfile(m)),
       );
     }
 
     const weights: ModelCandidateWeight[] = activeCandidates.map((p) => {
-
       const passRate = (p.totalSuccess + 1) / (p.totalTasks + 2);
 
       const weight = Math.max(0.05, passRate);
@@ -165,7 +185,7 @@ export class ModelEvictionManager {
         weight,
         passRate,
         consecutiveFailures: p.consecutiveFailures,
-        status: p.status
+        status: p.status,
       };
     });
 

@@ -5,19 +5,26 @@ import { DeterministicImportInjector } from "../context/DeterministicImportInjec
 test("DeterministicImportInjector Suite (T93.2.2)", async (t) => {
   const injector = new DeterministicImportInjector();
 
-  await t.test("injects missing Angular core symbols when referenced without import", () => {
-    const code = `export class CounterComponent {
+  await t.test(
+    "injects missing Angular core symbols when referenced without import",
+    () => {
+      const code = `export class CounterComponent {
   public count = signal(0);
   public double = computed(() => this.count() * 2);
 }
 `;
 
-    const result = injector.injectMissingImports(code);
-    assert.ok(result.injectedSymbols.includes("signal"));
-    assert.ok(result.injectedSymbols.includes("computed"));
-    assert.ok(result.updatedCode.includes('import { computed, signal } from "@angular/core";'));
-    assert.ok(result.updatedCode.includes("export class CounterComponent"));
-  });
+      const result = injector.injectMissingImports(code);
+      assert.ok(result.injectedSymbols.includes("signal"));
+      assert.ok(result.injectedSymbols.includes("computed"));
+      assert.ok(
+        result.updatedCode.includes(
+          'import { computed, signal } from "@angular/core";',
+        ),
+      );
+      assert.ok(result.updatedCode.includes("export class CounterComponent"));
+    },
+  );
 
   await t.test("does not inject symbols that are already imported", () => {
     const code = `import { signal } from "@angular/core";
@@ -46,6 +53,10 @@ export class CounterComponent {
 
     const result = customInjector.injectMissingImports(code);
     assert.deepEqual(result.injectedSymbols, ["RiskCalculator"]);
-    assert.ok(result.updatedCode.includes('import { RiskCalculator } from "./risk/calculator.js";'));
+    assert.ok(
+      result.updatedCode.includes(
+        'import { RiskCalculator } from "./risk/calculator.js";',
+      ),
+    );
   });
 });

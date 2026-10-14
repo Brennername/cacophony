@@ -20,7 +20,8 @@ export class GpuDeviceManager {
   private readonly telemetryProvider: AmdVegaTelemetryProvider;
 
   constructor(telemetryProvider?: AmdVegaTelemetryProvider) {
-    this.telemetryProvider = telemetryProvider ?? new AmdVegaTelemetryProvider();
+    this.telemetryProvider =
+      telemetryProvider ?? new AmdVegaTelemetryProvider();
   }
 
   /**
@@ -39,8 +40,8 @@ export class GpuDeviceManager {
           pciBus: "0000:05:00.0",
           vramTotalBytes: 17179869184,
           isPrimaryApu: true,
-          driver: "amdgpu"
-        }
+          driver: "amdgpu",
+        },
       ];
     }
 
@@ -62,13 +63,15 @@ export class GpuDeviceManager {
       const isPrimary = index === 0;
       return {
         id: `gpu-${index}`,
-        name: isPrimary ? "AMD Radeon Vega / Cezanne APU" : `AMD Secondary GPU (${d.cardName})`,
+        name: isPrimary
+          ? "AMD Radeon Vega / Cezanne APU"
+          : `AMD Secondary GPU (${d.cardName})`,
         cardName: d.cardName,
         deviceDir: d.deviceDir,
         pciBus,
         vramTotalBytes: d.vramTotalBytes,
         isPrimaryApu: isPrimary,
-        driver: "amdgpu"
+        driver: "amdgpu",
       };
     });
   }

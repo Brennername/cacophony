@@ -28,7 +28,7 @@ export class TestExecutionRepository {
   constructor(private readonly driver: IDatabaseDriver) {}
 
   public async recordRun(
-    run: Omit<TestExecutionRecord, "created_at">
+    run: Omit<TestExecutionRecord, "created_at">,
   ): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.query(
@@ -52,20 +52,25 @@ export class TestExecutionRepository {
         run.failed_assertions_json,
         run.root_causes_json,
         run.remediation_attempt,
-        now
-      ]
+        now,
+      ],
     );
   }
 
-  public async getLatestRunForTask(taskId: string): Promise<TestExecutionRecord | undefined> {
+  public async getLatestRunForTask(
+    taskId: string,
+  ): Promise<TestExecutionRecord | undefined> {
     const res = await this.driver.query<TestExecutionRecord>(
       `SELECT * FROM test_execution_runs WHERE task_id = $1 ORDER BY created_at DESC LIMIT 1`,
-      [taskId]
+      [taskId],
     );
     return res[0];
   }
 
-  public async listRuns(taskId?: string, limit = 20): Promise<readonly TestExecutionRecord[]> {
+  public async listRuns(
+    taskId?: string,
+    limit = 20,
+  ): Promise<readonly TestExecutionRecord[]> {
     const query = taskId
       ? `SELECT * FROM test_execution_runs WHERE task_id = $1 ORDER BY created_at DESC LIMIT $2`
       : `SELECT * FROM test_execution_runs ORDER BY created_at DESC LIMIT $1`;

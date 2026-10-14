@@ -2,7 +2,7 @@ import { Agent } from "undici";
 import type {
   InferenceRequest,
   InferenceResponse,
-  InferenceProviderType
+  InferenceProviderType,
 } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 import type { ModelProfileRepository } from "@cacophony/db";
@@ -29,13 +29,16 @@ export class OllamaProvider implements IInferenceProvider {
       this.baseUrl = options;
       this.profileRepo = undefined;
     } else {
-      this.baseUrl = options?.baseUrl || process.env["OLLAMA_BASE_URL"] || "http://127.0.0.1:11434";
+      this.baseUrl =
+        options?.baseUrl ||
+        process.env["OLLAMA_BASE_URL"] ||
+        "http://127.0.0.1:11434";
       this.profileRepo = options?.profileRepository;
     }
     this.dispatcher = new Agent({
       headersTimeout: 0,
       bodyTimeout: 0,
-      connectTimeout: 30000
+      connectTimeout: 30000,
     });
   }
 
@@ -53,7 +56,7 @@ export class OllamaProvider implements IInferenceProvider {
     model: string,
     role?: string,
     requestedTemperature?: number,
-    requestedMaxTokens?: number
+    requestedMaxTokens?: number,
   ): Promise<{
     temperature: number;
     num_predict: number;
@@ -66,9 +69,7 @@ export class OllamaProvider implements IInferenceProvider {
     if (this.profileRepo) {
       try {
         activeProfile = await this.profileRepo.getActiveProfile(model, role);
-      } catch {
-
-      }
+      } catch {}
     }
 
     if (activeProfile && activeProfile.isActive) {
@@ -78,14 +79,18 @@ export class OllamaProvider implements IInferenceProvider {
         num_ctx: activeProfile.numCtx,
         top_k: activeProfile.topK,
         top_p: activeProfile.topP,
-        repeat_penalty: activeProfile.repeatPenalty
+        repeat_penalty: activeProfile.repeatPenalty,
       };
     }
 
     return {
       temperature: requestedTemperature ?? 0.2,
-      num_predict: requestedMaxTokens ?? (process.env["OLLAMA_NUM_PREDICT"] ? Number(process.env["OLLAMA_NUM_PREDICT"]) : 4096),
-      num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384)
+      num_predict:
+        requestedMaxTokens ??
+        (process.env["OLLAMA_NUM_PREDICT"]
+          ? Number(process.env["OLLAMA_NUM_PREDICT"])
+          : 4096),
+      num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384),
     };
   }
 
@@ -97,15 +102,18 @@ export class OllamaProvider implements IInferenceProvider {
       request.model,
       undefined,
       request.temperature,
-      request.maxTokens
+      request.maxTokens,
     );
 
     const body = {
       model: request.model,
-      messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
+      messages: request.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
       stream: false,
       keep_alive: 300,
-      options
+      options,
     };
 
     const res = await fetch(url, {
@@ -114,16 +122,21 @@ export class OllamaProvider implements IInferenceProvider {
       ...(request.signal ? { signal: request.signal } : {}),
 
       dispatcher: this.dispatcher as any,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Ollama generation failed (HTTP ${res.status}): ${errText}`);
+      throw new Error(
+        `Ollama generation failed (HTTP ${res.status}): ${errText}`,
+      );
     }
 
     const data = (await res.json()) as {
-      readonly message?: { readonly content?: string; readonly thinking?: string };
+      readonly message?: {
+        readonly content?: string;
+        readonly thinking?: string;
+      };
       readonly prompt_eval_count?: number;
       readonly eval_count?: number;
       readonly total_duration?: number;
@@ -141,7 +154,10 @@ export class OllamaProvider implements IInferenceProvider {
     const tokensPrompt = data.prompt_eval_count ?? 0;
     const tokensCompletion = data.eval_count ?? 0;
     const totalTokens = tokensPrompt + tokensCompletion;
-    const tokensPerSec = tokensCompletion > 0 ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2)) : 0;
+    const tokensPerSec =
+      tokensCompletion > 0
+        ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2))
+        : 0;
 
     return {
       content: rawContent,
@@ -150,13 +166,13 @@ export class OllamaProvider implements IInferenceProvider {
       tokensCompletion,
       totalTokens,
       latencyMs,
-      tokensPerSec
+      tokensPerSec,
     };
   }
 
   public async stream(
     request: InferenceRequest,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
   ): Promise<InferenceResponse> {
     const startMs = Date.now();
     const url = `${this.baseUrl}/api/chat`;
@@ -165,15 +181,18 @@ export class OllamaProvider implements IInferenceProvider {
       request.model,
       undefined,
       request.temperature,
-      request.maxTokens
+      request.maxTokens,
     );
 
     const body = {
       model: request.model,
-      messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
+      messages: request.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
       stream: true,
       keep_alive: 300,
-      options
+      options,
     };
 
     const res = await fetch(url, {
@@ -181,12 +200,14 @@ export class OllamaProvider implements IInferenceProvider {
       headers: { "Content-Type": "application/json" },
       ...(request.signal ? { signal: request.signal } : {}),
       dispatcher: this.dispatcher as any,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!res.ok || !res.body) {
       const errText = await res.text();
-      throw new Error(`Ollama streaming failed (HTTP ${res.status}): ${errText}`);
+      throw new Error(
+        `Ollama streaming failed (HTTP ${res.status}): ${errText}`,
+      );
     }
 
     const reader = res.body.getReader();
@@ -201,7 +222,9 @@ export class OllamaProvider implements IInferenceProvider {
     while (true) {
       if (request.signal?.aborted) {
         reader.cancel().catch(() => {});
-        throw new Error("Ollama inference streaming aborted by watchdog signal");
+        throw new Error(
+          "Ollama inference streaming aborted by watchdog signal",
+        );
       }
       const { done, value } = await reader.read();
       if (done) break;
@@ -214,7 +237,10 @@ export class OllamaProvider implements IInferenceProvider {
         if (!line.trim()) continue;
         try {
           const parsed = JSON.parse(line) as {
-            readonly message?: { readonly content?: string; readonly thinking?: string };
+            readonly message?: {
+              readonly content?: string;
+              readonly thinking?: string;
+            };
             readonly prompt_eval_count?: number;
             readonly eval_count?: number;
             readonly done?: boolean;
@@ -256,7 +282,10 @@ export class OllamaProvider implements IInferenceProvider {
 
     const latencyMs = Math.max(1, Date.now() - startMs);
     const totalTokens = tokensPrompt + tokensCompletion;
-    const tokensPerSec = tokensCompletion > 0 ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2)) : 0;
+    const tokensPerSec =
+      tokensCompletion > 0
+        ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2))
+        : 0;
 
     return {
       content: accumulatedContent,
@@ -265,7 +294,7 @@ export class OllamaProvider implements IInferenceProvider {
       tokensCompletion,
       totalTokens,
       latencyMs,
-      tokensPerSec
+      tokensPerSec,
     };
   }
 
@@ -283,14 +312,15 @@ export class OllamaProvider implements IInferenceProvider {
       dispatcher: this.dispatcher as any,
       body: JSON.stringify({
         model: modelName,
-        keep_alive: 0
-      })
+        keep_alive: 0,
+      }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Failed to unload model '${modelName}' (HTTP ${res.status}): ${errText}`);
+      throw new Error(
+        `Failed to unload model '${modelName}' (HTTP ${res.status}): ${errText}`,
+      );
     }
   }
 }
-

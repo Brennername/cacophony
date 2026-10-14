@@ -36,7 +36,7 @@ export class SignatureAlignmentScrubber {
       code,
       ts.ScriptTarget.ES2022,
       true,
-      filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+      filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
     );
 
     const visit = (node: ts.Node) => {
@@ -54,13 +54,18 @@ export class SignatureAlignmentScrubber {
         if (targetIdent) {
           const sig = this.signatureStore.get(targetIdent);
           if (sig) {
-            const callable = sig.callables.find((c) => c.name === targetIdent) || sig.callables[0];
+            const callable =
+              sig.callables.find((c) => c.name === targetIdent) ||
+              sig.callables[0];
             if (callable && callable.parameters.length > 0) {
               // Check object literal argument parameter name mismatches
-              if (node.arguments.length === 1 && ts.isObjectLiteralExpression(node.arguments[0]!)) {
+              if (
+                node.arguments.length === 1 &&
+                ts.isObjectLiteralExpression(node.arguments[0]!)
+              ) {
                 const objArg = node.arguments[0]!;
                 const firstParam = callable.parameters[0]!;
-                
+
                 // Collect valid keys either from parameter name or from its type signature if it refers to an interface
                 let validKeys = [firstParam.name];
                 const typeRecord = this.signatureStore.get(firstParam.type);
@@ -69,18 +74,29 @@ export class SignatureAlignmentScrubber {
                 }
 
                 for (const prop of objArg.properties) {
-                  if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+                  if (
+                    ts.isPropertyAssignment(prop) &&
+                    ts.isIdentifier(prop.name)
+                  ) {
                     const argKey = prop.name.text;
-                    const matchedParam = this.findClosestParameter(argKey, validKeys);
+                    const matchedParam = this.findClosestParameter(
+                      argKey,
+                      validKeys,
+                    );
                     if (matchedParam && matchedParam !== argKey) {
-                      const pos = sourceFile.getLineAndCharacterOfPosition(prop.getStart(sourceFile));
+                      const pos = sourceFile.getLineAndCharacterOfPosition(
+                        prop.getStart(sourceFile),
+                      );
                       corrections.push({
                         originalCall: argKey,
                         correctedCall: matchedParam,
                         reason: `Typo in parameter key "${argKey}" aligned to authoritative "${matchedParam}"`,
                         line: pos.line + 1,
                       });
-                      updatedCode = updatedCode.replace(new RegExp(`\\b${argKey}\\s*:`, "g"), `${matchedParam}:`);
+                      updatedCode = updatedCode.replace(
+                        new RegExp(`\\b${argKey}\\s*:`, "g"),
+                        `${matchedParam}:`,
+                      );
                     }
                   }
                 }
@@ -105,14 +121,20 @@ export class SignatureAlignmentScrubber {
   /**
    * Levenshtein / fuzzy distance match for parameter typos.
    */
-  private findClosestParameter(candidate: string, validParams: readonly string[]): string | null {
+  private findClosestParameter(
+    candidate: string,
+    validParams: readonly string[],
+  ): string | null {
     if (validParams.includes(candidate)) return candidate;
 
     let closest: string | null = null;
     let minDistance = Infinity;
 
     for (const valid of validParams) {
-      const dist = this.levenshtein(candidate.toLowerCase(), valid.toLowerCase());
+      const dist = this.levenshtein(
+        candidate.toLowerCase(),
+        valid.toLowerCase(),
+      );
       if (dist <= 2 && dist < minDistance) {
         minDistance = dist;
         closest = valid;
@@ -138,7 +160,7 @@ export class SignatureAlignmentScrubber {
           matrix[i]![j] = Math.min(
             matrix[i - 1]![j - 1]! + 1,
             matrix[i]![j - 1]! + 1,
-            matrix[i - 1]![j]! + 1
+            matrix[i - 1]![j]! + 1,
           );
         }
       }

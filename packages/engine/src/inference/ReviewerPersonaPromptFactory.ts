@@ -109,7 +109,7 @@ If any blocker findings exist, verdict MUST be "REQUEST_CHANGES".`;
    */
   public static createUserPrompt(
     persona: ReviewDomainPersona,
-    context: ReviewPromptContext
+    context: ReviewPromptContext,
   ): string {
     return `Evaluate the following Pull Request diff through your domain lens as ${persona}:
 
@@ -132,24 +132,36 @@ Analyze the changes thoroughly and output the machine-parseable JSON verdict.`;
    */
   public static parsePersonaResponse(
     rawOutput: string,
-    persona: ReviewDomainPersona
+    persona: ReviewDomainPersona,
   ): PersonaReviewResult {
     try {
       const jsonMatch = rawOutput.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        const verdict = parsed.verdict === "APPROVE" ? "APPROVE" : "REQUEST_CHANGES";
+        const verdict =
+          parsed.verdict === "APPROVE" ? "APPROVE" : "REQUEST_CHANGES";
         const findings: PersonaFinding[] = Array.isArray(parsed.findings)
           ? parsed.findings.map((f: Record<string, unknown>) => ({
               path: typeof f["path"] === "string" ? f["path"] : "unknown",
-              lineNumber: typeof f["lineNumber"] === "number" ? f["lineNumber"] : undefined,
+              lineNumber:
+                typeof f["lineNumber"] === "number"
+                  ? f["lineNumber"]
+                  : undefined,
               ruleId: typeof f["ruleId"] === "string" ? f["ruleId"] : undefined,
-              message: typeof f["message"] === "string" ? f["message"] : "No message provided",
+              message:
+                typeof f["message"] === "string"
+                  ? f["message"]
+                  : "No message provided",
               severity:
-                f["severity"] === "blocker" || f["severity"] === "warning" || f["severity"] === "info"
+                f["severity"] === "blocker" ||
+                f["severity"] === "warning" ||
+                f["severity"] === "info"
                   ? (f["severity"] as "blocker" | "warning" | "info")
                   : "warning",
-              suggestion: typeof f["suggestion"] === "string" ? f["suggestion"] : undefined,
+              suggestion:
+                typeof f["suggestion"] === "string"
+                  ? f["suggestion"]
+                  : undefined,
             }))
           : [];
 
@@ -160,7 +172,10 @@ Analyze the changes thoroughly and output the machine-parseable JSON verdict.`;
           persona,
           verdict: effectiveVerdict,
           findings,
-          summary: typeof parsed.summary === "string" ? parsed.summary : "Persona review completed",
+          summary:
+            typeof parsed.summary === "string"
+              ? parsed.summary
+              : "Persona review completed",
         };
       }
     } catch {
@@ -168,7 +183,9 @@ Analyze the changes thoroughly and output the machine-parseable JSON verdict.`;
     }
 
     const hasRejectionKeywords =
-      /REQUEST_CHANGES|REJECT|VULNERABILITY|VIOLATION|BLOCKER|FAIL/i.test(rawOutput);
+      /REQUEST_CHANGES|REJECT|VULNERABILITY|VIOLATION|BLOCKER|FAIL/i.test(
+        rawOutput,
+      );
 
     return {
       persona,

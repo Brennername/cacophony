@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 
 // Mock dependencies
 const mockModelLoader = {
@@ -12,7 +12,7 @@ const mockModelLoader = {
 const mockTaskQueue = {
   getNextPendingTask: () => {
     // Simulate getting the next pending task
-    return { modelId: 'model-123' };
+    return { modelId: "model-123" };
   },
 };
 
@@ -36,12 +36,12 @@ class VramPrefetchCoordinator {
 }
 
 // Test suite for VramPrefetchCoordinator
-describe('VramPrefetchCoordinator', () => {
-  it('should pre-load the next required model into VRAM during compilation stage', async () => {
+describe("VramPrefetchCoordinator", () => {
+  it("should pre-load the next required model into VRAM during compilation stage", async () => {
     const coordinator = new VramPrefetchCoordinator();
     await coordinator.startMonitoring();
 
     // Assert that the model was loaded into VRAM
-    assert.ok(true, 'Model should be loaded into VRAM');
+    assert.ok(true, "Model should be loaded into VRAM");
   });
 });

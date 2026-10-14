@@ -4,7 +4,12 @@ import type { TaskRecord } from "@cacophony/shared-types";
 import { RollingWindowAnalyticsService } from "../analytics/RollingWindowAnalyticsService.js";
 
 describe("RollingWindowAnalyticsService Suite (T85.1)", () => {
-  const createMockTask = (id: string, status: "COMPLETED" | "FAILED", role = "implementer", model = "qwen2.5-coder:7b"): TaskRecord => ({
+  const createMockTask = (
+    id: string,
+    status: "COMPLETED" | "FAILED",
+    role = "implementer",
+    model = "qwen2.5-coder:7b",
+  ): TaskRecord => ({
     id,
     title: `Task ${id}`,
     prompt: `Prompt for ${id}`,
@@ -28,7 +33,10 @@ describe("RollingWindowAnalyticsService Suite (T85.1)", () => {
     };
 
     const service = new RollingWindowAnalyticsService(mockSource);
-    const metrics = await service.computeRollingMetrics({ windowSize: 10, minSampleSize: 2 });
+    const metrics = await service.computeRollingMetrics({
+      windowSize: 10,
+      minSampleSize: 2,
+    });
 
     assert.equal(metrics.sampleCount, 1);
     assert.equal(metrics.successCount, 1);

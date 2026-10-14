@@ -19,7 +19,10 @@ export interface NormalizedDiagnostic {
 export class LspDiagnosticIngestor {
   private readonly store = new Map<string, NormalizedDiagnostic[]>();
 
-  public ingest(uri: string, diagnostics: readonly LspDiagnostic[]): readonly NormalizedDiagnostic[] {
+  public ingest(
+    uri: string,
+    diagnostics: readonly LspDiagnostic[],
+  ): readonly NormalizedDiagnostic[] {
     const normalized: NormalizedDiagnostic[] = diagnostics.map((d) => {
       let severity: "ERROR" | "WARNING" | "INFO" | "HINT" = "ERROR";
       switch (d.severity) {
@@ -43,7 +46,7 @@ export class LspDiagnosticIngestor {
         severity,
         code: d.code !== undefined ? String(d.code) : undefined,
         source: d.source || "lsp",
-        message: d.message
+        message: d.message,
       };
     });
 
@@ -85,16 +88,20 @@ export class LspDiagnosticIngestor {
 
     const lines: string[] = [
       "[LSP COMPILER DIAGNOSTICS DETECTED]:",
-      "The following compiler / type errors were emitted by the language server post-edit:"
+      "The following compiler / type errors were emitted by the language server post-edit:",
     ];
 
     for (const err of errors) {
       const codeStr = err.code ? ` (${err.code})` : "";
-      lines.push(`- ${err.uri}:${err.line + 1}:${err.character + 1} [${err.source}${codeStr}] ${err.message}`);
+      lines.push(
+        `- ${err.uri}:${err.line + 1}:${err.character + 1} [${err.source}${codeStr}] ${err.message}`,
+      );
     }
 
     lines.push("");
-    lines.push("Please self-correct your implementation to resolve all compiler errors.");
+    lines.push(
+      "Please self-correct your implementation to resolve all compiler errors.",
+    );
     return lines.join("\n");
   }
 }

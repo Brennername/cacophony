@@ -6,4 +6,4 @@ export * from "./SandboxedProcessRunner.js";
 export * from "./StubCommentSanitizer.js";
 export * from "./GeneratedChangeGuard.js";
 export * from "./BackgroundTestWorkerPool.js";
-
+export * from "./DiagnosticPreFlightChecker.js";

@@ -1,7 +1,11 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { FleetMasterCoordinator } from "../fleet/FleetMasterCoordinator.js";
-import { NvidiaTelemetryProvider, AmdRDNAProvider, AppleSiliconProvider } from "../telemetry/FleetTelemetryProviders.js";
+import {
+  NvidiaTelemetryProvider,
+  AmdRDNAProvider,
+  AppleSiliconProvider,
+} from "../telemetry/FleetTelemetryProviders.js";
 
 describe("Phase 24: Distributed Multi-Node Fleet Architecture & Hardware Profiling", () => {
   describe("T24.1: FleetMasterCoordinator Node Registration & Dynamic Dispatch", () => {
@@ -15,7 +19,7 @@ describe("Phase 24: Distributed Multi-Node Fleet Architecture & Hardware Profili
         port: 24074,
         gpuType: "AMD_VEGA",
         vramTotalMb: 16384,
-        authSecret: "secret-token-1"
+        authSecret: "secret-token-1",
       });
 
       const cudaNode = coordinator.registerNode({
@@ -25,7 +29,7 @@ describe("Phase 24: Distributed Multi-Node Fleet Architecture & Hardware Profili
         port: 24074,
         gpuType: "NVIDIA_CUDA",
         vramTotalMb: 24576,
-        authSecret: "secret-token-2"
+        authSecret: "secret-token-2",
       });
 
       assert.equal(coordinator.listNodes().length, 2);
@@ -36,7 +40,7 @@ describe("Phase 24: Distributed Multi-Node Fleet Architecture & Hardware Profili
       const heartbeatOk = coordinator.recordHeartbeat("node-vega-01", {
         vramUsedMb: 4096,
         gpuBusyPercent: 30,
-        temperatureCelsius: 60
+        temperatureCelsius: 60,
       });
       assert.equal(heartbeatOk, true);
 

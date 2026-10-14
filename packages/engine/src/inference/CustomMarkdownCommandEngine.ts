@@ -62,7 +62,9 @@ export class CustomMarkdownCommandEngine {
   }
 
   public getCommand(name: string): MarkdownCommand | undefined {
-    const cleanName = name.startsWith("/") ? name.slice(1).toLowerCase() : name.toLowerCase();
+    const cleanName = name.startsWith("/")
+      ? name.slice(1).toLowerCase()
+      : name.toLowerCase();
     return this.commands.get(cleanName);
   }
 
@@ -73,7 +75,10 @@ export class CustomMarkdownCommandEngine {
   /**
    * Parses markdown file containing optional YAML-style frontmatter headers.
    */
-  public parseCommandFile(content: string, filePath: string): MarkdownCommand | null {
+  public parseCommandFile(
+    content: string,
+    filePath: string,
+  ): MarkdownCommand | null {
     const defaultName = path.basename(filePath, ".md");
     const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
     const match = content.match(frontmatterRegex);
@@ -83,10 +88,10 @@ export class CustomMarkdownCommandEngine {
       return {
         metadata: {
           name: defaultName,
-          description: `Custom command ${defaultName}`
+          description: `Custom command ${defaultName}`,
         },
         template: content.trim(),
-        sourceFilePath: filePath
+        sourceFilePath: filePath,
       };
     }
 
@@ -99,12 +104,18 @@ export class CustomMarkdownCommandEngine {
         name: metaObj.name || defaultName,
         description: metaObj.description || `Custom command ${defaultName}`,
         role: (metaObj.role as "user" | "system" | "assistant") || "user",
-        temperature: metaObj.temperature ? parseFloat(metaObj.temperature) : undefined,
-        focusFiles: metaObj.focusFiles ? metaObj.focusFiles.split(",").map((s) => s.trim()) : undefined,
-        arguments: metaObj.arguments ? metaObj.arguments.split(",").map((s) => s.trim()) : undefined
+        temperature: metaObj.temperature
+          ? parseFloat(metaObj.temperature)
+          : undefined,
+        focusFiles: metaObj.focusFiles
+          ? metaObj.focusFiles.split(",").map((s) => s.trim())
+          : undefined,
+        arguments: metaObj.arguments
+          ? metaObj.arguments.split(",").map((s) => s.trim())
+          : undefined,
       },
       template,
-      sourceFilePath: filePath
+      sourceFilePath: filePath,
     };
   }
 
@@ -112,7 +123,10 @@ export class CustomMarkdownCommandEngine {
    * Interpolates variables into markdown command template.
    * Supports: $ARG1, $ARG2, ..., $SELECTION, $FILES, $TEST_OUTPUT, and custom vars.
    */
-  public interpolate(command: MarkdownCommand, context: InterpolationContext = {}): string {
+  public interpolate(
+    command: MarkdownCommand,
+    context: InterpolationContext = {},
+  ): string {
     let result = command.template;
 
     // Replace numbered arguments ($ARG1, $ARG2, ...)
@@ -127,7 +141,10 @@ export class CustomMarkdownCommandEngine {
     result = result.replaceAll("$SELECTION", context.selection || "");
 
     // Replace $FILES
-    result = result.replaceAll("$FILES", context.files ? context.files.join(", ") : "");
+    result = result.replaceAll(
+      "$FILES",
+      context.files ? context.files.join(", ") : "",
+    );
 
     // Replace $TEST_OUTPUT
     result = result.replaceAll("$TEST_OUTPUT", context.testOutput || "");
@@ -155,7 +172,10 @@ export class CustomMarkdownCommandEngine {
         const key = trimmed.slice(0, colonIdx).trim();
         let value = trimmed.slice(colonIdx + 1).trim();
         // Strip optional surrounding quotes
-        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
           value = value.slice(1, -1);
         }
         record[key] = value;

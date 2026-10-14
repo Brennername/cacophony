@@ -26,7 +26,11 @@ export class MultiFileEditCoordinator {
   private readonly staged = new Map<string, StagedFileEdit>();
   private readonly astValidator = new AstValidator();
 
-  public async stage(workspaceRoot: string, relativePath: string, proposedContent: string): Promise<void> {
+  public async stage(
+    workspaceRoot: string,
+    relativePath: string,
+    proposedContent: string,
+  ): Promise<void> {
     const fullPath = path.resolve(workspaceRoot, relativePath);
     let originalContent = "";
     try {
@@ -38,7 +42,7 @@ export class MultiFileEditCoordinator {
     this.staged.set(relativePath, {
       relativePath,
       originalContent,
-      proposedContent
+      proposedContent,
     });
   }
 
@@ -46,15 +50,25 @@ export class MultiFileEditCoordinator {
     const errors: string[] = [];
 
     for (const edit of this.staged.values()) {
-      if (edit.relativePath.endsWith(".ts") || edit.relativePath.endsWith(".js")) {
-        const res = this.astValidator.validateTypeScript(edit.proposedContent, edit.relativePath);
+      if (
+        edit.relativePath.endsWith(".ts") ||
+        edit.relativePath.endsWith(".js")
+      ) {
+        const res = this.astValidator.validateTypeScript(
+          edit.proposedContent,
+          edit.relativePath,
+        );
         if (!res.valid) {
-          errors.push(`File ${edit.relativePath} syntax error: ${res.errors.join("; ")}`);
+          errors.push(
+            `File ${edit.relativePath} syntax error: ${res.errors.join("; ")}`,
+          );
         }
       } else if (edit.relativePath.endsWith(".java")) {
         const res = this.astValidator.validateJava(edit.proposedContent);
         if (!res.valid) {
-          errors.push(`File ${edit.relativePath} bracket mismatch: ${res.errors.join("; ")}`);
+          errors.push(
+            `File ${edit.relativePath} bracket mismatch: ${res.errors.join("; ")}`,
+          );
         }
       }
     }
@@ -62,14 +76,16 @@ export class MultiFileEditCoordinator {
     return {
       valid: errors.length === 0,
       errors,
-      stagedFiles: Array.from(this.staged.keys())
+      stagedFiles: Array.from(this.staged.keys()),
     };
   }
 
   public async applyToDisk(workspaceRoot: string): Promise<readonly string[]> {
     const validation = this.validateStaged();
     if (!validation.valid) {
-      throw new Error(`Cannot commit staged edits to disk due to validation errors: ${validation.errors.join(", ")}`);
+      throw new Error(
+        `Cannot commit staged edits to disk due to validation errors: ${validation.errors.join(", ")}`,
+      );
     }
 
     const appliedFiles: string[] = [];

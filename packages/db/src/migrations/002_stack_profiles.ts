@@ -31,5 +31,5 @@ export const migration002: Migration = {
 
   async down(driver: IDatabaseDriver): Promise<void> {
     await driver.execRaw("DROP TABLE IF EXISTS stack_instruction_profiles;");
-  }
+  },
 };

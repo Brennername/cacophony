@@ -30,7 +30,10 @@ export interface RuleSynthesisQueueOptions {
 
 export class RuleSynthesisQueue {
   private readonly threshold: number;
-  private readonly occurrencesByCode = new Map<string, DiagnosticOccurrence[]>();
+  private readonly occurrencesByCode = new Map<
+    string,
+    DiagnosticOccurrence[]
+  >();
   private readonly enqueuedCodes = new Set<string>();
 
   constructor(options: RuleSynthesisQueueOptions = {}) {
@@ -40,7 +43,11 @@ export class RuleSynthesisQueue {
   /**
    * Records a compiler diagnostic occurrence for synthesis analysis.
    */
-  public recordDiagnostic(code: string, message: string, filePath?: string): void {
+  public recordDiagnostic(
+    code: string,
+    message: string,
+    filePath?: string,
+  ): void {
     const normalizedCode = code.toUpperCase().trim();
     const list = this.occurrencesByCode.get(normalizedCode) ?? [];
     list.push({
@@ -60,9 +67,13 @@ export class RuleSynthesisQueue {
 
     for (const [code, items] of this.occurrencesByCode.entries()) {
       if (items.length >= this.threshold) {
-        const sampleMessages = Array.from(new Set(items.map((i) => i.message))).slice(0, 5);
+        const sampleMessages = Array.from(
+          new Set(items.map((i) => i.message)),
+        ).slice(0, 5);
         const affectedFiles = Array.from(
-          new Set(items.map((i) => i.filePath).filter((f): f is string => Boolean(f)))
+          new Set(
+            items.map((i) => i.filePath).filter((f): f is string => Boolean(f)),
+          ),
         ).slice(0, 5);
 
         candidates.push({
@@ -139,7 +150,7 @@ export class ${ruleClassName} extends BaseRepairRule {
    */
   public async enqueueMetaRuleTask(
     candidate: RuleSynthesisCandidate,
-    taskRepo?: TaskRepository
+    taskRepo?: TaskRepository,
   ): Promise<string | null> {
     if (this.enqueuedCodes.has(candidate.code)) {
       return null;

@@ -39,7 +39,12 @@ export class BanditTaskScheduler {
   /**
    * Registers a candidate model arm for a specific agent role.
    */
-  public registerArm(modelId: string, role: string, initialAlpha = 2, initialBeta = 2): BanditArmRecord {
+  public registerArm(
+    modelId: string,
+    role: string,
+    initialAlpha = 2,
+    initialBeta = 2,
+  ): BanditArmRecord {
     const armId = `${role}:${modelId}`;
     const arm: BanditArmRecord = {
       armId,
@@ -98,11 +103,16 @@ export class BanditTaskScheduler {
   /**
    * Dispatches the next task to an optimal or exploratory model arm.
    */
-  public selectModel(role: string, candidateModels?: string[]): BanditDispatchOutcome {
+  public selectModel(
+    role: string,
+    candidateModels?: string[],
+  ): BanditDispatchOutcome {
     let eligibleArms = this.getArms(role);
 
     if (candidateModels && candidateModels.length > 0) {
-      eligibleArms = eligibleArms.filter((a) => candidateModels.includes(a.modelId));
+      eligibleArms = eligibleArms.filter((a) =>
+        candidateModels.includes(a.modelId),
+      );
     }
 
     if (eligibleArms.length === 0) {
@@ -151,7 +161,9 @@ export class BanditTaskScheduler {
     }
 
     // Exploit highest average win rate
-    arms.sort((a, b) => this.calculateMeanWinRate(b) - this.calculateMeanWinRate(a));
+    arms.sort(
+      (a, b) => this.calculateMeanWinRate(b) - this.calculateMeanWinRate(a),
+    );
     const best = arms[0]!;
 
     return {
@@ -184,7 +196,9 @@ export class BanditTaskScheduler {
       }
 
       const mean = this.calculateMeanWinRate(arm);
-      const bonus = this.ucbConstant * Math.sqrt(Math.log(totalTrials + 1) / arm.trialsCount);
+      const bonus =
+        this.ucbConstant *
+        Math.sqrt(Math.log(totalTrials + 1) / arm.trialsCount);
       const ucbScore = mean + bonus;
 
       if (ucbScore > bestScore) {
@@ -203,7 +217,9 @@ export class BanditTaskScheduler {
     };
   }
 
-  private selectThompsonSampling(arms: BanditArmRecord[]): BanditDispatchOutcome {
+  private selectThompsonSampling(
+    arms: BanditArmRecord[],
+  ): BanditDispatchOutcome {
     let highestSample = -Infinity;
     let selectedArm = arms[0]!;
 
@@ -241,10 +257,11 @@ export class BanditTaskScheduler {
     const newReward = arm.totalReward + feedback.reward;
 
     const avgTokens = Math.round(
-      (arm.averageTokensPerSec * arm.trialsCount + feedback.tokensPerSec) / newTrials
+      (arm.averageTokensPerSec * arm.trialsCount + feedback.tokensPerSec) /
+        newTrials,
     );
     const avgVram = Math.round(
-      (arm.averageVramMb * arm.trialsCount + feedback.vramMb) / newTrials
+      (arm.averageVramMb * arm.trialsCount + feedback.vramMb) / newTrials,
     );
 
     const updated: BanditArmRecord = {
@@ -266,7 +283,10 @@ export class BanditTaskScheduler {
   /**
    * Evaluates role promotion: If exploratory arm significantly beats incumbent (p < 0.05).
    */
-  public evaluateRolePromotion(role: string, currentPrimaryModel: string): ModelPromotionRecord | null {
+  public evaluateRolePromotion(
+    role: string,
+    currentPrimaryModel: string,
+  ): ModelPromotionRecord | null {
     const roleArms = this.getArms(role);
     const incumbent = roleArms.find((a) => a.modelId === currentPrimaryModel);
     if (!incumbent || incumbent.trialsCount < 10) return null;
@@ -274,7 +294,10 @@ export class BanditTaskScheduler {
     const incumbentWinRate = this.calculateMeanWinRate(incumbent);
 
     for (const challenger of roleArms) {
-      if (challenger.modelId === currentPrimaryModel || challenger.trialsCount < 10) {
+      if (
+        challenger.modelId === currentPrimaryModel ||
+        challenger.trialsCount < 10
+      ) {
         continue;
       }
 
@@ -282,9 +305,14 @@ export class BanditTaskScheduler {
       if (challengerWinRate > incumbentWinRate) {
         // Binomial test / Z-score approximation
         const delta = challengerWinRate - incumbentWinRate;
-        const pooled = (challenger.successCount + incumbent.successCount) /
-                       (challenger.trialsCount + incumbent.trialsCount);
-        const se = Math.sqrt(pooled * (1 - pooled) * (1 / challenger.trialsCount + 1 / incumbent.trialsCount));
+        const pooled =
+          (challenger.successCount + incumbent.successCount) /
+          (challenger.trialsCount + incumbent.trialsCount);
+        const se = Math.sqrt(
+          pooled *
+            (1 - pooled) *
+            (1 / challenger.trialsCount + 1 / incumbent.trialsCount),
+        );
         const z = se > 0 ? delta / se : 0;
         const pValue = Math.max(0.001, 1 - this.approximatePhi(z));
 

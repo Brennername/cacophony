@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 
 export interface SandboxedProcessOptions {
   readonly cwd: string;
-  readonly timeoutMs?: number | undefined; 
+  readonly timeoutMs?: number | undefined;
   readonly maxBufferBytes?: number | undefined; // default 256 * 1024 (256KB)
   readonly env?: NodeJS.ProcessEnv | undefined;
 }
@@ -29,14 +29,17 @@ export class SandboxedProcessRunner {
   private readonly defaultTimeoutMs: number;
   private readonly defaultMaxBufferBytes: number;
 
-  constructor(options?: { defaultTimeoutMs?: number; defaultMaxBufferBytes?: number }) {
+  constructor(options?: {
+    defaultTimeoutMs?: number;
+    defaultMaxBufferBytes?: number;
+  }) {
     this.defaultTimeoutMs = options?.defaultTimeoutMs ?? 180000;
     this.defaultMaxBufferBytes = options?.defaultMaxBufferBytes ?? 256 * 1024;
   }
 
   public async run(
     command: string,
-    options: SandboxedProcessOptions
+    options: SandboxedProcessOptions,
   ): Promise<SandboxedProcessResult> {
     const startTime = Date.now();
     const timeoutMs = options.timeoutMs ?? this.defaultTimeoutMs;
@@ -55,7 +58,7 @@ export class SandboxedProcessRunner {
         shell: true,
         cwd: options.cwd,
         env: options.env ?? process.env,
-        detached: true
+        detached: true,
       });
 
       let timeoutTimer: NodeJS.Timeout | null = null;
@@ -100,27 +103,32 @@ export class SandboxedProcessRunner {
           stdout,
           stderr: `${stderr}\n${err.message}`.trim(),
           timedOut,
-          truncated
+          truncated,
         });
       });
 
-      child.on("close", (code: number | null, signal: NodeJS.Signals | null) => {
-        if (timeoutTimer) {
-          clearTimeout(timeoutTimer);
-        }
-        const durationMs = Date.now() - startTime;
-        const exitCode = timedOut ? 124 : (code ?? (signal ? 1 : 0));
+      child.on(
+        "close",
+        (code: number | null, signal: NodeJS.Signals | null) => {
+          if (timeoutTimer) {
+            clearTimeout(timeoutTimer);
+          }
+          const durationMs = Date.now() - startTime;
+          const exitCode = timedOut ? 124 : (code ?? (signal ? 1 : 0));
 
-        resolve({
-          exitCode,
-          signal,
-          durationMs,
-          stdout,
-          stderr: timedOut ? `${stderr}\nExecution timed out after ${timeoutMs}ms`.trim() : stderr,
-          timedOut,
-          truncated
-        });
-      });
+          resolve({
+            exitCode,
+            signal,
+            durationMs,
+            stdout,
+            stderr: timedOut
+              ? `${stderr}\nExecution timed out after ${timeoutMs}ms`.trim()
+              : stderr,
+            timedOut,
+            truncated,
+          });
+        },
+      );
     });
   }
 

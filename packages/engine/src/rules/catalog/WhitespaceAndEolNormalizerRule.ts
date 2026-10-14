@@ -17,14 +17,18 @@ import { BaseRepairRule } from "../BaseRepairRule.js";
 export class WhitespaceAndEolNormalizerRule extends BaseRepairRule {
   readonly id = "whitespace_normalizer";
   readonly name = "Whitespace & EOL Normalizer";
-  readonly description = "Normalizes CRLF to LF, trims trailing whitespace on lines, and ensures single newline EOF.";
+  readonly description =
+    "Normalizes CRLF to LF, trims trailing whitespace on lines, and ensures single newline EOF.";
   readonly defaultSeverity: RuleSeverity = "silent_repair";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    _options?: Record<string, unknown>
+    _options?: Record<string, unknown>,
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -55,7 +59,8 @@ export class WhitespaceAndEolNormalizerRule extends BaseRepairRule {
             filePath,
             originalContent: content,
             updatedContent: normalized,
-            description: "Normalized line endings and trimmed trailing whitespace",
+            description:
+              "Normalized line endings and trimmed trailing whitespace",
           });
         } else if (severity === "hard_rejection") {
           passed = false;
@@ -77,6 +82,12 @@ export class WhitespaceAndEolNormalizerRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

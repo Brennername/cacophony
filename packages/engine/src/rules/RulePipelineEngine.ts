@@ -41,15 +41,15 @@ export class RulePipelineEngine {
     if (direct) return direct;
 
     const aliasMap: Record<string, string> = {
-      "empty_file_guard": "empty_files",
-      "banned_import_scrubber": "banned_imports",
-      "placeholder_stub_detector": "placeholder_stubs",
-      "whitespace_and_eol_normalizer": "whitespace_normalizer",
-      "loose_root_file_guard": "loose_root_files",
-      "signature_align": "ast_signature_align",
-      "parameter_inversion_repair": "ast_parameter_correction",
-      "ast_param_align": "ast_parameter_correction",
-      "file_placement": "file_placement_and_naming"
+      empty_file_guard: "empty_files",
+      banned_import_scrubber: "banned_imports",
+      placeholder_stub_detector: "placeholder_stubs",
+      whitespace_and_eol_normalizer: "whitespace_normalizer",
+      loose_root_file_guard: "loose_root_files",
+      signature_align: "ast_signature_align",
+      parameter_inversion_repair: "ast_parameter_correction",
+      ast_param_align: "ast_parameter_correction",
+      file_placement: "file_placement_and_naming",
     };
 
     const mapped = aliasMap[ruleId];
@@ -70,14 +70,17 @@ export class RulePipelineEngine {
     this.registerRule(new FilePlacementAndNamingConventionRule());
   }
 
-  public parseDsl(dslSource: string, env?: Record<string, string>): RulePipelineDeclaration {
+  public parseDsl(
+    dslSource: string,
+    env?: Record<string, string>,
+  ): RulePipelineDeclaration {
     return this.dslParser.parse(dslSource, env);
   }
 
   public async executePipelineHook(
     pipeline: RulePipelineDeclaration,
     hook: RuleLifecycleHook,
-    context: RuleEvaluationContext
+    context: RuleEvaluationContext,
   ): Promise<PipelineExecutionOutcome> {
     const start = performance.now();
     const hookDecl = pipeline.hooks.find((h) => h.hook === hook);
@@ -112,7 +115,9 @@ export class RulePipelineEngine {
 
       const rule = this.rules.get(ruleDecl.ruleId);
       if (!rule) {
-        throw new Error(`Rule '${ruleDecl.ruleId}' declared in pipeline '${pipeline.id}' is not registered`);
+        throw new Error(
+          `Rule '${ruleDecl.ruleId}' declared in pipeline '${pipeline.id}' is not registered`,
+        );
       }
 
       const ruleContext: RuleEvaluationContext = {
@@ -120,7 +125,11 @@ export class RulePipelineEngine {
         fileContents: workingFileContents,
       };
 
-      const result = await rule.evaluate(ruleContext, ruleDecl.severity, ruleDecl.options);
+      const result = await rule.evaluate(
+        ruleContext,
+        ruleDecl.severity,
+        ruleDecl.options,
+      );
       ruleResults.push(result);
 
       for (const diag of result.diagnostics) {
@@ -137,17 +146,18 @@ export class RulePipelineEngine {
 
         if (!context.simulate) {
           try {
-            await fs.writeFile(mutation.filePath, mutation.updatedContent, "utf-8");
-          } catch {
-
-          }
+            await fs.writeFile(
+              mutation.filePath,
+              mutation.updatedContent,
+              "utf-8",
+            );
+          } catch {}
         }
       }
 
       if (result.hardRejected) {
         hardRejected = true;
         if (!ruleDecl.continueOnError) {
-
           break;
         }
       }

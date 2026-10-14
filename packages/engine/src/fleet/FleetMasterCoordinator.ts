@@ -2,7 +2,7 @@ import type {
   FleetNodeRecord,
   FleetNodeRegistration,
   FleetGpuType,
-  HardwareProfileRecord
+  HardwareProfileRecord,
 } from "@cacophony/shared-types";
 
 /**
@@ -14,7 +14,10 @@ import type {
  */
 export class FleetMasterCoordinator {
   private readonly nodes = new Map<string, FleetNodeRecord>();
-  private readonly hardwareProfiles = new Map<FleetGpuType, HardwareProfileRecord>();
+  private readonly hardwareProfiles = new Map<
+    FleetGpuType,
+    HardwareProfileRecord
+  >();
 
   constructor() {
     this.registerDefaultHardwareProfiles();
@@ -49,7 +52,11 @@ export class FleetMasterCoordinator {
    */
   public recordHeartbeat(
     nodeId: string,
-    telemetry: { vramUsedMb: number; gpuBusyPercent: number; temperatureCelsius: number }
+    telemetry: {
+      vramUsedMb: number;
+      gpuBusyPercent: number;
+      temperatureCelsius: number;
+    },
   ): boolean {
     const existing = this.nodes.get(nodeId);
     if (!existing) return false;
@@ -70,7 +77,10 @@ export class FleetMasterCoordinator {
   /**
    * Selects the most optimal available node for a given model requirement.
    */
-  public selectBestNode(requiredVramMb: number, preferredGpu?: FleetGpuType): FleetNodeRecord | null {
+  public selectBestNode(
+    requiredVramMb: number,
+    preferredGpu?: FleetGpuType,
+  ): FleetNodeRecord | null {
     const candidates = Array.from(this.nodes.values()).filter((n) => {
       const isOnline = n.status === "ONLINE" || n.status === "BUSY";
       const hasVram = n.vramTotalMb - n.vramUsedMb >= requiredVramMb;
@@ -84,7 +94,9 @@ export class FleetMasterCoordinator {
     if (preferredGpu) {
       const matched = candidates.filter((c) => c.gpuType === preferredGpu);
       if (matched.length > 0) {
-        return matched.sort((a, b) => a.activeTasksCount - b.activeTasksCount)[0]!;
+        return matched.sort(
+          (a, b) => a.activeTasksCount - b.activeTasksCount,
+        )[0]!;
       }
     }
 
@@ -107,7 +119,9 @@ export class FleetMasterCoordinator {
   /**
    * Retrieves benchmark profile for GPU type.
    */
-  public getHardwareProfile(gpuType: FleetGpuType): HardwareProfileRecord | undefined {
+  public getHardwareProfile(
+    gpuType: FleetGpuType,
+  ): HardwareProfileRecord | undefined {
     return this.hardwareProfiles.get(gpuType);
   }
 

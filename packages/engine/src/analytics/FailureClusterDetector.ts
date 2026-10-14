@@ -77,14 +77,19 @@ export class FailureClusterDetector {
       return null;
     }
 
-    const failingTasks = this.slidingWindow.filter((t) => t.status === "FAILED");
-    const distinctFailingModels = Array.from(new Set(failingTasks.map((t) => t.modelId)));
+    const failingTasks = this.slidingWindow.filter(
+      (t) => t.status === "FAILED",
+    );
+    const distinctFailingModels = Array.from(
+      new Set(failingTasks.map((t) => t.modelId)),
+    );
 
     // Multi-model requirement: failures must span at least minDistinctModels to prove systemic regression
     const isMultiModel = distinctFailingModels.length >= this.minDistinctModels;
 
     // Check 1: High density failures in window
-    const isHighDensity = failingTasks.length >= this.minFailuresForBurst && isMultiModel;
+    const isHighDensity =
+      failingTasks.length >= this.minFailuresForBurst && isMultiModel;
 
     // Check 2: Consecutive failure streak ending with the latest task
     let consecutiveCount = 0;
@@ -101,8 +106,8 @@ export class FailureClusterDetector {
         this.slidingWindow
           .slice(-consecutiveCount)
           .filter((t) => t.status === "FAILED")
-          .map((t) => t.modelId)
-      )
+          .map((t) => t.modelId),
+      ),
     );
     const isConsecutiveBurst =
       consecutiveCount >= this.minConsecutiveFailures &&

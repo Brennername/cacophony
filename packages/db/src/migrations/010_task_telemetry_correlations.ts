@@ -37,5 +37,5 @@ export const migration010: Migration = {
     await driver.execRaw(`
       DROP TABLE IF EXISTS task_telemetry_correlations;
     `);
-  }
+  },
 };

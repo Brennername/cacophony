@@ -8,7 +8,8 @@ describe("ConvergenceAnalyzer Suite (T85.2)", () => {
     // Delta 1: 60 - 50 = +10
     // Delta 2: 75 - 60 = +15 (velocity = 15)
     // Acceleration: 15 - 10 = +5
-    const { velocityDelta, accelerationDelta } = ConvergenceAnalyzer.calculateDerivatives([50, 60, 75]);
+    const { velocityDelta, accelerationDelta } =
+      ConvergenceAnalyzer.calculateDerivatives([50, 60, 75]);
     assert.equal(velocityDelta, 15);
     assert.equal(accelerationDelta, 5);
   });
@@ -40,7 +41,8 @@ describe("ConvergenceAnalyzer Suite (T85.2)", () => {
       "SyntaxError: Unexpected token '{'",
       "Error: Cannot find module './utils.js'",
     ];
-    const syntaxAnalysis = ConvergenceAnalyzer.evaluateFailureMode(syntaxErrors);
+    const syntaxAnalysis =
+      ConvergenceAnalyzer.evaluateFailureMode(syntaxErrors);
     assert.equal(syntaxAnalysis.signature, "SYNTAX_OR_IMPORT");
     assert.equal(syntaxAnalysis.resolutionStrategy, "IN_SITU_MITIGATION");
 

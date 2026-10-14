@@ -31,6 +31,7 @@ Cacophony features native zero-configuration auto-detection and pluggable hardwa
 ## Quickstart Hardware Onboarding
 
 ### 1. Run Automated Hardware Profiler
+
 Run the onboarding detector script to inspect host accelerators, available memory, and compute profiles:
 
 ```bash
@@ -46,18 +47,21 @@ bash bin/setup-hardware.sh
 Select the profile corresponding to your accelerator architecture:
 
 - **Standard / Default (Native Host Ollama)**:
+
   ```bash
   docker compose up -d
   ```
 
 - **NVIDIA GPU Acceleration**:
   Ensure the NVIDIA Container Toolkit is installed (`nvidia-container-toolkit`).
+
   ```bash
   docker compose --profile nvidia up -d
   ```
 
 - **AMD ROCm / APU Acceleration**:
   Ensure `/dev/kfd` and `/dev/dri` are accessible by the video and render user groups.
+
   ```bash
   docker compose --profile amd up -d
   ```
@@ -74,14 +78,14 @@ Select the profile corresponding to your accelerator architecture:
 
 The `HardwareHyperparameterAutoSizer` calculates optimal runtime parameters based on detected total VRAM:
 
-| VRAM Tier | Safe Allocation (70%) | Context Window | Parallel Streams | Recommended Model |
-| :--- | :--- | :--- | :--- | :--- |
-| **<= 6 GB** | ~4.2 GB | 4,096 tokens | 1 | `qwen2.5-coder:7b-instruct-q4_K_M` |
-| **8 GB** | ~5.7 GB | 8,192 tokens | 1 | `qwen2.5-coder:7b-instruct-q4_K_M` |
-| **12 GB** | ~8.6 GB | 16,384 tokens | 1 | `qwen2.5-coder:7b-instruct-q4_K_M` |
-| **16 GB** | ~11.4 GB | 16,384 tokens | 2 | `qwen2.5-coder:14b-instruct-q4_K_M` |
-| **24 GB** | ~17.2 GB | 32,768 tokens | 2 | `deepseek-coder-v2:16b` |
-| **64 GB+** | ~45.8 GB | 65,536 tokens | 4 | `deepseek-coder-v2:latest` |
+| VRAM Tier   | Safe Allocation (70%) | Context Window | Parallel Streams | Recommended Model                   |
+| :---------- | :-------------------- | :------------- | :--------------- | :---------------------------------- |
+| **<= 6 GB** | ~4.2 GB               | 4,096 tokens   | 1                | `qwen2.5-coder:7b-instruct-q4_K_M`  |
+| **8 GB**    | ~5.7 GB               | 8,192 tokens   | 1                | `qwen2.5-coder:7b-instruct-q4_K_M`  |
+| **12 GB**   | ~8.6 GB               | 16,384 tokens  | 1                | `qwen2.5-coder:7b-instruct-q4_K_M`  |
+| **16 GB**   | ~11.4 GB              | 16,384 tokens  | 2                | `qwen2.5-coder:14b-instruct-q4_K_M` |
+| **24 GB**   | ~17.2 GB              | 32,768 tokens  | 2                | `deepseek-coder-v2:16b`             |
+| **64 GB+**  | ~45.8 GB              | 65,536 tokens  | 4                | `deepseek-coder-v2:latest`          |
 
 ---
 

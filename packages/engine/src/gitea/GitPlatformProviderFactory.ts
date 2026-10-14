@@ -12,26 +12,37 @@ export interface GitPlatformProviderOptions {
 }
 
 export class GitPlatformProviderFactory {
-  public static create(options: GitPlatformProviderOptions = {}): IGitPlatformProvider {
-    const platform = (options.platform || process.env["GIT_PLATFORM_PROVIDER"] || "gitea").toLowerCase();
+  public static create(
+    options: GitPlatformProviderOptions = {},
+  ): IGitPlatformProvider {
+    const platform = (
+      options.platform ||
+      process.env["GIT_PLATFORM_PROVIDER"] ||
+      "gitea"
+    ).toLowerCase();
 
     if (platform === "github") {
       const token = options.githubToken || process.env["GITHUB_TOKEN"] || "";
       if (!token) {
-        throw new Error("GITHUB_TOKEN is required when GIT_PLATFORM_PROVIDER is set to 'github'.");
+        throw new Error(
+          "GITHUB_TOKEN is required when GIT_PLATFORM_PROVIDER is set to 'github'.",
+        );
       }
       return new GitHubPlatformProvider({
         token,
-        baseUrl: options.githubBaseUrl || process.env["GITHUB_API_URL"]
+        baseUrl: options.githubBaseUrl || process.env["GITHUB_API_URL"],
       });
     }
 
-    const baseUrl = options.giteaBaseUrl || process.env["GITEA_BASE_URL"] || "http://cacophony-gitea:3000";
+    const baseUrl =
+      options.giteaBaseUrl ||
+      process.env["GITEA_BASE_URL"] ||
+      "http://cacophony-gitea:3000";
     const apiToken = options.giteaApiToken || process.env["GITEA_API_TOKEN"];
 
     const client = new GiteaApiClient({
       baseUrl,
-      apiToken
+      apiToken,
     });
 
     return new GiteaPlatformProvider(client);

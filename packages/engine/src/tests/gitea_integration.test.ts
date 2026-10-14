@@ -8,7 +8,10 @@ import { AutomatedPrWorkflow } from "../gitea/AutomatedPrWorkflow.js";
 import { AutomatedPrReviewLoop } from "../gitea/AutomatedPrReviewLoop.js";
 import { GiteaWebhookReceiver } from "../gitea/GiteaWebhookReceiver.js";
 import { GiteaOAuthProvider } from "../gitea/GiteaOAuthProvider.js";
-import type { GitWorktreeManager, WorktreeDescriptor } from "../gitea/GitWorktreeManager.js";
+import type {
+  GitWorktreeManager,
+  WorktreeDescriptor,
+} from "../gitea/GitWorktreeManager.js";
 import type { OllamaProvider } from "../inference/OllamaProvider.js";
 import type { TaskRepository } from "@cacophony/db";
 
@@ -28,19 +31,28 @@ describe("Gitea Integration & Automated Development Cycle", () => {
         return;
       }
 
-      if (url.includes("/api/v1/repos/cacophony/core/pulls/1/reviews") && req.method === "POST") {
+      if (
+        url.includes("/api/v1/repos/cacophony/core/pulls/1/reviews") &&
+        req.method === "POST"
+      ) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ id: 101, status: "APPROVED" }));
         return;
       }
 
-      if (url.includes("/api/v1/repos/cacophony/core/pulls/1/merge") && req.method === "POST") {
+      if (
+        url.includes("/api/v1/repos/cacophony/core/pulls/1/merge") &&
+        req.method === "POST"
+      ) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ message: "Pull request merged" }));
         return;
       }
 
-      if (url.includes("/api/v1/repos/cacophony/core/pulls") && req.method === "POST") {
+      if (
+        url.includes("/api/v1/repos/cacophony/core/pulls") &&
+        req.method === "POST"
+      ) {
         res.writeHead(201, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
@@ -53,8 +65,8 @@ describe("Gitea Integration & Automated Development Cycle", () => {
             head: { ref: "task-branch-1" },
             base: { ref: "main" },
             html_url: `http://localhost:${mockPort}/pulls/1`,
-            diff_url: `http://localhost:${mockPort}/pulls/1.diff`
-          })
+            diff_url: `http://localhost:${mockPort}/pulls/1.diff`,
+          }),
         );
         return;
       }
@@ -64,8 +76,8 @@ describe("Gitea Integration & Automated Development Cycle", () => {
         res.end(
           JSON.stringify({
             access_token: "mock-oauth-token-xyz",
-            token_type: "bearer"
-          })
+            token_type: "bearer",
+          }),
         );
         return;
       }
@@ -77,8 +89,8 @@ describe("Gitea Integration & Automated Development Cycle", () => {
             id: 42,
             login: "alice_developer",
             email: "alice@example.com",
-            full_name: "Alice Dev"
-          })
+            full_name: "Alice Dev",
+          }),
         );
         return;
       }
@@ -93,7 +105,7 @@ describe("Gitea Integration & Automated Development Cycle", () => {
 
     giteaClient = new GiteaApiClient({
       baseUrl: `http://127.0.0.1:${mockPort}`,
-      apiToken: "mock-secret-token"
+      apiToken: "mock-secret-token",
     });
   });
 
@@ -106,14 +118,17 @@ describe("Gitea Integration & Automated Development Cycle", () => {
   it("should publish Pull Request with AutomatedPrWorkflow", async () => {
     const mockWorktreeManager: Partial<GitWorktreeManager> = {
       commitWorktree: async () => "commit ok",
-      pushBranch: async () => {}
+      pushBranch: async () => {},
     };
 
-    const workflow = new AutomatedPrWorkflow(giteaClient, mockWorktreeManager as GitWorktreeManager);
+    const workflow = new AutomatedPrWorkflow(
+      giteaClient,
+      mockWorktreeManager as GitWorktreeManager,
+    );
     const mockWorktree: WorktreeDescriptor = {
       taskId: "task-001",
       branchName: "task-branch-1",
-      worktreePath: "/tmp/workspaces/task-001"
+      worktreePath: "/tmp/workspaces/task-001",
     };
 
     const result = await workflow.publishPullRequest(mockWorktree, {
@@ -122,7 +137,7 @@ describe("Gitea Integration & Automated Development Cycle", () => {
       taskId: "task-001",
       title: "Feature A implementation",
       testSummary: "All 12 unit tests passing",
-      commitMessage: "feat: add feature A"
+      commitMessage: "feat: add feature A",
     });
 
     assert.strictEqual(result.success, true);
@@ -135,25 +150,28 @@ describe("Gitea Integration & Automated Development Cycle", () => {
         content: JSON.stringify({
           verdict: "APPROVE",
           reviewNotes: "Clean SOLID design with strict typing.",
-          comments: []
+          comments: [],
         }),
         model: "qwen2.5-coder:7b",
         tokensPrompt: 50,
         tokensCompletion: 80,
         totalTokens: 130,
         latencyMs: 120,
-        tokensPerSec: 800
-      })
+        tokensPerSec: 800,
+      }),
     };
 
-    const reviewLoop = new AutomatedPrReviewLoop(giteaClient, mockOllama as OllamaProvider);
+    const reviewLoop = new AutomatedPrReviewLoop(
+      giteaClient,
+      mockOllama as OllamaProvider,
+    );
     const reviewResult = await reviewLoop.evaluatePullRequest({
       owner: "cacophony",
       repo: "core",
       prNumber: 1,
       taskId: "task-001",
       reviewerModel: "qwen2.5-coder:7b",
-      autoMergeOnApproval: true
+      autoMergeOnApproval: true,
     });
 
     assert.strictEqual(reviewResult.verdict, "APPROVE");
@@ -167,33 +185,44 @@ describe("Gitea Integration & Automated Development Cycle", () => {
       create: async (task: any) => {
         enqueuedTasks.push(task);
         return task;
-      }
+      },
     };
 
-    const webhookReceiver = new GiteaWebhookReceiver(mockTaskRepo as TaskRepository, "test-webhook-secret");
+    const webhookReceiver = new GiteaWebhookReceiver(
+      mockTaskRepo as TaskRepository,
+      "test-webhook-secret",
+    );
 
     const validPayload = JSON.stringify({
       action: "opened",
       issue: {
         number: 404,
         title: "Fix APU memory leak",
-        body: "Investigate DRM sysfs buffer"
+        body: "Investigate DRM sysfs buffer",
       },
       repository: {
         name: "core",
         full_name: "cacophony/core",
-        default_branch: "main"
-      }
+        default_branch: "main",
+      },
     });
 
-    const signature = "sha256=" + crypto
-      .createHmac("sha256", "test-webhook-secret")
-      .update(validPayload)
-      .digest("hex");
+    const signature =
+      "sha256=" +
+      crypto
+        .createHmac("sha256", "test-webhook-secret")
+        .update(validPayload)
+        .digest("hex");
 
-    assert.strictEqual(webhookReceiver.verifySignature(validPayload, signature.slice(7)), true);
+    assert.strictEqual(
+      webhookReceiver.verifySignature(validPayload, signature.slice(7)),
+      true,
+    );
 
-    const result = await webhookReceiver.handleWebhook("issues", JSON.parse(validPayload));
+    const result = await webhookReceiver.handleWebhook(
+      "issues",
+      JSON.parse(validPayload),
+    );
     assert.strictEqual(result.processed, true);
     assert.strictEqual(enqueuedTasks.length, 1);
     assert.ok(enqueuedTasks[0].prompt.includes("Fix APU memory leak"));
@@ -205,7 +234,7 @@ describe("Gitea Integration & Automated Development Cycle", () => {
       clientSecret: "client-secret-123",
       redirectUri: "http://localhost:24072/auth/callback",
       giteaPublicUrl: "http://localhost:19634",
-      jwtSecret: "cacophony-jwt-secret-xyz"
+      jwtSecret: "cacophony-jwt-secret-xyz",
     });
 
     const authUrl = oauthProvider.getAuthorizationUrl("random-state-123");

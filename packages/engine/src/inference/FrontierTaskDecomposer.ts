@@ -1,25 +1,31 @@
 import { z } from "zod";
 import type { TaskRepository } from "@cacophony/db";
-import type { TaskRecord, AgentRole, TaskPriority } from "@cacophony/shared-types";
+import type {
+  TaskRecord,
+  AgentRole,
+  TaskPriority,
+} from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 import { AdaptiveOutputFormatter } from "./AdaptiveOutputFormatter.js";
 
 const DecomposedTaskItemSchema = z.object({
   title: z.string().min(1),
   prompt: z.string().min(1),
-  role: z.enum([
-    "implementer",
-    "reviewer",
-    "architect",
-    "planner",
-    "test_engineer",
-    "doc_writer",
-    "type_specialist",
-    "security_auditor"
-  ]).default("implementer"),
+  role: z
+    .enum([
+      "implementer",
+      "reviewer",
+      "architect",
+      "planner",
+      "test_engineer",
+      "doc_writer",
+      "type_specialist",
+      "security_auditor",
+    ])
+    .default("implementer"),
   priority: z.enum(["P0", "P1", "P2"]).default("P1"),
   focusFiles: z.string().optional(),
-  testCommand: z.string().optional()
+  testCommand: z.string().optional(),
 });
 
 const DecomposedTaskListSchema = z.array(DecomposedTaskItemSchema);
@@ -39,7 +45,7 @@ export class FrontierTaskDecomposer {
   constructor(
     provider: IInferenceProvider,
     taskRepo: TaskRepository,
-    formatter: AdaptiveOutputFormatter = new AdaptiveOutputFormatter()
+    formatter: AdaptiveOutputFormatter = new AdaptiveOutputFormatter(),
   ) {
     this.provider = provider;
     this.taskRepo = taskRepo;
@@ -52,7 +58,7 @@ export class FrontierTaskDecomposer {
   public async decomposeAndPersist(
     objective: string,
     modelName: string,
-    workspaceSummary = ""
+    workspaceSummary = "",
   ): Promise<readonly TaskRecord[]> {
     const prompt = [
       "You are the Chief Software Architect.",
@@ -74,16 +80,17 @@ export class FrontierTaskDecomposer {
       '    "testCommand": "npm test --workspace=@cacophony/engine --if-present"',
       "  }",
       "]",
-      "```"
+      "```",
     ].join("\n");
 
     const res = await this.provider.generate({
       model: modelName,
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.1
+      temperature: 0.1,
     });
 
-    const primaryJson = this.formatter.extractPrimaryCode(res.content) || res.content;
+    const primaryJson =
+      this.formatter.extractPrimaryCode(res.content) || res.content;
     let parsedJson: unknown;
     try {
       parsedJson = JSON.parse(primaryJson);
@@ -93,7 +100,9 @@ export class FrontierTaskDecomposer {
       if (match) {
         parsedJson = JSON.parse(match[0]);
       } else {
-        throw new Error("Frontier model response could not be parsed as a valid JSON array.");
+        throw new Error(
+          "Frontier model response could not be parsed as a valid JSON array.",
+        );
       }
     }
 
@@ -103,8 +112,13 @@ export class FrontierTaskDecomposer {
     const now = new Date();
     for (let i = 0; i < items.length; i++) {
       const item = items[i]!;
-      const timestamp = now.toISOString().replace(/[-:T.]/g, "").slice(0, 15);
-      const randomSuffix = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
+      const timestamp = now
+        .toISOString()
+        .replace(/[-:T.]/g, "")
+        .slice(0, 15);
+      const randomSuffix = Math.floor(Math.random() * 1000000)
+        .toString()
+        .padStart(6, "0");
       const taskId = `task-${timestamp}_${String(i).padStart(2, "0")}_${randomSuffix}`;
 
       const taskRecord: TaskRecord = {
@@ -122,7 +136,7 @@ export class FrontierTaskDecomposer {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       await this.taskRepo.create(taskRecord);

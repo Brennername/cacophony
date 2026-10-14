@@ -1,6 +1,10 @@
 import type { GiteaApiClient } from "./GiteaApiClient.js";
 import type { OllamaProvider } from "../inference/OllamaProvider.js";
-import type { PrReviewRecord, ReviewVerdict, ReviewComment } from "@cacophony/shared-types";
+import type {
+  PrReviewRecord,
+  ReviewVerdict,
+  ReviewComment,
+} from "@cacophony/shared-types";
 
 export interface ReviewLoopOptions {
   readonly owner: string;
@@ -30,14 +34,16 @@ export class ReviewVerdictParser {
       if (firstBrace !== -1 && lastBrace > firstBrace) {
         const jsonSubstring = llmText.slice(firstBrace, lastBrace + 1);
         const parsed = JSON.parse(jsonSubstring);
-        const verdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(parsed.verdict)
+        const verdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(
+          parsed.verdict,
+        )
           ? (parsed.verdict as ReviewVerdict)
           : "REQUEST_CHANGES";
 
         return {
           verdict,
           reviewNotes: parsed.reviewNotes || "Review evaluated automatically.",
-          comments: Array.isArray(parsed.comments) ? parsed.comments : []
+          comments: Array.isArray(parsed.comments) ? parsed.comments : [],
         };
       }
     } catch {
@@ -48,14 +54,14 @@ export class ReviewVerdictParser {
       return {
         verdict: "APPROVE",
         reviewNotes: llmText,
-        comments: []
+        comments: [],
       };
     }
 
     return {
       verdict: "REQUEST_CHANGES",
       reviewNotes: llmText,
-      comments: []
+      comments: [],
     };
   }
 }
@@ -69,8 +75,14 @@ export class AutomatedPrReviewLoop {
     this.inferenceProvider = inferenceProvider;
   }
 
-  public async evaluatePullRequest(options: ReviewLoopOptions): Promise<ReviewLoopResult> {
-    const diff = await this.giteaClient.getPullRequestDiff(options.owner, options.repo, options.prNumber);
+  public async evaluatePullRequest(
+    options: ReviewLoopOptions,
+  ): Promise<ReviewLoopResult> {
+    const diff = await this.giteaClient.getPullRequestDiff(
+      options.owner,
+      options.repo,
+      options.prNumber,
+    );
 
     const reviewPrompt = this.buildPrompt(diff);
     const response = await this.inferenceProvider.generate({
@@ -78,36 +90,52 @@ export class AutomatedPrReviewLoop {
       messages: [
         {
           role: "system",
-          content: "You are an automated senior code review architect evaluating pull requests."
+          content:
+            "You are an automated senior code review architect evaluating pull requests.",
         },
         {
           role: "user",
-          content: reviewPrompt
-        }
+          content: reviewPrompt,
+        },
       ],
-      temperature: 0.1
+      temperature: 0.1,
     });
 
     const parsed = this.parseReviewResponse(response.content);
 
-    await this.giteaClient.submitPullRequestReview(options.owner, options.repo, options.prNumber, {
-      event: parsed.verdict === "APPROVE" ? "APPROVED" : parsed.verdict === "REQUEST_CHANGES" ? "REQUEST_CHANGES" : "COMMENT",
-      body: parsed.reviewNotes,
-      comments: parsed.comments.map((c) => ({
-        body: `[${c.severity.toUpperCase()}] ${c.comment}`,
-        path: c.path,
-        line: c.lineNumber
-      }))
-    });
+    await this.giteaClient.submitPullRequestReview(
+      options.owner,
+      options.repo,
+      options.prNumber,
+      {
+        event:
+          parsed.verdict === "APPROVE"
+            ? "APPROVED"
+            : parsed.verdict === "REQUEST_CHANGES"
+              ? "REQUEST_CHANGES"
+              : "COMMENT",
+        body: parsed.reviewNotes,
+        comments: parsed.comments.map((c) => ({
+          body: `[${c.severity.toUpperCase()}] ${c.comment}`,
+          path: c.path,
+          line: c.lineNumber,
+        })),
+      },
+    );
 
     let merged = false;
 
     if (parsed.verdict === "APPROVE" && (options.autoMergeOnApproval ?? true)) {
       try {
-        await this.giteaClient.mergePullRequest(options.owner, options.repo, options.prNumber, {
-          Do: "squash",
-          MergeTitleField: `Merge PR #${options.prNumber} [Automated Review Approved]`
-        });
+        await this.giteaClient.mergePullRequest(
+          options.owner,
+          options.repo,
+          options.prNumber,
+          {
+            Do: "squash",
+            MergeTitleField: `Merge PR #${options.prNumber} [Automated Review Approved]`,
+          },
+        );
         merged = true;
       } catch {
         merged = false;
@@ -123,14 +151,14 @@ export class AutomatedPrReviewLoop {
       reviewNotes: parsed.reviewNotes,
       comments: parsed.comments,
       diffAnalyzed: diff.slice(0, 10000),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     return {
       verdict: parsed.verdict,
       record,
       merged,
-      remediationRequired: parsed.verdict === "REQUEST_CHANGES"
+      remediationRequired: parsed.verdict === "REQUEST_CHANGES",
     };
   }
 
@@ -148,7 +176,7 @@ export class AutomatedPrReviewLoop {
       "}",
       "",
       "--- DIFF ---",
-      diff.slice(0, 30000)
+      diff.slice(0, 30000),
     ].join("\n");
   }
 

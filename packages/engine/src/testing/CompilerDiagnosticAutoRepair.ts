@@ -7,7 +7,7 @@ const KNOWN_WORKSPACE_PACKAGES = new Set([
   "@cacophony/engine",
   "@cacophony/frontend",
   "@cacophony/shared-types",
-  "@cacophony/tools"
+  "@cacophony/tools",
 ]);
 
 /**
@@ -42,7 +42,12 @@ export interface CompilerAutoRepairResult {
 export class CompilerDiagnosticAutoRepair {
   private readonly dynamicRepairs = new Map<
     string,
-    Array<(code: string, diag: CompilerDiagnostic) => { repairedCode: string; description: string } | null>
+    Array<
+      (
+        code: string,
+        diag: CompilerDiagnostic,
+      ) => { repairedCode: string; description: string } | null
+    >
   >();
 
   /**
@@ -50,7 +55,10 @@ export class CompilerDiagnosticAutoRepair {
    */
   public registerDynamicRepair(
     errorCode: string,
-    handler: (code: string, diag: CompilerDiagnostic) => { repairedCode: string; description: string } | null
+    handler: (
+      code: string,
+      diag: CompilerDiagnostic,
+    ) => { repairedCode: string; description: string } | null,
   ): void {
     const code = errorCode.toUpperCase().trim();
     const list = this.dynamicRepairs.get(code) ?? [];
@@ -64,16 +72,18 @@ export class CompilerDiagnosticAutoRepair {
   public static generateRepairTemplate(
     diagnostic: CompilerDiagnostic,
     originalCode: string,
-    repairedCode: string
+    repairedCode: string,
   ): string {
     const origLines = originalCode.split("\n");
     const repLines = repairedCode.split("\n");
-    const targetLine = diagnostic.lineNumber > 0 && diagnostic.lineNumber <= origLines.length
-      ? origLines[diagnostic.lineNumber - 1] ?? ""
-      : "";
-    const replacementLine = diagnostic.lineNumber > 0 && diagnostic.lineNumber <= repLines.length
-      ? repLines[diagnostic.lineNumber - 1] ?? ""
-      : "";
+    const targetLine =
+      diagnostic.lineNumber > 0 && diagnostic.lineNumber <= origLines.length
+        ? (origLines[diagnostic.lineNumber - 1] ?? "")
+        : "";
+    const replacementLine =
+      diagnostic.lineNumber > 0 && diagnostic.lineNumber <= repLines.length
+        ? (repLines[diagnostic.lineNumber - 1] ?? "")
+        : "";
 
     return `/**
  * Auto-Generated Repair Handler for ${diagnostic.errorCode}
@@ -105,7 +115,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
   public repair(
     code: string,
     diagnostics: readonly CompilerDiagnostic[],
-    targetFilePath?: string
+    targetFilePath?: string,
   ): CompilerAutoRepairResult {
     if (!diagnostics || diagnostics.length === 0) {
       return { repairedCode: code, repairsApplied: [] };
@@ -118,7 +128,9 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     // Dynamic synthesized repair handlers
     for (const diag of diagnostics) {
       if (diag.errorCode) {
-        const handlers = this.dynamicRepairs.get(diag.errorCode.toUpperCase().trim());
+        const handlers = this.dynamicRepairs.get(
+          diag.errorCode.toUpperCase().trim(),
+        );
         if (handlers) {
           for (const handler of handlers) {
             const res = handler(currentCode, diag);
@@ -132,19 +144,30 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     }
 
     const isTestFile = targetFilePath
-      ? (targetFilePath.endsWith(".test.ts") || targetFilePath.endsWith(".spec.ts"))
-      : (code.includes("describe(") || code.includes("it(") || code.includes("test("));
+      ? targetFilePath.endsWith(".test.ts") ||
+        targetFilePath.endsWith(".spec.ts")
+      : code.includes("describe(") ||
+        code.includes("it(") ||
+        code.includes("test(");
 
     const isComponentFile = targetFilePath
-      ? (targetFilePath.includes("/components/") || targetFilePath.includes("/app/"))
+      ? targetFilePath.includes("/components/") ||
+        targetFilePath.includes("/app/")
       : currentCode.includes("@Component");
 
     // 1. Repair TS2304 / TS2708: Missing 'jest' test runner global or namespace used as value
     const hasJestMissing = diagnostics.some(
-      (d) => (d.errorCode === "TS2304" && /Cannot find name 'jest'/i.test(d.message)) ||
-             (d.errorCode === "TS2708" && /Cannot use namespace 'jest' as a value/i.test(d.message))
+      (d) =>
+        (d.errorCode === "TS2304" &&
+          /Cannot find name 'jest'/i.test(d.message)) ||
+        (d.errorCode === "TS2708" &&
+          /Cannot use namespace 'jest' as a value/i.test(d.message)),
     );
-    if (hasJestMissing && !currentCode.includes("const jest =") && !currentCode.includes("var jest =")) {
+    if (
+      hasJestMissing &&
+      !currentCode.includes("const jest =") &&
+      !currentCode.includes("var jest =")
+    ) {
       const jestShim = [
         "// Native node:test compatibility shim for jest APIs",
         "const jest = {",
@@ -194,17 +217,25 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         "  clearAllMocks: () => {},",
         "  resetAllMocks: () => {}",
         "};",
-        ""
+        "",
       ].join("\n");
       prependCode += jestShim;
-      repairsApplied.push("Injected native node:test compatibility shim for 'jest'");
+      repairsApplied.push(
+        "Injected native node:test compatibility shim for 'jest'",
+      );
     }
 
     // 2. Repair TS2304: Missing 'expect' assertion global
     const hasExpectMissing = diagnostics.some(
-      (d) => d.errorCode === "TS2304" && /Cannot find name 'expect'/i.test(d.message)
+      (d) =>
+        d.errorCode === "TS2304" &&
+        /Cannot find name 'expect'/i.test(d.message),
     );
-    if (hasExpectMissing && !currentCode.includes("const expect =") && !currentCode.includes("export const expect =")) {
+    if (
+      hasExpectMissing &&
+      !currentCode.includes("const expect =") &&
+      !currentCode.includes("export const expect =")
+    ) {
       const expectShim = [
         "// Native node:assert compatibility shim for expect assertions",
         "import * as _assert from 'node:assert/strict';",
@@ -237,10 +268,12 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         "    toContain: (item: any) => _assert.ok(!(actual && (actual as any).includes ? (actual as any).includes(item) : false))",
         "  }",
         "});",
-        ""
+        "",
       ].join("\n");
       prependCode += expectShim;
-      repairsApplied.push("Injected native node:assert compatibility shim for 'expect'");
+      repairsApplied.push(
+        "Injected native node:assert compatibility shim for 'expect'",
+      );
     }
 
     // 2b. Repair TS2304: Missing node:test runner functions and lifecycle hooks
@@ -253,13 +286,15 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       { name: "before", exportName: "before" },
       { name: "after", exportName: "after" },
       { name: "beforeAll", exportName: "before as beforeAll" },
-      { name: "afterAll", exportName: "after as afterAll" }
+      { name: "afterAll", exportName: "after as afterAll" },
     ];
 
     const missingTestFns: string[] = [];
     for (const item of testFunctions) {
       const hasMissing = diagnostics.some(
-        (d) => d.errorCode === "TS2304" && new RegExp(`Cannot find name '${item.name}'`, "i").test(d.message)
+        (d) =>
+          d.errorCode === "TS2304" &&
+          new RegExp(`Cannot find name '${item.name}'`, "i").test(d.message),
       );
       if (hasMissing) {
         missingTestFns.push(item.exportName);
@@ -267,133 +302,236 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     }
 
     if (missingTestFns.length > 0) {
-      if (!currentCode.includes("from 'node:test'") && !currentCode.includes('from "node:test"') && !prependCode.includes("from 'node:test'")) {
-        const standardImports = ["describe", "it", "test", "beforeEach", "afterEach", "before", "after"];
-        if (missingTestFns.includes("before as beforeAll")) standardImports.push("before as beforeAll");
-        if (missingTestFns.includes("after as afterAll")) standardImports.push("after as afterAll");
+      if (
+        !currentCode.includes("from 'node:test'") &&
+        !currentCode.includes('from "node:test"') &&
+        !prependCode.includes("from 'node:test'")
+      ) {
+        const standardImports = [
+          "describe",
+          "it",
+          "test",
+          "beforeEach",
+          "afterEach",
+          "before",
+          "after",
+        ];
+        if (missingTestFns.includes("before as beforeAll"))
+          standardImports.push("before as beforeAll");
+        if (missingTestFns.includes("after as afterAll"))
+          standardImports.push("after as afterAll");
         const hookShim = `import { ${standardImports.join(", ")} } from 'node:test';\n`;
         prependCode += hookShim;
         repairsApplied.push(`Injected 'node:test' runner function imports`);
       } else {
-        const importRegex = /(import\s*\{)([^}]+)(\}\s*from\s*['"]node:test['"])/;
+        const importRegex =
+          /(import\s*\{)([^}]+)(\}\s*from\s*['"]node:test['"])/;
         if (importRegex.test(currentCode)) {
           currentCode = currentCode.replace(importRegex, (_m, p1, p2, p3) => {
-            const existing = p2.split(",").map((s: string) => s.trim()).filter(Boolean);
+            const existing = p2
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter(Boolean);
             for (const fn of missingTestFns) {
               const baseName = fn.split(" as ")[0]!.trim();
-              if (!existing.some((e: string) => e === fn || e.startsWith(baseName))) {
+              if (
+                !existing.some(
+                  (e: string) => e === fn || e.startsWith(baseName),
+                )
+              ) {
                 existing.push(fn);
               }
             }
             return `${p1} ${existing.join(", ")} ${p3}`;
           });
-          repairsApplied.push(`Added missing test runner functions to 'node:test' import: ${missingTestFns.join(", ")}`);
+          repairsApplied.push(
+            `Added missing test runner functions to 'node:test' import: ${missingTestFns.join(", ")}`,
+          );
         }
       }
     }
 
     // 3. Repair TS2307: Missing module 'vscode' -> replace with 'typescript'
     const hasVscodeMissing = diagnostics.some(
-      (d) => d.errorCode === "TS2307" && /Cannot find module 'vscode'/i.test(d.message)
+      (d) =>
+        d.errorCode === "TS2307" &&
+        /Cannot find module 'vscode'/i.test(d.message),
     );
     if (hasVscodeMissing) {
       const updated = currentCode.replace(
         /import(?:\s+type)?\s+(?:\{[^}]*\}|[a-zA-Z0-9_$*]+|\*\s+as\s+[a-zA-Z0-9_$]+)\s+from\s+['"]vscode['"];?\n?/g,
-        "import * as ts from 'typescript';\n"
+        "import * as ts from 'typescript';\n",
       );
       if (updated !== currentCode) {
         currentCode = updated;
-        repairsApplied.push("Replaced hallucinated 'vscode' import with 'typescript'");
+        repairsApplied.push(
+          "Replaced hallucinated 'vscode' import with 'typescript'",
+        );
       }
     }
 
     // 3b. Repair TS2307: Missing relative module paths or uninstalled packages in generated files
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2307" || /Cannot find module '([^']+)'/i.test(diag.message)) {
+      if (
+        diag.errorCode === "TS2307" ||
+        /Cannot find module '([^']+)'/i.test(diag.message)
+      ) {
         const modMatch = diag.message.match(/Cannot find module '([^']+)'/i);
         if (modMatch && modMatch[1]) {
           const modPath = modMatch[1];
           if (modPath.startsWith(".")) {
-            const baseName = path.basename(modPath).replace(/\.[a-zA-Z0-9]+$/, "");
+            const baseName = path
+              .basename(modPath)
+              .replace(/\.[a-zA-Z0-9]+$/, "");
             if (baseName && baseName !== "index") {
-              const resolvedRelPath = this.resolveWorkspaceModule(baseName, targetFilePath);
+              const resolvedRelPath = this.resolveWorkspaceModule(
+                baseName,
+                targetFilePath,
+              );
               if (resolvedRelPath) {
                 const escaped = modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
                 const regex = new RegExp(`(['"])${escaped}(['"])`, "g");
-                const updated = currentCode.replace(regex, `$1${resolvedRelPath}$2`);
+                const updated = currentCode.replace(
+                  regex,
+                  `$1${resolvedRelPath}$2`,
+                );
                 if (updated !== currentCode) {
                   currentCode = updated;
-                  repairsApplied.push(`Resolved missing relative module '${modPath}' -> '${resolvedRelPath}'`);
+                  repairsApplied.push(
+                    `Resolved missing relative module '${modPath}' -> '${resolvedRelPath}'`,
+                  );
                 }
               } else {
                 const escaped = modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                const importRegex = new RegExp(`import(?:\\s+type)?\\s*\\{([^}]+)\\}\\s*from\\s*['"]${escaped}['"];?`, "g");
+                const importRegex = new RegExp(
+                  `import(?:\\s+type)?\\s*\\{([^}]+)\\}\\s*from\\s*['"]${escaped}['"];?`,
+                  "g",
+                );
                 if (importRegex.test(currentCode)) {
-                  currentCode = currentCode.replace(importRegex, (_full, members) => {
-                    const memberList = members.split(",").map((m: string) => m.trim().split(/\s+as\s+/)[0]!.trim()).filter(Boolean);
-                    let stubs = "";
-                    for (const mem of memberList) {
-                      if (/^[A-Z]/.test(mem)) {
-                        stubs += `// @ts-ignore\nexport class ${mem} { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }\n`;
-                      } else {
-                        stubs += `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                  currentCode = currentCode.replace(
+                    importRegex,
+                    (_full, members) => {
+                      const memberList = members
+                        .split(",")
+                        .map((m: string) =>
+                          m
+                            .trim()
+                            .split(/\s+as\s+/)[0]!
+                            .trim(),
+                        )
+                        .filter(Boolean);
+                      let stubs = "";
+                      for (const mem of memberList) {
+                        if (/^[A-Z]/.test(mem)) {
+                          stubs += `// @ts-ignore\nexport class ${mem} { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }\n`;
+                        } else {
+                          stubs += `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                        }
                       }
-                    }
-                    repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`);
-                    return stubs;
-                  });
+                      repairsApplied.push(
+                        `Replaced unresolvable module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`,
+                      );
+                      return stubs;
+                    },
+                  );
                 }
-                const defaultImportRegex = new RegExp(`import(?:\\s+type)?\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`, "g");
+                const defaultImportRegex = new RegExp(
+                  `import(?:\\s+type)?\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`,
+                  "g",
+                );
                 if (defaultImportRegex.test(currentCode)) {
-                  currentCode = currentCode.replace(defaultImportRegex, (_full, mem) => {
-                    repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration: ${mem}`);
-                    if (/^[A-Z]/.test(mem)) {
-                      return `// @ts-ignore\nexport class ${mem} { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }\n`;
-                    }
-                    return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
-                  });
+                  currentCode = currentCode.replace(
+                    defaultImportRegex,
+                    (_full, mem) => {
+                      repairsApplied.push(
+                        `Replaced unresolvable module '${modPath}' with fallback declaration: ${mem}`,
+                      );
+                      if (/^[A-Z]/.test(mem)) {
+                        return `// @ts-ignore\nexport class ${mem} { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }\n`;
+                      }
+                      return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                    },
+                  );
                 }
               }
             }
-          } else if (!modPath.startsWith("node:") && !KNOWN_WORKSPACE_PACKAGES.has(modPath) && modPath !== "vue") {
+          } else if (
+            !modPath.startsWith("node:") &&
+            !KNOWN_WORKSPACE_PACKAGES.has(modPath) &&
+            modPath !== "vue"
+          ) {
             const escaped = modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            const namedImportRegex = new RegExp(`import(?:\\s+type)?\\s*\\{([^}]+)\\}\\s*from\\s*['"]${escaped}['"];?`, "g");
+            const namedImportRegex = new RegExp(
+              `import(?:\\s+type)?\\s*\\{([^}]+)\\}\\s*from\\s*['"]${escaped}['"];?`,
+              "g",
+            );
             if (namedImportRegex.test(currentCode)) {
-              currentCode = currentCode.replace(namedImportRegex, (_full, members) => {
-                const memberList = members.split(",").map((m: string) => m.trim().split(/\s+as\s+/)[0]!.trim()).filter(Boolean);
-                let stubs = "";
-                for (const mem of memberList) {
-                  stubs += `// @ts-ignore\nexport type ${mem}<_T = any, _U = any> = any;\n// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
-                }
-                repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`);
-                return stubs;
-              });
+              currentCode = currentCode.replace(
+                namedImportRegex,
+                (_full, members) => {
+                  const memberList = members
+                    .split(",")
+                    .map((m: string) =>
+                      m
+                        .trim()
+                        .split(/\s+as\s+/)[0]!
+                        .trim(),
+                    )
+                    .filter(Boolean);
+                  let stubs = "";
+                  for (const mem of memberList) {
+                    stubs += `// @ts-ignore\nexport type ${mem}<_T = any, _U = any> = any;\n// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                  }
+                  repairsApplied.push(
+                    `Replaced unresolvable module '${modPath}' with fallback declaration(s): ${memberList.join(", ")}`,
+                  );
+                  return stubs;
+                },
+              );
             }
-            const defaultImportRegex = new RegExp(`import(?:\\s+type)?\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`, "g");
+            const defaultImportRegex = new RegExp(
+              `import(?:\\s+type)?\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`,
+              "g",
+            );
             if (defaultImportRegex.test(currentCode)) {
-              currentCode = currentCode.replace(defaultImportRegex, (_full, mem) => {
-                repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback declaration: ${mem}`);
-                return `// @ts-ignore\nexport type ${mem}<_T = any, _U = any> = any;\n// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
-              });
+              currentCode = currentCode.replace(
+                defaultImportRegex,
+                (_full, mem) => {
+                  repairsApplied.push(
+                    `Replaced unresolvable module '${modPath}' with fallback declaration: ${mem}`,
+                  );
+                  return `// @ts-ignore\nexport type ${mem}<_T = any, _U = any> = any;\n// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n`;
+                },
+              );
             }
-            const starImportRegex = new RegExp(`import(?:\\s+type)?\\s*\\*\\s+as\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`, "g");
+            const starImportRegex = new RegExp(
+              `import(?:\\s+type)?\\s*\\*\\s+as\\s+([a-zA-Z0-9_$]+)\\s+from\\s*['"]${escaped}['"];?`,
+              "g",
+            );
             if (starImportRegex.test(currentCode)) {
-              currentCode = currentCode.replace(starImportRegex, (_full, mem) => {
-                repairsApplied.push(`Replaced unresolvable module '${modPath}' with fallback namespace declaration: ${mem}`);
-                if (mem === "ts") {
-                  return `import * as ts from 'typescript';\n`;
-                }
-                return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n// @ts-ignore\nexport namespace ${mem} { export type Node = any; export type SourceFile = any; export type Type = any; export type Symbol = any; }\n`;
-              });
+              currentCode = currentCode.replace(
+                starImportRegex,
+                (_full, mem) => {
+                  repairsApplied.push(
+                    `Replaced unresolvable module '${modPath}' with fallback namespace declaration: ${mem}`,
+                  );
+                  if (mem === "ts") {
+                    return `import * as ts from 'typescript';\n`;
+                  }
+                  return `// @ts-ignore\nexport const ${mem}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });\n// @ts-ignore\nexport namespace ${mem} { export type Node = any; export type SourceFile = any; export type Type = any; export type Symbol = any; }\n`;
+                },
+              );
             }
           } else if (modPath === "vue") {
             const updated = currentCode.replace(
               /import(?:\s+type)?\s+(?:\{[^}]*\}|[a-zA-Z0-9_$*]+|\*\s+as\s+[a-zA-Z0-9_$]+)\s+from\s+['"]vue['"];?\n?/g,
-              ""
+              "",
             );
             if (updated !== currentCode) {
               currentCode = updated;
-              repairsApplied.push("Removed hallucinated 'vue' import statement in Angular project");
+              repairsApplied.push(
+                "Removed hallucinated 'vue' import statement in Angular project",
+              );
             }
           }
         }
@@ -402,12 +540,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 4. Repair TS2307: Missing module 'express' -> strip import
     const hasExpressMissing = diagnostics.some(
-      (d) => d.errorCode === "TS2307" && /Cannot find module 'express'/i.test(d.message)
+      (d) =>
+        d.errorCode === "TS2307" &&
+        /Cannot find module 'express'/i.test(d.message),
     );
     if (hasExpressMissing) {
       const updated = currentCode.replace(
         /import(?:\s+type)?\s+(?:\{[^}]*\}|[a-zA-Z0-9_$*]+|\*\s+as\s+[a-zA-Z0-9_$]+)\s+from\s+['"]express['"];?\n?/g,
-        ""
+        "",
       );
       if (updated !== currentCode) {
         currentCode = updated;
@@ -417,51 +557,82 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 4b. Repair TS2724: Typos in exported members ('Did you mean 'Y'?')
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2724" || diag.errorCode === "TS2552" || /Did you mean '([^']+)'\?/i.test(diag.message)) {
-        const typoMatch = diag.message.match(/(?:has no exported member named|does not exist on type|Cannot find name)\s+'([^']+)'.*?Did you mean '([^']+)'\?/i);
+      if (
+        diag.errorCode === "TS2724" ||
+        diag.errorCode === "TS2552" ||
+        /Did you mean '([^']+)'\?/i.test(diag.message)
+      ) {
+        const typoMatch = diag.message.match(
+          /(?:has no exported member named|does not exist on type|Cannot find name)\s+'([^']+)'.*?Did you mean '([^']+)'\?/i,
+        );
         if (typoMatch && typoMatch[1] && typoMatch[2]) {
           const wrongName = typoMatch[1];
           const rightName = typoMatch[2];
-          if (wrongName.toLowerCase() === "assert" && rightName.toLowerCase() === "assert") {
+          if (
+            wrongName.toLowerCase() === "assert" &&
+            rightName.toLowerCase() === "assert"
+          ) {
             continue;
           }
-          currentCode = this.replaceIdentifierSafely(currentCode, wrongName, rightName);
-          repairsApplied.push(`Replaced typo member '${wrongName}' with suggested '${rightName}'`);
+          currentCode = this.replaceIdentifierSafely(
+            currentCode,
+            wrongName,
+            rightName,
+          );
+          repairsApplied.push(
+            `Replaced typo member '${wrongName}' with suggested '${rightName}'`,
+          );
         }
       }
     }
 
     // 4c. Repair TS2305: Missing exported member in valid module
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2305" || /has no exported member/i.test(diag.message)) {
-        const match = diag.message.match(/Module\s+['"]+([^'"]+)['"]+\s+has no exported member(?:\s+named)?\s+['"]+([a-zA-Z0-9_]+)['"]+/i);
+      if (
+        diag.errorCode === "TS2305" ||
+        /has no exported member/i.test(diag.message)
+      ) {
+        const match = diag.message.match(
+          /Module\s+['"]+([^'"]+)['"]+\s+has no exported member(?:\s+named)?\s+['"]+([a-zA-Z0-9_]+)['"]+/i,
+        );
         if (match && match[1] && match[2]) {
           const modPath = match[1].replace(/^["']|["']$/g, "").trim();
           const missingMember = match[2].trim();
           const modPathNoExt = modPath.replace(/\.[jt]sx?$/, "");
           const escapedMod = modPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const escapedBase = modPathNoExt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const escapedBase = modPathNoExt.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&",
+          );
           const importRegex = new RegExp(
             `import\\s*(?:type\\s*)?\\{([^}]+)\\}\\s*from\\s*['"](?:${escapedMod}|${escapedBase}(?:\\.[a-zA-Z]+)?)['"];?`,
-            "g"
+            "g",
           );
           currentCode = currentCode.replace(importRegex, (_full, members) => {
-            const memberList = members.split(",").map((m: string) => m.trim()).filter((m: string) => m.length > 0 && m !== missingMember);
+            const memberList = members
+              .split(",")
+              .map((m: string) => m.trim())
+              .filter((m: string) => m.length > 0 && m !== missingMember);
             if (memberList.length === 0) {
               return "";
             }
             return `import { ${memberList.join(", ")} } from '${modPath}';`;
           });
-          if (!currentCode.includes(`interface ${missingMember}`) && !currentCode.includes(`const ${missingMember}:`)) {
+          if (
+            !currentCode.includes(`interface ${missingMember}`) &&
+            !currentCode.includes(`const ${missingMember}:`)
+          ) {
             const fallbackDecl = [
               `// @ts-ignore`,
               `export interface ${missingMember} { [key: string]: any; }`,
               `// @ts-ignore`,
               `export const ${missingMember}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });`,
-              ""
+              "",
             ].join("\n");
             currentCode = fallbackDecl + currentCode;
-            repairsApplied.push(`Removed non-existent export '${missingMember}' from '${modPath}' and declared local fallback interface and callable stub`);
+            repairsApplied.push(
+              `Removed non-existent export '${missingMember}' from '${modPath}' and declared local fallback interface and callable stub`,
+            );
           }
         }
       }
@@ -469,78 +640,109 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 4e. Repair TS2304: Missing Angular core symbols in Angular components or decorators
     const angularCoreMatch = diagnostics.find(
-      (d) => d.errorCode === "TS2304" && /Cannot find name '(?:EventEmitter|Output|Input|OnInit|OnDestroy|Component|Injectable|signal|computed|effect|Signal)'/i.test(d.message)
+      (d) =>
+        d.errorCode === "TS2304" &&
+        /Cannot find name '(?:EventEmitter|Output|Input|OnInit|OnDestroy|Component|Injectable|signal|computed|effect|Signal)'/i.test(
+          d.message,
+        ),
     );
     if (angularCoreMatch) {
-      const symMatch = angularCoreMatch.message.match(/Cannot find name '([^']+)'/i);
+      const symMatch = angularCoreMatch.message.match(
+        /Cannot find name '([^']+)'/i,
+      );
       if (symMatch && symMatch[1]) {
         const sym = symMatch[1];
         if (currentCode.includes("@angular/core")) {
           currentCode = currentCode.replace(
             /(import\s*\{)([^}]+)(\}\s*from\s*['"]@angular\/core['"])/,
-            (_match, p1, p2, p3) => `${p1} ${p2.trim()}, ${sym} ${p3}`
+            (_match, p1, p2, p3) => `${p1} ${p2.trim()}, ${sym} ${p3}`,
           );
-          repairsApplied.push(`Added missing '${sym}' to '@angular/core' imports`);
+          repairsApplied.push(
+            `Added missing '${sym}' to '@angular/core' imports`,
+          );
         } else if (isComponentFile || currentCode.includes("@Component")) {
-          currentCode = `import { ${sym} } from '@angular/core';\n` + currentCode;
+          currentCode =
+            `import { ${sym} } from '@angular/core';\n` + currentCode;
           repairsApplied.push(`Imported '${sym}' from '@angular/core'`);
         } else {
-          currentCode = `// @ts-ignore\nconst ${sym}: any = (..._args: any[]) => (_target?: any, _key?: any, _desc?: any) => {};\n` + currentCode;
+          currentCode =
+            `// @ts-ignore\nconst ${sym}: any = (..._args: any[]) => (_target?: any, _key?: any, _desc?: any) => {};\n` +
+            currentCode;
           repairsApplied.push(`Declared fallback decorator '${sym}'`);
         }
       }
     }
 
     // 4f. Repair NG8002: Missing FormsModule for ngModel in Angular templates
-    const hasNgModelMissing = diagnostics.some(
-      (d) => /NG8002|Can't bind to 'ngModel'/i.test(d.message)
+    const hasNgModelMissing = diagnostics.some((d) =>
+      /NG8002|Can't bind to 'ngModel'/i.test(d.message),
     );
     if (hasNgModelMissing && !currentCode.includes("FormsModule")) {
-      currentCode = "import { FormsModule } from '@angular/forms';\n" + currentCode;
+      currentCode =
+        "import { FormsModule } from '@angular/forms';\n" + currentCode;
       if (currentCode.includes("imports: [")) {
-        currentCode = currentCode.replace("imports: [", "imports: [FormsModule, ");
+        currentCode = currentCode.replace(
+          "imports: [",
+          "imports: [FormsModule, ",
+        );
       }
-      repairsApplied.push("Imported and registered FormsModule for ngModel binding");
+      repairsApplied.push(
+        "Imported and registered FormsModule for ngModel binding",
+      );
     }
 
     // 4f2. Repair NG8001 / NG8002: Unknown property bindings or unknown elements in Angular templates
     const hasUnknownBinding = diagnostics.some(
-      (d) => /Can't bind to '([^']+)' since it isn't a known property/i.test(d.message) ||
-             /is not a known element/i.test(d.message) ||
-             /NG8001|NG8002/i.test(d.message)
+      (d) =>
+        /Can't bind to '([^']+)' since it isn't a known property/i.test(
+          d.message,
+        ) ||
+        /is not a known element/i.test(d.message) ||
+        /NG8001|NG8002/i.test(d.message),
     );
     if (hasUnknownBinding) {
       if (!currentCode.includes("CUSTOM_ELEMENTS_SCHEMA")) {
         if (currentCode.includes("@angular/core")) {
           currentCode = currentCode.replace(
             /(import\s*\{)([^}]+)(\}\s*from\s*['"]@angular\/core['"])/,
-            "$1$2, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA $3"
+            "$1$2, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA $3",
           );
         } else {
-          currentCode = "import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';\n" + currentCode;
+          currentCode =
+            "import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';\n" +
+            currentCode;
         }
       }
       if (!currentCode.includes("schemas:")) {
         currentCode = currentCode.replace(
           /@Component\s*\(\{/,
-          "@Component({\n  schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],"
+          "@Component({\n  schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],",
         );
-        repairsApplied.push("Registered CUSTOM_ELEMENTS_SCHEMA and NO_ERRORS_SCHEMA in Component decorator for template bindings");
+        repairsApplied.push(
+          "Registered CUSTOM_ELEMENTS_SCHEMA and NO_ERRORS_SCHEMA in Component decorator for template bindings",
+        );
       }
     }
 
     // 4g. Repair missing Angular template file
     for (const diag of diagnostics) {
       if (/Could not find template file\s+'([^']+)'/i.test(diag.message)) {
-        const tplMatch = diag.message.match(/Could not find template file\s+'([^']+)'/i);
+        const tplMatch = diag.message.match(
+          /Could not find template file\s+'([^']+)'/i,
+        );
         if (tplMatch && tplMatch[1]) {
           const tplPath = tplMatch[1];
           const escaped = tplPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           const regex = new RegExp(`templateUrl:\\s*['"]${escaped}['"]`, "g");
-          const updated = currentCode.replace(regex, `template: '<div class="component-container"></div>'`);
+          const updated = currentCode.replace(
+            regex,
+            `template: '<div class="component-container"></div>'`,
+          );
           if (updated !== currentCode) {
             currentCode = updated;
-            repairsApplied.push(`Replaced missing template file '${tplPath}' with inline template`);
+            repairsApplied.push(
+              `Replaced missing template file '${tplPath}' with inline template`,
+            );
           }
         }
       }
@@ -549,7 +751,9 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     // 4h. Repair missing Angular stylesheet file
     for (const diag of diagnostics) {
       if (
-        /Could not (?:resolve|find) (?:stylesheet file\s+)?'([^']+\.css)'/i.test(diag.message) ||
+        /Could not (?:resolve|find) (?:stylesheet file\s+)?'([^']+\.css)'/i.test(
+          diag.message,
+        ) ||
         /Cannot find module '([^']+\.css)'/i.test(diag.message) ||
         /Failed to resolve (?:import )?'([^']+\.css)'/i.test(diag.message)
       ) {
@@ -557,20 +761,33 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         if (cssMatch && cssMatch[1]) {
           const cssPath = cssMatch[1];
           const escaped = cssPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const styleUrlRegex = new RegExp(`styleUrl:\\s*['"]${escaped}['"]`, "g");
-          const styleUrlsRegex = new RegExp(`styleUrls:\\s*\\[[^\\]]*${escaped}[^\\]]*\\]`, "g");
+          const styleUrlRegex = new RegExp(
+            `styleUrl:\\s*['"]${escaped}['"]`,
+            "g",
+          );
+          const styleUrlsRegex = new RegExp(
+            `styleUrls:\\s*\\[[^\\]]*${escaped}[^\\]]*\\]`,
+            "g",
+          );
           let updated = currentCode.replace(styleUrlRegex, `styles: []`);
           updated = updated.replace(styleUrlsRegex, `styles: []`);
           if (updated !== currentCode) {
             currentCode = updated;
-            repairsApplied.push(`Replaced missing stylesheet '${cssPath}' with inline styles`);
+            repairsApplied.push(
+              `Replaced missing stylesheet '${cssPath}' with inline styles`,
+            );
           }
         }
       }
     }
 
-    if (targetFilePath && (currentCode.includes("styleUrl") || currentCode.includes("styleUrls"))) {
-      const match = currentCode.match(/styleUrls?:\s*(?:['"]([^'"]+\.css)['"]|\[\s*['"]([^'"]+\.css)['"]\s*\])/);
+    if (
+      targetFilePath &&
+      (currentCode.includes("styleUrl") || currentCode.includes("styleUrls"))
+    ) {
+      const match = currentCode.match(
+        /styleUrls?:\s*(?:['"]([^'"]+\.css)['"]|\[\s*['"]([^'"]+\.css)['"]\s*\])/,
+      );
       if (match) {
         const relCss = match[1] || match[2];
         if (relCss && relCss.startsWith(".")) {
@@ -578,11 +795,22 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           if (!fs.existsSync(absCss)) {
             try {
               fs.mkdirSync(path.dirname(absCss), { recursive: true });
-              fs.writeFileSync(absCss, "/* auto-generated component styles */\n", "utf8");
-              repairsApplied.push(`Created missing stylesheet file at '${relCss}'`);
+              fs.writeFileSync(
+                absCss,
+                "/* auto-generated component styles */\n",
+                "utf8",
+              );
+              repairsApplied.push(
+                `Created missing stylesheet file at '${relCss}'`,
+              );
             } catch {
-              currentCode = currentCode.replace(/styleUrls?:\s*(?:['"][^'"]+['"]|\[[^\]]*\])/g, "styles: []");
-              repairsApplied.push(`Replaced unresolvable stylesheet '${relCss}' with inline styles`);
+              currentCode = currentCode.replace(
+                /styleUrls?:\s*(?:['"][^'"]+['"]|\[[^\]]*\])/g,
+                "styles: []",
+              );
+              repairsApplied.push(
+                `Replaced unresolvable stylesheet '${relCss}' with inline styles`,
+              );
             }
           }
         }
@@ -591,33 +819,48 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 4i. Repair TS2377: Constructors for derived classes must contain a 'super' call
     const hasMissingSuper = diagnostics.some(
-      (d) => d.errorCode === "TS2377" || /Constructors for derived classes must contain a 'super' call/i.test(d.message)
+      (d) =>
+        d.errorCode === "TS2377" ||
+        /Constructors for derived classes must contain a 'super' call/i.test(
+          d.message,
+        ),
     );
     if (hasMissingSuper) {
       currentCode = currentCode.replace(
         /(constructor\s*\([^)]*\)\s*\{)(?!\s*super\s*\()/g,
-        "$1\n    super(...([] as any));"
+        "$1\n    super(...([] as any));",
       );
-      repairsApplied.push("Injected required 'super(...([] as any))' call into derived class constructor");
+      repairsApplied.push(
+        "Injected required 'super(...([] as any))' call into derived class constructor",
+      );
     }
 
     // 4j. Repair TS17009: 'super' must be called before accessing 'this'
     const hasSuperAfterThis = diagnostics.some(
-      (d) => d.errorCode === "TS17009" || /'super' must be called before accessing 'this'/i.test(d.message)
+      (d) =>
+        d.errorCode === "TS17009" ||
+        /'super' must be called before accessing 'this'/i.test(d.message),
     );
     if (hasSuperAfterThis) {
       currentCode = currentCode.replace(
         /(constructor\s*\([^)]*\)\s*\{)([\s\S]*?)(\bsuper\s*\([^)]*\);?)/,
         (_match, ctorHead, bodyBeforeSuper, superCall) => {
           return `${ctorHead}\n    ${superCall}\n${bodyBeforeSuper.replace(superCall, "")}`;
-        }
+        },
       );
-      repairsApplied.push("Moved 'super()' call to beginning of constructor before accessing 'this'");
+      repairsApplied.push(
+        "Moved 'super()' call to beginning of constructor before accessing 'this'",
+      );
     }
 
     // 5. Repair TS2834: Explicit .js file extensions in relative imports
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2834" || /Relative import paths need explicit file extensions/i.test(diag.message)) {
+      if (
+        diag.errorCode === "TS2834" ||
+        /Relative import paths need explicit file extensions/i.test(
+          diag.message,
+        )
+      ) {
         const suggestionMatch = diag.message.match(/Did you mean '([^']+)'\?/i);
         if (suggestionMatch && suggestionMatch[1]) {
           const suggestedPath = suggestionMatch[1];
@@ -627,7 +870,9 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           const updated = currentCode.replace(regex, `$1${suggestedPath}$2`);
           if (updated !== currentCode) {
             currentCode = updated;
-            repairsApplied.push(`Added missing .js extension to '${suggestedPath}'`);
+            repairsApplied.push(
+              `Added missing .js extension to '${suggestedPath}'`,
+            );
           }
         }
       }
@@ -635,20 +880,26 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // Fallback pass: ensure all relative imports ending without an extension get .js
     const relativeImportRegex = /(from\s+['"])((\.\.?\/)[^'"\n]+)(['"])/g;
-    const extendedCode = currentCode.replace(relativeImportRegex, (match, prefix, importPath, _relPrefix, suffix) => {
-      if (/\.[a-zA-Z0-9]+$/.test(importPath)) {
-        return match;
-      }
-      repairsApplied.push(`Appended .js extension to '${importPath}'`);
-      return `${prefix}${importPath}.js${suffix}`;
-    });
+    const extendedCode = currentCode.replace(
+      relativeImportRegex,
+      (match, prefix, importPath, _relPrefix, suffix) => {
+        if (/\.[a-zA-Z0-9]+$/.test(importPath)) {
+          return match;
+        }
+        repairsApplied.push(`Appended .js extension to '${importPath}'`);
+        return `${prefix}${importPath}.js${suffix}`;
+      },
+    );
     currentCode = extendedCode;
 
     // 5b. Repair TS2300: Duplicate identifier in imports
     let lines = currentCode.split("\n");
     const seenDuplicateSymbols = new Set<string>();
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2300" || /Duplicate identifier '([^']+)'/i.test(diag.message)) {
+      if (
+        diag.errorCode === "TS2300" ||
+        /Duplicate identifier '([^']+)'/i.test(diag.message)
+      ) {
         const dupMatch = diag.message.match(/Duplicate identifier '([^']+)'/i);
         if (dupMatch && dupMatch[1]) {
           const dupName = dupMatch[1];
@@ -662,26 +913,42 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             const targetLine = lines[lineIdx];
             if (targetLine && /^\s*import\b/.test(targetLine)) {
               if (targetLine.includes("{") && targetLine.includes("}")) {
-                const cleaned = targetLine.replace(/\{([^}]+)\}/, (_match, inner) => {
-                  const parts = inner.split(",").map((p: string) => p.trim()).filter(Boolean);
-                  const remaining = parts.filter((p: string) => {
-                    const clean = p.split(/\s+as\s+/)[0]!.trim();
-                    const alias = (p.split(/\s+as\s+/)[1] || clean).trim();
-                    return alias !== dupName && clean !== dupName;
-                  });
-                  if (remaining.length === 0) return "{ }";
-                  return `{ ${remaining.join(", ")} }`;
-                });
+                const cleaned = targetLine.replace(
+                  /\{([^}]+)\}/,
+                  (_match, inner) => {
+                    const parts = inner
+                      .split(",")
+                      .map((p: string) => p.trim())
+                      .filter(Boolean);
+                    const remaining = parts.filter((p: string) => {
+                      const clean = p.split(/\s+as\s+/)[0]!.trim();
+                      const alias = (p.split(/\s+as\s+/)[1] || clean).trim();
+                      return alias !== dupName && clean !== dupName;
+                    });
+                    if (remaining.length === 0) return "{ }";
+                    return `{ ${remaining.join(", ")} }`;
+                  },
+                );
                 if (/import\s*\{\s*\}\s*from\b/.test(cleaned)) {
                   lines[lineIdx] = "";
-                  repairsApplied.push(`Removed duplicate import statement for '${dupName}' at line ${diag.lineNumber}`);
+                  repairsApplied.push(
+                    `Removed duplicate import statement for '${dupName}' at line ${diag.lineNumber}`,
+                  );
                 } else {
                   lines[lineIdx] = cleaned;
-                  repairsApplied.push(`Removed duplicate imported symbol '${dupName}' from line ${diag.lineNumber}`);
+                  repairsApplied.push(
+                    `Removed duplicate imported symbol '${dupName}' from line ${diag.lineNumber}`,
+                  );
                 }
-              } else if (new RegExp(`import\\s+(?:\\*\\s+as\\s+)?${dupName}\\s+from\\b`).test(targetLine)) {
+              } else if (
+                new RegExp(
+                  `import\\s+(?:\\*\\s+as\\s+)?${dupName}\\s+from\\b`,
+                ).test(targetLine)
+              ) {
                 lines[lineIdx] = "";
-                repairsApplied.push(`Removed duplicate import statement for '${dupName}' at line ${diag.lineNumber}`);
+                repairsApplied.push(
+                  `Removed duplicate import statement for '${dupName}' at line ${diag.lineNumber}`,
+                );
               }
             }
           }
@@ -691,7 +958,13 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 6. Repair TS6133 / TS6138: Unused variable or parameter
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS6133" || diag.errorCode === "TS6138" || /is declared but (?:its value is never read|never used)/i.test(diag.message)) {
+      if (
+        diag.errorCode === "TS6133" ||
+        diag.errorCode === "TS6138" ||
+        /is declared but (?:its value is never read|never used)/i.test(
+          diag.message,
+        )
+      ) {
         const varMatch = diag.message.match(/'([^']+)' is declared but/i);
         if (varMatch && varMatch[1]) {
           const varName = varMatch[1];
@@ -703,22 +976,40 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
               if (/^\s*import\b/.test(targetLine)) {
                 let cleaned = targetLine;
                 // Default import combined with named: import X, { ... } from '...'
-                if (new RegExp(`^(\\s*import\\s+)${varName}\\s*,\\s*\\{`).test(cleaned)) {
-                  cleaned = cleaned.replace(new RegExp(`^(\\s*import\\s+)${varName}\\s*,\\s*\\{`), "$1{");
+                if (
+                  new RegExp(`^(\\s*import\\s+)${varName}\\s*,\\s*\\{`).test(
+                    cleaned,
+                  )
+                ) {
+                  cleaned = cleaned.replace(
+                    new RegExp(`^(\\s*import\\s+)${varName}\\s*,\\s*\\{`),
+                    "$1{",
+                  );
                   lines[lineIdx] = cleaned;
-                  repairsApplied.push(`Removed unused default import '${varName}' at line ${diag.lineNumber}`);
+                  repairsApplied.push(
+                    `Removed unused default import '${varName}' at line ${diag.lineNumber}`,
+                  );
                   continue;
                 }
                 // Default import alone: import X from '...' or namespace: import * as X from '...'
-                if (new RegExp(`^\\s*import\\s+(?:\\*\\s+as\\s+)?${varName}\\s+from\\b`).test(cleaned)) {
+                if (
+                  new RegExp(
+                    `^\\s*import\\s+(?:\\*\\s+as\\s+)?${varName}\\s+from\\b`,
+                  ).test(cleaned)
+                ) {
                   lines[lineIdx] = "";
-                  repairsApplied.push(`Removed unused import '${varName}' statement at line ${diag.lineNumber}`);
+                  repairsApplied.push(
+                    `Removed unused import '${varName}' statement at line ${diag.lineNumber}`,
+                  );
                   continue;
                 }
                 // Inside named imports: import { ..., X, ... } from '...'
                 if (cleaned.includes("{") && cleaned.includes("}")) {
                   cleaned = cleaned.replace(/\{([^}]+)\}/, (_match, inner) => {
-                    const parts = inner.split(",").map((p: string) => p.trim()).filter(Boolean);
+                    const parts = inner
+                      .split(",")
+                      .map((p: string) => p.trim())
+                      .filter(Boolean);
                     const remaining = parts.filter((p: string) => {
                       const clean = p.split(/\s+as\s+/)[0]!.trim();
                       const alias = (p.split(/\s+as\s+/)[1] || clean).trim();
@@ -729,10 +1020,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                   });
                   if (/import\s*\{\s*\}\s*from\b/.test(cleaned)) {
                     lines[lineIdx] = "";
-                    repairsApplied.push(`Removed empty import statement for '${varName}' at line ${diag.lineNumber}`);
+                    repairsApplied.push(
+                      `Removed empty import statement for '${varName}' at line ${diag.lineNumber}`,
+                    );
                   } else {
                     lines[lineIdx] = cleaned;
-                    repairsApplied.push(`Removed unused member '${varName}' from import at line ${diag.lineNumber}`);
+                    repairsApplied.push(
+                      `Removed unused member '${varName}' from import at line ${diag.lineNumber}`,
+                    );
                   }
                   continue;
                 }
@@ -745,20 +1040,25 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 const pubLine = targetLine.replace(/\bprivate\s+/, "public ");
                 if (pubLine !== targetLine) {
                   lines[lineIdx] = pubLine;
-                  repairsApplied.push(`Converted unused private member '${varName}' to public at line ${diag.lineNumber}`);
+                  repairsApplied.push(
+                    `Converted unused private member '${varName}' to public at line ${diag.lineNumber}`,
+                  );
                   continue;
                 }
               }
 
               const isTypeOrClass =
-                /^\s*(?:export\s+)?(?:class|interface|type|enum)\s+/.test(targetLine) ||
-                /\bas\s+[A-Z]/.test(targetLine);
+                /^\s*(?:export\s+)?(?:class|interface|type|enum)\s+/.test(
+                  targetLine,
+                ) || /\bas\s+[A-Z]/.test(targetLine);
 
               if (!isTypeOrClass) {
                 if (varName.startsWith("_")) {
                   // Already prefixed with underscore but still failing noUnusedLocals: suppress with @ts-ignore
                   lines[lineIdx] = "// @ts-ignore\n" + lines[lineIdx];
-                  repairsApplied.push(`Suppressed unused local '${varName}' with @ts-ignore at line ${diag.lineNumber}`);
+                  repairsApplied.push(
+                    `Suppressed unused local '${varName}' with @ts-ignore at line ${diag.lineNumber}`,
+                  );
                 } else {
                   const parts = targetLine.split(/(['"][^'"]*['"])/);
                   const replacedParts = parts.map((part) => {
@@ -771,7 +1071,9 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                   const newLine = replacedParts.join("");
                   if (newLine !== targetLine) {
                     lines[lineIdx] = newLine;
-                    repairsApplied.push(`Prefixed unused symbol '${varName}' with '_' at line ${diag.lineNumber}`);
+                    repairsApplied.push(
+                      `Prefixed unused symbol '${varName}' with '_' at line ${diag.lineNumber}`,
+                    );
                   }
                 }
               }
@@ -784,13 +1086,25 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 7. Repair TS2345 / TS2322: 'ScriptTarget | undefined' not assignable to 'ScriptTarget'
     for (const diag of diagnostics) {
-      if ((diag.errorCode === "TS2345" || diag.errorCode === "TS2322") && /ScriptTarget \| undefined/i.test(diag.message)) {
+      if (
+        (diag.errorCode === "TS2345" || diag.errorCode === "TS2322") &&
+        /ScriptTarget \| undefined/i.test(diag.message)
+      ) {
         if (diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
           const lineIdx = diag.lineNumber - 1;
           const targetLine = lines[lineIdx];
-          if (targetLine && targetLine.includes(".target") && !targetLine.includes(".target ??")) {
-            lines[lineIdx] = targetLine.replace(/\.target\b/g, ".target ?? ts.ScriptTarget.ES2022");
-            repairsApplied.push(`Added nullish fallback for ScriptTarget at line ${diag.lineNumber}`);
+          if (
+            targetLine &&
+            targetLine.includes(".target") &&
+            !targetLine.includes(".target ??")
+          ) {
+            lines[lineIdx] = targetLine.replace(
+              /\.target\b/g,
+              ".target ?? ts.ScriptTarget.ES2022",
+            );
+            repairsApplied.push(
+              `Added nullish fallback for ScriptTarget at line ${diag.lineNumber}`,
+            );
           }
         }
       }
@@ -799,19 +1113,37 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 8. Repair TS7006: Parameter implicitly has an 'any' type
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS7006" || /Parameter '([^']+)' implicitly has an 'any' type/i.test(diag.message)) {
-        const paramMatch = diag.message.match(/Parameter '([^']+)' implicitly has an 'any' type/i);
-        if (paramMatch && paramMatch[1] && diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+      if (
+        diag.errorCode === "TS7006" ||
+        /Parameter '([^']+)' implicitly has an 'any' type/i.test(diag.message)
+      ) {
+        const paramMatch = diag.message.match(
+          /Parameter '([^']+)' implicitly has an 'any' type/i,
+        );
+        if (
+          paramMatch &&
+          paramMatch[1] &&
+          diag.lineNumber > 0 &&
+          diag.lineNumber <= lines.length
+        ) {
           const param = paramMatch[1];
           const lineIdx = diag.lineNumber - 1;
           const line = lines[lineIdx];
           if (line) {
             const updatedLine = line
-              .replace(new RegExp(`(\\()\\s*${param}\\s*([,)])`), `$1${param}: any$2`)
-              .replace(new RegExp(`(,\\s*)${param}\\s*([,)])`), `$1${param}: any$2`);
+              .replace(
+                new RegExp(`(\\()\\s*${param}\\s*([,)])`),
+                `$1${param}: any$2`,
+              )
+              .replace(
+                new RegExp(`(,\\s*)${param}\\s*([,)])`),
+                `$1${param}: any$2`,
+              );
             if (updatedLine !== line) {
               lines[lineIdx] = updatedLine;
-              repairsApplied.push(`Added ': any' type annotation to implicit parameter '${param}' at line ${diag.lineNumber}`);
+              repairsApplied.push(
+                `Added ': any' type annotation to implicit parameter '${param}' at line ${diag.lineNumber}`,
+              );
             }
           }
         }
@@ -821,21 +1153,41 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 8b. Repair TS2339: Property 'X' does not exist on type 'Y'
     for (const diag of diagnostics) {
-      if (diag.errorCode === "TS2339" || /Property '([^']+)' does not exist on type/i.test(diag.message)) {
-        const propMatch = diag.message.match(/Property '([^']+)' does not exist on type/i);
+      if (
+        diag.errorCode === "TS2339" ||
+        /Property '([^']+)' does not exist on type/i.test(diag.message)
+      ) {
+        const propMatch = diag.message.match(
+          /Property '([^']+)' does not exist on type/i,
+        );
         if (propMatch && propMatch[1]) {
           const propName = propMatch[1];
-          const isMockProp = /^(mock|mockReturnValue|mockResolvedValue|mockImplementation|mockClear|mockReset|mockRejectedValue|mockReturnValueOnce|mockResolvedValueOnce|mockImplementationOnce|mockReturnThis|called|calledOnce)$/.test(propName);
+          const isMockProp =
+            /^(mock|mockReturnValue|mockResolvedValue|mockImplementation|mockClear|mockReset|mockRejectedValue|mockReturnValueOnce|mockResolvedValueOnce|mockImplementationOnce|mockReturnThis|called|calledOnce)$/.test(
+              propName,
+            );
 
           // If the target interface is defined locally, add an index signature to satisfy the compiler
-          const typeMatch = diag.message.match(/does not exist on type '([^']+)'/i);
+          const typeMatch = diag.message.match(
+            /does not exist on type '([^']+)'/i,
+          );
           if (typeMatch && typeMatch[1]) {
             const typeName = typeMatch[1];
             const ifaceRegex = new RegExp(`interface\\s+${typeName}\\s*\\{`);
-            if (ifaceRegex.test(currentCode) && !currentCode.includes(`interface ${typeName} {\n  [key: string]: any;`)) {
-              currentCode = currentCode.replace(ifaceRegex, `interface ${typeName} {\n  [key: string]: any;`);
+            if (
+              ifaceRegex.test(currentCode) &&
+              !currentCode.includes(
+                `interface ${typeName} {\n  [key: string]: any;`,
+              )
+            ) {
+              currentCode = currentCode.replace(
+                ifaceRegex,
+                `interface ${typeName} {\n  [key: string]: any;`,
+              );
               lines = currentCode.split("\n");
-              repairsApplied.push(`Added index signature to local interface '${typeName}' for property '${propName}'`);
+              repairsApplied.push(
+                `Added index signature to local interface '${typeName}' for property '${propName}'`,
+              );
             }
           }
 
@@ -847,12 +1199,24 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           if (diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
             const lineIdx = diag.lineNumber - 1;
             const targetLine = lines[lineIdx];
-            if (targetLine && targetLine.includes(`.${propName}`) && !targetLine.includes(`as any).${propName}`)) {
-              const castRegex = new RegExp(`(?<![\\w$.])((?:this\\.)?[a-zA-Z0-9_$]+(?:\\.[a-zA-Z0-9_$]+)*)\\.${propName}\\b`, "g");
-              const updatedLine = targetLine.replace(castRegex, `($1 as any).${propName}`);
+            if (
+              targetLine &&
+              targetLine.includes(`.${propName}`) &&
+              !targetLine.includes(`as any).${propName}`)
+            ) {
+              const castRegex = new RegExp(
+                `(?<![\\w$.])((?:this\\.)?[a-zA-Z0-9_$]+(?:\\.[a-zA-Z0-9_$]+)*)\\.${propName}\\b`,
+                "g",
+              );
+              const updatedLine = targetLine.replace(
+                castRegex,
+                `($1 as any).${propName}`,
+              );
               if (updatedLine !== targetLine) {
                 lines[lineIdx] = updatedLine;
-                repairsApplied.push(`Cast target of '.${propName}' to 'any' at line ${diag.lineNumber}`);
+                repairsApplied.push(
+                  `Cast target of '.${propName}' to 'any' at line ${diag.lineNumber}`,
+                );
               }
             }
           }
@@ -863,7 +1227,9 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 9. Repair TS1002 / TS1005: Unterminated string literal or syntax error on EOF truncated file
     const hasUnterminatedEof = diagnostics.some(
-      (d) => (d.errorCode === "TS1002" || d.errorCode === "TS1005") && d.lineNumber >= Math.max(1, lines.length - 2)
+      (d) =>
+        (d.errorCode === "TS1002" || d.errorCode === "TS1005") &&
+        d.lineNumber >= Math.max(1, lines.length - 2),
     );
     if (hasUnterminatedEof && lines.length >= 2) {
       let lastIdx = lines.length - 1;
@@ -872,9 +1238,16 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
       if (lastIdx >= 0) {
         const lastLine = lines[lastIdx]?.trim() || "";
-        if (lastLine.endsWith('"') || lastLine.endsWith("'") || lastLine.endsWith("(") || !lastLine.endsWith(";")) {
+        if (
+          lastLine.endsWith('"') ||
+          lastLine.endsWith("'") ||
+          lastLine.endsWith("(") ||
+          !lastLine.endsWith(";")
+        ) {
           lines.splice(lastIdx, 1);
-          repairsApplied.push(`Stripped truncated trailing line ${lastIdx + 1} with unterminated string`);
+          repairsApplied.push(
+            `Stripped truncated trailing line ${lastIdx + 1} with unterminated string`,
+          );
         }
         const codeSoFar = lines.join("\n");
         const openBraces = (codeSoFar.match(/\{/g) || []).length;
@@ -885,20 +1258,30 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         let suffix = "";
         const matchedPairs = Math.min(
           Math.max(0, openParens - closeParens),
-          Math.max(0, openBraces - closeBraces)
+          Math.max(0, openBraces - closeBraces),
         );
         for (let i = 0; i < matchedPairs; i++) {
           suffix += "});\n";
         }
-        for (let i = 0; i < Math.max(0, (openParens - closeParens) - matchedPairs); i++) {
+        for (
+          let i = 0;
+          i < Math.max(0, openParens - closeParens - matchedPairs);
+          i++
+        ) {
           suffix += ");\n";
         }
-        for (let i = 0; i < Math.max(0, (openBraces - closeBraces) - matchedPairs); i++) {
+        for (
+          let i = 0;
+          i < Math.max(0, openBraces - closeBraces - matchedPairs);
+          i++
+        ) {
           suffix += "}\n";
         }
         if (suffix.length > 0) {
           lines.push(suffix.trimEnd());
-          repairsApplied.push("Balanced unclosed braces and parentheses from truncated EOF");
+          repairsApplied.push(
+            "Balanced unclosed braces and parentheses from truncated EOF",
+          );
         }
       }
       currentCode = lines.join("\n");
@@ -910,14 +1293,17 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     return {
       repairedCode: currentCode,
-      repairsApplied
+      repairsApplied,
     };
   }
 
   /**
    * Resolves a module base name to a valid relative TypeScript/JavaScript import path.
    */
-  private resolveWorkspaceModule(baseName: string, targetFilePath?: string): string | null {
+  private resolveWorkspaceModule(
+    baseName: string,
+    targetFilePath?: string,
+  ): string | null {
     let curr = process.cwd();
     let repoRoot = curr;
     while (curr && curr !== path.dirname(curr)) {
@@ -943,7 +1329,10 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         targetAbs = path.resolve(repoRoot, targetFilePath);
       }
     } else {
-      targetAbs = path.join(repoRoot, "packages/engine/src/tests/placeholder.ts");
+      targetAbs = path.join(
+        repoRoot,
+        "packages/engine/src/tests/placeholder.ts",
+      );
     }
 
     const fromDir = path.dirname(targetAbs);
@@ -955,17 +1344,30 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
   /**
    * Recursively finds a file matching baseName.ts or baseName.js in directory tree.
    */
-  private findFileRecursive(dir: string, baseName: string, depth = 0): string | null {
+  private findFileRecursive(
+    dir: string,
+    baseName: string,
+    depth = 0,
+  ): string | null {
     if (depth > 6) return null;
     try {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
-        if (entry.name === "node_modules" || entry.name === "dist" || entry.name === ".git" || entry.name === "coverage") continue;
+        if (
+          entry.name === "node_modules" ||
+          entry.name === "dist" ||
+          entry.name === ".git" ||
+          entry.name === "coverage"
+        )
+          continue;
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           const res = this.findFileRecursive(full, baseName, depth + 1);
           if (res) return res;
-        } else if (entry.name === `${baseName}.ts` || entry.name === `${baseName}.js`) {
+        } else if (
+          entry.name === `${baseName}.ts` ||
+          entry.name === `${baseName}.js`
+        ) {
           return full;
         }
       }
@@ -978,7 +1380,11 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
   /**
    * Replaces an identifier safely outside of string literals, quotes, and import source paths.
    */
-  private replaceIdentifierSafely(code: string, wrongName: string, rightName: string): string {
+  private replaceIdentifierSafely(
+    code: string,
+    wrongName: string,
+    rightName: string,
+  ): string {
     const lines = code.split("\n");
     const wrongRegex = new RegExp(`\\b${wrongName}\\b`, "g");
     const updatedLines = lines.map((line) => {
@@ -993,7 +1399,11 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       const parts = line.split(/(['"`][^'"`]*['"`])/);
       return parts
         .map((part) => {
-          if (part.startsWith("'") || part.startsWith('"') || part.startsWith("`")) {
+          if (
+            part.startsWith("'") ||
+            part.startsWith('"') ||
+            part.startsWith("`")
+          ) {
             return part;
           }
           return part.replace(wrongRegex, rightName);

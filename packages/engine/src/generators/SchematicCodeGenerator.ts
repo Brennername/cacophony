@@ -3,7 +3,10 @@ import ts from "typescript";
 export interface MethodContract {
   readonly name: string;
   readonly description?: string | undefined;
-  readonly parameters: readonly { readonly name: string; readonly type: string }[];
+  readonly parameters: readonly {
+    readonly name: string;
+    readonly type: string;
+  }[];
   readonly returnType: string;
   readonly isAsync?: boolean | undefined;
   readonly isStatic?: boolean | undefined;
@@ -74,7 +77,10 @@ export class SchematicCodeGenerator {
     }
 
     // 3. Class Declaration
-    const exportPrefix = spec.exportKind === "export default" ? "export default class" : "export class";
+    const exportPrefix =
+      spec.exportKind === "export default"
+        ? "export default class"
+        : "export class";
     lines.push(`${exportPrefix} ${spec.className} {`);
 
     // 4. Properties
@@ -97,13 +103,20 @@ export class SchematicCodeGenerator {
       }
       const asyncPrefix = method.isAsync ? "async " : "";
       const staticPrefix = method.isStatic ? "static " : "";
-      const params = method.parameters.map((p) => `${p.name}: ${p.type}`).join(", ");
-      const retType = method.isAsync && !method.returnType.startsWith("Promise<")
-        ? `Promise<${method.returnType}>`
-        : method.returnType;
+      const params = method.parameters
+        .map((p) => `${p.name}: ${p.type}`)
+        .join(", ");
+      const retType =
+        method.isAsync && !method.returnType.startsWith("Promise<")
+          ? `Promise<${method.returnType}>`
+          : method.returnType;
 
-      lines.push(`  public ${staticPrefix}${asyncPrefix}${method.name}(${params}): ${retType} {`);
-      lines.push(`    ${SchematicCodeGenerator.STUB_MARKER_PREFIX} ${method.name} */`);
+      lines.push(
+        `  public ${staticPrefix}${asyncPrefix}${method.name}(${params}): ${retType} {`,
+      );
+      lines.push(
+        `    ${SchematicCodeGenerator.STUB_MARKER_PREFIX} ${method.name} */`,
+      );
       lines.push("  }");
       lines.push("");
     }
@@ -114,7 +127,7 @@ export class SchematicCodeGenerator {
     return {
       className: spec.className,
       sourceCode: lines.join("\n"),
-      methodCount: spec.methods.length
+      methodCount: spec.methods.length,
     };
   }
 
@@ -122,25 +135,49 @@ export class SchematicCodeGenerator {
    * Traverses a scaffolded TypeScript file and extracts isolated method units
    * ready for individual distribution to larger implementer models.
    */
-  public extractMethodTargets(sourceCode: string, fileName = "scaffold.ts"): readonly TargetedMethodUnit[] {
-    const sourceFile = ts.createSourceFile(fileName, sourceCode, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  public extractMethodTargets(
+    sourceCode: string,
+    fileName = "scaffold.ts",
+  ): readonly TargetedMethodUnit[] {
+    const sourceFile = ts.createSourceFile(
+      fileName,
+      sourceCode,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
     const units: TargetedMethodUnit[] = [];
 
     const visit = (node: ts.Node): void => {
       if (ts.isClassDeclaration(node) && node.name) {
         const className = node.name.text;
         const classProperties = node.members
-          .filter((m): m is ts.PropertyDeclaration => ts.isPropertyDeclaration(m) && Boolean(m.name))
+          .filter(
+            (m): m is ts.PropertyDeclaration =>
+              ts.isPropertyDeclaration(m) && Boolean(m.name),
+          )
           .map((m) => `  ${m.getText(sourceFile)}`);
 
         for (const member of node.members) {
-          if (ts.isMethodDeclaration(member) && member.name && ts.isIdentifier(member.name)) {
+          if (
+            ts.isMethodDeclaration(member) &&
+            member.name &&
+            ts.isIdentifier(member.name)
+          ) {
             const methodName = member.name.text;
             const methodBody = member.body?.getText(sourceFile) || "";
 
-            if (methodBody.includes(SchematicCodeGenerator.STUB_MARKER_PREFIX)) {
-              const signature = member.getText(sourceFile).slice(0, member.body?.getStart(sourceFile) ?? member.end).trim();
-              const isAsync = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
+            if (
+              methodBody.includes(SchematicCodeGenerator.STUB_MARKER_PREFIX)
+            ) {
+              const signature = member
+                .getText(sourceFile)
+                .slice(0, member.body?.getStart(sourceFile) ?? member.end)
+                .trim();
+              const isAsync =
+                member.modifiers?.some(
+                  (m) => m.kind === ts.SyntaxKind.AsyncKeyword,
+                ) ?? false;
               const returnType = member.type?.getText(sourceFile) ?? "void";
 
               const prompt = [
@@ -152,7 +189,7 @@ export class SchematicCodeGenerator {
                 "",
                 "Implement the complete method body for this signature.",
                 "Return only the method body statements wrapped in braces { ... }.",
-                "Strict TypeScript typing required. No empty stubs or unhandled errors."
+                "Strict TypeScript typing required. No empty stubs or unhandled errors.",
               ].join("\n");
 
               units.push({
@@ -161,7 +198,7 @@ export class SchematicCodeGenerator {
                 signature,
                 prompt,
                 isAsync,
-                returnType
+                returnType,
               });
             }
           }
@@ -180,21 +217,44 @@ export class SchematicCodeGenerator {
   public mergeMethodImplementations(
     sourceCode: string,
     implementations: ReadonlyMap<string, string>,
-    fileName = "scaffold.ts"
+    fileName = "scaffold.ts",
   ): string {
-    const sourceFile = ts.createSourceFile(fileName, sourceCode, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    const replacements: Array<{ start: number; end: number; text: string }> = [];
+    const sourceFile = ts.createSourceFile(
+      fileName,
+      sourceCode,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
+    const replacements: Array<{ start: number; end: number; text: string }> =
+      [];
 
     const visit = (node: ts.Node): void => {
-      if (ts.isMethodDeclaration(node) && node.name && ts.isIdentifier(node.name) && node.body) {
+      if (
+        ts.isMethodDeclaration(node) &&
+        node.name &&
+        ts.isIdentifier(node.name) &&
+        node.body
+      ) {
         const methodName = node.name.text;
         const impl = implementations.get(methodName);
 
-        if (impl && node.body.getText(sourceFile).includes(SchematicCodeGenerator.STUB_MARKER_PREFIX)) {
+        if (
+          impl &&
+          node.body
+            .getText(sourceFile)
+            .includes(SchematicCodeGenerator.STUB_MARKER_PREFIX)
+        ) {
           // Normalize implementation: ensure it has braces
           let cleanImpl = impl.trim();
-          if (cleanImpl.startsWith("```typescript") || cleanImpl.startsWith("```ts")) {
-            cleanImpl = cleanImpl.replace(/^```(?:typescript|ts)?\s*/, "").replace(/```\s*$/, "").trim();
+          if (
+            cleanImpl.startsWith("```typescript") ||
+            cleanImpl.startsWith("```ts")
+          ) {
+            cleanImpl = cleanImpl
+              .replace(/^```(?:typescript|ts)?\s*/, "")
+              .replace(/```\s*$/, "")
+              .trim();
           }
           if (!cleanImpl.startsWith("{")) {
             cleanImpl = `{\n    ${cleanImpl.split("\n").join("\n    ")}\n  }`;
@@ -203,7 +263,7 @@ export class SchematicCodeGenerator {
           replacements.push({
             start: node.body.getStart(sourceFile),
             end: node.body.getEnd(),
-            text: cleanImpl
+            text: cleanImpl,
           });
         }
       }

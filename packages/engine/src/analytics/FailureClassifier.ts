@@ -44,7 +44,12 @@ export class ExecutionTimeoutError extends Error {
   public readonly taskId?: string | undefined;
   public readonly model?: string | undefined;
 
-  constructor(message: string, timeoutMs: number, taskId?: string, model?: string) {
+  constructor(
+    message: string,
+    timeoutMs: number,
+    taskId?: string,
+    model?: string,
+  ) {
     super(message);
     this.name = "ExecutionTimeoutError";
     this.timeoutMs = timeoutMs;
@@ -55,11 +60,14 @@ export class ExecutionTimeoutError extends Error {
 }
 
 export class FailureClassifier {
-
-  public static classify(errorOrMessage: Error | string, context?: { exitCode?: number; logOutput?: string }): ClassificationResult {
+  public static classify(
+    errorOrMessage: Error | string,
+    context?: { exitCode?: number; logOutput?: string },
+  ): ClassificationResult {
     let text = "";
     if (errorOrMessage instanceof Error) {
-      text = `${errorOrMessage.name}: ${errorOrMessage.message}\n${errorOrMessage.stack || ""}\n${context?.logOutput ?? ""}`.trim();
+      text =
+        `${errorOrMessage.name}: ${errorOrMessage.message}\n${errorOrMessage.stack || ""}\n${context?.logOutput ?? ""}`.trim();
     } else {
       text = `${errorOrMessage}\n${context?.logOutput ?? ""}`.trim();
     }
@@ -71,7 +79,7 @@ export class FailureClassifier {
         confidence: 1.0,
         matchedPattern: "execution_timeout_error",
         rootCauseSnippet: errorOrMessage.message,
-        locations
+        locations,
       };
     }
 
@@ -81,29 +89,31 @@ export class FailureClassifier {
         confidence: 0.95,
         matchedPattern: "thermal_governor",
         rootCauseSnippet: "GPU thermal limit exceeded nominal threshold",
-        locations
+        locations,
       };
     }
 
     if (
       /\bcontext\s+(?:window\s+|length\s+|size\s+)?overflow\b|\btoken\s+(?:count\s+|window\s+|size\s+)?limit\s+exceeded\b|\bout of memory\b|\boom\b|\bvram exhausted\b/i.test(
-        text
+        text,
       ) ||
-      (text.toLowerCase().includes("context") && text.toLowerCase().includes("overflow")) ||
-      (text.toLowerCase().includes("token") && text.toLowerCase().includes("limit exceeded"))
+      (text.toLowerCase().includes("context") &&
+        text.toLowerCase().includes("overflow")) ||
+      (text.toLowerCase().includes("token") &&
+        text.toLowerCase().includes("limit exceeded"))
     ) {
       return {
         category: "CONTEXT_OVERFLOW",
         confidence: 0.95,
         matchedPattern: "context_window",
         rootCauseSnippet: "Context token window limit or VRAM exhaustion",
-        locations
+        locations,
       };
     }
 
     if (
       /timeout|timed out|exceeded maximum command duration|executiontimeouterror|watchdog(?:\s+\w+)?\s+timeout|aborted by watchdog/i.test(
-        text
+        text,
       ) ||
       context?.exitCode === 124
     ) {
@@ -111,69 +121,85 @@ export class FailureClassifier {
         category: "TIMEOUT",
         confidence: 0.95,
         matchedPattern: "timeout_signal",
-        rootCauseSnippet: "Execution exceeded allocated runtime timeout or aborted by watchdog timer",
-        locations
+        rootCauseSnippet:
+          "Execution exceeded allocated runtime timeout or aborted by watchdog timer",
+        locations,
       };
     }
 
     if (
       /cannot find module|module not found|no such package|package\s+\S+(?:\s+\S+){0,3}\s+not found|unresolved import|could not find crate|dependency\s+\S+(?:\s+\S+){0,3}\s+not found|has no exported member|could not find\s+['"]?[^\s'"]+dist\//i.test(
-        text
+        text,
       )
     ) {
-      const match = text.match(/(?:cannot find module|module not found|could not find crate|has no exported member)\s+['"]?([^'"\n]+)['"]?/i);
+      const match = text.match(
+        /(?:cannot find module|module not found|could not find crate|has no exported member)\s+['"]?([^'"\n]+)['"]?/i,
+      );
       return {
         category: "MISSING_DEPENDENCY",
         confidence: 0.95,
         matchedPattern: "missing_dependency",
-        rootCauseSnippet: match ? match[0] : "Missing project dependency or module",
-        locations
+        rootCauseSnippet: match
+          ? match[0]
+          : "Missing project dependency or module",
+        locations,
       };
     }
 
-    if (/banned import|disallowed root file|forbidden command|security guardrail|rejected unsafe|generated replacement shrinks|left a stub|stripped\s+\S+(?:\s+\S+){0,4}\s+comment block/i.test(text)) {
+    if (
+      /banned import|disallowed root file|forbidden command|security guardrail|rejected unsafe|generated replacement shrinks|left a stub|stripped\s+\S+(?:\s+\S+){0,4}\s+comment block/i.test(
+        text,
+      )
+    ) {
       return {
         category: "BANNED_IMPORT",
         confidence: 0.95,
         matchedPattern: "security_guardrail",
-        rootCauseSnippet: "Encountered disallowed dependency or security/integrity violation",
-        locations
+        rootCauseSnippet:
+          "Encountered disallowed dependency or security/integrity violation",
+        locations,
       };
     }
 
     if (
       /error TS\d+:|cannot find namespace|cannot find name|implicitly has an 'any' type|type\s+\S+(?:\s+\S+){0,4}\s+not assignable|property\s+\S+(?:\s+\S+){0,4}\s+does not exist on type|is declared but its value is never read|mismatched types|type mismatch|compilation check failed|package build check failed|tsc -b/i.test(
-        text
+        text,
       )
     ) {
-      const match = text.match(/(?:error TS\d+:[^\n]+|cannot find namespace[^\n]+|cannot find name[^\n]+|mismatched types:[^\n]+|type mismatch:[^\n]+|compilation check failed[^\n]*)/i);
+      const match = text.match(
+        /(?:error TS\d+:[^\n]+|cannot find namespace[^\n]+|cannot find name[^\n]+|mismatched types:[^\n]+|type mismatch:[^\n]+|compilation check failed[^\n]*)/i,
+      );
       return {
         category: "TYPE_MISMATCH",
         confidence: 0.9,
         matchedPattern: "type_system",
-        rootCauseSnippet: match ? match[0] : "Type mismatch or compiler type-check error",
-        locations
+        rootCauseSnippet: match
+          ? match[0]
+          : "Type mismatch or compiler type-check error",
+        locations,
       };
     }
 
     if (
       /SyntaxError:|unexpected token|parse error|parsing error|syntax error|not parseable|unterminated string literal|expression expected|self-healing parser failed|no code block extracted|expected `[^`\r\n]+`, found/i.test(
-        text
+        text,
       )
     ) {
-      const match = text.match(/(?:SyntaxError:[^\n]+|syntax error:[^\n]+|not parseable[^\n]*|unterminated string literal[^\n]*|expected `[^`\r\n]+`, found[^\n]+)/i);
+      const match = text.match(
+        /(?:SyntaxError:[^\n]+|syntax error:[^\n]+|not parseable[^\n]*|unterminated string literal[^\n]*|expected `[^`\r\n]+`, found[^\n]+)/i,
+      );
       return {
         category: "SYNTAX_ERROR",
         confidence: 0.95,
         matchedPattern: "syntax_error",
         rootCauseSnippet: match ? match[0] : "Source code syntax error",
-        locations
+        locations,
       };
     }
 
     if (
       /AssertionError|assert\.|expect\([^\r\n]{0,50}?fail|fail\s+\d+|ERR_ASSERTION|assertion `left == right` failed|--- FAIL:|FAILURE!|test command failed|stage failed verification|failed verification/i.test(
-        text
+        text,
       )
     ) {
       return {
@@ -181,7 +207,7 @@ export class FailureClassifier {
         confidence: 0.9,
         matchedPattern: "test_runner",
         rootCauseSnippet: "Automated test or verification assertion failed",
-        locations
+        locations,
       };
     }
 
@@ -190,20 +216,28 @@ export class FailureClassifier {
       confidence: 0.5,
       matchedPattern: "default",
       rootCauseSnippet: text.slice(0, 120),
-      locations
+      locations,
     };
   }
 
-  public static extractStackLocations(text: string): readonly StackTraceLocation[] {
+  public static extractStackLocations(
+    text: string,
+  ): readonly StackTraceLocation[] {
     const locations: StackTraceLocation[] = [];
 
-    const nodeRegex = /(?:at\s+(?:[^\s()]+\s+)?\(?(?:file:\/\/)?([^\s():]+):(\d+):?(\d+)?\)?)/g;
+    const nodeRegex =
+      /(?:at\s+(?:[^\s()]+\s+)?\(?(?:file:\/\/)?([^\s():]+):(\d+):?(\d+)?\)?)/g;
     let match: RegExpExecArray | null;
     while ((match = nodeRegex.exec(text)) !== null) {
       const file = match[1];
       const line = parseInt(match[2] ?? "0", 10);
       const column = match[3] ? parseInt(match[3], 10) : undefined;
-      if (file && line > 0 && !file.includes("node_modules") && !file.includes("node:internal")) {
+      if (
+        file &&
+        line > 0 &&
+        !file.includes("node_modules") &&
+        !file.includes("node:internal")
+      ) {
         locations.push({ file, line, column });
       }
     }
@@ -246,7 +280,8 @@ export class FailureClassifier {
       }
     }
 
-    const mvnRegex = /\[ERROR\]\s+([^\s:]+\.java):\[(\d+),(\d+)\](?:\s*([^\r\n]+))?/g;
+    const mvnRegex =
+      /\[ERROR\]\s+([^\s:]+\.java):\[(\d+),(\d+)\](?:\s*([^\r\n]+))?/g;
     while ((match = mvnRegex.exec(text)) !== null) {
       const file = match[1];
       const line = parseInt(match[2] ?? "0", 10);

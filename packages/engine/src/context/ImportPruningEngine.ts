@@ -9,17 +9,21 @@ export interface ParsedImport {
 }
 
 export class ImportPruningEngine {
-
   public pruneUnusedImports(
     sourceCode: string,
-    allowedOrRequiredModules: readonly string[] = []
+    allowedOrRequiredModules: readonly string[] = [],
   ): string {
     const trimmed = sourceCode.trim();
     if (!trimmed) return sourceCode;
 
     let sourceFile: ts.SourceFile;
     try {
-      sourceFile = ts.createSourceFile("temp.ts", sourceCode, ts.ScriptTarget.ES2022, true);
+      sourceFile = ts.createSourceFile(
+        "temp.ts",
+        sourceCode,
+        ts.ScriptTarget.ES2022,
+        true,
+      );
     } catch {
       return sourceCode;
     }
@@ -59,7 +63,10 @@ export class ImportPruningEngine {
 
       let isAnySymbolUsed = false;
 
-      if (importClause.name && nonImportIdentifiers.has(importClause.name.text)) {
+      if (
+        importClause.name &&
+        nonImportIdentifiers.has(importClause.name.text)
+      ) {
         isAnySymbolUsed = true;
       }
 
@@ -90,7 +97,9 @@ export class ImportPruningEngine {
 
     let updatedCode = sourceCode;
 
-    importsToRemove.sort((a, b) => b.getStart(sourceFile) - a.getStart(sourceFile));
+    importsToRemove.sort(
+      (a, b) => b.getStart(sourceFile) - a.getStart(sourceFile),
+    );
 
     for (const imp of importsToRemove) {
       const start = imp.getStart(sourceFile);
@@ -113,14 +122,22 @@ export class ImportPruningEngine {
 
     let sourceFile: ts.SourceFile;
     try {
-      sourceFile = ts.createSourceFile("temp.ts", sourceCode, ts.ScriptTarget.ES2022, true);
+      sourceFile = ts.createSourceFile(
+        "temp.ts",
+        sourceCode,
+        ts.ScriptTarget.ES2022,
+        true,
+      );
     } catch {
       return sourceCode;
     }
 
     const importsByModule = new Map<string, ts.ImportDeclaration[]>();
     for (const stmt of sourceFile.statements) {
-      if (ts.isImportDeclaration(stmt) && ts.isStringLiteral(stmt.moduleSpecifier)) {
+      if (
+        ts.isImportDeclaration(stmt) &&
+        ts.isStringLiteral(stmt.moduleSpecifier)
+      ) {
         const mod = stmt.moduleSpecifier.text;
         const list = importsByModule.get(mod) ?? [];
         list.push(stmt);
@@ -151,7 +168,10 @@ export class ImportPruningEngine {
         if (imp.importClause?.name) {
           defaultImport = imp.importClause.name.text;
         }
-        if (imp.importClause?.namedBindings && ts.isNamedImports(imp.importClause.namedBindings)) {
+        if (
+          imp.importClause?.namedBindings &&
+          ts.isNamedImports(imp.importClause.namedBindings)
+        ) {
           for (const el of imp.importClause.namedBindings.elements) {
             namedSymbols.add(el.getText(sourceFile));
           }
@@ -165,7 +185,9 @@ export class ImportPruningEngine {
       }
       const consolidatedStmt = `import ${parts.join(", ")} from "${mod}";`;
 
-      const sortedList = [...list].sort((a, b) => b.getStart(sourceFile) - a.getStart(sourceFile));
+      const sortedList = [...list].sort(
+        (a, b) => b.getStart(sourceFile) - a.getStart(sourceFile),
+      );
       for (let i = 0; i < sortedList.length - 1; i++) {
         const item = sortedList[i]!;
         const start = item.getStart(sourceFile);
@@ -178,9 +200,15 @@ export class ImportPruningEngine {
       const firstItem = sortedList[sortedList.length - 1]!;
       const start = firstItem.getStart(sourceFile);
       const end = firstItem.getEnd();
-      updatedCode = updatedCode.slice(0, start) + consolidatedStmt + updatedCode.slice(end);
+      updatedCode =
+        updatedCode.slice(0, start) + consolidatedStmt + updatedCode.slice(end);
 
-      sourceFile = ts.createSourceFile("temp.ts", updatedCode, ts.ScriptTarget.ES2022, true);
+      sourceFile = ts.createSourceFile(
+        "temp.ts",
+        updatedCode,
+        ts.ScriptTarget.ES2022,
+        true,
+      );
     }
 
     return updatedCode;

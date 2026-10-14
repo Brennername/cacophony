@@ -33,12 +33,14 @@ export const migration016: Migration = {
         { name: "base_commit_hash", type: "TEXT DEFAULT NULL" },
         { name: "failure_reason", type: "TEXT DEFAULT NULL" },
         { name: "parent_task_id", type: "TEXT DEFAULT NULL" },
-        { name: "rehab_status", type: "TEXT DEFAULT 'NONE'" }
+        { name: "rehab_status", type: "TEXT DEFAULT 'NONE'" },
       ];
 
       for (const col of columnsToAdd) {
         try {
-          await driver.execRaw(`ALTER TABLE tasks ADD COLUMN ${col.name} ${col.type};`);
+          await driver.execRaw(
+            `ALTER TABLE tasks ADD COLUMN ${col.name} ${col.type};`,
+          );
         } catch (err: unknown) {
           const msg = String(err);
           if (!msg.includes("duplicate column")) {
@@ -48,8 +50,12 @@ export const migration016: Migration = {
       }
 
       try {
-        await driver.execRaw(`CREATE INDEX IF NOT EXISTS idx_tasks_commit_hash ON tasks(commit_hash);`);
-        await driver.execRaw(`CREATE INDEX IF NOT EXISTS idx_tasks_parent_task_id ON tasks(parent_task_id);`);
+        await driver.execRaw(
+          `CREATE INDEX IF NOT EXISTS idx_tasks_commit_hash ON tasks(commit_hash);`,
+        );
+        await driver.execRaw(
+          `CREATE INDEX IF NOT EXISTS idx_tasks_parent_task_id ON tasks(parent_task_id);`,
+        );
       } catch {
         // non-fatal index creation in SQLite
       }
@@ -69,7 +75,13 @@ export const migration016: Migration = {
         ALTER TABLE tasks DROP COLUMN IF EXISTS commit_hash;
       `);
     } else {
-      const cols = ["rehab_status", "parent_task_id", "failure_reason", "base_commit_hash", "commit_hash"];
+      const cols = [
+        "rehab_status",
+        "parent_task_id",
+        "failure_reason",
+        "base_commit_hash",
+        "commit_hash",
+      ];
       for (const col of cols) {
         try {
           await driver.execRaw(`ALTER TABLE tasks DROP COLUMN ${col};`);
@@ -78,5 +90,5 @@ export const migration016: Migration = {
         }
       }
     }
-  }
+  },
 };

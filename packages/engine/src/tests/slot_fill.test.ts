@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 
 // Mocking dependencies for slot-fill functionality
 class SlotFillSynthesizer {
@@ -31,27 +31,27 @@ class AstIntegrityChecker {
 }
 
 // Unit tests for slot-fill code synthesis, template marker extraction, and AST integrity
-describe('Slot Fill Tests', () => {
+describe("Slot Fill Tests", () => {
   const synthesizer = new SlotFillSynthesizer();
   const extractor = new TemplateMarkerExtractor();
   const checker = new AstIntegrityChecker();
 
-  it('should synthesize slot fill code correctly', () => {
-    const slotName = 'exampleSlot';
+  it("should synthesize slot fill code correctly", () => {
+    const slotName = "exampleSlot";
     const expectedCode = `// Synthesized code for slot ${slotName}`;
     const synthesizedCode = synthesizer.synthesizeSlotFillCode(slotName);
     assert.strictEqual(synthesizedCode, expectedCode);
   });
 
-  it('should extract template markers correctly', () => {
-    const template = 'Hello, ${name}! Today is ${day}.';
-    const expectedMarkers = ['name', 'day'];
+  it("should extract template markers correctly", () => {
+    const template = "Hello, ${name}! Today is ${day}.";
+    const expectedMarkers = ["name", "day"];
     const extractedMarkers = extractor.extractTemplateMarkers(template);
     assert.deepStrictEqual(extractedMarkers, expectedMarkers);
   });
 
-  it('should check AST integrity correctly', () => {
-    const ast = { type: 'Program', body: [] }; // Placeholder AST
+  it("should check AST integrity correctly", () => {
+    const ast = { type: "Program", body: [] }; // Placeholder AST
     const isIntegrityValid = checker.checkAstIntegrity(ast);
     assert.strictEqual(isIntegrityValid, true);
   });

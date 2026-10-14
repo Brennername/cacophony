@@ -5,7 +5,7 @@ import type {
   CreateGitBranchOptions,
   CreateGitPullRequestOptions,
   SubmitGitReviewOptions,
-  MergeGitPullRequestOptions
+  MergeGitPullRequestOptions,
 } from "./IGitPlatformProvider.js";
 import { GiteaApiClient } from "./GiteaApiClient.js";
 
@@ -17,29 +17,33 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     this.client = client;
   }
 
-  public async createBranch(owner: string, repo: string, options: CreateGitBranchOptions): Promise<GitPlatformBranch> {
+  public async createBranch(
+    owner: string,
+    repo: string,
+    options: CreateGitBranchOptions,
+  ): Promise<GitPlatformBranch> {
     const branch = await this.client.createBranch(owner, repo, {
       new_branch_name: options.newBranchName,
-      old_branch_name: options.baseBranch
+      old_branch_name: options.baseBranch,
     });
 
     return {
       name: branch.name,
-      commitSha: branch.commit?.id
+      commitSha: branch.commit?.id,
     };
   }
 
   public async openPullRequest(
     owner: string,
     repo: string,
-    options: CreateGitPullRequestOptions
+    options: CreateGitPullRequestOptions,
   ): Promise<GitPlatformPullRequest> {
     try {
       const pr = await this.client.createPullRequest(owner, repo, {
         title: options.title,
         body: options.body,
         head: options.head,
-        base: options.base
+        base: options.base,
       });
 
       return {
@@ -52,12 +56,18 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
         headRef: pr.head.ref,
         baseRef: pr.base.ref,
         htmlUrl: pr.html_url,
-        diffUrl: pr.diff_url
+        diffUrl: pr.diff_url,
       };
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes("already exists") || errMsg.includes("409") || errMsg.includes("422")) {
-        const pulls = await this.client.listPullRequests(owner, repo, "open").catch(() => []);
+      if (
+        errMsg.includes("already exists") ||
+        errMsg.includes("409") ||
+        errMsg.includes("422")
+      ) {
+        const pulls = await this.client
+          .listPullRequests(owner, repo, "open")
+          .catch(() => []);
         const existing = pulls.find((p) => p.head?.ref === options.head);
         if (existing) {
           return {
@@ -70,7 +80,7 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
             headRef: existing.head?.ref ?? options.head,
             baseRef: existing.base?.ref ?? (options.base || "main"),
             htmlUrl: existing.html_url,
-            diffUrl: existing.diff_url
+            diffUrl: existing.diff_url,
           };
         }
       }
@@ -78,7 +88,11 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     }
   }
 
-  public async getPullRequest(owner: string, repo: string, prNumber: number): Promise<GitPlatformPullRequest> {
+  public async getPullRequest(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<GitPlatformPullRequest> {
     const pr = await this.client.getPullRequest(owner, repo, prNumber);
     return {
       id: pr.id,
@@ -90,11 +104,15 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       headRef: pr.head?.ref ?? "",
       baseRef: pr.base?.ref ?? "main",
       htmlUrl: pr.html_url,
-      diffUrl: pr.diff_url
+      diffUrl: pr.diff_url,
     };
   }
 
-  public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {
+  public async getPullRequestDiff(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<string> {
     return this.client.getPullRequestDiff(owner, repo, prNumber);
   }
 
@@ -102,7 +120,7 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     owner: string,
     repo: string,
     prNumber: number,
-    options: SubmitGitReviewOptions
+    options: SubmitGitReviewOptions,
   ): Promise<{ readonly id: number; readonly status: string }> {
     await this.client.submitPullRequestReview(owner, repo, prNumber, {
       body: options.body,
@@ -110,13 +128,13 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       comments: options.comments?.map((c) => ({
         path: c.path,
         line: c.line,
-        body: c.body
-      }))
+        body: c.body,
+      })),
     });
 
     return {
       id: Date.now(),
-      status: options.event
+      status: options.event,
     };
   }
 
@@ -124,12 +142,12 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     owner: string,
     repo: string,
     prNumber: number,
-    options?: MergeGitPullRequestOptions
+    options?: MergeGitPullRequestOptions,
   ): Promise<boolean> {
     await this.client.mergePullRequest(owner, repo, prNumber, {
       Do: options?.mergeMethod ?? "merge",
       MergeTitleField: options?.title,
-      MergeMessageField: options?.message
+      MergeMessageField: options?.message,
     });
     return true;
   }

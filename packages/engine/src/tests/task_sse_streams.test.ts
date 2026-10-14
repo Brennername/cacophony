@@ -1,5 +1,5 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
 
 class TaskSseStreams {
   private clients: Map<string, Set<(token: string) => void>>;
@@ -33,7 +33,7 @@ class TaskSseStreams {
   }
 }
 
-describe('Task SSE Streams Integration Tests', () => {
+describe("Task SSE Streams Integration Tests", () => {
   let taskSseStreams: TaskSseStreams;
 
   beforeEach(() => {
@@ -46,9 +46,9 @@ describe('Task SSE Streams Integration Tests', () => {
     await taskSseStreams.closeAllConnections();
   });
 
-  it('should connect multiple SSE clients to different tasks', async () => {
-    const taskId1 = 'task-001';
-    const taskId2 = 'task-002';
+  it("should connect multiple SSE clients to different tasks", async () => {
+    const taskId1 = "task-001";
+    const taskId2 = "task-002";
 
     // Create mock SSE client functions for testing
     let receivedTokenStream1: string[] = [];
@@ -67,8 +67,8 @@ describe('Task SSE Streams Integration Tests', () => {
     taskSseStreams.connect(taskId2, sseClient2);
 
     // Simulate token streams for each task
-    const tokensForTask1 = ['token-001', 'token-002'];
-    const tokensForTask2 = ['token-003', 'token-004'];
+    const tokensForTask1 = ["token-001", "token-002"];
+    const tokensForTask2 = ["token-003", "token-004"];
 
     for (const token of tokensForTask1) {
       await taskSseStreams.sendToken(taskId1, token);
@@ -79,12 +79,20 @@ describe('Task SSE Streams Integration Tests', () => {
     }
 
     // Verify that each client received the correct token stream
-    assert.deepEqual(receivedTokenStream1, tokensForTask1, 'Client 1 did not receive the correct token stream');
-    assert.deepEqual(receivedTokenStream2, tokensForTask2, 'Client 2 did not receive the correct token stream');
+    assert.deepEqual(
+      receivedTokenStream1,
+      tokensForTask1,
+      "Client 1 did not receive the correct token stream",
+    );
+    assert.deepEqual(
+      receivedTokenStream2,
+      tokensForTask2,
+      "Client 2 did not receive the correct token stream",
+    );
   });
 
-  it('should handle disconnection of a single client without affecting others', async () => {
-    const taskId = 'task-001';
+  it("should handle disconnection of a single client without affecting others", async () => {
+    const taskId = "task-001";
 
     // Create mock SSE client functions for testing
     let receivedTokenStream1: string[] = [];
@@ -103,7 +111,7 @@ describe('Task SSE Streams Integration Tests', () => {
     taskSseStreams.connect(taskId, sseClient2);
 
     // Simulate token stream for the task
-    const tokens = ['token-001', 'token-002'];
+    const tokens = ["token-001", "token-002"];
 
     for (const token of tokens) {
       await taskSseStreams.sendToken(taskId, token);
@@ -113,16 +121,24 @@ describe('Task SSE Streams Integration Tests', () => {
     taskSseStreams.disconnect(taskId, sseClient1);
 
     // Send more tokens to verify the disconnected client does not receive them
-    const additionalTokens = ['token-003', 'token-004'];
+    const additionalTokens = ["token-003", "token-004"];
     for (const token of additionalTokens) {
       await taskSseStreams.sendToken(taskId, token);
     }
 
     // Verify that the disconnected client did not receive additional tokens
-    assert.deepEqual(receivedTokenStream1, tokens, 'Disconnected client received unexpected tokens');
+    assert.deepEqual(
+      receivedTokenStream1,
+      tokens,
+      "Disconnected client received unexpected tokens",
+    );
 
     // Verify that the other client received all tokens
     const expectedReceivedTokenStream2 = [...tokens, ...additionalTokens];
-    assert.deepEqual(receivedTokenStream2, expectedReceivedTokenStream2, 'Connected client did not receive all tokens');
+    assert.deepEqual(
+      receivedTokenStream2,
+      expectedReceivedTokenStream2,
+      "Connected client did not receive all tokens",
+    );
   });
 });

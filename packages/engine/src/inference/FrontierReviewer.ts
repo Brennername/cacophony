@@ -58,19 +58,28 @@ export class FrontierReviewer {
     readonly reviewTimeoutMs?: number | undefined;
   }) {
     this.inferenceProvider = options?.inferenceProvider;
-    this.defaultModel = options?.defaultModel || process.env.FRONTIER_REVIEWER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M";
+    this.defaultModel =
+      options?.defaultModel ||
+      process.env.FRONTIER_REVIEWER_MODEL ||
+      "qwen2.5-coder:7b-instruct-q4_K_M";
     this.reviewTimeoutMs = options?.reviewTimeoutMs ?? 45_000;
   }
 
   /**
    * Generates a structured review evaluation checklist.
    */
-  public async evaluateReview(context: ReviewPromptContext): Promise<ReviewEvaluationResult> {
+  public async evaluateReview(
+    context: ReviewPromptContext,
+  ): Promise<ReviewEvaluationResult> {
     const diffText = context.diff || "";
-    const testSummary = context.testSummary || "All scoped tests passed cleanly.";
+    const testSummary =
+      context.testSummary || "All scoped tests passed cleanly.";
 
     // 1. Structural Anti-Stub Inspection
-    const structuralIssues = this.inspectStructuralAntiStub(context.title, diffText);
+    const structuralIssues = this.inspectStructuralAntiStub(
+      context.title,
+      diffText,
+    );
     if (structuralIssues.length > 0) {
       return {
         verdict: "REJECT",
@@ -79,25 +88,37 @@ export class FrontierReviewer {
           path: "diff",
           lineNumber: 1,
           comment: msg,
-          severity: "blocker" as const
+          severity: "blocker" as const,
         })),
         solidComplianceScore: 30,
         testCoveragePassed: false,
-        securityBoundariesPassed: true
+        securityBoundariesPassed: true,
       };
     }
 
     // If an inference provider is configured (either frontier API or local reasoner)
     if (this.inferenceProvider) {
       try {
-        const prompt = this.buildReviewPrompt(context.title, diffText, testSummary);
+        const prompt = this.buildReviewPrompt(
+          context.title,
+          diffText,
+          testSummary,
+        );
         const reviewTimeoutMs = this.reviewTimeoutMs;
         const abortController = new AbortController();
         let timeoutHandle: NodeJS.Timeout | null = null;
         const timeoutPromise = new Promise<never>((_, reject) => {
           timeoutHandle = setTimeout(() => {
-            abortController.abort(new Error(`Frontier review generation timed out after ${reviewTimeoutMs}ms`));
-            reject(new Error(`Frontier review generation timed out after ${reviewTimeoutMs}ms`));
+            abortController.abort(
+              new Error(
+                `Frontier review generation timed out after ${reviewTimeoutMs}ms`,
+              ),
+            );
+            reject(
+              new Error(
+                `Frontier review generation timed out after ${reviewTimeoutMs}ms`,
+              ),
+            );
           }, reviewTimeoutMs);
         });
 
@@ -107,25 +128,32 @@ export class FrontierReviewer {
             messages: [
               {
                 role: "system",
-                content: "You are a senior principal software architect conducting an automated pull request review. Reject any superficial mocks, empty component templates, or stub implementations."
+                content:
+                  "You are a senior principal software architect conducting an automated pull request review. Reject any superficial mocks, empty component templates, or stub implementations.",
               },
               {
                 role: "user",
-                content: prompt
-              }
+                content: prompt,
+              },
             ],
             temperature: 0.1,
             maxTokens: 1024,
-            signal: abortController.signal
+            signal: abortController.signal,
           });
 
-          const response = await Promise.race([generatePromise, timeoutPromise]);
+          const response = await Promise.race([
+            generatePromise,
+            timeoutPromise,
+          ]);
           return this.parseReviewResponse(response.content, diffText);
         } finally {
           if (timeoutHandle) clearTimeout(timeoutHandle);
         }
       } catch (err) {
-        console.warn("[FrontierReviewer] Provider review invocation failed, applying heuristic evaluation:", err);
+        console.warn(
+          "[FrontierReviewer] Provider review invocation failed, applying heuristic evaluation:",
+          err,
+        );
       }
     }
 
@@ -141,13 +169,17 @@ export class FrontierReviewer {
    */
   public async evaluateStripedMoEReview(
     context: ReviewPromptContext,
-    options?: MoEReviewOptions
+    options?: MoEReviewOptions,
   ): Promise<ReviewEvaluationResult> {
     const diffText = context.diff || "";
-    const testSummary = context.testSummary || "All scoped tests passed cleanly.";
+    const testSummary =
+      context.testSummary || "All scoped tests passed cleanly.";
 
     // 1. Structural Anti-Stub deterministic pre-flight check
-    const structuralIssues = this.inspectStructuralAntiStub(context.title, diffText);
+    const structuralIssues = this.inspectStructuralAntiStub(
+      context.title,
+      diffText,
+    );
     if (structuralIssues.length > 0) {
       return {
         verdict: "REJECT",
@@ -156,27 +188,45 @@ export class FrontierReviewer {
           path: "diff",
           lineNumber: 1,
           comment: msg,
-          severity: "blocker" as const
+          severity: "blocker" as const,
         })),
         solidComplianceScore: 30,
         semanticCompletenessScore: 10,
         testCoveragePassed: false,
         securityBoundariesPassed: true,
-        executivePlan: "Rework implementation to provide substantive functional logic without placeholders or empty stubs."
+        executivePlan:
+          "Rework implementation to provide substantive functional logic without placeholders or empty stubs.",
       };
     }
 
-    const semanticModel = options?.semanticModel || process.env.FRONTIER_SEMANTIC_MODEL || "deepseek-r1:8b";
-    const qualityModel = options?.qualityModel || options?.executiveModel || this.defaultModel;
+    const semanticModel =
+      options?.semanticModel ||
+      process.env.FRONTIER_SEMANTIC_MODEL ||
+      "deepseek-r1:8b";
+    const qualityModel =
+      options?.qualityModel || options?.executiveModel || this.defaultModel;
 
     // Stage 1: Semantic Completeness Critic
-    const semanticPass = await this.runSemanticCritic(context.title, diffText, testSummary, semanticModel);
+    const semanticPass = await this.runSemanticCritic(
+      context.title,
+      diffText,
+      testSummary,
+      semanticModel,
+    );
 
     // Stage 2: SOLID Quality Critic
-    const qualityPass = await this.runSolidQualityCritic(context.title, diffText, testSummary, qualityModel);
+    const qualityPass = await this.runSolidQualityCritic(
+      context.title,
+      diffText,
+      testSummary,
+      qualityModel,
+    );
 
     // Stage 3: Executive Consolidation
-    return this.consolidateMoEVerdicts(context.title, diffText, [semanticPass, qualityPass]);
+    return this.consolidateMoEVerdicts(context.title, diffText, [
+      semanticPass,
+      qualityPass,
+    ]);
   }
 
   /**
@@ -186,7 +236,7 @@ export class FrontierReviewer {
     title: string,
     diff: string,
     testSummary: string,
-    model: string
+    model: string,
   ): Promise<CriticPassResult> {
     if (this.inferenceProvider) {
       try {
@@ -205,7 +255,7 @@ export class FrontierReviewer {
           '  "score": 90,',
           '  "notes": "Semantic evaluation notes",',
           '  "comments": [{ "path": "file.ts", "lineNumber": 1, "comment": "Note", "severity": "info" | "warning" | "blocker" }]',
-          "}"
+          "}",
         ].join("\n");
 
         const response = await this.inferenceProvider.generate({
@@ -213,18 +263,26 @@ export class FrontierReviewer {
           messages: [
             {
               role: "system",
-              content: "You are the Semantic Completeness Critic. Ensure the code diff fully satisfies the task title and implements real operational logic rather than hollow stubs."
+              content:
+                "You are the Semantic Completeness Critic. Ensure the code diff fully satisfies the task title and implements real operational logic rather than hollow stubs.",
             },
-            { role: "user", content: prompt }
+            { role: "user", content: prompt },
           ],
           temperature: 0.1,
-          maxTokens: 1024
+          maxTokens: 1024,
         });
 
-        const parsed = this.parseCriticResponse(response.content, "semantic_completeness", model);
+        const parsed = this.parseCriticResponse(
+          response.content,
+          "semantic_completeness",
+          model,
+        );
         if (parsed) return parsed;
       } catch (err) {
-        console.warn(`[FrontierReviewer] Semantic critic call with model '${model}' failed, falling back to heuristic:`, err);
+        console.warn(
+          `[FrontierReviewer] Semantic critic call with model '${model}' failed, falling back to heuristic:`,
+          err,
+        );
       }
     }
 
@@ -240,8 +298,15 @@ export class FrontierReviewer {
         ? "Diff appears trivial or incomplete relative to task objective."
         : "Substantive changes detected matching task scope.",
       comments: isTrivial
-        ? [{ path: "diff", lineNumber: 1, comment: "Diff has minimal code changes.", severity: "warning" }]
-        : []
+        ? [
+            {
+              path: "diff",
+              lineNumber: 1,
+              comment: "Diff has minimal code changes.",
+              severity: "warning",
+            },
+          ]
+        : [],
     };
   }
 
@@ -252,7 +317,7 @@ export class FrontierReviewer {
     title: string,
     diff: string,
     testSummary: string,
-    model: string
+    model: string,
   ): Promise<CriticPassResult> {
     if (this.inferenceProvider) {
       try {
@@ -262,18 +327,26 @@ export class FrontierReviewer {
           messages: [
             {
               role: "system",
-              content: "You are the SOLID Quality Critic. Evaluate interfaces, single responsibility, dependency injection, typing rigor, and security boundaries."
+              content:
+                "You are the SOLID Quality Critic. Evaluate interfaces, single responsibility, dependency injection, typing rigor, and security boundaries.",
             },
-            { role: "user", content: prompt }
+            { role: "user", content: prompt },
           ],
           temperature: 0.1,
-          maxTokens: 1024
+          maxTokens: 1024,
         });
 
-        const parsed = this.parseCriticResponse(response.content, "solid_quality", model);
+        const parsed = this.parseCriticResponse(
+          response.content,
+          "solid_quality",
+          model,
+        );
         if (parsed) return parsed;
       } catch (err) {
-        console.warn(`[FrontierReviewer] Quality critic call with model '${model}' failed, falling back to heuristic:`, err);
+        console.warn(
+          `[FrontierReviewer] Quality critic call with model '${model}' failed, falling back to heuristic:`,
+          err,
+        );
       }
     }
 
@@ -285,7 +358,7 @@ export class FrontierReviewer {
       verdict: heuristic.verdict,
       score: heuristic.solidComplianceScore,
       notes: heuristic.reviewNotes,
-      comments: heuristic.comments
+      comments: heuristic.comments,
     };
   }
 
@@ -295,10 +368,14 @@ export class FrontierReviewer {
   public consolidateMoEVerdicts(
     title: string,
     _diff: string,
-    criticPasses: readonly CriticPassResult[]
+    criticPasses: readonly CriticPassResult[],
   ): ReviewEvaluationResult {
-    const semanticPass = criticPasses.find((p) => p.criticRole === "semantic_completeness");
-    const qualityPass = criticPasses.find((p) => p.criticRole === "solid_quality");
+    const semanticPass = criticPasses.find(
+      (p) => p.criticRole === "semantic_completeness",
+    );
+    const qualityPass = criticPasses.find(
+      (p) => p.criticRole === "solid_quality",
+    );
 
     const semanticScore = semanticPass ? semanticPass.score : 85;
     const solidScore = qualityPass ? qualityPass.score : 85;
@@ -332,22 +409,31 @@ export class FrontierReviewer {
     // Executive Roadmap for remediation
     let executivePlan: string;
     if (verdict === "APPROVE") {
-      executivePlan = "Changes meet architectural, semantic, and SOLID standards. Ready for staging merge.";
+      executivePlan =
+        "Changes meet architectural, semantic, and SOLID standards. Ready for staging merge.";
     } else {
       const planItems: string[] = [];
       if (semanticScore < 75) {
-        planItems.push("1. Expand operational feature logic to fully cover task objectives without stubs.");
+        planItems.push(
+          "1. Expand operational feature logic to fully cover task objectives without stubs.",
+        );
       }
       if (solidScore < 75 || hasBlockers) {
-        planItems.push("2. Resolve SOLID and security boundary defects flagged by the Quality Critic.");
+        planItems.push(
+          "2. Resolve SOLID and security boundary defects flagged by the Quality Critic.",
+        );
       }
       if (hasWarnings) {
-        planItems.push("3. Eliminate untyped declarations and refactor warnings.");
+        planItems.push(
+          "3. Eliminate untyped declarations and refactor warnings.",
+        );
       }
-      executivePlan = `Remediation Plan for '${title}':\n` + planItems.join("\n");
+      executivePlan =
+        `Remediation Plan for '${title}':\n` + planItems.join("\n");
     }
 
-    const reviewNotes = `MoE Striped Review (${criticPasses.map((p) => `${p.criticRole}: ${p.modelUsed}`).join(", ")}): ` +
+    const reviewNotes =
+      `MoE Striped Review (${criticPasses.map((p) => `${p.criticRole}: ${p.modelUsed}`).join(", ")}): ` +
       `Semantic ${semanticScore}%, SOLID ${solidScore}%. Verdict: ${verdict}.`;
 
     return {
@@ -359,30 +445,40 @@ export class FrontierReviewer {
       testCoveragePassed: verdict !== "REJECT",
       securityBoundariesPassed: !hasBlockers,
       executivePlan,
-      criticPasses
+      criticPasses,
     };
   }
 
   private parseCriticResponse(
     rawText: string,
     role: "semantic_completeness" | "solid_quality",
-    model: string
+    model: string,
   ): CriticPassResult | null {
     try {
       const match = rawText.match(/\{[\s\S]*\}/);
       if (match) {
         const parsed = JSON.parse(match[0]);
-        const verdict: ReviewVerdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(parsed.verdict)
+        const verdict: ReviewVerdict = [
+          "APPROVE",
+          "REQUEST_CHANGES",
+          "REJECT",
+        ].includes(parsed.verdict)
           ? parsed.verdict
           : "APPROVE";
-        const score = typeof parsed.score === "number" ? parsed.score : (typeof parsed.solidComplianceScore === "number" ? parsed.solidComplianceScore : 85);
+        const score =
+          typeof parsed.score === "number"
+            ? parsed.score
+            : typeof parsed.solidComplianceScore === "number"
+              ? parsed.solidComplianceScore
+              : 85;
         return {
           criticRole: role,
           modelUsed: model,
           verdict,
           score,
-          notes: parsed.notes || parsed.reviewNotes || "Critic evaluation complete.",
-          comments: Array.isArray(parsed.comments) ? parsed.comments : []
+          notes:
+            parsed.notes || parsed.reviewNotes || "Critic evaluation complete.",
+          comments: Array.isArray(parsed.comments) ? parsed.comments : [],
         };
       }
     } catch {
@@ -402,39 +498,72 @@ export class FrontierReviewer {
     // Check for empty Angular component templates
     if (
       diffText.includes("@Component") &&
-      (/template\s*:\s*[`'"]\s*<div(?:\s+class=["'][^"']*["'])?>\s*<\/div>\s*[`'"]/i.test(diffText) ||
-       /template\s*:\s*[`'"]\s*<div class="component-container"><\/div>\s*[`'"]/i.test(diffText) ||
-       /template\s*:\s*[`'"]\s*<p>\s*<\/p>\s*[`'"]/i.test(diffText))
+      (/template\s*:\s*[`'"]\s*<div(?:\s+class=["'][^"']*["'])?>\s*<\/div>\s*[`'"]/i.test(
+        diffText,
+      ) ||
+        /template\s*:\s*[`'"]\s*<div class="component-container"><\/div>\s*[`'"]/i.test(
+          diffText,
+        ) ||
+        /template\s*:\s*[`'"]\s*<p>\s*<\/p>\s*[`'"]/i.test(diffText))
     ) {
-      issues.push("Detected placeholder or empty component template ('component-container'). Real semantic UI required.");
+      issues.push(
+        "Detected placeholder or empty component template ('component-container'). Real semantic UI required.",
+      );
     }
 
     // Check for placeholder error throwing or TODO bodies
-    const addedLines = diffText.split("\n").filter((l) => l.startsWith("+") && !l.startsWith("+++"));
-    const removedLines = diffText.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---"));
+    const addedLines = diffText
+      .split("\n")
+      .filter((l) => l.startsWith("+") && !l.startsWith("+++"));
+    const removedLines = diffText
+      .split("\n")
+      .filter((l) => l.startsWith("-") && !l.startsWith("---"));
 
-    if (addedLines.some((l) => /throw\s+new\s+Error\s*\(\s*[`'"](?:not implemented|todo|stub)/i.test(l))) {
-      issues.push("Detected unimplemented placeholder method body in added lines.");
+    if (
+      addedLines.some((l) =>
+        /throw\s+new\s+Error\s*\(\s*[`'"](?:not implemented|todo|stub)/i.test(
+          l,
+        ),
+      )
+    ) {
+      issues.push(
+        "Detected unimplemented placeholder method body in added lines.",
+      );
     }
 
     // Check for net comment-only deletion
     const addedCodeLines = addedLines.filter((l) => {
       const trimmed = l.slice(1).trim();
-      return trimmed.length > 0 && !trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*");
+      return (
+        trimmed.length > 0 &&
+        !trimmed.startsWith("//") &&
+        !trimmed.startsWith("/*") &&
+        !trimmed.startsWith("*")
+      );
     });
     const removedDocLines = removedLines.filter((l) => {
       const trimmed = l.slice(1).trim();
-      return trimmed.startsWith("/**") || trimmed.startsWith("*") || trimmed.startsWith("*/");
+      return (
+        trimmed.startsWith("/**") ||
+        trimmed.startsWith("*") ||
+        trimmed.startsWith("*/")
+      );
     });
 
     if (removedDocLines.length >= 4 && addedCodeLines.length === 0) {
-      issues.push("Diff predominantly strips documentation comments without adding implementation logic.");
+      issues.push(
+        "Diff predominantly strips documentation comments without adding implementation logic.",
+      );
     }
 
     return issues;
   }
 
-  private buildReviewPrompt(title: string, diff: string, testSummary: string): string {
+  private buildReviewPrompt(
+    title: string,
+    diff: string,
+    testSummary: string,
+  ): string {
     return [
       `Review task: ${title}`,
       "Evaluate the code diff for:",
@@ -457,47 +586,64 @@ export class FrontierReviewer {
       '  "comments": [',
       '    { "path": "file.ts", "lineNumber": 10, "comment": "Feedback", "severity": "info" | "warning" | "blocker" }',
       "  ]",
-      "}"
+      "}",
     ].join("\n");
   }
 
-  public parseReviewResponse(rawText: string, fallbackDiff: string): ReviewEvaluationResult {
+  public parseReviewResponse(
+    rawText: string,
+    fallbackDiff: string,
+  ): ReviewEvaluationResult {
     try {
       const match = rawText.match(/\{[\s\S]*\}/);
       if (match) {
         const parsed = JSON.parse(match[0]);
-        const verdict: ReviewVerdict = ["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(parsed.verdict)
+        const verdict: ReviewVerdict = [
+          "APPROVE",
+          "REQUEST_CHANGES",
+          "REJECT",
+        ].includes(parsed.verdict)
           ? parsed.verdict
           : "APPROVE";
 
         return {
           verdict,
-          reviewNotes: parsed.reviewNotes || "Automated review evaluation completed.",
+          reviewNotes:
+            parsed.reviewNotes || "Automated review evaluation completed.",
           comments: Array.isArray(parsed.comments) ? parsed.comments : [],
-          solidComplianceScore: typeof parsed.solidComplianceScore === "number" ? parsed.solidComplianceScore : 90,
+          solidComplianceScore:
+            typeof parsed.solidComplianceScore === "number"
+              ? parsed.solidComplianceScore
+              : 90,
           testCoveragePassed: parsed.testCoveragePassed !== false,
-          securityBoundariesPassed: parsed.securityBoundariesPassed !== false
+          securityBoundariesPassed: parsed.securityBoundariesPassed !== false,
         };
       }
     } catch {
       // Fallback
     }
 
-    if (rawText.toUpperCase().includes("REQUEST_CHANGES") || rawText.toUpperCase().includes("REJECT")) {
+    if (
+      rawText.toUpperCase().includes("REQUEST_CHANGES") ||
+      rawText.toUpperCase().includes("REJECT")
+    ) {
       return {
         verdict: "REQUEST_CHANGES",
         reviewNotes: rawText.slice(0, 500),
         comments: [],
         solidComplianceScore: 65,
         testCoveragePassed: true,
-        securityBoundariesPassed: true
+        securityBoundariesPassed: true,
       };
     }
 
     return this.evaluateHeuristically("Parsed Review", fallbackDiff);
   }
 
-  private evaluateHeuristically(title: string, diff: string): ReviewEvaluationResult {
+  private evaluateHeuristically(
+    title: string,
+    diff: string,
+  ): ReviewEvaluationResult {
     const comments: ReviewComment[] = [];
     let solidScore = 100;
     let securityPassed = true;
@@ -507,8 +653,9 @@ export class FrontierReviewer {
       comments.push({
         path: "detected_diff",
         lineNumber: 1,
-        comment: "Detected potentially unsafe dynamic evaluation or innerHTML injection.",
-        severity: "blocker"
+        comment:
+          "Detected potentially unsafe dynamic evaluation or innerHTML injection.",
+        severity: "blocker",
       });
       securityPassed = false;
       solidScore -= 30;
@@ -518,13 +665,15 @@ export class FrontierReviewer {
       comments.push({
         path: "detected_diff",
         lineNumber: 1,
-        comment: "Detected untyped `any` usage. Adhere to strict TypeScript typing.",
-        severity: "warning"
+        comment:
+          "Detected untyped `any` usage. Adhere to strict TypeScript typing.",
+        severity: "warning",
       });
       solidScore -= 10;
     }
 
-    const verdict: ReviewVerdict = securityPassed && solidScore >= 70 ? "APPROVE" : "REQUEST_CHANGES";
+    const verdict: ReviewVerdict =
+      securityPassed && solidScore >= 70 ? "APPROVE" : "REQUEST_CHANGES";
 
     return {
       verdict,
@@ -532,7 +681,7 @@ export class FrontierReviewer {
       comments,
       solidComplianceScore: solidScore,
       testCoveragePassed: true,
-      securityBoundariesPassed: securityPassed
+      securityBoundariesPassed: securityPassed,
     };
   }
 }

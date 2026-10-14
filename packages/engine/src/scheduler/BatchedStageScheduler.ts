@@ -29,7 +29,13 @@ export class BatchedStageScheduler {
 
   constructor(options: BatchedStageSchedulerOptions = {}) {
     this.maxBatchWindow = options.maxBatchWindow ?? 5;
-    this.heavyModelKeywords = options.heavyModelKeywords ?? ["14b", "16b", "32b", "r1", "8b"];
+    this.heavyModelKeywords = options.heavyModelKeywords ?? [
+      "14b",
+      "16b",
+      "32b",
+      "r1",
+      "8b",
+    ];
   }
 
   /**
@@ -38,7 +44,7 @@ export class BatchedStageScheduler {
    */
   public selectNextTask(
     pendingTasks: readonly TaskRecord[],
-    activeVramModel: string | null
+    activeVramModel: string | null,
   ): BatchedScheduleDecision | null {
     if (pendingTasks.length === 0) {
       this.resetBatch();
@@ -49,7 +55,8 @@ export class BatchedStageScheduler {
     const p0Tasks = pendingTasks.filter((t) => t.priority === "P0");
     if (p0Tasks.length > 0) {
       const topP0 = p0Tasks[0]!;
-      const assigned = topP0.modelAssigned || activeVramModel || "qwen2.5-coder:7b";
+      const assigned =
+        topP0.modelAssigned || activeVramModel || "qwen2.5-coder:7b";
       this.updateResident(assigned);
       return {
         task: topP0,
@@ -91,7 +98,8 @@ export class BatchedStageScheduler {
     const nextTask = this.pickNextByPriority(pendingTasks);
     if (!nextTask) return null;
 
-    const targetModel = nextTask.modelAssigned || currentModel || "qwen2.5-coder:7b";
+    const targetModel =
+      nextTask.modelAssigned || currentModel || "qwen2.5-coder:7b";
     this.currentResidentModel = targetModel;
     this.currentBatchCount = 1;
 

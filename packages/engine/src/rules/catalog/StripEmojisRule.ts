@@ -11,7 +11,8 @@ import { BaseRepairRule } from "../BaseRepairRule.js";
 /**
  * Unicode emoji regex excluding musical notes (U+2669 - U+266F).
  */
-const EMOJI_REGEX = /(?![\u2669-\u266F])[\u{1F300}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+const EMOJI_REGEX =
+  /(?![\u2669-\u266F])[\u{1F300}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
 
 /**
  * StripEmojisRule
@@ -22,14 +23,18 @@ const EMOJI_REGEX = /(?![\u2669-\u266F])[\u{1F300}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\
 export class StripEmojisRule extends BaseRepairRule {
   readonly id = "strip_emojis";
   readonly name = "Strip Emojis";
-  readonly description = "Removes emojis from code, comments, and documentation while preserving musical notation symbols.";
+  readonly description =
+    "Removes emojis from code, comments, and documentation while preserving musical notation symbols.";
   readonly defaultSeverity: RuleSeverity = "silent_repair";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    _options?: Record<string, unknown>
+    _options?: Record<string, unknown>,
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -72,6 +77,12 @@ export class StripEmojisRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

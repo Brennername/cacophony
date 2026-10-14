@@ -14,9 +14,16 @@ export class SignatureStore {
   /**
    * Indexes signatures from raw file content.
    */
-  public indexFile(filePath: string, content: string): readonly CodeSignatureRecord[] {
+  public indexFile(
+    filePath: string,
+    content: string,
+  ): readonly CodeSignatureRecord[] {
     let harvested: readonly CodeSignatureRecord[] = [];
-    if (filePath.endsWith(".ts") || filePath.endsWith(".tsx") || filePath.endsWith(".js")) {
+    if (
+      filePath.endsWith(".ts") ||
+      filePath.endsWith(".tsx") ||
+      filePath.endsWith(".js")
+    ) {
       harvested = this.harvester.harvestTypeScript(filePath, content);
     } else if (filePath.endsWith(".java")) {
       harvested = this.harvester.harvestJava(filePath, content);
@@ -38,7 +45,10 @@ export class SignatureStore {
   /**
    * Retrieves a signature by identifier or filePath#identifier.
    */
-  public get(identifier: string, filePath?: string): CodeSignatureRecord | undefined {
+  public get(
+    identifier: string,
+    filePath?: string,
+  ): CodeSignatureRecord | undefined {
     if (filePath) {
       const exact = this.records.get(`${filePath}#${identifier}`);
       if (exact) return exact;
@@ -61,7 +71,9 @@ export class SignatureStore {
    * Generates a compressed prompt mini-specification from indexed target files or identifiers.
    */
   public formatTargetMiniSpec(identifiers: readonly string[]): string {
-    const lines: string[] = ["=== Target Interface Mini-Specification (Strict Signatures) ==="];
+    const lines: string[] = [
+      "=== Target Interface Mini-Specification (Strict Signatures) ===",
+    ];
     for (const id of identifiers) {
       const rec = this.get(id);
       if (rec) {

@@ -1,4 +1,8 @@
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "../IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "../IScrubberRule.js";
 
 /**
  * WorkspacePackageImportScrubberRule
@@ -12,25 +16,31 @@ export class WorkspacePackageImportScrubberRule implements IScrubberRule {
   public readonly applicableExtensions = [".ts", ".js", ".mts"];
 
   public isApplicable(_stack: string, filePath: string): boolean {
-    return this.applicableExtensions.some((ext) => filePath.endsWith(ext) && !filePath.endsWith(".d.ts"));
+    return this.applicableExtensions.some(
+      (ext) => filePath.endsWith(ext) && !filePath.endsWith(".d.ts"),
+    );
   }
 
   public scrub(
     content: string,
     filePath: string,
-    options?: ScrubRuleOptions
+    options?: ScrubRuleOptions,
   ): ScrubRuleResult {
     if (
       options?.disabledRules?.includes(this.name) ||
       options?.disabledRules?.includes("all") ||
-      content.includes("@cacophony-disable-scrubber: WorkspacePackageImportScrubberRule") ||
+      content.includes(
+        "@cacophony-disable-scrubber: WorkspacePackageImportScrubberRule",
+      ) ||
       content.includes("@cacophony-disable-scrubber: all")
     ) {
       return {
         modified: false,
         content,
         issuesFixed: [],
-        issuesDetected: ["Workspace package import scrubbing skipped via rule disable flag."]
+        issuesDetected: [
+          "Workspace package import scrubbing skipped via rule disable flag.",
+        ],
       };
     }
 
@@ -41,12 +51,16 @@ export class WorkspacePackageImportScrubberRule implements IScrubberRule {
 
     const isInsideScheduler = filePath.includes("/scheduler/");
     const isInsideGitea = filePath.includes("/gitea/");
-    const isInsideTests = filePath.includes("/tests/") || filePath.includes("/__tests__/");
+    const isInsideTests =
+      filePath.includes("/tests/") || filePath.includes("/__tests__/");
 
     // 1. Repair hallucinated '@cacophony/git-worktrees' or '@cacophony/worktrees'
-    const gitWorktreeRegex = /from\s+["']@cacophony\/(?:git-)?worktrees(?:\/[^"']*)?["']/g;
+    const gitWorktreeRegex =
+      /from\s+["']@cacophony\/(?:git-)?worktrees(?:\/[^"']*)?["']/g;
     if (gitWorktreeRegex.test(cleaned)) {
-      issuesDetected.push("Detected hallucinated import '@cacophony/git-worktrees'");
+      issuesDetected.push(
+        "Detected hallucinated import '@cacophony/git-worktrees'",
+      );
       let replacementPath = "../gitea/GitWorktreeManager.js";
       if (isInsideGitea) {
         replacementPath = "./GitWorktreeManager.js";
@@ -56,7 +70,9 @@ export class WorkspacePackageImportScrubberRule implements IScrubberRule {
         replacementPath = "../gitea/GitWorktreeManager.js";
       }
       cleaned = cleaned.replace(gitWorktreeRegex, `from "${replacementPath}"`);
-      issuesFixed.push(`Rewrote hallucinated git-worktrees import to '${replacementPath}'`);
+      issuesFixed.push(
+        `Rewrote hallucinated git-worktrees import to '${replacementPath}'`,
+      );
       modified = true;
     }
 
@@ -72,19 +88,36 @@ export class WorkspacePackageImportScrubberRule implements IScrubberRule {
     // 3. Repair hallucinated '@cacophony/scheduler' or '@cacophony/pipeline'
     const schedRegex = /from\s+["']@cacophony\/(?:scheduler|pipeline)["']/g;
     if (schedRegex.test(cleaned)) {
-      issuesDetected.push("Detected hallucinated import '@cacophony/scheduler'");
-      const relSched = isInsideScheduler ? "./TaskScheduler.js" : "../scheduler/TaskScheduler.js";
+      issuesDetected.push(
+        "Detected hallucinated import '@cacophony/scheduler'",
+      );
+      const relSched = isInsideScheduler
+        ? "./TaskScheduler.js"
+        : "../scheduler/TaskScheduler.js";
       cleaned = cleaned.replace(schedRegex, `from "${relSched}"`);
       issuesFixed.push(`Rewrote to relative internal module '${relSched}'`);
       modified = true;
     }
 
     // 4. Chai imports in test files: migrate to native Node.js assert
-    if (isInsideTests && cleaned.includes("from 'chai'") || cleaned.includes('from "chai"')) {
-      issuesDetected.push("Detected third-party 'chai' assertion import in test suite");
-      cleaned = cleaned.replace(/import\s+\{\s*expect\s*\}\s+from\s+["']chai["'];?/g, 'import assert from "node:assert/strict";');
-      cleaned = cleaned.replace(/import\s+.*from\s+["']chai["'];?/g, 'import assert from "node:assert/strict";');
-      issuesFixed.push("Migrated 'chai' import to standard 'node:assert/strict'");
+    if (
+      (isInsideTests && cleaned.includes("from 'chai'")) ||
+      cleaned.includes('from "chai"')
+    ) {
+      issuesDetected.push(
+        "Detected third-party 'chai' assertion import in test suite",
+      );
+      cleaned = cleaned.replace(
+        /import\s+\{\s*expect\s*\}\s+from\s+["']chai["'];?/g,
+        'import assert from "node:assert/strict";',
+      );
+      cleaned = cleaned.replace(
+        /import\s+.*from\s+["']chai["'];?/g,
+        'import assert from "node:assert/strict";',
+      );
+      issuesFixed.push(
+        "Migrated 'chai' import to standard 'node:assert/strict'",
+      );
       modified = true;
     }
 
@@ -92,7 +125,7 @@ export class WorkspacePackageImportScrubberRule implements IScrubberRule {
       modified,
       content: cleaned,
       issuesFixed,
-      issuesDetected
+      issuesDetected,
     };
   }
 }

@@ -19,7 +19,8 @@ test("ReviewOpinionSynthesizer Suite (T94.2.2)", async (t) => {
             lineNumber: 22,
             ruleId: "SOLID_SRP",
             severity: "warning",
-            message: "Authentication handler mixing token issuance and billing logic",
+            message:
+              "Authentication handler mixing token issuance and billing logic",
             suggestion: "Separate billing into dedicated service",
           },
         ],
@@ -39,7 +40,8 @@ test("ReviewOpinionSynthesizer Suite (T94.2.2)", async (t) => {
             lineNumber: 22,
             ruleId: "NO_SECRET_LOG",
             severity: "blocker",
-            message: "Authentication handler mixing token issuance and billing logic",
+            message:
+              "Authentication handler mixing token issuance and billing logic",
             suggestion: "Sanitize logs before emission",
           },
         ],
@@ -58,21 +60,24 @@ test("ReviewOpinionSynthesizer Suite (T94.2.2)", async (t) => {
     },
   ];
 
-  await t.test("deduplicates overlapping findings and elevates blocker severity", () => {
-    const synthesis = ReviewOpinionSynthesizer.synthesize(executions);
+  await t.test(
+    "deduplicates overlapping findings and elevates blocker severity",
+    () => {
+      const synthesis = ReviewOpinionSynthesizer.synthesize(executions);
 
-    assert.equal(synthesis.consensusVerdict, "REQUEST_CHANGES");
-    assert.equal(synthesis.approvalCount, 1);
-    assert.equal(synthesis.requestChangesCount, 2);
+      assert.equal(synthesis.consensusVerdict, "REQUEST_CHANGES");
+      assert.equal(synthesis.approvalCount, 1);
+      assert.equal(synthesis.requestChangesCount, 2);
 
-    // Both models reported on auth.ts line 22 with identical core message
-    assert.equal(synthesis.unifiedFindings.length, 1);
-    const unified = synthesis.unifiedFindings[0]!;
-    assert.equal(unified.severity, "blocker"); // elevated from warning to blocker
-    assert.equal(unified.reportingModels.length, 2);
-    assert.ok(unified.reportingPersonas.includes("ArchitectureAuditor"));
-    assert.ok(unified.reportingPersonas.includes("SecurityAuditor"));
-  });
+      // Both models reported on auth.ts line 22 with identical core message
+      assert.equal(synthesis.unifiedFindings.length, 1);
+      const unified = synthesis.unifiedFindings[0]!;
+      assert.equal(unified.severity, "blocker"); // elevated from warning to blocker
+      assert.equal(unified.reportingModels.length, 2);
+      assert.ok(unified.reportingPersonas.includes("ArchitectureAuditor"));
+      assert.ok(unified.reportingPersonas.includes("SecurityAuditor"));
+    },
+  );
 
   await t.test("generates actionable unified markdown review comment", () => {
     const synthesis = ReviewOpinionSynthesizer.synthesize(executions);

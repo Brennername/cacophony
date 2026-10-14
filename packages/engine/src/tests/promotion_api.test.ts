@@ -7,26 +7,44 @@ class MockDaemonForPromotion {
   public taskRepo = {
     listPending: async () => [],
     listRecent: async (_limit: number, _filter?: any) => [
-      { id: "task-1", title: "feat: example task", status: "COMPLETED" }
-    ]
+      { id: "task-1", title: "feat: example task", status: "COMPLETED" },
+    ],
   };
 
-  public getModelHealthRepository() { return null; }
-  public getTenancyGuard() { return null; }
-  public getModelManager() { return null; }
-  public getBenchmarkRunner() { return null; }
-  public getStreamTapManager() { return null; }
-  public getTaskRepository() { return this.taskRepo; }
-  public getTelemetryPoller() { return null; }
+  public getModelHealthRepository() {
+    return null;
+  }
+  public getTenancyGuard() {
+    return null;
+  }
+  public getModelManager() {
+    return null;
+  }
+  public getBenchmarkRunner() {
+    return null;
+  }
+  public getStreamTapManager() {
+    return null;
+  }
+  public getTaskRepository() {
+    return this.taskRepo;
+  }
+  public getTelemetryPoller() {
+    return null;
+  }
   public getUserSessionRepository() {
     return {
       findSessionByToken: async () => null,
-      deleteSession: async () => {}
+      deleteSession: async () => {},
     };
   }
   public getMaintenanceService() {
     return {
-      getStorageMetrics: async () => ({ totalSizeMegabytes: 10, isOverThreshold: false, thresholdBytes: 1000000 })
+      getStorageMetrics: async () => ({
+        totalSizeMegabytes: 10,
+        isOverThreshold: false,
+        thresholdBytes: 1000000,
+      }),
     };
   }
 }
@@ -45,7 +63,10 @@ describe("Promotion REST API & CLI Suite (T80.5)", () => {
 
   test("GET /api/promotion/status returns staging divergence and pending tasks count", async () => {
     const daemon = new MockDaemonForPromotion();
-    server = new CacophonyHttpServer(daemon as any, { httpPort: testPort, httpHost: "127.0.0.1" });
+    server = new CacophonyHttpServer(daemon as any, {
+      httpPort: testPort,
+      httpHost: "127.0.0.1",
+    });
     await server.start();
 
     const res = await fetch(`${baseUrl}/api/promotion/status`);
@@ -61,7 +82,10 @@ describe("Promotion REST API & CLI Suite (T80.5)", () => {
 
   test("POST /api/promotion/release with dryRun passes quarantine gauntlet and returns HTTP 200", async () => {
     const daemon = new MockDaemonForPromotion();
-    server = new CacophonyHttpServer(daemon as any, { httpPort: testPort, httpHost: "127.0.0.1" });
+    server = new CacophonyHttpServer(daemon as any, {
+      httpPort: testPort,
+      httpHost: "127.0.0.1",
+    });
     await server.start();
 
     const cleanDiff = `
@@ -78,8 +102,8 @@ describe("Promotion REST API & CLI Suite (T80.5)", () => {
         milestoneTitle: "Sprint 48 Release",
         dryRun: true,
         diff: cleanDiff,
-        workspacePath: undefined
-      })
+        workspacePath: undefined,
+      }),
     });
 
     assert.equal(res.status, 200);
@@ -91,7 +115,10 @@ describe("Promotion REST API & CLI Suite (T80.5)", () => {
 
   test("POST /api/promotion/release rejects secret leaks with HTTP 422", async () => {
     const daemon = new MockDaemonForPromotion();
-    server = new CacophonyHttpServer(daemon as any, { httpPort: testPort, httpHost: "127.0.0.1" });
+    server = new CacophonyHttpServer(daemon as any, {
+      httpPort: testPort,
+      httpHost: "127.0.0.1",
+    });
     await server.start();
 
     const sampleGh = ["ghp", "_1234567890abcdefghijklmnopqrstuvwxyz"].join("");
@@ -107,8 +134,8 @@ describe("Promotion REST API & CLI Suite (T80.5)", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         milestoneTitle: "Compromised Release",
-        diff: dirtyDiff
-      })
+        diff: dirtyDiff,
+      }),
     });
 
     assert.equal(res.status, 422);
@@ -119,7 +146,11 @@ describe("Promotion REST API & CLI Suite (T80.5)", () => {
   });
 
   test("CLI promote function completes in dry-run mode", async () => {
-    const success = await promote({ dryRun: true, target: "github", testCommand: "node -e 'process.exit(0)'" });
+    const success = await promote({
+      dryRun: true,
+      target: "github",
+      testCommand: "node -e 'process.exit(0)'",
+    });
     assert.equal(success, true);
   });
 });

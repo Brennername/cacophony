@@ -1,7 +1,7 @@
 import type {
   InferenceRequest,
   InferenceResponse,
-  InferenceProviderType
+  InferenceProviderType,
 } from "@cacophony/shared-types";
 
 /**
@@ -23,6 +23,6 @@ export interface IInferenceProvider {
    */
   stream(
     request: InferenceRequest,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
   ): Promise<InferenceResponse>;
 }

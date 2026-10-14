@@ -21,7 +21,7 @@ export abstract class BaseRepairRule implements IRepairRule {
   abstract evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    options?: Record<string, unknown>
+    options?: Record<string, unknown>,
   ): Promise<RuleExecutionResult>;
 
   protected createResult(
@@ -29,7 +29,7 @@ export abstract class BaseRepairRule implements IRepairRule {
     durationMs: number,
     diagnostics: RuleDiagnostic[],
     mutations: FileMutation[],
-    severity: RuleSeverity
+    severity: RuleSeverity,
   ): RuleExecutionResult {
     const hardRejected = !passed && severity === "hard_rejection";
     return {

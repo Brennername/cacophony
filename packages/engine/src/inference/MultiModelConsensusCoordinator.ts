@@ -22,7 +22,11 @@ export interface CandidateReviewExecution {
 }
 
 export interface IModelInferenceCaller {
-  generate(modelId: string, systemPrompt: string, userPrompt: string): Promise<string>;
+  generate(
+    modelId: string,
+    systemPrompt: string,
+    userPrompt: string,
+  ): Promise<string>;
 }
 
 /**
@@ -33,18 +37,27 @@ export interface IModelInferenceCaller {
  * capturing distinct persona verdicts (Security, Architecture, DxUx).
  */
 export class MultiModelConsensusCoordinator {
-  public static readonly DEFAULT_CANDIDATES: readonly CandidateReviewerConfig[] = [
-    { modelId: "qwen2.5-coder:14b", persona: "ArchitectureAuditor", temperature: 0.2 },
-    { modelId: "deepseek-r1:8b", persona: "SecurityAuditor", temperature: 0.2 },
-    { modelId: "gemma3:4b-it-qat", persona: "DxUxAuditor", temperature: 0.3 },
-  ];
+  public static readonly DEFAULT_CANDIDATES: readonly CandidateReviewerConfig[] =
+    [
+      {
+        modelId: "qwen2.5-coder:14b",
+        persona: "ArchitectureAuditor",
+        temperature: 0.2,
+      },
+      {
+        modelId: "deepseek-r1:8b",
+        persona: "SecurityAuditor",
+        temperature: 0.2,
+      },
+      { modelId: "gemma3:4b-it-qat", persona: "DxUxAuditor", temperature: 0.3 },
+    ];
 
   private readonly inferenceCaller: IModelInferenceCaller;
   private readonly candidates: readonly CandidateReviewerConfig[];
 
   constructor(
     inferenceCaller: IModelInferenceCaller,
-    candidates: readonly CandidateReviewerConfig[] = MultiModelConsensusCoordinator.DEFAULT_CANDIDATES
+    candidates: readonly CandidateReviewerConfig[] = MultiModelConsensusCoordinator.DEFAULT_CANDIDATES,
   ) {
     this.inferenceCaller = inferenceCaller;
     // Clamp to maximum of 3 candidate reviewer models
@@ -55,24 +68,29 @@ export class MultiModelConsensusCoordinator {
    * Executes multi-model review across configured candidate models and returns individual reviews.
    */
   public async coordinateReview(
-    context: ReviewPromptContext
+    context: ReviewPromptContext,
   ): Promise<readonly CandidateReviewExecution[]> {
     const results: CandidateReviewExecution[] = [];
 
     for (const candidate of this.candidates) {
       const startTime = Date.now();
-      const systemPrompt = ReviewerPersonaPromptFactory.createSystemPrompt(candidate.persona);
-      const userPrompt = ReviewerPersonaPromptFactory.createUserPrompt(candidate.persona, context);
+      const systemPrompt = ReviewerPersonaPromptFactory.createSystemPrompt(
+        candidate.persona,
+      );
+      const userPrompt = ReviewerPersonaPromptFactory.createUserPrompt(
+        candidate.persona,
+        context,
+      );
 
       try {
         const rawOutput = await this.inferenceCaller.generate(
           candidate.modelId,
           systemPrompt,
-          userPrompt
+          userPrompt,
         );
         const parsedResult = ReviewerPersonaPromptFactory.parsePersonaResponse(
           rawOutput,
-          candidate.persona
+          candidate.persona,
         );
 
         results.push({

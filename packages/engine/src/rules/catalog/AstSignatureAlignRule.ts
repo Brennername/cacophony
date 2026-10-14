@@ -19,9 +19,13 @@ import { SignatureAlignmentScrubber } from "../../signature/SignatureAlignmentSc
 export class AstSignatureAlignRule extends BaseRepairRule {
   readonly id = "ast_signature_align";
   readonly name = "AST Signature Alignment";
-  readonly description = "Mechanistically aligns misspelled parameter names and inverted argument order to match authoritative AST signatures.";
+  readonly description =
+    "Mechanistically aligns misspelled parameter names and inverted argument order to match authoritative AST signatures.";
   readonly defaultSeverity: RuleSeverity = "silent_repair";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   private readonly scrubber: SignatureAlignmentScrubber;
 
@@ -34,7 +38,7 @@ export class AstSignatureAlignRule extends BaseRepairRule {
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    _options?: Record<string, unknown>
+    _options?: Record<string, unknown>,
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -86,6 +90,12 @@ export class AstSignatureAlignRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

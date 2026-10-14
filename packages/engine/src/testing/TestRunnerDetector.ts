@@ -40,22 +40,46 @@ export class TestRunnerDetector {
       const devDeps = { ...pkg.dependencies, ...pkg.devDependencies };
 
       if (devDeps.vitest) {
-        return { framework: "vitest", defaultCommand: "npx vitest run", confidence: 0.95 };
+        return {
+          framework: "vitest",
+          defaultCommand: "npx vitest run",
+          confidence: 0.95,
+        };
       }
       if (devDeps.jest) {
-        return { framework: "jest", defaultCommand: "npx jest", confidence: 0.95 };
+        return {
+          framework: "jest",
+          defaultCommand: "npx jest",
+          confidence: 0.95,
+        };
       }
       if (devDeps["@playwright/test"]) {
-        return { framework: "playwright", defaultCommand: "npx playwright test", confidence: 0.95 };
+        return {
+          framework: "playwright",
+          defaultCommand: "npx playwright test",
+          confidence: 0.95,
+        };
       }
       if (devDeps.mocha) {
-        return { framework: "mocha", defaultCommand: "npx mocha", confidence: 0.90 };
+        return {
+          framework: "mocha",
+          defaultCommand: "npx mocha",
+          confidence: 0.9,
+        };
       }
       if (pkg.scripts?.test && pkg.scripts.test.includes("node --test")) {
-        return { framework: "node-test", defaultCommand: "node --test", confidence: 0.90 };
+        return {
+          framework: "node-test",
+          defaultCommand: "node --test",
+          confidence: 0.9,
+        };
       }
       if (pkg.scripts?.test) {
-        return { framework: "node-test", defaultCommand: "npm test", confidence: 0.85 };
+        return {
+          framework: "node-test",
+          defaultCommand: "npm test",
+          confidence: 0.85,
+        };
       }
     } catch {
       // Not a standard node root
@@ -64,27 +88,47 @@ export class TestRunnerDetector {
     // 2. Check Java (Maven / Gradle)
     try {
       await fs.stat(path.resolve(workspaceRoot, "pom.xml"));
-      return { framework: "maven", defaultCommand: "mvn test", confidence: 0.95 };
+      return {
+        framework: "maven",
+        defaultCommand: "mvn test",
+        confidence: 0.95,
+      };
     } catch {}
 
     try {
       await fs.stat(path.resolve(workspaceRoot, "build.gradle"));
-      return { framework: "gradle", defaultCommand: "gradle test", confidence: 0.95 };
+      return {
+        framework: "gradle",
+        defaultCommand: "gradle test",
+        confidence: 0.95,
+      };
     } catch {}
 
     // 3. Check Go
     try {
       await fs.stat(path.resolve(workspaceRoot, "go.mod"));
-      return { framework: "go-test", defaultCommand: "go test ./...", confidence: 0.95 };
+      return {
+        framework: "go-test",
+        defaultCommand: "go test ./...",
+        confidence: 0.95,
+      };
     } catch {}
 
     // 4. Check Rust
     try {
       await fs.stat(path.resolve(workspaceRoot, "Cargo.toml"));
-      return { framework: "cargo-test", defaultCommand: "cargo test", confidence: 0.95 };
+      return {
+        framework: "cargo-test",
+        defaultCommand: "cargo test",
+        confidence: 0.95,
+      };
     } catch {}
 
-    return { framework: "generic", defaultCommand: "npm test", confidence: 0.5 };
+    return {
+      framework: "generic",
+      defaultCommand: "npm test",
+      confidence: 0.5,
+    };
   }
 
   /**
@@ -92,12 +136,16 @@ export class TestRunnerDetector {
    */
   public scopeCommand(
     base: DetectedTestSuite,
-    changedFiles: readonly string[]
+    changedFiles: readonly string[],
   ): string {
     if (changedFiles.length === 0) return base.defaultCommand;
 
-    const testFiles = changedFiles.filter((f) =>
-      f.includes(".test.") || f.includes(".spec.") || f.includes("Test.java") || f.includes("_test.go")
+    const testFiles = changedFiles.filter(
+      (f) =>
+        f.includes(".test.") ||
+        f.includes(".spec.") ||
+        f.includes("Test.java") ||
+        f.includes("_test.go"),
     );
 
     if (testFiles.length === 0) return base.defaultCommand;

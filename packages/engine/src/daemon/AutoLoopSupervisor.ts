@@ -40,10 +40,12 @@ export class AutoLoopSupervisor {
   constructor(
     private readonly taskRepo: {
       listPending: () => Promise<readonly TaskRecord[]>;
-      createIfNotExists: (task: TaskRecord) => Promise<{ created: boolean; task: TaskRecord }>;
+      createIfNotExists: (
+        task: TaskRecord,
+      ) => Promise<{ created: boolean; task: TaskRecord }>;
       updateStatus: (id: string, status: any) => Promise<void>;
     },
-    options?: AutoLoopSupervisorOptions
+    options?: AutoLoopSupervisorOptions,
   ) {
     this.pollIntervalMs = options?.pollIntervalMs ?? 5000;
     this.maxConsecutiveCrashes = options?.maxConsecutiveCrashes ?? 10;
@@ -71,7 +73,7 @@ export class AutoLoopSupervisor {
       consecutiveCrashes: this.consecutiveCrashes,
       totalErrorsHandled: this.totalErrorsHandled,
       vacancyTasksCreated: this.vacancyTasksCreated,
-      lastErrorTimestamp: this.lastErrorTimestamp
+      lastErrorTimestamp: this.lastErrorTimestamp,
     };
   }
 
@@ -79,24 +81,39 @@ export class AutoLoopSupervisor {
    * Catches and isolates unhandled worker/task execution rejections,
    * rolls back worktree, transitions task to FAILED, and prevents queue death.
    */
-  public async handleWorkerError(taskId: string, error: Error, worktreePath?: string): Promise<void> {
+  public async handleWorkerError(
+    taskId: string,
+    error: Error,
+    worktreePath?: string,
+  ): Promise<void> {
     this.totalErrorsHandled++;
     this.consecutiveCrashes++;
     this.lastErrorTimestamp = new Date().toISOString();
 
     if (this.consecutiveCrashes >= this.maxConsecutiveCrashes) {
-      console.warn(`[AutoLoopSupervisor] Consecutive crashes reached ceiling (${this.maxConsecutiveCrashes}).`);
+      console.warn(
+        `[AutoLoopSupervisor] Consecutive crashes reached ceiling (${this.maxConsecutiveCrashes}).`,
+      );
     }
 
-    console.warn(`[AutoLoopSupervisor] Handled worker failure on task '${taskId}': ${error.message}`);
+    console.warn(
+      `[AutoLoopSupervisor] Handled worker failure on task '${taskId}': ${error.message}`,
+    );
 
     // Rollback worktree if provided
     if (worktreePath) {
       try {
-        await execAsync(`git -C "${worktreePath}" checkout -f HEAD && git -C "${worktreePath}" clean -fd`, { timeout: 10000 });
-        console.log(`[AutoLoopSupervisor] Cleaned and reset worktree at '${worktreePath}'`);
+        await execAsync(
+          `git -C "${worktreePath}" checkout -f HEAD && git -C "${worktreePath}" clean -fd`,
+          { timeout: 10000 },
+        );
+        console.log(
+          `[AutoLoopSupervisor] Cleaned and reset worktree at '${worktreePath}'`,
+        );
       } catch (err: any) {
-        console.warn(`[AutoLoopSupervisor] Worktree rollback warning: ${err?.message}`);
+        console.warn(
+          `[AutoLoopSupervisor] Worktree rollback warning: ${err?.message}`,
+        );
       }
     }
 
@@ -119,7 +136,7 @@ export class AutoLoopSupervisor {
       "Expand unit test coverage for core edge cases",
       "Prune unused AST import specifiers and re-export trees",
       "Validate zero-emoji compliance across test manifests",
-      "Audit SOLID interface segregation in service layer"
+      "Audit SOLID interface segregation in service layer",
     ];
     const pickedTitle = titles[this.vacancyTasksCreated % titles.length]!;
 
@@ -138,7 +155,7 @@ export class AutoLoopSupervisor {
       failureCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      completedAt: null
+      completedAt: null,
     };
 
     const res = await this.taskRepo.createIfNotExists(taskRecord);

@@ -1,9 +1,12 @@
 type IDatabaseDriver<_T = any, _U = any> = any;
-const IDatabaseDriver: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });
+const IDatabaseDriver: any = Object.assign((...args: any[]) => ({ ...args }), {
+  [Symbol.iterator]: function* () {},
+});
 
 type MigrationRunner<_T = any, _U = any> = any;
-const MigrationRunner: any = Object.assign((...args: any[]) => ({ ...args }), { [Symbol.iterator]: function*() {} });
-
+const MigrationRunner: any = Object.assign((...args: any[]) => ({ ...args }), {
+  [Symbol.iterator]: function* () {},
+});
 
 /**
  * Service responsible for creating timestamped snapshots of the PGlite database.
@@ -20,7 +23,7 @@ export class DatabaseBackupService {
    * @returns A promise that resolves when the backup is complete.
    */
   public async createSnapshot(): Promise<void> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const snapshotPath = `packages/db/src/services/pglite-backups/${timestamp}`;
 
     // Ensure the snapshot directory exists

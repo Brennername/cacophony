@@ -64,5 +64,5 @@ export const migration014: Migration = {
   },
   down: async (driver: IDatabaseDriver): Promise<void> => {
     await driver.execute("DROP TABLE IF EXISTS model_tuning_profiles;");
-  }
+  },
 };

@@ -8,7 +8,7 @@ import { CacophonyDaemon } from "../daemon/CacophonyDaemon.js";
 function httpRequest(
   url: string,
   method = "GET",
-  body?: string
+  body?: string,
 ): Promise<{ status: number; data: any }> {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
@@ -21,9 +21,9 @@ function httpRequest(
         headers: body
           ? {
               "Content-Type": "application/json",
-              "Content-Length": Buffer.byteLength(body)
+              "Content-Length": Buffer.byteLength(body),
             }
-          : {}
+          : {},
       },
       (res) => {
         let raw = "";
@@ -34,16 +34,16 @@ function httpRequest(
           try {
             resolve({
               status: res.statusCode || 500,
-              data: raw ? JSON.parse(raw) : null
+              data: raw ? JSON.parse(raw) : null,
             });
           } catch {
             resolve({
               status: res.statusCode || 500,
-              data: raw
+              data: raw,
             });
           }
         });
-      }
+      },
     );
     req.on("error", reject);
     if (body) req.write(body);
@@ -53,21 +53,27 @@ function httpRequest(
 
 describe("Bandit Policy API Integration Suite (T55.2, T60.5)", () => {
   it("should get model arms and dynamically update policy via PUT /api/bandit/policy", async () => {
-    const tmpDir = path.resolve(process.cwd(), "workspaces", "test-bandit-api-" + Date.now());
+    const tmpDir = path.resolve(
+      process.cwd(),
+      "workspaces",
+      "test-bandit-api-" + Date.now(),
+    );
     await fs.mkdir(tmpDir, { recursive: true });
     const port = 24190;
 
     const daemon = new CacophonyDaemon({
       dbPath: path.join(tmpDir, "bandit.db"),
       socketPath: path.join(tmpDir, "bandit.sock"),
-      httpPort: port
+      httpPort: port,
     });
 
     try {
       await daemon.start();
 
       // 1. GET /api/bandit/arms
-      const getRes = await httpRequest(`http://127.0.0.1:${port}/api/bandit/arms`);
+      const getRes = await httpRequest(
+        `http://127.0.0.1:${port}/api/bandit/arms`,
+      );
       assert.strictEqual(getRes.status, 200);
       assert.strictEqual(getRes.data.success, true);
       assert.ok(Array.isArray(getRes.data.arms));
@@ -80,8 +86,8 @@ describe("Bandit Policy API Integration Suite (T55.2, T60.5)", () => {
         JSON.stringify({
           policy: "thompson_sampling",
           explorationRate: 0.22,
-          ucbConstant: 1.5
-        })
+          ucbConstant: 1.5,
+        }),
       );
       assert.strictEqual(updateRes.status, 200);
       assert.strictEqual(updateRes.data.policy, "thompson_sampling");

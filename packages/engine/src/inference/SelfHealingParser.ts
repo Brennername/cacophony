@@ -1,4 +1,8 @@
-import { AdaptiveOutputFormatter, stripThinkBlocks, type ExtractedCodeBlock } from "./AdaptiveOutputFormatter.js";
+import {
+  AdaptiveOutputFormatter,
+  stripThinkBlocks,
+  type ExtractedCodeBlock,
+} from "./AdaptiveOutputFormatter.js";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 import type { ChatMessage, InferenceRequest } from "@cacophony/shared-types";
 
@@ -22,7 +26,10 @@ export class SelfHealingParser {
   private readonly formatter: AdaptiveOutputFormatter;
   private readonly maxRetries: number;
 
-  constructor(formatter: AdaptiveOutputFormatter = new AdaptiveOutputFormatter(), maxRetries = 2) {
+  constructor(
+    formatter: AdaptiveOutputFormatter = new AdaptiveOutputFormatter(),
+    maxRetries = 2,
+  ) {
     this.formatter = formatter;
     this.maxRetries = maxRetries;
   }
@@ -40,7 +47,7 @@ export class SelfHealingParser {
         valid: false,
         code: null,
         error: "Model emitted an empty or whitespace-only response.",
-        blocks: []
+        blocks: [],
       };
     }
 
@@ -50,21 +57,30 @@ export class SelfHealingParser {
       const lastOpenThink = rawOutput.lastIndexOf("<think>");
       const lastCloseThink = rawOutput.lastIndexOf("</think>");
 
-      if (lastOpenThink !== -1 && (lastCloseThink === -1 || lastOpenThink > lastCloseThink)) {
+      if (
+        lastOpenThink !== -1 &&
+        (lastCloseThink === -1 || lastOpenThink > lastCloseThink)
+      ) {
         return {
           valid: false,
           code: null,
-          error: "Output was cut off inside a thinking block (<think>) before completing the analysis and writing code. Please continue immediately, close the thought, and emit the complete code inside markdown code fences (```).",
-          blocks: []
+          error:
+            "Output was cut off inside a thinking block (<think>) before completing the analysis and writing code. Please continue immediately, close the thought, and emit the complete code inside markdown code fences (```).",
+          blocks: [],
         };
       }
 
-      if (rawOutput.includes("<think>") && rawOutput.includes("</think>") && !rawOutput.includes("```")) {
+      if (
+        rawOutput.includes("<think>") &&
+        rawOutput.includes("</think>") &&
+        !rawOutput.includes("```")
+      ) {
         return {
           valid: false,
           code: null,
-          error: "Thinking block completed, but response was cut off before emitting the code block. Provide the complete code implementation inside markdown code fences (```) now.",
-          blocks: []
+          error:
+            "Thinking block completed, but response was cut off before emitting the code block. Provide the complete code implementation inside markdown code fences (```) now.",
+          blocks: [],
         };
       }
 
@@ -75,21 +91,27 @@ export class SelfHealingParser {
 
       const hasMultipleLinesOfCode =
         cleanedRaw.split("\n").length >= 3 &&
-        (cleanedRaw.includes("export class ") || cleanedRaw.includes("export interface ") || cleanedRaw.includes("import "));
+        (cleanedRaw.includes("export class ") ||
+          cleanedRaw.includes("export interface ") ||
+          cleanedRaw.includes("import "));
 
-      if ((hasCodeDeclaration || hasMultipleLinesOfCode) && !cleanedRaw.includes("```")) {
+      if (
+        (hasCodeDeclaration || hasMultipleLinesOfCode) &&
+        !cleanedRaw.includes("```")
+      ) {
         return {
           valid: true,
           code: cleanedRaw,
-          blocks: [{ language: "typescript", code: cleanedRaw }]
+          blocks: [{ language: "typescript", code: cleanedRaw }],
         };
       }
 
       return {
         valid: false,
         code: null,
-        error: "Missing required markdown code fence (```<language> ... ```). Output must enclose complete code inside code fences.",
-        blocks: []
+        error:
+          "Missing required markdown code fence (```<language> ... ```). Output must enclose complete code inside code fences.",
+        blocks: [],
       };
     }
 
@@ -97,8 +119,9 @@ export class SelfHealingParser {
       return {
         valid: false,
         code: null,
-        error: "Output was cut off before closing the code fence (```). Please continue immediately and provide the complete, fully closed code without cutting off.",
-        blocks
+        error:
+          "Output was cut off before closing the code fence (```). Please continue immediately and provide the complete, fully closed code without cutting off.",
+        blocks,
       };
     }
 
@@ -108,25 +131,27 @@ export class SelfHealingParser {
         valid: false,
         code: null,
         error: "Code fence block was empty.",
-        blocks
+        blocks,
       };
     }
 
     // Detect placeholder comments and lazy stubs that local models frequently emit when incomplete
-    const placeholderRegex = /(\/\/\s*\.\.\.\s*existing\s*code|\/\*\s*\.\.\.\s*existing|(?:\/\/|\/\*)\s*(?:\.\.\.\s*)?previous\s+code\s+goes\s+here|(?:\/\/|\/\*)\s*rest\s*of\s*(?:code|method)|\/\/\s*\.\.\.\s*rest\s*of\s*(?:code|method)|\/\/\s*TODO:\s*(?:implement|fill|add|later)|throw\s+new\s+Error\(\s*["'](?:Not implemented|TODO)["']\s*\))/i;
+    const placeholderRegex =
+      /(\/\/\s*\.\.\.\s*existing\s*code|\/\*\s*\.\.\.\s*existing|(?:\/\/|\/\*)\s*(?:\.\.\.\s*)?previous\s+code\s+goes\s+here|(?:\/\/|\/\*)\s*rest\s*of\s*(?:code|method)|\/\/\s*\.\.\.\s*rest\s*of\s*(?:code|method)|\/\/\s*TODO:\s*(?:implement|fill|add|later)|throw\s+new\s+Error\(\s*["'](?:Not implemented|TODO)["']\s*\))/i;
     if (placeholderRegex.test(primary)) {
       return {
         valid: false,
         code: null,
-        error: "Forbidden placeholder comment detected (e.g. '// ... existing code ...' or incomplete stub). Retry using the output scope requested in the original task; do not expand a targeted edit into a full-file rewrite.",
-        blocks
+        error:
+          "Forbidden placeholder comment detected (e.g. '// ... existing code ...' or incomplete stub). Retry using the output scope requested in the original task; do not expand a targeted edit into a full-file rewrite.",
+        blocks,
       };
     }
 
     return {
       valid: true,
       code: primary,
-      blocks
+      blocks,
     };
   }
 
@@ -143,7 +168,7 @@ export class SelfHealingParser {
       "Rules reminder:",
       "- Enclose the complete code inside a standard markdown code block: ```<language> ... ```.",
       "- Do NOT use placeholder comments like '// ... existing code ...'. For targeted edits, return only the requested target; for whole-file tasks, return the complete file.",
-      "- Do NOT output any <think> tags or internal thoughts. Start your response directly with the markdown code fence ```."
+      "- Do NOT output any <think> tags or internal thoughts. Start your response directly with the markdown code fence ```.",
     ].join("\n");
   }
 
@@ -154,7 +179,7 @@ export class SelfHealingParser {
     provider: IInferenceProvider,
     baseRequest: InferenceRequest,
     onChunk?: (chunk: string) => void,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<{
     readonly code: string;
     readonly attempts: number;
@@ -164,7 +189,9 @@ export class SelfHealingParser {
     readonly tokensCompletion: number;
   }> {
     const messages: ChatMessage[] = [...baseRequest.messages];
-    const isReasoner = baseRequest.model.includes("r1") || baseRequest.model.includes("reasoner");
+    const isReasoner =
+      baseRequest.model.includes("r1") ||
+      baseRequest.model.includes("reasoner");
     const allowedRetries = isReasoner ? 1 : this.maxRetries;
     let attempts = 0;
 
@@ -176,7 +203,7 @@ export class SelfHealingParser {
       const req: InferenceRequest = {
         ...baseRequest,
         messages,
-        ...(signal ? { signal } : {})
+        ...(signal ? { signal } : {}),
       };
       const response = onChunk
         ? await provider.stream(req, onChunk)
@@ -190,7 +217,7 @@ export class SelfHealingParser {
           rawOutput: response.content,
           tokensPerSec: response.tokensPerSec,
           tokensPrompt: response.tokensPrompt,
-          tokensCompletion: response.tokensCompletion
+          tokensCompletion: response.tokensCompletion,
         };
       }
 
@@ -202,11 +229,15 @@ export class SelfHealingParser {
       messages.push({ role: "assistant", content: response.content });
       messages.push({
         role: "user",
-        content: this.buildCorrectionPrompt(validation.error || "Invalid format.")
+        content: this.buildCorrectionPrompt(
+          validation.error || "Invalid format.",
+        ),
       });
     }
 
-    throw new Error(`Self-healing parsing failed after ${this.maxRetries} attempts.`);
+    throw new Error(
+      `Self-healing parsing failed after ${this.maxRetries} attempts.`,
+    );
   }
 
   /**
@@ -240,6 +271,8 @@ export class SelfHealingParser {
     }
 
     const remainder = str.slice(idx);
-    return /^(?:import|export|class|interface|function|const|let|var)\b/.test(remainder);
+    return /^(?:import|export|class|interface|function|const|let|var)\b/.test(
+      remainder,
+    );
   }
 }

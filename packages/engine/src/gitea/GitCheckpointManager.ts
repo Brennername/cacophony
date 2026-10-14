@@ -31,15 +31,26 @@ export class GitCheckpointManager {
   /**
    * Creates a shadow checkpoint ref for a specific task and pipeline stage.
    */
-  public async createCheckpoint(taskId: string, stageName: string, message: string): Promise<string> {
+  public async createCheckpoint(
+    taskId: string,
+    stageName: string,
+    message: string,
+  ): Promise<string> {
     const ref = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
     try {
-      const { stdout: commitHash } = await execAsync("git rev-parse HEAD", { cwd: this.repositoryRoot });
+      const { stdout: commitHash } = await execAsync("git rev-parse HEAD", {
+        cwd: this.repositoryRoot,
+      });
       const hash = commitHash.trim();
-      await execAsync(`git update-ref ${ref} ${hash}`, { cwd: this.repositoryRoot });
+      await execAsync(`git update-ref ${ref} ${hash}`, {
+        cwd: this.repositoryRoot,
+      });
       return hash;
     } catch (err) {
-      console.warn(`[GitCheckpointManager] Failed to create checkpoint ${ref} (${message}):`, err);
+      console.warn(
+        `[GitCheckpointManager] Failed to create checkpoint ${ref} (${message}):`,
+        err,
+      );
       return "";
     }
   }
@@ -49,10 +60,12 @@ export class GitCheckpointManager {
    */
   public async listCheckpoints(taskId?: string): Promise<CheckpointRecord[]> {
     try {
-      const pattern = taskId ? `${CHECKPOINT_REF_PREFIX}/${taskId}-*` : `${CHECKPOINT_REF_PREFIX}/*`;
+      const pattern = taskId
+        ? `${CHECKPOINT_REF_PREFIX}/${taskId}-*`
+        : `${CHECKPOINT_REF_PREFIX}/*`;
       const { stdout } = await execAsync(
         `git for-each-ref --format="%(refname) %(objectname) %(contents:subject)" ${pattern}`,
-        { cwd: this.repositoryRoot }
+        { cwd: this.repositoryRoot },
       );
       const lines = stdout.trim().split("\n").filter(Boolean);
       return lines.map((line, idx) => {
@@ -62,7 +75,7 @@ export class GitCheckpointManager {
           hash,
           message: rest.join(" ") || "Shadow stage checkpoint",
           createdAt: new Date().toISOString(),
-          filesChanged: 1
+          filesChanged: 1,
         };
       });
     } catch {
@@ -74,28 +87,44 @@ export class GitCheckpointManager {
    * Reverts the working directory to a specific checkpoint ref or commit hash.
    */
   public async revertToCheckpoint(checkpointId: string): Promise<void> {
-    await execAsync(`git checkout ${checkpointId} -- .`, { cwd: this.repositoryRoot });
+    await execAsync(`git checkout ${checkpointId} -- .`, {
+      cwd: this.repositoryRoot,
+    });
   }
 
   /**
    * Stores a checkpoint reference under the hidden namespace.
    */
-  public async storeCheckpointRef(taskId: string, stageName: string, ref: string): Promise<void> {
+  public async storeCheckpointRef(
+    taskId: string,
+    stageName: string,
+    ref: string,
+  ): Promise<void> {
     const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
     try {
-      await execAsync(`git update-ref ${checkpointRef} ${ref}`, { cwd: this.repositoryRoot });
+      await execAsync(`git update-ref ${checkpointRef} ${ref}`, {
+        cwd: this.repositoryRoot,
+      });
     } catch (err) {
-      console.warn(`[GitCheckpointManager] Failed to store ref ${checkpointRef}:`, err);
+      console.warn(
+        `[GitCheckpointManager] Failed to store ref ${checkpointRef}:`,
+        err,
+      );
     }
   }
 
   /**
    * Retrieves a checkpoint reference from the hidden namespace.
    */
-  public async getCheckpointRef(taskId: string, stageName: string): Promise<string | undefined> {
+  public async getCheckpointRef(
+    taskId: string,
+    stageName: string,
+  ): Promise<string | undefined> {
     const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
     try {
-      const { stdout } = await execAsync(`git rev-parse ${checkpointRef}`, { cwd: this.repositoryRoot });
+      const { stdout } = await execAsync(`git rev-parse ${checkpointRef}`, {
+        cwd: this.repositoryRoot,
+      });
       return stdout.trim() || undefined;
     } catch {
       return undefined;
@@ -105,10 +134,15 @@ export class GitCheckpointManager {
   /**
    * Deletes a checkpoint reference from the hidden namespace.
    */
-  public async deleteCheckpointRef(taskId: string, stageName: string): Promise<void> {
+  public async deleteCheckpointRef(
+    taskId: string,
+    stageName: string,
+  ): Promise<void> {
     const checkpointRef = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
     try {
-      await execAsync(`git update-ref -d ${checkpointRef}`, { cwd: this.repositoryRoot });
+      await execAsync(`git update-ref -d ${checkpointRef}`, {
+        cwd: this.repositoryRoot,
+      });
     } catch {
       // Ignored
     }
@@ -121,13 +155,16 @@ export class GitCheckpointManager {
    * @param maxCount The maximum number of recent checkpoints to retain.
    * @returns The number of pruned checkpoint references.
    */
-  public async pruneOldCheckpoints(maxAgeDays: number, maxCount: number): Promise<number> {
+  public async pruneOldCheckpoints(
+    maxAgeDays: number,
+    maxCount: number,
+  ): Promise<number> {
     try {
       const pattern = `${CHECKPOINT_REF_PREFIX}/*`;
       const format = "%(refname) %(creatordate:iso8601)";
       const { stdout } = await execAsync(
         `git for-each-ref --format="${format}" --sort=-creatordate ${pattern}`,
-        { cwd: this.repositoryRoot }
+        { cwd: this.repositoryRoot },
       );
 
       const lines = stdout.trim().split("\n").filter(Boolean);
@@ -151,7 +188,9 @@ export class GitCheckpointManager {
 
         if (isOverAge || isOverCount) {
           try {
-            await execAsync(`git update-ref -d ${refname}`, { cwd: this.repositoryRoot });
+            await execAsync(`git update-ref -d ${refname}`, {
+              cwd: this.repositoryRoot,
+            });
             prunedCount++;
           } catch {
             // Ignored per-ref deletion error
@@ -161,7 +200,10 @@ export class GitCheckpointManager {
 
       return prunedCount;
     } catch (err) {
-      console.warn("[GitCheckpointManager] Error pruning old checkpoints:", err);
+      console.warn(
+        "[GitCheckpointManager] Error pruning old checkpoints:",
+        err,
+      );
       return 0;
     }
   }

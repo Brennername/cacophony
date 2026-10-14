@@ -21,7 +21,10 @@ export class RepoMapGenerator {
   /**
    * Generates a formatted repo map string conforming to token budget.
    */
-  public generateMap(symbols: readonly ExtractedSymbol[], options: RepoMapOptions = {}): string {
+  public generateMap(
+    symbols: readonly ExtractedSymbol[],
+    options: RepoMapOptions = {},
+  ): string {
     const maxTokens = options.maxTokens ?? 2048;
     const query = options.queryBiasing?.toLowerCase().trim();
 
@@ -37,12 +40,16 @@ export class RepoMapGenerator {
     // 2. Score symbols with query biasing
     const ranked: RankedSymbol[] = symbols.map((s) => {
       let score = ranks.get(s.id) ?? 0.0;
-      if (query && (s.name.toLowerCase().includes(query) || s.filePath.toLowerCase().includes(query))) {
+      if (
+        query &&
+        (s.name.toLowerCase().includes(query) ||
+          s.filePath.toLowerCase().includes(query))
+      ) {
         score += 0.5; // Boost matches
       }
       return {
         ...s,
-        score
+        score,
       };
     });
 
@@ -55,8 +62,12 @@ export class RepoMapGenerator {
     let currentChars = 0;
 
     for (const item of ranked) {
-      const estimatedLineLength = item.filePath.length + item.signature.length + 12;
-      if (currentChars + estimatedLineLength > charBudget && selectedSymbols.length > 0) {
+      const estimatedLineLength =
+        item.filePath.length + item.signature.length + 12;
+      if (
+        currentChars + estimatedLineLength > charBudget &&
+        selectedSymbols.length > 0
+      ) {
         break;
       }
       selectedSymbols.push(item);

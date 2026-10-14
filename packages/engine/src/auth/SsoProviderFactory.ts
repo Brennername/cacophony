@@ -19,7 +19,10 @@ export class SsoProviderFactory {
       process.env["SSO_PROVIDER"] ||
       "authentik") as SsoProviderType;
 
-    const jwtSecret = config?.jwtSecret || process.env["VAULT_MASTER_KEY"] || "cacophony-jwt-session-secret";
+    const jwtSecret =
+      config?.jwtSecret ||
+      process.env["VAULT_MASTER_KEY"] ||
+      "cacophony-jwt-session-secret";
 
     switch (providerType) {
       case "authentik": {
@@ -40,7 +43,12 @@ export class SsoProviderFactory {
             config?.authentik?.redirectUri ||
             process.env["AUTHENTIK_OAUTH_REDIRECT_URI"] ||
             "http://localhost:24072/auth/callback",
-          scopes: config?.authentik?.scopes || ["openid", "profile", "email", "groups"]
+          scopes: config?.authentik?.scopes || [
+            "openid",
+            "profile",
+            "email",
+            "groups",
+          ],
         };
         return new AuthentikOAuthProvider(authentikConfig, jwtSecret);
       }
@@ -53,25 +61,32 @@ export class SsoProviderFactory {
             "http://localhost:9091/",
           forwardAuthEnabled:
             config?.authelia?.forwardAuthEnabled ??
-            (process.env["AUTHELIA_FORWARD_AUTH_ENABLED"] !== "false"),
+            process.env["AUTHELIA_FORWARD_AUTH_ENABLED"] !== "false",
           headerRemoteUser: config?.authelia?.headerRemoteUser || "Remote-User",
-          headerRemoteEmail: config?.authelia?.headerRemoteEmail || "Remote-Email",
-          headerRemoteGroups: config?.authelia?.headerRemoteGroups || "Remote-Groups",
-          headerRemoteName: config?.authelia?.headerRemoteName || "Remote-Name"
+          headerRemoteEmail:
+            config?.authelia?.headerRemoteEmail || "Remote-Email",
+          headerRemoteGroups:
+            config?.authelia?.headerRemoteGroups || "Remote-Groups",
+          headerRemoteName: config?.authelia?.headerRemoteName || "Remote-Name",
         };
         return new AutheliaSsoProvider(autheliaConfig, jwtSecret);
       }
 
       case "gitea": {
         const giteaClient = new GiteaApiClient({
-          baseUrl: process.env["GITEA_BASE_URL"] || "http://cacophony-gitea:3000"
+          baseUrl:
+            process.env["GITEA_BASE_URL"] || "http://cacophony-gitea:3000",
         });
         const giteaProvider = new GiteaOAuthProvider(giteaClient, {
-          clientId: process.env["GITEA_OAUTH_CLIENT_ID"] || "cacophony-dashboard",
+          clientId:
+            process.env["GITEA_OAUTH_CLIENT_ID"] || "cacophony-dashboard",
           clientSecret: process.env["GITEA_OAUTH_CLIENT_SECRET"] || "",
-          redirectUri: process.env["GITEA_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback",
-          giteaPublicUrl: process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
-          jwtSecret
+          redirectUri:
+            process.env["GITEA_OAUTH_REDIRECT_URI"] ||
+            "http://localhost:24072/auth/callback",
+          giteaPublicUrl:
+            process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
+          jwtSecret,
         });
         return new GiteaSsoAdapter(giteaProvider);
       }

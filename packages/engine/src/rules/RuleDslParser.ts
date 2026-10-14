@@ -35,16 +35,20 @@ export class RuleDslParser {
    */
   public static interpolateVariables(
     source: string,
-    env: Record<string, string> = process.env as Record<string, string>
+    env: Record<string, string> = process.env as Record<string, string>,
   ): string {
-    return source.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => env[key] ?? "")
-                 .replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, key) => env[key] ?? "");
+    return source
+      .replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => env[key] ?? "")
+      .replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, key) => env[key] ?? "");
   }
 
   /**
    * Parses the DSL string into a typed RulePipelineDeclaration.
    */
-  public parse(source: string, env?: Record<string, string>): RulePipelineDeclaration {
+  public parse(
+    source: string,
+    env?: Record<string, string>,
+  ): RulePipelineDeclaration {
     const interpolated = RuleDslParser.interpolateVariables(source, env);
     const tokens = this.tokenize(interpolated);
     let pos = 0;
@@ -53,10 +57,14 @@ export class RuleDslParser {
     const consume = (expected?: string) => {
       const token = tokens[pos];
       if (!token) {
-        throw new Error(`Unexpected end of input, expected ${expected || "token"}`);
+        throw new Error(
+          `Unexpected end of input, expected ${expected || "token"}`,
+        );
       }
       if (expected && token !== expected) {
-        throw new Error(`Expected '${expected}' but got '${token}' at token ${pos}`);
+        throw new Error(
+          `Expected '${expected}' but got '${token}' at token ${pos}`,
+        );
       }
       pos++;
       return token;
@@ -122,7 +130,9 @@ export class RuleDslParser {
           rules,
         });
       } else {
-        throw new Error(`Unexpected keyword '${token}' inside pipeline declaration`);
+        throw new Error(
+          `Unexpected keyword '${token}' inside pipeline declaration`,
+        );
       }
     }
 
@@ -282,7 +292,11 @@ export class RuleDslParser {
 
       // Identifiers / numbers / words
       let word = "";
-      while (i < text.length && !/\s/.test(text[i]!) && !["{", "}", "[", "]", ",", "="].includes(text[i]!)) {
+      while (
+        i < text.length &&
+        !/\s/.test(text[i]!) &&
+        !["{", "}", "[", "]", ",", "="].includes(text[i]!)
+      ) {
         word += text[i];
         i++;
       }

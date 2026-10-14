@@ -16,14 +16,18 @@ import { BaseRepairRule } from "../BaseRepairRule.js";
 export class EmptyFileGuardRule extends BaseRepairRule {
   readonly id = "empty_files";
   readonly name = "Empty File Guard";
-  readonly description = "Detects 0-byte or whitespace-only files produced during generation and rejects or warns.";
+  readonly description =
+    "Detects 0-byte or whitespace-only files produced during generation and rejects or warns.";
   readonly defaultSeverity: RuleSeverity = "hard_rejection";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    _options?: Record<string, unknown>
+    _options?: Record<string, unknown>,
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -55,6 +59,12 @@ export class EmptyFileGuardRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

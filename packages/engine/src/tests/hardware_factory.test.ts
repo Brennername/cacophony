@@ -41,7 +41,9 @@ describe("HardwareProviderFactory & CpuFallbackProvider Suite (T83.1)", () => {
   });
 
   it("detects AMD_APU_VEGA when sysfs DRM vendor matches 0x1002", async () => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cacophony-drm-amd-"));
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "cacophony-drm-amd-"),
+    );
     try {
       const cardDir = path.join(tempDir, "card0", "device");
       fs.mkdirSync(cardDir, { recursive: true });
@@ -67,7 +69,9 @@ describe("HardwareProviderFactory & CpuFallbackProvider Suite (T83.1)", () => {
   });
 
   it("falls back to CPU_FALLBACK when no GPU accelerator exists", async () => {
-    const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), "cacophony-empty-drm-"));
+    const emptyDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "cacophony-empty-drm-"),
+    );
     try {
       const factory = new HardwareProviderFactory({
         platform: "linux",
@@ -97,8 +101,14 @@ describe("HardwareProviderFactory & CpuFallbackProvider Suite (T83.1)", () => {
 
     const metrics = await cpuProvider.sample();
     assert(metrics.vramTotalBytes > 0, "Expected positive total memory");
-    assert(metrics.vramPercent >= 0 && metrics.vramPercent <= 100, "VRAM percent within range");
-    assert(metrics.gpuBusyPercent >= 0 && metrics.gpuBusyPercent <= 100, "CPU load within range");
+    assert(
+      metrics.vramPercent >= 0 && metrics.vramPercent <= 100,
+      "VRAM percent within range",
+    );
+    assert(
+      metrics.gpuBusyPercent >= 0 && metrics.gpuBusyPercent <= 100,
+      "CPU load within range",
+    );
     assert.equal(metrics.edgeTempCelsius, 45.0);
 
     const vram = await cpuProvider.getVramMetrics();

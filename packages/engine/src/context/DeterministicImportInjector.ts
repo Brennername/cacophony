@@ -56,7 +56,7 @@ export class DeterministicImportInjector {
       "temp.ts",
       sourceCode,
       ts.ScriptTarget.Latest,
-      true
+      true,
     );
 
     const importedSymbols = new Set<string>();
@@ -66,10 +66,15 @@ export class DeterministicImportInjector {
 
     function visit(node: ts.Node): void {
       if (ts.isImportDeclaration(node)) {
-        const moduleSpec = node.moduleSpecifier.getText(sourceFile).replace(/['"]/g, "");
+        const moduleSpec = node.moduleSpecifier
+          .getText(sourceFile)
+          .replace(/['"]/g, "");
         existingModules.set(moduleSpec, node);
 
-        if (node.importClause?.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+        if (
+          node.importClause?.namedBindings &&
+          ts.isNamedImports(node.importClause.namedBindings)
+        ) {
           for (const el of node.importClause.namedBindings.elements) {
             importedSymbols.add(el.name.getText(sourceFile));
           }
@@ -102,7 +107,11 @@ export class DeterministicImportInjector {
     const allInjected: string[] = [];
 
     for (const sym of referencedSymbols) {
-      if (!importedSymbols.has(sym) && !declaredSymbols.has(sym) && this.symbolCatalog[sym]) {
+      if (
+        !importedSymbols.has(sym) &&
+        !declaredSymbols.has(sym) &&
+        this.symbolCatalog[sym]
+      ) {
         const moduleSpec = this.symbolCatalog[sym]!;
         const list = missingByModule.get(moduleSpec) ?? [];
         if (!list.includes(sym)) {
@@ -120,7 +129,9 @@ export class DeterministicImportInjector {
     // Build new import lines
     const importLines: string[] = [];
     for (const [moduleSpec, symbols] of missingByModule.entries()) {
-      importLines.push(`import { ${symbols.sort().join(", ")} } from "${moduleSpec}";`);
+      importLines.push(
+        `import { ${symbols.sort().join(", ")} } from "${moduleSpec}";`,
+      );
     }
 
     const updatedCode = `${importLines.join("\n")}\n${sourceCode}`;

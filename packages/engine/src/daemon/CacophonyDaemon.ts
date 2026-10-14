@@ -339,6 +339,7 @@ export class CacophonyDaemon {
       gitPlatformProvider: gitProvider,
       frontierReviewer,
       banditScheduler: this.banditScheduler,
+      modelHealthRepository: this.healthRepo,
       autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
       repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
       repoName: process.env.GIT_REPO_NAME || "cacophony",

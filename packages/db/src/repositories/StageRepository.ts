@@ -1,5 +1,9 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { TaskStageRecord, StageName, StageStatus } from "@cacophony/shared-types";
+import type {
+  TaskStageRecord,
+  StageName,
+  StageStatus,
+} from "@cacophony/shared-types";
 
 interface StageRow {
   readonly id: number;
@@ -24,14 +28,17 @@ export class StageRepository {
     this.driver = driver;
   }
 
-  public async recordStageStart(taskId: string, stageName: StageName): Promise<number> {
+  public async recordStageStart(
+    taskId: string,
+    stageName: StageName,
+  ): Promise<number> {
     const startedAt = new Date().toISOString();
     if (this.driver.getDialect() === "postgres") {
       const row = await this.driver.queryOne<{ id: number }>(
         `INSERT INTO task_stages (
           task_id, stage_name, stage_status, started_at, tokens_sent, tokens_received, duration_ms
         ) VALUES ($1, $2, 'RUNNING', $3, 0, 0, 0) RETURNING id`,
-        [taskId, stageName, startedAt]
+        [taskId, stageName, startedAt],
       );
       return Number(row?.id);
     }
@@ -40,10 +47,10 @@ export class StageRepository {
       `INSERT INTO task_stages (
         task_id, stage_name, stage_status, started_at, tokens_sent, tokens_received, duration_ms
       ) VALUES ($1, $2, 'RUNNING', $3, 0, 0, 0)`,
-      [taskId, stageName, startedAt]
+      [taskId, stageName, startedAt],
     );
     const row = await this.driver.queryOne<{ id: number }>(
-      "SELECT last_insert_rowid() AS id"
+      "SELECT last_insert_rowid() AS id",
     );
     return Number(row?.id);
   }
@@ -57,7 +64,7 @@ export class StageRepository {
     durationMs: number,
     reasoningTranscript?: string | null,
     distilledOpinion?: string | null,
-    thinkingDurationMs?: number
+    thinkingDurationMs?: number,
   ): Promise<void> {
     const completedAt = new Date().toISOString();
     await this.driver.execute(
@@ -76,15 +83,17 @@ export class StageRepository {
         reasoningTranscript ?? null,
         distilledOpinion ?? null,
         thinkingDurationMs ?? 0,
-        id
-      ]
+        id,
+      ],
     );
   }
 
-  public async getStagesForTask(taskId: string): Promise<readonly TaskStageRecord[]> {
+  public async getStagesForTask(
+    taskId: string,
+  ): Promise<readonly TaskStageRecord[]> {
     const rows = await this.driver.query<StageRow>(
       "SELECT * FROM task_stages WHERE task_id = $1 ORDER BY id ASC",
-      [taskId]
+      [taskId],
     );
     return rows.map((r) => this.mapRow(r));
   }
@@ -101,9 +110,16 @@ export class StageRepository {
       durationMs: Number(row.duration_ms),
       startedAt: String(row.started_at),
       completedAt: row.completed_at ? String(row.completed_at) : null,
-      ...(row.reasoning_transcript !== undefined ? { reasoningTranscript: row.reasoning_transcript } : {}),
-      ...(row.distilled_opinion !== undefined ? { distilledOpinion: row.distilled_opinion } : {}),
-      ...(row.thinking_duration_ms !== undefined && row.thinking_duration_ms !== null ? { thinkingDurationMs: Number(row.thinking_duration_ms) } : {})
+      ...(row.reasoning_transcript !== undefined
+        ? { reasoningTranscript: row.reasoning_transcript }
+        : {}),
+      ...(row.distilled_opinion !== undefined
+        ? { distilledOpinion: row.distilled_opinion }
+        : {}),
+      ...(row.thinking_duration_ms !== undefined &&
+      row.thinking_duration_ms !== null
+        ? { thinkingDurationMs: Number(row.thinking_duration_ms) }
+        : {}),
     };
   }
 }

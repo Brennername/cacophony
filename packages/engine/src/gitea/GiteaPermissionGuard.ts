@@ -2,7 +2,7 @@ import type {
   GiteaScope,
   GiteaAccessLevel,
   GiteaTokenPermissions,
-  CacophonyGiteaRole
+  CacophonyGiteaRole,
 } from "@cacophony/shared-types";
 import { ROLE_GITEA_PERMISSIONS } from "@cacophony/shared-types";
 
@@ -15,12 +15,15 @@ export class GiteaPermissionGuard {
   private readonly role: CacophonyGiteaRole;
   private readonly permissions: GiteaTokenPermissions;
 
-  constructor(role: CacophonyGiteaRole, customPermissions?: Partial<GiteaTokenPermissions>) {
+  constructor(
+    role: CacophonyGiteaRole,
+    customPermissions?: Partial<GiteaTokenPermissions>,
+  ) {
     this.role = role;
     const basePermissions = ROLE_GITEA_PERMISSIONS[role];
     this.permissions = {
       ...basePermissions,
-      ...(customPermissions || {})
+      ...(customPermissions || {}),
     };
   }
 
@@ -47,13 +50,13 @@ export class GiteaPermissionGuard {
 
     if (currentLevel === "none") {
       throw new Error(
-        `Gitea Security Violation: Role '${this.role}' has 'none' access to scope '${scope}'. Required: '${requiredLevel}'.`
+        `Gitea Security Violation: Role '${this.role}' has 'none' access to scope '${scope}'. Required: '${requiredLevel}'.`,
       );
     }
 
     if (requiredLevel === "write" && currentLevel !== "write") {
       throw new Error(
-        `Gitea Security Violation: Role '${this.role}' has '${currentLevel}' access to scope '${scope}'. Required: 'write'.`
+        `Gitea Security Violation: Role '${this.role}' has '${currentLevel}' access to scope '${scope}'. Required: 'write'.`,
       );
     }
   }
@@ -68,16 +71,16 @@ export class GiteaPermissionGuard {
       "master",
       "production",
       "release",
-      "release/"
+      "release/",
     ];
 
     const isProtected = protectedPatterns.some(
-      (p) => normalized === p || (p.endsWith("/") && normalized.startsWith(p))
+      (p) => normalized === p || (p.endsWith("/") && normalized.startsWith(p)),
     );
 
     if (isProtected) {
       throw new Error(
-        `Gitea Security Violation: Role '${this.role}' cannot directly push or commit to protected branch '${branchName}'. Modifications must occur on isolated feature/fix branches.`
+        `Gitea Security Violation: Role '${this.role}' cannot directly push or commit to protected branch '${branchName}'. Modifications must occur on isolated feature/fix branches.`,
       );
     }
   }

@@ -18,7 +18,11 @@ export class ConversationPane {
     this.messages.push(message);
   }
 
-  public render(buffer: ScreenBuffer, bounds: BoxDimensions, isActive: boolean): void {
+  public render(
+    buffer: ScreenBuffer,
+    bounds: BoxDimensions,
+    isActive: boolean,
+  ): void {
     const palette = buffer.getPalette();
     buffer.drawBox(bounds, { title: "Conversation", isActive });
 
@@ -54,7 +58,10 @@ export class ConversationPane {
         } else if (rawLine.startsWith("#")) {
           lines.push({ text: `  ${rawLine}`, style: palette.title });
         } else if (rawLine.startsWith("- ") || rawLine.startsWith("* ")) {
-          lines.push({ text: `    * ${rawLine.slice(2)}`, style: palette.text });
+          lines.push({
+            text: `    * ${rawLine.slice(2)}`,
+            style: palette.text,
+          });
         } else {
           // Word wrap line to innerW
           const wrapped = this.wrapText(rawLine, innerW - 4);
@@ -74,7 +81,13 @@ export class ConversationPane {
     for (let i = 0; i < visibleCount; i++) {
       const lineItem = lines[startIdx + i];
       if (!lineItem) break;
-      buffer.drawText(innerX, innerY + i, lineItem.text, lineItem.style, innerW);
+      buffer.drawText(
+        innerX,
+        innerY + i,
+        lineItem.text,
+        lineItem.style,
+        innerW,
+      );
     }
   }
 
@@ -107,7 +120,11 @@ export class TelemetryBar {
     this.telemetry = snapshot;
   }
 
-  public render(buffer: ScreenBuffer, bounds: BoxDimensions, isActive: boolean): void {
+  public render(
+    buffer: ScreenBuffer,
+    bounds: BoxDimensions,
+    isActive: boolean,
+  ): void {
     const palette = buffer.getPalette();
     buffer.drawBox(bounds, { title: "Hardware APU Telemetry", isActive });
 
@@ -116,17 +133,25 @@ export class TelemetryBar {
     const innerW = bounds.width - 4;
 
     if (!this.telemetry) {
-      buffer.drawText(innerX, innerY, "Sampling hardware sensors...", palette.textMuted, innerW);
+      buffer.drawText(
+        innerX,
+        innerY,
+        "Sampling hardware sensors...",
+        palette.textMuted,
+        innerW,
+      );
       return;
     }
 
-    const { gpu, thermalZone, pacingDelaySeconds, activeModel } = this.telemetry;
+    const { gpu, thermalZone, pacingDelaySeconds, activeModel } =
+      this.telemetry;
     const vramMb = Math.round(gpu.vramUsedBytes / (1024 * 1024));
     const vramTot = Math.round(gpu.vramTotalBytes / (1024 * 1024));
 
     let zoneStyle = palette.success;
     if (thermalZone === "Warm") zoneStyle = palette.warn;
-    if (thermalZone === "Elevated" || thermalZone === "Danger") zoneStyle = palette.danger;
+    if (thermalZone === "Elevated" || thermalZone === "Danger")
+      zoneStyle = palette.danger;
 
     const line1 = `GPU Load: ${gpu.gpuBusyPercent}% | Temp: ${gpu.edgeTempCelsius}C | Power: ${gpu.pptWatts}W | Clock: ${gpu.sclkMhz}MHz`;
     const line2 = `Thermal Zone: [${thermalZone}] (Delay ${pacingDelaySeconds}s) | VRAM: ${vramMb}MB / ${vramTot}MB (${gpu.vramPercent.toFixed(1)}%)`;
@@ -147,7 +172,11 @@ export class ContextInspectorPane {
   public focusFiles: string[] = [];
   public tokenBudget = { used: 0, limit: 32768 };
 
-  public render(buffer: ScreenBuffer, bounds: BoxDimensions, isActive: boolean): void {
+  public render(
+    buffer: ScreenBuffer,
+    bounds: BoxDimensions,
+    isActive: boolean,
+  ): void {
     const palette = buffer.getPalette();
     buffer.drawBox(bounds, { title: "Context & Files", isActive });
 
@@ -156,24 +185,46 @@ export class ContextInspectorPane {
     const innerW = bounds.width - 4;
     const innerH = bounds.height - 2;
 
-    const budgetPct = ((this.tokenBudget.used / this.tokenBudget.limit) * 100).toFixed(1);
-    const budgetStyle = Number(budgetPct) > 80 ? palette.danger : palette.success;
+    const budgetPct = (
+      (this.tokenBudget.used / this.tokenBudget.limit) *
+      100
+    ).toFixed(1);
+    const budgetStyle =
+      Number(budgetPct) > 80 ? palette.danger : palette.success;
 
     buffer.drawText(
       innerX,
       innerY,
       `Tokens: ${this.tokenBudget.used} / ${this.tokenBudget.limit} (${budgetPct}%)`,
       budgetStyle,
-      innerW
+      innerW,
     );
 
-    buffer.drawText(innerX, innerY + 1, "Focus Files:", palette.keyword, innerW);
+    buffer.drawText(
+      innerX,
+      innerY + 1,
+      "Focus Files:",
+      palette.keyword,
+      innerW,
+    );
 
     if (this.focusFiles.length === 0) {
-      buffer.drawText(innerX + 2, innerY + 2, "No files pinned.", palette.textMuted, innerW - 2);
+      buffer.drawText(
+        innerX + 2,
+        innerY + 2,
+        "No files pinned.",
+        palette.textMuted,
+        innerW - 2,
+      );
     } else {
       for (let i = 0; i < Math.min(this.focusFiles.length, innerH - 3); i++) {
-        buffer.drawText(innerX + 2, innerY + 2 + i, `• ${this.focusFiles[i]}`, palette.text, innerW - 2);
+        buffer.drawText(
+          innerX + 2,
+          innerY + 2 + i,
+          `• ${this.focusFiles[i]}`,
+          palette.text,
+          innerW - 2,
+        );
       }
     }
   }
@@ -193,10 +244,17 @@ export class StreamingLogDrawer {
     }
   }
 
-  public render(buffer: ScreenBuffer, bounds: BoxDimensions, isActive: boolean): void {
+  public render(
+    buffer: ScreenBuffer,
+    bounds: BoxDimensions,
+    isActive: boolean,
+  ): void {
     if (!this.isVisible) return;
     const palette = buffer.getPalette();
-    buffer.drawBox(bounds, { title: "Stream Output & Process Drawer", isActive });
+    buffer.drawBox(bounds, {
+      title: "Stream Output & Process Drawer",
+      isActive,
+    });
 
     const innerX = bounds.x + 2;
     const innerY = bounds.y + 1;
@@ -207,7 +265,11 @@ export class StreamingLogDrawer {
     for (let i = 0; i < visibleLogs.length; i++) {
       const line = visibleLogs[i] || "";
       let style = palette.textMuted;
-      if (line.includes("ERROR") || line.includes("fail") || line.includes("FAIL")) {
+      if (
+        line.includes("ERROR") ||
+        line.includes("fail") ||
+        line.includes("FAIL")
+      ) {
         style = palette.danger;
       } else if (line.includes("SUCCESS") || line.includes("PASS")) {
         style = palette.success;

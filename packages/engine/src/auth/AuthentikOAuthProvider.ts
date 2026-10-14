@@ -12,7 +12,10 @@ export class AuthentikOAuthProvider implements ISsoProvider {
   private readonly config: AuthentikConfig;
   private readonly jwtSecret: string;
 
-  constructor(config: AuthentikConfig, jwtSecret: string = "cacophony-authentik-default-jwt-secret") {
+  constructor(
+    config: AuthentikConfig,
+    jwtSecret: string = "cacophony-authentik-default-jwt-secret",
+  ) {
     this.config = config;
     this.jwtSecret = jwtSecret;
   }
@@ -28,7 +31,7 @@ export class AuthentikOAuthProvider implements ISsoProvider {
       redirect_uri: this.config.redirectUri,
       response_type: "code",
       scope: this.config.scopes.join(" "),
-      state
+      state,
     });
 
     return `${authEndpoint}?${params.toString()}`;
@@ -37,7 +40,9 @@ export class AuthentikOAuthProvider implements ISsoProvider {
   /**
    * Exchanges authorization code with Authentik token endpoint.
    */
-  public async exchangeCode(code: string): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
+  public async exchangeCode(
+    code: string,
+  ): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
     const issuer = this.config.issuerUrl.replace(/\/+$/, "");
     const tokenUrl = this.config.tokenEndpoint || `${issuer}/token/`;
 
@@ -46,7 +51,7 @@ export class AuthentikOAuthProvider implements ISsoProvider {
       client_id: this.config.clientId,
       client_secret: this.config.clientSecret,
       code,
-      redirect_uri: this.config.redirectUri
+      redirect_uri: this.config.redirectUri,
     });
 
     let accessToken = "";
@@ -55,16 +60,18 @@ export class AuthentikOAuthProvider implements ISsoProvider {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json"
+          Accept: "application/json",
         },
-        body: bodyParams.toString()
+        body: bodyParams.toString(),
       });
 
       if (!response.ok) {
-        throw new Error(`Authentik token exchange failed: HTTP ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Authentik token exchange failed: HTTP ${response.status} ${response.statusText}`,
+        );
       }
 
-      const json = await response.json() as { access_token?: string };
+      const json = (await response.json()) as { access_token?: string };
       accessToken = json.access_token || "";
     } catch (err: unknown) {
       // If network unreachable in offline/mock test, fallback to simulated exchange if code matches test pattern
@@ -90,12 +97,12 @@ export class AuthentikOAuthProvider implements ISsoProvider {
       const response = await fetch(userinfoUrl, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json"
-        }
+          Accept: "application/json",
+        },
       });
 
       if (response.ok) {
-        const data = await response.json() as {
+        const data = (await response.json()) as {
           sub?: string;
           preferred_username?: string;
           email?: string;
@@ -113,7 +120,7 @@ export class AuthentikOAuthProvider implements ISsoProvider {
           ...(data.name ? { displayName: data.name } : {}),
           groups,
           roles,
-          provider: "authentik"
+          provider: "authentik",
         };
         return userProfile;
       }
@@ -129,7 +136,7 @@ export class AuthentikOAuthProvider implements ISsoProvider {
       displayName: "Authentik Administrator",
       groups: ["cacophony-admins", "authentik-admins"],
       roles: ["ADMIN", "OPERATOR"],
-      provider: "authentik"
+      provider: "authentik",
     };
   }
 
@@ -161,7 +168,9 @@ export class AuthentikOAuthProvider implements ISsoProvider {
         return { valid: false, error: "Signature verification failed" };
       }
 
-      const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf-8");
+      const payloadJson = Buffer.from(payloadB64, "base64url").toString(
+        "utf-8",
+      );
       const payload = JSON.parse(payloadJson) as {
         sub: string;
         username: string;
@@ -187,13 +196,13 @@ export class AuthentikOAuthProvider implements ISsoProvider {
           email: payload.email,
           groups,
           roles,
-          provider: "authentik"
-        }
+          provider: "authentik",
+        },
       };
     } catch (err: unknown) {
       return {
         valid: false,
-        error: err instanceof Error ? err.message : "Token validation error"
+        error: err instanceof Error ? err.message : "Token validation error",
       };
     }
   }
@@ -201,7 +210,10 @@ export class AuthentikOAuthProvider implements ISsoProvider {
   /**
    * Issues a signed session token.
    */
-  public issueSessionToken(user: SsoUserProfile, ttlSeconds: number = 86400): string {
+  public issueSessionToken(
+    user: SsoUserProfile,
+    ttlSeconds: number = 86400,
+  ): string {
     const header = { alg: "HS256", typ: "JWT" };
     const now = Math.floor(Date.now() / 1000);
     const payload = {
@@ -212,11 +224,13 @@ export class AuthentikOAuthProvider implements ISsoProvider {
       groups: user.groups,
       provider: this.providerType,
       iat: now,
-      exp: now + ttlSeconds
+      exp: now + ttlSeconds,
     };
 
     const headerB64 = Buffer.from(JSON.stringify(header)).toString("base64url");
-    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString(
+      "base64url",
+    );
     const signature = crypto
       .createHmac("sha256", this.jwtSecret)
       .update(`${headerB64}.${payloadB64}`)
@@ -236,7 +250,11 @@ export class AuthentikOAuthProvider implements ISsoProvider {
       if (lower.includes("admin") || lower === "cacophony-admins") {
         roles.add("ADMIN");
         roles.add("OPERATOR");
-      } else if (lower.includes("operator") || lower === "cacophony-operators" || lower.includes("developer")) {
+      } else if (
+        lower.includes("operator") ||
+        lower === "cacophony-operators" ||
+        lower.includes("developer")
+      ) {
         roles.add("OPERATOR");
       }
     }

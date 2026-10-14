@@ -5,7 +5,7 @@ export enum DiagnosticSeverity {
   Error = 1,
   Warning = 2,
   Information = 3,
-  Hint = 4
+  Hint = 4,
 }
 
 export interface Position {
@@ -54,14 +54,28 @@ export interface ILspClient {
   stop(): Promise<void>;
   restart(): Promise<void>;
 
-  sendRequest<TResult = unknown>(method: string, params?: unknown): Promise<TResult>;
+  sendRequest<TResult = unknown>(
+    method: string,
+    params?: unknown,
+  ): Promise<TResult>;
   sendNotification(method: string, params?: unknown): Promise<void>;
 
-  onNotification(method: string, handler: (params: unknown) => void): () => void;
-  onDiagnostics(handler: (diagnostics: readonly LspDiagnostic[]) => void): () => void;
+  onNotification(
+    method: string,
+    handler: (params: unknown) => void,
+  ): () => void;
+  onDiagnostics(
+    handler: (diagnostics: readonly LspDiagnostic[]) => void,
+  ): () => void;
 
   getDiagnostics(uri?: string): readonly LspDiagnostic[];
-  findDefinition(uri: string, position: Position): Promise<readonly LspLocation[]>;
-  findReferences(uri: string, position: Position): Promise<readonly LspLocation[]>;
+  findDefinition(
+    uri: string,
+    position: Position,
+  ): Promise<readonly LspLocation[]>;
+  findReferences(
+    uri: string,
+    position: Position,
+  ): Promise<readonly LspLocation[]>;
   documentSymbols(uri: string): Promise<readonly LspSymbolInformation[]>;
 }

@@ -38,7 +38,7 @@ describe("ModelProfileRepository Suite (T94.3.1)", () => {
         ArchitectureAuditor: 0.98,
         SecurityAuditor: 0.85,
         DxUxAuditor: 0.9,
-      }
+      },
     );
 
     assert.equal(updated.modelId, "qwen2.5-coder:14b");
@@ -46,7 +46,8 @@ describe("ModelProfileRepository Suite (T94.3.1)", () => {
     assert.equal(updated.reviewTemperature, 0.15);
     assert.equal(updated.domainAffinities["ArchitectureAuditor"], 0.98);
 
-    const retrieved = await profileRepo.getReviewCapability("qwen2.5-coder:14b");
+    const retrieved =
+      await profileRepo.getReviewCapability("qwen2.5-coder:14b");
     assert.equal(retrieved.contextWindow, 16384);
     assert.equal(retrieved.reviewTemperature, 0.15);
   });
@@ -55,10 +56,12 @@ describe("ModelProfileRepository Suite (T94.3.1)", () => {
     const r1Affinities = profileRepo.inferDomainAffinities("deepseek-r1:14b");
     assert.ok(r1Affinities["SecurityAuditor"]! >= 0.9);
 
-    const coderAffinities = profileRepo.inferDomainAffinities("qwen2.5-coder:7b");
+    const coderAffinities =
+      profileRepo.inferDomainAffinities("qwen2.5-coder:7b");
     assert.ok(coderAffinities["ArchitectureAuditor"]! >= 0.9);
 
-    const gemmaAffinities = profileRepo.inferDomainAffinities("gemma3:4b-it-qat");
+    const gemmaAffinities =
+      profileRepo.inferDomainAffinities("gemma3:4b-it-qat");
     assert.ok(gemmaAffinities["DxUxAuditor"]! >= 0.85);
   });
 });

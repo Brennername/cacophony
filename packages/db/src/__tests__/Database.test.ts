@@ -8,7 +8,10 @@ import { StageRepository } from "../repositories/StageRepository.js";
 import { ModelHealthRepository } from "../repositories/ModelHealthRepository.js";
 import { TelemetryRepository } from "../repositories/TelemetryRepository.js";
 import { VaultRepository } from "../repositories/VaultRepository.js";
-import type { TaskRecord, HardwareTelemetrySnapshot } from "@cacophony/shared-types";
+import type {
+  TaskRecord,
+  HardwareTelemetrySnapshot,
+} from "@cacophony/shared-types";
 
 describe("Database & Persistence Layer", () => {
   describe("PGliteDriver with Initial Schema Migrations", () => {
@@ -56,7 +59,7 @@ describe("Database & Persistence Layer", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       await taskRepo.create(task);
@@ -73,7 +76,10 @@ describe("Database & Persistence Layer", () => {
     });
 
     test("should record stage execution and token accounting", async () => {
-      const stageId = await stageRepo.recordStageStart("task-test-001", "generation");
+      const stageId = await stageRepo.recordStageStart(
+        "task-test-001",
+        "generation",
+      );
       assert.ok(stageId > 0);
 
       await stageRepo.recordStageCompletion(
@@ -82,7 +88,7 @@ describe("Database & Persistence Layer", () => {
         "Code generated cleanly.",
         150,
         450,
-        1200
+        1200,
       );
 
       const stages = await stageRepo.getStagesForTask("task-test-001");
@@ -110,20 +116,35 @@ describe("Database & Persistence Layer", () => {
         failureCount: failures,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: new Date().toISOString()
+        completedAt: new Date().toISOString(),
       });
 
       await taskRepo.create(makeFailedTask("task-retryable", 2));
       await taskRepo.create(makeFailedTask("task-quarantined", 3));
 
       assert.equal(await taskRepo.retryFailedTasks(), 1);
-      assert.equal((await taskRepo.getById("task-retryable"))?.status, "PENDING");
+      assert.equal(
+        (await taskRepo.getById("task-retryable"))?.status,
+        "PENDING",
+      );
       assert.equal((await taskRepo.getById("task-retryable"))?.failureCount, 2);
-      assert.equal((await taskRepo.getById("task-quarantined"))?.status, "FAILED");
+      assert.equal(
+        (await taskRepo.getById("task-quarantined"))?.status,
+        "FAILED",
+      );
 
-      assert.equal(await taskRepo.retryFailedTasks("task-quarantined", true), 1);
-      assert.equal((await taskRepo.getById("task-quarantined"))?.status, "PENDING");
-      assert.equal((await taskRepo.getById("task-quarantined"))?.failureCount, 3);
+      assert.equal(
+        await taskRepo.retryFailedTasks("task-quarantined", true),
+        1,
+      );
+      assert.equal(
+        (await taskRepo.getById("task-quarantined"))?.status,
+        "PENDING",
+      );
+      assert.equal(
+        (await taskRepo.getById("task-quarantined"))?.failureCount,
+        3,
+      );
     });
 
     test("should track model health and trigger automated eviction on 3 consecutive failures", async () => {
@@ -133,17 +154,35 @@ describe("Database & Persistence Layer", () => {
       assert.equal(initial.consecutiveFailures, 0);
 
       // Failure 1
-      const f1 = await modelRepo.recordRun(modelId, "ollama", false, 5000, 15.2);
+      const f1 = await modelRepo.recordRun(
+        modelId,
+        "ollama",
+        false,
+        5000,
+        15.2,
+      );
       assert.equal(f1.consecutiveFailures, 1);
       assert.equal(f1.status, "ACTIVE");
 
       // Failure 2
-      const f2 = await modelRepo.recordRun(modelId, "ollama", false, 5100, 14.8);
+      const f2 = await modelRepo.recordRun(
+        modelId,
+        "ollama",
+        false,
+        5100,
+        14.8,
+      );
       assert.equal(f2.consecutiveFailures, 2);
       assert.equal(f2.status, "ACTIVE");
 
       // Failure 3 -> Eviction trigger!
-      const f3 = await modelRepo.recordRun(modelId, "ollama", false, 5200, 14.5);
+      const f3 = await modelRepo.recordRun(
+        modelId,
+        "ollama",
+        false,
+        5200,
+        14.5,
+      );
       assert.equal(f3.consecutiveFailures, 3);
       assert.equal(f3.status, "EJECTED");
 
@@ -168,7 +207,7 @@ describe("Database & Persistence Layer", () => {
           vddgfxMilliVolts: 800,
           socMilliVolts: 750,
           pptWatts: 15.5,
-          sclkMhz: 1200
+          sclkMhz: 1200,
         },
         thermalZone: "Warm",
         pacingDelaySeconds: 5,
@@ -176,8 +215,8 @@ describe("Database & Persistence Layer", () => {
           name: "qwen2.5-coder:7b",
           model: "qwen2.5-coder:7b",
           sizeBytes: 4683075584,
-          vramSizeBytes: 4683075584
-        }
+          vramSizeBytes: 4683075584,
+        },
       };
 
       await telemetryRepo.insertSnapshot(snapshot);
@@ -191,7 +230,11 @@ describe("Database & Persistence Layer", () => {
     });
 
     test("should store and retrieve encrypted secrets in vault", async () => {
-      await vaultRepo.setSecret("OPENAI_API_KEY", "enc_cipher_text_mock", "mock_iv_vector");
+      await vaultRepo.setSecret(
+        "OPENAI_API_KEY",
+        "enc_cipher_text_mock",
+        "mock_iv_vector",
+      );
       const secret = await vaultRepo.getSecret("OPENAI_API_KEY");
       assert.ok(secret);
       assert.equal(secret.secretKey, "OPENAI_API_KEY");
@@ -236,7 +279,7 @@ describe("Database & Persistence Layer", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       await taskRepo.create(task);
@@ -249,7 +292,8 @@ describe("Database & Persistence Layer", () => {
 
   describe("Phase 41: Database Engine Portability, Auto-Vacuuming & Storage Optimization (T41.1 & T41.2)", () => {
     test("T41.1: DatabaseMaintenanceService should compact, partition old telemetry, and measure storage", async () => {
-      const { DatabaseMaintenanceService } = await import("../services/DatabaseMaintenanceService.js");
+      const { DatabaseMaintenanceService } =
+        await import("../services/DatabaseMaintenanceService.js");
       const testDriver = new PGliteDriver();
       await testDriver.connect();
 
@@ -257,7 +301,9 @@ describe("Database & Persistence Layer", () => {
       await runner.migrate();
 
       // Seed old telemetry snapshot (20 days ago) and fresh snapshot (today)
-      const oldTimestamp = new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString();
+      const oldTimestamp = new Date(
+        Date.now() - 20 * 24 * 3600 * 1000,
+      ).toISOString();
       const freshTimestamp = new Date().toISOString();
 
       await testDriver.execute(
@@ -266,7 +312,7 @@ describe("Database & Persistence Layer", () => {
           gtt_used_bytes, gtt_total_bytes, edge_temp_c, vddgfx_mv,
           soc_mv, ppt_watts, sclk_mhz, current_model
         ) VALUES ($1, 40.0, 1000, 2000, 500, 1000, 65.0, 800, 750, 15.0, 1200, 'qwen2.5-coder:7b')`,
-        [oldTimestamp]
+        [oldTimestamp],
       );
       await testDriver.execute(
         `INSERT INTO telemetry_snapshots (
@@ -274,14 +320,14 @@ describe("Database & Persistence Layer", () => {
           gtt_used_bytes, gtt_total_bytes, edge_temp_c, vddgfx_mv,
           soc_mv, ppt_watts, sclk_mhz, current_model
         ) VALUES ($1, 55.0, 1500, 2000, 600, 1000, 75.0, 850, 750, 20.0, 1400, 'qwen2.5-coder:7b')`,
-        [freshTimestamp]
+        [freshTimestamp],
       );
 
       const maintenance = new DatabaseMaintenanceService({
         driver: testDriver,
         dataDirPath: "data/test_maintenance_pglite",
         maxStorageThresholdBytes: 100 * 1024 * 1024,
-        telemetryRetentionDays: 14
+        telemetryRetentionDays: 14,
       });
 
       // 1. Run VACUUM & compaction without locking transactions
@@ -291,7 +337,9 @@ describe("Database & Persistence Layer", () => {
 
       // Verify active transaction runs concurrently without lock failure
       await testDriver.transaction(async (tx) => {
-        const rows = await tx.query("SELECT COUNT(*) as cnt FROM telemetry_snapshots");
+        const rows = await tx.query(
+          "SELECT COUNT(*) as cnt FROM telemetry_snapshots",
+        );
         assert.ok(rows.length > 0);
       });
 
@@ -302,26 +350,33 @@ describe("Database & Persistence Layer", () => {
       assert.equal(metrics.isOverThreshold, false);
 
       // 3. Partition & archive old telemetry
-      const partitionResult = await maintenance.partitionAndArchiveOldTelemetry(14);
+      const partitionResult =
+        await maintenance.partitionAndArchiveOldTelemetry(14);
       assert.equal(partitionResult.archivedCount, 1);
       assert.ok(partitionResult.archiveFilePath);
 
       // Verify only 1 fresh record remains in DB
-      const remainingRows = await testDriver.query<{ count: number | string }>("SELECT COUNT(*) as count FROM telemetry_snapshots");
+      const remainingRows = await testDriver.query<{ count: number | string }>(
+        "SELECT COUNT(*) as count FROM telemetry_snapshots",
+      );
       assert.equal(Number(remainingRows[0]?.count), 1);
 
       await testDriver.close();
     });
 
     test("T41.2: DatabaseDriverFactory should instantiate drivers and provide cross-driver parity", async () => {
-      const { DatabaseDriverFactory } = await import("../drivers/DatabaseDriverFactory.js");
+      const { DatabaseDriverFactory } =
+        await import("../drivers/DatabaseDriverFactory.js");
 
       // Test default/pglite driver instantiation
       const pglite = DatabaseDriverFactory.createDriver({ driver: "pglite" });
       assert.equal(pglite.getDialect(), "postgres");
 
       // Test sqlite driver instantiation
-      const sqlite = DatabaseDriverFactory.createDriver({ driver: "sqlite", sqliteDbPath: ":memory:" });
+      const sqlite = DatabaseDriverFactory.createDriver({
+        driver: "sqlite",
+        sqliteDbPath: ":memory:",
+      });
       assert.equal(sqlite.getDialect(), "sqlite");
 
       await sqlite.connect();
@@ -345,7 +400,7 @@ describe("Database & Persistence Layer", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       await sqliteTaskRepo.create(testTask);
@@ -384,7 +439,7 @@ describe("Database & Persistence Layer", () => {
         failureCount: 2,
         createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
         updatedAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       await repo.create(staleTask);

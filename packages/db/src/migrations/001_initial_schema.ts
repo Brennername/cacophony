@@ -137,5 +137,5 @@ export const migration001: Migration = {
         updated_at ${timestampType} NOT NULL
       );
     `);
-  }
+  },
 };

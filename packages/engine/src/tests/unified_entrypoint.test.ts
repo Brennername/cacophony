@@ -10,20 +10,27 @@ describe("Unified Startup Entrypoint & End-to-End Server Validation", () => {
   let tempDir: string;
   let daemon: CacophonyDaemon;
   const testHttpPort = 24199;
-  const testSocket = path.join(os.tmpdir(), `test-e2e-cacophony-${Date.now()}.sock`);
+  const testSocket = path.join(
+    os.tmpdir(),
+    `test-e2e-cacophony-${Date.now()}.sock`,
+  );
 
   before(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "cacophony-e2e-"));
     const distMock = path.join(tempDir, "dist");
     await fs.mkdir(distMock, { recursive: true });
-    await fs.writeFile(path.join(distMock, "index.html"), "<html><body>Mock Frontend</body></html>", "utf-8");
+    await fs.writeFile(
+      path.join(distMock, "index.html"),
+      "<html><body>Mock Frontend</body></html>",
+      "utf-8",
+    );
 
     daemon = new CacophonyDaemon({
       dbPath: path.join(tempDir, "cacophony_test_db"),
       socketPath: testSocket,
       httpPort: testHttpPort,
       httpHost: "127.0.0.1",
-      frontendDistPath: distMock
+      frontendDistPath: distMock,
     });
 
     await daemon.start();
@@ -59,8 +66,8 @@ describe("Unified Startup Entrypoint & End-to-End Server Validation", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: "E2E Automated Task",
-        priority: "P0"
-      })
+        priority: "P0",
+      }),
     });
     assert.strictEqual(postRes.status, 201);
 
@@ -71,19 +78,31 @@ describe("Unified Startup Entrypoint & End-to-End Server Validation", () => {
   });
 
   it("should resolve dynamic host origin and return network profile from /api/config/network", async () => {
-    const res = await fetch(`http://127.0.0.1:${testHttpPort}/api/config/network`, {
-      headers: {
-        "X-Forwarded-Host": "192.168.1.150:24072",
-        "X-Forwarded-Proto": "https",
-        Origin: "https://192.168.1.150:24072"
-      }
-    });
+    const res = await fetch(
+      `http://127.0.0.1:${testHttpPort}/api/config/network`,
+      {
+        headers: {
+          "X-Forwarded-Host": "192.168.1.150:24072",
+          "X-Forwarded-Proto": "https",
+          Origin: "https://192.168.1.150:24072",
+        },
+      },
+    );
 
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.headers.get("access-control-allow-origin"), "https://192.168.1.150:24072");
-    assert.ok(res.headers.get("content-security-policy")?.includes("default-src"));
+    assert.strictEqual(
+      res.headers.get("access-control-allow-origin"),
+      "https://192.168.1.150:24072",
+    );
+    assert.ok(
+      res.headers.get("content-security-policy")?.includes("default-src"),
+    );
 
-    const data = (await res.json()) as { resolvedOrigin: string; isLan: boolean; isLoopback: boolean };
+    const data = (await res.json()) as {
+      resolvedOrigin: string;
+      isLan: boolean;
+      isLoopback: boolean;
+    };
     assert.strictEqual(data.resolvedOrigin, "https://192.168.1.150:24072");
     assert.strictEqual(data.isLan, true);
     assert.strictEqual(data.isLoopback, false);

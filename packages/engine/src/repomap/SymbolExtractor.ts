@@ -5,7 +5,8 @@ import ts from "typescript";
 export interface ExtractedSymbol {
   readonly id: string;
   readonly name: string;
-  readonly kind: "class" | "interface" | "function" | "method" | "type" | "const" | "enum";
+  readonly kind:
+    "class" | "interface" | "function" | "method" | "type" | "const" | "enum";
   readonly filePath: string;
   readonly lineStart: number;
   readonly lineEnd: number;
@@ -37,15 +38,20 @@ export class SymbolExtractor {
       "dist",
       "target",
       "build",
-      ".next"
+      ".next",
     ];
   }
 
   /**
    * Scans a file and extracts all declared architectural symbols.
    */
-  public async extractFileSymbols(workspaceRoot: string, relativePath: string): Promise<readonly ExtractedSymbol[]> {
-    if (this.excludedPatterns.some((pattern) => relativePath.includes(pattern))) {
+  public async extractFileSymbols(
+    workspaceRoot: string,
+    relativePath: string,
+  ): Promise<readonly ExtractedSymbol[]> {
+    if (
+      this.excludedPatterns.some((pattern) => relativePath.includes(pattern))
+    ) {
       return [];
     }
     const fullPath = path.resolve(workspaceRoot, relativePath);
@@ -64,10 +70,19 @@ export class SymbolExtractor {
   /**
    * Extracts symbols from in-memory content.
    */
-  public extractFromContent(relativePath: string, content: string): readonly ExtractedSymbol[] {
+  public extractFromContent(
+    relativePath: string,
+    content: string,
+  ): readonly ExtractedSymbol[] {
     const ext = path.extname(relativePath).toLowerCase();
 
-    if (ext === ".ts" || ext === ".tsx" || ext === ".js" || ext === ".jsx" || ext === ".mjs") {
+    if (
+      ext === ".ts" ||
+      ext === ".tsx" ||
+      ext === ".js" ||
+      ext === ".jsx" ||
+      ext === ".mjs"
+    ) {
       return this.extractTypeScriptSymbols(relativePath, content);
     } else if (ext === ".java") {
       return this.extractJavaSymbols(relativePath, content);
@@ -80,14 +95,19 @@ export class SymbolExtractor {
     return [];
   }
 
-  private extractTypeScriptSymbols(relativePath: string, content: string): readonly ExtractedSymbol[] {
+  private extractTypeScriptSymbols(
+    relativePath: string,
+    content: string,
+  ): readonly ExtractedSymbol[] {
     const symbols: ExtractedSymbol[] = [];
     const sourceFile = ts.createSourceFile(
       relativePath,
       content,
       ts.ScriptTarget.ES2022,
       true,
-      relativePath.endsWith(".tsx") || relativePath.endsWith(".jsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+      relativePath.endsWith(".tsx") || relativePath.endsWith(".jsx")
+        ? ts.ScriptKind.TSX
+        : ts.ScriptKind.TS,
     );
 
     const importedSymbols = new Set<string>();
@@ -98,7 +118,10 @@ export class SymbolExtractor {
         if (node.importClause.name) {
           importedSymbols.add(node.importClause.name.text);
         }
-        if (node.importClause.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+        if (
+          node.importClause.namedBindings &&
+          ts.isNamedImports(node.importClause.namedBindings)
+        ) {
           for (const spec of node.importClause.namedBindings.elements) {
             importedSymbols.add(spec.name.text);
           }
@@ -106,15 +129,60 @@ export class SymbolExtractor {
       }
 
       if (ts.isClassDeclaration(node) && node.name) {
-        symbols.push(this.createTsSymbol(sourceFile, node, node.name.text, "class", content, importedSymbols));
+        symbols.push(
+          this.createTsSymbol(
+            sourceFile,
+            node,
+            node.name.text,
+            "class",
+            content,
+            importedSymbols,
+          ),
+        );
       } else if (ts.isInterfaceDeclaration(node)) {
-        symbols.push(this.createTsSymbol(sourceFile, node, node.name.text, "interface", content, importedSymbols));
+        symbols.push(
+          this.createTsSymbol(
+            sourceFile,
+            node,
+            node.name.text,
+            "interface",
+            content,
+            importedSymbols,
+          ),
+        );
       } else if (ts.isFunctionDeclaration(node) && node.name) {
-        symbols.push(this.createTsSymbol(sourceFile, node, node.name.text, "function", content, importedSymbols));
+        symbols.push(
+          this.createTsSymbol(
+            sourceFile,
+            node,
+            node.name.text,
+            "function",
+            content,
+            importedSymbols,
+          ),
+        );
       } else if (ts.isTypeAliasDeclaration(node)) {
-        symbols.push(this.createTsSymbol(sourceFile, node, node.name.text, "type", content, importedSymbols));
+        symbols.push(
+          this.createTsSymbol(
+            sourceFile,
+            node,
+            node.name.text,
+            "type",
+            content,
+            importedSymbols,
+          ),
+        );
       } else if (ts.isEnumDeclaration(node)) {
-        symbols.push(this.createTsSymbol(sourceFile, node, node.name.text, "enum", content, importedSymbols));
+        symbols.push(
+          this.createTsSymbol(
+            sourceFile,
+            node,
+            node.name.text,
+            "enum",
+            content,
+            importedSymbols,
+          ),
+        );
       }
 
       ts.forEachChild(node, visit);
@@ -130,15 +198,19 @@ export class SymbolExtractor {
     name: string,
     kind: ExtractedSymbol["kind"],
     content: string,
-    importedSymbols: Set<string>
+    importedSymbols: Set<string>,
   ): ExtractedSymbol {
-    const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+    const start = sourceFile.getLineAndCharacterOfPosition(
+      node.getStart(sourceFile),
+    );
     const end = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
     const lineStart = start.line + 1;
     const lineEnd = end.line + 1;
 
     // First line or signature
-    const lines = content.slice(node.getStart(sourceFile), node.getEnd()).split("\n");
+    const lines = content
+      .slice(node.getStart(sourceFile), node.getEnd())
+      .split("\n");
     const signature = (lines[0] || "").trim().slice(0, 160);
 
     // Identify references to imported symbols inside this node
@@ -158,16 +230,21 @@ export class SymbolExtractor {
       lineStart,
       lineEnd,
       signature,
-      references: refs
+      references: refs,
     };
   }
 
-  private extractJavaSymbols(relativePath: string, content: string): readonly ExtractedSymbol[] {
+  private extractJavaSymbols(
+    relativePath: string,
+    content: string,
+  ): readonly ExtractedSymbol[] {
     const symbols: ExtractedSymbol[] = [];
     const lines = content.split("\n");
 
-    const classRegex = /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:class|interface|record|enum)\s+([A-Za-z0-9_]+)/;
-    const methodRegex = /^\s*(?:(?:public|protected|private|static|final)\s+)*([A-Za-z0-9_]+(?:<[A-Za-z0-9_,\s]+>)?(?:\[\])?)\s+([A-Za-z0-9_]+)\s*\([^)]*\)(?:\s+throws\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
+    const classRegex =
+      /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:class|interface|record|enum)\s+([A-Za-z0-9_]+)/;
+    const methodRegex =
+      /^\s*(?:(?:public|protected|private|static|final)\s+)*([A-Za-z0-9_]+(?:<[A-Za-z0-9_,\s]+>)?(?:\[\])?)\s+([A-Za-z0-9_]+)\s*\([^)]*\)(?:\s+throws\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] || "";
@@ -181,7 +258,7 @@ export class SymbolExtractor {
           lineStart: i + 1,
           lineEnd: i + 1,
           signature: line.trim(),
-          references: []
+          references: [],
         });
       } else {
         const methodMatch = line.match(methodRegex);
@@ -194,7 +271,7 @@ export class SymbolExtractor {
             lineStart: i + 1,
             lineEnd: i + 1,
             signature: line.trim(),
-            references: []
+            references: [],
           });
         }
       }
@@ -203,7 +280,10 @@ export class SymbolExtractor {
     return symbols;
   }
 
-  private extractGoSymbols(relativePath: string, content: string): readonly ExtractedSymbol[] {
+  private extractGoSymbols(
+    relativePath: string,
+    content: string,
+  ): readonly ExtractedSymbol[] {
     const symbols: ExtractedSymbol[] = [];
     const lines = content.split("\n");
 
@@ -222,7 +302,7 @@ export class SymbolExtractor {
           lineStart: i + 1,
           lineEnd: i + 1,
           signature: line.trim(),
-          references: []
+          references: [],
         });
       } else {
         const typeMatch = line.match(typeRegex);
@@ -235,7 +315,7 @@ export class SymbolExtractor {
             lineStart: i + 1,
             lineEnd: i + 1,
             signature: line.trim(),
-            references: []
+            references: [],
           });
         }
       }
@@ -244,7 +324,10 @@ export class SymbolExtractor {
     return symbols;
   }
 
-  private extractPythonSymbols(relativePath: string, content: string): readonly ExtractedSymbol[] {
+  private extractPythonSymbols(
+    relativePath: string,
+    content: string,
+  ): readonly ExtractedSymbol[] {
     const symbols: ExtractedSymbol[] = [];
     const lines = content.split("\n");
 
@@ -263,7 +346,7 @@ export class SymbolExtractor {
           lineStart: i + 1,
           lineEnd: i + 1,
           signature: line.trim(),
-          references: []
+          references: [],
         });
       } else {
         const defMatch = line.match(defRegex);
@@ -276,7 +359,7 @@ export class SymbolExtractor {
             lineStart: i + 1,
             lineEnd: i + 1,
             signature: line.trim(),
-            references: []
+            references: [],
           });
         }
       }

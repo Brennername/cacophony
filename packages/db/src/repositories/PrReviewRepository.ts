@@ -1,6 +1,8 @@
-interface IDatabaseDriver { [key: string]: any; }
-import { PrReviewRecord } from '@cacophony/shared-types';
-import { DatabaseDriverFactory } from '../drivers/DatabaseDriverFactory.js';
+interface IDatabaseDriver {
+  [key: string]: any;
+}
+import { PrReviewRecord } from "@cacophony/shared-types";
+import { DatabaseDriverFactory } from "../drivers/DatabaseDriverFactory.js";
 
 export class PrReviewRepository {
   private dbDriver: IDatabaseDriver;
@@ -15,7 +17,7 @@ export class PrReviewRepository {
    */
   public async saveReview(reviewRecord: PrReviewRecord): Promise<void> {
     try {
-      await this.dbDriver.insert('pr_reviews', reviewRecord);
+      await this.dbDriver.insert("pr_reviews", reviewRecord);
     } catch (error) {
       throw new Error(`Failed to save review record: ${error}`);
     }
@@ -27,7 +29,7 @@ export class PrReviewRepository {
    */
   public async getReviewById(id: number): Promise<PrReviewRecord | null> {
     try {
-      const result = await this.dbDriver.select('pr_reviews', { id });
+      const result = await this.dbDriver.select("pr_reviews", { id });
       return result.length > 0 ? result[0] : null;
     } catch (error) {
       throw new Error(`Failed to retrieve review record by ID: ${error}`);
@@ -40,7 +42,9 @@ export class PrReviewRepository {
    */
   public async updateReview(reviewRecord: PrReviewRecord): Promise<void> {
     try {
-      await this.dbDriver.update('pr_reviews', reviewRecord, { id: reviewRecord.id });
+      await this.dbDriver.update("pr_reviews", reviewRecord, {
+        id: reviewRecord.id,
+      });
     } catch (error) {
       throw new Error(`Failed to update review record: ${error}`);
     }
@@ -52,7 +56,7 @@ export class PrReviewRepository {
    */
   public async deleteReview(id: number): Promise<void> {
     try {
-      await this.dbDriver.delete('pr_reviews', { id });
+      await this.dbDriver.delete("pr_reviews", { id });
     } catch (error) {
       throw new Error(`Failed to delete review record by ID: ${error}`);
     }

@@ -24,7 +24,7 @@ describe("FleetHealthMonitor Suite (T86.1)", () => {
       activeMemoryUsage: 2048,
       apuThermal: 45,
       gpuThermal: 58,
-      currentTaskAssignment: "task-101"
+      currentTaskAssignment: "task-101",
     };
 
     monitor.recordHeartbeat(sampleNode);
@@ -57,14 +57,18 @@ describe("FleetHealthMonitor Suite (T86.1)", () => {
       activeMemoryUsage: 4096,
       apuThermal: 84,
       gpuThermal: 82,
-      currentTaskAssignment: "task-heavy"
+      currentTaskAssignment: "task-heavy",
     };
 
     monitor.recordHeartbeat(hotNode);
 
     const retrieved = monitor.getNode("node-hot-02");
     assert.ok(retrieved);
-    assert.equal(retrieved?.status, "DEGRADED", "Hot node should be classified as DEGRADED");
+    assert.equal(
+      retrieved?.status,
+      "DEGRADED",
+      "Hot node should be classified as DEGRADED",
+    );
   });
 
   it("should mark stale nodes as OFFLINE when heartbeat expires", () => {
@@ -87,21 +91,27 @@ describe("FleetHealthMonitor Suite (T86.1)", () => {
       activeMemoryUsage: 1024,
       apuThermal: 40,
       gpuThermal: 40,
-      currentTaskAssignment: "task-stale"
+      currentTaskAssignment: "task-stale",
     };
 
     monitor.recordHeartbeat(staleNode);
     // Explicitly backdate the heartbeat to simulate expiration
     const registered = monitor.getNode("node-stale-03");
     if (registered) {
-      (registered as any).lastHeartbeat = new Date(Date.now() - 200).toISOString();
+      (registered as any).lastHeartbeat = new Date(
+        Date.now() - 200,
+      ).toISOString();
     }
 
     monitor.checkNodeLiveness();
 
     const checked = monitor.getNode("node-stale-03");
     assert.ok(checked);
-    assert.equal(checked?.status, "OFFLINE", "Stale node should transition to OFFLINE");
+    assert.equal(
+      checked?.status,
+      "OFFLINE",
+      "Stale node should transition to OFFLINE",
+    );
     assert.equal(checked?.activeTasksCount, 0);
     assert.equal(checked?.currentTaskAssignment, null);
   });
@@ -125,7 +135,7 @@ describe("FleetHealthMonitor Suite (T86.1)", () => {
       tokenHash: "hash1",
       activeMemoryUsage: 2048,
       apuThermal: 45,
-      gpuThermal: 50
+      gpuThermal: 50,
     });
 
     monitor.recordHeartbeat({
@@ -144,7 +154,7 @@ describe("FleetHealthMonitor Suite (T86.1)", () => {
       tokenHash: "hash2",
       activeMemoryUsage: 512,
       apuThermal: 40,
-      gpuThermal: 40
+      gpuThermal: 40,
     });
 
     const available = monitor.getAvailableNodes();
@@ -170,7 +180,7 @@ describe("FleetHealthMonitor Suite (T86.1)", () => {
       tokenHash: "hashdel",
       activeMemoryUsage: 512,
       apuThermal: 35,
-      gpuThermal: 35
+      gpuThermal: 35,
     });
 
     assert.equal(monitor.listNodes().length, 1);

@@ -29,7 +29,10 @@ export class SymbolGraphBuilder {
    * @param sourceFile - The parsed TypeScript SourceFile AST
    * @param fileSymbols - Optional list of symbols discovered in this file
    */
-  public processSourceFile(sourceFile: ts.SourceFile, fileSymbols: readonly ExtractedSymbol[] = []): void {
+  public processSourceFile(
+    sourceFile: ts.SourceFile,
+    fileSymbols: readonly ExtractedSymbol[] = [],
+  ): void {
     ts.forEachChild(sourceFile, (node) => {
       if (ts.isImportDeclaration(node)) {
         if (node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {

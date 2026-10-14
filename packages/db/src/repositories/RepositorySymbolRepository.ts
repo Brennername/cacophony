@@ -24,7 +24,9 @@ export interface RepoSymbolRecord {
 export class RepositorySymbolRepository {
   constructor(private readonly driver: IDatabaseDriver) {}
 
-  public async upsertSymbols(symbols: readonly Omit<RepoSymbolRecord, "updated_at">[]): Promise<void> {
+  public async upsertSymbols(
+    symbols: readonly Omit<RepoSymbolRecord, "updated_at">[],
+  ): Promise<void> {
     if (symbols.length === 0) return;
     const now = new Date().toISOString();
 
@@ -55,42 +57,51 @@ export class RepositorySymbolRepository {
           s.pagerank_score,
           s.incoming_refs_count,
           s.file_mtime,
-          now
-        ]
+          now,
+        ],
       );
     }
   }
 
-  public async getTopRankedSymbols(workspaceRoot: string, limit = 100): Promise<readonly RepoSymbolRecord[]> {
+  public async getTopRankedSymbols(
+    workspaceRoot: string,
+    limit = 100,
+  ): Promise<readonly RepoSymbolRecord[]> {
     return this.driver.query<RepoSymbolRecord>(
       `SELECT * FROM repository_symbol_graph
        WHERE workspace_root = $1
        ORDER BY pagerank_score DESC, incoming_refs_count DESC
        LIMIT $2`,
-      [workspaceRoot, limit]
+      [workspaceRoot, limit],
     );
   }
 
-  public async getSymbolsByFile(workspaceRoot: string, filePath: string): Promise<readonly RepoSymbolRecord[]> {
+  public async getSymbolsByFile(
+    workspaceRoot: string,
+    filePath: string,
+  ): Promise<readonly RepoSymbolRecord[]> {
     return this.driver.query<RepoSymbolRecord>(
       `SELECT * FROM repository_symbol_graph
        WHERE workspace_root = $1 AND file_path = $2
        ORDER BY line_start ASC`,
-      [workspaceRoot, filePath]
+      [workspaceRoot, filePath],
     );
   }
 
-  public async deleteForFile(workspaceRoot: string, filePath: string): Promise<void> {
+  public async deleteForFile(
+    workspaceRoot: string,
+    filePath: string,
+  ): Promise<void> {
     await this.driver.query(
       `DELETE FROM repository_symbol_graph WHERE workspace_root = $1 AND file_path = $2`,
-      [workspaceRoot, filePath]
+      [workspaceRoot, filePath],
     );
   }
 
   public async clearWorkspace(workspaceRoot: string): Promise<void> {
     await this.driver.query(
       `DELETE FROM repository_symbol_graph WHERE workspace_root = $1`,
-      [workspaceRoot]
+      [workspaceRoot],
     );
   }
 }

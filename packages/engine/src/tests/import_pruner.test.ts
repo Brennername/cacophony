@@ -18,7 +18,10 @@ export function processData(items: string[]): string[] {
     const pruned = pruner.pruneUnusedImports(code);
     assert.ok(!pruned.includes("lodash"), "lodash should be pruned");
     assert.ok(!pruned.includes("rxjs"), "rxjs should be pruned");
-    assert.ok(pruned.includes("./LocalUtil.js"), "relative imports should be preserved");
+    assert.ok(
+      pruned.includes("./LocalUtil.js"),
+      "relative imports should be preserved",
+    );
     assert.ok(pruned.includes("export function processData"));
   });
 
@@ -42,6 +45,9 @@ export const result = a + b;
 `;
 
     const consolidated = pruner.consolidateImports(code);
-    assert.ok(consolidated.includes(`import { a, b } from "foo";`) || consolidated.includes(`import { b, a } from "foo";`));
+    assert.ok(
+      consolidated.includes(`import { a, b } from "foo";`) ||
+        consolidated.includes(`import { b, a } from "foo";`),
+    );
   });
 });

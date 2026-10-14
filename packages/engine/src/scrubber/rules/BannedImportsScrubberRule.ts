@@ -1,4 +1,8 @@
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "../IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "../IScrubberRule.js";
 
 /**
  * BannedImportsScrubberRule
@@ -21,30 +25,39 @@ export class BannedImportsScrubberRule implements IScrubberRule {
   public scrub(
     content: string,
     _filePath: string,
-    options?: ScrubRuleOptions
+    options?: ScrubRuleOptions,
   ): ScrubRuleResult {
     // Check for rule-level disabling
     if (
       options?.disabledRules?.includes(this.name) ||
       options?.disabledRules?.includes("all") ||
-      content.includes("@cacophony-disable-scrubber: BannedImportsScrubberRule") ||
+      content.includes(
+        "@cacophony-disable-scrubber: BannedImportsScrubberRule",
+      ) ||
       content.includes("@cacophony-disable-scrubber: all")
     ) {
       return {
         modified: false,
         content,
         issuesFixed: [],
-        issuesDetected: ["Banned import scrubbing skipped via rule disable flag."]
+        issuesDetected: [
+          "Banned import scrubbing skipped via rule disable flag.",
+        ],
       };
     }
 
     // Check for universal file-level or options-level import bypass
-    if (options?.allowAllImports || content.includes("@cacophony-allow-all-imports")) {
+    if (
+      options?.allowAllImports ||
+      content.includes("@cacophony-allow-all-imports")
+    ) {
       return {
         modified: false,
         content,
         issuesFixed: [],
-        issuesDetected: ["Banned import scrubbing bypassed via universal import allowance flag."]
+        issuesDetected: [
+          "Banned import scrubbing bypassed via universal import allowance flag.",
+        ],
       };
     }
 
@@ -52,11 +65,13 @@ export class BannedImportsScrubberRule implements IScrubberRule {
     const configuredBanned = options?.bannedLibraries ?? defaultBanned;
     const configuredAllowed = new Set<string>([
       ...(options?.allowedLibraries ?? []),
-      ...(options?.allowedImports ?? [])
+      ...(options?.allowedImports ?? []),
     ]);
 
     // Parse inline file annotations: // @cacophony-allow-import: redis, express
-    const annotationMatches = content.match(/@cacophony-allow-import:\s*([^\r\n]+)/g);
+    const annotationMatches = content.match(
+      /@cacophony-allow-import:\s*([^\r\n]+)/g,
+    );
     if (annotationMatches) {
       for (const ann of annotationMatches) {
         const rawLibs = ann.replace(/@cacophony-allow-import:\s*/, "");
@@ -67,24 +82,35 @@ export class BannedImportsScrubberRule implements IScrubberRule {
       }
     }
 
-
-    const activeBanned = configuredBanned.filter((lib) => !configuredAllowed.has(lib));
+    const activeBanned = configuredBanned.filter(
+      (lib) => !configuredAllowed.has(lib),
+    );
     const issuesFixed: string[] = [];
     const issuesDetected: string[] = [];
 
     // Note any explicitly allowed imports present in the file for transparency
     for (const lib of configuredAllowed) {
-      const regex = new RegExp(`from\\s+["']${lib}(?:/.*)?["']|require\\(["']${lib}["']\\)|import\\s+["']${lib}["']`, "g");
+      const regex = new RegExp(
+        `from\\s+["']${lib}(?:/.*)?["']|require\\(["']${lib}["']\\)|import\\s+["']${lib}["']`,
+        "g",
+      );
       if (regex.test(content)) {
-        issuesDetected.push(`Import of '${lib}' approved via feature exemption flag.`);
+        issuesDetected.push(
+          `Import of '${lib}' approved via feature exemption flag.`,
+        );
       }
     }
 
     // Scan for unapproved banned libraries
     for (const lib of activeBanned) {
-      const regex = new RegExp(`from\\s+["']${lib}(?:/.*)?["']|require\\(["']${lib}["']\\)|import\\s+["']${lib}["']`, "g");
+      const regex = new RegExp(
+        `from\\s+["']${lib}(?:/.*)?["']|require\\(["']${lib}["']\\)|import\\s+["']${lib}["']`,
+        "g",
+      );
       if (regex.test(content)) {
-        issuesDetected.push(`Detected forbidden import of prohibited library: '${lib}'`);
+        issuesDetected.push(
+          `Detected forbidden import of prohibited library: '${lib}'`,
+        );
       }
     }
 
@@ -92,8 +118,7 @@ export class BannedImportsScrubberRule implements IScrubberRule {
       modified: false,
       content,
       issuesFixed,
-      issuesDetected
+      issuesDetected,
     };
   }
 }
-

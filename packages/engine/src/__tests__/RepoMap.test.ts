@@ -30,7 +30,10 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
         }
       `;
 
-      const symbols = extractor.extractFromContent("src/services/UserService.ts", tsCode);
+      const symbols = extractor.extractFromContent(
+        "src/services/UserService.ts",
+        tsCode,
+      );
       assert.ok(symbols.length >= 3);
 
       const iface = symbols.find((s) => s.kind === "interface");
@@ -54,9 +57,18 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
         }
       `;
 
-      const symbols = extractor.extractFromContent("src/main/java/PaymentProcessor.java", javaCode);
-      assert.ok(symbols.some((s) => s.name === "PaymentProcessor" && s.kind === "class"));
-      assert.ok(symbols.some((s) => s.name === "processPayment" && s.kind === "method"));
+      const symbols = extractor.extractFromContent(
+        "src/main/java/PaymentProcessor.java",
+        javaCode,
+      );
+      assert.ok(
+        symbols.some(
+          (s) => s.name === "PaymentProcessor" && s.kind === "class",
+        ),
+      );
+      assert.ok(
+        symbols.some((s) => s.name === "processPayment" && s.kind === "method"),
+      );
     });
 
     test("should extract functions and structs from Go source", () => {
@@ -71,8 +83,12 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
       `;
 
       const symbols = extractor.extractFromContent("main.go", goCode);
-      assert.ok(symbols.some((s) => s.name === "Config" && s.kind === "interface"));
-      assert.ok(symbols.some((s) => s.name === "StartServer" && s.kind === "function"));
+      assert.ok(
+        symbols.some((s) => s.name === "Config" && s.kind === "interface"),
+      );
+      assert.ok(
+        symbols.some((s) => s.name === "StartServer" && s.kind === "function"),
+      );
     });
   });
 
@@ -89,7 +105,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
         lineStart: 1,
         lineEnd: 10,
         signature: "class ServiceA",
-        references: ["ServiceB", "ServiceC"]
+        references: ["ServiceB", "ServiceC"],
       });
 
       graph.addSymbol({
@@ -100,7 +116,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
         lineStart: 1,
         lineEnd: 10,
         signature: "class ServiceB",
-        references: ["ServiceC"]
+        references: ["ServiceC"],
       });
 
       graph.addSymbol({
@@ -111,7 +127,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
         lineStart: 1,
         lineEnd: 10,
         signature: "class ServiceC",
-        references: []
+        references: [],
       });
 
       graph.addSymbol({
@@ -122,7 +138,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
         lineStart: 1,
         lineEnd: 10,
         signature: "class ServiceD",
-        references: ["ServiceC"]
+        references: ["ServiceC"],
       });
 
       // Wire edges
@@ -152,7 +168,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
           lineStart: 10,
           lineEnd: 50,
           signature: "export class PaymentGateway",
-          references: []
+          references: [],
         },
         {
           id: "2",
@@ -162,7 +178,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
           lineStart: 5,
           lineEnd: 30,
           signature: "export class InvoiceGenerator",
-          references: []
+          references: [],
         },
         {
           id: "3",
@@ -172,18 +188,20 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
           lineStart: 1,
           lineEnd: 25,
           signature: "export class UserAuthentication",
-          references: []
-        }
+          references: [],
+        },
       ];
 
       const biasedMap = generator.generateMap(symbols, {
         maxTokens: 500,
-        queryBiasing: "PaymentGateway"
+        queryBiasing: "PaymentGateway",
       });
 
       assert.ok(biasedMap.includes("src/billing/PaymentGateway.ts"));
       assert.ok(biasedMap.includes("PaymentGateway"));
-      assert.ok(biasedMap.includes("=== Repository Map (Architectural Overview) ==="));
+      assert.ok(
+        biasedMap.includes("=== Repository Map (Architectural Overview) ==="),
+      );
     });
   });
 
@@ -191,7 +209,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
     test("should manage EDITABLE vs REFERENCE files and token thresholds", async () => {
       const manager = new ContextManager({
         modelWindowTokens: 1000,
-        maxTokensThreshold: 600
+        maxTokensThreshold: 600,
       });
 
       await manager.addFile("/workspace", "src/foo.ts", "EDITABLE");
@@ -222,7 +240,7 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
           lineStart: 1,
           lineEnd: 20,
           signature: "export class UserService",
-          references: ["DatabaseClient"]
+          references: ["DatabaseClient"],
         },
         {
           id: "s2",
@@ -232,14 +250,20 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
           lineStart: 1,
           lineEnd: 20,
           signature: "export class DatabaseClient",
-          references: []
-        }
+          references: [],
+        },
       ];
 
-      const recommendations = recommender.recommend(["src/UserService.ts"], symbols, "user database");
+      const recommendations = recommender.recommend(
+        ["src/UserService.ts"],
+        symbols,
+        "user database",
+      );
       assert.ok(recommendations.length >= 2);
       assert.ok(recommendations.some((r) => r.reason === "corresponding_test"));
-      assert.ok(recommendations.some((r) => r.filePath === "src/DatabaseClient.ts"));
+      assert.ok(
+        recommendations.some((r) => r.filePath === "src/DatabaseClient.ts"),
+      );
     });
   });
 
@@ -247,11 +271,19 @@ describe("Phase 12: Repository Mapping & Granular Context Engine", () => {
     test("should validate syntax across staged edits before disk application", async () => {
       const coordinator = new MultiFileEditCoordinator();
 
-      await coordinator.stage("/workspace", "src/valid.ts", "export const value: number = 42;");
+      await coordinator.stage(
+        "/workspace",
+        "src/valid.ts",
+        "export const value: number = 42;",
+      );
       const validRes = coordinator.validateStaged();
       assert.equal(validRes.valid, true);
 
-      await coordinator.stage("/workspace", "src/broken.ts", "export const broken = {;");
+      await coordinator.stage(
+        "/workspace",
+        "src/broken.ts",
+        "export const broken = {;",
+      );
       const brokenRes = coordinator.validateStaged();
       assert.equal(brokenRes.valid, false);
       assert.ok(brokenRes.errors.length > 0);

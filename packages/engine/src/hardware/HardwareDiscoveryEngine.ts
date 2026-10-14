@@ -46,8 +46,12 @@ export class HardwareDiscoveryEngine {
         flashAttentionSupported = false;
         optimalContextWindow = 4096;
         maxLoadedModels = 1;
-        warnings.push("APU shared memory: Flash Attention is disabled on Vega/Cezanne GFX900 to prevent driver lockups.");
-        warnings.push("Recommend setting amdgpu lockup_timeout=180000 in kernel parameters.");
+        warnings.push(
+          "APU shared memory: Flash Attention is disabled on Vega/Cezanne GFX900 to prevent driver lockups.",
+        );
+        warnings.push(
+          "Recommend setting amdgpu lockup_timeout=180000 in kernel parameters.",
+        );
       } else if (primary.category === "AMD_DISCRETE_RDNA") {
         recommendedProfileId = "amd_rdna_rocm";
         flashAttentionSupported = true;
@@ -65,7 +69,9 @@ export class HardwareDiscoveryEngine {
         maxLoadedModels = 2;
       }
     } else {
-      warnings.push("No discrete or integrated GPU detected. Falling back to multi-core CPU inference.");
+      warnings.push(
+        "No discrete or integrated GPU detected. Falling back to multi-core CPU inference.",
+      );
     }
 
     return {
@@ -83,7 +89,9 @@ export class HardwareDiscoveryEngine {
     };
   }
 
-  private async probeDrmDevices(hostRamMb: number): Promise<DiscoveredDevice[]> {
+  private async probeDrmDevices(
+    hostRamMb: number,
+  ): Promise<DiscoveredDevice[]> {
     const devices: DiscoveredDevice[] = [];
     const drmBase = "/sys/class/drm";
 
@@ -99,7 +107,11 @@ export class HardwareDiscoveryEngine {
           const vendorId = (await fs.readFile(vendorPath, "utf-8")).trim();
           const deviceId = (await fs.readFile(devicePath, "utf-8")).trim();
 
-          const classification = this.classifyPciDevice(vendorId, deviceId, hostRamMb);
+          const classification = this.classifyPciDevice(
+            vendorId,
+            deviceId,
+            hostRamMb,
+          );
 
           devices.push({
             id: card,
@@ -109,7 +121,9 @@ export class HardwareDiscoveryEngine {
             category: classification.category,
             isApu: classification.isApu,
             totalMemoryMb: classification.memoryMb,
-            ...(classification.computeUnits ? { computeUnits: classification.computeUnits } : {}),
+            ...(classification.computeUnits
+              ? { computeUnits: classification.computeUnits }
+              : {}),
             recommendedBackend: classification.backend,
           });
         } catch {
@@ -126,7 +140,7 @@ export class HardwareDiscoveryEngine {
   public classifyPciDevice(
     vendorId: string,
     deviceId: string,
-    hostRamMb: number
+    hostRamMb: number,
   ): {
     name: string;
     category: HardwareDeviceCategory;
@@ -210,7 +224,14 @@ export class HardwareDiscoveryEngine {
   }
 
   private async detectAvailableTools(): Promise<string[]> {
-    const candidates = ["lspci", "rocm-smi", "nvidia-smi", "clinfo", "vulkaninfo", "rocminfo"];
+    const candidates = [
+      "lspci",
+      "rocm-smi",
+      "nvidia-smi",
+      "clinfo",
+      "vulkaninfo",
+      "rocminfo",
+    ];
     const detected: string[] = [];
 
     for (const tool of candidates) {

@@ -9,4 +9,3 @@ export * from "./rules/GoAstScrubberRule.js";
 export * from "./rules/RustSyntaxScrubberRule.js";
 export * from "./CodeScrubber.js";
 export * from "./AstValidator.js";
-

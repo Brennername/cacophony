@@ -1,5 +1,8 @@
 import { execSync } from "node:child_process";
-import type { GpuMetrics, HardwareDeviceCategory } from "@cacophony/shared-types";
+import type {
+  GpuMetrics,
+  HardwareDeviceCategory,
+} from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 
 export interface NvidiaGpuDevice {
@@ -37,7 +40,9 @@ export class NvidiaNvmlProvider implements IHardwareTelemetryProvider {
   private readonly runCommand: CommandRunner;
 
   constructor(commandRunner?: CommandRunner) {
-    this.runCommand = commandRunner ?? ((cmd: string) => execSync(cmd, { encoding: "utf-8", timeout: 2500 }));
+    this.runCommand =
+      commandRunner ??
+      ((cmd: string) => execSync(cmd, { encoding: "utf-8", timeout: 2500 }));
   }
 
   public getName(): string {
@@ -66,7 +71,10 @@ export class NvidiaNvmlProvider implements IHardwareTelemetryProvider {
   public async listDevices(): Promise<NvidiaGpuDevice[]> {
     try {
       const output = this.runCommand(NvidiaNvmlProvider.QUERY_COMMAND);
-      const lines = output.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+      const lines = output
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
       if (lines.length === 0) {
         throw new Error("No GPU records returned by nvidia-smi");
       }
@@ -140,10 +148,12 @@ export class NvidiaNvmlProvider implements IHardwareTelemetryProvider {
       usedVram += d.memoryUsedBytes;
       if (d.temperatureCelsius > maxTemp) maxTemp = d.temperatureCelsius;
       totalPower += d.powerDrawWatts;
-      if (d.smUtilizationPercent > maxSmUtil) maxSmUtil = d.smUtilizationPercent;
+      if (d.smUtilizationPercent > maxSmUtil)
+        maxSmUtil = d.smUtilizationPercent;
     }
 
-    const vramPercent = totalVram > 0 ? Number(((usedVram / totalVram) * 100).toFixed(1)) : 0;
+    const vramPercent =
+      totalVram > 0 ? Number(((usedVram / totalVram) * 100).toFixed(1)) : 0;
 
     return {
       gpuBusyPercent: maxSmUtil,
@@ -160,7 +170,11 @@ export class NvidiaNvmlProvider implements IHardwareTelemetryProvider {
     };
   }
 
-  public async getVramMetrics(): Promise<{ totalBytes: number; usedBytes: number; freeBytes: number }> {
+  public async getVramMetrics(): Promise<{
+    totalBytes: number;
+    usedBytes: number;
+    freeBytes: number;
+  }> {
     const devices = await this.listDevices();
     let total = 0;
     let used = 0;
@@ -173,7 +187,10 @@ export class NvidiaNvmlProvider implements IHardwareTelemetryProvider {
     return { totalBytes: total, usedBytes: used, freeBytes: free };
   }
 
-  public async getThermalMetrics(): Promise<{ temperatureCelsius: number; isThrottled: boolean }> {
+  public async getThermalMetrics(): Promise<{
+    temperatureCelsius: number;
+    isThrottled: boolean;
+  }> {
     const devices = await this.listDevices();
     let maxTemp = 0;
     for (const d of devices) {
@@ -208,7 +225,9 @@ export class NvidiaNvmlProvider implements IHardwareTelemetryProvider {
       memoryFreeBytes: Math.round(freeMb * 1024 * 1024),
       temperatureCelsius: Number.isNaN(tempC) ? 0 : tempC,
       powerDrawWatts: Number.isNaN(powerW) ? 0 : powerW,
-      smUtilizationPercent: Number.isNaN(utilPercent) ? 0 : Math.min(100, Math.max(0, utilPercent)),
+      smUtilizationPercent: Number.isNaN(utilPercent)
+        ? 0
+        : Math.min(100, Math.max(0, utilPercent)),
     };
   }
 }

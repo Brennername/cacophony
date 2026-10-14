@@ -2,7 +2,11 @@ import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
 import { ScreenBuffer } from "../tui/ScreenBuffer.js";
 import { TerminalApp } from "../tui/TerminalApp.js";
-import { ConversationPane, TelemetryBar, ContextInspectorPane } from "../tui/TuiPanes.js";
+import {
+  ConversationPane,
+  TelemetryBar,
+  ContextInspectorPane,
+} from "../tui/TuiPanes.js";
 import { LivePromptQueue } from "../inference/LivePromptQueue.js";
 import { CustomMarkdownCommandEngine } from "../inference/CustomMarkdownCommandEngine.js";
 
@@ -10,12 +14,21 @@ describe("Phase 14: Terminal User Interface & Developer Experience", () => {
   describe("T14.1: Terminal UI Rendering & Layout Engine", () => {
     it("should draw box borders, title, and clip text within screen buffer", () => {
       const buffer = new ScreenBuffer(40, 10, "dark");
-      buffer.drawBox({ x: 0, y: 0, width: 30, height: 6 }, { title: "Test Panel", isActive: true });
+      buffer.drawBox(
+        { x: 0, y: 0, width: 30, height: 6 },
+        { title: "Test Panel", isActive: true },
+      );
       buffer.drawText(2, 2, "Hello Cacophony TUI");
 
       const output = buffer.renderToString();
-      assert.ok(output.includes("Test Panel"), "Rendered output should include panel title");
-      assert.ok(output.includes("Hello Cacophony TUI"), "Rendered output should contain inner text");
+      assert.ok(
+        output.includes("Test Panel"),
+        "Rendered output should include panel title",
+      );
+      assert.ok(
+        output.includes("Hello Cacophony TUI"),
+        "Rendered output should contain inner text",
+      );
     });
 
     it("should format markdown messages in ConversationPane", () => {
@@ -24,14 +37,23 @@ describe("Phase 14: Terminal User Interface & Developer Experience", () => {
       pane.addMessage({ sender: "user", content: "Optimize SQL index" });
       pane.addMessage({
         sender: "assistant",
-        content: "```sql\nCREATE INDEX idx ON test(id);\n```"
+        content: "```sql\nCREATE INDEX idx ON test(id);\n```",
       });
 
       pane.render(buffer, { x: 0, y: 0, width: 50, height: 15 }, true);
       const rendered = buffer.renderToString();
-      assert.ok(rendered.includes("[User]:"), "Should render user prompt header");
-      assert.ok(rendered.includes("[Agent]:"), "Should render agent response header");
-      assert.ok(rendered.includes("CREATE INDEX"), "Should render code block contents");
+      assert.ok(
+        rendered.includes("[User]:"),
+        "Should render user prompt header",
+      );
+      assert.ok(
+        rendered.includes("[Agent]:"),
+        "Should render agent response header",
+      );
+      assert.ok(
+        rendered.includes("CREATE INDEX"),
+        "Should render code block contents",
+      );
     });
 
     it("should render hardware telemetry readouts in TelemetryBar", () => {
@@ -53,22 +75,28 @@ describe("Phase 14: Terminal User Interface & Developer Experience", () => {
           vddgfxMilliVolts: 925,
           socMilliVolts: 900,
           pptWatts: 14,
-          sclkMhz: 1200
+          sclkMhz: 1200,
         },
         activeModel: {
           name: "qwen2.5-coder:7b",
           model: "qwen2.5-coder:7b",
           sizeBytes: 4 * 1024 * 1024 * 1024,
-          vramSizeBytes: 4400 * 1024 * 1024
-        }
+          vramSizeBytes: 4400 * 1024 * 1024,
+        },
       });
 
       bar.render(buffer, { x: 0, y: 0, width: 80, height: 5 }, false);
       const rendered = buffer.renderToString();
-      assert.ok(rendered.includes("GPU Load: 12%"), "Should include GPU busy percent");
+      assert.ok(
+        rendered.includes("GPU Load: 12%"),
+        "Should include GPU busy percent",
+      );
       assert.ok(rendered.includes("52C"), "Should include edge temperature");
       assert.ok(rendered.includes("Nominal"), "Should include thermal zone");
-      assert.ok(rendered.includes("qwen2.5-coder:7b"), "Should display active model name");
+      assert.ok(
+        rendered.includes("qwen2.5-coder:7b"),
+        "Should display active model name",
+      );
     });
 
     it("should render pinned files and token budgets in ContextInspectorPane", () => {
@@ -79,7 +107,10 @@ describe("Phase 14: Terminal User Interface & Developer Experience", () => {
 
       inspector.render(buffer, { x: 0, y: 0, width: 40, height: 10 }, false);
       const rendered = buffer.renderToString();
-      assert.ok(rendered.includes("Tokens: 4096 / 32768"), "Should display token budget");
+      assert.ok(
+        rendered.includes("Tokens: 4096 / 32768"),
+        "Should display token budget",
+      );
       assert.ok(rendered.includes("index.ts"), "Should list focus file");
     });
 
@@ -93,7 +124,7 @@ describe("Phase 14: Terminal User Interface & Developer Experience", () => {
         description: "Execute automated unit tests",
         handler: () => {
           executed = true;
-        }
+        },
       });
 
       assert.strictEqual(app.getActivePane(), "conversation");
@@ -106,8 +137,16 @@ describe("Phase 14: Terminal User Interface & Developer Experience", () => {
 
       // Execute selected command with Return
       app.handleKeypress("return");
-      assert.strictEqual(executed, true, "Registered command handler should have run");
-      assert.strictEqual(app.isCommandPaletteOpen(), false, "Palette should close after execution");
+      assert.strictEqual(
+        executed,
+        true,
+        "Registered command handler should have run",
+      );
+      assert.strictEqual(
+        app.isCommandPaletteOpen(),
+        false,
+        "Palette should close after execution",
+      );
     });
   });
 
@@ -137,7 +176,9 @@ describe("Phase 14: Terminal User Interface & Developer Experience", () => {
 
       queue.injectSteeringGuidance("Ensure code uses TypeScript 5.7+ syntax");
       const guidance = queue.getAndClearSteeringGuidance();
-      assert.deepStrictEqual(guidance, ["Ensure code uses TypeScript 5.7+ syntax"]);
+      assert.deepStrictEqual(guidance, [
+        "Ensure code uses TypeScript 5.7+ syntax",
+      ]);
     });
 
     it("should trigger AbortController on mid-stream interruption", () => {
@@ -168,30 +209,44 @@ Please refactor $ARG1 in file $ARG2 following Single Responsibility.
 Selection context:
 $SELECTION
 `;
-      const parsed = engine.parseCommandFile(rawMarkdown, "/commands/refactor.md");
+      const parsed = engine.parseCommandFile(
+        rawMarkdown,
+        "/commands/refactor.md",
+      );
       assert.ok(parsed);
       assert.strictEqual(parsed.metadata.name, "refactor");
       assert.strictEqual(parsed.metadata.temperature, 0.2);
-      assert.deepStrictEqual(parsed.metadata.arguments, ["targetSymbol", "file"]);
+      assert.deepStrictEqual(parsed.metadata.arguments, [
+        "targetSymbol",
+        "file",
+      ]);
 
       const interpolated = engine.interpolate(parsed, {
         args: ["SessionManager", "src/SessionManager.ts"],
-        selection: "class SessionManager { ... }"
+        selection: "class SessionManager { ... }",
       });
 
-      assert.ok(interpolated.includes("Please refactor SessionManager in file src/SessionManager.ts"));
+      assert.ok(
+        interpolated.includes(
+          "Please refactor SessionManager in file src/SessionManager.ts",
+        ),
+      );
       assert.ok(interpolated.includes("class SessionManager { ... }"));
     });
   });
 
   describe("T14.4: Flexible Execution Modes & Safety Guardrails", () => {
     it("should disallow disk modification in Plan Mode and allow in Build/Auto", async () => {
-      const { ExecutionSafetyManager } = await import("../inference/ExecutionSafetyManager.js");
+      const { ExecutionSafetyManager } =
+        await import("../inference/ExecutionSafetyManager.js");
       const safety = new ExecutionSafetyManager("plan");
 
       assert.strictEqual(safety.getMode(), "plan");
       assert.strictEqual(safety.canModifyDisk(), false);
-      assert.throws(() => safety.assertCanModifyDisk("applyPatch"), /forbidden in Plan Mode/);
+      assert.throws(
+        () => safety.assertCanModifyDisk("applyPatch"),
+        /forbidden in Plan Mode/,
+      );
 
       safety.setMode("build");
       assert.strictEqual(safety.canModifyDisk(), true);
@@ -205,8 +260,11 @@ $SELECTION
 
   describe("T14.5: Headless Server Protocol & JSON-RPC 2.0 Layer", () => {
     it("should process JSON-RPC request and handle auth tokens", async () => {
-      const { HeadlessServerProtocol } = await import("../inference/HeadlessServerProtocol.js");
-      const protocol = new HeadlessServerProtocol({ authToken: "secret-token-123" });
+      const { HeadlessServerProtocol } =
+        await import("../inference/HeadlessServerProtocol.js");
+      const protocol = new HeadlessServerProtocol({
+        authToken: "secret-token-123",
+      });
 
       protocol.registerMethod("engine/status", async (params) => {
         return { online: true, echo: params["query"] };
@@ -214,14 +272,24 @@ $SELECTION
 
       // Unauthorized request without token
       const unauthRes = await protocol.handleMessage(
-        JSON.stringify({ jsonrpc: "2.0", id: 1, method: "engine/status", params: { query: "ping" } })
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "engine/status",
+          params: { query: "ping" },
+        }),
       );
       assert.ok(unauthRes?.includes("Unauthorized"));
 
       // Authorized request
       const authRes = await protocol.handleMessage(
-        JSON.stringify({ jsonrpc: "2.0", id: 2, method: "engine/status", params: { query: "ping" } }),
-        "secret-token-123"
+        JSON.stringify({
+          jsonrpc: "2.0",
+          id: 2,
+          method: "engine/status",
+          params: { query: "ping" },
+        }),
+        "secret-token-123",
       );
       assert.ok(authRes);
       const parsed = JSON.parse(authRes);

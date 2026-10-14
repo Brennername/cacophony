@@ -1,7 +1,14 @@
-import type { UserRole, AuthContext, SsoUserProfile } from "@cacophony/shared-types";
+import type {
+  UserRole,
+  AuthContext,
+  SsoUserProfile,
+} from "@cacophony/shared-types";
 import type { UserSessionRepository, UserSessionRecord } from "@cacophony/db";
 import { randomBytes } from "node:crypto";
-import { OidcDiscoveryService, JwksKeyManager } from "./OidcDiscoveryService.js";
+import {
+  OidcDiscoveryService,
+  JwksKeyManager,
+} from "./OidcDiscoveryService.js";
 import { JwtValidator } from "./JwtValidator.js";
 import { SsoProviderFactory } from "./SsoProviderFactory.js";
 import type { ISsoProvider } from "./ISsoProvider.js";
@@ -26,25 +33,33 @@ export class AuthService {
     ssoProvider?: ISsoProvider | undefined;
   }) {
     this.userSessionRepo = options?.userSessionRepo;
-    this.issuerUrl = options?.issuerUrl || process.env["OIDC_ISSUER_URL"] || "http://localhost:9000/application/o/cacophony/";
+    this.issuerUrl =
+      options?.issuerUrl ||
+      process.env["OIDC_ISSUER_URL"] ||
+      "http://localhost:9000/application/o/cacophony/";
 
     if (options?.jwksUri || process.env["OIDC_JWKS_URI"]) {
       let base = this.issuerUrl;
       while (base.endsWith("/")) {
         base = base.slice(0, -1);
       }
-      const uri = options?.jwksUri || process.env["OIDC_JWKS_URI"] || `${base}/jwks`;
+      const uri =
+        options?.jwksUri || process.env["OIDC_JWKS_URI"] || `${base}/jwks`;
       this.jwksKeyManager = new JwksKeyManager(uri);
     }
 
     this.oidcDiscoveryService = new OidcDiscoveryService(this.issuerUrl);
-    const hmacSecret = options?.jwtSecret || process.env["VAULT_MASTER_KEY"] || "cacophony-jwt-session-secret";
+    const hmacSecret =
+      options?.jwtSecret ||
+      process.env["VAULT_MASTER_KEY"] ||
+      "cacophony-jwt-session-secret";
     this.jwtValidator = new JwtValidator({
       ...(this.jwksKeyManager ? { jwksKeyManager: this.jwksKeyManager } : {}),
-      hmacSecret
+      hmacSecret,
     });
 
-    this.ssoProvider = options?.ssoProvider || SsoProviderFactory.createProvider();
+    this.ssoProvider =
+      options?.ssoProvider || SsoProviderFactory.createProvider();
   }
 
   /**
@@ -66,7 +81,9 @@ export class AuthService {
     const result = await this.jwtValidator.validate(token);
     if (result.valid && result.payload) {
       const p = result.payload;
-      const groups = Array.isArray(p["groups"]) ? (p["groups"] as string[]) : [];
+      const groups = Array.isArray(p["groups"])
+        ? (p["groups"] as string[])
+        : [];
       const roles = Array.isArray(p["roles"]) ? (p["roles"] as string[]) : [];
       const primaryRole = this.resolvePrimaryRole(roles, groups);
 
@@ -76,7 +93,7 @@ export class AuthService {
         email: String(p["email"] || ""),
         role: primaryRole,
         provider: (p["provider"] as any) || "authentik",
-        groups
+        groups,
       };
     }
 
@@ -90,7 +107,7 @@ export class AuthService {
         email: u.email,
         role: this.resolvePrimaryRole(u.roles, u.groups),
         provider: u.provider,
-        groups: u.groups
+        groups: u.groups,
       };
     }
 
@@ -104,7 +121,7 @@ export class AuthService {
     user: SsoUserProfile,
     accessTokenEnc: string,
     refreshTokenEnc?: string,
-    ttlSeconds: number = 86400
+    ttlSeconds: number = 86400,
   ): Promise<UserSessionRecord> {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString();
@@ -121,7 +138,7 @@ export class AuthService {
       refreshTokenEnc,
       expiresAt,
       createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
+      updatedAt: now.toISOString(),
     };
 
     if (this.userSessionRepo) {
@@ -133,7 +150,9 @@ export class AuthService {
   /**
    * Refreshes an active session token using the stored refresh token.
    */
-  public async refreshSession(sessionId: string): Promise<UserSessionRecord | null> {
+  public async refreshSession(
+    sessionId: string,
+  ): Promise<UserSessionRecord | null> {
     if (!this.userSessionRepo) {
       return null;
     }
@@ -153,7 +172,7 @@ export class AuthService {
     const updated: UserSessionRecord = {
       ...session,
       expiresAt: newExpiresAt,
-      updatedAt: now.toISOString()
+      updatedAt: now.toISOString(),
     };
 
     await this.userSessionRepo.saveSession(updated);
@@ -163,7 +182,9 @@ export class AuthService {
   /**
    * Revokes a session locally and returns upstream logout URL if supported.
    */
-  public async logout(sessionId: string): Promise<{ readonly logoutUrl?: string | undefined }> {
+  public async logout(
+    sessionId: string,
+  ): Promise<{ readonly logoutUrl?: string | undefined }> {
     if (this.userSessionRepo) {
       await this.userSessionRepo.deleteSession(sessionId);
     }
@@ -174,12 +195,27 @@ export class AuthService {
   /**
    * Maps roles and groups to highest permission tier (ADMIN > OPERATOR > VIEWER).
    */
-  public resolvePrimaryRole(roles: readonly string[] = [], groups: readonly string[] = []): UserRole {
+  public resolvePrimaryRole(
+    roles: readonly string[] = [],
+    groups: readonly string[] = [],
+  ): UserRole {
     const combined = [...roles, ...groups].map((s) => s.toLowerCase());
-    if (combined.some((s) => s === "admin" || s.includes("admin") || s === "cacophony-admins")) {
+    if (
+      combined.some(
+        (s) => s === "admin" || s.includes("admin") || s === "cacophony-admins",
+      )
+    ) {
       return "ADMIN";
     }
-    if (combined.some((s) => s === "operator" || s.includes("operator") || s === "cacophony-operators" || s.includes("developer"))) {
+    if (
+      combined.some(
+        (s) =>
+          s === "operator" ||
+          s.includes("operator") ||
+          s === "cacophony-operators" ||
+          s.includes("developer"),
+      )
+    ) {
       return "OPERATOR";
     }
     return "VIEWER";
@@ -188,14 +224,17 @@ export class AuthService {
   /**
    * Checks if an AuthContext has at least the required role tier.
    */
-  public isAuthorized(context: AuthContext | null, requiredRole: UserRole): boolean {
+  public isAuthorized(
+    context: AuthContext | null,
+    requiredRole: UserRole,
+  ): boolean {
     if (!context) {
       return false;
     }
     const roleRank: Record<UserRole, number> = {
       VIEWER: 1,
       OPERATOR: 2,
-      ADMIN: 3
+      ADMIN: 3,
     };
     return (roleRank[context.role] ?? 0) >= (roleRank[requiredRole] ?? 0);
   }

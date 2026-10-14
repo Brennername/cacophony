@@ -1,6 +1,10 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "./IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "./IScrubberRule.js";
 import { EmojiScrubberRule } from "./rules/EmojiScrubberRule.js";
 import { EsmRelativeImportScrubberRule } from "./rules/EsmRelativeImportScrubberRule.js";
 import { ExtensionHeuristicScrubberRule } from "./rules/ExtensionHeuristicScrubberRule.js";
@@ -46,7 +50,7 @@ export class CodeScrubber {
 
   constructor(
     rules?: readonly IScrubberRule[],
-    defaultStack = "typescript-nodenext"
+    defaultStack = "typescript-nodenext",
   ) {
     this.defaultStack = defaultStack;
     this.rules = rules ?? [
@@ -56,7 +60,7 @@ export class CodeScrubber {
       new ExtensionHeuristicScrubberRule(),
       new BannedImportsScrubberRule(),
       new JavaPackageScrubberRule(),
-      new PrettierFormattingScrubberRule()
+      new PrettierFormattingScrubberRule(),
     ];
   }
 
@@ -66,7 +70,7 @@ export class CodeScrubber {
   public scrubContent(
     content: string,
     filePath: string,
-    options?: ScrubOptions
+    options?: ScrubOptions,
   ): FileScrubResult {
     // Universal file-level bypass check
     if (
@@ -78,14 +82,16 @@ export class CodeScrubber {
         modified: false,
         content,
         issuesFixed: [],
-        issuesDetected: ["All code scrubbing bypassed via file-level exemption annotation."]
+        issuesDetected: [
+          "All code scrubbing bypassed via file-level exemption annotation.",
+        ],
       };
     }
 
     const stack = options?.stack || this.defaultStack;
     const effectiveOptions: ScrubOptions = {
       ...options,
-      stack
+      stack,
     };
 
     let currentContent = content;
@@ -106,7 +112,11 @@ export class CodeScrubber {
       }
 
       if (rule.isApplicable(stack, filePath)) {
-        const result: ScrubRuleResult = rule.scrub(currentContent, filePath, effectiveOptions);
+        const result: ScrubRuleResult = rule.scrub(
+          currentContent,
+          filePath,
+          effectiveOptions,
+        );
 
         if (result.modified) {
           modified = true;
@@ -122,7 +132,7 @@ export class CodeScrubber {
       modified,
       content: currentContent,
       issuesFixed: allFixed,
-      issuesDetected: allDetected
+      issuesDetected: allDetected,
     };
   }
 
@@ -132,7 +142,7 @@ export class CodeScrubber {
   public scrubFiles(
     projectDir: string,
     relativeFilePaths: readonly string[],
-    options?: ScrubOptions
+    options?: ScrubOptions,
   ): ScrubReport {
     const autoFix = options?.autoFix ?? true;
     const fileResults: FileScrubResult[] = [];
@@ -174,8 +184,7 @@ export class CodeScrubber {
       totalFilesModified: totalModified,
       totalIssuesFixed: totalFixed,
       totalIssuesDetected: totalDetected,
-      fileResults
+      fileResults,
     };
   }
 }
-

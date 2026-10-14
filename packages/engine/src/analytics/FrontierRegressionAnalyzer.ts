@@ -1,4 +1,7 @@
-import type { IncidentBundle, GitCommitRecord } from "./IncidentBundleRecorder.js";
+import type {
+  IncidentBundle,
+  GitCommitRecord,
+} from "./IncidentBundleRecorder.js";
 import type { OllamaProvider } from "../inference/OllamaProvider.js";
 
 export interface SuspectCommit {
@@ -10,10 +13,15 @@ export interface SuspectCommit {
 
 export interface RegressionAnalysisResult {
   readonly bundleId: string;
-  readonly classification: "ENGINE_REGRESSION" | "MODEL_CAPACITY" | "ENVIRONMENT";
+  readonly classification:
+    "ENGINE_REGRESSION" | "MODEL_CAPACITY" | "ENVIRONMENT";
   readonly confidence: number;
   readonly suspectCommits: readonly SuspectCommit[];
-  readonly recommendedAction: "GIT_BISECT" | "MODEL_SWAP" | "RULE_SYNTHESIS" | "RETRY_WITH_HIGHER_CONTEXT";
+  readonly recommendedAction:
+    | "GIT_BISECT"
+    | "MODEL_SWAP"
+    | "RULE_SYNTHESIS"
+    | "RETRY_WITH_HIGHER_CONTEXT";
   readonly explanation: string;
   readonly bisectStartCommit?: string | undefined;
   readonly bisectEndCommit?: string | undefined;
@@ -36,9 +44,14 @@ export class FrontierRegressionAnalyzer {
   /**
    * Analyzes an incident bundle to determine root-cause category and suspect commits.
    */
-  public async analyze(bundle: IncidentBundle): Promise<RegressionAnalysisResult> {
+  public async analyze(
+    bundle: IncidentBundle,
+  ): Promise<RegressionAnalysisResult> {
     const errorSummaries = bundle.failingTasks
-      .map((t) => `Task ${t.taskId} (${t.modelId}): ${t.errorDetails || "Unknown error"}`)
+      .map(
+        (t) =>
+          `Task ${t.taskId} (${t.modelId}): ${t.errorDetails || "Unknown error"}`,
+      )
       .join("\n");
 
     const commitList = bundle.gitCommits
@@ -77,7 +90,7 @@ Output valid JSON matching this schema:
           const suspectCommits = this.matchSuspectCommits(
             parsed.suspectCommitHashes || [],
             bundle.gitCommits,
-            parsed.explanation || "Identified by frontier analyzer"
+            parsed.explanation || "Identified by frontier analyzer",
           );
 
           return {
@@ -86,9 +99,12 @@ Output valid JSON matching this schema:
             confidence: parsed.confidence || 0.8,
             suspectCommits,
             recommendedAction: parsed.recommendedAction || "GIT_BISECT",
-            explanation: parsed.explanation || "Frontier model diagnosed systemic regression",
+            explanation:
+              parsed.explanation ||
+              "Frontier model diagnosed systemic regression",
             bisectStartCommit: suspectCommits[0]?.hash,
-            bisectEndCommit: bundle.gitCommits[bundle.gitCommits.length - 1]?.hash,
+            bisectEndCommit:
+              bundle.gitCommits[bundle.gitCommits.length - 1]?.hash,
           };
         }
       } catch {
@@ -102,15 +118,30 @@ Output valid JSON matching this schema:
   /**
    * Rule-based heuristic analyzer identifying suspect commits from error patterns.
    */
-  public analyzeWithHeuristics(bundle: IncidentBundle): RegressionAnalysisResult {
+  public analyzeWithHeuristics(
+    bundle: IncidentBundle,
+  ): RegressionAnalysisResult {
     const failingTasks = bundle.failingTasks;
-    const errorsJoined = failingTasks.map((t) => t.errorDetails || "").join(" ").toLowerCase();
+    const errorsJoined = failingTasks
+      .map((t) => t.errorDetails || "")
+      .join(" ")
+      .toLowerCase();
 
-    const isTypeMismatch = errorsJoined.includes("ts2339") || errorsJoined.includes("property") || errorsJoined.includes("not found");
-    const isTimeout = errorsJoined.includes("timeout") || errorsJoined.includes("exceeded allocated timeout");
+    const isTypeMismatch =
+      errorsJoined.includes("ts2339") ||
+      errorsJoined.includes("property") ||
+      errorsJoined.includes("not found");
+    const isTimeout =
+      errorsJoined.includes("timeout") ||
+      errorsJoined.includes("exceeded allocated timeout");
 
-    let classification: "ENGINE_REGRESSION" | "MODEL_CAPACITY" | "ENVIRONMENT" = "ENGINE_REGRESSION";
-    let recommendedAction: "GIT_BISECT" | "MODEL_SWAP" | "RULE_SYNTHESIS" | "RETRY_WITH_HIGHER_CONTEXT" = "GIT_BISECT";
+    let classification: "ENGINE_REGRESSION" | "MODEL_CAPACITY" | "ENVIRONMENT" =
+      "ENGINE_REGRESSION";
+    let recommendedAction:
+      | "GIT_BISECT"
+      | "MODEL_SWAP"
+      | "RULE_SYNTHESIS"
+      | "RETRY_WITH_HIGHER_CONTEXT" = "GIT_BISECT";
     const suspectCommits: SuspectCommit[] = [];
 
     if (isTimeout) {
@@ -123,7 +154,12 @@ Output valid JSON matching this schema:
       // Match recent commit altering interface or engine components
       for (const commit of bundle.gitCommits.slice(0, 5)) {
         const msg = commit.message.toLowerCase();
-        if (msg.includes("refactor") || msg.includes("interface") || msg.includes("fix(") || msg.includes("feat(")) {
+        if (
+          msg.includes("refactor") ||
+          msg.includes("interface") ||
+          msg.includes("fix(") ||
+          msg.includes("feat(")
+        ) {
           suspectCommits.push({
             hash: commit.hash,
             message: commit.message,
@@ -155,8 +191,12 @@ Output valid JSON matching this schema:
    * Generates a reproducible git bisect script string.
    */
   public generateBisectScript(result: RegressionAnalysisResult): string {
-    const bad = result.bisectStartCommit ? result.bisectStartCommit.slice(0, 8) : "HEAD";
-    const good = result.bisectEndCommit ? result.bisectEndCommit.slice(0, 8) : "HEAD~10";
+    const bad = result.bisectStartCommit
+      ? result.bisectStartCommit.slice(0, 8)
+      : "HEAD";
+    const good = result.bisectEndCommit
+      ? result.bisectEndCommit.slice(0, 8)
+      : "HEAD~10";
 
     return `#!/usr/bin/env bash
 # Automated Git Bisect Script for Incident ${result.bundleId}
@@ -177,11 +217,13 @@ echo "Bisect run complete."
   private matchSuspectCommits(
     hashes: string[],
     commits: readonly GitCommitRecord[],
-    reason: string
+    reason: string,
   ): SuspectCommit[] {
     const matched: SuspectCommit[] = [];
     for (const h of hashes) {
-      const match = commits.find((c) => c.hash.startsWith(h) || h.startsWith(c.hash.slice(0, 8)));
+      const match = commits.find(
+        (c) => c.hash.startsWith(h) || h.startsWith(c.hash.slice(0, 8)),
+      );
       if (match) {
         matched.push({
           hash: match.hash,

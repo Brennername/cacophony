@@ -16,13 +16,16 @@ export class SignatureHarvester {
   /**
    * Harvests all deep signatures from a TypeScript source file content.
    */
-  public harvestTypeScript(filePath: string, content: string): readonly CodeSignatureRecord[] {
+  public harvestTypeScript(
+    filePath: string,
+    content: string,
+  ): readonly CodeSignatureRecord[] {
     const sourceFile = ts.createSourceFile(
       filePath,
       content,
       ts.ScriptTarget.ES2022,
       true,
-      filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+      filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
     );
 
     const records: CodeSignatureRecord[] = [];
@@ -52,12 +55,17 @@ export class SignatureHarvester {
   /**
    * Harvests signatures from Java source code via AST-like structured parsing.
    */
-  public harvestJava(filePath: string, content: string): readonly CodeSignatureRecord[] {
+  public harvestJava(
+    filePath: string,
+    content: string,
+  ): readonly CodeSignatureRecord[] {
     const records: CodeSignatureRecord[] = [];
     const lines = content.split("\n");
 
-    const classRegex = /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:final\s+)?class\s+([A-Za-z0-9_]+)(?:\s+extends\s+[A-Za-z0-9_]+)?(?:\s+implements\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
-    const methodRegex = /^\s*(?:(?:public|protected|private|static|final)\s+)*([A-Za-z0-9_]+(?:<[A-Za-z0-9_,\s]+>)?(?:\[\])?)\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)(?:\s+throws\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
+    const classRegex =
+      /(?:public\s+|protected\s+|private\s+)?(?:static\s+)?(?:final\s+)?class\s+([A-Za-z0-9_]+)(?:\s+extends\s+[A-Za-z0-9_]+)?(?:\s+implements\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
+    const methodRegex =
+      /^\s*(?:(?:public|protected|private|static|final)\s+)*([A-Za-z0-9_]+(?:<[A-Za-z0-9_,\s]+>)?(?:\[\])?)\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)(?:\s+throws\s+[A-Za-z0-9_,\s]+)?\s*\{?/;
 
     let currentClassName = "";
     const methods: CallableSignature[] = [];
@@ -75,7 +83,12 @@ export class SignatureHarvester {
             kind: "class",
             callables: [...methods],
             properties: [],
-            rawCompressed: this.compressRecord(currentClassName, "class", methods, [])
+            rawCompressed: this.compressRecord(
+              currentClassName,
+              "class",
+              methods,
+              [],
+            ),
           });
           methods.length = 0;
         }
@@ -123,7 +136,12 @@ export class SignatureHarvester {
         kind: "class",
         callables: methods,
         properties: [],
-        rawCompressed: this.compressRecord(currentClassName, "class", methods, [])
+        rawCompressed: this.compressRecord(
+          currentClassName,
+          "class",
+          methods,
+          [],
+        ),
       });
     }
 
@@ -133,11 +151,15 @@ export class SignatureHarvester {
   /**
    * Harvests struct and function signatures from Go source code.
    */
-  public harvestGo(filePath: string, content: string): readonly CodeSignatureRecord[] {
+  public harvestGo(
+    filePath: string,
+    content: string,
+  ): readonly CodeSignatureRecord[] {
     const records: CodeSignatureRecord[] = [];
     const lines = content.split("\n");
 
-    const funcRegex = /^\s*func\s+(?:\([^)]+\)\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^{]*)\{?/;
+    const funcRegex =
+      /^\s*func\s+(?:\([^)]+\)\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^{]*)\{?/;
     const structRegex = /^\s*type\s+([A-Za-z0-9_]+)\s+struct\s*\{?/;
 
     for (let i = 0; i < lines.length; i++) {
@@ -153,7 +175,7 @@ export class SignatureHarvester {
           kind: "type",
           callables: [],
           properties: [],
-          rawCompressed: `type ${structName} struct`
+          rawCompressed: `type ${structName} struct`,
         });
         continue;
       }
@@ -194,7 +216,7 @@ export class SignatureHarvester {
           kind: "function",
           callables: [callable],
           properties: [],
-          rawCompressed: `func ${funcName}(${params.map((p) => `${p.name}: ${p.type}`).join(", ")}): ${returnType}`
+          rawCompressed: `func ${funcName}(${params.map((p) => `${p.name}: ${p.type}`).join(", ")}): ${returnType}`,
         });
       }
     }
@@ -202,7 +224,11 @@ export class SignatureHarvester {
     return records;
   }
 
-  private extractTsClass(filePath: string, node: ts.ClassDeclaration, sourceFile: ts.SourceFile): CodeSignatureRecord | null {
+  private extractTsClass(
+    filePath: string,
+    node: ts.ClassDeclaration,
+    sourceFile: ts.SourceFile,
+  ): CodeSignatureRecord | null {
     const className = node.name?.text;
     if (!className) return null;
 
@@ -210,10 +236,22 @@ export class SignatureHarvester {
     const properties: PropertySignature[] = [];
 
     for (const member of node.members) {
-      if (ts.isMethodDeclaration(member) && member.name && ts.isIdentifier(member.name)) {
-        const isAsync = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
-        const isStatic = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword) ?? false;
-        const returnType = member.type ? member.type.getText(sourceFile) : "void";
+      if (
+        ts.isMethodDeclaration(member) &&
+        member.name &&
+        ts.isIdentifier(member.name)
+      ) {
+        const isAsync =
+          member.modifiers?.some(
+            (m) => m.kind === ts.SyntaxKind.AsyncKeyword,
+          ) ?? false;
+        const isStatic =
+          member.modifiers?.some(
+            (m) => m.kind === ts.SyntaxKind.StaticKeyword,
+          ) ?? false;
+        const returnType = member.type
+          ? member.type.getText(sourceFile)
+          : "void";
         const params = this.extractParameters(member.parameters, sourceFile);
 
         callables.push({
@@ -223,8 +261,15 @@ export class SignatureHarvester {
           isAsync,
           isStatic,
         });
-      } else if (ts.isPropertyDeclaration(member) && member.name && ts.isIdentifier(member.name)) {
-        const isReadonly = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword) ?? false;
+      } else if (
+        ts.isPropertyDeclaration(member) &&
+        member.name &&
+        ts.isIdentifier(member.name)
+      ) {
+        const isReadonly =
+          member.modifiers?.some(
+            (m) => m.kind === ts.SyntaxKind.ReadonlyKeyword,
+          ) ?? false;
         const isOptional = !!member.questionToken;
         const type = member.type ? member.type.getText(sourceFile) : "any";
 
@@ -245,18 +290,33 @@ export class SignatureHarvester {
       kind: "class",
       callables,
       properties,
-      rawCompressed: this.compressRecord(className, "class", callables, properties)
+      rawCompressed: this.compressRecord(
+        className,
+        "class",
+        callables,
+        properties,
+      ),
     };
   }
 
-  private extractTsInterface(filePath: string, node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile): CodeSignatureRecord {
+  private extractTsInterface(
+    filePath: string,
+    node: ts.InterfaceDeclaration,
+    sourceFile: ts.SourceFile,
+  ): CodeSignatureRecord {
     const ifaceName = node.name.text;
     const callables: CallableSignature[] = [];
     const properties: PropertySignature[] = [];
 
     for (const member of node.members) {
-      if (ts.isMethodSignature(member) && member.name && ts.isIdentifier(member.name)) {
-        const returnType = member.type ? member.type.getText(sourceFile) : "void";
+      if (
+        ts.isMethodSignature(member) &&
+        member.name &&
+        ts.isIdentifier(member.name)
+      ) {
+        const returnType = member.type
+          ? member.type.getText(sourceFile)
+          : "void";
         const params = this.extractParameters(member.parameters, sourceFile);
         callables.push({
           name: member.name.text,
@@ -264,8 +324,15 @@ export class SignatureHarvester {
           returnType,
           isAsync: false,
         });
-      } else if (ts.isPropertySignature(member) && member.name && ts.isIdentifier(member.name)) {
-        const isReadonly = member.modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword) ?? false;
+      } else if (
+        ts.isPropertySignature(member) &&
+        member.name &&
+        ts.isIdentifier(member.name)
+      ) {
+        const isReadonly =
+          member.modifiers?.some(
+            (m) => m.kind === ts.SyntaxKind.ReadonlyKeyword,
+          ) ?? false;
         const isOptional = !!member.questionToken;
         const type = member.type ? member.type.getText(sourceFile) : "any";
         properties.push({
@@ -285,15 +352,26 @@ export class SignatureHarvester {
       kind: "interface",
       callables,
       properties,
-      rawCompressed: this.compressRecord(ifaceName, "interface", callables, properties)
+      rawCompressed: this.compressRecord(
+        ifaceName,
+        "interface",
+        callables,
+        properties,
+      ),
     };
   }
 
-  private extractTsFunction(filePath: string, node: ts.FunctionDeclaration, sourceFile: ts.SourceFile): CodeSignatureRecord | null {
+  private extractTsFunction(
+    filePath: string,
+    node: ts.FunctionDeclaration,
+    sourceFile: ts.SourceFile,
+  ): CodeSignatureRecord | null {
     const fnName = node.name?.text;
     if (!fnName) return null;
 
-    const isAsync = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false;
+    const isAsync =
+      node.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword) ??
+      false;
     const returnType = node.type ? node.type.getText(sourceFile) : "void";
     const params = this.extractParameters(node.parameters, sourceFile);
 
@@ -312,11 +390,15 @@ export class SignatureHarvester {
       kind: "function",
       callables: [callable],
       properties: [],
-      rawCompressed: `function ${fnName}(${params.map((p) => `${p.name}${p.isOptional ? "?" : ""}: ${p.type}`).join(", ")}): ${returnType}`
+      rawCompressed: `function ${fnName}(${params.map((p) => `${p.name}${p.isOptional ? "?" : ""}: ${p.type}`).join(", ")}): ${returnType}`,
     };
   }
 
-  private extractTsTypeAlias(filePath: string, node: ts.TypeAliasDeclaration, sourceFile: ts.SourceFile): CodeSignatureRecord {
+  private extractTsTypeAlias(
+    filePath: string,
+    node: ts.TypeAliasDeclaration,
+    sourceFile: ts.SourceFile,
+  ): CodeSignatureRecord {
     const typeName = node.name.text;
     const rawType = node.type.getText(sourceFile).replace(/\s+/g, " ");
 
@@ -328,16 +410,21 @@ export class SignatureHarvester {
       kind: "type",
       callables: [],
       properties: [],
-      rawCompressed: `type ${typeName} = ${rawType}`
+      rawCompressed: `type ${typeName} = ${rawType}`,
     };
   }
 
-  private extractParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>, sourceFile: ts.SourceFile): FunctionParameterSignature[] {
+  private extractParameters(
+    parameters: ts.NodeArray<ts.ParameterDeclaration>,
+    sourceFile: ts.SourceFile,
+  ): FunctionParameterSignature[] {
     return parameters.map((param) => {
       const name = param.name.getText(sourceFile);
       const isOptional = !!param.questionToken || !!param.initializer;
       const type = param.type ? param.type.getText(sourceFile) : "any";
-      const defaultValue = param.initializer ? param.initializer.getText(sourceFile) : undefined;
+      const defaultValue = param.initializer
+        ? param.initializer.getText(sourceFile)
+        : undefined;
       const result: FunctionParameterSignature = {
         name,
         type,
@@ -357,11 +444,15 @@ export class SignatureHarvester {
     name: string,
     kind: string,
     callables: readonly CallableSignature[],
-    properties: readonly PropertySignature[]
+    properties: readonly PropertySignature[],
   ): string {
-    const propStrs = properties.map((p) => `${p.isReadonly ? "readonly " : ""}${p.name}${p.isOptional ? "?" : ""}: ${p.type}`);
+    const propStrs = properties.map(
+      (p) =>
+        `${p.isReadonly ? "readonly " : ""}${p.name}${p.isOptional ? "?" : ""}: ${p.type}`,
+    );
     const methodStrs = callables.map(
-      (c) => `${c.name}(${c.parameters.map((p) => `${p.name}${p.isOptional ? "?" : ""}: ${p.type}`).join(", ")}): ${c.returnType}`
+      (c) =>
+        `${c.name}(${c.parameters.map((p) => `${p.name}${p.isOptional ? "?" : ""}: ${p.type}`).join(", ")}): ${c.returnType}`,
     );
     const body = [...propStrs, ...methodStrs].join("; ");
     return `${kind} ${name} { ${body} }`;

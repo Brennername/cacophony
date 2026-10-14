@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 
 // Mocking OOMGuard functionality for testing purposes
 class MockOomGuard {
@@ -8,12 +8,12 @@ class MockOomGuard {
   }
 
   static haltTaskDispatch(): void {
-    console.warn('Task dispatch halted due to low memory conditions');
+    console.warn("Task dispatch halted due to low memory conditions");
   }
 }
 
-describe('OOM Guard Test Suite', () => {
-  it('should halt task dispatch when low memory condition is detected', async () => {
+describe("OOM Guard Test Suite", () => {
+  it("should halt task dispatch when low memory condition is detected", async () => {
     const originalIsLowMemory = MockOomGuard.isLowMemory;
     const originalHaltTaskDispatch = MockOomGuard.haltTaskDispatch;
 
@@ -36,8 +36,16 @@ describe('OOM Guard Test Suite', () => {
         MockOomGuard.haltTaskDispatch();
       }
 
-      assert.strictEqual(isLowMemoryCalled, true, 'isLowMemory should be called');
-      assert.strictEqual(haltTaskDispatchCalled, true, 'haltTaskDispatch should be called');
+      assert.strictEqual(
+        isLowMemoryCalled,
+        true,
+        "isLowMemory should be called",
+      );
+      assert.strictEqual(
+        haltTaskDispatchCalled,
+        true,
+        "haltTaskDispatch should be called",
+      );
     } finally {
       // Restore the original methods
       MockOomGuard.isLowMemory = originalIsLowMemory;

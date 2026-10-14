@@ -1,5 +1,10 @@
 import { randomBytes } from "node:crypto";
-import type { SessionRepository, SessionRecord, SessionMessageRecord, SessionTabRecord } from "@cacophony/db";
+import type {
+  SessionRepository,
+  SessionRecord,
+  SessionMessageRecord,
+  SessionTabRecord,
+} from "@cacophony/db";
 import type { ChatMessage } from "@cacophony/shared-types";
 import { SessionCompactor } from "./SessionCompactor.js";
 
@@ -30,7 +35,7 @@ export class SessionManager {
 
   constructor(
     private readonly repository: SessionRepository,
-    options: SessionManagerOptions = {}
+    options: SessionManagerOptions = {},
   ) {
     const maxTokens = options.maxContextTokens ?? 8192;
     this.defaultModel = options.defaultModel ?? "qwen2.5-coder:7b";
@@ -40,7 +45,9 @@ export class SessionManager {
 
   public async createSession(
     title: string,
-    options?: { branch?: string | undefined; activeModel?: string | undefined } | undefined
+    options?:
+      | { branch?: string | undefined; activeModel?: string | undefined }
+      | undefined,
   ): Promise<SessionRecord> {
     const id = `session-${Date.now()}-${randomBytes(4).toString("hex")}`;
     const branch = options?.branch ?? this.defaultBranch;
@@ -52,7 +59,7 @@ export class SessionManager {
       branch,
       active_model: activeModel,
       total_tokens: 0,
-      status: "ACTIVE"
+      status: "ACTIVE",
     };
 
     await this.repository.createSession(record);
@@ -62,13 +69,15 @@ export class SessionManager {
       tab_name: "Main",
       active_file: null,
       cursor_position: 0,
-      order_index: 0
+      order_index: 0,
     });
 
     return (await this.repository.getSession(id))!;
   }
 
-  public async getSessionContext(sessionId: string): Promise<ActiveSessionContext | undefined> {
+  public async getSessionContext(
+    sessionId: string,
+  ): Promise<ActiveSessionContext | undefined> {
     const session = await this.repository.getSession(sessionId);
     if (!session) return undefined;
 
@@ -77,17 +86,21 @@ export class SessionManager {
 
     const chatMessages: ChatMessage[] = messages.map((m) => ({
       role: m.role as ChatMessage["role"],
-      content: m.content
+      content: m.content,
     }));
 
     return {
       session,
       messages: chatMessages,
-      tabs
+      tabs,
     };
   }
 
-  public async appendTurn(sessionId: string, userPrompt: string, assistantResponse: string): Promise<void> {
+  public async appendTurn(
+    sessionId: string,
+    userPrompt: string,
+    assistantResponse: string,
+  ): Promise<void> {
     const session = await this.repository.getSession(sessionId);
     if (!session) throw new Error(`Session '${sessionId}' not found`);
 
@@ -101,7 +114,7 @@ export class SessionManager {
       tool_calls_json: "[]",
       tool_results_json: "[]",
       token_count: userTokens,
-      importance_score: 1.0
+      importance_score: 1.0,
     });
 
     const assistantMsgId = `msg-${Date.now()}-a`;
@@ -114,14 +127,14 @@ export class SessionManager {
       tool_calls_json: "[]",
       tool_results_json: "[]",
       token_count: assistantTokens,
-      importance_score: 1.0
+      importance_score: 1.0,
     });
 
     // Check compaction
     const allMessages = await this.repository.getMessages(sessionId);
     const chatMessages: ChatMessage[] = allMessages.map((m) => ({
       role: m.role as ChatMessage["role"],
-      content: m.content
+      content: m.content,
     }));
 
     const compaction = this.compactor.compact(chatMessages);
@@ -133,34 +146,42 @@ export class SessionManager {
         pre_compaction_tokens: compaction.preTokens,
         post_compaction_tokens: compaction.postTokens,
         summary_text: compaction.summary,
-        preserved_turns_count: 4
+        preserved_turns_count: 4,
       });
 
       // Update persisted messages with compacted turns
-      const newRecords: Omit<SessionMessageRecord, "created_at">[] = compaction.messages.map((m, idx) => ({
-        id: `comp-msg-${sessionId}-${idx}`,
-        session_id: sessionId,
-        role: m.role,
-        content: m.content,
-        tool_calls_json: "[]",
-        tool_results_json: "[]",
-        token_count: Math.ceil(m.content.length / 4),
-        importance_score: m.role === "system" ? 2.0 : 1.0
-      }));
+      const newRecords: Omit<SessionMessageRecord, "created_at">[] =
+        compaction.messages.map((m, idx) => ({
+          id: `comp-msg-${sessionId}-${idx}`,
+          session_id: sessionId,
+          role: m.role,
+          content: m.content,
+          tool_calls_json: "[]",
+          tool_results_json: "[]",
+          token_count: Math.ceil(m.content.length / 4),
+          importance_score: m.role === "system" ? 2.0 : 1.0,
+        }));
 
       await this.repository.replaceMessages(sessionId, newRecords);
-      await this.repository.updateSessionTokens(sessionId, compaction.postTokens);
+      await this.repository.updateSessionTokens(
+        sessionId,
+        compaction.postTokens,
+      );
     } else {
       const updatedTotal = session.total_tokens + userTokens + assistantTokens;
       await this.repository.updateSessionTokens(sessionId, updatedTotal);
     }
   }
 
-  public async listSessions(branch?: string): Promise<readonly SessionRecord[]> {
+  public async listSessions(
+    branch?: string,
+  ): Promise<readonly SessionRecord[]> {
     return this.repository.listSessions(branch);
   }
 
-  public async searchHistory(query: string): Promise<readonly SessionMessageRecord[]> {
+  public async searchHistory(
+    query: string,
+  ): Promise<readonly SessionMessageRecord[]> {
     return this.repository.searchMessages(query);
   }
 }

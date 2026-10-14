@@ -23,10 +23,15 @@ describe("Phase 37: Multi-Stack Profile Verifiers, AST Inversion Repair & Scrubb
       }
     `;
 
-    const res = rule.correctTransposedArguments("services/TransferService.ts", source);
+    const res = rule.correctTransposedArguments(
+      "services/TransferService.ts",
+      source,
+    );
     assert.equal(res.modified, true);
     assert.equal(res.correctionsCount, 1);
-    assert.ok(res.code.includes("transferFunds(sourceAccount, destinationAccount)"));
+    assert.ok(
+      res.code.includes("transferFunds(sourceAccount, destinationAccount)"),
+    );
   });
 
   it("T37.2: GoSignatureHarvester should parse structs, interfaces, and methods", () => {
@@ -51,12 +56,16 @@ describe("Phase 37: Multi-Stack Profile Verifiers, AST Inversion Repair & Scrubb
     const records = harvester.harvest("pkg/user/repo.go", goSource);
     assert.ok(records.length >= 3);
 
-    const structRec = records.find((r: CodeSignatureRecord) => r.identifier === "UserRepository");
+    const structRec = records.find(
+      (r: CodeSignatureRecord) => r.identifier === "UserRepository",
+    );
     assert.ok(structRec);
     assert.equal(structRec.kind, "type");
     assert.equal(structRec.properties.length, 2);
 
-    const ifaceRec = records.find((r: CodeSignatureRecord) => r.identifier === "Authenticator");
+    const ifaceRec = records.find(
+      (r: CodeSignatureRecord) => r.identifier === "Authenticator",
+    );
     assert.ok(ifaceRec);
     assert.equal(ifaceRec.kind, "interface");
     assert.equal(ifaceRec.callables[0]?.name, "Authenticate");
@@ -133,7 +142,7 @@ describe("Phase 37: Multi-Stack Profile Verifiers, AST Inversion Repair & Scrubb
       status: "PENDING",
       priority: "P1",
       focusFiles: "internal/user/model.go",
-      testCommand: null
+      testCommand: null,
     };
 
     const groomed = groomer.groom(goTask, {
@@ -141,8 +150,8 @@ describe("Phase 37: Multi-Stack Profile Verifiers, AST Inversion Repair & Scrubb
         id: "go",
         name: "Go Module",
         directives: [],
-        defaultTestRunner: "go test ./..."
-      } as any
+        defaultTestRunner: "go test ./...",
+      } as any,
     });
 
     assert.equal(groomed.scopedTestCommand, "go test ./internal/user/...");

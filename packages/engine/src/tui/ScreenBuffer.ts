@@ -1,4 +1,8 @@
-import { TUI_PALETTES, type TuiColorPalette, type TuiThemeName } from "./TuiTheme.js";
+import {
+  TUI_PALETTES,
+  type TuiColorPalette,
+  type TuiThemeName,
+} from "./TuiTheme.js";
 
 export interface BoxDimensions {
   readonly x: number;
@@ -52,11 +56,20 @@ export class ScreenBuffer {
     }
   }
 
-  public drawText(x: number, y: number, text: string, stylePrefix = "", maxLength?: number): void {
+  public drawText(
+    x: number,
+    y: number,
+    text: string,
+    stylePrefix = "",
+    maxLength?: number,
+  ): void {
     if (y < 0 || y >= this.height) return;
     if (x < 0 || x >= this.width) return;
 
-    const visibleLength = maxLength !== undefined ? Math.min(maxLength, this.width - x) : this.width - x;
+    const visibleLength =
+      maxLength !== undefined
+        ? Math.min(maxLength, this.width - x)
+        : this.width - x;
     const cleanChars = Array.from(text.slice(0, visibleLength));
 
     for (let i = 0; i < cleanChars.length; i++) {
@@ -78,8 +91,12 @@ export class ScreenBuffer {
     const { x, y, width, height } = dim;
     if (width < 2 || height < 2) return;
 
-    const borderStyle = options.isActive ? this.palette.activeBorder : this.palette.border;
-    const titleStyle = options.isActive ? this.palette.title : this.palette.textMuted;
+    const borderStyle = options.isActive
+      ? this.palette.activeBorder
+      : this.palette.border;
+    const titleStyle = options.isActive
+      ? this.palette.title
+      : this.palette.textMuted;
 
     // Corners & Horizontal borders
     const topRow = y;

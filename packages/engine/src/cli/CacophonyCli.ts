@@ -49,11 +49,17 @@ export class CacophonyCli {
 
         case "stop":
         case "shutdown-after-task":
-          return await this.handleSimpleCommand("drain", "Instructing daemon to shutdown after current task");
+          return await this.handleSimpleCommand(
+            "drain",
+            "Instructing daemon to shutdown after current task",
+          );
 
         case "shutdown-now":
         case "kill":
-          return await this.handleSimpleCommand("kill", "Instructing daemon to terminate immediately");
+          return await this.handleSimpleCommand(
+            "kill",
+            "Instructing daemon to terminate immediately",
+          );
 
         // Task commands
         case "tasks":
@@ -94,7 +100,9 @@ export class CacophonyCli {
           return 1;
       }
     } catch (err) {
-      console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `Error: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return 1;
     }
   }
@@ -141,7 +149,7 @@ export class CacophonyCli {
     const child = spawn(process.execPath, [runnerScript], {
       detached: true,
       stdio: "ignore",
-      env: { ...process.env, CACOPHONY_IPC_SOCKET: this.socketPath }
+      env: { ...process.env, CACOPHONY_IPC_SOCKET: this.socketPath },
     });
 
     child.unref();
@@ -150,12 +158,16 @@ export class CacophonyCli {
     for (let i = 0; i < 25; i++) {
       await new Promise((r) => setTimeout(r, 200));
       if (await this.client.isOnline()) {
-        console.log(`Cacophony daemon started successfully in background (PID ${child.pid}).`);
+        console.log(
+          `Cacophony daemon started successfully in background (PID ${child.pid}).`,
+        );
         return 0;
       }
     }
 
-    console.error("Daemon started but IPC socket did not become ready in time.");
+    console.error(
+      "Daemon started but IPC socket did not become ready in time.",
+    );
     return 1;
   }
 
@@ -176,7 +188,7 @@ export class CacophonyCli {
       return 0;
     }
 
-    const res = await this.client.request("status") as {
+    const res = (await this.client.request("status")) as {
       status: string;
       uptimeSeconds: number;
       pendingTasksCount: number;
@@ -190,28 +202,46 @@ export class CacophonyCli {
     console.log(`Active Running Task: ${res.activeTaskId || "None (Idle)"}`);
 
     if (res.telemetry) {
-      const { gpu, thermalZone, pacingDelaySeconds, activeModel } = res.telemetry;
+      const { gpu, thermalZone, pacingDelaySeconds, activeModel } =
+        res.telemetry;
       const vramUsedMb = Math.round(gpu.vramUsedBytes / (1024 * 1024));
       const vramTotalMb = Math.round(gpu.vramTotalBytes / (1024 * 1024));
 
       console.log("\nHardware APU Telemetry:");
-      console.log(`  GPU Load: ${gpu.gpuBusyPercent}% | Thermal Zone: ${thermalZone} (Pacing Delay: ${pacingDelaySeconds}s)`);
-      console.log(`  Edge Temp: ${gpu.edgeTempCelsius}C | Power: ${gpu.pptWatts}W | Clock: ${gpu.sclkMhz}MHz`);
-      console.log(`  Core Voltage: ${gpu.vddgfxMilliVolts}mV | SoC: ${gpu.socMilliVolts}mV`);
-      console.log(`  VRAM: ${vramUsedMb}MB / ${vramTotalMb}MB (${gpu.vramPercent.toFixed(1)}%)`);
+      console.log(
+        `  GPU Load: ${gpu.gpuBusyPercent}% | Thermal Zone: ${thermalZone} (Pacing Delay: ${pacingDelaySeconds}s)`,
+      );
+      console.log(
+        `  Edge Temp: ${gpu.edgeTempCelsius}C | Power: ${gpu.pptWatts}W | Clock: ${gpu.sclkMhz}MHz`,
+      );
+      console.log(
+        `  Core Voltage: ${gpu.vddgfxMilliVolts}mV | SoC: ${gpu.socMilliVolts}mV`,
+      );
+      console.log(
+        `  VRAM: ${vramUsedMb}MB / ${vramTotalMb}MB (${gpu.vramPercent.toFixed(1)}%)`,
+      );
       if (activeModel) {
-        const modelVramMb = Math.round(activeModel.vramSizeBytes / (1024 * 1024));
-        console.log(`  Active VRAM Model: ${activeModel.name} (${modelVramMb}MB resident)`);
+        const modelVramMb = Math.round(
+          activeModel.vramSizeBytes / (1024 * 1024),
+        );
+        console.log(
+          `  Active VRAM Model: ${activeModel.name} (${modelVramMb}MB resident)`,
+        );
       }
     }
 
     return 0;
   }
 
-  private async handleSimpleCommand(command: string, description: string): Promise<number> {
+  private async handleSimpleCommand(
+    command: string,
+    description: string,
+  ): Promise<number> {
     const online = await this.client.isOnline();
     if (!online) {
-      console.error(`Cannot execute '${command}': Cacophony daemon is offline.`);
+      console.error(
+        `Cannot execute '${command}': Cacophony daemon is offline.`,
+      );
       return 1;
     }
 
@@ -226,7 +256,9 @@ export class CacophonyCli {
 
     if (sub === "list") {
       const statusArg = this.extractFlag(args, "--status");
-      const res = await this.client.request("tasks.list", { status: statusArg });
+      const res = await this.client.request("tasks.list", {
+        status: statusArg,
+      });
       console.log(JSON.stringify(res, null, 2));
       return 0;
     }
@@ -253,11 +285,15 @@ export class CacophonyCli {
       const allowEmojis = args.includes("--allow-emojis");
 
       if (!title || !prompt) {
-        console.error("Usage: cacophony tasks enqueue --title=\"...\" --prompt=\"...\" [--priority=P0|P1|P2] [--focus=...] [--allowed-imports=redis,express] [--allow-emojis]");
+        console.error(
+          'Usage: cacophony tasks enqueue --title="..." --prompt="..." [--priority=P0|P1|P2] [--focus=...] [--allowed-imports=redis,express] [--allow-emojis]',
+        );
         return 1;
       }
 
-      const allowedImports = allowedImportsRaw ? allowedImportsRaw.split(",").map((s) => s.trim()) : undefined;
+      const allowedImports = allowedImportsRaw
+        ? allowedImportsRaw.split(",").map((s) => s.trim())
+        : undefined;
 
       const res = await this.client.request("tasks.enqueue", {
         title,
@@ -267,7 +303,7 @@ export class CacophonyCli {
         focusFiles: focus,
         testCommand: testCmd,
         allowedImports,
-        allowEmojis
+        allowEmojis,
       });
 
       console.log("Task enqueued successfully:");
@@ -314,7 +350,9 @@ export class CacophonyCli {
 
     if (sub === "tap") {
       const taskId = args[1];
-      console.log(`Attaching live token stream tap ${taskId ? `for task: ${taskId}` : "(active task)"}... Press Ctrl+C to untap.\n`);
+      console.log(
+        `Attaching live token stream tap ${taskId ? `for task: ${taskId}` : "(active task)"}... Press Ctrl+C to untap.\n`,
+      );
 
       const untap = this.client.tapStream(
         (token) => {
@@ -322,7 +360,7 @@ export class CacophonyCli {
         },
         (msg) => {
           console.log(`[Stream Status]: ${msg}`);
-        }
+        },
       );
 
       process.on("SIGINT", () => {
@@ -356,7 +394,9 @@ export class CacophonyCli {
   private async handleScrub(args: readonly string[]): Promise<number> {
     const targetFile = args[0];
     if (!targetFile) {
-      console.error("Usage: cacophony scrub <file-path> [--stack=...] [--allowed-imports=redis] [--allow-emojis]");
+      console.error(
+        "Usage: cacophony scrub <file-path> [--stack=...] [--allowed-imports=redis] [--allow-emojis]",
+      );
       return 1;
     }
 
@@ -370,24 +410,27 @@ export class CacophonyCli {
     const stack = this.extractFlag(args, "--stack");
     const allowedImportsRaw = this.extractFlag(args, "--allowed-imports");
     const allowEmojis = args.includes("--allow-emojis");
-    const allowedImports = allowedImportsRaw ? allowedImportsRaw.split(",").map((s) => s.trim()) : undefined;
+    const allowedImports = allowedImportsRaw
+      ? allowedImportsRaw.split(",").map((s) => s.trim())
+      : undefined;
 
     const scrubber = new CodeScrubber();
-    const result = scrubber.scrubContent(
-      content,
-      targetFile,
-      {
-        allowEmojis,
-        ...(stack ? { stack } : {}),
-        ...(allowedImports ? { allowedImports } : {})
-      }
-    );
-
+    const result = scrubber.scrubContent(content, targetFile, {
+      allowEmojis,
+      ...(stack ? { stack } : {}),
+      ...(allowedImports ? { allowedImports } : {}),
+    });
 
     console.log(`Scrub evaluated: ${targetFile}`);
     console.log(`Modified: ${result.modified}`);
-    console.log(`Issues Fixed (${result.issuesFixed.length}):`, result.issuesFixed);
-    console.log(`Issues Detected (${result.issuesDetected.length}):`, result.issuesDetected);
+    console.log(
+      `Issues Fixed (${result.issuesFixed.length}):`,
+      result.issuesFixed,
+    );
+    console.log(
+      `Issues Detected (${result.issuesDetected.length}):`,
+      result.issuesDetected,
+    );
 
     if (result.modified && args.includes("--write")) {
       fs.writeFileSync(fullPath, result.content, "utf-8");
@@ -406,7 +449,9 @@ export class CacophonyCli {
   private async handleCommandPalette(args: readonly string[]): Promise<number> {
     const action = args[0];
     if (!action) {
-      console.log("Command Palette: Available actions: status, pause, resume, drain, kill, telemetry, models, scrub, tui");
+      console.log(
+        "Command Palette: Available actions: status, pause, resume, drain, kill, telemetry, models, scrub, tui",
+      );
       return 0;
     }
 
@@ -415,7 +460,10 @@ export class CacophonyCli {
     return 0;
   }
 
-  private extractFlag(args: readonly string[], flag: string): string | undefined {
+  private extractFlag(
+    args: readonly string[],
+    flag: string,
+  ): string | undefined {
     const prefix = `${flag}=`;
     const found = args.find((a) => a.startsWith(prefix));
     if (found) {
@@ -433,43 +481,60 @@ export class CacophonyCli {
     const targetArg = args.find((a) => a.startsWith("--target="));
     const target = targetArg ? targetArg.split("=")[1] : "github";
 
-    console.log(`[Promotion Pipeline] Starting quarantine gauntlet for target '${target}' (dry-run: ${dryRun})...`);
+    console.log(
+      `[Promotion Pipeline] Starting quarantine gauntlet for target '${target}' (dry-run: ${dryRun})...`,
+    );
 
     const { MonorepoBuildGate } = await import("../gitea/MonorepoBuildGate.js");
-    const { PromotionSanitizer } = await import("../gitea/PromotionSanitizer.js");
+    const { PromotionSanitizer } =
+      await import("../gitea/PromotionSanitizer.js");
 
     const buildGate = new MonorepoBuildGate();
     console.log("[Quarantine Gate] Verifying monorepo build...");
     const buildResult = await buildGate.verifyBuild(process.cwd());
     if (!buildResult.passed) {
-      console.error(`[Promotion Gate Failure] Build verification failed: ${buildResult.failureSummary}`);
+      console.error(
+        `[Promotion Gate Failure] Build verification failed: ${buildResult.failureSummary}`,
+      );
       return 1;
     }
     console.log("[Quarantine Gate] Monorepo build verified successfully.");
 
-    console.log("[Quarantine Gate] Scanning for leaked secrets and banned dependencies...");
+    console.log(
+      "[Quarantine Gate] Scanning for leaked secrets and banned dependencies...",
+    );
     const sanitizer = new PromotionSanitizer();
     const files = fs.readdirSync(process.cwd());
     const sanitization = sanitizer.sanitize({ filePaths: files });
     if (!sanitization.passed) {
-      console.error(`[Promotion Gate Failure] Hygiene check failed: ${sanitization.summary}`);
+      console.error(
+        `[Promotion Gate Failure] Hygiene check failed: ${sanitization.summary}`,
+      );
       return 1;
     }
     console.log("[Quarantine Gate] Repository hygiene scan passed.");
 
     if (dryRun) {
-      console.log("[Promotion Pipeline] Dry run successful. All quarantine gates passed. No upstream push executed.");
+      console.log(
+        "[Promotion Pipeline] Dry run successful. All quarantine gates passed. No upstream push executed.",
+      );
       return 0;
     }
 
-    console.log(`[Promotion Pipeline] Pushing release to upstream ${target}...`);
+    console.log(
+      `[Promotion Pipeline] Pushing release to upstream ${target}...`,
+    );
     const { execSync } = await import("node:child_process");
     try {
       execSync("git push origin master", { stdio: "inherit" });
-      console.log("[Promotion Pipeline] Promotion to upstream production successful.");
+      console.log(
+        "[Promotion Pipeline] Promotion to upstream production successful.",
+      );
       return 0;
     } catch (pushErr) {
-      console.error(`[Promotion Gate Failure] Upstream push failed: ${String(pushErr)}`);
+      console.error(
+        `[Promotion Gate Failure] Upstream push failed: ${String(pushErr)}`,
+      );
       return 1;
     }
   }

@@ -27,7 +27,9 @@ export interface ISsoProvider {
    * Exchanges an authorization code or forward-auth credential for user profile and token.
    * @param code Authorization code or forward-auth session token
    */
-  exchangeCode(code: string): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }>;
+  exchangeCode(
+    code: string,
+  ): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }>;
 
   /**
    * Verifies an access token or session JWT.

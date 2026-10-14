@@ -115,11 +115,14 @@ export class StreamTapManager {
     this.enforceBufferLimit(taskId, token);
 
     const now = Date.now();
-    this.activityTimestamps.set(taskId, Math.max(now, (this.activityTimestamps.get(taskId) ?? 0) + 1));
+    this.activityTimestamps.set(
+      taskId,
+      Math.max(now, (this.activityTimestamps.get(taskId) ?? 0) + 1),
+    );
     const event: StreamTokenEvent = {
       taskId,
       token,
-      timestamp: now
+      timestamp: now,
     };
     this.emitter.emit("token", event);
     this.emitter.emit(`token:${taskId}`, event);
@@ -132,13 +135,14 @@ export class StreamTapManager {
 
     const chunks = demuxer.feed(token);
     for (const chunk of chunks) {
-      const eventName = chunk.type === "reasoning" ? "reasoning_chunk" : "code_chunk";
+      const eventName =
+        chunk.type === "reasoning" ? "reasoning_chunk" : "code_chunk";
       const demuxedEvent: DemuxedTokenEvent = {
         taskId,
         chunk: chunk.content,
         content: chunk.content,
         type: chunk.type,
-        timestamp: now
+        timestamp: now,
       };
       this.emitter.emit(eventName, demuxedEvent);
       this.emitter.emit(`${eventName}:${taskId}`, demuxedEvent);
@@ -207,7 +211,10 @@ export class StreamTapManager {
    * Subscribes a listener to live token stream.
    * If taskId is specified, listens only for that task.
    */
-  public tap(listener: (event: StreamTokenEvent) => void, taskId?: string): () => void {
+  public tap(
+    listener: (event: StreamTokenEvent) => void,
+    taskId?: string,
+  ): () => void {
     const eventName = taskId ? `token:${taskId}` : "token";
     this.emitter.on(eventName, listener);
     return () => {
@@ -218,7 +225,10 @@ export class StreamTapManager {
   /**
    * Subscribes a listener to live reasoning chunk events.
    */
-  public tapReasoning(listener: (event: DemuxedTokenEvent) => void, taskId?: string): () => void {
+  public tapReasoning(
+    listener: (event: DemuxedTokenEvent) => void,
+    taskId?: string,
+  ): () => void {
     const eventName = taskId ? `reasoning_chunk:${taskId}` : "reasoning_chunk";
     this.emitter.on(eventName, listener);
     return () => {
@@ -229,7 +239,10 @@ export class StreamTapManager {
   /**
    * Subscribes a listener to live code chunk events.
    */
-  public tapCode(listener: (event: DemuxedTokenEvent) => void, taskId?: string): () => void {
+  public tapCode(
+    listener: (event: DemuxedTokenEvent) => void,
+    taskId?: string,
+  ): () => void {
     const eventName = taskId ? `code_chunk:${taskId}` : "code_chunk";
     this.emitter.on(eventName, listener);
     return () => {
@@ -243,7 +256,10 @@ export class StreamTapManager {
   public emitStageTransition(event: StageTransitionEvent): void {
     this.activityTimestamps.set(
       event.taskId,
-      Math.max(event.timestamp, (this.activityTimestamps.get(event.taskId) ?? 0) + 1)
+      Math.max(
+        event.timestamp,
+        (this.activityTimestamps.get(event.taskId) ?? 0) + 1,
+      ),
     );
     this.emitter.emit("stage_transition", event);
     this.emitter.emit(`stage_transition:${event.taskId}`, event);
@@ -253,8 +269,13 @@ export class StreamTapManager {
    * Subscribes a listener to live stage transition events.
    * If taskId is specified, listens only for that task.
    */
-  public tapStageTransitions(listener: (event: StageTransitionEvent) => void, taskId?: string): () => void {
-    const eventName = taskId ? `stage_transition:${taskId}` : "stage_transition";
+  public tapStageTransitions(
+    listener: (event: StageTransitionEvent) => void,
+    taskId?: string,
+  ): () => void {
+    const eventName = taskId
+      ? `stage_transition:${taskId}`
+      : "stage_transition";
     this.emitter.on(eventName, listener);
     return () => {
       this.emitter.off(eventName, listener);
@@ -272,8 +293,13 @@ export class StreamTapManager {
   /**
    * Subscribes a listener to generation heartbeat events.
    */
-  public tapGenerationHeartbeat(listener: (event: GenerationHeartbeatEvent) => void, taskId?: string): () => void {
-    const eventName = taskId ? `generation_heartbeat:${taskId}` : "generation_heartbeat";
+  public tapGenerationHeartbeat(
+    listener: (event: GenerationHeartbeatEvent) => void,
+    taskId?: string,
+  ): () => void {
+    const eventName = taskId
+      ? `generation_heartbeat:${taskId}`
+      : "generation_heartbeat";
     this.emitter.on(eventName, listener);
     return () => {
       this.emitter.off(eventName, listener);
@@ -291,7 +317,10 @@ export class StreamTapManager {
   /**
    * Subscribes a listener to live sub-stage log events.
    */
-  public tapSubStageLog(listener: (event: SubStageLogEvent) => void, taskId?: string): () => void {
+  public tapSubStageLog(
+    listener: (event: SubStageLogEvent) => void,
+    taskId?: string,
+  ): () => void {
     const eventName = taskId ? `substage_log:${taskId}` : "substage_log";
     this.emitter.on(eventName, listener);
     return () => {
@@ -318,7 +347,14 @@ export class StreamTapManager {
   /**
    * Subscribes a listener to arena epoch advanced events.
    */
-  public tapEpochAdvanced(listener: (event: { epochId: number; name: string; reason: string; timestamp: number }) => void): () => void {
+  public tapEpochAdvanced(
+    listener: (event: {
+      epochId: number;
+      name: string;
+      reason: string;
+      timestamp: number;
+    }) => void,
+  ): () => void {
     this.emitter.on("arena_epoch_advanced", listener);
     return () => {
       this.emitter.off("arena_epoch_advanced", listener);
@@ -376,8 +412,7 @@ export class StreamTapManager {
     });
   }
 
-
   public getTaskBuffer(taskId: string): string {
-      return this.taskBuffers.get(taskId) || "";
-    }
+    return this.taskBuffers.get(taskId) || "";
+  }
 }

@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 
 // Mocking necessary dependencies and classes
 class SimulatedNetworkClient {
@@ -42,8 +42,8 @@ class TokenManager {
 }
 
 // Test suite for verifying token loss during network disconnection and reconnection
-describe('SSE Reconnect Integration Tests', () => {
-  it('should not lose tokens on simulated network disconnection and reconnection', async () => {
+describe("SSE Reconnect Integration Tests", () => {
+  it("should not lose tokens on simulated network disconnection and reconnection", async () => {
     const client = new SimulatedNetworkClient();
     const tokenManager = new TokenManager();
 

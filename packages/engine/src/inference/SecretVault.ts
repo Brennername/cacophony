@@ -18,7 +18,10 @@ export class SecretVault {
       this.masterKeyBuffer = Buffer.from(keyHex, "hex");
     } else {
       // Fallback deterministic derivation if 64-hex string is not provided
-      this.masterKeyBuffer = crypto.createHash("sha256").update(keyHex || "cacophony_local_default_key").digest();
+      this.masterKeyBuffer = crypto
+        .createHash("sha256")
+        .update(keyHex || "cacophony_local_default_key")
+        .digest();
     }
   }
 
@@ -27,14 +30,22 @@ export class SecretVault {
    */
   public async setKey(keyName: string, plainValue: string): Promise<void> {
     const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv("aes-256-gcm", this.masterKeyBuffer, iv);
+    const cipher = crypto.createCipheriv(
+      "aes-256-gcm",
+      this.masterKeyBuffer,
+      iv,
+    );
 
     let encrypted = cipher.update(plainValue, "utf-8", "hex");
     encrypted += cipher.final("hex");
     const authTag = cipher.getAuthTag().toString("hex");
 
     const fullCipherPayload = `${encrypted}:${authTag}`;
-    await this.repository.setSecret(keyName, fullCipherPayload, iv.toString("hex"));
+    await this.repository.setSecret(
+      keyName,
+      fullCipherPayload,
+      iv.toString("hex"),
+    );
   }
 
   /**
@@ -48,7 +59,11 @@ export class SecretVault {
         if (!encryptedHex || !authTagHex) return null;
 
         const iv = Buffer.from(record.iv, "hex");
-        const decipher = crypto.createDecipheriv("aes-256-gcm", this.masterKeyBuffer, iv);
+        const decipher = crypto.createDecipheriv(
+          "aes-256-gcm",
+          this.masterKeyBuffer,
+          iv,
+        );
         decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
 
         let decrypted = decipher.update(encryptedHex, "hex", "utf-8");

@@ -5,6 +5,7 @@
 Cacophony is an autonomous multi-agent code orchestration platform and local model arena designed to run 24/7 on local hardware while coordinating with external frontier models and internal Git repositories hosted on Gitea.
 
 The system replaces ad-hoc shell scripts and brittle file-based message passing with:
+
 1. Strict TypeScript backend engine adhering to SOLID principles.
 2. In-process SQL persistence via PGlite (with modular adapters for SQLite, PostgreSQL, and MariaDB).
 3. Pluggable compute execution scheduling tailored for edge acceleration (APUs, discrete GPUs, TPUs, and CPU fallback), featuring model-affinity batching to minimize model swapping, thermal pacing, and consecutive-failure model eviction with weighted random roulette fallback (calibrated on the reference AMD Vega APU).
@@ -59,6 +60,7 @@ The system replaces ad-hoc shell scripts and brittle file-based message passing 
 ## 3. Core Architectural Subsystems
 
 ### 3.1 Persistence & Database Abstraction Layer
+
 Previous iterations scattered JSON files across `data/arena/queue/`, `completed/`, and `failed/`. Cacophony centralizes all state into structured SQL tables managed by an extensible database abstraction.
 
 - **Primary Driver**: PGlite (`@electric-sql/pglite`). Provides embedded Postgres running in WebAssembly/Node.js, writing WAL and table data to `/data/cacophony_pglite` without requiring a standalone database server container.
@@ -66,6 +68,7 @@ Previous iterations scattered JSON files across `data/arena/queue/`, `completed/
 - **Alternative Drivers**: Cleanly swappable for standalone PostgreSQL, SQLite (`better-sqlite3`), or MariaDB via environment configuration (`DB_DRIVER=pglite | sqlite | postgres | mariadb`).
 
 #### Database Schema Layout:
+
 1. `tasks`:
    - `id` (VARCHAR PK): Formatted task identifier (`task-YYYYMMDD_HHMMSS_XXXXXX`).
    - `title` (VARCHAR): Human-readable task summary.
@@ -135,11 +138,12 @@ Previous iterations scattered JSON files across `data/arena/queue/`, `completed/
 
 ### 3.2 Single-Concurrency Scheduler & Model Governor
 
-Cacophony features an abstract hardware telemetry and pacing engine architected to support edge accelerators, discrete GPUs, TPUs, and full CPU fallback. Because tight memory and thermal constraints exist on edge devices, the execution engine enforces strict concurrency control and active thermal pacing. 
+Cacophony features an abstract hardware telemetry and pacing engine architected to support edge accelerators, discrete GPUs, TPUs, and full CPU fallback. Because tight memory and thermal constraints exist on edge devices, the execution engine enforces strict concurrency control and active thermal pacing.
 
 Detailed hardware calibration in this release is tuned against our first reference hardware profile: the unified-memory AMD Vega APU.
 
 #### Scheduling Invariants & Features:
+
 1. **Single-Concurrency Mutex**: An asynchronous execution lock ensures jobs run sequentially through their lifecycle stages to prevent memory thrashing or device watchdog trips.
 2. **Model-Affinity Batching**:
    - Querying Ollama's active model via `GET http://<host>:11434/api/ps`.
@@ -154,16 +158,17 @@ Detailed hardware calibration in this release is tuned against our first referen
    - A weighted random roulette selects the replacement model, providing self-healing exploration without getting stuck on degraded configurations.
 4. **Thermal Governor Pacing**:
    - The engine checks APU edge temperature before starting any new task stage:
-     * `< 70°C (Nominal)`: 0s delay.
-     * `70°C – 79°C (Warm)`: 5s pacing breath.
-     * `80°C – 89°C (Elevated)`: 15s active cooldown delay.
-     * `≥ 90°C (Danger Zone)`: Task paused, scheduler sleeps in 10-second intervals until temperature drops below 80°C.
+     - `< 70°C (Nominal)`: 0s delay.
+     - `70°C – 79°C (Warm)`: 5s pacing breath.
+     - `80°C – 89°C (Elevated)`: 15s active cooldown delay.
+     - `≥ 90°C (Danger Zone)`: Task paused, scheduler sleeps in 10-second intervals until temperature drops below 80°C.
 
 ---
 
 ### 3.3 Deterministic Code Correction Layer (`CodeScrubber`)
 
 Rather than burning expensive LLM tokens on trivial syntax errors that local models frequently repeat, Cacophony executes a deterministic correction pass prior to testing and code review:
+
 1. **ESM Import Extension Resolver**:
    - Automatically detects relative TypeScript imports (e.g. `import { Foo } from "./Foo"`) and appends `.js` to satisfy NodeNext ECMAScript module resolution.
 2. **Unicode Emoji Stripper**:
@@ -179,18 +184,18 @@ Rather than burning expensive LLM tokens on trivial syntax errors that local mod
 
 Local models and external frontier agents interact with the repository through a strongly-typed tool registry validating parameters via Zod:
 
-| Tool Name | Parameters | Capabilities |
-| :--- | :--- | :--- |
-| `view_file` | `path`, `startLine?`, `endLine?`, `byteOffset?` | Sliced viewing of source files with line-number indexing and byte pagination. |
-| `replace_file_content` | `path`, `targetContent`, `replacementContent`, `startLine?`, `endLine?` | Single contiguous replacement requiring exact character-level matches. |
-| `multi_replace_file_content` | `path`, `replacementChunks: [{ target, replacement, startLine, endLine }]` | Atomic multi-chunk edits preventing partial file corruptions. |
-| `write_to_file` | `path`, `content`, `overwrite?` | Safe file creation with directory tree creation. |
-| `list_dir` | `path`, `recursive?` | Directory inspection returning relative paths, sizes, and file types. |
-| `grep_search` | `path`, `pattern`, `isRegex?`, `caseInsensitive?`, `includes?` | Ripgrep-powered recursive search with line numbers and matches. |
-| `locate_feature` | `path`, `symbolName`, `kind?` | AST identifier lookup for functions, classes, interfaces, and methods. |
-| `ast_inspect` | `path`, `extractTypes?` | Structural syntax tree inspection using TypeScript Compiler API. |
-| `regex_tool` | `path`, `pattern`, `replacement`, `dryRun?` | Batch regex matching and substitution across target files. |
-| `run_command` | `command`, `cwd`, `timeoutMs?` | Scoped execution guard strictly blocking blacklisted commands (`rm`, `sudo`, `dd`, `mkfs`, `git reset --hard`). |
+| Tool Name                    | Parameters                                                                 | Capabilities                                                                                                    |
+| :--------------------------- | :------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| `view_file`                  | `path`, `startLine?`, `endLine?`, `byteOffset?`                            | Sliced viewing of source files with line-number indexing and byte pagination.                                   |
+| `replace_file_content`       | `path`, `targetContent`, `replacementContent`, `startLine?`, `endLine?`    | Single contiguous replacement requiring exact character-level matches.                                          |
+| `multi_replace_file_content` | `path`, `replacementChunks: [{ target, replacement, startLine, endLine }]` | Atomic multi-chunk edits preventing partial file corruptions.                                                   |
+| `write_to_file`              | `path`, `content`, `overwrite?`                                            | Safe file creation with directory tree creation.                                                                |
+| `list_dir`                   | `path`, `recursive?`                                                       | Directory inspection returning relative paths, sizes, and file types.                                           |
+| `grep_search`                | `path`, `pattern`, `isRegex?`, `caseInsensitive?`, `includes?`             | Ripgrep-powered recursive search with line numbers and matches.                                                 |
+| `locate_feature`             | `path`, `symbolName`, `kind?`                                              | AST identifier lookup for functions, classes, interfaces, and methods.                                          |
+| `ast_inspect`                | `path`, `extractTypes?`                                                    | Structural syntax tree inspection using TypeScript Compiler API.                                                |
+| `regex_tool`                 | `path`, `pattern`, `replacement`, `dryRun?`                                | Batch regex matching and substitution across target files.                                                      |
+| `run_command`                | `command`, `cwd`, `timeoutMs?`                                             | Scoped execution guard strictly blocking blacklisted commands (`rm`, `sudo`, `dd`, `mkfs`, `git reset --hard`). |
 
 All tools are simultaneously exposed via internal TypeScript function calls and an embedded **MCP (Model Context Protocol)** server over stdio and Server-Sent Events (SSE).
 
@@ -210,9 +215,9 @@ Cacophony interacts with a dedicated Gitea container via REST API to establish a
    - A reviewer agent is assigned the PR diff.
    - The reviewer evaluates architectural boundaries, SOLID principles, type completeness, and security.
    - Returns a structured verdict:
-     * `APPROVE`: Automated PR merge into target branch.
-     * `REQUEST_CHANGES`: Specific change requests parsed and queued back into Cacophony as a high-priority remediation task.
-     * `REJECT`: Branch closed and logged with failure taxonomy.
+     - `APPROVE`: Automated PR merge into target branch.
+     - `REQUEST_CHANGES`: Specific change requests parsed and queued back into Cacophony as a high-priority remediation task.
+     - `REJECT`: Branch closed and logged with failure taxonomy.
 4. **Issue Sync**:
    - Gitea issues can trigger Cacophony tasks via webhooks; tasks report progress back to issue comments.
 
@@ -221,6 +226,7 @@ Cacophony interacts with a dedicated Gitea container via REST API to establish a
 ### 3.6 Frontier Model Decomposition & Vault
 
 For complex epics requiring high-level reasoning:
+
 1. **Frontier Task Decomposer**: High-level feature requests are submitted via UI or API. A frontier model (e.g. Gemini 1.5 Pro, Claude 3.5 Sonnet, GPT-4o) evaluates the codebase structure and decomposes the request into an ordered series of atomic taskcade items.
 2. **Encrypted Secret Vault**: API keys are never stored in plain text. They are encrypted using AES-256-GCM with a master key derived from the host environment (`VAULT_MASTER_KEY`).
 

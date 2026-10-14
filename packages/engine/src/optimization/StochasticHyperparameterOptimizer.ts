@@ -34,7 +34,7 @@ export class StochasticHyperparameterOptimizer {
   public async optimize(
     targetModel: string,
     tasks: readonly HistoricalTaskRecord[],
-    options: OptimizerOptions = {}
+    options: OptimizerOptions = {},
   ): Promise<OptimizationRunResult> {
     const start = performance.now();
     const strategy = options.strategy || "genetic_evolution";
@@ -53,23 +53,32 @@ export class StochasticHyperparameterOptimizer {
       "ast_signature_align",
     ];
 
-    const severities: RuleSeverity[] = ["silent_repair", "soft_warning", "hard_rejection", "disabled"];
+    const severities: RuleSeverity[] = [
+      "silent_repair",
+      "soft_warning",
+      "hard_rejection",
+      "disabled",
+    ];
 
     // Generate initial population
-    let population: PipelineHyperparameterGenome[] = Array.from({ length: populationSize }, (_, idx) => {
-      const enablement: Record<string, boolean> = {};
-      const ruleSeverities: Record<string, RuleSeverity> = {};
-      for (const ruleId of candidateRules) {
-        enablement[ruleId] = Math.random() > 0.15;
-        ruleSeverities[ruleId] = severities[Math.floor(Math.random() * severities.length)]!;
-      }
-      return {
-        pipelineId: `genome_${idx}`,
-        ruleEnablement: enablement,
-        ruleSeverities,
-        ruleOrdering: [...candidateRules].sort(() => Math.random() - 0.5),
-      };
-    });
+    let population: PipelineHyperparameterGenome[] = Array.from(
+      { length: populationSize },
+      (_, idx) => {
+        const enablement: Record<string, boolean> = {};
+        const ruleSeverities: Record<string, RuleSeverity> = {};
+        for (const ruleId of candidateRules) {
+          enablement[ruleId] = Math.random() > 0.15;
+          ruleSeverities[ruleId] =
+            severities[Math.floor(Math.random() * severities.length)]!;
+        }
+        return {
+          pipelineId: `genome_${idx}`,
+          ruleEnablement: enablement,
+          ruleSeverities,
+          ruleOrdering: [...candidateRules].sort(() => Math.random() - 0.5),
+        };
+      },
+    );
 
     let bestGenome: PipelineHyperparameterGenome = population[0]!;
     let bestScore = -1;
@@ -77,7 +86,11 @@ export class StochasticHyperparameterOptimizer {
     let candidatesTested = 0;
 
     for (let gen = 0; gen < generations; gen++) {
-      const scoredPopulation: { genome: PipelineHyperparameterGenome; score: number; passRatePct: number }[] = [];
+      const scoredPopulation: {
+        genome: PipelineHyperparameterGenome;
+        score: number;
+        passRatePct: number;
+      }[] = [];
 
       for (const genome of population) {
         candidatesTested++;
@@ -86,13 +99,18 @@ export class StochasticHyperparameterOptimizer {
 
         // Multi-objective loss/fitness:
         // Reward high pass rate, penalize high latency
-        const score = sim.passRatePct * 0.95 - (sim.averageRuleLatencyMs > 5 ? 10 : 0);
+        const score =
+          sim.passRatePct * 0.95 - (sim.averageRuleLatencyMs > 5 ? 10 : 0);
 
         if (candidatesTested === 1) {
           baselinePassRatePct = sim.passRatePct;
         }
 
-        scoredPopulation.push({ genome: { ...genome, fitnessScore: score }, score, passRatePct: sim.passRatePct });
+        scoredPopulation.push({
+          genome: { ...genome, fitnessScore: score },
+          score,
+          passRatePct: sim.passRatePct,
+        });
 
         if (score > bestScore) {
           bestScore = score;
@@ -103,14 +121,24 @@ export class StochasticHyperparameterOptimizer {
       if (strategy === "genetic_evolution") {
         // Selection: Top 50%
         scoredPopulation.sort((a, b) => b.score - a.score);
-        const survivors = scoredPopulation.slice(0, Math.max(2, Math.floor(populationSize / 2))).map((s) => s.genome);
+        const survivors = scoredPopulation
+          .slice(0, Math.max(2, Math.floor(populationSize / 2)))
+          .map((s) => s.genome);
 
         // Breed next generation with mutation
         const nextGen: PipelineHyperparameterGenome[] = [...survivors];
         while (nextGen.length < populationSize) {
-          const parentA = survivors[Math.floor(Math.random() * survivors.length)]!;
-          const parentB = survivors[Math.floor(Math.random() * survivors.length)]!;
-          const child = this.crossoverAndMutate(parentA, parentB, candidateRules, severities, mutationRate);
+          const parentA =
+            survivors[Math.floor(Math.random() * survivors.length)]!;
+          const parentB =
+            survivors[Math.floor(Math.random() * survivors.length)]!;
+          const child = this.crossoverAndMutate(
+            parentA,
+            parentB,
+            candidateRules,
+            severities,
+            mutationRate,
+          );
           nextGen.push(child);
         }
         population = nextGen;
@@ -118,7 +146,10 @@ export class StochasticHyperparameterOptimizer {
     }
 
     const finalPipeline = this.genomeToPipeline(bestGenome);
-    const finalSim = await this.backtestRunner.runBacktest(finalPipeline, tasks);
+    const finalSim = await this.backtestRunner.runBacktest(
+      finalPipeline,
+      tasks,
+    );
 
     return {
       targetModel,
@@ -137,22 +168,29 @@ export class StochasticHyperparameterOptimizer {
     pB: PipelineHyperparameterGenome,
     rules: readonly string[],
     severities: readonly RuleSeverity[],
-    mutationRate: number
+    mutationRate: number,
   ): PipelineHyperparameterGenome {
     const enablement: Record<string, boolean> = {};
     const ruleSeverities: Record<string, RuleSeverity> = {};
 
     for (const rule of rules) {
       // Crossover
-      enablement[rule] = Math.random() > 0.5 ? pA.ruleEnablement[rule]! : pB.ruleEnablement[rule]!;
-      ruleSeverities[rule] = Math.random() > 0.5 ? pA.ruleSeverities[rule]! : pB.ruleSeverities[rule]!;
+      enablement[rule] =
+        Math.random() > 0.5
+          ? pA.ruleEnablement[rule]!
+          : pB.ruleEnablement[rule]!;
+      ruleSeverities[rule] =
+        Math.random() > 0.5
+          ? pA.ruleSeverities[rule]!
+          : pB.ruleSeverities[rule]!;
 
       // Mutation
       if (Math.random() < mutationRate) {
         enablement[rule] = !enablement[rule];
       }
       if (Math.random() < mutationRate) {
-        ruleSeverities[rule] = severities[Math.floor(Math.random() * severities.length)]!;
+        ruleSeverities[rule] =
+          severities[Math.floor(Math.random() * severities.length)]!;
       }
     }
 
@@ -160,11 +198,14 @@ export class StochasticHyperparameterOptimizer {
       pipelineId: `mutant_${Date.now()}`,
       ruleEnablement: enablement,
       ruleSeverities,
-      ruleOrdering: Math.random() > 0.5 ? [...pA.ruleOrdering] : [...pB.ruleOrdering],
+      ruleOrdering:
+        Math.random() > 0.5 ? [...pA.ruleOrdering] : [...pB.ruleOrdering],
     };
   }
 
-  private genomeToPipeline(genome: PipelineHyperparameterGenome): RulePipelineDeclaration {
+  private genomeToPipeline(
+    genome: PipelineHyperparameterGenome,
+  ): RulePipelineDeclaration {
     return {
       id: genome.pipelineId,
       name: `Optimized Pipeline ${genome.pipelineId}`,

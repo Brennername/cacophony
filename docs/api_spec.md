@@ -7,9 +7,11 @@ This document specifies the REST, Server-Sent Events (SSE), and JSON-RPC 2.0 int
 ## 1. REST Endpoints
 
 ### GET `/api/status`
+
 Returns high-level daemon and arena operational health.
 
 **Response:** `200 OK`
+
 ```json
 {
   "arena": "ONLINE",
@@ -20,12 +22,15 @@ Returns high-level daemon and arena operational health.
 ```
 
 ### GET `/api/tasks`
+
 Lists all pending, active, and completed tasks.
 
 **Query Parameters:**
+
 - `status` (optional): Filter by task status (`PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, `REMEDIATED`).
 
 **Response:** `200 OK`
+
 ```json
 [
   {
@@ -39,9 +44,11 @@ Lists all pending, active, and completed tasks.
 ```
 
 ### POST `/api/tasks`
+
 Enqueues a new autonomous unit of work.
 
 **Request Body:**
+
 ```json
 {
   "title": "Refactor SessionManager",
@@ -54,6 +61,7 @@ Enqueues a new autonomous unit of work.
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "task-102",
@@ -63,81 +71,107 @@ Enqueues a new autonomous unit of work.
 ```
 
 ### GET `/api/tasks/:id`
+
 Retrieves detailed status, logs, diffs, and execution steps for a specific task.
 
 ### DELETE `/api/tasks/:id`
+
 Cancels or removes an enqueued task from the active queue.
 
 ### GET `/api/tasks/:id/gantt`
+
 Returns stage durations and timeline spans for Gantt transport visualization.
 
 ### POST `/api/tasks/decompose-spec`
+
 Ingests specification documents (`docs/spec.md`, `README.md`, OpenAPI JSON) and autonomously derives topological task sequences.
 
 ### POST `/api/tasks/requeue`
+
 Retries failed tasks with a three-failure quarantine safeguard (`force=true` bypasses).
 
 ### POST `/api/tasks/seed`
+
 Ingests uncompleted tasks from `docs/taskcade.md` into the active queue.
 
 ### POST `/api/tasks/reclaim`
+
 Reclaims stale running tasks back to `PENDING` state.
 
 ### POST `/api/tasks/groom`
+
 Grooms task queue by reconciling completed tasks against merged Gitea PRs.
 
 ### GET `/api/analytics/window-success`
+
 Evaluates dynamic rolling window success rates, Discrete velocity, acceleration derivatives, and plateau convergence metrics across arbitrary window sizes (10, 20, 50, 100, 1000).
 
 ### GET `/api/bandit/arms`
+
 Retrieves multi-armed bandit model arms with exploration distributions, empirical rewards, and selected arm counts.
 
 ### GET & POST `/api/bandit/policy`
+
 Reads or updates the active multi-armed bandit exploration policy (`thompson_sampling`, `ucb1`, `epsilon_greedy`).
 
 ### GET `/api/arena/epochs`
+
 Lists all arena epochs and active degradation reset states.
 
 ### POST `/api/arena/epoch`
+
 Advances arena epoch and performs clean-slate model degradation reset.
 
 ### POST `/api/models/reset-stats`
+
 Resets model health metrics and failure tallies to baseline.
 
 ### GET & PUT `/api/models/config`
+
 Reads and updates model tenancy configurations (disk quotas, auto-eviction, model whitelist).
 
 ### POST `/api/fleet/heartbeat`
+
 Receives periodic UDP/HTTP worker node health heartbeats (VRAM usage, APU/GPU thermals, task assignments).
 
 ### GET `/api/fleet/nodes`
+
 Lists active and registered fleet worker nodes with availability and load states.
 
 ### GET `/api/fleet/events`
+
 Server-Sent Events (SSE) stream broadcasting real-time cluster fleet events (`fleet_init`, `fleet_heartbeat`, `fleet_node_updated`, `thermal_warning`).
 
 ### GET `/api/history`
+
 Returns paginated historical task records, stage execution durations, and model win rates.
 
 ### GET `/api/models/leaderboard`
-Returns dynamic model leaderboard metrics, win rates, tokens/second, and eviction counts.
+
+Returns dynamic model leaderboard metrics, win rates, tokens/second, eviction counts, and remediation recovery telemetry (`totalRemediationAttempts`, `totalRemediationSuccess`, and `remediationRecoveryRate`).
 
 ### GET `/api/analytics/failures`
+
 Returns rolling failure taxonomy distribution across configurable time windows (24h, 7d, 30d).
 
 ### GET `/api/repomap`
+
 Returns dynamic AST symbol graph with PageRank centrality ranking.
 
 ### GET `/api/checkpoints`
+
 Returns shadow git micro-checkpoints for undo/redo state tracking.
 
 ### GET `/api/diagnostics`
+
 Returns live TypeScript and language server compiler diagnostics.
 
 ### GET `/api/hardware/tools`
+
 Returns host hardware diagnostic utilities status (`radeontop`, `sensors`, `btop`) and missing package commands.
 
 ### GET `/api/config/network`
+
 Returns resolved client origin URL and network accessibility profile (`lan_shared`, `local_only`).
 
 ---
@@ -145,9 +179,11 @@ Returns resolved client origin URL and network accessibility profile (`lan_share
 ## 2. Server-Sent Events (SSE) Stream
 
 ### GET `/api/events`
+
 Opens a persistent streaming channel broadcasting real-time arena diagnostics and task state transitions.
 
 **Event Types:**
+
 - `stage`: Emitted when a task transitions to a new stage (`planning`, `generation`, `test`, `review`).
 - `token`: Incremental token emitted during live LLM stream inference.
 - `telemetry`: 1-second interval hardware APU sensor snapshots.
@@ -160,6 +196,7 @@ Opens a persistent streaming channel broadcasting real-time arena diagnostics an
 Cacophony supports bi-directional JSON-RPC 2.0 communications for external editor extensions (VS Code, Cursor) and terminal clients over WebSocket or Unix Domain Sockets (`/tmp/cacophony.sock`).
 
 ### Request Structure
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -168,12 +205,15 @@ Cacophony supports bi-directional JSON-RPC 2.0 communications for external edito
   "params": {
     "sessionId": "sess-abc",
     "prompt": "Generate unit test for RepoMapViewer",
-    "focusFiles": ["packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts"]
+    "focusFiles": [
+      "packages/frontend/src/app/components/repo-map-viewer/repo-map-viewer.component.ts"
+    ]
   }
 }
 ```
 
 ### Response Structure
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -186,6 +226,7 @@ Cacophony supports bi-directional JSON-RPC 2.0 communications for external edito
 ```
 
 ### Supported RPC Methods
+
 1. `session/create`: Create a new conversation session.
 2. `session/prompt`: Submit instruction turn.
 3. `session/interrupt`: Immediately cancel in-flight model stream.
@@ -194,6 +235,7 @@ Cacophony supports bi-directional JSON-RPC 2.0 communications for external edito
 6. `engine/status`: Query active task and hardware telemetry metrics.
 
 ### Streaming Notifications
+
 - `stream/token`: Emits `{ "promptId": string, "token": string }`.
 - `task/stageChange`: Emits `{ "taskId": string, "stage": string, "status": string }`.
 - `telemetry/update`: Emits `{ "gpu": { ... }, "thermalZone": string }`.

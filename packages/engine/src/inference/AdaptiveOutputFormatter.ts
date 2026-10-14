@@ -45,15 +45,15 @@ export class AdaptiveOutputFormatter {
     isLocalModel: boolean,
     focusFile?: string,
     modelTag?: string,
-    isLargeExistingFile?: boolean
+    isLargeExistingFile?: boolean,
   ): string {
     if (isLocalModel) {
       const fileTarget = focusFile ? ` for file '${focusFile}'` : "";
-      const isReasoner = modelTag ? (
-        modelTag.toLowerCase().includes("r1") ||
-        modelTag.toLowerCase().includes("think") ||
-        modelTag.toLowerCase().includes("reason")
-      ) : false;
+      const isReasoner = modelTag
+        ? modelTag.toLowerCase().includes("r1") ||
+          modelTag.toLowerCase().includes("think") ||
+          modelTag.toLowerCase().includes("reason")
+        : false;
 
       if (isLargeExistingFile) {
         const lines = [
@@ -63,16 +63,16 @@ export class AdaptiveOutputFormatter {
           "1. Any required import statements.",
           "2. The target class containing ONLY the new or updated methods/properties required for this task.",
           "Existing unchanged methods and class members will be automatically merged via AST analysis.",
-          "Enclose the implementation inside a single standard markdown code block: ```typescript ... ```."
+          "Enclose the implementation inside a single standard markdown code block: ```typescript ... ```.",
         ];
 
         if (isReasoner) {
           lines.push(
-            "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the targeted implementation."
+            "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the targeted implementation.",
           );
         } else {
           lines.push(
-            "Your response should be only the code block or brief explanation followed by the code block. Do NOT emit <think> or </think> tags."
+            "Your response should be only the code block or brief explanation followed by the code block. Do NOT emit <think> or </think> tags.",
           );
         }
 
@@ -83,16 +83,16 @@ export class AdaptiveOutputFormatter {
         "[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]:",
         `Provide the COMPLETE, fully working file content${fileTarget}.`,
         "Do NOT use diffs, search/replace blocks, ellipses, or placeholder comments (e.g. '// ... existing code ...').",
-        "Enclose the entire code inside a single standard markdown code block: ```<language> ... ```."
+        "Enclose the entire code inside a single standard markdown code block: ```<language> ... ```.",
       ];
 
       if (isReasoner) {
         lines.push(
-          "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the complete implementation."
+          "CRITICAL: Keep internal thinking brief. Once </think> is closed, do NOT open another <think> block. Immediately emit the markdown code fence with the complete implementation.",
         );
       } else {
         lines.push(
-          "Your response should be only the code block or brief explanation followed by the code block. Do NOT emit <think> or </think> tags."
+          "Your response should be only the code block or brief explanation followed by the code block. Do NOT emit <think> or </think> tags.",
         );
       }
 
@@ -103,7 +103,7 @@ export class AdaptiveOutputFormatter {
     return [
       "[OUTPUT FORMAT REQUIREMENT]:",
       "Provide complete file contents or clear structural replacement blocks within standard markdown code fences (```<language> ... ```).",
-      "Ensure all code is valid, syntax-checked, and self-contained."
+      "Ensure all code is valid, syntax-checked, and self-contained.",
     ].join("\n");
   }
 
@@ -140,7 +140,9 @@ export class AdaptiveOutputFormatter {
       let lineEnd = cleaned.indexOf("\n", openIdx + 3);
       if (lineEnd === -1) lineEnd = cleaned.length;
       const langHeader = cleaned.slice(openIdx + 3, lineEnd).trim();
-      const language = /^[a-zA-Z0-9_-]+$/.test(langHeader) ? langHeader : "text";
+      const language = /^[a-zA-Z0-9_-]+$/.test(langHeader)
+        ? langHeader
+        : "text";
 
       const closeIdx = cleaned.indexOf("```", lineEnd);
       if (closeIdx === -1) {
@@ -150,7 +152,7 @@ export class AdaptiveOutputFormatter {
           blocks.push({
             language,
             code: unclosedCode,
-            isTruncated: true
+            isTruncated: true,
           });
         }
         break;

@@ -41,7 +41,7 @@ export class PrAssessmentCoordinator {
    * Processes the review synthesis and enqueues remediation if needed.
    */
   public async handleAssessment(
-    request: PrAssessmentRequest
+    request: PrAssessmentRequest,
   ): Promise<PrAssessmentOutcome> {
     let commentPosted = false;
 
@@ -52,15 +52,21 @@ export class PrAssessmentCoordinator {
             request.owner,
             request.repo,
             request.prNumber,
-            { body: request.synthesis.markdownComment }
+            { body: request.synthesis.markdownComment },
           );
           commentPosted = true;
-        } else if ("postReviewComment" in (this.giteaClient as Record<string, unknown>)) {
-          await (this.giteaClient as unknown as { postReviewComment: (...args: unknown[]) => Promise<unknown> }).postReviewComment(
+        } else if (
+          "postReviewComment" in (this.giteaClient as Record<string, unknown>)
+        ) {
+          await (
+            this.giteaClient as unknown as {
+              postReviewComment: (...args: unknown[]) => Promise<unknown>;
+            }
+          ).postReviewComment(
             request.owner,
             request.repo,
             request.prNumber,
-            request.synthesis.markdownComment
+            request.synthesis.markdownComment,
           );
           commentPosted = true;
         }
@@ -81,12 +87,16 @@ export class PrAssessmentCoordinator {
 
     const remediationTaskId = `remediate-${request.task.id}-${Date.now().toString(36)}`;
     const focusPaths = Array.from(
-      new Set(request.synthesis.unifiedFindings.map((f) => f.path).filter((p) => p !== "unknown"))
+      new Set(
+        request.synthesis.unifiedFindings
+          .map((f) => f.path)
+          .filter((p) => p !== "unknown"),
+      ),
     );
 
     const remediationPrompt = this.buildRemediationPrompt(
       request.task,
-      request.synthesis
+      request.synthesis,
     );
 
     const remediationTask: TaskRecord = {
@@ -98,7 +108,8 @@ export class PrAssessmentCoordinator {
       priority: "P0",
       modelAssigned: request.task.modelAssigned,
       testCommand: request.task.testCommand,
-      focusFiles: focusPaths.length > 0 ? focusPaths.join(", ") : request.task.focusFiles,
+      focusFiles:
+        focusPaths.length > 0 ? focusPaths.join(", ") : request.task.focusFiles,
       targetBranch: request.task.targetBranch,
       prUrl: request.task.prUrl,
       failureCount: 0,
@@ -125,7 +136,7 @@ export class PrAssessmentCoordinator {
    */
   private buildRemediationPrompt(
     originalTask: TaskRecord,
-    synthesis: ConsensusReviewSynthesis
+    synthesis: ConsensusReviewSynthesis,
   ): string {
     const lines: string[] = [
       `Remediate code review findings for task: ${originalTask.title}`,
@@ -150,7 +161,7 @@ export class PrAssessmentCoordinator {
       "Instructions:",
       "1. Resolve every reported finding directly in the specified files.",
       "2. Ensure all unit and integration tests pass cleanly.",
-      "3. Do not discard existing code or interfaces outside the necessary fixes."
+      "3. Do not discard existing code or interfaces outside the necessary fixes.",
     );
 
     return lines.join("\n");

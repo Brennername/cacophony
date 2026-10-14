@@ -1,7 +1,10 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
-import type { HardwareDeviceCategory, IHardwareTelemetryProvider } from "@cacophony/shared-types";
+import type {
+  HardwareDeviceCategory,
+  IHardwareTelemetryProvider,
+} from "@cacophony/shared-types";
 import { AmdVegaTelemetryProvider } from "./AmdVegaTelemetryProvider.js";
 import { NvidiaNvmlProvider } from "./NvidiaNvmlProvider.js";
 import { AppleSiliconProvider } from "./AppleSiliconProvider.js";
@@ -58,7 +61,10 @@ export class HardwareProviderFactory {
     }
 
     // 1. macOS / Apple Silicon detection
-    if (this.platform === "darwin" && (this.arch === "arm64" || this.isAppleSiliconSysctl())) {
+    if (
+      this.platform === "darwin" &&
+      (this.arch === "arm64" || this.isAppleSiliconSysctl())
+    ) {
       return "APPLE_SILICON";
     }
 
@@ -127,9 +133,17 @@ export class HardwareProviderFactory {
         const entries = fs.readdirSync(this.drmPath);
         for (const entry of entries) {
           if (entry.startsWith("card") && !entry.includes("-")) {
-            const vendorFile = path.join(this.drmPath, entry, "device", "vendor");
+            const vendorFile = path.join(
+              this.drmPath,
+              entry,
+              "device",
+              "vendor",
+            );
             if (fs.existsSync(vendorFile)) {
-              const vendor = fs.readFileSync(vendorFile, "utf-8").trim().toLowerCase();
+              const vendor = fs
+                .readFileSync(vendorFile, "utf-8")
+                .trim()
+                .toLowerCase();
               if (vendor === "0x1002") return true;
             }
           }
@@ -154,9 +168,17 @@ export class HardwareProviderFactory {
         const entries = fs.readdirSync(this.drmPath);
         for (const entry of entries) {
           if (entry.startsWith("card") && !entry.includes("-")) {
-            const vendorFile = path.join(this.drmPath, entry, "device", "vendor");
+            const vendorFile = path.join(
+              this.drmPath,
+              entry,
+              "device",
+              "vendor",
+            );
             if (fs.existsSync(vendorFile)) {
-              const vendor = fs.readFileSync(vendorFile, "utf-8").trim().toLowerCase();
+              const vendor = fs
+                .readFileSync(vendorFile, "utf-8")
+                .trim()
+                .toLowerCase();
               if (vendor === "0x8086") return true;
             }
           }

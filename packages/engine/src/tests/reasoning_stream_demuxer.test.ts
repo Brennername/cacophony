@@ -13,7 +13,7 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
       "</think>",
       "\nexport function sort(arr: number[]): number[] {\n",
       "  return arr.slice().sort((a, b) => a - b);\n",
-      "}\n"
+      "}\n",
     ];
 
     const allChunks: Array<{ type: string; content: string }> = [];
@@ -31,7 +31,9 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
     const fullReasoning = demuxer.getAccumulatedReasoning();
     const fullCode = demuxer.getAccumulatedCode();
 
-    assert.ok(fullReasoning.includes("First, we need to inspect the input array."));
+    assert.ok(
+      fullReasoning.includes("First, we need to inspect the input array."),
+    );
     assert.ok(fullReasoning.includes("We will sort it using quicksort."));
     assert.strictEqual(fullReasoning.includes("<think>"), false);
     assert.strictEqual(fullReasoning.includes("</think>"), false);
@@ -50,7 +52,7 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
       "</th",
       "ink>",
       "console",
-      ".log('done');"
+      ".log('done');",
     ];
 
     for (const tok of fragmentedTokens) {
@@ -64,7 +66,9 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
 
   it("should not confuse markdown code blocks inside <think> tags with executable code", () => {
     const demuxer = new ReasoningStreamDemuxer();
-    demuxer.feed("<think>\nLet us consider this snippet:\n```typescript\nconst temp = 1;\n```\n</think>\nconst realCode = 2;");
+    demuxer.feed(
+      "<think>\nLet us consider this snippet:\n```typescript\nconst temp = 1;\n```\n</think>\nconst realCode = 2;",
+    );
     demuxer.flush();
 
     const reasoning = demuxer.getAccumulatedReasoning();
@@ -89,14 +93,23 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
     });
 
     const taskId = "task-cognitive-test";
-    tap.emitToken(taskId, "<think>Thinking through strategy...</think>function solution() {}");
+    tap.emitToken(
+      taskId,
+      "<think>Thinking through strategy...</think>function solution() {}",
+    );
 
     assert.ok(receivedReasoning.length > 0);
     assert.ok(receivedCode.length > 0);
-    assert.strictEqual(receivedReasoning.join(""), "Thinking through strategy...");
+    assert.strictEqual(
+      receivedReasoning.join(""),
+      "Thinking through strategy...",
+    );
     assert.strictEqual(receivedCode.join(""), "function solution() {}");
 
-    assert.strictEqual(tap.getReasoningTranscript(taskId), "Thinking through strategy...");
+    assert.strictEqual(
+      tap.getReasoningTranscript(taskId),
+      "Thinking through strategy...",
+    );
     assert.strictEqual(tap.getDemuxedCode(taskId), "function solution() {}");
   });
 
@@ -106,7 +119,13 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
     demuxer.flush();
 
     assert.strictEqual(demuxer.getAccumulatedReasoning(), "");
-    assert.strictEqual(demuxer.getAccumulatedCode(), "const a = 1;\n\nconst b = 2;");
-    assert.strictEqual(demuxer.getAccumulatedCode().includes("</think>"), false);
+    assert.strictEqual(
+      demuxer.getAccumulatedCode(),
+      "const a = 1;\n\nconst b = 2;",
+    );
+    assert.strictEqual(
+      demuxer.getAccumulatedCode().includes("</think>"),
+      false,
+    );
   });
 });

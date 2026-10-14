@@ -8,7 +8,7 @@ describe("Phase 28: Stochastic Exploration Scheduler & Multi-Armed Bandit Dispat
     it("should register arms and perform Epsilon-Greedy exploitation vs exploration", () => {
       const scheduler = new BanditTaskScheduler({ explorationRate: 0.0 }); // 100% exploitation
       scheduler.registerArm("qwen2.5-coder:7b", "coder", 10, 2); // 83% win rate
-      scheduler.registerArm("deepseek-r1:8b", "coder", 4, 8);   // 33% win rate
+      scheduler.registerArm("deepseek-r1:8b", "coder", 4, 8); // 33% win rate
 
       const outcome = scheduler.selectModel("coder");
       assert.equal(outcome.selectedModel, "qwen2.5-coder:7b");
@@ -32,12 +32,16 @@ describe("Phase 28: Stochastic Exploration Scheduler & Multi-Armed Bandit Dispat
     });
 
     it("should select arms via Thompson Sampling posterior draw", () => {
-      const scheduler = new BanditTaskScheduler({ policy: "thompson_sampling" });
+      const scheduler = new BanditTaskScheduler({
+        policy: "thompson_sampling",
+      });
       scheduler.registerArm("qwen2.5-coder:7b", "architect", 15, 2);
       scheduler.registerArm("gemma3:4b", "architect", 3, 10);
 
       const outcome = scheduler.selectModel("architect");
-      assert.ok(["qwen2.5-coder:7b", "gemma3:4b"].includes(outcome.selectedModel));
+      assert.ok(
+        ["qwen2.5-coder:7b", "gemma3:4b"].includes(outcome.selectedModel),
+      );
       assert.equal(outcome.policy, "thompson_sampling");
     });
   });
@@ -70,10 +74,18 @@ describe("Phase 28: Stochastic Exploration Scheduler & Multi-Armed Bandit Dispat
 
     it("should trigger statistical role promotion when challenger significantly outperforms incumbent", () => {
       const scheduler = new BanditTaskScheduler();
-      const incumbent = scheduler.registerArm("old-incumbent:7b", "coder", 12, 18); // 12/30 = 40%
+      const incumbent = scheduler.registerArm(
+        "old-incumbent:7b",
+        "coder",
+        12,
+        18,
+      ); // 12/30 = 40%
       scheduler.registerArm("new-challenger:7b", "coder", 27, 3); // 27/30 = 90%
 
-      const promotion = scheduler.evaluateRolePromotion("coder", incumbent.modelId);
+      const promotion = scheduler.evaluateRolePromotion(
+        "coder",
+        incumbent.modelId,
+      );
       assert.ok(promotion);
       assert.equal(promotion.role, "coder");
       assert.equal(promotion.previousModel, "old-incumbent:7b");

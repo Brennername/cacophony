@@ -50,7 +50,7 @@ export class ThermalGovernor {
   constructor(
     nominalOrOptions?: number | ThermalGovernorOptions,
     warmMax?: number,
-    elevatedMax?: number
+    elevatedMax?: number,
   ) {
     if (typeof nominalOrOptions === "number") {
       this.isLegacy3Point = true;
@@ -78,7 +78,9 @@ export class ThermalGovernor {
       this.orangeMax = opts.orangeMax ?? 95;
       this.redMax = opts.redMax ?? 100;
       this.emergencyShutdownTemp = opts.emergencyShutdownTemp ?? 105;
-      this.coolOffEnabled = opts.coolOffEnabled ?? (process.env["THERMAL_COOLOFF_ENABLED"] === "true");
+      this.coolOffEnabled =
+        opts.coolOffEnabled ??
+        process.env["THERMAL_COOLOFF_ENABLED"] === "true";
     }
   }
 
@@ -94,7 +96,7 @@ export class ThermalGovernor {
           tempCelsius,
           zone: "Danger",
           pacingDelaySeconds: 10,
-          emergencyHalt: isEmergency
+          emergencyHalt: isEmergency,
         };
       }
       if (tempCelsius >= this.legacyWarmMax) {
@@ -102,7 +104,7 @@ export class ThermalGovernor {
           tempCelsius,
           zone: "Elevated",
           pacingDelaySeconds: 15,
-          emergencyHalt: false
+          emergencyHalt: false,
         };
       }
       if (tempCelsius >= this.legacyNominalMax) {
@@ -110,14 +112,14 @@ export class ThermalGovernor {
           tempCelsius,
           zone: "Warm",
           pacingDelaySeconds: 5,
-          emergencyHalt: false
+          emergencyHalt: false,
         };
       }
       return {
         tempCelsius,
         zone: "Nominal",
         pacingDelaySeconds: 0,
-        emergencyHalt: false
+        emergencyHalt: false,
       };
     }
 
@@ -126,7 +128,7 @@ export class ThermalGovernor {
         tempCelsius,
         zone: "Danger",
         pacingDelaySeconds: this.coolOffEnabled ? 10 : 0,
-        emergencyHalt: isEmergency
+        emergencyHalt: isEmergency,
       };
     }
     if (tempCelsius >= this.orangeMax) {
@@ -134,7 +136,7 @@ export class ThermalGovernor {
         tempCelsius,
         zone: "Danger",
         pacingDelaySeconds: this.coolOffEnabled ? 5 : 0,
-        emergencyHalt: false
+        emergencyHalt: false,
       };
     }
     if (tempCelsius >= this.yellowMax) {
@@ -142,7 +144,7 @@ export class ThermalGovernor {
         tempCelsius,
         zone: "Elevated",
         pacingDelaySeconds: this.coolOffEnabled ? 3 : 0,
-        emergencyHalt: false
+        emergencyHalt: false,
       };
     }
     if (tempCelsius >= this.greenMax) {
@@ -150,14 +152,14 @@ export class ThermalGovernor {
         tempCelsius,
         zone: "Warm",
         pacingDelaySeconds: 0,
-        emergencyHalt: false
+        emergencyHalt: false,
       };
     }
     return {
       tempCelsius,
       zone: "Nominal",
       pacingDelaySeconds: 0,
-      emergencyHalt: false
+      emergencyHalt: false,
     };
   }
 
@@ -166,13 +168,15 @@ export class ThermalGovernor {
    * If cool-off is enabled and temperature is in Danger zone, paces execution.
    * If emergency cutoff is breached, flags emergency halt.
    */
-  public async enforcePacing(provider: IHardwareTelemetryProvider): Promise<ThermalEvaluation> {
+  public async enforcePacing(
+    provider: IHardwareTelemetryProvider,
+  ): Promise<ThermalEvaluation> {
     const metrics = await provider.sample();
     const evalResult = this.evaluate(metrics.edgeTempCelsius);
 
     if (evalResult.emergencyHalt) {
       console.error(
-        `[ThermalGovernor] CRITICAL OUCH!: Hardware temperature ${metrics.edgeTempCelsius}C exceeds emergency cutoff ${this.emergencyShutdownTemp}C. Triggering queue halt.`
+        `[ThermalGovernor] CRITICAL OUCH!: Hardware temperature ${metrics.edgeTempCelsius}C exceeds emergency cutoff ${this.emergencyShutdownTemp}C. Triggering queue halt.`,
       );
       return evalResult;
     }

@@ -6,21 +6,37 @@ import { CacophonyDaemon } from "../daemon/CacophonyDaemon.js";
 
 describe("CacophonyDaemon Lifecycle & Signal Resilience Suite (T47.4.3)", () => {
   it("should start daemon, register signal handlers, and clean up locks on stop", async () => {
-    const tmpDir = path.resolve(process.cwd(), "workspaces", "test-daemon-lifecycle-" + Date.now());
+    const tmpDir = path.resolve(
+      process.cwd(),
+      "workspaces",
+      "test-daemon-lifecycle-" + Date.now(),
+    );
     await fs.mkdir(tmpDir, { recursive: true });
 
     const daemon = new CacophonyDaemon({
       dbPath: path.join(tmpDir, "lifecycle.db"),
-      socketPath: path.join(tmpDir, "test.sock")
+      socketPath: path.join(tmpDir, "test.sock"),
     });
 
     try {
       await daemon.start();
-      assert.strictEqual(daemon.getConfig().socketPath, path.join(tmpDir, "test.sock"));
+      assert.strictEqual(
+        daemon.getConfig().socketPath,
+        path.join(tmpDir, "test.sock"),
+      );
       assert.ok(daemon.getScheduler(), "Scheduler should be initialized");
-      assert.ok(daemon.getTaskRepository(), "TaskRepository should be initialized");
-      assert.ok(daemon.getBanditScheduler(), "BanditTaskScheduler should be initialized");
-      assert.ok(daemon.getFleetCoordinator(), "FleetMasterCoordinator should be initialized");
+      assert.ok(
+        daemon.getTaskRepository(),
+        "TaskRepository should be initialized",
+      );
+      assert.ok(
+        daemon.getBanditScheduler(),
+        "BanditTaskScheduler should be initialized",
+      );
+      assert.ok(
+        daemon.getFleetCoordinator(),
+        "FleetMasterCoordinator should be initialized",
+      );
 
       // Verify stopping cleanly releases locks and closes servers
       await daemon.stop();
@@ -38,12 +54,16 @@ describe("CacophonyDaemon Lifecycle & Signal Resilience Suite (T47.4.3)", () => 
   });
 
   it("should handle process SIGTERM invocation without throwing uncaught exceptions", async () => {
-    const tmpDir = path.resolve(process.cwd(), "workspaces", "test-daemon-sigterm-" + Date.now());
+    const tmpDir = path.resolve(
+      process.cwd(),
+      "workspaces",
+      "test-daemon-sigterm-" + Date.now(),
+    );
     await fs.mkdir(tmpDir, { recursive: true });
 
     const daemon = new CacophonyDaemon({
       dbPath: path.join(tmpDir, "sigterm.db"),
-      socketPath: path.join(tmpDir, "sigterm.sock")
+      socketPath: path.join(tmpDir, "sigterm.sock"),
     });
 
     try {

@@ -1,5 +1,8 @@
 import type { TestExecutionRepository } from "@cacophony/db";
-import { TestRunnerDetector, type DetectedTestSuite } from "./TestRunnerDetector.js";
+import {
+  TestRunnerDetector,
+  type DetectedTestSuite,
+} from "./TestRunnerDetector.js";
 import { TestOutputParser, type ParsedTestOutput } from "./TestOutputParser.js";
 import { SandboxedProcessRunner } from "./SandboxedProcessRunner.js";
 
@@ -7,7 +10,7 @@ export interface TestExecutionOptions {
   readonly taskId?: string | undefined;
   readonly sessionId?: string | undefined;
   readonly changedFiles?: readonly string[] | undefined;
-  readonly timeoutMs?: number | undefined; 
+  readonly timeoutMs?: number | undefined;
   readonly commandOverride?: string | undefined;
   readonly attemptNumber?: number | undefined;
 }
@@ -42,7 +45,7 @@ export class AutomatedTestLoopRunner {
     private readonly repository?: TestExecutionRepository | undefined,
     detector?: TestRunnerDetector | undefined,
     parser?: TestOutputParser | undefined,
-    sandboxedRunner?: SandboxedProcessRunner | undefined
+    sandboxedRunner?: SandboxedProcessRunner | undefined,
   ) {
     this.detector = detector ?? new TestRunnerDetector();
     this.parser = parser ?? new TestOutputParser();
@@ -51,7 +54,7 @@ export class AutomatedTestLoopRunner {
 
   public async runTests(
     workspaceRoot: string,
-    options: TestExecutionOptions = {}
+    options: TestExecutionOptions = {},
   ): Promise<TestRunResult> {
     const runId = `test-run-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const timeoutMs = options.timeoutMs ?? 180000;
@@ -61,17 +64,24 @@ export class AutomatedTestLoopRunner {
     let finalCommand: string;
 
     if (options.commandOverride) {
-      detected = { framework: "generic", defaultCommand: options.commandOverride, confidence: 1.0 };
+      detected = {
+        framework: "generic",
+        defaultCommand: options.commandOverride,
+        confidence: 1.0,
+      };
       finalCommand = options.commandOverride;
     } else {
       detected = await this.detector.detect(workspaceRoot);
-      finalCommand = this.detector.scopeCommand(detected, options.changedFiles ?? []);
+      finalCommand = this.detector.scopeCommand(
+        detected,
+        options.changedFiles ?? [],
+      );
     }
 
     const sandboxedResult = await this.sandboxedRunner.run(finalCommand, {
       cwd: workspaceRoot,
       timeoutMs,
-      maxBufferBytes: 256 * 1024
+      maxBufferBytes: 256 * 1024,
     });
 
     const stdout = sandboxedResult.stdout;
@@ -97,7 +107,7 @@ export class AutomatedTestLoopRunner {
         stderr,
         failed_assertions_json: JSON.stringify(parsed.failures),
         root_causes_json: JSON.stringify(parsed.rootCauses),
-        remediation_attempt: attempt
+        remediation_attempt: attempt,
       });
     }
 
@@ -111,7 +121,7 @@ export class AutomatedTestLoopRunner {
       stdout,
       stderr,
       parsed,
-      remediationSnippet
+      remediationSnippet,
     };
   }
 }

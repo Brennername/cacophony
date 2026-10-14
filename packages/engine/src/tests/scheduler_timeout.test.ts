@@ -1,13 +1,21 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
-import { FailureClassifier, ExecutionTimeoutError } from "../analytics/FailureClassifier.js";
+import {
+  FailureClassifier,
+  ExecutionTimeoutError,
+} from "../analytics/FailureClassifier.js";
 import type { TaskRecord } from "@cacophony/shared-types";
 import { StreamTapManager } from "../inference/StreamTapManager.js";
 
 describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
   it("T47.2.2: FailureClassifier correctly classifies ExecutionTimeoutError as TIMEOUT category", () => {
-    const error = new ExecutionTimeoutError("Stalled inference stream", 5000, "task-123", "qwen2.5-coder:7b");
+    const error = new ExecutionTimeoutError(
+      "Stalled inference stream",
+      5000,
+      "task-123",
+      "qwen2.5-coder:7b",
+    );
     assert.equal(error.name, "ExecutionTimeoutError");
     assert.equal(error.timeoutMs, 5000);
     assert.equal(error.taskId, "task-123");
@@ -17,7 +25,7 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
     assert.equal(classificationFromError.category, "TIMEOUT");
 
     const classificationFromMsg = FailureClassifier.classify(
-      "Task execution exceeded allocated timeout of 5000ms for model 'qwen2.5-coder:7b'"
+      "Task execution exceeded allocated timeout of 5000ms for model 'qwen2.5-coder:7b'",
     );
     assert.equal(classificationFromMsg.category, "TIMEOUT");
     assert.equal(classificationFromMsg.matchedPattern, "timeout_signal");
@@ -29,19 +37,27 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
     const t0 = Date.now();
     const result1 = FailureClassifier.classify(maliciousContextStr);
     const duration1 = Date.now() - t0;
-    assert.ok(duration1 < 200, `Context classification took ${duration1}ms (expected <200ms)`);
+    assert.ok(
+      duration1 < 200,
+      `Context classification took ${duration1}ms (expected <200ms)`,
+    );
     assert.notEqual(result1.category, "CONTEXT_OVERFLOW");
 
-    const validOverflow = "Error: context window overflow occurred during generation";
+    const validOverflow =
+      "Error: context window overflow occurred during generation";
     const resultValid = FailureClassifier.classify(validOverflow);
     assert.equal(resultValid.category, "CONTEXT_OVERFLOW");
 
     // 2. Syntax backtick repetition payload
-    const maliciousSyntaxStr = "expected `" + "expected `".repeat(1500) + " found nothing";
+    const maliciousSyntaxStr =
+      "expected `" + "expected `".repeat(1500) + " found nothing";
     const t1 = Date.now();
     const result2 = FailureClassifier.classify(maliciousSyntaxStr);
     const duration2 = Date.now() - t1;
-    assert.ok(duration2 < 200, `Syntax classification took ${duration2}ms (expected <200ms)`);
+    assert.ok(
+      duration2 < 200,
+      `Syntax classification took ${duration2}ms (expected <200ms)`,
+    );
     assert.notEqual(result2.category, "SYNTAX_ERROR");
 
     // 3. Repeated hyphens in Go stack location payload
@@ -49,16 +65,23 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
     const t2 = Date.now();
     const locs = FailureClassifier.extractStackLocations(maliciousGoStr);
     const duration3 = Date.now() - t2;
-    assert.ok(duration3 < 200, `Go stack location extraction took ${duration3}ms (expected <200ms)`);
+    assert.ok(
+      duration3 < 200,
+      `Go stack location extraction took ${duration3}ms (expected <200ms)`,
+    );
     assert.ok(locs.length > 0);
     assert.equal(locs[0]?.line, 42);
 
     // 4. Repeated whitespace in missing package/dependency payload
-    const maliciousPackageStr = "package\t" + "\t\t".repeat(2500) + "trailing non match";
+    const maliciousPackageStr =
+      "package\t" + "\t\t".repeat(2500) + "trailing non match";
     const t3 = Date.now();
     const result3 = FailureClassifier.classify(maliciousPackageStr);
     const duration4 = Date.now() - t3;
-    assert.ok(duration4 < 200, `Package classification took ${duration4}ms (expected <200ms)`);
+    assert.ok(
+      duration4 < 200,
+      `Package classification took ${duration4}ms (expected <200ms)`,
+    );
     assert.notEqual(result3.category, "MISSING_DEPENDENCY");
 
     const validPackageStr = "Error: package @types/node not found in workspace";
@@ -90,12 +113,13 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       updatedAt: new Date().toISOString(),
       completedAt: null,
       durationMs: 0,
-      tokensPerSec: 0
+      tokensPerSec: 0,
     };
 
     let currentTaskStatus = "PENDING";
     const mockTaskRepo = {
-      listPending: async () => (currentTaskStatus === "FAILED" ? [] : [mockTask]),
+      listPending: async () =>
+        currentTaskStatus === "FAILED" ? [] : [mockTask],
       updateStatus: async (_id: string, status: string) => {
         updatedStatus = status;
         currentTaskStatus = status;
@@ -106,7 +130,7 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       incrementFailure: async () => {
         failureCountIncremented = true;
         return 3;
-      }
+      },
     } as any;
 
     const mockStageRepo = {
@@ -114,16 +138,16 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       recordStageCompletion: async (
         _id: number,
         status: string,
-        logOutput: string
+        logOutput: string,
       ) => {
         completionVerdict = status;
         completionMessage = logOutput;
-      }
+      },
     } as any;
 
     const mockEvictionManager = {
       selectModel: async () => "qwen2.5-coder:3b",
-      recordRunOutcome: async () => {}
+      recordRunOutcome: async () => {},
     } as any;
 
     const mockTelemetryProvider = {
@@ -136,8 +160,8 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
         pptWatts: 15,
         sclkMhz: 1000,
         mclkMhz: 1000,
-        timestamp: new Date().toISOString()
-      })
+        timestamp: new Date().toISOString(),
+      }),
     } as any;
 
     // Configure scheduler with very low timeout (50ms) for the test
@@ -148,8 +172,8 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       telemetryProvider: mockTelemetryProvider,
       defaultTimeoutMs: 50,
       perModelTimeoutMs: {
-        "qwen2.5-coder:3b": 50
-      }
+        "qwen2.5-coder:3b": 50,
+      },
     });
 
     // Simulate an execution handler that hangs for 200ms
@@ -184,7 +208,7 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       failureCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      completedAt: null
+      completedAt: null,
     };
     let status = "PENDING";
     const taskRepo = {
@@ -195,29 +219,52 @@ describe("T47.2: Task Execution Timeout & Deadlock Watchdog", () => {
       updateModel: async () => {},
       updateLogSnippet: async () => {},
       updateRehabStatus: async () => {},
-      incrementFailure: async () => 0
+      incrementFailure: async () => 0,
     } as any;
     const stageRepo = {
       recordStageStart: async () => 1,
-      recordStageCompletion: async () => {}
+      recordStageCompletion: async () => {},
     } as any;
-    const evictionManager = { selectModel: async () => "qwen2.5-coder:3b", recordRunOutcome: async () => {} } as any;
+    const evictionManager = {
+      selectModel: async () => "qwen2.5-coder:3b",
+      recordRunOutcome: async () => {},
+    } as any;
     const telemetryProvider = {
-      sample: async () => ({ edgeTempCelsius: 50, junctionTempCelsius: 55, vramUsedBytes: 1, vramTotalBytes: 2,
-        gpuBusyPercent: 0, pptWatts: 1, sclkMhz: 1, mclkMhz: 1, timestamp: new Date().toISOString() })
+      sample: async () => ({
+        edgeTempCelsius: 50,
+        junctionTempCelsius: 55,
+        vramUsedBytes: 1,
+        vramTotalBytes: 2,
+        gpuBusyPercent: 0,
+        pptWatts: 1,
+        sclkMhz: 1,
+        mclkMhz: 1,
+        timestamp: new Date().toISOString(),
+      }),
     } as any;
     const streamTapManager = new StreamTapManager();
     const scheduler = new TaskScheduler({
-      taskRepo, stageRepo, evictionManager, telemetryProvider, streamTapManager,
+      taskRepo,
+      stageRepo,
+      evictionManager,
+      telemetryProvider,
+      streamTapManager,
       defaultTimeoutMs: 1000,
       noProgressTimeoutMs: 80,
-      perModelTimeoutMs: { "qwen2.5-coder:3b": 1000 }
+      perModelTimeoutMs: { "qwen2.5-coder:3b": 1000 },
     });
 
     scheduler.setExecutionHandler(async () => {
-      const heartbeat = setInterval(() => streamTapManager.emitStageTransition({
-        taskId: task.id, stageName: "test_execution", stageStatus: "RUNNING", timestamp: Date.now()
-      }), 20);
+      const heartbeat = setInterval(
+        () =>
+          streamTapManager.emitStageTransition({
+            taskId: task.id,
+            stageName: "test_execution",
+            stageStatus: "RUNNING",
+            timestamp: Date.now(),
+          }),
+        20,
+      );
       await new Promise((resolve) => setTimeout(resolve, 220));
       clearInterval(heartbeat);
       return { success: true, tokensPerSec: 0 };

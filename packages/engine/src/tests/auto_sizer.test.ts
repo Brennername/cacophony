@@ -5,7 +5,8 @@ import { HardwareHyperparameterAutoSizer } from "../scheduler/HardwareHyperparam
 describe("HardwareHyperparameterAutoSizer Suite (T83.4)", () => {
   it("enforces 70% safe allocation limit and 30% OS reservation", () => {
     const bytes16Gb = 16 * 1024 * 1024 * 1024;
-    const allocation = HardwareHyperparameterAutoSizer.computeSafeAllocation(bytes16Gb);
+    const allocation =
+      HardwareHyperparameterAutoSizer.computeSafeAllocation(bytes16Gb);
 
     assert.equal(allocation.totalMb, 16384);
     assert.equal(allocation.safeMb, Math.floor(16384 * 0.7)); // 11468

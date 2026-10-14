@@ -1,5 +1,11 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { TaskRecord, TaskStatus, TaskPriority, AgentRole, RehabStatus } from "@cacophony/shared-types";
+import type {
+  TaskRecord,
+  TaskStatus,
+  TaskPriority,
+  AgentRole,
+  RehabStatus,
+} from "@cacophony/shared-types";
 
 interface TaskRow {
   readonly id: string;
@@ -63,8 +69,8 @@ export class TaskRepository {
           task.baseCommitHash ?? null,
           task.failureReason ?? null,
           task.parentTaskId ?? null,
-          task.rehabStatus ?? "NONE"
-        ]
+          task.rehabStatus ?? "NONE",
+        ],
       );
     } catch (err: unknown) {
       const msg = String(err);
@@ -73,7 +79,6 @@ export class TaskRepository {
         msg.includes("has no column named") ||
         msg.includes("column does not exist")
       ) {
-
         await this.driver.execute(
           `INSERT INTO tasks (
             id, title, prompt, role, status, priority, model_assigned,
@@ -95,8 +100,8 @@ export class TaskRepository {
             task.failureCount,
             task.createdAt,
             task.updatedAt,
-            task.completedAt
-          ]
+            task.completedAt,
+          ],
         );
       } else {
         throw err;
@@ -108,7 +113,7 @@ export class TaskRepository {
   public async getById(id: string): Promise<TaskRecord | null> {
     const row = await this.driver.queryOne<TaskRow>(
       "SELECT * FROM tasks WHERE id = $1",
-      [id]
+      [id],
     );
     return row ? this.mapRow(row) : null;
   }
@@ -116,12 +121,14 @@ export class TaskRepository {
   public async getByTitle(title: string): Promise<TaskRecord | null> {
     const row = await this.driver.queryOne<TaskRow>(
       "SELECT * FROM tasks WHERE title = $1 LIMIT 1",
-      [title]
+      [title],
     );
     return row ? this.mapRow(row) : null;
   }
 
-  public async createIfNotExists(task: TaskRecord): Promise<{ created: boolean; task: TaskRecord }> {
+  public async createIfNotExists(
+    task: TaskRecord,
+  ): Promise<{ created: boolean; task: TaskRecord }> {
     const existingById = await this.getById(task.id);
     if (existingById) {
       return { created: false, task: existingById };
@@ -138,25 +145,28 @@ export class TaskRepository {
     id: string,
     status: TaskStatus,
     durationMs?: number,
-    tokensPerSec?: number
+    tokensPerSec?: number,
   ): Promise<void> {
     const now = new Date().toISOString();
-    const completedAt = (status === "COMPLETED" || status === "FAILED" || status === "CANCELLED") ? now : null;
+    const completedAt =
+      status === "COMPLETED" || status === "FAILED" || status === "CANCELLED"
+        ? now
+        : null;
 
     if (durationMs !== undefined && tokensPerSec !== undefined) {
       await this.driver.execute(
         "UPDATE tasks SET status = $1, updated_at = $2, completed_at = COALESCE($3, completed_at), duration_ms = $4, tokens_per_sec = $5 WHERE id = $6",
-        [status, now, completedAt, durationMs, tokensPerSec, id]
+        [status, now, completedAt, durationMs, tokensPerSec, id],
       );
     } else if (durationMs !== undefined) {
       await this.driver.execute(
         "UPDATE tasks SET status = $1, updated_at = $2, completed_at = COALESCE($3, completed_at), duration_ms = $4 WHERE id = $5",
-        [status, now, completedAt, durationMs, id]
+        [status, now, completedAt, durationMs, id],
       );
     } else {
       await this.driver.execute(
         "UPDATE tasks SET status = $1, updated_at = $2, completed_at = COALESCE($3, completed_at) WHERE id = $4",
-        [status, now, completedAt, id]
+        [status, now, completedAt, id],
       );
     }
   }
@@ -165,15 +175,19 @@ export class TaskRepository {
     const now = new Date().toISOString();
     await this.driver.execute(
       "UPDATE tasks SET model_assigned = $1, updated_at = $2 WHERE id = $3",
-      [model, now, id]
+      [model, now, id],
     );
   }
 
-  public async updatePr(id: string, targetBranch: string, prUrl: string): Promise<void> {
+  public async updatePr(
+    id: string,
+    targetBranch: string,
+    prUrl: string,
+  ): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.execute(
       "UPDATE tasks SET target_branch = $1, pr_url = $2, updated_at = $3 WHERE id = $4",
-      [targetBranch, prUrl, now, id]
+      [targetBranch, prUrl, now, id],
     );
   }
 
@@ -181,7 +195,7 @@ export class TaskRepository {
     const now = new Date().toISOString();
     await this.driver.execute(
       "UPDATE tasks SET log_snippet = $1, updated_at = $2 WHERE id = $3",
-      [logSnippet, now, id]
+      [logSnippet, now, id],
     );
   }
 
@@ -193,7 +207,7 @@ export class TaskRepository {
     taskId: string,
     stageName: string,
     stageState: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED",
-    artifacts?: Record<string, any>
+    artifacts?: Record<string, any>,
   ): Promise<void> {
     const updatedAt = new Date().toISOString();
     const snippet = artifacts
@@ -203,12 +217,12 @@ export class TaskRepository {
     if (snippet) {
       await this.driver.execute(
         "UPDATE tasks SET updated_at = $1, log_snippet = $2 WHERE id = $3",
-        [updatedAt, snippet, taskId]
+        [updatedAt, snippet, taskId],
       );
     } else {
       await this.driver.execute(
         "UPDATE tasks SET updated_at = $1 WHERE id = $2",
-        [updatedAt, taskId]
+        [updatedAt, taskId],
       );
     }
   }
@@ -217,7 +231,7 @@ export class TaskRepository {
     const now = new Date().toISOString();
     await this.driver.execute(
       "UPDATE tasks SET failure_count = failure_count + 1, updated_at = $1 WHERE id = $2",
-      [now, id]
+      [now, id],
     );
     const updated = await this.getById(id);
     return updated ? updated.failureCount : 0;
@@ -230,31 +244,42 @@ export class TaskRepository {
        ORDER BY
          CASE status WHEN 'RUNNING' THEN 0 ELSE 1 END ASC,
          CASE priority WHEN 'P0' THEN 1 WHEN 'P1' THEN 2 WHEN 'P2' THEN 3 ELSE 4 END ASC,
-         created_at ASC`
+         created_at ASC`,
     );
     return rows.map((r) => this.mapRow(r));
   }
 
-  public async listRecent(limit = 50, filter?: { status?: TaskStatus }): Promise<readonly TaskRecord[]> {
+  public async listRecent(
+    limit = 50,
+    filter?: { status?: TaskStatus },
+  ): Promise<readonly TaskRecord[]> {
     if (filter?.status) {
       const rows = await this.driver.query<TaskRow>(
         "SELECT * FROM tasks WHERE status = $1 ORDER BY updated_at DESC LIMIT $2",
-        [filter.status, limit]
+        [filter.status, limit],
       );
       return rows.map((r) => this.mapRow(r));
     }
     const rows = await this.driver.query<TaskRow>(
       "SELECT * FROM tasks WHERE status IN ('COMPLETED', 'FAILED', 'REMEDIATING', 'CANCELLED') ORDER BY COALESCE(completed_at, updated_at) DESC LIMIT $1",
-      [limit]
+      [limit],
     );
     return rows.map((r) => this.mapRow(r));
   }
 
   public async deleteTask(id: string): Promise<boolean> {
     await this.driver.execute("DELETE FROM tasks WHERE id = $1", [id]);
-    await this.driver.execute("DELETE FROM task_stages WHERE task_id = $1", [id]);
-    await this.driver.execute("DELETE FROM task_telemetry_correlations WHERE task_id = $1", [id]);
-    await this.driver.execute("DELETE FROM test_execution_runs WHERE task_id = $1", [id]);
+    await this.driver.execute("DELETE FROM task_stages WHERE task_id = $1", [
+      id,
+    ]);
+    await this.driver.execute(
+      "DELETE FROM task_telemetry_correlations WHERE task_id = $1",
+      [id],
+    );
+    await this.driver.execute(
+      "DELETE FROM test_execution_runs WHERE task_id = $1",
+      [id],
+    );
     return true;
   }
 
@@ -262,37 +287,44 @@ export class TaskRepository {
     if (titlePattern) {
       const res = await this.driver.execute(
         "DELETE FROM tasks WHERE status = 'PENDING' AND title LIKE $1",
-        [titlePattern]
+        [titlePattern],
       );
       return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
     }
-    const res = await this.driver.execute("DELETE FROM tasks WHERE status = 'PENDING'");
+    const res = await this.driver.execute(
+      "DELETE FROM tasks WHERE status = 'PENDING'",
+    );
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
-  public async retryFailedTasks(pattern?: string, force = false): Promise<number> {
+  public async retryFailedTasks(
+    pattern?: string,
+    force = false,
+  ): Promise<number> {
     const now = new Date().toISOString();
     if (pattern) {
       const res = await this.driver.execute(
         `UPDATE tasks SET status = 'PENDING', updated_at = $1, completed_at = NULL
          WHERE status = 'FAILED' AND (id LIKE $2 OR title LIKE $2) AND ($3 = 1 OR failure_count < 3)`,
-        [now, pattern, force ? 1 : 0]
+        [now, pattern, force ? 1 : 0],
       );
       return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
     }
     const res = await this.driver.execute(
       `UPDATE tasks SET status = 'PENDING', updated_at = $1, completed_at = NULL
        WHERE status = 'FAILED' AND ($2 = 1 OR failure_count < 3)`,
-      [now, force ? 1 : 0]
+      [now, force ? 1 : 0],
     );
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
 
   public async reclaimStaleRunningTasks(timeoutMinutes = 15): Promise<number> {
-    const cutoff = new Date(Date.now() - timeoutMinutes * 60 * 1000).toISOString();
+    const cutoff = new Date(
+      Date.now() - timeoutMinutes * 60 * 1000,
+    ).toISOString();
     const res = await this.driver.execute(
       "UPDATE tasks SET status = 'PENDING', updated_at = $1 WHERE status = 'RUNNING' AND updated_at < $2",
-      [new Date().toISOString(), cutoff]
+      [new Date().toISOString(), cutoff],
     );
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
   }
@@ -306,11 +338,17 @@ export class TaskRepository {
   }> {
     const rows = await this.driver.query<TaskRow>(
       "SELECT status FROM tasks WHERE status IN ('COMPLETED', 'FAILED') ORDER BY completed_at DESC LIMIT $1",
-      [sampleSize]
+      [sampleSize],
     );
     const total = rows.length;
     if (total === 0) {
-      return { sampleSize: 0, successRate: 100, completedCount: 0, failedCount: 0, trendDirection: "stable" };
+      return {
+        sampleSize: 0,
+        successRate: 100,
+        completedCount: 0,
+        failedCount: 0,
+        trendDirection: "stable",
+      };
     }
     const completed = rows.filter((r) => r.status === "COMPLETED").length;
     const failed = total - completed;
@@ -321,8 +359,10 @@ export class TaskRepository {
     if (mid > 0) {
       const older = rows.slice(mid);
       const newer = rows.slice(0, mid);
-      const olderRate = older.filter((r) => r.status === "COMPLETED").length / older.length;
-      const newerRate = newer.filter((r) => r.status === "COMPLETED").length / newer.length;
+      const olderRate =
+        older.filter((r) => r.status === "COMPLETED").length / older.length;
+      const newerRate =
+        newer.filter((r) => r.status === "COMPLETED").length / newer.length;
       if (newerRate > olderRate + 0.05) trendDirection = "improving";
       else if (newerRate < olderRate - 0.05) trendDirection = "declining";
     }
@@ -332,7 +372,7 @@ export class TaskRepository {
       successRate,
       completedCount: completed,
       failedCount: failed,
-      trendDirection
+      trendDirection,
     };
   }
 
@@ -342,18 +382,18 @@ export class TaskRepository {
   public async updateCommitAttribution(
     id: string,
     commitHash: string,
-    baseCommitHash?: string | null
+    baseCommitHash?: string | null,
   ): Promise<void> {
     const now = new Date().toISOString();
     if (baseCommitHash !== undefined && baseCommitHash !== null) {
       await this.driver.execute(
         "UPDATE tasks SET commit_hash = $1, base_commit_hash = $2, updated_at = $3 WHERE id = $4",
-        [commitHash, baseCommitHash, now, id]
+        [commitHash, baseCommitHash, now, id],
       );
     } else {
       await this.driver.execute(
         "UPDATE tasks SET commit_hash = $1, updated_at = $2 WHERE id = $3",
-        [commitHash, now, id]
+        [commitHash, now, id],
       );
     }
   }
@@ -364,12 +404,12 @@ export class TaskRepository {
   public async recordFailure(
     id: string,
     failureReason: string,
-    maxRetries = 3
+    maxRetries = 3,
   ): Promise<{ shouldRequeue: boolean; failureCount: number }> {
     const now = new Date().toISOString();
     await this.driver.execute(
       "UPDATE tasks SET failure_count = failure_count + 1, failure_reason = $1, updated_at = $2 WHERE id = $3",
-      [failureReason, now, id]
+      [failureReason, now, id],
     );
     const updated = await this.getById(id);
     const failureCount = updated ? updated.failureCount : 1;
@@ -378,23 +418,42 @@ export class TaskRepository {
   }
 
   /**
+   * Directly updates the failure reason for a task.
+   */
+  public async updateFailureReason(
+    id: string,
+    failureReason: string,
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    await this.driver.execute(
+      "UPDATE tasks SET failure_reason = $1, updated_at = $2 WHERE id = $3",
+      [failureReason, now, id],
+    );
+  }
+
+  /**
    * Updates rehabilitation lifecycle state for a task.
    */
-  public async updateRehabStatus(id: string, rehabStatus: RehabStatus): Promise<void> {
+  public async updateRehabStatus(
+    id: string,
+    rehabStatus: RehabStatus,
+  ): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.execute(
       "UPDATE tasks SET rehab_status = $1, updated_at = $2 WHERE id = $3",
-      [rehabStatus, now, id]
+      [rehabStatus, now, id],
     );
   }
 
   /**
    * Queries tasks associated with a specific git commit hash.
    */
-  public async listByCommitHash(commitHash: string): Promise<readonly TaskRecord[]> {
+  public async listByCommitHash(
+    commitHash: string,
+  ): Promise<readonly TaskRecord[]> {
     const rows = await this.driver.query<TaskRow>(
       "SELECT * FROM tasks WHERE commit_hash = $1 OR base_commit_hash = $1 ORDER BY updated_at DESC",
-      [commitHash]
+      [commitHash],
     );
     return rows.map((r) => this.mapRow(r));
   }
@@ -402,18 +461,22 @@ export class TaskRepository {
   /**
    * Queries child tasks spawned via rehabilitation of a parent task.
    */
-  public async listByParentTaskId(parentTaskId: string): Promise<readonly TaskRecord[]> {
+  public async listByParentTaskId(
+    parentTaskId: string,
+  ): Promise<readonly TaskRecord[]> {
     const rows = await this.driver.query<TaskRow>(
       "SELECT * FROM tasks WHERE parent_task_id = $1 ORDER BY created_at ASC",
-      [parentTaskId]
+      [parentTaskId],
     );
     return rows.map((r) => this.mapRow(r));
   }
 
   private mapRow(row: TaskRow): TaskRecord {
     const runtimeMetrics: { durationMs?: number; tokensPerSec?: number } = {};
-    if (row.duration_ms != null) runtimeMetrics.durationMs = Number(row.duration_ms);
-    if (row.tokens_per_sec != null) runtimeMetrics.tokensPerSec = Number(row.tokens_per_sec);
+    if (row.duration_ms != null)
+      runtimeMetrics.durationMs = Number(row.duration_ms);
+    if (row.tokens_per_sec != null)
+      runtimeMetrics.tokensPerSec = Number(row.tokens_per_sec);
 
     return {
       id: row.id,
@@ -437,16 +500,17 @@ export class TaskRepository {
       failureReason: row.failure_reason ?? null,
       parentTaskId: row.parent_task_id ?? null,
       rehabStatus: (row.rehab_status as RehabStatus) ?? "NONE",
-      ...runtimeMetrics
+      ...runtimeMetrics,
     };
   }
 
-
-  public async listByBaseCommitHash(baseCommitHash: string): Promise<readonly TaskRecord[]> {
-      const rows = await this.driver.query<TaskRow>(
-        "SELECT * FROM tasks WHERE base_commit_hash = $1",
-        [baseCommitHash]
-      );
-      return rows.map((r) => this.mapRow(r));
-    }
+  public async listByBaseCommitHash(
+    baseCommitHash: string,
+  ): Promise<readonly TaskRecord[]> {
+    const rows = await this.driver.query<TaskRow>(
+      "SELECT * FROM tasks WHERE base_commit_hash = $1",
+      [baseCommitHash],
+    );
+    return rows.map((r) => this.mapRow(r));
+  }
 }

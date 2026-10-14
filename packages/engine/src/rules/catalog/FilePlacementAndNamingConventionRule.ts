@@ -23,14 +23,18 @@ export interface FilePlacementAndNamingOptions {
 export class FilePlacementAndNamingConventionRule extends BaseRepairRule {
   readonly id = "file_placement_and_naming";
   readonly name = "File Placement and Naming Convention Guard";
-  readonly description = "Prevents phase-numbered filenames and ensures tests and components are properly co-located.";
+  readonly description =
+    "Prevents phase-numbered filenames and ensures tests and components are properly co-located.";
   readonly defaultSeverity: RuleSeverity = "hard_rejection";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    options?: FilePlacementAndNamingOptions
+    options?: FilePlacementAndNamingOptions,
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -38,7 +42,8 @@ export class FilePlacementAndNamingConventionRule extends BaseRepairRule {
     let passed = true;
 
     const disallowPhaseNaming = options?.disallowPhaseNaming ?? true;
-    const enforceColocatedAngularSpecs = options?.enforceColocatedAngularSpecs ?? true;
+    const enforceColocatedAngularSpecs =
+      options?.enforceColocatedAngularSpecs ?? true;
 
     for (const filePath of context.modifiedFiles) {
       const relPath = path.isAbsolute(filePath)
@@ -63,7 +68,8 @@ export class FilePlacementAndNamingConventionRule extends BaseRepairRule {
       // Check 2: Disallow loose component spec files in the parent components directory
       // (e.g. packages/frontend/src/app/components/*.spec.ts or src/app/components/*.spec.ts)
       if (enforceColocatedAngularSpecs) {
-        const looseComponentSpecPattern = /(?:^|\/)src\/app\/components\/[^/]+\.spec\.ts$/;
+        const looseComponentSpecPattern =
+          /(?:^|\/)src\/app\/components\/[^/]+\.spec\.ts$/;
         if (looseComponentSpecPattern.test(normalizedPath)) {
           if (severity === "hard_rejection") {
             passed = false;
@@ -79,6 +85,12 @@ export class FilePlacementAndNamingConventionRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

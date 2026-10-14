@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import * as fsSync from "node:fs";
 import path from "node:path";
-import type { TaskRecord, AgentRole, TaskPriority } from "@cacophony/shared-types";
+import type {
+  TaskRecord,
+  AgentRole,
+  TaskPriority,
+} from "@cacophony/shared-types";
 
 export interface ParsedTaskcadeItem {
   readonly taskId: string;
@@ -35,9 +39,10 @@ export class TaskcadeSeedLoader {
       const candidates = [
         path.resolve(process.cwd(), "docs/taskcade.md"),
         path.resolve(process.cwd(), "../../docs/taskcade.md"),
-        path.resolve(process.cwd(), "../docs/taskcade.md")
+        path.resolve(process.cwd(), "../docs/taskcade.md"),
       ];
-      this.taskcadeFilePath = candidates.find((c) => fsSync.existsSync(c)) || candidates[0]!;
+      this.taskcadeFilePath =
+        candidates.find((c) => fsSync.existsSync(c)) || candidates[0]!;
     }
 
     if (historyFilePath) {
@@ -46,9 +51,10 @@ export class TaskcadeSeedLoader {
       const historyCandidates = [
         path.resolve(process.cwd(), "docs/taskcade-history.md"),
         path.resolve(process.cwd(), "../../docs/taskcade-history.md"),
-        path.resolve(process.cwd(), "../docs/taskcade-history.md")
+        path.resolve(process.cwd(), "../docs/taskcade-history.md"),
       ];
-      this.historyFilePath = historyCandidates.find((c) => fsSync.existsSync(c)) || null;
+      this.historyFilePath =
+        historyCandidates.find((c) => fsSync.existsSync(c)) || null;
     }
   }
 
@@ -58,7 +64,11 @@ export class TaskcadeSeedLoader {
    */
   public async getCompletedTaskIds(forceRefresh = false): Promise<Set<string>> {
     const now = Date.now();
-    if (!forceRefresh && this.cachedCompletedIds && now - this.lastCompletedIdsTime < TaskcadeSeedLoader.CACHE_TTL_MS) {
+    if (
+      !forceRefresh &&
+      this.cachedCompletedIds &&
+      now - this.lastCompletedIdsTime < TaskcadeSeedLoader.CACHE_TTL_MS
+    ) {
       return this.cachedCompletedIds;
     }
 
@@ -117,13 +127,18 @@ export class TaskcadeSeedLoader {
     }
     if (options?.phaseFilter) {
       const filterLower = options.phaseFilter.toLowerCase();
-      filtered = filtered.filter((item) => item.phaseName.toLowerCase().includes(filterLower));
+      filtered = filtered.filter((item) =>
+        item.phaseName.toLowerCase().includes(filterLower),
+      );
     }
     if (options?.limit && options.limit > 0) {
       filtered = filtered.slice(0, options.limit);
     }
 
-    const fleet = options?.fleetModels && options.fleetModels.length > 0 ? options.fleetModels : null;
+    const fleet =
+      options?.fleetModels && options.fleetModels.length > 0
+        ? options.fleetModels
+        : null;
     return filtered.map((item, idx) => {
       const modelAssigned = fleet ? fleet[idx % fleet.length]! : null;
       return this.toTaskRecord(item, modelAssigned);
@@ -139,7 +154,8 @@ export class TaskcadeSeedLoader {
 
     let currentPhase = "General";
     // Regex matching: - [ ] T46.1.1: Title description... [File: ...] [Test: ...]
-    const itemRegex = /^[\s]*-[\s]+\[([ xX])\][\s]+([A-Za-z0-9_.-]+):[\s]+(.+)$/;
+    const itemRegex =
+      /^[\s]*-[\s]+\[([ xX])\][\s]+([A-Za-z0-9_.-]+):[\s]+(.+)$/;
     const phaseRegex = /^##[\s]+(Phase[\s]+[0-9]+:[\s]+[^\n\r]+)$/i;
 
     for (const line of lines) {
@@ -175,8 +191,14 @@ export class TaskcadeSeedLoader {
         .replace(/\[Signal:\s*[^\]]+\]/gi, "")
         .trim();
 
-      const focusFiles = fileMatch && fileMatch[1] ? fileMatch[1].replace(/^["']|["']$/g, "").trim() : null;
-      let testCommand = testMatch && testMatch[1] ? testMatch[1].replace(/^["']|["']$/g, "").trim() : null;
+      const focusFiles =
+        fileMatch && fileMatch[1]
+          ? fileMatch[1].replace(/^["']|["']$/g, "").trim()
+          : null;
+      let testCommand =
+        testMatch && testMatch[1]
+          ? testMatch[1].replace(/^["']|["']$/g, "").trim()
+          : null;
 
       // Filter out non-runnable or CI-only test commands from arena execution
       if (testCommand) {
@@ -189,7 +211,9 @@ export class TaskcadeSeedLoader {
           lowerTest.includes("bin/cacophony")
         ) {
           const firstFocus = focusFiles ? focusFiles.split(/\s+/)[0] : null;
-          const isJsTs = firstFocus ? /\.(?:ts|js|mjs|cjs)$/i.test(firstFocus) : false;
+          const isJsTs = firstFocus
+            ? /\.(?:ts|js|mjs|cjs)$/i.test(firstFocus)
+            : false;
           testCommand = isJsTs ? `node --check ${firstFocus}` : "";
         }
       }
@@ -197,21 +221,42 @@ export class TaskcadeSeedLoader {
       // Assign agent role based on task nature
       let role: AgentRole = "implementer";
       const promptLower = cleanPrompt.toLowerCase();
-      if (promptLower.includes("write unit test") || promptLower.includes("write frontend unit test") || promptLower.includes("write integration test")) {
+      if (
+        promptLower.includes("write unit test") ||
+        promptLower.includes("write frontend unit test") ||
+        promptLower.includes("write integration test")
+      ) {
         role = "test_engineer";
-      } else if (promptLower.includes("review") || promptLower.includes("audit")) {
+      } else if (
+        promptLower.includes("review") ||
+        promptLower.includes("audit")
+      ) {
         role = "reviewer";
-      } else if (promptLower.includes("architect") || promptLower.includes("design")) {
+      } else if (
+        promptLower.includes("architect") ||
+        promptLower.includes("design")
+      ) {
         role = "architect";
-      } else if (promptLower.includes("doc") || promptLower.includes("readme")) {
+      } else if (
+        promptLower.includes("doc") ||
+        promptLower.includes("readme")
+      ) {
         role = "doc_writer";
       }
 
       // Priority tier mapping: default P1, P0 for critical infra, P2 for maintenance/docs
       let priority: TaskPriority = "P1";
-      if (promptLower.includes("critical") || promptLower.includes("deadlock") || promptLower.includes("security")) {
+      if (
+        promptLower.includes("critical") ||
+        promptLower.includes("deadlock") ||
+        promptLower.includes("security")
+      ) {
         priority = "P0";
-      } else if (role === "doc_writer" || promptLower.includes("vacuum") || promptLower.includes("compactor")) {
+      } else if (
+        role === "doc_writer" ||
+        promptLower.includes("vacuum") ||
+        promptLower.includes("compactor")
+      ) {
         priority = "P2";
       }
 
@@ -226,14 +271,17 @@ export class TaskcadeSeedLoader {
         focusFiles,
         testCommand,
         completed,
-        phaseName: currentPhase
+        phaseName: currentPhase,
       });
     }
 
     return items;
   }
 
-  private toTaskRecord(item: ParsedTaskcadeItem, modelAssigned: string | null = null): TaskRecord {
+  private toTaskRecord(
+    item: ParsedTaskcadeItem,
+    modelAssigned: string | null = null,
+  ): TaskRecord {
     const now = new Date().toISOString();
     return {
       id: item.taskId,
@@ -250,7 +298,7 @@ export class TaskcadeSeedLoader {
       failureCount: 0,
       createdAt: now,
       updatedAt: now,
-      completedAt: null
+      completedAt: null,
     };
   }
 }

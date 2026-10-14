@@ -18,7 +18,10 @@ export class PGliteDriver implements IDatabaseDriver {
    */
   private async runSerialized<T>(operation: () => Promise<T>): Promise<T> {
     const next = this.queue.then(operation, operation);
-    this.queue = next.then(() => {}, () => {});
+    this.queue = next.then(
+      () => {},
+      () => {},
+    );
     return next;
   }
 
@@ -57,7 +60,10 @@ export class PGliteDriver implements IDatabaseDriver {
     }
   }
 
-  public async query<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<readonly T[]> {
+  public async query<T = unknown>(
+    sql: string,
+    params: readonly unknown[] = [],
+  ): Promise<readonly T[]> {
     this.ensureConnected();
     return this.runSerialized(async () => {
       const result = await this.pg!.query<T>(sql, params as unknown[]);
@@ -65,12 +71,18 @@ export class PGliteDriver implements IDatabaseDriver {
     });
   }
 
-  public async queryOne<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<T | null> {
+  public async queryOne<T = unknown>(
+    sql: string,
+    params: readonly unknown[] = [],
+  ): Promise<T | null> {
     const rows = await this.query<T>(sql, params);
     return rows[0] ?? null;
   }
 
-  public async execute(sql: string, params: readonly unknown[] = []): Promise<{ readonly rowsAffected: number }> {
+  public async execute(
+    sql: string,
+    params: readonly unknown[] = [],
+  ): Promise<{ readonly rowsAffected: number }> {
     this.ensureConnected();
     return this.runSerialized(async () => {
       const result = await this.pg!.query(sql, params as unknown[]);
@@ -85,18 +97,26 @@ export class PGliteDriver implements IDatabaseDriver {
     });
   }
 
-  public async transaction<T>(fn: (driver: IDatabaseDriver) => Promise<T>): Promise<T> {
+  public async transaction<T>(
+    fn: (driver: IDatabaseDriver) => Promise<T>,
+  ): Promise<T> {
     this.ensureConnected();
     return this.runSerialized(async () => {
       return this.pg!.transaction(async (tx) => {
         const txDriver: IDatabaseDriver = {
           connect: async () => {},
           close: async () => {},
-          query: async <R = unknown>(sql: string, params: readonly unknown[] = []) => {
+          query: async <R = unknown>(
+            sql: string,
+            params: readonly unknown[] = [],
+          ) => {
             const res = await tx.query<R>(sql, params as unknown[]);
             return res.rows;
           },
-          queryOne: async <R = unknown>(sql: string, params: readonly unknown[] = []) => {
+          queryOne: async <R = unknown>(
+            sql: string,
+            params: readonly unknown[] = [],
+          ) => {
             const res = await tx.query<R>(sql, params as unknown[]);
             return res.rows[0] ?? null;
           },
@@ -107,10 +127,12 @@ export class PGliteDriver implements IDatabaseDriver {
           execRaw: async (sql: string) => {
             await tx.exec(sql);
           },
-          transaction: async <SubT>(subFn: (driver: IDatabaseDriver) => Promise<SubT>) => {
+          transaction: async <SubT>(
+            subFn: (driver: IDatabaseDriver) => Promise<SubT>,
+          ) => {
             return subFn(txDriver);
           },
-          getDialect: () => "postgres"
+          getDialect: () => "postgres",
         };
         return fn(txDriver);
       });
@@ -123,7 +145,9 @@ export class PGliteDriver implements IDatabaseDriver {
 
   private ensureConnected(): void {
     if (!this.pg) {
-      throw new Error("PGlite database is not connected. Call connect() before issuing queries.");
+      throw new Error(
+        "PGlite database is not connected. Call connect() before issuing queries.",
+      );
     }
   }
 
@@ -133,7 +157,10 @@ export class PGliteDriver implements IDatabaseDriver {
       const lockFileContent = fs.readFileSync(this.lockFile, "utf-8").trim();
       const parts = lockFileContent.split(":");
       const pid = parts.length === 2 ? parseInt(parts[0] || "", 10) : NaN;
-      const lockTimestamp = parts.length === 2 ? parseInt(parts[1] || "", 10) : parseInt(parts[0] || "", 10);
+      const lockTimestamp =
+        parts.length === 2
+          ? parseInt(parts[1] || "", 10)
+          : parseInt(parts[0] || "", 10);
 
       let isStale = false;
       if (!isNaN(pid) && pid > 0) {
@@ -147,7 +174,7 @@ export class PGliteDriver implements IDatabaseDriver {
         }
       }
 
-      if (isNaN(lockTimestamp) || (Date.now() - lockTimestamp > 15 * 1000)) {
+      if (isNaN(lockTimestamp) || Date.now() - lockTimestamp > 15 * 1000) {
         isStale = true;
       }
 
@@ -158,7 +185,9 @@ export class PGliteDriver implements IDatabaseDriver {
           // ignore
         }
       } else {
-        throw new Error("Database connection is already in use by another process.");
+        throw new Error(
+          "Database connection is already in use by another process.",
+        );
       }
     }
 

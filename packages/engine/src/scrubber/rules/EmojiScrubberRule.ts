@@ -1,7 +1,12 @@
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "../IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "../IScrubberRule.js";
 
 /** Emoji Unicode regex range (excluding musical notation symbols U+2669 through U+266F) */
-const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{2668}\u{2670}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+const EMOJI_REGEX =
+  /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{2668}\u{2670}-\u{26FF}\u{2700}-\u{27BF}]/gu;
 
 /**
  * EmojiScrubberRule
@@ -11,13 +16,27 @@ const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\
  */
 export class EmojiScrubberRule implements IScrubberRule {
   public readonly name = "EmojiScrubberRule";
-  public readonly applicableExtensions = [".ts", ".js", ".java", ".json", ".md", ".html", ".css", ".go", ".rs"];
+  public readonly applicableExtensions = [
+    ".ts",
+    ".js",
+    ".java",
+    ".json",
+    ".md",
+    ".html",
+    ".css",
+    ".go",
+    ".rs",
+  ];
 
   public isApplicable(_stack: string, filePath: string): boolean {
     return this.applicableExtensions.some((ext) => filePath.endsWith(ext));
   }
 
-  public scrub(content: string, _filePath: string, options?: ScrubRuleOptions): ScrubRuleResult {
+  public scrub(
+    content: string,
+    _filePath: string,
+    options?: ScrubRuleOptions,
+  ): ScrubRuleResult {
     const issuesFixed: string[] = [];
     const issuesDetected: string[] = [];
 
@@ -32,7 +51,7 @@ export class EmojiScrubberRule implements IScrubberRule {
         modified: false,
         content,
         issuesFixed,
-        issuesDetected: ["Emoji scrubbing skipped via rule disable flag."]
+        issuesDetected: ["Emoji scrubbing skipped via rule disable flag."],
       };
     }
 
@@ -41,20 +60,25 @@ export class EmojiScrubberRule implements IScrubberRule {
         modified: false,
         content,
         issuesFixed,
-        issuesDetected: ["Emoji scrubbing bypassed via feature exemption flag (@cacophony-allow-emojis)."]
+        issuesDetected: [
+          "Emoji scrubbing bypassed via feature exemption flag (@cacophony-allow-emojis).",
+        ],
       };
     }
 
-
     if (EMOJI_REGEX.test(content)) {
-      issuesDetected.push("Decorative unicode emojis detected in file content.");
+      issuesDetected.push(
+        "Decorative unicode emojis detected in file content.",
+      );
       const cleaned = content.replace(EMOJI_REGEX, "");
-      issuesFixed.push("Stripped unicode decorative emojis to comply with zero-emoji standard.");
+      issuesFixed.push(
+        "Stripped unicode decorative emojis to comply with zero-emoji standard.",
+      );
       return {
         modified: true,
         content: cleaned,
         issuesFixed,
-        issuesDetected
+        issuesDetected,
       };
     }
 
@@ -62,7 +86,7 @@ export class EmojiScrubberRule implements IScrubberRule {
       modified: false,
       content,
       issuesFixed,
-      issuesDetected
+      issuesDetected,
     };
   }
 }

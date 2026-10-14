@@ -6,11 +6,14 @@ import { DistributedTaskDispatcher } from "../scheduler/DistributedTaskDispatche
 describe("DistributedTaskDispatcher Suite (T86.2)", () => {
   it("should fall back to local node when no remote nodes exist", () => {
     const monitor = new FleetHealthMonitor();
-    const dispatcher = new DistributedTaskDispatcher(monitor, "local-orchestrator");
+    const dispatcher = new DistributedTaskDispatcher(
+      monitor,
+      "local-orchestrator",
+    );
 
     const decision = dispatcher.selectPlacement({
       taskId: "task-001",
-      model: "qwen2.5-coder:7b"
+      model: "qwen2.5-coder:7b",
     });
 
     assert.equal(decision.nodeId, "local-orchestrator");
@@ -20,7 +23,10 @@ describe("DistributedTaskDispatcher Suite (T86.2)", () => {
 
   it("should route heavy models to nodes with largest free VRAM and lowest thermals", () => {
     const monitor = new FleetHealthMonitor();
-    const dispatcher = new DistributedTaskDispatcher(monitor, "local-orchestrator");
+    const dispatcher = new DistributedTaskDispatcher(
+      monitor,
+      "local-orchestrator",
+    );
 
     // Node 1: Moderate VRAM
     monitor.recordHeartbeat({
@@ -39,7 +45,7 @@ describe("DistributedTaskDispatcher Suite (T86.2)", () => {
       tokenHash: "h1",
       activeMemoryUsage: 2048,
       apuThermal: 45,
-      gpuThermal: 60
+      gpuThermal: 60,
     });
 
     // Node 2: Large VRAM, cool thermals
@@ -59,12 +65,12 @@ describe("DistributedTaskDispatcher Suite (T86.2)", () => {
       tokenHash: "h2",
       activeMemoryUsage: 4096,
       apuThermal: 42,
-      gpuThermal: 48
+      gpuThermal: 48,
     });
 
     const decision = dispatcher.selectPlacement({
       taskId: "task-heavy-1",
-      model: "deepseek-coder-v2:16b" // requires ~10GB VRAM
+      model: "deepseek-coder-v2:16b", // requires ~10GB VRAM
     });
 
     assert.equal(decision.nodeId, "node-gpu-large");
@@ -75,7 +81,10 @@ describe("DistributedTaskDispatcher Suite (T86.2)", () => {
 
   it("should migrate tasks from throttling nodes to cooler destinations", () => {
     const monitor = new FleetHealthMonitor();
-    const dispatcher = new DistributedTaskDispatcher(monitor, "local-orchestrator");
+    const dispatcher = new DistributedTaskDispatcher(
+      monitor,
+      "local-orchestrator",
+    );
 
     monitor.recordHeartbeat({
       nodeId: "node-throttling",
@@ -93,7 +102,7 @@ describe("DistributedTaskDispatcher Suite (T86.2)", () => {
       tokenHash: "h3",
       activeMemoryUsage: 4096,
       apuThermal: 85,
-      gpuThermal: 86
+      gpuThermal: 86,
     });
 
     monitor.recordHeartbeat({
@@ -112,14 +121,21 @@ describe("DistributedTaskDispatcher Suite (T86.2)", () => {
       tokenHash: "h4",
       activeMemoryUsage: 2048,
       apuThermal: 40,
-      gpuThermal: 45
+      gpuThermal: 45,
     });
 
-    const migration = dispatcher.migrateTask("task-reassign", "node-throttling", "qwen2.5-coder:7b");
+    const migration = dispatcher.migrateTask(
+      "task-reassign",
+      "node-throttling",
+      "qwen2.5-coder:7b",
+    );
 
     assert.ok(migration, "Expected migration decision to be produced");
     assert.equal(migration?.nodeId, "node-cool");
     assert.equal(migration?.targetHost, "192.168.1.40");
-    assert.match(migration?.reason ?? "", /Migrated task task-reassign from throttling node node-throttling/);
+    assert.match(
+      migration?.reason ?? "",
+      /Migrated task task-reassign from throttling node node-throttling/,
+    );
   });
 });

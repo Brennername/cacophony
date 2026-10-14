@@ -28,10 +28,15 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
   });
 
   test("should record runs, evict on consecutive failures, and resetAllStats cleanly", async () => {
-
     await healthRepo.recordRun("test-model-1", "ollama", false, 1500, 5.0);
     await healthRepo.recordRun("test-model-1", "ollama", false, 1600, 4.8);
-    const profile = await healthRepo.recordRun("test-model-1", "ollama", false, 1400, 5.2);
+    const profile = await healthRepo.recordRun(
+      "test-model-1",
+      "ollama",
+      false,
+      1400,
+      5.2,
+    );
 
     assert.equal(profile.consecutiveFailures, 3);
     assert.equal(profile.status, "EJECTED");
@@ -46,7 +51,6 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
   });
 
   test("should advance to Epoch 2, snapshot history, and un-eject models", async () => {
-
     await healthRepo.recordRun("dirty-model-a", "ollama", true, 2000, 8.0);
     await healthRepo.recordRun("dirty-model-a", "ollama", false, 2500, 7.5);
     await healthRepo.recordRun("dirty-model-a", "ollama", false, 2400, 7.2);
@@ -59,7 +63,7 @@ describe("Arena Telemetry Epoching & Clean-Slate Reset Test Suite (T82.1 & T82.2
     const epoch2 = await healthRepo.advanceEpoch(
       "Epoch 2: Post-Bootstrap Mitigation",
       "Cleared failure cascade from PR #74 and restored healthy arena baseline",
-      "All models restored to ACTIVE"
+      "All models restored to ACTIVE",
     );
 
     assert.equal(epoch2.epochId, 2);

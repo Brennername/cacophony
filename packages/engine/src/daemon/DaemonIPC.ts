@@ -3,7 +3,8 @@ import * as fs from "node:fs";
 import { EventEmitter } from "node:events";
 import type { StreamTapManager } from "../inference/StreamTapManager.js";
 
-export const DEFAULT_SOCKET_PATH = process.env.CACOPHONY_IPC_SOCKET || "/tmp/cacophony.sock";
+export const DEFAULT_SOCKET_PATH =
+  process.env.CACOPHONY_IPC_SOCKET || "/tmp/cacophony.sock";
 
 export interface IPCRequest {
   readonly id: string;
@@ -26,7 +27,7 @@ export interface IPCStreamEvent {
 
 export type CommandHandler = (
   command: string,
-  params?: Record<string, unknown> | undefined
+  params?: Record<string, unknown> | undefined,
 ) => Promise<unknown>;
 
 export interface DaemonIPCServerOptions {
@@ -52,7 +53,6 @@ export class DaemonIPCServer {
   private untapListener: (() => void) | null = null;
 
   constructor(options: DaemonIPCServerOptions) {
-
     this.socketPath = options.socketPath || DEFAULT_SOCKET_PATH;
     this.handler = options.handler;
     this.streamTapManager = options.streamTapManager;
@@ -76,7 +76,7 @@ export class DaemonIPCServer {
       this.broadcastStreamEvent({
         type: "stream_token",
         taskId: event.taskId,
-        token: event.token
+        token: event.token,
       });
     });
 
@@ -146,7 +146,7 @@ export class DaemonIPCServer {
           const res: IPCResponse = {
             id: "unknown",
             success: false,
-            error: `Malformed JSON-RPC request: ${err instanceof Error ? err.message : String(err)}`
+            error: `Malformed JSON-RPC request: ${err instanceof Error ? err.message : String(err)}`,
           };
           socket.write(JSON.stringify(res) + "\n");
         }
@@ -164,13 +164,19 @@ export class DaemonIPCServer {
     });
   }
 
-  private async processRequest(socket: net.Socket, req: IPCRequest): Promise<void> {
+  private async processRequest(
+    socket: net.Socket,
+    req: IPCRequest,
+  ): Promise<void> {
     if (req.command === "stream.tap") {
       this.streamSubscribers.add(socket);
       const res: IPCResponse = {
         id: req.id,
         success: true,
-        data: { message: "Stream tap attached successfully", activeTaskId: this.streamTapManager.getActiveTask() }
+        data: {
+          message: "Stream tap attached successfully",
+          activeTaskId: this.streamTapManager.getActiveTask(),
+        },
       };
       socket.write(JSON.stringify(res) + "\n");
       return;
@@ -181,7 +187,7 @@ export class DaemonIPCServer {
       const res: IPCResponse = {
         id: req.id,
         success: true,
-        data: { message: "Stream tap detached successfully" }
+        data: { message: "Stream tap detached successfully" },
       };
       socket.write(JSON.stringify(res) + "\n");
       return;
@@ -192,14 +198,14 @@ export class DaemonIPCServer {
       const res: IPCResponse = {
         id: req.id,
         success: true,
-        data
+        data,
       };
       socket.write(JSON.stringify(res) + "\n");
     } catch (err) {
       const res: IPCResponse = {
         id: req.id,
         success: false,
-        error: err instanceof Error ? err.message : String(err)
+        error: err instanceof Error ? err.message : String(err),
       };
       socket.write(JSON.stringify(res) + "\n");
     }
@@ -252,11 +258,14 @@ export class DaemonIPCClient extends EventEmitter {
   /**
    * Sends a command request to the daemon and returns the parsed response.
    */
-  public async request(command: string, params?: Record<string, unknown>, timeoutMs = 10000): Promise<unknown> {
+  public async request(
+    command: string,
+    params?: Record<string, unknown>,
+    timeoutMs = 10000,
+  ): Promise<unknown> {
     const id = `req_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const payload: IPCRequest = params !== undefined ? { id, command, params } : { id, command };
-
-
+    const payload: IPCRequest =
+      params !== undefined ? { id, command, params } : { id, command };
 
     return new Promise((resolve, reject) => {
       const socket = net.createConnection(this.socketPath);
@@ -270,7 +279,9 @@ export class DaemonIPCClient extends EventEmitter {
 
       timer = setTimeout(() => {
         cleanup();
-        reject(new Error(`IPC request '${command}' timed out after ${timeoutMs}ms`));
+        reject(
+          new Error(`IPC request '${command}' timed out after ${timeoutMs}ms`),
+        );
       }, timeoutMs);
 
       socket.on("connect", () => {
@@ -315,7 +326,7 @@ export class DaemonIPCClient extends EventEmitter {
    */
   public tapStream(
     onToken: (token: string, taskId: string) => void,
-    onStatus?: (msg: string) => void
+    onStatus?: (msg: string) => void,
   ): () => void {
     const socket = net.createConnection(this.socketPath);
     let buffer = "";
@@ -337,7 +348,11 @@ export class DaemonIPCClient extends EventEmitter {
 
         try {
           const parsed = JSON.parse(trimmed) as IPCStreamEvent | IPCResponse;
-          if ("type" in parsed && parsed.type === "stream_token" && parsed.token) {
+          if (
+            "type" in parsed &&
+            parsed.type === "stream_token" &&
+            parsed.token
+          ) {
             onToken(parsed.token, parsed.taskId);
           } else if ("data" in parsed && onStatus) {
             onStatus(JSON.stringify(parsed.data));
@@ -350,7 +365,10 @@ export class DaemonIPCClient extends EventEmitter {
 
     return () => {
       try {
-        const untapReq: IPCRequest = { id: `untap_${Date.now()}`, command: "stream.untap" };
+        const untapReq: IPCRequest = {
+          id: `untap_${Date.now()}`,
+          command: "stream.untap",
+        };
         socket.write(JSON.stringify(untapReq) + "\n");
         socket.destroy();
       } catch {

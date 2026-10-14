@@ -69,7 +69,8 @@ options amdgpu vm_update_mode=0
       };
     }
 
-    const systemdOverridePath = "/etc/systemd/system/ollama.service.d/override.conf";
+    const systemdOverridePath =
+      "/etc/systemd/system/ollama.service.d/override.conf";
     const systemdOverrideContent = this.formatSystemdOverride(envVars);
 
     return {

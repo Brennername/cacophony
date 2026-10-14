@@ -1,7 +1,11 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { MonorepoBuildGate } from "../gitea/MonorepoBuildGate.js";
-import { SandboxedProcessRunner, type SandboxedProcessOptions, type SandboxedProcessResult } from "../testing/SandboxedProcessRunner.js";
+import {
+  SandboxedProcessRunner,
+  type SandboxedProcessOptions,
+  type SandboxedProcessResult,
+} from "../testing/SandboxedProcessRunner.js";
 
 class StubProcessRunner extends SandboxedProcessRunner {
   public mockResult: SandboxedProcessResult = {
@@ -11,13 +15,16 @@ class StubProcessRunner extends SandboxedProcessRunner {
     stdout: "Build succeeded",
     stderr: "",
     timedOut: false,
-    truncated: false
+    truncated: false,
   };
 
   public lastCommand: string | null = null;
   public lastCwd: string | null = null;
 
-  public override async run(command: string, options: SandboxedProcessOptions): Promise<SandboxedProcessResult> {
+  public override async run(
+    command: string,
+    options: SandboxedProcessOptions,
+  ): Promise<SandboxedProcessResult> {
     this.lastCommand = command;
     this.lastCwd = options.cwd;
     return this.mockResult;
@@ -55,7 +62,10 @@ packages/frontend/src/app/view.ts(104,7): error NG8001: 'custom-card' is not a k
     assert.equal(d1.file, "packages/engine/src/bar.ts");
     assert.equal(d1.line, 15);
     assert.equal(d1.column, 3);
-    assert.equal(d1.message, "Module '\"./types\"' has no exported member 'MissingType'.");
+    assert.equal(
+      d1.message,
+      "Module '\"./types\"' has no exported member 'MissingType'.",
+    );
 
     const d2 = diagnostics[2]!;
     assert.equal(d2.code, "TS2322");
@@ -64,7 +74,10 @@ packages/frontend/src/app/view.ts(104,7): error NG8001: 'custom-card' is not a k
 
     const d3 = diagnostics[3]!;
     assert.equal(d3.code, "NG2008");
-    assert.equal(d3.message, "Component ModelsViewComponent is missing templateUrl");
+    assert.equal(
+      d3.message,
+      "Component ModelsViewComponent is missing templateUrl",
+    );
 
     const d4 = diagnostics[4]!;
     assert.equal(d4.code, "NG8001");
@@ -81,7 +94,7 @@ packages/frontend/src/app/view.ts(104,7): error NG8001: 'custom-card' is not a k
       stdout: "Building packages... Done.",
       stderr: "",
       timedOut: false,
-      truncated: false
+      truncated: false,
     };
 
     const gate = new MonorepoBuildGate({ sandboxedRunner: stubRunner });
@@ -101,10 +114,11 @@ packages/frontend/src/app/view.ts(104,7): error NG8001: 'custom-card' is not a k
       exitCode: 2,
       signal: null,
       durationMs: 3100,
-      stdout: "packages/engine/src/broken.ts(10,5): error TS2304: Cannot find name 'unresolved'.",
+      stdout:
+        "packages/engine/src/broken.ts(10,5): error TS2304: Cannot find name 'unresolved'.",
       stderr: "npm ERR! Lifecycle script failed.",
       timedOut: false,
-      truncated: false
+      truncated: false,
     };
 
     const gate = new MonorepoBuildGate({ sandboxedRunner: stubRunner });
@@ -114,6 +128,9 @@ packages/frontend/src/app/view.ts(104,7): error NG8001: 'custom-card' is not a k
     assert.equal(result.exitCode, 2);
     assert.equal(result.diagnostics.length, 1);
     assert.equal(result.diagnostics[0]!.code, "TS2304");
-    assert.match(result.failureSummary!, /TS2304 in packages\/engine\/src\/broken.ts/);
+    assert.match(
+      result.failureSummary!,
+      /TS2304 in packages\/engine\/src\/broken.ts/,
+    );
   });
 });

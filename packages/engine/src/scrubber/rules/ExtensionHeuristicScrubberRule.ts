@@ -1,4 +1,8 @@
-import type { IScrubberRule, ScrubRuleOptions, ScrubRuleResult } from "../IScrubberRule.js";
+import type {
+  IScrubberRule,
+  ScrubRuleOptions,
+  ScrubRuleResult,
+} from "../IScrubberRule.js";
 
 /**
  * ExtensionHeuristicScrubberRule
@@ -21,7 +25,11 @@ export class ExtensionHeuristicScrubberRule implements IScrubberRule {
     return this.applicableExtensions.some((ext) => filePath.endsWith(ext));
   }
 
-  public scrub(content: string, _filePath: string, options?: ScrubRuleOptions): ScrubRuleResult {
+  public scrub(
+    content: string,
+    _filePath: string,
+    options?: ScrubRuleOptions,
+  ): ScrubRuleResult {
     const issuesFixed: string[] = [];
     const issuesDetected: string[] = [];
 
@@ -30,7 +38,9 @@ export class ExtensionHeuristicScrubberRule implements IScrubberRule {
       options?.disabledRules?.includes(this.name) ||
       options?.disabledRules?.includes("all") ||
       options?.allowLiteralExtensions ||
-      content.includes("@cacophony-disable-scrubber: ExtensionHeuristicScrubberRule") ||
+      content.includes(
+        "@cacophony-disable-scrubber: ExtensionHeuristicScrubberRule",
+      ) ||
       content.includes("@cacophony-disable-scrubber: all") ||
       content.includes("@cacophony-allow-literal-extensions")
     ) {
@@ -38,7 +48,9 @@ export class ExtensionHeuristicScrubberRule implements IScrubberRule {
         modified: false,
         content,
         issuesFixed,
-        issuesDetected: ["Extension heuristic scrubbing skipped via exemption flag."]
+        issuesDetected: [
+          "Extension heuristic scrubbing skipped via exemption flag.",
+        ],
       };
     }
     const stack = options?.stack || "typescript-standard";
@@ -46,24 +58,33 @@ export class ExtensionHeuristicScrubberRule implements IScrubberRule {
     const literalTsRegex = /from\s+(["'])(\.[^"']+)\.ts\1/g;
     let modified = false;
 
-    const cleaned = content.replace(literalTsRegex, (_fullMatch, quote: string, importPath: string) => {
-      issuesDetected.push(`Detected prohibited literal .ts extension on relative import: '${importPath}.ts'`);
-      modified = true;
+    const cleaned = content.replace(
+      literalTsRegex,
+      (_fullMatch, quote: string, importPath: string) => {
+        issuesDetected.push(
+          `Detected prohibited literal .ts extension on relative import: '${importPath}.ts'`,
+        );
+        modified = true;
 
-      if (stack === "typescript-nodenext") {
-        issuesFixed.push(`Rewrote '${importPath}.ts' to '${importPath}.js' for NodeNext`);
-        return `from ${quote}${importPath}.js${quote}`;
-      } else {
-        issuesFixed.push(`Rewrote '${importPath}.ts' to bare '${importPath}' for bundler`);
-        return `from ${quote}${importPath}${quote}`;
-      }
-    });
+        if (stack === "typescript-nodenext") {
+          issuesFixed.push(
+            `Rewrote '${importPath}.ts' to '${importPath}.js' for NodeNext`,
+          );
+          return `from ${quote}${importPath}.js${quote}`;
+        } else {
+          issuesFixed.push(
+            `Rewrote '${importPath}.ts' to bare '${importPath}' for bundler`,
+          );
+          return `from ${quote}${importPath}${quote}`;
+        }
+      },
+    );
 
     return {
       modified,
       content: cleaned,
       issuesFixed,
-      issuesDetected
+      issuesDetected,
     };
   }
 }

@@ -41,7 +41,9 @@ export class ExecutionSafetyManager {
 
   public assertCanModifyDisk(operationName: string): void {
     if (!this.canModifyDisk()) {
-      throw new Error(`Disk modification forbidden in Plan Mode: cannot execute '${operationName}'`);
+      throw new Error(
+        `Disk modification forbidden in Plan Mode: cannot execute '${operationName}'`,
+      );
     }
   }
 }

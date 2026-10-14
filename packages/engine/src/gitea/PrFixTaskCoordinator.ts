@@ -1,33 +1,67 @@
 // @ts-ignore
-export interface GiteaApiClient { [key: string]: any; }
+export interface GiteaApiClient {
+  [key: string]: any;
+}
 // @ts-ignore
-export const GiteaApiClient: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });
+export const GiteaApiClient: any = Object.assign(
+  function (this: any, ..._args: any[]) {
+    return this;
+  },
+  { [Symbol.iterator]: function* () {} },
+);
 
 // @ts-ignore
-export interface ITaskScheduler { [key: string]: any; }
+export interface ITaskScheduler {
+  [key: string]: any;
+}
 // @ts-ignore
-export const ITaskScheduler: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });
+export const ITaskScheduler: any = Object.assign(
+  function (this: any, ..._args: any[]) {
+    return this;
+  },
+  { [Symbol.iterator]: function* () {} },
+);
 // @ts-ignore
-export interface PrFixTask { [key: string]: any; }
+export interface PrFixTask {
+  [key: string]: any;
+}
 // @ts-ignore
-export const PrFixTask: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });
+export const PrFixTask: any = Object.assign(
+  function (this: any, ..._args: any[]) {
+    return this;
+  },
+  { [Symbol.iterator]: function* () {} },
+);
 // @ts-ignore
-export interface TaskCoordinator { [key: string]: any; }
+export interface TaskCoordinator {
+  [key: string]: any;
+}
 // @ts-ignore
-export const TaskCoordinator: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });
+export const TaskCoordinator: any = Object.assign(
+  function (this: any, ..._args: any[]) {
+    return this;
+  },
+  { [Symbol.iterator]: function* () {} },
+);
 
-
-
 // @ts-ignore
-export class Logger { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }
-
+export class Logger {
+  [key: string]: any;
+  static [key: string]: any;
+  constructor(..._args: any[]) {}
+}
 
 export class PrFixTaskCoordinator extends TaskCoordinator<PrFixTask> {
   private readonly giteaClient: GiteaApiClient;
   private readonly taskScheduler: ITaskScheduler;
   private readonly logger: Logger;
 
-  constructor(task: PrFixTask, taskScheduler: ITaskScheduler, giteaClient: GiteaApiClient, logger: Logger) {
+  constructor(
+    task: PrFixTask,
+    taskScheduler: ITaskScheduler,
+    giteaClient: GiteaApiClient,
+    logger: Logger,
+  ) {
     super(task);
     this.giteaClient = giteaClient;
     this.taskScheduler = taskScheduler;
@@ -49,11 +83,14 @@ export class PrFixTaskCoordinator extends TaskCoordinator<PrFixTask> {
       this.logger.info(`Starting PrFixTask for pr id: ${prId}`);
 
       // Simulate some work
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       this.logger.info(`PrFixTask completed successfully for pr id: ${prId}`);
     } catch (error) {
-      this.logger.error(`Error executing PrFixTask for pr id ${this.task.prId}:`, error);
+      this.logger.error(
+        `Error executing PrFixTask for pr id ${this.task.prId}:`,
+        error,
+      );
       throw error; // Re-throw the error to signal failure
     } finally {
       await this.taskScheduler.enqueueNewAssessmentRound();

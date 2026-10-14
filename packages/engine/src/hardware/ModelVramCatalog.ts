@@ -1,5 +1,7 @@
-class IModelVramCatalog { [key: string]: any; constructor(..._args: any[]) {} }
-
+class IModelVramCatalog {
+  [key: string]: any;
+  constructor(..._args: any[]) {}
+}
 
 /**
  * ModelVramCatalog class to manage and provide VRAM footprints for different models.
@@ -17,10 +19,10 @@ export class ModelVramCatalog implements IModelVramCatalog {
    * Initializes the baseline memory footprints for known models.
    */
   private initializeBaselineMemoryFootprints(): void {
-    this.modelVramMap.set('qwen2.5-coder:3b', 2.2);
-    this.modelVramMap.set('gemma3:4b', 3.1);
-    this.modelVramMap.set('qwen2.5-coder:7b', 5.2);
-    this.modelVramMap.set('deepseek-r1:8b', 6.1);
+    this.modelVramMap.set("qwen2.5-coder:3b", 2.2);
+    this.modelVramMap.set("gemma3:4b", 3.1);
+    this.modelVramMap.set("qwen2.5-coder:7b", 5.2);
+    this.modelVramMap.set("deepseek-r1:8b", 6.1);
   }
 
   /**

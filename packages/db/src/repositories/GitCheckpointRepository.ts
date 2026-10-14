@@ -23,7 +23,7 @@ export class GitCheckpointRepository {
   constructor(private readonly driver: IDatabaseDriver) {}
 
   public async recordCheckpoint(
-    checkpoint: Omit<GitCheckpointRecord, "created_at">
+    checkpoint: Omit<GitCheckpointRecord, "created_at">,
   ): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.query(
@@ -41,12 +41,14 @@ export class GitCheckpointRepository {
         checkpoint.message,
         checkpoint.files_changed_json,
         checkpoint.is_reverted,
-        now
-      ]
+        now,
+      ],
     );
   }
 
-  public async getLatestCheckpoint(sessionId?: string): Promise<GitCheckpointRecord | undefined> {
+  public async getLatestCheckpoint(
+    sessionId?: string,
+  ): Promise<GitCheckpointRecord | undefined> {
     const query = sessionId
       ? `SELECT * FROM git_checkpoints WHERE session_id = $1 AND is_reverted = FALSE ORDER BY created_at DESC LIMIT 1`
       : `SELECT * FROM git_checkpoints WHERE is_reverted = FALSE ORDER BY created_at DESC LIMIT 1`;
@@ -55,7 +57,9 @@ export class GitCheckpointRepository {
     return res[0];
   }
 
-  public async getLatestRevertedCheckpoint(sessionId?: string): Promise<GitCheckpointRecord | undefined> {
+  public async getLatestRevertedCheckpoint(
+    sessionId?: string,
+  ): Promise<GitCheckpointRecord | undefined> {
     const query = sessionId
       ? `SELECT * FROM git_checkpoints WHERE session_id = $1 AND is_reverted = TRUE ORDER BY created_at DESC LIMIT 1`
       : `SELECT * FROM git_checkpoints WHERE is_reverted = TRUE ORDER BY created_at DESC LIMIT 1`;
@@ -67,11 +71,14 @@ export class GitCheckpointRepository {
   public async setReverted(id: string, isReverted: boolean): Promise<void> {
     await this.driver.query(
       `UPDATE git_checkpoints SET is_reverted = $1 WHERE id = $2`,
-      [isReverted, id]
+      [isReverted, id],
     );
   }
 
-  public async listCheckpoints(sessionId?: string, limit = 50): Promise<readonly GitCheckpointRecord[]> {
+  public async listCheckpoints(
+    sessionId?: string,
+    limit = 50,
+  ): Promise<readonly GitCheckpointRecord[]> {
     const query = sessionId
       ? `SELECT * FROM git_checkpoints WHERE session_id = $1 ORDER BY created_at DESC LIMIT $2`
       : `SELECT * FROM git_checkpoints ORDER BY created_at DESC LIMIT $1`;

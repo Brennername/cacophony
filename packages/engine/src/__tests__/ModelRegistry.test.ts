@@ -19,7 +19,7 @@ describe("Model-Agnostic Registry & Multi-Provider Architecture", () => {
     test("should select optimal local model when local preference is requested", async () => {
       const optimal = await registry.getOptimalModelForTask({
         contextTokensNeeded: 4000,
-        prefersLocal: true
+        prefersLocal: true,
       });
 
       assert.ok(optimal);
@@ -29,7 +29,7 @@ describe("Model-Agnostic Registry & Multi-Provider Architecture", () => {
     test("should select frontier model when required context exceeds local window", async () => {
       const optimal = await registry.getOptimalModelForTask({
         contextTokensNeeded: 100000,
-        prefersLocal: true
+        prefersLocal: true,
       });
 
       assert.ok(optimal);
@@ -48,7 +48,7 @@ describe("Model-Agnostic Registry & Multi-Provider Architecture", () => {
         diffFormatCapability: true,
         costPer1kTokens: 0,
         isLocal: true,
-        tags: ["custom"]
+        tags: ["custom"],
       });
 
       const found = await registry.getModel("custom-local-model:latest");
@@ -65,14 +65,14 @@ describe("Model-Agnostic Registry & Multi-Provider Architecture", () => {
     test("should instantiate for LM Studio and Groq providers", () => {
       const lmStudio = new OpenAiCompatibleProvider({
         providerType: "lmstudio",
-        baseUrl: "http://localhost:1234/v1"
+        baseUrl: "http://localhost:1234/v1",
       });
       assert.equal(lmStudio.getProviderType(), "lmstudio");
 
       const groq = new OpenAiCompatibleProvider({
         providerType: "groq",
         baseUrl: "https://api.groq.com/openai/v1",
-        apiKey: "gsk_test"
+        apiKey: "gsk_test",
       });
       assert.equal(groq.getProviderType(), "groq");
     });

@@ -30,7 +30,9 @@ export class HistoricalArenaIngestionAdapter {
    * Discovers and returns the version of the dataset directory.
    * Reads manifest.json if present; falls back to stats.json inspection or legacy v1.0.0.
    */
-  public async getDatasetVersion(basePath = this.defaultBasePath): Promise<string> {
+  public async getDatasetVersion(
+    basePath = this.defaultBasePath,
+  ): Promise<string> {
     try {
       const manifestPath = path.join(basePath, "manifest.json");
       const raw = await fs.readFile(manifestPath, "utf-8");
@@ -58,7 +60,9 @@ export class HistoricalArenaIngestionAdapter {
   /**
    * Reads and parses stats.json summary telemetry.
    */
-  public async loadStats(basePath = this.defaultBasePath): Promise<HistoricalArenaStats> {
+  public async loadStats(
+    basePath = this.defaultBasePath,
+  ): Promise<HistoricalArenaStats> {
     const statsPath = path.join(basePath, "stats.json");
     const raw = await fs.readFile(statsPath, "utf-8");
     const parsed = JSON.parse(raw);
@@ -80,12 +84,14 @@ export class HistoricalArenaIngestionAdapter {
   public async loadTasks(
     category: "completed" | "failed" | "exhausted",
     limit = 50,
-    basePath = this.defaultBasePath
+    basePath = this.defaultBasePath,
   ): Promise<HistoricalTaskRecord[]> {
     const dir = path.join(basePath, category);
     try {
       const files = await fs.readdir(dir);
-      const jsonFiles = files.filter((f) => f.endsWith(".json")).slice(0, limit);
+      const jsonFiles = files
+        .filter((f) => f.endsWith(".json"))
+        .slice(0, limit);
 
       const records: HistoricalTaskRecord[] = [];
       for (const file of jsonFiles) {
@@ -96,10 +102,11 @@ export class HistoricalArenaIngestionAdapter {
           let patchContent: string | undefined;
           const patchFile = file.replace(/\.json$/, ".patch");
           try {
-            patchContent = await fs.readFile(path.join(basePath, "patches", patchFile), "utf-8");
-          } catch {
-
-          }
+            patchContent = await fs.readFile(
+              path.join(basePath, "patches", patchFile),
+              "utf-8",
+            );
+          } catch {}
 
           records.push({
             id: d.id || file.replace(/\.json$/, ""),
@@ -115,9 +122,7 @@ export class HistoricalArenaIngestionAdapter {
             ...(d.failure_reason ? { failureReason: d.failure_reason } : {}),
             ...(patchContent !== undefined ? { patchContent } : {}),
           });
-        } catch {
-
-        }
+        } catch {}
       }
       return records;
     } catch {
@@ -130,12 +135,14 @@ export class HistoricalArenaIngestionAdapter {
    */
   public async loadPostmortems(
     limit = 50,
-    basePath = this.defaultBasePath
+    basePath = this.defaultBasePath,
   ): Promise<HistoricalPostmortemRecord[]> {
     const dir = path.join(basePath, "postmortems");
     try {
       const files = await fs.readdir(dir);
-      const jsonFiles = files.filter((f) => f.endsWith(".json")).slice(0, limit);
+      const jsonFiles = files
+        .filter((f) => f.endsWith(".json"))
+        .slice(0, limit);
 
       const records: HistoricalPostmortemRecord[] = [];
       for (const file of jsonFiles) {
@@ -167,26 +174,41 @@ export class HistoricalArenaIngestionAdapter {
    * Formulates the historical analysis comparing deterministic validation rejections
    * (review_failed, validation_failed, disallowed_root_files) vs actual test assertion failures.
    */
-  public analyzeMitigationParadox(stats: HistoricalArenaStats): MitigationParadoxReport {
+  public analyzeMitigationParadox(
+    stats: HistoricalArenaStats,
+  ): MitigationParadoxReport {
     const totalProcessed = stats.totalProcessed;
     const totalCompleted = stats.totalCompleted;
     const totalFailed = stats.totalFailed;
 
-    const rawPassRatePct = totalProcessed > 0 ? (totalCompleted / totalProcessed) * 100 : 0;
+    const rawPassRatePct =
+      totalProcessed > 0 ? (totalCompleted / totalProcessed) * 100 : 0;
 
     const realTestFailureCount = stats.failureReasons["test_failed"] || 0;
-    const realTestFailurePct = totalProcessed > 0 ? (realTestFailureCount / totalProcessed) * 100 : 0;
+    const realTestFailurePct =
+      totalProcessed > 0 ? (realTestFailureCount / totalProcessed) * 100 : 0;
 
     const reviewFailedCount = stats.failureReasons["review_failed"] || 0;
-    const validationFailedCount = stats.failureReasons["validation_failed"] || 0;
-    const disallowedRootFilesCount = stats.failureReasons["disallowed_root_files"] || 0;
+    const validationFailedCount =
+      stats.failureReasons["validation_failed"] || 0;
+    const disallowedRootFilesCount =
+      stats.failureReasons["disallowed_root_files"] || 0;
     const noChangesCount = stats.failureReasons["no_changes_produced"] || 0;
 
-    const verifierRejectionCount = reviewFailedCount + validationFailedCount + disallowedRootFilesCount;
-    const verifierRejectionPct = totalProcessed > 0 ? (verifierRejectionCount / totalProcessed) * 100 : 0;
+    const verifierRejectionCount =
+      reviewFailedCount + validationFailedCount + disallowedRootFilesCount;
+    const verifierRejectionPct =
+      totalProcessed > 0 ? (verifierRejectionCount / totalProcessed) * 100 : 0;
 
-    const estimatedRecoverableTasks = Math.round(reviewFailedCount * 0.75 + validationFailedCount * 0.85 + disallowedRootFilesCount * 0.90);
-    const counterfactualPassRatePct = totalProcessed > 0 ? ((totalCompleted + estimatedRecoverableTasks) / totalProcessed) * 100 : 0;
+    const estimatedRecoverableTasks = Math.round(
+      reviewFailedCount * 0.75 +
+        validationFailedCount * 0.85 +
+        disallowedRootFilesCount * 0.9,
+    );
+    const counterfactualPassRatePct =
+      totalProcessed > 0
+        ? ((totalCompleted + estimatedRecoverableTasks) / totalProcessed) * 100
+        : 0;
 
     return {
       totalProcessed,
@@ -199,7 +221,8 @@ export class HistoricalArenaIngestionAdapter {
       verifierRejectionPct: Math.round(verifierRejectionPct * 100) / 100,
       reviewFailedCount,
       noChangesCount,
-      counterfactualPassRatePct: Math.round(counterfactualPassRatePct * 100) / 100,
+      counterfactualPassRatePct:
+        Math.round(counterfactualPassRatePct * 100) / 100,
       estimatedRecoverableTasks,
     };
   }

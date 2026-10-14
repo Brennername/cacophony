@@ -12,7 +12,9 @@ export class LocalBypassSsoProvider implements ISsoProvider {
     return `/auth/callback?code=emergency-local-bypass&state=${encodeURIComponent(state)}`;
   }
 
-  public async exchangeCode(_code: string): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
+  public async exchangeCode(
+    _code: string,
+  ): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
     const user: SsoUserProfile = {
       id: "local-admin-root",
       username: "cacophony_admin",
@@ -20,12 +22,12 @@ export class LocalBypassSsoProvider implements ISsoProvider {
       displayName: "Local Administrator (Emergency Bypass)",
       groups: ["cacophony-admins"],
       roles: ["ADMIN", "OPERATOR", "VIEWER"],
-      provider: "local"
+      provider: "local",
     };
 
     return {
       accessToken: "local-emergency-bypass-token",
-      user
+      user,
     };
   }
 
@@ -40,8 +42,8 @@ export class LocalBypassSsoProvider implements ISsoProvider {
           displayName: "Local Administrator",
           groups: ["cacophony-admins"],
           roles: ["ADMIN", "OPERATOR", "VIEWER"],
-          provider: "local"
-        }
+          provider: "local",
+        },
       };
     }
     return { valid: false, error: "Invalid local bypass token" };
@@ -55,7 +57,7 @@ export class LocalBypassSsoProvider implements ISsoProvider {
       displayName: "Local Administrator",
       groups: ["cacophony-admins"],
       roles: ["ADMIN", "OPERATOR", "VIEWER"],
-      provider: "local"
+      provider: "local",
     };
   }
 }

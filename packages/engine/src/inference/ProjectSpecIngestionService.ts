@@ -60,7 +60,10 @@ export class ProjectSpecIngestionService {
   /**
    * Parses markdown documents extracting headings, requirement bullet points, and API route markers.
    */
-  public parseMarkdown(content: string, defaultTitle = "Specification"): ParsedSpecDocument {
+  public parseMarkdown(
+    content: string,
+    defaultTitle = "Specification",
+  ): ParsedSpecDocument {
     const lines = content.split("\n");
     let title = defaultTitle;
     let description = "";
@@ -85,13 +88,28 @@ export class ProjectSpecIngestionService {
       if (line.startsWith("## ") || line.startsWith("### ")) {
         currentSection = line.replace(/^#+\s*/, "").trim();
         const lowerSection = currentSection.toLowerCase();
-        if (lowerSection.includes("constraint") || lowerSection.includes("rule")) {
+        if (
+          lowerSection.includes("constraint") ||
+          lowerSection.includes("rule")
+        ) {
           sectionType = "constraint";
-        } else if (lowerSection.includes("non-functional") || lowerSection.includes("performance") || lowerSection.includes("security")) {
+        } else if (
+          lowerSection.includes("non-functional") ||
+          lowerSection.includes("performance") ||
+          lowerSection.includes("security")
+        ) {
           sectionType = "non-functional";
-        } else if (lowerSection.includes("api") || lowerSection.includes("endpoint") || lowerSection.includes("route")) {
+        } else if (
+          lowerSection.includes("api") ||
+          lowerSection.includes("endpoint") ||
+          lowerSection.includes("route")
+        ) {
           sectionType = "api_endpoint";
-        } else if (lowerSection.includes("model") || lowerSection.includes("schema") || lowerSection.includes("database")) {
+        } else if (
+          lowerSection.includes("model") ||
+          lowerSection.includes("schema") ||
+          lowerSection.includes("database")
+        ) {
           sectionType = "data_model";
         } else {
           sectionType = "functional";
@@ -100,7 +118,9 @@ export class ProjectSpecIngestionService {
       }
 
       // Check for API route definition: GET/POST/PUT/PATCH/DELETE /api/...
-      const apiMatch = line.match(/\b(GET|POST|PUT|PATCH|DELETE)\s+([/a-zA-Z0-9_\-:]+)(?:\s*[-:]\s*(.*))?/i);
+      const apiMatch = line.match(
+        /\b(GET|POST|PUT|PATCH|DELETE)\s+([/a-zA-Z0-9_\-:]+)(?:\s*[-:]\s*(.*))?/i,
+      );
       if (apiMatch) {
         const method = apiMatch[1]!.toUpperCase();
         const routePath = apiMatch[2]!;
@@ -114,7 +134,7 @@ export class ProjectSpecIngestionService {
           category: currentSection,
           constraints: [],
           httpMethod: method,
-          routePath
+          routePath,
         });
         continue;
       }
@@ -129,7 +149,7 @@ export class ProjectSpecIngestionService {
             description: reqText,
             type: sectionType,
             category: currentSection,
-            constraints: []
+            constraints: [],
           });
         }
         continue;
@@ -148,14 +168,17 @@ export class ProjectSpecIngestionService {
       description: description || `Ingested specification for ${title}`,
       requirements,
       technicalConstraints,
-      apiEndpoints: endpoints
+      apiEndpoints: endpoints,
     };
   }
 
   /**
    * Parses JSON or OpenAPI 3.0 specification documents.
    */
-  public parseJsonOrOpenApi(content: string, filePath: string): ParsedSpecDocument {
+  public parseJsonOrOpenApi(
+    content: string,
+    filePath: string,
+  ): ParsedSpecDocument {
     try {
       const data = JSON.parse(content);
       const title = data.info?.title || path.basename(filePath, ".json");
@@ -167,11 +190,22 @@ export class ProjectSpecIngestionService {
       if (data.paths && typeof data.paths === "object") {
         for (const [routePath, methods] of Object.entries(data.paths)) {
           if (methods && typeof methods === "object") {
-            for (const [method, details] of Object.entries(methods as Record<string, any>)) {
+            for (const [method, details] of Object.entries(
+              methods as Record<string, any>,
+            )) {
               const upperMethod = method.toUpperCase();
-              if (["GET", "POST", "PUT", "PATCH", "DELETE"].includes(upperMethod)) {
-                const summary = details?.summary || details?.description || `${upperMethod} ${routePath}`;
-                endpoints.push({ method: upperMethod, path: routePath, summary });
+              if (
+                ["GET", "POST", "PUT", "PATCH", "DELETE"].includes(upperMethod)
+              ) {
+                const summary =
+                  details?.summary ||
+                  details?.description ||
+                  `${upperMethod} ${routePath}`;
+                endpoints.push({
+                  method: upperMethod,
+                  path: routePath,
+                  summary,
+                });
                 requirements.push({
                   id: `req-api-${index++}`,
                   title: `${upperMethod} ${routePath}`,
@@ -180,7 +214,7 @@ export class ProjectSpecIngestionService {
                   category: details?.tags?.[0] || "API",
                   constraints: [],
                   httpMethod: upperMethod,
-                  routePath
+                  routePath,
                 });
               }
             }
@@ -192,8 +226,11 @@ export class ProjectSpecIngestionService {
         title,
         description,
         requirements,
-        technicalConstraints: ["Strict TypeScript typing", "JSON REST schema compliance"],
-        apiEndpoints: endpoints
+        technicalConstraints: [
+          "Strict TypeScript typing",
+          "JSON REST schema compliance",
+        ],
+        apiEndpoints: endpoints,
       };
     } catch {
       return this.parseMarkdown(content, "JSON Document");
@@ -221,7 +258,9 @@ export class ProjectSpecIngestionService {
       constraints.push("Modern Angular (v20+ Standalone, Signals, Zoneless)");
     }
     if (lower.includes("mobile-first") || lower.includes("mobile first")) {
-      constraints.push("Mobile-first responsive layout (WCAG AAA touch targets 44x44px)");
+      constraints.push(
+        "Mobile-first responsive layout (WCAG AAA touch targets 44x44px)",
+      );
     }
     if (lower.includes("pglite") || lower.includes("postgres")) {
       constraints.push("PGlite/PostgreSQL dialect-agnostic schema migrations");

@@ -26,26 +26,26 @@ export class LspDetector {
       name: "typescript-language-server",
       command: "npx",
       args: ["-y", "typescript-language-server", "--stdio"],
-      detectionMarkers: ["tsconfig.json", "package.json"]
+      detectionMarkers: ["tsconfig.json", "package.json"],
     },
     {
       name: "jdtls",
       command: "jdtls",
       args: [],
-      detectionMarkers: ["pom.xml", "build.gradle", ".project"]
+      detectionMarkers: ["pom.xml", "build.gradle", ".project"],
     },
     {
       name: "gopls",
       command: "gopls",
       args: [],
-      detectionMarkers: ["go.mod"]
+      detectionMarkers: ["go.mod"],
     },
     {
       name: "rust-analyzer",
       command: "rust-analyzer",
       args: [],
-      detectionMarkers: ["Cargo.toml"]
-    }
+      detectionMarkers: ["Cargo.toml"],
+    },
   ];
 
   /**
@@ -54,7 +54,7 @@ export class LspDetector {
   public static detectServer(workspaceRoot: string): LspServerConfig | null {
     for (const server of LspDetector.KNOWN_SERVERS) {
       const matched = server.detectionMarkers.some((marker) =>
-        fs.existsSync(path.join(workspaceRoot, marker))
+        fs.existsSync(path.join(workspaceRoot, marker)),
       );
       if (matched) {
         return server;
@@ -66,21 +66,29 @@ export class LspDetector {
   /**
    * Creates an ILspClient instance configured for the given workspace.
    */
-  public static createClient(workspaceRoot: string, customConfig?: Partial<LspServerConfig>): ILspClient {
+  public static createClient(
+    workspaceRoot: string,
+    customConfig?: Partial<LspServerConfig>,
+  ): ILspClient {
     const detected = customConfig?.name
-      ? LspDetector.KNOWN_SERVERS.find((s) => s.name === customConfig.name) || null
+      ? LspDetector.KNOWN_SERVERS.find((s) => s.name === customConfig.name) ||
+        null
       : LspDetector.detectServer(workspaceRoot);
 
     const name = customConfig?.name || detected?.name || "generic-lsp";
     const command = customConfig?.command || detected?.command || "npx";
-    const args = customConfig?.args || detected?.args || ["-y", "typescript-language-server", "--stdio"];
-    const initOptions = customConfig?.initializationOptions || detected?.initializationOptions || {};
+    const args = customConfig?.args ||
+      detected?.args || ["-y", "typescript-language-server", "--stdio"];
+    const initOptions =
+      customConfig?.initializationOptions ||
+      detected?.initializationOptions ||
+      {};
 
     const options: LspClientOptions = {
       workspaceRoot,
       serverCommand: command,
       serverArgs: args,
-      initializationOptions: initOptions
+      initializationOptions: initOptions,
     };
 
     return new LspProcessSupervisor(name, options);

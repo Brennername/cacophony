@@ -17,9 +17,13 @@ describe("GitCheckpointManager Pruning Suite", () => {
     tempRepo = await fs.mkdtemp(path.join(os.tmpdir(), "cacophony-cp-test-"));
     await execAsync("git init", { cwd: tempRepo });
     await execAsync('git config user.name "Test Runner"', { cwd: tempRepo });
-    await execAsync('git config user.email "test@example.com"', { cwd: tempRepo });
+    await execAsync('git config user.email "test@example.com"', {
+      cwd: tempRepo,
+    });
     await fs.writeFile(path.join(tempRepo, "initial.txt"), "hello", "utf-8");
-    await execAsync("git add . && git commit -m 'Initial commit'", { cwd: tempRepo });
+    await execAsync("git add . && git commit -m 'Initial commit'", {
+      cwd: tempRepo,
+    });
     manager = new GitCheckpointManager(tempRepo);
     assert.ok(manager);
   });
@@ -27,8 +31,14 @@ describe("GitCheckpointManager Pruning Suite", () => {
   test("should create and prune checkpoints by count", async () => {
     // Create 5 shadow checkpoints
     for (let i = 1; i <= 5; i++) {
-      await fs.writeFile(path.join(tempRepo, `file-${i}.txt`), `content ${i}`, "utf-8");
-      await execAsync(`git add . && git commit -m 'Commit ${i}'`, { cwd: tempRepo });
+      await fs.writeFile(
+        path.join(tempRepo, `file-${i}.txt`),
+        `content ${i}`,
+        "utf-8",
+      );
+      await execAsync(`git add . && git commit -m 'Commit ${i}'`, {
+        cwd: tempRepo,
+      });
       await manager.createCheckpoint(`task-${i}`, "stage", `Checkpoint ${i}`);
     }
 

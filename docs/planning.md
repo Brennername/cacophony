@@ -5,6 +5,7 @@
 > This document serves as the formal architectural bridge between long-term conceptual ideas ([`docs/future.md`](future.md)) and executable work phases in [`docs/taskcade.md`](taskcade.md).
 > Only features that have been explicitly selected and approved by the user for active design and implementation are documented here.
 > For each selected feature, the AI assistant must:
+>
 > 1. Formulate clear architectural designs, contracts, interfaces, and database schemas adhering to SOLID principles and strict typing.
 > 2. Break down the design into structured, numbered phases with atomic subtasks.
 > 3. Define explicit automated verification gates (unit, integration, and e2e tests).
@@ -15,6 +16,7 @@
 ## 1. Selected Features for Current Execution Era
 
 ### 1.1 Authentik & Authelia Enterprise SSO Provider Integration
+
 - **Objective**: Replace Gitea as identity provider with Authentik (OIDC/OAuth2) and provide adapter for Authelia.
 - **Architectural Scope**:
   - Container compose definitions for Authentik server, worker, and Redis cache.
@@ -23,6 +25,7 @@
 - **Assigned Taskcade Phase**: Phase 17 (`spec:AuthentikArchitecture`, `spec:AuthentikOnboarding`).
 
 ### 1.2 Full-Stack Real Data Pipeline & Elimination of Mocks
+
 - **Objective**: Purge all hardcoded mock signals (`ArenaStateStore`, `HistoryMetricsService`, `RepoMapViewerComponent`, `CheckpointTimelineComponent`, `LspTestLoopPanelComponent`) and wire 100% of data flow to real database repositories and sysfs sensor streams.
 - **Architectural Scope**:
   - Dedicated Angular data services (`TaskApiService`, `ProcessMonitorService`, `TelemetryStreamService`, `HistoryApiService`, `RepoMapApiService`, `GitCheckpointApiService`).
@@ -31,6 +34,7 @@
 - **Assigned Taskcade Phase**: Phase 18 (`spec:EliminateFrontendMocks`, `spec:BackendApiExpansion`).
 
 ### 1.3 Network-Agnostic URL Resolution & Multi-Device Access
+
 - **Objective**: Support access from any device (phone over Wi-Fi LAN, VPN, reverse proxy domain) without hardcoding `localhost`.
 - **Architectural Scope**:
   - Host header inspection (`X-Forwarded-Host`, `Host`) dynamically formatting redirect URIs and API endpoints.
@@ -38,6 +42,7 @@
 - **Assigned Taskcade Phase**: Phase 19 (`spec:DynamicHostResolution`).
 
 ### 1.4 Mobile-First Routed Navigation & High-Density Desktop Layout
+
 - **Objective**: Replace monolithic single-page forever-scroll with modular Angular child routing (`/dashboard`, `/queue`, `/history`, `/models`, `/repomap`, `/processes`, `/settings`), mobile slide-out drawer, mobile bottom navigation bar, and dense auto-fitting desktop grid.
 - **Architectural Scope**:
   - Angular Router configuration with standalone lazy-loaded view components.
@@ -46,6 +51,7 @@
 - **Assigned Taskcade Phase**: Phase 20 (`spec:AngularRouting`, `spec:DesktopGridOptimization`).
 
 ### 1.5 Real-Time Task Progress, Granular Stages & Gantt Transport
+
 - **Objective**: Granular multi-stage progress tracking (`1/7 Planning` through `7/7 PR Review`) with progress bars, intra-stage token velocity, and Gantt timeline.
 - **Architectural Scope**:
   - Segmented progress bar components and intra-stage token velocity gauges.
@@ -53,6 +59,7 @@
 - **Assigned Taskcade Phase**: Phase 21 (`spec:MultiLevelProgress`, `spec:GanttTransportTimeline`).
 
 ### 1.6 Historical Failure Taxonomy & Area-Under-Curve (AOC) Visualizations
+
 - **Objective**: Deterministic error categorization and KDE System Monitor aesthetic multi-series trend lines with shaded area-under-curve visualizations.
 - **Architectural Scope**:
   - `FailureClassifier` mapping errors to normalized categories (`SYNTAX_ERROR`, `TEST_ASSERTION_FAILURE`, etc.).
@@ -60,6 +67,7 @@
 - **Assigned Taskcade Phase**: Phase 22 (`spec:FailureTaxonomy`, `spec:AocCharts`).
 
 ### 1.7 AST Code Signature Compression & Mechanistic Interface Enforcement
+
 - **Objective**: Maximize local model first-pass success rate by extracting deep AST signature maps, exposing queryable MCP tools, and mechanistically aligning hallucinations before test execution.
 - **Architectural Scope**:
   - `SignatureHarvester` extracting compact type shapes and constructor overloads across TypeScript, Java, and Go.
@@ -68,6 +76,7 @@
 - **Assigned Taskcade Phase**: Phase 23 (`spec:SignatureMapExtraction`, `spec:MechanisticCorrection`).
 
 ### 1.8 Distributed Multi-Node Fleet Architecture & Hardware Profiling
+
 - **Objective**: Multi-machine coordinator/worker cluster with automated hardware profiling across NVIDIA, modern AMD RDNA, and Apple Silicon nodes.
 - **Architectural Scope**:
   - `FleetMasterCoordinator` scheduling tasks across remote worker daemons over persistent WebSockets.
@@ -76,6 +85,7 @@
 - **Assigned Taskcade Phase**: Phase 24 (`spec:FleetTopology`, `spec:HardwareProfiling`).
 
 ### 1.9 Composable Deterministic Repair Rule DSL & Pipeline Chaining
+
 - **Objective**: Provide a fully whiteboxed, declarative Domain-Specific Language (DSL) and execution engine for deterministic code repairs, mitigations, and validations. Rules can be toggled on/off, parameterized, sequenced into pipelines, and assigned distinct severity levels (`silent_repair`, `soft_warning`, `hard_rejection`, `disabled`). Prevents over-aggressive deterministic mitigations from rejecting workable LLM code and driving up false failure rates.
 - **Architectural Scope**:
   - Declarative DSL syntax (supporting both JSON/YAML declarative AST and human-readable pipeline script format).
@@ -85,6 +95,7 @@
 - **Assigned Taskcade Phase**: Phase 25 (`spec:RuleDslArchitecture`, `spec:CoreRuleCatalog`, `spec:PipelineExecutionEngine`).
 
 ### 1.10 Historical Arena Telemetry Ingestion & Versioned Dataset Import
+
 - **Objective**: Import and normalize historical empirical arena telemetry from versioned dataset archives (`data/arena/` containing historical task runs, postmortems, lineage trees, and patch diffs) into clean, typed Cacophony database schemas. Decouple Cacophony entirely from external legacy project directories while leveraging empirical data across schema versions to seed hyperparameter searches.
 - **Architectural Scope**:
   - `HistoricalArenaIngestionAdapter`: Safely parses dataset archives across schema versions (`v1.0.0` legacy format without manifest, and `v2.0.0` canonical specification containing `manifest.json`), reading `stats.json`, `completed/`, `failed/`, `exhausted/`, and `postmortems/`.
@@ -93,6 +104,7 @@
 - **Assigned Taskcade Phase**: Phase 26 (`spec:HistoricalArenaIngestion`, `spec:MitigationParadoxAnalyzer`).
 
 ### 1.11 Stochastic Hyperparameter Optimization Engine for Rule Pipelines
+
 - **Objective**: Run stochastic optimization (Random Search, Bayesian Optimization via Gaussian Process surrogate, and Genetic Pipeline Mutation) across rule selections, parameter thresholds, and sequencing order to discover optimal configurations that maximize test pass rates while minimizing false rejections and token overhead.
 - **Architectural Scope**:
   - Search Space Specification: Discrete toggles (enabled/disabled), categorical severity (`silent_repair` vs `hard_rejection`), and continuous thresholds (timeout ms, AST max complexity, AST signature similarity threshold).
@@ -102,6 +114,7 @@
 - **Assigned Taskcade Phase**: Phase 26 (`spec:HyperparameterOptimizationEngine`).
 
 ### 1.12 Autonomous Hardware Feature Discovery & Whitebox Ollama Tuning
+
 - **Objective**: Dynamically detect host GPU/APU compute capabilities using native Linux sysfs and system utilities (`lshw`, `lspci`, `lsusb`, `rocminfo`, `vulkaninfo`, `nvidia-smi`), generate whitebox systemd service overrides for Ollama, and establish tailored hardware profiles with primary optimization for the AMD Vega APU setup and full portability for NVIDIA, modern AMD RDNA, Intel Arc, and Apple Silicon.
 - **Architectural Scope**:
   - Multi-tier hardware scanner probing `/sys/class/drm`, `/sys/class/kfd`, `/proc/cpuinfo`, PCI vendor IDs (`0x1002` AMD, `0x10de` NVIDIA, `0x8086` Intel), unified memory aperture, and compute ring watchdog timeouts.
@@ -115,6 +128,7 @@
 - **Assigned Taskcade Phase**: Phase 27 (`spec:HardwareProbingEngine`, `spec:OllamaWhiteboxTuning`, `spec:HardwareBenchmarking`).
 
 ### 1.13 Stochastic Exploration Scheduler & Multi-Armed Bandit Model Selection
+
 - **Objective**: Prevent local minima in task scheduling by introducing an epsilon-greedy ($\epsilon \approx 0.10 - 0.15$) and Upper Confidence Bound (UCB-1 / Thompson Sampling) bandit dispatcher that periodically samples exploratory configurations (e.g. larger context windows like 8k/16k, non-default models assigned to roles, alternative sampling temperatures) to collect empirical telemetry and dynamically promote successful candidates on retries and future tasks.
 - **Architectural Scope**:
   - Epsilon-Greedy Exploration Policy: $P(\text{explore}) = \epsilon$, uniformly or softmax-sampling from qualified candidate models and extended context tiers; $P(\text{exploit}) = 1 - \epsilon$, selecting the highest-ranked model from historical leaderboard.
@@ -122,7 +136,9 @@
   - Bayesian Win-Rate Updater: Continuously adjusts posterior distribution $Beta(\alpha + \text{wins}, \beta + \text{losses})$ per model-role pair, rewarding verified code generation (+1.0) and penalizing crash/timeout (-1.0).
   - Dynamic Retry Routing: Escalates failed tasks along an empirical decision tree informed by bandit affinity scores rather than hardcoded fallbacks.
   - Mobile-First Telemetry UI: Angular widgets displaying exploration rate controls, Thompson sampling confidence intervals, and Pareto-frontier scatter plots.
+
 ### 1.14 Dynamic Ollama Model Lifecycle Management & Multi-Tenant Hardware Adaptation
+
 - **Objective**: Provide automated control of Ollama model selection, benchmarking candidate models, pulling new models, and evicting underperforming models based on hardware profile, while strictly enforcing user tenancy guardrails and whitelist protections.
 - **Architectural Scope**:
   - `OllamaModelManager`: Communicates directly with the Ollama REST engine (`/api/tags`, `/api/pull`, `/api/delete`, `/api/show`).
@@ -132,6 +148,7 @@
 - **Assigned Taskcade Phase**: Phase 75 (`spec:OllamaModelManager`, `spec:ModelTenancyGuard`, `spec:ModelBenchmarkRunner`).
 
 ### 1.15 Frontend Model Fleet Manager, Download Terminal & Tenancy Controls
+
 - **Objective**: Transform the models view (`/models`) into an interactive Fleet Management Console allowing operators to inspect installed models, trigger new downloads with real-time piped terminal logs, manage eviction policies, and configure tenancy protections.
 - **Architectural Scope**:
   - Installed Model Grid: Hardware suitability badges, parameter count, quantization, memory footprint, and protected tenancy pills.
@@ -140,6 +157,7 @@
 - **Assigned Taskcade Phase**: Phase 76 (`spec:ModelFleetConsole`, `spec:ModelPullTerminal`, `spec:TenancyConfigPanel`).
 
 ### 1.16 Reasoning Model `<think>` Stream Separation, Distillation & Opinion Synthesis
+
 - **Objective**: Segregate raw `<think>...</think>` cognitive traces from executable code output in real-time, distill the reasoning into atomic opinions, and provide differentiated frontend views and prompt engineering tailored per model archetype.
 - **Architectural Scope**:
   - `ReasoningStreamDemuxer`: Dual-channel stateful parser demuxing streaming tokens into `reasoning_chunk` and `code_chunk` events.
@@ -149,6 +167,7 @@
 - **Assigned Taskcade Phase**: Phase 77 (`spec:ReasoningStreamDemuxer`, `spec:ReasoningDistillation`, `spec:DifferentiatedModelViews`).
 
 ### 1.17 End-to-End In-House Pull Request Lifecycle & Review Pipeline (Gitea + GitHub Compatibility)
+
 - **Objective**: Establish a complete in-house pull request and review workflow operating in ephemeral git worktrees with cross-platform support for both Gitea (local self-hosted) and GitHub (remote/enterprise), complete with automated PR code reviews and merge gates.
 - **Architectural Scope**:
   - `IGitPlatformProvider`: Unified abstraction supporting branch creation, pull request publication, review submission, and automated merging across Gitea and GitHub.
@@ -159,16 +178,18 @@
 
 ---
 
-
 ## 2. Core Architectural Interfaces & Contracts
 
 ### 2.1 Rule DSL & Execution Contracts
+
 ```typescript
 /** Severity level governing rule evaluation outcome */
-export type RuleSeverity = "silent_repair" | "soft_warning" | "hard_rejection" | "disabled";
+export type RuleSeverity =
+  "silent_repair" | "soft_warning" | "hard_rejection" | "disabled";
 
 /** Lifecycle execution phases where rules can intercept */
-export type RuleLifecycleHook = "pre_generation" | "post_generation" | "pre_test" | "post_test";
+export type RuleLifecycleHook =
+  "pre_generation" | "post_generation" | "pre_test" | "post_test";
 
 /** Context passed into rule evaluation */
 export interface RuleEvaluationContext {
@@ -207,7 +228,10 @@ export interface IRepairRule {
   readonly description: string;
   readonly hook: RuleLifecycleHook;
   readonly defaultSeverity: RuleSeverity;
-  evaluate(context: RuleEvaluationContext, options: Readonly<Record<string, unknown>>): Promise<RuleExecutionResult>;
+  evaluate(
+    context: RuleEvaluationContext,
+    options: Readonly<Record<string, unknown>>,
+  ): Promise<RuleExecutionResult>;
 }
 
 /** Composable pipeline definition */
@@ -227,8 +251,10 @@ export interface IRulePipeline {
 ```
 
 ### 2.2 Hardware Discovery & Ollama Tuning Contracts
+
 ```typescript
-export type ComputeHardwareVendor = "amd" | "nvidia" | "intel" | "apple" | "tpu" | "cpu_only";
+export type ComputeHardwareVendor =
+  "amd" | "nvidia" | "intel" | "apple" | "tpu" | "cpu_only";
 
 export interface ComputeDeviceCandidate {
   readonly pciAddress: string;
@@ -238,7 +264,9 @@ export interface ComputeDeviceCandidate {
   readonly vramBytes: number;
   readonly isApu: boolean;
   readonly isPrimaryDisplay: boolean;
-  readonly computeBackendsSupported: readonly ("vulkan" | "rocm" | "cuda" | "metal" | "tpu" | "cpu")[];
+  readonly computeBackendsSupported: readonly (
+    "vulkan" | "rocm" | "cuda" | "metal" | "tpu" | "cpu"
+  )[];
 }
 
 export interface HardwareDiscoveryReport {
@@ -260,12 +288,18 @@ export interface OllamaEnvironmentOverride {
 ```
 
 ### 2.3 Stochastic Hyperparameter Search & Exploration Contracts
+
 ```typescript
 export interface RuleHyperparameterSearchSpace {
   readonly pipelineId: string;
   readonly ruleToggles: Readonly<Record<string, readonly boolean[]>>;
   readonly ruleSeverities: Readonly<Record<string, readonly RuleSeverity[]>>;
-  readonly numericParameters: Readonly<Record<string, { readonly min: number; readonly max: number; readonly step: number }>>;
+  readonly numericParameters: Readonly<
+    Record<
+      string,
+      { readonly min: number; readonly max: number; readonly step: number }
+    >
+  >;
 }
 
 export interface HyperparameterOptimizationCandidate {
@@ -281,7 +315,7 @@ export interface BanditModelOption {
   readonly role: string;
   readonly contextTierTokens: number;
   readonly alpha: number; // Beta distribution wins
-  readonly beta: number;  // Beta distribution losses
+  readonly beta: number; // Beta distribution losses
   readonly totalTrials: number;
   readonly averageTokensPerSecond: number;
 }
@@ -332,7 +366,8 @@ export interface NuusTelemetryReport {
   readonly affectedComponentRoute: string;
   readonly correlatedAstNode?: string;
   readonly anonymizedActionPattern: readonly string[];
-  readonly policyComplianceStatus: "COMPLIANT" | "REMEDIATION_REQUIRED" | "GUARDRAIL_BLOCKED";
+  readonly policyComplianceStatus:
+    "COMPLIANT" | "REMEDIATION_REQUIRED" | "GUARDRAIL_BLOCKED";
 }
 ```
 
@@ -405,15 +440,28 @@ export interface PullRequestRecord {
 export interface IGitPlatformProvider {
   readonly providerName: "gitea" | "github";
   createBranch(branchName: string, baseSha: string): Promise<void>;
-  openPullRequest(title: string, body: string, headBranch: string, baseBranch: string): Promise<PullRequestRecord>;
-  submitReview(prNumber: number, verdict: "APPROVE" | "REQUEST_CHANGES" | "COMMENT", commentBody: string): Promise<void>;
-  mergePullRequest(prNumber: number, method: "merge" | "squash" | "rebase"): Promise<boolean>;
+  openPullRequest(
+    title: string,
+    body: string,
+    headBranch: string,
+    baseBranch: string,
+  ): Promise<PullRequestRecord>;
+  submitReview(
+    prNumber: number,
+    verdict: "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
+    commentBody: string,
+  ): Promise<void>;
+  mergePullRequest(
+    prNumber: number,
+    method: "merge" | "squash" | "rebase",
+  ): Promise<boolean>;
 }
 ```
 
 ---
 
 ### 1.13 Multi-Stage Staging (Gitea) to Production (GitHub) Promotion Gate & Batched Promotion Pipeline
+
 - **Objective**: Establish an automated quarantine gate and release promotion pipeline that bridges local Gitea (staging/testing) to public GitHub (production). Replaces fragmented single-file PR pushes with cohesive, semantically versioned milestone releases and verified bug fix PRs.
 - **Architectural Scope**:
   - Full Monorepo Compilation Gate: Validates `@cacophony/shared-types`, `@cacophony/db`, `@cacophony/tools`, `@cacophony/engine`, and `@cacophony/frontend` build cleanly without errors before any upstream push.
@@ -425,6 +473,7 @@ export interface IGitPlatformProvider {
 ---
 
 ### 1.14 Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine
+
 - **Objective**: Implement the Autonomous Software Factory pipeline allowing operators to drop in raw project specification files (`docs/spec.md`, `README.md`, or architecture diagrams) and have the system autonomously derive data schemas, SOLID architectural contracts, acceptance criteria, and atomic taskcade task lists.
 - **Architectural Scope**:
   - `ProjectSpecIngestionService`: Ingests markdown, OpenAPI, and code files to build functional requirement models.
@@ -435,6 +484,7 @@ export interface IGitPlatformProvider {
 ---
 
 ### 1.15 Arena Telemetry Epoching & Clean-Slate Model Health Reset Engine
+
 - **Objective**: Provide a mathematical epoching system separating dirty bootstrap failure statistics from active operational telemetry. Allows resetting model health counters to clean baselines while preserving all historical trials for postmortems and bandit retraining.
 - **Architectural Scope**:
   - Migration 015 (`015_arena_epochs.ts`): Tables `arena_epochs` and `model_health_epoch_history`.
@@ -446,6 +496,7 @@ export interface IGitPlatformProvider {
 ---
 
 ### 1.16 Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine
+
 - **Objective**: Enable decentralized community contributors with diverse GPU hardware (NVIDIA CUDA, Apple Silicon Metal, AMD ROCm, Intel Arc, and CPU-only) to run Cacophony out-of-the-box with auto-sized contexts and quantization profiles.
 - **Architectural Scope**:
   - Universal `IHardwareTelemetryProvider` abstraction: Vendor-specific detectors for NVML, ROCm SMI, macOS `powermetrics`, and Level-Zero.
@@ -456,6 +507,7 @@ export interface IGitPlatformProvider {
 ---
 
 ### 1.17 Auto-Mode Loop Hardening & Bi-Directional GitHub Issue Sync
+
 - **Objective**: Defocus manual Build and Plan modes and harden Auto Mode so the arena operates 24/7 autonomously without human intervention. Synchronizes public GitHub issues directly into the local execution queue and returns verified pull requests.
 - **Architectural Scope**:
   - Auto Loop Supervisor: Recovers from unhandled process exceptions, monitors thermal limits, and re-enqueues stalled tasks automatically.
@@ -466,6 +518,7 @@ export interface IGitPlatformProvider {
 ---
 
 ### 1.18 Multi-Window Convergence Analytics, Git Regression Pinpointing & Plateau Intervention Dispatcher
+
 - **Objective**: Establish flexible sliding-window success analytics, discrete derivative calculus for convergence and plateau detection, automated correlation of failure windows with git commit hashes, and priority regression remediation agent dispatching.
 - **Architectural Scope**:
   - `RollingWindowAnalyticsService`: Configurable sliding windows (10, 20, 50, 100, 1000, capped at total qualified tasks; minimum N >= 2 or 3 tasks) across contiguous time-series or multi-dimensional qualifications (role, model, commit).
@@ -477,6 +530,7 @@ export interface IGitPlatformProvider {
 ---
 
 ### 1.19 Bounded Code Generation & Structural Preservation
+
 - **Objective**: Keep model output proportional to the requested change. Large or multi-method files must be decomposed into symbol-scoped context and changed through syntax-aware, bounded edits that preserve unrelated code.
 - **Generation Contract**:
   - Index the target file into symbols, scopes, signatures, references, imports, and state dependencies. Supply the target implementation with its required contracts and relevant call edges, not unrelated sibling bodies.
@@ -488,6 +542,7 @@ export interface IGitPlatformProvider {
 - **Assigned Taskcade Phase**: Phase 88, Tasks T88.5–T88.6.
 
 ### 1.20 Independent PR Assessment, Queued Fixes & Review Evidence
+
 - **Objective**: End implementation runs after a verified PR is published. Assess that PR in separate queue work, preserve reviewer evidence, and route requested changes through a new fix task and a later independent assessment round.
 - **Lifecycle Contract**:
   1. The implementation task builds, tests, and publishes a PR. Its task record completes and does not continue into an assessment or repair loop.

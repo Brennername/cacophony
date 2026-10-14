@@ -28,7 +28,7 @@ export class RuleBacktestRunner {
    */
   public async runBacktest(
     pipeline: RulePipelineDeclaration,
-    tasks: readonly HistoricalTaskRecord[]
+    tasks: readonly HistoricalTaskRecord[],
   ): Promise<BacktestSimulationSummary> {
     let passedCount = 0;
     let rejectedCount = 0;
@@ -38,7 +38,9 @@ export class RuleBacktestRunner {
     for (const task of tasks) {
       // Simulate file content from patch or synthetic content
       const fakeFilePath = task.focusFiles || "src/index.ts";
-      const fileContent = task.patchContent || `// Simulated task content for ${task.id}\nimport { log } from "conductor";\n`;
+      const fileContent =
+        task.patchContent ||
+        `// Simulated task content for ${task.id}\nimport { log } from "conductor";\n`;
 
       const context: RuleEvaluationContext = {
         projectRoot: "/tmp/arena_backtest",
@@ -48,7 +50,11 @@ export class RuleBacktestRunner {
         simulate: true,
       };
 
-      const outcome = await this.engine.executePipelineHook(pipeline, "post_generation", context);
+      const outcome = await this.engine.executePipelineHook(
+        pipeline,
+        "post_generation",
+        context,
+      );
       totalLatency += outcome.durationMs;
 
       if (outcome.passed) {
@@ -61,8 +67,10 @@ export class RuleBacktestRunner {
     }
 
     const totalReplayed = tasks.length;
-    const passRatePct = totalReplayed > 0 ? (passedCount / totalReplayed) * 100 : 0;
-    const averageRuleLatencyMs = totalReplayed > 0 ? totalLatency / totalReplayed : 0;
+    const passRatePct =
+      totalReplayed > 0 ? (passedCount / totalReplayed) * 100 : 0;
+    const averageRuleLatencyMs =
+      totalReplayed > 0 ? totalLatency / totalReplayed : 0;
 
     return {
       totalReplayed,

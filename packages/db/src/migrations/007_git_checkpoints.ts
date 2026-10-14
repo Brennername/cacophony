@@ -38,5 +38,5 @@ export const migration007: Migration = {
     await driver.execRaw(`
       DROP TABLE IF EXISTS git_checkpoints;
     `);
-  }
+  },
 };

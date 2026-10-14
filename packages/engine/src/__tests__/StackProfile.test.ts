@@ -4,9 +4,16 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { StackDetector } from "../scheduler/stack/StackDetector.js";
-import { DEFAULT_STACK_PROFILES, GENERIC_STACK_PROFILE } from "../scheduler/stack/defaultProfiles.js";
+import {
+  DEFAULT_STACK_PROFILES,
+  GENERIC_STACK_PROFILE,
+} from "../scheduler/stack/defaultProfiles.js";
 import { QueueGroomer } from "../scheduler/QueueGroomer.js";
-import { PGliteDriver, MigrationRunner, StackProfileRepository } from "@cacophony/db";
+import {
+  PGliteDriver,
+  MigrationRunner,
+  StackProfileRepository,
+} from "@cacophony/db";
 import type { TaskRecord } from "@cacophony/shared-types";
 
 describe("Stack & Skill Instruction Profile System", () => {
@@ -20,9 +27,12 @@ describe("Stack & Skill Instruction Profile System", () => {
     test("should detect typescript-nodenext profile when tsconfig has NodeNext", () => {
       const tsDir = path.join(tempDir, "ts-project");
       fs.mkdirSync(tsDir, { recursive: true });
-      fs.writeFileSync(path.join(tsDir, "tsconfig.json"), JSON.stringify({
-        compilerOptions: { moduleResolution: "NodeNext" }
-      }));
+      fs.writeFileSync(
+        path.join(tsDir, "tsconfig.json"),
+        JSON.stringify({
+          compilerOptions: { moduleResolution: "NodeNext" },
+        }),
+      );
 
       const detector = new StackDetector();
       const detected = detector.detect(tsDir);
@@ -45,7 +55,10 @@ describe("Stack & Skill Instruction Profile System", () => {
     test("should detect go profile when go.mod is present", () => {
       const goDir = path.join(tempDir, "go-project");
       fs.mkdirSync(goDir, { recursive: true });
-      fs.writeFileSync(path.join(goDir, "go.mod"), "module example.com/app\ngo 1.22");
+      fs.writeFileSync(
+        path.join(goDir, "go.mod"),
+        "module example.com/app\ngo 1.22",
+      );
 
       const detector = new StackDetector();
       const detected = detector.detect(goDir);
@@ -65,13 +78,16 @@ describe("Stack & Skill Instruction Profile System", () => {
 
   describe("QueueGroomer Stack-Aware Directives & Test Scoping", () => {
     test("should dynamically inject Java directives and test runner for Maven task", () => {
-      const mavenProfile = DEFAULT_STACK_PROFILES.find((p) => p.id === "java-maven")!;
+      const mavenProfile = DEFAULT_STACK_PROFILES.find(
+        (p) => p.id === "java-maven",
+      )!;
       const groomer = new QueueGroomer();
 
       const task: TaskRecord = {
         id: "task-java-1",
         title: "Build Order Service",
-        prompt: "Create OrderService in order-service/src/main/java/OrderService.java",
+        prompt:
+          "Create OrderService in order-service/src/main/java/OrderService.java",
         role: "implementer",
         status: "PENDING",
         priority: "P1",
@@ -83,7 +99,7 @@ describe("Stack & Skill Instruction Profile System", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task, { stackProfile: mavenProfile });
@@ -112,13 +128,15 @@ describe("Stack & Skill Instruction Profile System", () => {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       };
 
       const groomed = groomer.groom(task, { stackProfile: rustProfile });
       assert.equal(groomed.stackProfile.id, "rust");
       assert.equal(groomed.scopedTestCommand, "cargo test");
-      assert.ok(groomed.enrichedPrompt.includes("Rust Idioms: Strict ownership"));
+      assert.ok(
+        groomed.enrichedPrompt.includes("Rust Idioms: Strict ownership"),
+      );
     });
   });
 
@@ -142,8 +160,8 @@ describe("Stack & Skill Instruction Profile System", () => {
         defaultTestRunner: "poetry run pytest",
         dataJson: JSON.stringify({
           directives: ["FastAPI async endpoints", "Pydantic v2 validation"],
-          markers: [{ file: "pyproject.toml" }]
-        })
+          markers: [{ file: "pyproject.toml" }],
+        }),
       };
 
       await repo.save(customProfile);

@@ -59,7 +59,7 @@ export class ContractSynthesizer {
     const lines: string[] = [
       'import { z } from "zod";',
       "",
-      `export const ${schema.name}Schema = z.object({`
+      `export const ${schema.name}Schema = z.object({`,
     ];
 
     for (const field of schema.fields) {
@@ -92,7 +92,9 @@ export class ContractSynthesizer {
 
     lines.push("});");
     lines.push("");
-    lines.push(`export type ${schema.name} = z.infer<typeof ${schema.name}Schema>;`);
+    lines.push(
+      `export type ${schema.name} = z.infer<typeof ${schema.name}Schema>;`,
+    );
     lines.push("");
     return lines.join("\n");
   }
@@ -102,11 +104,11 @@ export class ContractSynthesizer {
    */
   public synthesizeMigration(
     schema: ModelSchemaContract,
-    dialect: "postgres" | "sqlite" = "postgres"
+    dialect: "postgres" | "sqlite" = "postgres",
   ): string {
     const lines: string[] = [
       `-- Migration for ${schema.tableName}`,
-      `CREATE TABLE IF NOT EXISTS ${schema.tableName} (`
+      `CREATE TABLE IF NOT EXISTS ${schema.tableName} (`,
     ];
 
     const colDefs: string[] = [];
@@ -132,8 +134,13 @@ export class ContractSynthesizer {
 
     // Indexes
     for (const field of schema.fields) {
-      if (!field.isPrimary && (field.name.endsWith("_id") || field.name === "status")) {
-        lines.push(`CREATE INDEX IF NOT EXISTS idx_${schema.tableName}_${field.name} ON ${schema.tableName}(${field.name});`);
+      if (
+        !field.isPrimary &&
+        (field.name.endsWith("_id") || field.name === "status")
+      ) {
+        lines.push(
+          `CREATE INDEX IF NOT EXISTS idx_${schema.tableName}_${field.name} ON ${schema.tableName}(${field.name});`,
+        );
       }
     }
 
@@ -143,8 +150,16 @@ export class ContractSynthesizer {
   /**
    * Validates synthesized contract code for TypeScript syntactic validity.
    */
-  public validateAgainstWorkspace(contractCode: string): ContractValidationResult {
-    const sourceFile = ts.createSourceFile("contract.ts", contractCode, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  public validateAgainstWorkspace(
+    contractCode: string,
+  ): ContractValidationResult {
+    const sourceFile = ts.createSourceFile(
+      "contract.ts",
+      contractCode,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
     const errors: string[] = [];
 
     // Check for obvious syntax diagnostics in AST
@@ -158,38 +173,57 @@ export class ContractSynthesizer {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
   private mapFieldToTsType(type: FieldType): string {
     switch (type) {
-      case "string": return "string";
-      case "number": return "number";
-      case "boolean": return "boolean";
-      case "date": return "string";
-      case "json": return "Record<string, unknown>";
-      default: return "unknown";
+      case "string":
+        return "string";
+      case "number":
+        return "number";
+      case "boolean":
+        return "boolean";
+      case "date":
+        return "string";
+      case "json":
+        return "Record<string, unknown>";
+      default:
+        return "unknown";
     }
   }
 
-  private mapFieldToSqlType(type: FieldType, dialect: "postgres" | "sqlite"): string {
+  private mapFieldToSqlType(
+    type: FieldType,
+    dialect: "postgres" | "sqlite",
+  ): string {
     if (dialect === "sqlite") {
       switch (type) {
-        case "string": return "TEXT";
-        case "number": return "INTEGER";
-        case "boolean": return "INTEGER";
-        case "date": return "TEXT";
-        case "json": return "TEXT";
+        case "string":
+          return "TEXT";
+        case "number":
+          return "INTEGER";
+        case "boolean":
+          return "INTEGER";
+        case "date":
+          return "TEXT";
+        case "json":
+          return "TEXT";
       }
     }
 
     switch (type) {
-      case "string": return "VARCHAR(255)";
-      case "number": return "BIGINT";
-      case "boolean": return "BOOLEAN";
-      case "date": return "TIMESTAMPTZ";
-      case "json": return "JSONB";
+      case "string":
+        return "VARCHAR(255)";
+      case "number":
+        return "BIGINT";
+      case "boolean":
+        return "BOOLEAN";
+      case "date":
+        return "TIMESTAMPTZ";
+      case "json":
+        return "JSONB";
     }
   }
 }

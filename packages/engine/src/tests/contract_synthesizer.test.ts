@@ -15,8 +15,8 @@ test("ContractSynthesizer Suite (T81.3)", async (t) => {
       { name: "token_hash", type: "string" as const },
       { name: "is_active", type: "boolean" as const, defaultValue: "true" },
       { name: "created_at", type: "date" as const },
-      { name: "metadata", type: "json" as const, isNullable: true }
-    ]
+      { name: "metadata", type: "json" as const, isNullable: true },
+    ],
   };
 
   await t.test("should synthesize valid TypeScript interface", () => {
@@ -36,16 +36,23 @@ test("ContractSynthesizer Suite (T81.3)", async (t) => {
     assert.ok(zodCode.includes("metadata: z.record(z.unknown()).optional()"));
   });
 
-  await t.test("should synthesize dialect-agnostic PostgreSQL and SQLite migrations", () => {
-    const pgSql = synthesizer.synthesizeMigration(userModel, "postgres");
-    assert.ok(pgSql.includes("CREATE TABLE IF NOT EXISTS user_sessions ("));
-    assert.ok(pgSql.includes("id VARCHAR(255) PRIMARY KEY"));
-    assert.ok(pgSql.includes("is_active BOOLEAN NOT NULL DEFAULT true"));
-    assert.ok(pgSql.includes("metadata JSONB"));
-    assert.ok(pgSql.includes("CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);"));
+  await t.test(
+    "should synthesize dialect-agnostic PostgreSQL and SQLite migrations",
+    () => {
+      const pgSql = synthesizer.synthesizeMigration(userModel, "postgres");
+      assert.ok(pgSql.includes("CREATE TABLE IF NOT EXISTS user_sessions ("));
+      assert.ok(pgSql.includes("id VARCHAR(255) PRIMARY KEY"));
+      assert.ok(pgSql.includes("is_active BOOLEAN NOT NULL DEFAULT true"));
+      assert.ok(pgSql.includes("metadata JSONB"));
+      assert.ok(
+        pgSql.includes(
+          "CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);",
+        ),
+      );
 
-    const sqliteSql = synthesizer.synthesizeMigration(userModel, "sqlite");
-    assert.ok(sqliteSql.includes("id TEXT PRIMARY KEY"));
-    assert.ok(sqliteSql.includes("is_active INTEGER NOT NULL DEFAULT true"));
-  });
+      const sqliteSql = synthesizer.synthesizeMigration(userModel, "sqlite");
+      assert.ok(sqliteSql.includes("id TEXT PRIMARY KEY"));
+      assert.ok(sqliteSql.includes("is_active INTEGER NOT NULL DEFAULT true"));
+    },
+  );
 });

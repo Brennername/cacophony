@@ -1,7 +1,7 @@
 import type {
   InferenceRequest,
   InferenceResponse,
-  InferenceProviderType
+  InferenceProviderType,
 } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 import { ProviderCircuitBreaker, TokenQuotaTracker } from "./CircuitBreaker.js";
@@ -30,7 +30,10 @@ export class FrontierFallbackRouter implements IInferenceProvider {
   private readonly quotaTracker: TokenQuotaTracker;
   private readonly localFallbackModel: string;
 
-  constructor(localFallbackModel = "deepseek-r1:8b", quotaTracker?: TokenQuotaTracker) {
+  constructor(
+    localFallbackModel = "deepseek-r1:8b",
+    quotaTracker?: TokenQuotaTracker,
+  ) {
     this.localFallbackModel = localFallbackModel;
     this.quotaTracker = quotaTracker ?? new TokenQuotaTracker();
   }
@@ -39,24 +42,36 @@ export class FrontierFallbackRouter implements IInferenceProvider {
     this.providers.push(entry);
     this.providers.sort((a, b) => a.priority - b.priority);
     if (!this.circuitBreakers.has(entry.providerType)) {
-      this.circuitBreakers.set(entry.providerType, new ProviderCircuitBreaker());
+      this.circuitBreakers.set(
+        entry.providerType,
+        new ProviderCircuitBreaker(),
+      );
     }
   }
 
   public getProviderType(): InferenceProviderType {
-    return (this.providers[0]?.providerType ?? "ollama") as InferenceProviderType;
+    return (this.providers[0]?.providerType ??
+      "ollama") as InferenceProviderType;
   }
 
   public getQuotaTracker(): TokenQuotaTracker {
     return this.quotaTracker;
   }
 
-  public getCircuitBreaker(providerType: string): ProviderCircuitBreaker | undefined {
+  public getCircuitBreaker(
+    providerType: string,
+  ): ProviderCircuitBreaker | undefined {
     return this.circuitBreakers.get(providerType);
   }
 
-  public getAllCircuitStatus(): Record<string, ReturnType<ProviderCircuitBreaker["getSnapshot"]>> {
-    const status: Record<string, ReturnType<ProviderCircuitBreaker["getSnapshot"]>> = {};
+  public getAllCircuitStatus(): Record<
+    string,
+    ReturnType<ProviderCircuitBreaker["getSnapshot"]>
+  > {
+    const status: Record<
+      string,
+      ReturnType<ProviderCircuitBreaker["getSnapshot"]>
+    > = {};
     for (const [k, cb] of this.circuitBreakers.entries()) {
       status[k] = cb.getSnapshot();
     }
@@ -71,7 +86,7 @@ export class FrontierFallbackRouter implements IInferenceProvider {
       if (breaker && !breaker.canExecute()) {
         errors.push({
           provider: entry.providerType,
-          error: `Circuit breaker is ${breaker.getState()}`
+          error: `Circuit breaker is ${breaker.getState()}`,
         });
         continue;
       }
@@ -82,7 +97,7 @@ export class FrontierFallbackRouter implements IInferenceProvider {
         this.quotaTracker.recordUsage(
           entry.providerType,
           response.tokensPrompt,
-          response.tokensCompletion
+          response.tokensCompletion,
         );
         return response;
       } catch (err: unknown) {
@@ -100,13 +115,13 @@ export class FrontierFallbackRouter implements IInferenceProvider {
     }
 
     throw new Error(
-      `All inference providers failed or circuits open. Fallback attempted to ${this.localFallbackModel}. Errors: ${JSON.stringify(errors)}`
+      `All inference providers failed or circuits open. Fallback attempted to ${this.localFallbackModel}. Errors: ${JSON.stringify(errors)}`,
     );
   }
 
   public async stream(
     request: InferenceRequest,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
   ): Promise<InferenceResponse> {
     for (const entry of this.providers) {
       const breaker = this.circuitBreakers.get(entry.providerType);
@@ -120,7 +135,7 @@ export class FrontierFallbackRouter implements IInferenceProvider {
         this.quotaTracker.recordUsage(
           entry.providerType,
           response.tokensPrompt,
-          response.tokensCompletion
+          response.tokensCompletion,
         );
         return response;
       } catch {
@@ -128,6 +143,8 @@ export class FrontierFallbackRouter implements IInferenceProvider {
       }
     }
 
-    throw new Error(`All providers failed to stream for request ${request.model}`);
+    throw new Error(
+      `All providers failed to stream for request ${request.model}`,
+    );
   }
 }

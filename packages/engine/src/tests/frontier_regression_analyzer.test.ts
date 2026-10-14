@@ -14,19 +14,53 @@ test("FrontierRegressionAnalyzer Suite (T91.2.1 & T91.2.2)", async (t) => {
       failureCount: 4,
       distinctModels: ["qwen2.5-coder:7b", "deepseek-r1:8b"],
       failingTasks: [
-        { taskId: "t1", modelId: "qwen2.5-coder:7b", status: "FAILED", timestamp: 100, errorDetails: "error TS2339: Property 'ruleId' does not exist" },
-        { taskId: "t2", modelId: "deepseek-r1:8b", status: "FAILED", timestamp: 200, errorDetails: "error TS2339: Property 'ruleId' does not exist" },
+        {
+          taskId: "t1",
+          modelId: "qwen2.5-coder:7b",
+          status: "FAILED",
+          timestamp: 100,
+          errorDetails: "error TS2339: Property 'ruleId' does not exist",
+        },
+        {
+          taskId: "t2",
+          modelId: "deepseek-r1:8b",
+          status: "FAILED",
+          timestamp: 200,
+          errorDetails: "error TS2339: Property 'ruleId' does not exist",
+        },
       ],
       timestamp: Date.now(),
       reason: "High failure density",
     },
     gitCommits: [
-      { hash: "abcd1234ef567890", author: "Dev", date: "2026-10-07", message: "refactor: update RulePipelineEngine interfaces" },
-      { hash: "1122334455667788", author: "Dev", date: "2026-10-07", message: "docs: update taskcade checklist" },
+      {
+        hash: "abcd1234ef567890",
+        author: "Dev",
+        date: "2026-10-07",
+        message: "refactor: update RulePipelineEngine interfaces",
+      },
+      {
+        hash: "1122334455667788",
+        author: "Dev",
+        date: "2026-10-07",
+        message: "docs: update taskcade checklist",
+      },
     ],
     failingTasks: [
-      { taskId: "t1", modelId: "qwen2.5-coder:7b", status: "FAILED", timestamp: 100, errorDetails: "error TS2339: Property 'ruleId' does not exist" },
-      { taskId: "t2", modelId: "deepseek-r1:8b", status: "FAILED", timestamp: 200, errorDetails: "error TS2339: Property 'ruleId' does not exist" },
+      {
+        taskId: "t1",
+        modelId: "qwen2.5-coder:7b",
+        status: "FAILED",
+        timestamp: 100,
+        errorDetails: "error TS2339: Property 'ruleId' does not exist",
+      },
+      {
+        taskId: "t2",
+        modelId: "deepseek-r1:8b",
+        status: "FAILED",
+        timestamp: 200,
+        errorDetails: "error TS2339: Property 'ruleId' does not exist",
+      },
     ],
     systemInfo: {
       nodeVersion: "v22.0.0",
@@ -37,16 +71,23 @@ test("FrontierRegressionAnalyzer Suite (T91.2.1 & T91.2.2)", async (t) => {
     },
   };
 
-  await t.test("should classify TypeScript mismatch errors as ENGINE_REGRESSION and flag suspect commit", async () => {
-    const analyzer = new FrontierRegressionAnalyzer();
-    const result = await analyzer.analyze(mockBundle);
+  await t.test(
+    "should classify TypeScript mismatch errors as ENGINE_REGRESSION and flag suspect commit",
+    async () => {
+      const analyzer = new FrontierRegressionAnalyzer();
+      const result = await analyzer.analyze(mockBundle);
 
-    assert.strictEqual(result.classification, "ENGINE_REGRESSION");
-    assert.strictEqual(result.recommendedAction, "GIT_BISECT");
-    assert.ok(result.suspectCommits.length > 0);
-    assert.strictEqual(result.suspectCommits[0]?.hash, "abcd1234ef567890");
-    assert.ok(result.suspectCommits[0]?.reason.includes("Modified core engine structures"));
-  });
+      assert.strictEqual(result.classification, "ENGINE_REGRESSION");
+      assert.strictEqual(result.recommendedAction, "GIT_BISECT");
+      assert.ok(result.suspectCommits.length > 0);
+      assert.strictEqual(result.suspectCommits[0]?.hash, "abcd1234ef567890");
+      assert.ok(
+        result.suspectCommits[0]?.reason.includes(
+          "Modified core engine structures",
+        ),
+      );
+    },
+  );
 
   await t.test("should generate reproducible git bisect script", () => {
     const analyzer = new FrontierRegressionAnalyzer();

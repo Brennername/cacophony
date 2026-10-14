@@ -31,7 +31,7 @@ export interface RedoResult {
 export class GitUndoManager {
   constructor(
     private readonly checkpointRepo: GitCheckpointRepository,
-    private readonly sessionManager?: SessionManager | undefined
+    private readonly sessionManager?: SessionManager | undefined,
   ) {}
 
   public getSessionManager(): SessionManager | undefined {
@@ -41,13 +41,16 @@ export class GitUndoManager {
   /**
    * Reverts working tree to the latest checkpoint.
    */
-  public async undo(workspaceRoot: string, sessionId?: string): Promise<UndoResult> {
+  public async undo(
+    workspaceRoot: string,
+    sessionId?: string,
+  ): Promise<UndoResult> {
     const checkpoint = await this.checkpointRepo.getLatestCheckpoint(sessionId);
     if (!checkpoint) {
       return {
         success: false,
         filesReverted: [],
-        message: "No checkpoints available to undo."
+        message: "No checkpoints available to undo.",
       };
     }
 
@@ -56,10 +59,18 @@ export class GitUndoManager {
     try {
       if (checkpoint.parent_hash) {
         // Checkout working tree files from parent hash
-        await execFileAsync("git", ["checkout", checkpoint.parent_hash, "--", "."], { cwd: workspaceRoot });
+        await execFileAsync(
+          "git",
+          ["checkout", checkpoint.parent_hash, "--", "."],
+          { cwd: workspaceRoot },
+        );
       } else {
         // Fallback to reverting commit
-        await execFileAsync("git", ["revert", "--no-commit", checkpoint.commit_hash], { cwd: workspaceRoot });
+        await execFileAsync(
+          "git",
+          ["revert", "--no-commit", checkpoint.commit_hash],
+          { cwd: workspaceRoot },
+        );
       }
 
       await this.checkpointRepo.setReverted(checkpoint.id, true);
@@ -68,14 +79,14 @@ export class GitUndoManager {
         success: true,
         revertedCheckpointId: checkpoint.id,
         filesReverted: files,
-        message: `Successfully rolled back changes from checkpoint '${checkpoint.id}'.`
+        message: `Successfully rolled back changes from checkpoint '${checkpoint.id}'.`,
       };
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return {
         success: false,
         filesReverted: [],
-        message: `Undo failed: ${errMsg}`
+        message: `Undo failed: ${errMsg}`,
       };
     }
   }
@@ -83,32 +94,38 @@ export class GitUndoManager {
   /**
    * Reverts changes to a specific file only.
    */
-  public async undoFile(workspaceRoot: string, relativePath: string, sessionId?: string): Promise<UndoResult> {
+  public async undoFile(
+    workspaceRoot: string,
+    relativePath: string,
+    sessionId?: string,
+  ): Promise<UndoResult> {
     const checkpoint = await this.checkpointRepo.getLatestCheckpoint(sessionId);
     if (!checkpoint) {
       return {
         success: false,
         filesReverted: [],
-        message: "No checkpoints available."
+        message: "No checkpoints available.",
       };
     }
 
     try {
       const targetHash = checkpoint.parent_hash || "HEAD~1";
-      await execFileAsync("git", ["checkout", targetHash, "--", relativePath], { cwd: workspaceRoot });
+      await execFileAsync("git", ["checkout", targetHash, "--", relativePath], {
+        cwd: workspaceRoot,
+      });
 
       return {
         success: true,
         revertedCheckpointId: checkpoint.id,
         filesReverted: [relativePath],
-        message: `Reverted file '${relativePath}' to state at ${targetHash}.`
+        message: `Reverted file '${relativePath}' to state at ${targetHash}.`,
       };
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return {
         success: false,
         filesReverted: [],
-        message: `File undo failed: ${errMsg}`
+        message: `File undo failed: ${errMsg}`,
       };
     }
   }
@@ -116,34 +133,42 @@ export class GitUndoManager {
   /**
    * Redoes the most recently undone checkpoint.
    */
-  public async redo(workspaceRoot: string, sessionId?: string): Promise<RedoResult> {
-    const checkpoint = await this.checkpointRepo.getLatestRevertedCheckpoint(sessionId);
+  public async redo(
+    workspaceRoot: string,
+    sessionId?: string,
+  ): Promise<RedoResult> {
+    const checkpoint =
+      await this.checkpointRepo.getLatestRevertedCheckpoint(sessionId);
     if (!checkpoint) {
       return {
         success: false,
         filesReapplied: [],
-        message: "No undone checkpoints available to redo."
+        message: "No undone checkpoints available to redo.",
       };
     }
 
     const files: string[] = JSON.parse(checkpoint.files_changed_json || "[]");
 
     try {
-      await execFileAsync("git", ["checkout", checkpoint.commit_hash, "--", "."], { cwd: workspaceRoot });
+      await execFileAsync(
+        "git",
+        ["checkout", checkpoint.commit_hash, "--", "."],
+        { cwd: workspaceRoot },
+      );
       await this.checkpointRepo.setReverted(checkpoint.id, false);
 
       return {
         success: true,
         reappliedCheckpointId: checkpoint.id,
         filesReapplied: files,
-        message: `Successfully reapplied checkpoint '${checkpoint.id}'.`
+        message: `Successfully reapplied checkpoint '${checkpoint.id}'.`,
       };
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return {
         success: false,
         filesReapplied: [],
-        message: `Redo failed: ${errMsg}`
+        message: `Redo failed: ${errMsg}`,
       };
     }
   }

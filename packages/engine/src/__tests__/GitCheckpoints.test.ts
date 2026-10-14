@@ -5,7 +5,11 @@ import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import * as childProcess from "node:child_process";
 import * as util from "node:util";
-import { PGliteDriver, MigrationRunner, GitCheckpointRepository } from "@cacophony/db";
+import {
+  PGliteDriver,
+  MigrationRunner,
+  GitCheckpointRepository,
+} from "@cacophony/db";
 import { GitCheckpointService } from "../git/GitCheckpointService.js";
 import { GitUndoManager } from "../git/GitUndoManager.js";
 
@@ -22,13 +26,24 @@ describe("Phase 12: Automated Git Checkpoints & Undo/Redo Engine", () => {
     // 1. Prepare temp git workspace
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "cacophony-git-test-"));
     await execFileAsync("git", ["init"], { cwd: tempDir });
-    await execFileAsync("git", ["config", "user.name", "Cacophony Engine"], { cwd: tempDir });
-    await execFileAsync("git", ["config", "user.email", "engine@cacophony.local"], { cwd: tempDir });
+    await execFileAsync("git", ["config", "user.name", "Cacophony Engine"], {
+      cwd: tempDir,
+    });
+    await execFileAsync(
+      "git",
+      ["config", "user.email", "engine@cacophony.local"],
+      { cwd: tempDir },
+    );
 
     // Initial commit
-    await fs.writeFile(path.join(tempDir, "file1.txt"), "Initial file1 content\n");
+    await fs.writeFile(
+      path.join(tempDir, "file1.txt"),
+      "Initial file1 content\n",
+    );
     await execFileAsync("git", ["add", "file1.txt"], { cwd: tempDir });
-    await execFileAsync("git", ["commit", "-m", "Initial commit"], { cwd: tempDir });
+    await execFileAsync("git", ["commit", "-m", "Initial commit"], {
+      cwd: tempDir,
+    });
 
     // 2. Database driver
     driver = new PGliteDriver();
@@ -47,13 +62,16 @@ describe("Phase 12: Automated Git Checkpoints & Undo/Redo Engine", () => {
   });
 
   test("should create checkpoint and record changes in database", async () => {
-    await fs.writeFile(path.join(tempDir, "file1.txt"), "Modified file1 content\n");
+    await fs.writeFile(
+      path.join(tempDir, "file1.txt"),
+      "Modified file1 content\n",
+    );
     await fs.writeFile(path.join(tempDir, "file2.txt"), "New file2 content\n");
 
     const checkpoint = await checkpointService.createCheckpoint(tempDir, {
       sessionId: "session-123",
       taskId: "task-abc",
-      message: "Checkpoint edit 1"
+      message: "Checkpoint edit 1",
     });
 
     assert.ok(checkpoint.id);
@@ -69,14 +87,20 @@ describe("Phase 12: Automated Git Checkpoints & Undo/Redo Engine", () => {
 
   test("should perform undo and restore working tree to parent snapshot", async () => {
     // Verify file exists before undo
-    const preContent = await fs.readFile(path.join(tempDir, "file1.txt"), "utf-8");
+    const preContent = await fs.readFile(
+      path.join(tempDir, "file1.txt"),
+      "utf-8",
+    );
     assert.equal(preContent, "Modified file1 content\n");
 
     // Perform undo
     const undoResult = await undoManager.undo(tempDir, "session-123");
     assert.equal(undoResult.success, true);
 
-    const postContent = await fs.readFile(path.join(tempDir, "file1.txt"), "utf-8");
+    const postContent = await fs.readFile(
+      path.join(tempDir, "file1.txt"),
+      "utf-8",
+    );
     assert.equal(postContent, "Initial file1 content\n");
   });
 
@@ -84,7 +108,10 @@ describe("Phase 12: Automated Git Checkpoints & Undo/Redo Engine", () => {
     const redoResult = await undoManager.redo(tempDir, "session-123");
     assert.equal(redoResult.success, true);
 
-    const postRedoContent = await fs.readFile(path.join(tempDir, "file1.txt"), "utf-8");
+    const postRedoContent = await fs.readFile(
+      path.join(tempDir, "file1.txt"),
+      "utf-8",
+    );
     assert.equal(postRedoContent, "Modified file1 content\n");
   });
 });

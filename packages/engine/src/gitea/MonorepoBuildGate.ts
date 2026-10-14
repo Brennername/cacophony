@@ -1,4 +1,7 @@
-import { SandboxedProcessRunner, type SandboxedProcessResult } from "../testing/SandboxedProcessRunner.js";
+import {
+  SandboxedProcessRunner,
+  type SandboxedProcessResult,
+} from "../testing/SandboxedProcessRunner.js";
 
 export interface CompilerDiagnostic {
   readonly code: string;
@@ -45,7 +48,9 @@ export class MonorepoBuildGate {
   /**
    * Pre-commit monorepo clean build verification gate (Phase 84 T84.2).
    */
-  public async verifyCleanBuild(worktreePath: string): Promise<MonorepoBuildResult> {
+  public async verifyCleanBuild(
+    worktreePath: string,
+  ): Promise<MonorepoBuildResult> {
     return this.verifyBuild(worktreePath);
   }
 
@@ -70,7 +75,9 @@ export class MonorepoBuildGate {
         let line: number | undefined;
         let column: number | undefined;
 
-        const locMatch = lineStr.match(/^([a-zA-Z0-9_./\\-]+)(?:(?:\(([0-9]+),([0-9]+)\))|(?::([0-9]+):([0-9]+)))/);
+        const locMatch = lineStr.match(
+          /^([a-zA-Z0-9_./\\-]+)(?:(?:\(([0-9]+),([0-9]+)\))|(?::([0-9]+):([0-9]+)))/,
+        );
         if (locMatch) {
           file = locMatch[1];
           const l = locMatch[2] || locMatch[4];
@@ -87,7 +94,7 @@ export class MonorepoBuildGate {
             message,
             ...(file ? { file } : {}),
             ...(line !== undefined ? { line } : {}),
-            ...(column !== undefined ? { column } : {})
+            ...(column !== undefined ? { column } : {}),
           });
         }
         continue;
@@ -102,7 +109,9 @@ export class MonorepoBuildGate {
         let line: number | undefined;
         let column: number | undefined;
 
-        const locMatch = lineStr.match(/^([a-zA-Z0-9_./\\-]+)(?:(?:\(([0-9]+),([0-9]+)\))|(?::([0-9]+):([0-9]+)))/);
+        const locMatch = lineStr.match(
+          /^([a-zA-Z0-9_./\\-]+)(?:(?:\(([0-9]+),([0-9]+)\))|(?::([0-9]+):([0-9]+)))/,
+        );
         if (locMatch) {
           file = locMatch[1];
           const l = locMatch[2] || locMatch[4];
@@ -119,7 +128,7 @@ export class MonorepoBuildGate {
             message,
             ...(file ? { file } : {}),
             ...(line !== undefined ? { line } : {}),
-            ...(column !== undefined ? { column } : {})
+            ...(column !== undefined ? { column } : {}),
           });
         }
       }
@@ -133,11 +142,14 @@ export class MonorepoBuildGate {
    * evaluating exit codes and extracting compiler diagnostics.
    */
   public async verifyBuild(cwd: string): Promise<MonorepoBuildResult> {
-    const runResult: SandboxedProcessResult = await this.runner.run(this.buildCommand, {
-      cwd,
-      timeoutMs: this.timeoutMs,
-      maxBufferBytes: 512 * 1024
-    });
+    const runResult: SandboxedProcessResult = await this.runner.run(
+      this.buildCommand,
+      {
+        cwd,
+        timeoutMs: this.timeoutMs,
+        maxBufferBytes: 512 * 1024,
+      },
+    );
 
     const passed = runResult.exitCode === 0;
     const combinedOutput = `${runResult.stdout}\n${runResult.stderr}`;
@@ -146,13 +158,20 @@ export class MonorepoBuildGate {
     let failureSummary: string | undefined;
     if (!passed) {
       if (diagnostics.length > 0) {
-        failureSummary = `Build failed with ${diagnostics.length} diagnostic error(s): ` +
+        failureSummary =
+          `Build failed with ${diagnostics.length} diagnostic error(s): ` +
           diagnostics
             .slice(0, 10)
-            .map((diag) => `${diag.code}${diag.file ? ` in ${diag.file}` : ""}: ${diag.message}`)
+            .map(
+              (diag) =>
+                `${diag.code}${diag.file ? ` in ${diag.file}` : ""}: ${diag.message}`,
+            )
             .join("; ");
       } else {
-        const rawErr = (runResult.stderr.trim() || runResult.stdout.trim() || `Exit code ${runResult.exitCode}`);
+        const rawErr =
+          runResult.stderr.trim() ||
+          runResult.stdout.trim() ||
+          `Exit code ${runResult.exitCode}`;
         failureSummary = rawErr.slice(-500);
       }
     }
@@ -164,7 +183,7 @@ export class MonorepoBuildGate {
       diagnostics,
       stdout: runResult.stdout,
       stderr: runResult.stderr,
-      ...(failureSummary ? { failureSummary } : {})
+      ...(failureSummary ? { failureSummary } : {}),
     };
   }
 }

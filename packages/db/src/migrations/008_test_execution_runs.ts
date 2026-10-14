@@ -42,5 +42,5 @@ export const migration008: Migration = {
     await driver.execRaw(`
       DROP TABLE IF EXISTS test_execution_runs;
     `);
-  }
+  },
 };

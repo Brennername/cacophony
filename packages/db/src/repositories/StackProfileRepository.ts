@@ -45,7 +45,15 @@ export class StackProfileRepository {
          default_test_runner = EXCLUDED.default_test_runner,
          data_json = EXCLUDED.data_json,
          updated_at = EXCLUDED.updated_at`,
-      [profile.id, profile.name, profile.description, profile.defaultTestRunner, profile.dataJson, now, now]
+      [
+        profile.id,
+        profile.name,
+        profile.description,
+        profile.defaultTestRunner,
+        profile.dataJson,
+        now,
+        now,
+      ],
     );
 
     return {
@@ -55,7 +63,7 @@ export class StackProfileRepository {
       defaultTestRunner: profile.defaultTestRunner,
       dataJson: profile.dataJson,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
   }
 
@@ -65,7 +73,7 @@ export class StackProfileRepository {
   public async getById(id: string): Promise<StackProfileRecord | null> {
     const row = await this.driver.queryOne<StackProfileRow>(
       "SELECT * FROM stack_instruction_profiles WHERE id = $1",
-      [id]
+      [id],
     );
     return row ? this.mapRow(row) : null;
   }
@@ -75,7 +83,7 @@ export class StackProfileRepository {
    */
   public async listAll(): Promise<readonly StackProfileRecord[]> {
     const rows = await this.driver.query<StackProfileRow>(
-      "SELECT * FROM stack_instruction_profiles ORDER BY name ASC"
+      "SELECT * FROM stack_instruction_profiles ORDER BY name ASC",
     );
     return rows.map((r) => this.mapRow(r));
   }
@@ -86,7 +94,7 @@ export class StackProfileRepository {
   public async delete(id: string): Promise<boolean> {
     const result = await this.driver.execute(
       "DELETE FROM stack_instruction_profiles WHERE id = $1",
-      [id]
+      [id],
     );
     return result.rowsAffected > 0;
   }
@@ -99,7 +107,7 @@ export class StackProfileRepository {
       defaultTestRunner: row.default_test_runner,
       dataJson: row.data_json,
       createdAt: String(row.created_at),
-      updatedAt: String(row.updated_at)
+      updatedAt: String(row.updated_at),
     };
   }
 }

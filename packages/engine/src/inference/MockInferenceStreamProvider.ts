@@ -1,7 +1,7 @@
 import type {
   InferenceRequest,
   InferenceResponse,
-  InferenceProviderType
+  InferenceProviderType,
 } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 
@@ -48,7 +48,7 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
       "      sclkMhz: 1200",
       "    };",
       "  }",
-      "}"
+      "}",
     ].join("\n");
   }
 
@@ -89,13 +89,13 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
       tokensCompletion: totalTokens,
       totalTokens: 128 + totalTokens,
       latencyMs: Math.max(10, Math.round(durationMs)),
-      tokensPerSec: tokensPerSecond
+      tokensPerSec: tokensPerSecond,
     };
   }
 
   public async stream(
     request: InferenceRequest,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
   ): Promise<InferenceResponse> {
     const tokensPerSecond = this.getTokensPerSecondForModel(request.model);
     const startMs = Date.now();
@@ -113,7 +113,9 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
 
     const durationMs = Date.now() - startMs;
     const tokensGenerated = tokens.length;
-    const measuredTps = Number(((tokensGenerated / (durationMs / 1000)) || tokensPerSecond).toFixed(1));
+    const measuredTps = Number(
+      (tokensGenerated / (durationMs / 1000) || tokensPerSecond).toFixed(1),
+    );
 
     return {
       content,
@@ -122,7 +124,7 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
       tokensCompletion: tokensGenerated,
       totalTokens: 128 + tokensGenerated,
       latencyMs: durationMs,
-      tokensPerSec: measuredTps
+      tokensPerSec: measuredTps,
     };
   }
 }

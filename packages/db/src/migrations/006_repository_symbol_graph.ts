@@ -40,5 +40,5 @@ export const migration006: Migration = {
     await driver.execRaw(`
       DROP TABLE IF EXISTS repository_symbol_graph;
     `);
-  }
+  },
 };

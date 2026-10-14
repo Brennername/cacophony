@@ -20,9 +20,13 @@ import { SignatureStore } from "../../signature/SignatureStore.js";
 export class AstParameterCorrectionRules extends BaseRepairRule {
   readonly id = "ast_parameter_correction";
   readonly name = "AST Parameter Inversion Repair";
-  readonly description = "Detects and repairs inverted function arguments at call sites based on declared parameter names.";
+  readonly description =
+    "Detects and repairs inverted function arguments at call sites based on declared parameter names.";
   readonly defaultSeverity: RuleSeverity = "silent_repair";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   private readonly signatureStore: SignatureStore;
 
@@ -34,7 +38,7 @@ export class AstParameterCorrectionRules extends BaseRepairRule {
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    _options?: Record<string, unknown>
+    _options?: Record<string, unknown>,
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -56,7 +60,7 @@ export class AstParameterCorrectionRules extends BaseRepairRule {
             filePath,
             originalContent: content,
             updatedContent: corrected.code,
-            description: `Corrected ${corrected.correctionsCount} transposed argument(s)`
+            description: `Corrected ${corrected.correctionsCount} transposed argument(s)`,
           });
         } else if (severity === "hard_rejection") {
           passed = false;
@@ -65,21 +69,27 @@ export class AstParameterCorrectionRules extends BaseRepairRule {
             severity,
             message: `Detected ${corrected.correctionsCount} transposed argument(s) in ${filePath}`,
             filePath,
-            suggestedFix: corrected.code
+            suggestedFix: corrected.code,
           });
         } else if (severity === "soft_warning") {
           diagnostics.push({
             ruleId: this.id,
             severity,
             message: `Warning: Possible transposed argument in ${filePath}`,
-            filePath
+            filePath,
           });
         }
       }
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 
   /**
@@ -88,14 +98,14 @@ export class AstParameterCorrectionRules extends BaseRepairRule {
    */
   public correctTransposedArguments(
     filePath: string,
-    code: string
+    code: string,
   ): { code: string; modified: boolean; correctionsCount: number } {
     const sourceFile = ts.createSourceFile(
       filePath,
       code,
       ts.ScriptTarget.ES2022,
       true,
-      filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+      filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
     );
 
     // 1. First pass: Harvest function parameter names declared in this source file
@@ -134,9 +144,13 @@ export class AstParameterCorrectionRules extends BaseRepairRule {
           }
         }
 
-        if (expectedParams && expectedParams.length >= 2 && node.arguments.length === expectedParams.length) {
+        if (
+          expectedParams &&
+          expectedParams.length >= 2 &&
+          node.arguments.length === expectedParams.length
+        ) {
           const argTexts = node.arguments.map((a) => a.getText(sourceFile));
-          
+
           // Check for 2-parameter transposition: expected [a, b], passed [b, a]
           if (
             expectedParams.length === 2 &&
@@ -163,7 +177,7 @@ export class AstParameterCorrectionRules extends BaseRepairRule {
     return {
       code: updatedCode,
       modified: correctionsCount > 0,
-      correctionsCount
+      correctionsCount,
     };
   }
 }

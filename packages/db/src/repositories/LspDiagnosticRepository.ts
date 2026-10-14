@@ -19,7 +19,9 @@ export interface LspDiagnosticRecord {
 export class LspDiagnosticRepository {
   constructor(private readonly driver: IDatabaseDriver) {}
 
-  public async insert(record: Omit<LspDiagnosticRecord, "created_at">): Promise<void> {
+  public async insert(
+    record: Omit<LspDiagnosticRecord, "created_at">,
+  ): Promise<void> {
     const now = new Date().toISOString();
     await this.driver.query(
       `INSERT INTO lsp_diagnostic_snapshots (id, task_id, uri, line, character, severity, code, source, message, created_at)
@@ -34,22 +36,24 @@ export class LspDiagnosticRepository {
         record.code,
         record.source,
         record.message,
-        now
-      ]
+        now,
+      ],
     );
   }
 
-  public async getByTaskId(taskId: string): Promise<readonly LspDiagnosticRecord[]> {
+  public async getByTaskId(
+    taskId: string,
+  ): Promise<readonly LspDiagnosticRecord[]> {
     return this.driver.query<LspDiagnosticRecord>(
       `SELECT * FROM lsp_diagnostic_snapshots WHERE task_id = $1 ORDER BY line ASC`,
-      [taskId]
+      [taskId],
     );
   }
 
   public async getByUri(uri: string): Promise<readonly LspDiagnosticRecord[]> {
     return this.driver.query<LspDiagnosticRecord>(
       `SELECT * FROM lsp_diagnostic_snapshots WHERE uri = $1 ORDER BY line ASC`,
-      [uri]
+      [uri],
     );
   }
 }

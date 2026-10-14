@@ -1,7 +1,10 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { IStackProfile } from "./IStackProfile.js";
-import { DEFAULT_STACK_PROFILES, GENERIC_STACK_PROFILE } from "./defaultProfiles.js";
+import {
+  DEFAULT_STACK_PROFILES,
+  GENERIC_STACK_PROFILE,
+} from "./defaultProfiles.js";
 
 /**
  * StackDetector
@@ -13,9 +16,10 @@ export class StackDetector {
   private readonly profiles: readonly IStackProfile[];
 
   constructor(customProfiles?: readonly IStackProfile[]) {
-    this.profiles = customProfiles && customProfiles.length > 0
-      ? [...customProfiles, ...DEFAULT_STACK_PROFILES]
-      : DEFAULT_STACK_PROFILES;
+    this.profiles =
+      customProfiles && customProfiles.length > 0
+        ? [...customProfiles, ...DEFAULT_STACK_PROFILES]
+        : DEFAULT_STACK_PROFILES;
   }
 
   /**

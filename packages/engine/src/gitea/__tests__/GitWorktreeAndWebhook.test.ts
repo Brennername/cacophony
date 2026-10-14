@@ -8,10 +8,13 @@ import { AutomatedPrPublisher } from "../AutomatedPrPublisher.js";
 
 describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints", () => {
   it("T39.1: GitWorktreeManager formats standardized branch names and manages worktree directory", async () => {
-    const manager = new GitWorktreeManager(process.cwd(), "/tmp/cacophony-test-workspaces");
+    const manager = new GitWorktreeManager(
+      process.cwd(),
+      "/tmp/cacophony-test-workspaces",
+    );
     const branch = manager.formatBranchName("task-99", {
       priority: "P0",
-      slug: "Fix User Auth Flow"
+      slug: "Fix User Auth Flow",
     });
 
     assert.equal(branch, "task/p0-task-99-fix-user-auth-flow");
@@ -49,12 +52,16 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
         return task;
       },
       listPending: async () => [
-        { id: "parent-task-1", targetBranch: "task/p1-task-1-fix-bug", status: "RUNNING" }
+        {
+          id: "parent-task-1",
+          targetBranch: "task/p1-task-1-fix-bug",
+          status: "RUNNING",
+        },
       ],
       updateStatus: async (id: string, status: string) => {
         const t = createdTasks.find((x) => x.id === id);
         if (t) t.status = status;
-      }
+      },
     };
 
     const receiver = new GiteaWebhookReceiver(mockTaskRepo, "secret-123");
@@ -65,14 +72,14 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
         id: 101,
         state: "REQUEST_CHANGES",
         body: "Please address null pointer vulnerability on line 42",
-        user: { login: "lead-architect" }
+        user: { login: "lead-architect" },
       },
       pull_request: {
         number: 42,
         title: "Feature X",
         body: "Initial implementation",
-        head: { ref: "task/p1-task-1-fix-bug" }
-      }
+        head: { ref: "task/p1-task-1-fix-bug" },
+      },
     });
 
     assert.equal(result.processed, true);
@@ -88,26 +95,39 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
   it("T39.2: GiteaWebhookReceiver triggers automated squash-and-merge on APPROVE", async () => {
     let mergeCalled = false;
     const mockGiteaClient: any = {
-      mergePullRequest: async (owner: string, repo: string, prNumber: number, req: any) => {
+      mergePullRequest: async (
+        owner: string,
+        repo: string,
+        prNumber: number,
+        req: any,
+      ) => {
         mergeCalled = true;
         assert.equal(owner, "cacophony-org");
         assert.equal(repo, "cacophony");
         assert.equal(prNumber, 55);
         assert.equal(req.Do, "squash");
-      }
+      },
     };
 
     const completedStatusUpdates: string[] = [];
     const mockTaskRepo: any = {
       listPending: async () => [
-        { id: "task-55-approved", targetBranch: "task/p0-task-55-feat", status: "IN_REVIEW" }
+        {
+          id: "task-55-approved",
+          targetBranch: "task/p0-task-55-feat",
+          status: "IN_REVIEW",
+        },
       ],
       updateStatus: async (id: string, status: string) => {
         completedStatusUpdates.push(`${id}:${status}`);
-      }
+      },
     };
 
-    const receiver = new GiteaWebhookReceiver(mockTaskRepo, undefined, mockGiteaClient);
+    const receiver = new GiteaWebhookReceiver(
+      mockTaskRepo,
+      undefined,
+      mockGiteaClient,
+    );
 
     const result = await receiver.handleWebhook("pull_request_review", {
       action: "submitted",
@@ -115,21 +135,21 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
         id: 102,
         state: "APPROVED",
         body: "LGTM!",
-        user: { login: "qa-lead" }
+        user: { login: "qa-lead" },
       },
       repository: {
         name: "cacophony",
         full_name: "cacophony-org/cacophony",
         clone_url: "http://git/cacophony.git",
         default_branch: "main",
-        owner: { login: "cacophony-org" }
+        owner: { login: "cacophony-org" },
       },
       pull_request: {
         number: 55,
         title: "Clean Feature",
         body: "All tests pass",
-        head: { ref: "task/p0-task-55-feat" }
-      }
+        head: { ref: "task/p0-task-55-feat" },
+      },
     });
 
     assert.equal(result.processed, true);
@@ -150,27 +170,34 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
           id: 1,
           number: 12,
           title: payload.title,
-          html_url: "http://gitea/devs/repo1/pulls/12"
+          html_url: "http://gitea/devs/repo1/pulls/12",
         };
-      }
+      },
     };
 
     const mockWorktreeManager: any = {
       commitWorktree: async () => "commit ok",
-      pushBranch: async () => {}
+      pushBranch: async () => {},
     };
 
-    const publisher = new AutomatedPrPublisher(mockGiteaClient, mockWorktreeManager);
+    const publisher = new AutomatedPrPublisher(
+      mockGiteaClient,
+      mockWorktreeManager,
+    );
     const pubResult = await publisher.publishPullRequest(
-      { taskId: "task-100", branchName: "task/p1-task-100-test", worktreePath: "/tmp" },
+      {
+        taskId: "task-100",
+        branchName: "task/p1-task-100-test",
+        worktreePath: "/tmp",
+      },
       {
         owner: "devs",
         repo: "repo1",
         taskId: "task-100",
         title: "Automated Fix",
         testSummary: "All 18 unit tests passed in 45ms",
-        commitMessage: "feat: automated fix"
-      }
+        commitMessage: "feat: automated fix",
+      },
     );
 
     assert.equal(pubResult.success, true);

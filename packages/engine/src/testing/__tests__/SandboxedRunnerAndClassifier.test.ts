@@ -1,17 +1,23 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { SandboxedProcessRunner } from "../SandboxedProcessRunner.js";
-import { FailureClassifier, type ClassificationResult } from "../../analytics/FailureClassifier.js";
+import {
+  FailureClassifier,
+  type ClassificationResult,
+} from "../../analytics/FailureClassifier.js";
 import { ClosedLoopTestRemediator } from "../ClosedLoopTestRemediator.js";
 
 describe("Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failure Taxonomy", () => {
   it("T38.1: SandboxedProcessRunner executes command and captures stdout/stderr with duration", async () => {
     const runner = new SandboxedProcessRunner();
-    const result = await runner.run('node -e "console.log(\'sandbox ok\'); process.exit(0);"', {
-      cwd: process.cwd(),
-      timeoutMs: 5000,
-      maxBufferBytes: 1024
-    });
+    const result = await runner.run(
+      "node -e \"console.log('sandbox ok'); process.exit(0);\"",
+      {
+        cwd: process.cwd(),
+        timeoutMs: 5000,
+        maxBufferBytes: 1024,
+      },
+    );
 
     assert.equal(result.exitCode, 0);
     assert.equal(result.timedOut, false);
@@ -24,7 +30,7 @@ describe("Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failu
     const result = await runner.run('node -e "setTimeout(() => {}, 10000);"', {
       cwd: process.cwd(),
       timeoutMs: 300,
-      maxBufferBytes: 1024
+      maxBufferBytes: 1024,
     });
 
     assert.equal(result.timedOut, true);
@@ -34,31 +40,49 @@ describe("Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failu
 
   it("T38.1: SandboxedProcessRunner enforces buffer size limits to prevent memory bloat", async () => {
     const runner = new SandboxedProcessRunner();
-    const result = await runner.run('node -e "for(let i=0; i<100; i++) console.log(\'A\'.repeat(50));"', {
-      cwd: process.cwd(),
-      timeoutMs: 5000,
-      maxBufferBytes: 256
-    });
+    const result = await runner.run(
+      "node -e \"for(let i=0; i<100; i++) console.log('A'.repeat(50));\"",
+      {
+        cwd: process.cwd(),
+        timeoutMs: 5000,
+        maxBufferBytes: 256,
+      },
+    );
 
     assert.equal(result.truncated, true);
-    assert.ok(result.stdout.includes("[OUTPUT TRUNCATED: Exceeded maximum log buffer limit]"));
+    assert.ok(
+      result.stdout.includes(
+        "[OUTPUT TRUNCATED: Exceeded maximum log buffer limit]",
+      ),
+    );
   });
 
   it("T38.2: FailureClassifier accurately categorizes diverse compiler & test failures", () => {
-    const syntaxErr = FailureClassifier.classify("SyntaxError: Unexpected identifier 'foo'");
+    const syntaxErr = FailureClassifier.classify(
+      "SyntaxError: Unexpected identifier 'foo'",
+    );
     assert.equal(syntaxErr.category, "SYNTAX_ERROR");
     assert.ok(syntaxErr.confidence >= 0.9);
 
-    const typeErr = FailureClassifier.classify("error TS2322: Type 'string' is not assignable to type 'number'.");
+    const typeErr = FailureClassifier.classify(
+      "error TS2322: Type 'string' is not assignable to type 'number'.",
+    );
     assert.equal(typeErr.category, "TYPE_MISMATCH");
 
-    const missingDep = FailureClassifier.classify("Error: Cannot find module '@cacophony/nonexistent'");
+    const missingDep = FailureClassifier.classify(
+      "Error: Cannot find module '@cacophony/nonexistent'",
+    );
     assert.equal(missingDep.category, "MISSING_DEPENDENCY");
 
-    const timeoutErr = FailureClassifier.classify("Command failed with timeout after 180000ms", { exitCode: 124 });
+    const timeoutErr = FailureClassifier.classify(
+      "Command failed with timeout after 180000ms",
+      { exitCode: 124 },
+    );
     assert.equal(timeoutErr.category, "TIMEOUT");
 
-    const assertionErr = FailureClassifier.classify("AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n+ 1\n- 2");
+    const assertionErr = FailureClassifier.classify(
+      "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n+ 1\n- 2",
+    );
     assert.equal(assertionErr.category, "ASSERTION_FAILURE");
   });
 
@@ -123,21 +147,33 @@ describe("Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failu
           passed: false,
           testsPassed: 0,
           testsFailed: 1,
-          failures: [{ testName: "failing test", rawMessage: "SyntaxError: Unexpected token '{'" }],
-          rootCauses: ["SyntaxError: Unexpected token '{'"]
+          failures: [
+            {
+              testName: "failing test",
+              rawMessage: "SyntaxError: Unexpected token '{'",
+            },
+          ],
+          rootCauses: ["SyntaxError: Unexpected token '{'"],
         },
-        remediationSnippet: "SyntaxError: Unexpected token '{'"
-      })
+        remediationSnippet: "SyntaxError: Unexpected token '{'",
+      }),
     };
 
-    const remediator = new ClosedLoopTestRemediator(mockRunner, undefined, { maxAttempts: 2, rollbackOnFailure: false });
+    const remediator = new ClosedLoopTestRemediator(mockRunner, undefined, {
+      maxAttempts: 2,
+      rollbackOnFailure: false,
+    });
 
     await remediator.executeLoop(
       "/tmp",
-      async (snippet: string, _attempt: number, classification?: ClassificationResult) => {
+      async (
+        snippet: string,
+        _attempt: number,
+        classification?: ClassificationResult,
+      ) => {
         capturedSnippet = snippet;
         capturedTaxonomy = classification?.category || "";
-      }
+      },
     );
 
     assert.equal(capturedTaxonomy, "SYNTAX_ERROR");

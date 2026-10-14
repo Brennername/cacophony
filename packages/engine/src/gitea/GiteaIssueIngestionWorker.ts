@@ -30,11 +30,19 @@ export class GiteaIssueIngestionWorker {
   /**
    * Ingests open issues from repository and enqueues matching issues as tasks.
    */
-  public async ingestIssues(options: IssueIngestionOptions): Promise<IngestionResult> {
-    const issues = await this.client.listIssues(options.owner, options.repo, "open");
+  public async ingestIssues(
+    options: IssueIngestionOptions,
+  ): Promise<IngestionResult> {
+    const issues = await this.client.listIssues(
+      options.owner,
+      options.repo,
+      "open",
+    );
     const enqueuedTaskIds: string[] = [];
 
-    const label = options.labelFilter ? options.labelFilter.toLowerCase() : undefined;
+    const label = options.labelFilter
+      ? options.labelFilter.toLowerCase()
+      : undefined;
     const max = options.maxTasksToEnqueue ?? 50;
 
     for (const issue of issues) {
@@ -62,20 +70,25 @@ export class GiteaIssueIngestionWorker {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       });
 
       enqueuedTaskIds.push(taskId);
 
       // Post status comment back to issue
-      await this.client.createIssueComment(options.owner, options.repo, issue.number, {
-        body: `Cacophony Taskcade has ingested this issue into the autonomous arena.\nTask ID: \`${taskId}\`\nStatus: \`PENDING\``
-      });
+      await this.client.createIssueComment(
+        options.owner,
+        options.repo,
+        issue.number,
+        {
+          body: `Cacophony Taskcade has ingested this issue into the autonomous arena.\nTask ID: \`${taskId}\`\nStatus: \`PENDING\``,
+        },
+      );
     }
 
     return {
       totalIngested: enqueuedTaskIds.length,
-      taskIds: enqueuedTaskIds
+      taskIds: enqueuedTaskIds,
     };
   }
 

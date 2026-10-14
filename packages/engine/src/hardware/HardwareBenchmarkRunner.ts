@@ -26,7 +26,9 @@ export class HardwareBenchmarkRunner {
   /**
    * Executes standardized benchmarks simulating or probing the engine.
    */
-  public async benchmark(report: HardwareDiscoveryReport): Promise<HardwareBenchmarkReport> {
+  public async benchmark(
+    report: HardwareDiscoveryReport,
+  ): Promise<HardwareBenchmarkReport> {
     const isVega = report.primaryCategory === "AMD_APU_VEGA";
     const contexts = [2048, 4096, 8192, 16384];
     const results: BenchmarkMetrics[] = [];
@@ -38,7 +40,9 @@ export class HardwareBenchmarkRunner {
         ? Math.max(12, Math.round(45 - (ctx / 1024) * 3))
         : Math.round(120 - (ctx / 1024) * 2);
       const genSpeed = isVega ? 22 : 65;
-      const ttft = isVega ? Math.round(150 + (ctx / 1024) * 80) : Math.round(50 + (ctx / 1024) * 20);
+      const ttft = isVega
+        ? Math.round(150 + (ctx / 1024) * 80)
+        : Math.round(50 + (ctx / 1024) * 20);
       const memMb = Math.round(1800 + (ctx / 1024) * 450);
 
       results.push({
@@ -51,7 +55,9 @@ export class HardwareBenchmarkRunner {
       });
     }
 
-    const maxStableContext = isVega ? 4096 : (report.optimalContextWindow || 8192);
+    const maxStableContext = isVega
+      ? 4096
+      : report.optimalContextWindow || 8192;
     const recommendedConcurrency = isVega ? 1 : report.maxLoadedModels;
 
     return {

@@ -8,7 +8,12 @@ describe("PromotionSanitizer Suite (T80.2)", () => {
 
     const sampleAws = ["AKIA", "IOSFODNN7EXAMPLE"].join("");
     const sampleGh = ["ghp", "_1234567890abcdefghijklmnopqrstuvwxyz"].join("");
-    const sampleSlack = ["xoxb", "123456789012", "1234567890123", "abcdefghijklmnopqrstuvwx"].join("-");
+    const sampleSlack = [
+      "xoxb",
+      "123456789012",
+      "1234567890123",
+      "abcdefghijklmnopqrstuvwx",
+    ].join("-");
     const sampleOpenAi = ["sk-", "abcdefghijklmnopqrstuvwxyz123456"].join("");
     const sampleKeyHeader = ["-----BEGIN ", "RSA PRIVATE KEY-----"].join("");
 
@@ -62,7 +67,11 @@ describe("PromotionSanitizer Suite (T80.2)", () => {
 +import { EventSource } from "eventsource";
 `;
 
-    const violations = sanitizer.scanHygiene(diffWithBanned, undefined, "parser.ts");
+    const violations = sanitizer.scanHygiene(
+      diffWithBanned,
+      undefined,
+      "parser.ts",
+    );
     assert.equal(violations.length, 2);
     assert.equal(violations[0]!.type, "banned_import");
     assert.equal(violations[0]!.match, "acorn");
@@ -78,7 +87,7 @@ describe("PromotionSanitizer Suite (T80.2)", () => {
       "README.md",
       "packages/engine/src/index.ts",
       "temp_script.js",
-      "scratch_test.ts"
+      "scratch_test.ts",
     ];
 
     const violations = sanitizer.scanHygiene(undefined, fileList);
@@ -102,7 +111,10 @@ describe("PromotionSanitizer Suite (T80.2)", () => {
 `;
 
     const cleanFiles = ["package.json", "packages/engine/src/clean.ts"];
-    const report = sanitizer.sanitize({ diff: cleanDiff, filePaths: cleanFiles });
+    const report = sanitizer.sanitize({
+      diff: cleanDiff,
+      filePaths: cleanFiles,
+    });
 
     assert.equal(report.passed, true);
     assert.equal(report.totalErrors, 0);

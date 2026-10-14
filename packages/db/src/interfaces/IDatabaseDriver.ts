@@ -17,17 +17,26 @@ export interface IDatabaseDriver {
   /**
    * Executes a parameterized SELECT query returning zero or more typed rows.
    */
-  query<T = unknown>(sql: string, params?: readonly unknown[]): Promise<readonly T[]>;
+  query<T = unknown>(
+    sql: string,
+    params?: readonly unknown[],
+  ): Promise<readonly T[]>;
 
   /**
    * Executes a parameterized SELECT query returning the first matching row or null.
    */
-  queryOne<T = unknown>(sql: string, params?: readonly unknown[]): Promise<T | null>;
+  queryOne<T = unknown>(
+    sql: string,
+    params?: readonly unknown[],
+  ): Promise<T | null>;
 
   /**
    * Executes a mutating DML statement (INSERT, UPDATE, DELETE) and returns row count.
    */
-  execute(sql: string, params?: readonly unknown[]): Promise<{ readonly rowsAffected: number }>;
+  execute(
+    sql: string,
+    params?: readonly unknown[],
+  ): Promise<{ readonly rowsAffected: number }>;
 
   /**
    * Executes raw multi-statement DDL script (used primarily for schema migrations).

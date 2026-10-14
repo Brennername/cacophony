@@ -22,7 +22,8 @@ export class ApiDocAppender {
    * Generates formatted markdown documentation for an API endpoint.
    */
   public static generateEndpointDoc(endpoint: ApiEndpointSpec): string {
-    const statusCode = endpoint.responseStatusCode ?? (endpoint.method === "POST" ? 201 : 200);
+    const statusCode =
+      endpoint.responseStatusCode ?? (endpoint.method === "POST" ? 201 : 200);
     const statusText = statusCode === 201 ? "Created" : "OK";
 
     let doc = `\n### ${endpoint.method} \`${endpoint.path}\`\n${endpoint.description}\n\n`;
@@ -42,7 +43,7 @@ export class ApiDocAppender {
    */
   public static async appendEndpointToSpec(
     specFilePath: string,
-    endpoint: ApiEndpointSpec
+    endpoint: ApiEndpointSpec,
   ): Promise<boolean> {
     const absPath = path.resolve(specFilePath);
     let content = "";

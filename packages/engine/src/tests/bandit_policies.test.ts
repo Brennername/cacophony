@@ -34,7 +34,10 @@ describe("EpsilonGreedyPolicy Test Suite", () => {
   ];
 
   test("should exploit arm with highest mean win rate when epsilon is 0", () => {
-    const policy = new EpsilonGreedyPolicy({ initialEpsilon: 0, minEpsilon: 0 });
+    const policy = new EpsilonGreedyPolicy({
+      initialEpsilon: 0,
+      minEpsilon: 0,
+    });
     const outcome = policy.selectArm(sampleArms);
 
     assert.strictEqual(outcome.isExploratory, false);

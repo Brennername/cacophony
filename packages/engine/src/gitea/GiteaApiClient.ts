@@ -11,7 +11,7 @@ import type {
   GiteaIssue,
   CreateIssueCommentRequest,
   GiteaComment,
-  GiteaPackage
+  GiteaPackage,
 } from "./giteaTypes.js";
 import { GiteaPermissionGuard } from "./GiteaPermissionGuard.js";
 
@@ -44,7 +44,10 @@ export class GiteaApiClient {
   /**
    * Retrieves repository metadata.
    */
-  public async getRepository(owner: string, repo: string): Promise<GiteaRepository> {
+  public async getRepository(
+    owner: string,
+    repo: string,
+  ): Promise<GiteaRepository> {
     this.guard?.assertScope("repository", "read");
     return this.request<GiteaRepository>(`/api/v1/repos/${owner}/${repo}`);
   }
@@ -52,21 +55,33 @@ export class GiteaApiClient {
   /**
    * Lists branches for a repository.
    */
-  public async listBranches(owner: string, repo: string): Promise<GiteaBranch[]> {
+  public async listBranches(
+    owner: string,
+    repo: string,
+  ): Promise<GiteaBranch[]> {
     this.guard?.assertScope("repository", "read");
-    return this.request<GiteaBranch[]>(`/api/v1/repos/${owner}/${repo}/branches`);
+    return this.request<GiteaBranch[]>(
+      `/api/v1/repos/${owner}/${repo}/branches`,
+    );
   }
 
   /**
    * Creates a new branch from an existing base branch.
    */
-  public async createBranch(owner: string, repo: string, req: CreateBranchRequest): Promise<GiteaBranch> {
+  public async createBranch(
+    owner: string,
+    repo: string,
+    req: CreateBranchRequest,
+  ): Promise<GiteaBranch> {
     this.guard?.assertScope("repository", "write");
     this.guard?.assertBranchModificationPermitted(req.new_branch_name);
-    return this.request<GiteaBranch>(`/api/v1/repos/${owner}/${repo}/branches`, {
-      method: "POST",
-      body: JSON.stringify(req)
-    });
+    return this.request<GiteaBranch>(
+      `/api/v1/repos/${owner}/${repo}/branches`,
+      {
+        method: "POST",
+        body: JSON.stringify(req),
+      },
+    );
   }
 
   /**
@@ -75,18 +90,26 @@ export class GiteaApiClient {
   public async listIssues(
     owner: string,
     repo: string,
-    state: "open" | "closed" | "all" = "open"
+    state: "open" | "closed" | "all" = "open",
   ): Promise<GiteaIssue[]> {
     this.guard?.assertScope("issue", "read");
-    return this.request<GiteaIssue[]>(`/api/v1/repos/${owner}/${repo}/issues?state=${state}`);
+    return this.request<GiteaIssue[]>(
+      `/api/v1/repos/${owner}/${repo}/issues?state=${state}`,
+    );
   }
 
   /**
    * Retrieves a single issue by number.
    */
-  public async getIssue(owner: string, repo: string, issueNumber: number): Promise<GiteaIssue> {
+  public async getIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GiteaIssue> {
     this.guard?.assertScope("issue", "read");
-    return this.request<GiteaIssue>(`/api/v1/repos/${owner}/${repo}/issues/${issueNumber}`);
+    return this.request<GiteaIssue>(
+      `/api/v1/repos/${owner}/${repo}/issues/${issueNumber}`,
+    );
   }
 
   /**
@@ -96,13 +119,16 @@ export class GiteaApiClient {
     owner: string,
     repo: string,
     issueNumber: number,
-    comment: CreateIssueCommentRequest
+    comment: CreateIssueCommentRequest,
   ): Promise<GiteaComment> {
     this.guard?.assertScope("issue", "write");
-    return this.request<GiteaComment>(`/api/v1/repos/${owner}/${repo}/issues/${issueNumber}/comments`, {
-      method: "POST",
-      body: JSON.stringify(comment)
-    });
+    return this.request<GiteaComment>(
+      `/api/v1/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify(comment),
+      },
+    );
   }
 
   /**
@@ -116,35 +142,58 @@ export class GiteaApiClient {
   /**
    * Opens a new Pull Request.
    */
-  public async createPullRequest(owner: string, repo: string, req: CreatePullRequestRequest): Promise<GiteaPullRequest> {
+  public async createPullRequest(
+    owner: string,
+    repo: string,
+    req: CreatePullRequestRequest,
+  ): Promise<GiteaPullRequest> {
     this.guard?.assertScope("repository", "write");
     this.guard?.assertBranchModificationPermitted(req.head);
-    return this.request<GiteaPullRequest>(`/api/v1/repos/${owner}/${repo}/pulls`, {
-      method: "POST",
-      body: JSON.stringify(req)
-    });
+    return this.request<GiteaPullRequest>(
+      `/api/v1/repos/${owner}/${repo}/pulls`,
+      {
+        method: "POST",
+        body: JSON.stringify(req),
+      },
+    );
   }
 
   /**
    * Lists Pull Requests for a repository.
    */
-  public async listPullRequests(owner: string, repo: string, state: "open" | "closed" | "all" = "open"): Promise<GiteaPullRequest[]> {
+  public async listPullRequests(
+    owner: string,
+    repo: string,
+    state: "open" | "closed" | "all" = "open",
+  ): Promise<GiteaPullRequest[]> {
     this.guard?.assertScope("repository", "read");
-    return this.request<GiteaPullRequest[]>(`/api/v1/repos/${owner}/${repo}/pulls?state=${state}`);
+    return this.request<GiteaPullRequest[]>(
+      `/api/v1/repos/${owner}/${repo}/pulls?state=${state}`,
+    );
   }
 
   /**
    * Retrieves a single Pull Request by number.
    */
-  public async getPullRequest(owner: string, repo: string, prNumber: number): Promise<GiteaPullRequest> {
+  public async getPullRequest(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<GiteaPullRequest> {
     this.guard?.assertScope("repository", "read");
-    return this.request<GiteaPullRequest>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}`);
+    return this.request<GiteaPullRequest>(
+      `/api/v1/repos/${owner}/${repo}/pulls/${prNumber}`,
+    );
   }
 
   /**
    * Fetches unified diff for a Pull Request.
    */
-  public async getPullRequestDiff(owner: string, repo: string, prNumber: number): Promise<string> {
+  public async getPullRequestDiff(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<string> {
     this.guard?.assertScope("repository", "read");
     const url = `${this.baseUrl}/api/v1/repos/${owner}/${repo}/pulls/${prNumber}.diff`;
     const headers: Record<string, string> = {};
@@ -154,7 +203,9 @@ export class GiteaApiClient {
 
     const res = await fetch(url, { headers });
     if (!res.ok) {
-      throw new Error(`Failed to fetch PR diff (${res.status}): ${await res.text()}`);
+      throw new Error(
+        `Failed to fetch PR diff (${res.status}): ${await res.text()}`,
+      );
     }
     return res.text();
   }
@@ -166,13 +217,16 @@ export class GiteaApiClient {
     owner: string,
     repo: string,
     prNumber: number,
-    review: SubmitReviewRequest
+    review: SubmitReviewRequest,
   ): Promise<void> {
     this.guard?.assertScope("repository", "write");
-    await this.request<void>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/reviews`, {
-      method: "POST",
-      body: JSON.stringify(review)
-    });
+    await this.request<void>(
+      `/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/reviews`,
+      {
+        method: "POST",
+        body: JSON.stringify(review),
+      },
+    );
   }
 
   /**
@@ -182,21 +236,28 @@ export class GiteaApiClient {
     owner: string,
     repo: string,
     prNumber: number,
-    mergeReq: MergePullRequestRequest
+    mergeReq: MergePullRequestRequest,
   ): Promise<void> {
     this.guard?.assertScope("repository", "write");
     const maxRetries = 10;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        await this.request<void>(`/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/merge`, {
-          method: "POST",
-          body: JSON.stringify(mergeReq)
-        });
+        await this.request<void>(
+          `/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/merge`,
+          {
+            method: "POST",
+            body: JSON.stringify(mergeReq),
+          },
+        );
         return;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         // Gitea returns 405 Method Not Allowed ("Please try again later") while conflict checking is in progress
-        if (errMsg.includes("405") && errMsg.includes("Please try again later") && attempt < maxRetries) {
+        if (
+          errMsg.includes("405") &&
+          errMsg.includes("Please try again later") &&
+          attempt < maxRetries
+        ) {
           await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
           continue;
         }
@@ -212,27 +273,29 @@ export class GiteaApiClient {
     clientId: string,
     clientSecret: string,
     code: string,
-    redirectUri: string
+    redirectUri: string,
   ): Promise<OAuthTokenResponse> {
     const params = new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
       code,
       grant_type: "authorization_code",
-      redirect_uri: redirectUri
+      redirect_uri: redirectUri,
     });
 
     const res = await fetch(`${this.baseUrl}/login/oauth/access_token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json"
+        Accept: "application/json",
       },
-      body: params.toString()
+      body: params.toString(),
     });
 
     if (!res.ok) {
-      throw new Error(`Gitea OAuth token exchange failed (${res.status}): ${await res.text()}`);
+      throw new Error(
+        `Gitea OAuth token exchange failed (${res.status}): ${await res.text()}`,
+      );
     }
 
     return (await res.json()) as OAuthTokenResponse;
@@ -245,23 +308,28 @@ export class GiteaApiClient {
     const res = await fetch(`${this.baseUrl}/api/v1/user`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json"
-      }
+        Accept: "application/json",
+      },
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch Gitea user (${res.status}): ${await res.text()}`);
+      throw new Error(
+        `Failed to fetch Gitea user (${res.status}): ${await res.text()}`,
+      );
     }
 
     return (await res.json()) as GiteaUser;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
       Accept: "application/json",
       "Content-Type": "application/json",
-      ...(options.headers as Record<string, string>)
+      ...(options.headers as Record<string, string>),
     };
 
     if (this.apiToken && !headers["Authorization"]) {
@@ -270,12 +338,14 @@ export class GiteaApiClient {
 
     const response = await fetch(url, {
       ...options,
-      headers
+      headers,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Gitea API Error [${response.status} ${response.statusText}] at ${endpoint}: ${errorText}`);
+      throw new Error(
+        `Gitea API Error [${response.status} ${response.statusText}] at ${endpoint}: ${errorText}`,
+      );
     }
 
     if (response.status === 204) {

@@ -28,13 +28,14 @@ export class ContextManager {
 
   constructor(options: ContextManagerOptions = {}) {
     this.modelWindowTokens = options.modelWindowTokens ?? 8192;
-    this.maxTokensThreshold = options.maxTokensThreshold ?? Math.floor(this.modelWindowTokens * 0.60);
+    this.maxTokensThreshold =
+      options.maxTokensThreshold ?? Math.floor(this.modelWindowTokens * 0.6);
   }
 
   public async addFile(
     workspaceRoot: string,
     relativeFilePath: string,
-    mode: ContextFileMode = "EDITABLE"
+    mode: ContextFileMode = "EDITABLE",
   ): Promise<ContextFile> {
     const fullPath = path.resolve(workspaceRoot, relativeFilePath);
     let size = 0;
@@ -50,7 +51,7 @@ export class ContextManager {
     const entry: ContextFile = {
       path: relativeFilePath,
       mode,
-      estimatedTokens
+      estimatedTokens,
     };
 
     this.files.set(relativeFilePath, entry);

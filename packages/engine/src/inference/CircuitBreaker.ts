@@ -9,8 +9,8 @@ export type CircuitState = "CLOSED" | "HALF_OPEN" | "OPEN";
  * Configuration options for ProviderCircuitBreaker.
  */
 export interface CircuitBreakerConfig {
-  readonly failureThreshold?: number;   // Consecutive errors before tripping OPEN (default 3)
-  readonly cooldownMs?: number;          // Wait time before transitioning to HALF_OPEN (default 30000ms)
+  readonly failureThreshold?: number; // Consecutive errors before tripping OPEN (default 3)
+  readonly cooldownMs?: number; // Wait time before transitioning to HALF_OPEN (default 30000ms)
 }
 
 /**
@@ -62,7 +62,10 @@ export class ProviderCircuitBreaker {
 
     this.consecutiveFailures++;
 
-    if (this.consecutiveFailures >= this.failureThreshold || this.state === "HALF_OPEN") {
+    if (
+      this.consecutiveFailures >= this.failureThreshold ||
+      this.state === "HALF_OPEN"
+    ) {
       this.state = "OPEN";
       this.lastStateChangeTimestamp = Date.now();
     }
@@ -84,7 +87,7 @@ export class ProviderCircuitBreaker {
       state: this.getState(),
       consecutiveFailures: this.consecutiveFailures,
       failureThreshold: this.failureThreshold,
-      lastStateChange: new Date(this.lastStateChangeTimestamp).toISOString()
+      lastStateChange: new Date(this.lastStateChangeTimestamp).toISOString(),
     };
   }
 }
@@ -96,26 +99,32 @@ export class ProviderCircuitBreaker {
  * across external providers (OpenAI, Anthropic, Gemini).
  */
 export class TokenQuotaTracker {
-  private readonly consumption = new Map<string, {
-    tokensPrompt: number;
-    tokensCompletion: number;
-    totalTokens: number;
-    requestCount: number;
-    estimatedCostUsd: number;
-  }>();
+  private readonly consumption = new Map<
+    string,
+    {
+      tokensPrompt: number;
+      tokensCompletion: number;
+      totalTokens: number;
+      requestCount: number;
+      estimatedCostUsd: number;
+    }
+  >();
 
   // Reference cost per 1M tokens in USD ($)
-  private readonly pricingPerMillion: Record<string, { prompt: number; completion: number }> = {
-    openai: { prompt: 2.50, completion: 10.00 },     // e.g. gpt-4o
-    anthropic: { prompt: 3.00, completion: 15.00 },  // e.g. claude-3-5-sonnet
-    gemini: { prompt: 1.25, completion: 5.00 },      // e.g. gemini-1.5-pro
-    ollama: { prompt: 0.00, completion: 0.00 }       // local hardware execution
+  private readonly pricingPerMillion: Record<
+    string,
+    { prompt: number; completion: number }
+  > = {
+    openai: { prompt: 2.5, completion: 10.0 }, // e.g. gpt-4o
+    anthropic: { prompt: 3.0, completion: 15.0 }, // e.g. claude-3-5-sonnet
+    gemini: { prompt: 1.25, completion: 5.0 }, // e.g. gemini-1.5-pro
+    ollama: { prompt: 0.0, completion: 0.0 }, // local hardware execution
   };
 
   public recordUsage(
     provider: InferenceProviderType | string,
     tokensPrompt: number,
-    tokensCompletion: number
+    tokensCompletion: number,
   ): void {
     const key = provider.toLowerCase();
     const existing = this.consumption.get(key) ?? {
@@ -123,31 +132,38 @@ export class TokenQuotaTracker {
       tokensCompletion: 0,
       totalTokens: 0,
       requestCount: 0,
-      estimatedCostUsd: 0.0
+      estimatedCostUsd: 0.0,
     };
 
-    const rates = this.pricingPerMillion[key] ?? { prompt: 1.0, completion: 2.0 };
+    const rates = this.pricingPerMillion[key] ?? {
+      prompt: 1.0,
+      completion: 2.0,
+    };
     const costPrompt = (tokensPrompt / 1_000_000) * rates.prompt;
     const costComp = (tokensCompletion / 1_000_000) * rates.completion;
-    const totalCost = Number((existing.estimatedCostUsd + costPrompt + costComp).toFixed(6));
+    const totalCost = Number(
+      (existing.estimatedCostUsd + costPrompt + costComp).toFixed(6),
+    );
 
     this.consumption.set(key, {
       tokensPrompt: existing.tokensPrompt + tokensPrompt,
       tokensCompletion: existing.tokensCompletion + tokensCompletion,
       totalTokens: existing.totalTokens + tokensPrompt + tokensCompletion,
       requestCount: existing.requestCount + 1,
-      estimatedCostUsd: totalCost
+      estimatedCostUsd: totalCost,
     });
   }
 
   public getUsage(provider: string) {
-    return this.consumption.get(provider.toLowerCase()) ?? {
-      tokensPrompt: 0,
-      tokensCompletion: 0,
-      totalTokens: 0,
-      requestCount: 0,
-      estimatedCostUsd: 0.0
-    };
+    return (
+      this.consumption.get(provider.toLowerCase()) ?? {
+        tokensPrompt: 0,
+        tokensCompletion: 0,
+        totalTokens: 0,
+        requestCount: 0,
+        estimatedCostUsd: 0.0,
+      }
+    );
   }
 
   public getAllUsage(): Record<string, ReturnType<typeof this.getUsage>> {

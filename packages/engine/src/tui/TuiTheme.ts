@@ -57,7 +57,7 @@ export const ANSI_CODES = {
   brightWhite: "\x1b[97m",
   bgBlack: "\x1b[40m",
   bgBlue: "\x1b[44m",
-  bgDarkGray: "\x1b[100m"
+  bgDarkGray: "\x1b[100m",
 } as const;
 
 /**
@@ -83,7 +83,7 @@ export const TUI_PALETTES: Record<TuiThemeName, TuiColorPalette> = {
     success: ANSI_CODES.brightGreen,
     warn: ANSI_CODES.brightYellow,
     danger: ANSI_CODES.brightRed,
-    highlight: ANSI_CODES.brightCyan
+    highlight: ANSI_CODES.brightCyan,
   },
   light: {
     name: "light",
@@ -104,7 +104,7 @@ export const TUI_PALETTES: Record<TuiThemeName, TuiColorPalette> = {
     success: ANSI_CODES.green,
     warn: ANSI_CODES.yellow,
     danger: ANSI_CODES.red,
-    highlight: ANSI_CODES.magenta
+    highlight: ANSI_CODES.magenta,
   },
   "high-contrast": {
     name: "high-contrast",
@@ -125,6 +125,6 @@ export const TUI_PALETTES: Record<TuiThemeName, TuiColorPalette> = {
     success: ANSI_CODES.brightGreen,
     warn: ANSI_CODES.brightYellow,
     danger: ANSI_CODES.brightRed,
-    highlight: ANSI_CODES.brightYellow
-  }
+    highlight: ANSI_CODES.brightYellow,
+  },
 };

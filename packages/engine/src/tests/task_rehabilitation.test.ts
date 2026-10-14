@@ -29,26 +29,27 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     completedAt: new Date().toISOString(),
-    rehabStatus: options.rehabStatus ?? "PENDING_REHAB"
+    rehabStatus: options.rehabStatus ?? "PENDING_REHAB",
   });
 
   it("decomposes a multi-file task into Types, Implementation, and Test subtasks", () => {
     const mockRepo: any = {};
     const service = new TaskRehabilitationService({
       taskRepo: mockRepo,
-      maxRetriesBeforeRehab: 3
+      maxRetriesBeforeRehab: 3,
     });
 
     const failedTask = createMockTask({
       id: "T99.2",
       title: "Full Auth Engine & JWT Service",
-      focusFiles: "packages/engine/src/types.ts, packages/engine/src/AuthService.ts, packages/engine/src/tests/auth.test.ts"
+      focusFiles:
+        "packages/engine/src/types.ts, packages/engine/src/AuthService.ts, packages/engine/src/tests/auth.test.ts",
     });
 
     const subtasks = service.decomposeTask(
       failedTask,
       "MonorepoBuildGate failed: missing type export and test timeout",
-      "commit-abc1234"
+      "commit-abc1234",
     );
 
     assert.equal(subtasks.length, 3);
@@ -63,25 +64,28 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
 
     assert.equal(subtasks[2]!.role, "test_engineer");
     assert.equal(subtasks[2]!.title.includes("Unit Test"), true);
-    assert.equal(subtasks[2]!.focusFiles, "packages/engine/src/tests/auth.test.ts");
+    assert.equal(
+      subtasks[2]!.focusFiles,
+      "packages/engine/src/tests/auth.test.ts",
+    );
   });
 
   it("decomposes a single-file task into Scaffold and Implementation subtasks", () => {
     const mockRepo: any = {};
     const service = new TaskRehabilitationService({
       taskRepo: mockRepo,
-      maxRetriesBeforeRehab: 3
+      maxRetriesBeforeRehab: 3,
     });
 
     const failedTask = createMockTask({
       id: "T99.3",
       title: "Single File Worker Pool",
-      focusFiles: "packages/engine/src/WorkerPool.ts"
+      focusFiles: "packages/engine/src/WorkerPool.ts",
     });
 
     const subtasks = service.decomposeTask(
       failedTask,
-      "ExecutionTimeoutError after 60000ms"
+      "ExecutionTimeoutError after 60000ms",
     );
 
     assert.equal(subtasks.length, 2);
@@ -95,12 +99,24 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
     const mockRepo: any = {};
     const service = new TaskRehabilitationService({
       taskRepo: mockRepo,
-      maxRetriesBeforeRehab: 3
+      maxRetriesBeforeRehab: 3,
     });
 
-    const lowRetryTask = createMockTask({ id: "T1", title: "Task 1", failureCount: 1 });
-    const thresholdTask = createMockTask({ id: "T2", title: "Task 2", failureCount: 3 });
-    const highRetryTask = createMockTask({ id: "T3", title: "Task 3", failureCount: 4 });
+    const lowRetryTask = createMockTask({
+      id: "T1",
+      title: "Task 1",
+      failureCount: 1,
+    });
+    const thresholdTask = createMockTask({
+      id: "T2",
+      title: "Task 2",
+      failureCount: 3,
+    });
+    const highRetryTask = createMockTask({
+      id: "T3",
+      title: "Task 3",
+      failureCount: 4,
+    });
 
     assert.equal(service.shouldRehabilitate(lowRetryTask), false);
     assert.equal(service.shouldRehabilitate(thresholdTask), true);
@@ -113,7 +129,7 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
     await fs.writeFile(
       taskcadeFile,
       "# Active Taskcade\n\n## Phase 1: Bootstrap\n- [x] Initial setup\n",
-      "utf-8"
+      "utf-8",
     );
 
     const createdSubtasks: TaskRecord[] = [];
@@ -131,25 +147,26 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
       updateLogSnippet: async (_id: string, snippet: string) => {
         loggedSnippet = snippet;
       },
-      listByParentTaskId: async () => []
+      listByParentTaskId: async () => [],
     };
 
     const service = new TaskRehabilitationService({
       taskRepo: mockRepo,
       taskcadePath: taskcadeFile,
-      maxRetriesBeforeRehab: 3
+      maxRetriesBeforeRehab: 3,
     });
 
     const failedTask = createMockTask({
       id: "T99.4",
       title: "Complex Distributed Scheduler",
-      focusFiles: "packages/engine/src/types.ts, packages/engine/src/Scheduler.ts"
+      focusFiles:
+        "packages/engine/src/types.ts, packages/engine/src/Scheduler.ts",
     });
 
     const plan = await service.rehabilitateTask(
       failedTask,
       "Repeated compile error in Scheduler.ts",
-      "commit-789def"
+      "commit-789def",
     );
 
     assert.equal(plan.parentTaskId, "T99.4");
@@ -173,30 +190,30 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
 
   it("is idempotent and does not recreate subtasks if already DECOMPOSED", async () => {
     const existingChildren: TaskRecord[] = [
-      createMockTask({ id: "T99.5.1", title: "Subtask 1" })
+      createMockTask({ id: "T99.5.1", title: "Subtask 1" }),
     ];
 
     const mockRepo: any = {
       listByParentTaskId: async () => existingChildren,
       create: async () => {
         throw new Error("Should not be called");
-      }
+      },
     };
 
     const service = new TaskRehabilitationService({
       taskRepo: mockRepo,
-      maxRetriesBeforeRehab: 3
+      maxRetriesBeforeRehab: 3,
     });
 
     const alreadyDecomposed = createMockTask({
       id: "T99.5",
       title: "Already Decomposed Task",
-      rehabStatus: "DECOMPOSED"
+      rehabStatus: "DECOMPOSED",
     });
 
     const plan = await service.rehabilitateTask(
       alreadyDecomposed,
-      "Prior error"
+      "Prior error",
     );
 
     assert.equal(plan.decomposedTasks.length, 1);

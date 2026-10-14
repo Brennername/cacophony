@@ -12,7 +12,10 @@ import {
   BannedImportScrubberRule,
   FilePlacementAndNamingConventionRule,
 } from "../rules/index.js";
-import { RuleEvaluationContext, RulePipelineDeclaration } from "@cacophony/shared-types";
+import {
+  RuleEvaluationContext,
+  RulePipelineDeclaration,
+} from "@cacophony/shared-types";
 
 describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine", () => {
   describe("T25.1: Declarative Rule DSL Grammar & AST Parser", () => {
@@ -36,7 +39,9 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
       `;
 
       const parser = new RuleDslParser();
-      const pipeline = parser.parse(dslSource, { TARGET_ARCH: "x86_64-linux-vega" });
+      const pipeline = parser.parse(dslSource, {
+        TARGET_ARCH: "x86_64-linux-vega",
+      });
 
       assert.equal(pipeline.id, "custom_pipeline");
       assert.equal(pipeline.name, "Custom Test Pipeline");
@@ -56,7 +61,10 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
       assert.equal(preTest.rules[0]!.ruleId, "banned_imports");
       assert.equal(preTest.rules[0]!.severity, "hard_rejection");
       assert.equal(preTest.rules[0]!.continueOnError, true);
-      assert.deepEqual(preTest.rules[0]!.options?.packages, ["conductor", "lodash"]);
+      assert.deepEqual(preTest.rules[0]!.options?.packages, [
+        "conductor",
+        "lodash",
+      ]);
     });
   });
 
@@ -93,7 +101,9 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
       const result = await rule.evaluate(context, "silent_repair");
       assert.ok(result.passed);
       assert.equal(result.mutations.length, 1);
-      assert.ok(result.mutations[0]!.updatedContent.includes(`from "./models/Task.js"`));
+      assert.ok(
+        result.mutations[0]!.updatedContent.includes(`from "./models/Task.js"`),
+      );
       assert.ok(result.mutations[0]!.updatedContent.includes(`from "express"`));
     });
 
@@ -111,7 +121,10 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
       const result = await rule.evaluate(context, "silent_repair");
       assert.ok(result.passed);
       assert.equal(result.mutations.length, 1);
-      assert.equal(result.mutations[0]!.updatedContent, "line 1\nline 2\nline 3\n");
+      assert.equal(
+        result.mutations[0]!.updatedContent,
+        "line 1\nline 2\nline 3\n",
+      );
     });
 
     it("LooseRootFileGuardRule: should flag loose root files not in permitted list", async () => {
@@ -160,7 +173,9 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
         simulate: true,
       };
 
-      const result = await rule.evaluate(context, "soft_warning", { maxAllowed: 0 });
+      const result = await rule.evaluate(context, "soft_warning", {
+        maxAllowed: 0,
+      });
       assert.ok(result.passed);
       assert.ok(result.diagnostics.length > 0);
       assert.equal(result.diagnostics[0]!.severity, "soft_warning");
@@ -177,7 +192,9 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
         simulate: true,
       };
 
-      const result = await rule.evaluate(context, "hard_rejection", { packages: ["conductor"] });
+      const result = await rule.evaluate(context, "hard_rejection", {
+        packages: ["conductor"],
+      });
       assert.ok(!result.passed);
       assert.equal(result.hardRejected, true);
     });
@@ -189,8 +206,15 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
       const phaseContext: RuleEvaluationContext = {
         projectRoot: "/tmp/cacophony",
         hook: "post_generation",
-        modifiedFiles: ["/tmp/cacophony/packages/frontend/src/app/components/phase15-components.spec.ts"],
-        fileContents: new Map([["/tmp/cacophony/packages/frontend/src/app/components/phase15-components.spec.ts", "// test"]]),
+        modifiedFiles: [
+          "/tmp/cacophony/packages/frontend/src/app/components/phase15-components.spec.ts",
+        ],
+        fileContents: new Map([
+          [
+            "/tmp/cacophony/packages/frontend/src/app/components/phase15-components.spec.ts",
+            "// test",
+          ],
+        ]),
         simulate: true,
       };
 
@@ -198,21 +222,37 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
       assert.ok(!phaseResult.passed);
       assert.equal(phaseResult.hardRejected, true);
       assert.ok(phaseResult.diagnostics.length >= 1);
-      assert.ok(phaseResult.diagnostics[0]!.message.includes("phase-numbered filename"));
+      assert.ok(
+        phaseResult.diagnostics[0]!.message.includes("phase-numbered filename"),
+      );
 
       // Case 2: Misplaced component spec in parent components dir
       const misplacedContext: RuleEvaluationContext = {
         projectRoot: "/tmp/cacophony",
         hook: "post_generation",
-        modifiedFiles: ["/tmp/cacophony/packages/frontend/src/app/components/my-widget.spec.ts"],
-        fileContents: new Map([["/tmp/cacophony/packages/frontend/src/app/components/my-widget.spec.ts", "// test"]]),
+        modifiedFiles: [
+          "/tmp/cacophony/packages/frontend/src/app/components/my-widget.spec.ts",
+        ],
+        fileContents: new Map([
+          [
+            "/tmp/cacophony/packages/frontend/src/app/components/my-widget.spec.ts",
+            "// test",
+          ],
+        ]),
         simulate: true,
       };
 
-      const misplacedResult = await rule.evaluate(misplacedContext, "hard_rejection");
+      const misplacedResult = await rule.evaluate(
+        misplacedContext,
+        "hard_rejection",
+      );
       assert.ok(!misplacedResult.passed);
       assert.equal(misplacedResult.hardRejected, true);
-      assert.ok(misplacedResult.diagnostics.some((d) => d.message.includes("Misplaced component test file")));
+      assert.ok(
+        misplacedResult.diagnostics.some((d) =>
+          d.message.includes("Misplaced component test file"),
+        ),
+      );
 
       // Case 3: Proper co-located component spec passes
       const validContext: RuleEvaluationContext = {
@@ -267,7 +307,11 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
         simulate: true,
       };
 
-      const postGenOutcome = await engine.executePipelineHook(pipeline, "post_generation", postGenContext);
+      const postGenOutcome = await engine.executePipelineHook(
+        pipeline,
+        "post_generation",
+        postGenContext,
+      );
       assert.ok(postGenOutcome.passed);
       assert.equal(postGenOutcome.repairsApplied.length, 2);
       assert.equal(postGenOutcome.rejections.length, 0);
@@ -285,7 +329,11 @@ describe("Phase 25: Composable Deterministic Repair Rule DSL & Pipeline Engine",
         simulate: true,
       };
 
-      const preTestOutcome = await engine.executePipelineHook(pipeline, "pre_test", preTestContext);
+      const preTestOutcome = await engine.executePipelineHook(
+        pipeline,
+        "pre_test",
+        preTestContext,
+      );
       assert.equal(preTestOutcome.passed, false);
       assert.equal(preTestOutcome.hardRejected, true);
       assert.equal(preTestOutcome.totalRulesRun, 1); // Short-circuited!

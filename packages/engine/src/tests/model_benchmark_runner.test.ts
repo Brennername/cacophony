@@ -5,7 +5,11 @@ import { ModelEvictionManager } from "../scheduler/ModelEvictionManager.js";
 import { ModelTenancyGuard } from "../scheduler/ModelTenancyGuard.js";
 import { OllamaModelManager } from "../inference/OllamaModelManager.js";
 import type { IInferenceProvider } from "../inference/IInferenceProvider.js";
-import type { InferenceRequest, InferenceResponse, InferenceProviderType } from "@cacophony/shared-types";
+import type {
+  InferenceRequest,
+  InferenceResponse,
+  InferenceProviderType,
+} from "@cacophony/shared-types";
 
 class MockInferenceProvider implements IInferenceProvider {
   public shouldFail = false;
@@ -38,13 +42,13 @@ export class RingBuffer<T> {
       tokensCompletion: 120,
       totalTokens: 170,
       latencyMs: 1500,
-      tokensPerSec: 80.0
+      tokensPerSec: 80.0,
     };
   }
 
   async stream(
     req: InferenceRequest,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
   ): Promise<InferenceResponse> {
     const res = await this.generate(req);
     onChunk(res.content);
@@ -53,10 +57,21 @@ export class RingBuffer<T> {
 }
 
 class MockHealthRepository {
-  public runs: Array<{ modelId: string; success: boolean; durationMs: number; tokensPerSec: number }> = [];
+  public runs: Array<{
+    modelId: string;
+    success: boolean;
+    durationMs: number;
+    tokensPerSec: number;
+  }> = [];
   public profiles: Record<string, any> = {};
 
-  async recordRun(modelId: string, _provider: any, success: boolean, durationMs: number, tokensPerSec: number) {
+  async recordRun(
+    modelId: string,
+    _provider: any,
+    success: boolean,
+    durationMs: number,
+    tokensPerSec: number,
+  ) {
     this.runs.push({ modelId, success, durationMs, tokensPerSec });
     if (!this.profiles[modelId]) {
       this.profiles[modelId] = {
@@ -64,7 +79,7 @@ class MockHealthRepository {
         consecutiveFailures: 0,
         status: "ACTIVE",
         totalTasks: 0,
-        totalSuccess: 0
+        totalSuccess: 0,
       };
     }
     this.profiles[modelId].totalTasks++;
@@ -77,18 +92,26 @@ class MockHealthRepository {
   }
 
   async getProfile(modelId: string) {
-    return this.profiles[modelId] || {
-      modelId,
-      consecutiveFailures: 0,
-      status: "ACTIVE",
-      totalTasks: 0,
-      totalSuccess: 0
-    };
+    return (
+      this.profiles[modelId] || {
+        modelId,
+        consecutiveFailures: 0,
+        status: "ACTIVE",
+        totalTasks: 0,
+        totalSuccess: 0,
+      }
+    );
   }
 
   async updateStatus(modelId: string, status: string) {
     if (!this.profiles[modelId]) {
-      this.profiles[modelId] = { modelId, consecutiveFailures: 0, status, totalTasks: 0, totalSuccess: 0 };
+      this.profiles[modelId] = {
+        modelId,
+        consecutiveFailures: 0,
+        status,
+        totalTasks: 0,
+        totalSuccess: 0,
+      };
     }
     this.profiles[modelId].status = status;
   }
@@ -139,11 +162,14 @@ describe("ModelBenchmarkRunner & Automated Eviction Suite", () => {
       maxDiskStorageGb: 50,
       autoEvictionEnabled: true,
       minimumSuccessRateThreshold: 0.4,
-      maxConsecutiveFailuresBeforeEviction: 3
+      maxConsecutiveFailuresBeforeEviction: 3,
     });
 
     let deleteRequested = "";
-    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      url: string | URL | Request,
+      init?: RequestInit,
+    ) => {
       const urlStr = String(url);
       if (urlStr.endsWith("/api/delete") && init?.method === "DELETE") {
         const body = JSON.parse(String(init.body || "{}"));
@@ -159,7 +185,7 @@ describe("ModelBenchmarkRunner & Automated Eviction Suite", () => {
       3,
       0.25,
       tenancyGuard,
-      modelManager
+      modelManager,
     );
 
     // 1. Fail non-protected model 3 times
@@ -180,7 +206,7 @@ describe("ModelBenchmarkRunner & Automated Eviction Suite", () => {
       maxDiskStorageGb: 50,
       autoEvictionEnabled: true,
       minimumSuccessRateThreshold: 0.4,
-      maxConsecutiveFailuresBeforeEviction: 3
+      maxConsecutiveFailuresBeforeEviction: 3,
     });
 
     let deleteRequested = false;
@@ -195,7 +221,7 @@ describe("ModelBenchmarkRunner & Automated Eviction Suite", () => {
       3,
       0.25,
       tenancyGuard,
-      modelManager
+      modelManager,
     );
 
     // Fail protected model 3 times

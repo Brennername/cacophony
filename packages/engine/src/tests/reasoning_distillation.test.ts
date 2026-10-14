@@ -20,15 +20,22 @@ Edge case: Memory exhaustion if queue grows unbounded
     assert.strictEqual(opinion.keyDecisions.length >= 2, true);
     assert.strictEqual(opinion.identifiedRisks.length >= 1, true);
     assert.strictEqual(opinion.confidenceScore >= 0.8, true);
-    assert.ok(opinion.keyDecisions.some((d) => d.includes("strict FIFO ordering")));
-    assert.ok(opinion.identifiedRisks.some((r) => r.includes("Watchdog timeouts")));
+    assert.ok(
+      opinion.keyDecisions.some((d) => d.includes("strict FIFO ordering")),
+    );
+    assert.ok(
+      opinion.identifiedRisks.some((r) => r.includes("Watchdog timeouts")),
+    );
   });
 
   it("should return fallback record for empty reasoning transcript", async () => {
     const service = new ReasoningDistillationService();
     const opinion = await service.distillOpinion("   ");
 
-    assert.strictEqual(opinion.summary, "No cognitive reasoning trace recorded.");
+    assert.strictEqual(
+      opinion.summary,
+      "No cognitive reasoning trace recorded.",
+    );
     assert.strictEqual(opinion.keyDecisions.length, 0);
     assert.strictEqual(opinion.identifiedRisks.length, 0);
     assert.strictEqual(opinion.confidenceScore, 0.5);
@@ -42,7 +49,7 @@ Edge case: Memory exhaustion if queue grows unbounded
           summary: "Implements decoupled worktree isolation for concurrency.",
           keyDecisions: ["Use worktree add -B", "Track lockfiles in worktree"],
           identifiedRisks: ["Git index lock collision"],
-          confidenceScore: 0.95
+          confidenceScore: 0.95,
         }),
         model: "qwen2.5-coder:7b",
         tokensPrompt: 100,
@@ -50,17 +57,20 @@ Edge case: Memory exhaustion if queue grows unbounded
         totalTokens: 140,
         durationMs: 120,
         latencyMs: 120,
-        tokensPerSec: 33.3
+        tokensPerSec: 33.3,
       }),
       stream: async () => {
         throw new Error("Not implemented");
-      }
+      },
     };
 
     const service = new ReasoningDistillationService(mockProvider);
     const opinion = await service.distillOpinion("raw reasoning here...");
 
-    assert.strictEqual(opinion.summary, "Implements decoupled worktree isolation for concurrency.");
+    assert.strictEqual(
+      opinion.summary,
+      "Implements decoupled worktree isolation for concurrency.",
+    );
     assert.strictEqual(opinion.keyDecisions.length, 2);
     assert.strictEqual(opinion.identifiedRisks[0], "Git index lock collision");
     assert.strictEqual(opinion.confidenceScore, 0.95);

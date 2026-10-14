@@ -41,18 +41,25 @@ export class TestOutputParser {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] || "";
 
-      // Detection of failing test line (e.g. ✖ should do something or FAIL src/foo.test.ts)
-      if (line.includes("✖ ") || line.includes("FAIL ") || line.includes("AssertionError") || line.includes("Expected:")) {
+      // Detection of failing test line (e.g. \u2716 should do something or FAIL src/foo.test.ts)
+      if (
+        line.includes("\u2716 ") ||
+        line.includes("FAIL ") ||
+        line.includes("AssertionError") ||
+        line.includes("Expected:")
+      ) {
         inFailureBlock = true;
       }
 
-      const failMatch = line.match(/(?:✖|FAIL|FAILURE:)\s+(.+)/);
+      const failMatch = line.match(/(?:\u2716|FAIL|FAILURE:)\s+(.+)/);
       if (failMatch && failMatch[1]) {
         currentTestName = failMatch[1].trim();
       }
 
       // Location match: e.g. at ... (/path/to/file.ts:42:15)
-      const locMatch = line.match(/(?:[( \t]|^)((?:\/|[A-Za-z]:\\)[^\s:()]+\.(?:ts|js|java|go|rs)):(\d+)/);
+      const locMatch = line.match(
+        /(?:[( \t]|^)((?:\/|[A-Za-z]:\\)[^\s:()]+\.(?:ts|js|java|go|rs)):(\d+)/,
+      );
       if (locMatch && locMatch[1] && locMatch[2]) {
         currentFile = locMatch[1];
         currentLine = parseInt(locMatch[2], 10);
@@ -60,7 +67,12 @@ export class TestOutputParser {
 
       if (inFailureBlock) {
         failureSnippet.push(line);
-        if (line.includes("AssertionError") || line.includes("Error:") || line.includes("expected") || line.includes("diff:")) {
+        if (
+          line.includes("AssertionError") ||
+          line.includes("Error:") ||
+          line.includes("expected") ||
+          line.includes("diff:")
+        ) {
           rootCauses.push(line.trim());
         }
       }
@@ -71,7 +83,7 @@ export class TestOutputParser {
           testName: currentTestName,
           file: currentFile || undefined,
           line: currentLine || undefined,
-          rawMessage: failureSnippet.join("\n").trim()
+          rawMessage: failureSnippet.join("\n").trim(),
         });
         failureSnippet = [];
         inFailureBlock = false;
@@ -85,18 +97,22 @@ export class TestOutputParser {
         testName: currentTestName,
         file: currentFile || undefined,
         line: currentLine || undefined,
-        rawMessage: failureSnippet.join("\n").trim()
+        rawMessage: failureSnippet.join("\n").trim(),
       });
     }
 
-    const hasFails = failures.length > 0 || combined.includes("FAIL") || combined.includes("✖") || combined.includes("BUILD FAILURE");
+    const hasFails =
+      failures.length > 0 ||
+      combined.includes("FAIL") ||
+      combined.includes("\u2716") ||
+      combined.includes("BUILD FAILURE");
 
     return {
       passed: !hasFails,
       testsPassed: hasFails ? 0 : 1,
-      testsFailed: failures.length > 0 ? failures.length : (hasFails ? 1 : 0),
+      testsFailed: failures.length > 0 ? failures.length : hasFails ? 1 : 0,
       failures,
-      rootCauses: Array.from(new Set(rootCauses)).slice(0, 5)
+      rootCauses: Array.from(new Set(rootCauses)).slice(0, 5),
     };
   }
 
@@ -110,7 +126,9 @@ export class TestOutputParser {
 
     const lines: string[] = [];
     lines.push("### Automated Test Execution Failures");
-    lines.push(`Found ${parsed.testsFailed} failing test(s). Please review and resolve the failures below:\n`);
+    lines.push(
+      `Found ${parsed.testsFailed} failing test(s). Please review and resolve the failures below:\n`,
+    );
 
     for (const f of parsed.failures) {
       lines.push(`- **Test**: \`${f.testName}\``);

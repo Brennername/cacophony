@@ -48,5 +48,5 @@ export const migration011: Migration = {
         // In older SQLite versions DROP COLUMN might not be supported or column already dropped
       }
     }
-  }
+  },
 };

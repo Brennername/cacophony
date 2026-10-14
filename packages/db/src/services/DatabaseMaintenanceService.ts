@@ -22,7 +22,7 @@ export interface DatabaseMaintenanceConfig {
   readonly driver: IDatabaseDriver;
   readonly dataDirPath?: string;
   readonly maxStorageThresholdBytes?: number; // Default 500 MB
-  readonly telemetryRetentionDays?: number;   // Default 30 days
+  readonly telemetryRetentionDays?: number; // Default 30 days
   readonly archiveDirPath?: string;
 }
 
@@ -36,9 +36,11 @@ export class DatabaseMaintenanceService {
   constructor(config: DatabaseMaintenanceConfig) {
     this.driver = config.driver;
     this.dataDirPath = config.dataDirPath ?? "data/cacophony_pglite";
-    this.maxStorageThresholdBytes = config.maxStorageThresholdBytes ?? 500 * 1024 * 1024;
+    this.maxStorageThresholdBytes =
+      config.maxStorageThresholdBytes ?? 500 * 1024 * 1024;
     this.telemetryRetentionDays = config.telemetryRetentionDays ?? 30;
-    this.archiveDirPath = config.archiveDirPath ?? path.join(this.dataDirPath, "archives");
+    this.archiveDirPath =
+      config.archiveDirPath ?? path.join(this.dataDirPath, "archives");
   }
 
   /**
@@ -47,7 +49,9 @@ export class DatabaseMaintenanceService {
    *
    * @param options Optional maintenance options including full vacuum execution.
    */
-  public async runVacuumAndCompaction(options?: { readonly full?: boolean }): Promise<{ readonly durationMs: number; readonly dialect: string }> {
+  public async runVacuumAndCompaction(options?: {
+    readonly full?: boolean;
+  }): Promise<{ readonly durationMs: number; readonly dialect: string }> {
     const start = Date.now();
     const dialect = this.driver.getDialect();
 
@@ -70,7 +74,7 @@ export class DatabaseMaintenanceService {
 
     return {
       durationMs: Date.now() - start,
-      dialect
+      dialect,
     };
   }
 
@@ -84,7 +88,7 @@ export class DatabaseMaintenanceService {
         totalSizeMegabytes: 0,
         fileCount: 0,
         isOverThreshold: false,
-        thresholdBytes: this.maxStorageThresholdBytes
+        thresholdBytes: this.maxStorageThresholdBytes,
       };
     }
 
@@ -103,9 +107,7 @@ export class DatabaseMaintenanceService {
             totalBytes += stats.size;
             fileCount++;
           }
-        } catch {
-
-        }
+        } catch {}
       }
     };
 
@@ -120,27 +122,29 @@ export class DatabaseMaintenanceService {
       totalSizeMegabytes: totalMb,
       fileCount,
       isOverThreshold: isOver,
-      thresholdBytes: this.maxStorageThresholdBytes
+      thresholdBytes: this.maxStorageThresholdBytes,
     };
   }
 
   public async partitionAndArchiveOldTelemetry(
-    retentionDaysOverride?: number
+    retentionDaysOverride?: number,
   ): Promise<TelemetryPartitionArchiveResult> {
     const days = retentionDaysOverride ?? this.telemetryRetentionDays;
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const cutoffIso = cutoffDate.toISOString();
 
-    const countRes = await this.driver.query<{ readonly count: string | number }>(
+    const countRes = await this.driver.query<{
+      readonly count: string | number;
+    }>(
       "SELECT count(*) as count FROM telemetry_snapshots WHERE timestamp < $1",
-      [cutoffIso]
+      [cutoffIso],
     );
     const totalMatching = Number(countRes[0]?.count ?? 0);
 
     if (totalMatching === 0) {
       return {
         archivedCount: 0,
-        cutoffIsoString: cutoffIso
+        cutoffIsoString: cutoffIso,
       };
     }
 
@@ -165,7 +169,7 @@ export class DatabaseMaintenanceService {
         readonly ppt_watts: number;
       }>(
         "SELECT timestamp, gpu_busy_pct, edge_temp_c, ppt_watts FROM telemetry_snapshots WHERE timestamp < $1 ORDER BY timestamp ASC LIMIT $2",
-        [cutoffIso, batchSize]
+        [cutoffIso, batchSize],
       );
 
       if (batch.length === 0) {
@@ -182,7 +186,7 @@ export class DatabaseMaintenanceService {
       const placeholders = timestamps.map((_, idx) => `$${idx + 1}`).join(", ");
       await this.driver.execute(
         `DELETE FROM telemetry_snapshots WHERE timestamp IN (${placeholders})`,
-        timestamps
+        timestamps,
       );
 
       archivedCount += batch.length;
@@ -199,7 +203,7 @@ export class DatabaseMaintenanceService {
     return {
       archivedCount,
       cutoffIsoString: cutoffIso,
-      archiveFilePath: archivePath
+      archiveFilePath: archivePath,
     };
   }
 }

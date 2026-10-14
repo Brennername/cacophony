@@ -8,7 +8,9 @@ import type { HardwareTelemetrySnapshot } from "@cacophony/shared-types";
 /**
  * Interactive full-screen terminal runner for Cacophony TerminalApp.
  */
-export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promise<void> {
+export async function runInteractiveTui(
+  socketPath = DEFAULT_SOCKET_PATH,
+): Promise<void> {
   // Ensure terminal handles ANSI raw mode
   if (!process.stdin.isTTY) {
     console.error("Error: TUI requires an interactive TTY terminal session.");
@@ -18,7 +20,7 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
   const app = new TerminalApp({
     theme: "dark",
     width: process.stdout.columns || 120,
-    height: process.stdout.rows || 36
+    height: process.stdout.rows || 36,
   });
 
   let cleanupAndExit: () => void = () => {};
@@ -31,7 +33,7 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     handler: () => {
       app.toggleLogDrawer();
       render();
-    }
+    },
   });
 
   app.registerCommand({
@@ -41,7 +43,7 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     handler: () => {
       app.cycleActivePane();
       render();
-    }
+    },
   });
 
   app.registerCommand({
@@ -51,7 +53,7 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     handler: () => {
       app.setTheme("dark");
       render();
-    }
+    },
   });
 
   app.registerCommand({
@@ -61,7 +63,7 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     handler: () => {
       app.setTheme("light");
       render();
-    }
+    },
   });
 
   app.registerCommand({
@@ -71,7 +73,7 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     handler: () => {
       app.setTheme("high-contrast");
       render();
-    }
+    },
   });
 
   app.registerCommand({
@@ -80,14 +82,15 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     description: "Exit terminal application",
     handler: () => {
       cleanupAndExit();
-    }
+    },
   });
 
   // Welcome message in conversation pane
   app.addMessage({
     sender: "system",
-    content: "# Cacophony Terminal Environment\n- Press **Tab** to cycle pane focus.\n- Press **Ctrl+P** for searchable Command Palette.\n- Press **Ctrl+T** to toggle live logs.\n- Press **Ctrl+C** or **q** to quit.",
-    timestamp: new Date().toISOString()
+    content:
+      "# Cacophony Terminal Environment\n- Press **Tab** to cycle pane focus.\n- Press **Ctrl+P** for searchable Command Palette.\n- Press **Ctrl+T** to toggle live logs.\n- Press **Ctrl+C** or **q** to quit.",
+    timestamp: new Date().toISOString(),
   });
 
   // Telemetry updates from local sysfs hardware provider
@@ -100,14 +103,22 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     try {
       const gpuMetrics = await activeProvider.sample();
       const temp = gpuMetrics.edgeTempCelsius;
-      const thermalZone = temp >= 90 ? "Danger" : temp >= 80 ? "Elevated" : temp >= 70 ? "Warm" : "Nominal";
-      const pacingDelaySeconds = temp >= 90 ? 10 : temp >= 80 ? 15 : temp >= 70 ? 5 : 0;
+      const thermalZone =
+        temp >= 90
+          ? "Danger"
+          : temp >= 80
+            ? "Elevated"
+            : temp >= 70
+              ? "Warm"
+              : "Nominal";
+      const pacingDelaySeconds =
+        temp >= 90 ? 10 : temp >= 80 ? 15 : temp >= 70 ? 5 : 0;
       const snapshot: HardwareTelemetrySnapshot = {
         timestamp: new Date().toISOString(),
         gpu: gpuMetrics,
         thermalZone,
         pacingDelaySeconds,
-        activeModel: null
+        activeModel: null,
       };
       app.updateTelemetry(snapshot);
       render();
@@ -127,9 +138,12 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
       app.appendLog("[IPC] Connected to live Cacophony daemon.");
       statusInterval = setInterval(async () => {
         try {
-          const statusRes = (await client.request("status", {})) as { activeTask?: { id: string; stage: string } } | undefined;
+          const statusRes = (await client.request("status", {})) as
+            { activeTask?: { id: string; stage: string } } | undefined;
           if (statusRes?.activeTask) {
-            app.appendLog(`[TASK] Active: ${statusRes.activeTask.id} (${statusRes.activeTask.stage})`);
+            app.appendLog(
+              `[TASK] Active: ${statusRes.activeTask.id} (${statusRes.activeTask.stage})`,
+            );
           }
         } catch {
           // ignore transient IPC errors

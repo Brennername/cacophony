@@ -1,7 +1,10 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
 import { GpuDeviceManager } from "../GpuDeviceManager.js";
-import { FleetWebSocketClient, type FleetMessage } from "../../fleet/FleetWebSocketClient.js";
+import {
+  FleetWebSocketClient,
+  type FleetMessage,
+} from "../../fleet/FleetWebSocketClient.js";
 
 describe("Phase 36: Heterogeneous Multi-Device Accelerator Grid & Remote Fleet Discovery", () => {
   it("T36.1: GpuDeviceManager should enumerate accelerators and identify primary APU", async () => {
@@ -16,7 +19,7 @@ describe("Phase 36: Heterogeneous Multi-Device Accelerator Grid & Remote Fleet D
   it("T36.2: FleetWebSocketClient should manage connections, heartbeats, and health timeouts", async () => {
     const client = new FleetWebSocketClient({
       nodeId: "worker-node-alpha",
-      orchestratorUrl: "ws://cacophony-master:24161/ws/fleet"
+      orchestratorUrl: "ws://cacophony-master:24161/ws/fleet",
     });
 
     assert.equal(client.isHealthy(), false);
@@ -34,7 +37,7 @@ describe("Phase 36: Heterogeneous Multi-Device Accelerator Grid & Remote Fleet D
       gpuBusyPercent: 12,
       temperatureCelsius: 52,
       pendingTasksCount: 1,
-      activeModel: "qwen2.5-coder:3b"
+      activeModel: "qwen2.5-coder:3b",
     });
 
     assert.ok(receivedMsg !== null);

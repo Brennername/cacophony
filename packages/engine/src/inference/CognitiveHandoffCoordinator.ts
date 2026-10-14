@@ -1,5 +1,8 @@
 import type { IInferenceProvider } from "./IInferenceProvider.js";
-import { ReasoningDistillationService, type ModelOpinionRecord } from "./ReasoningDistillationService.js";
+import {
+  ReasoningDistillationService,
+  type ModelOpinionRecord,
+} from "./ReasoningDistillationService.js";
 
 export interface CognitiveHandoffResult {
   readonly success: boolean;
@@ -39,9 +42,13 @@ export class CognitiveHandoffCoordinator {
   private readonly provider: IInferenceProvider;
   private readonly distillationService: ReasoningDistillationService;
 
-  constructor(provider: IInferenceProvider, distillationService?: ReasoningDistillationService) {
+  constructor(
+    provider: IInferenceProvider,
+    distillationService?: ReasoningDistillationService,
+  ) {
     this.provider = provider;
-    this.distillationService = distillationService || new ReasoningDistillationService(provider);
+    this.distillationService =
+      distillationService || new ReasoningDistillationService(provider);
   }
 
   /**
@@ -56,13 +63,13 @@ export class CognitiveHandoffCoordinator {
     opinion: ModelOpinionRecord,
     originalPrompt: string,
     focusFiles: readonly string[],
-    directives: readonly string[]
+    directives: readonly string[],
   ): string {
     const sections: string[] = [
       "=== ARCHITECTURAL SPECIFICATION & REASONING SUMMARY ===",
       `Executive Summary: ${opinion.summary}`,
       "",
-      "Key Architectural Decisions:"
+      "Key Architectural Decisions:",
     ];
 
     for (const decision of opinion.keyDecisions) {
@@ -81,7 +88,7 @@ export class CognitiveHandoffCoordinator {
       "=== TARGET TASK OBJECTIVE ===",
       originalPrompt,
       "",
-      `Target Files: ${focusFiles.join(", ") || "None specified"}`
+      `Target Files: ${focusFiles.join(", ") || "None specified"}`,
     );
 
     if (directives.length > 0) {
@@ -96,7 +103,7 @@ export class CognitiveHandoffCoordinator {
       "=== INSTRUCTIONS FOR IMPLEMENTER ===",
       "You are the senior implementation engineer. The software architect above has completed the high-level design.",
       "Your sole objective is to write the complete, production-ready code fulfilling all architectural decisions and constraints.",
-      "Enclose all code in markdown code fences. Do NOT repeat or output cognitive thinking tags."
+      "Enclose all code in markdown code fences. Do NOT repeat or output cognitive thinking tags.",
     );
 
     return sections.join("\n");
@@ -105,7 +112,9 @@ export class CognitiveHandoffCoordinator {
   /**
    * Executes handoff from architect reasoning trace to implementer model.
    */
-  public async executeHandoff(options: CognitiveHandoffOptions): Promise<CognitiveHandoffResult> {
+  public async executeHandoff(
+    options: CognitiveHandoffOptions,
+  ): Promise<CognitiveHandoffResult> {
     const {
       reasonerModel,
       implementerModel,
@@ -113,18 +122,21 @@ export class CognitiveHandoffCoordinator {
       originalTaskPrompt,
       focusFiles,
       directives,
-      onChunk
+      onChunk,
     } = options;
 
     // 1. Distill reasoning transcript
-    const opinion = await this.distillationService.distillOpinion(rawReasoningTranscript, implementerModel);
+    const opinion = await this.distillationService.distillOpinion(
+      rawReasoningTranscript,
+      implementerModel,
+    );
 
     // 2. Synthesize actionable implementation prompt
     const implementationBrief = this.formatImplementationBrief(
       opinion,
       originalTaskPrompt,
       focusFiles,
-      directives
+      directives,
     );
 
     // 3. Dispatch to implementer model
@@ -133,14 +145,14 @@ export class CognitiveHandoffCoordinator {
           {
             model: implementerModel,
             messages: [{ role: "user", content: implementationBrief }],
-            temperature: 0.1
+            temperature: 0.1,
           },
-          onChunk
+          onChunk,
         )
       : await this.provider.generate({
           model: implementerModel,
           messages: [{ role: "user", content: implementationBrief }],
-          temperature: 0.1
+          temperature: 0.1,
         });
 
     return {
@@ -154,7 +166,7 @@ export class CognitiveHandoffCoordinator {
       tokensPrompt: response.tokensPrompt,
       tokensCompletion: response.tokensCompletion,
       tokensPerSec: response.tokensPerSec,
-      rawOutput: response.content
+      rawOutput: response.content,
     };
   }
 }

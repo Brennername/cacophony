@@ -71,8 +71,8 @@ export class UserSessionRepository {
           session.refreshTokenEnc || null,
           session.expiresAt,
           session.createdAt,
-          session.updatedAt
-        ]
+          session.updatedAt,
+        ],
       );
     } else {
       await this.driver.execute(
@@ -91,8 +91,8 @@ export class UserSessionRepository {
           session.refreshTokenEnc || null,
           session.expiresAt,
           session.createdAt,
-          session.updatedAt
-        ]
+          session.updatedAt,
+        ],
       );
     }
   }
@@ -100,10 +100,12 @@ export class UserSessionRepository {
   /**
    * Retrieves an active user session by session ID.
    */
-  public async getSession(sessionId: string): Promise<UserSessionRecord | null> {
+  public async getSession(
+    sessionId: string,
+  ): Promise<UserSessionRecord | null> {
     const row = await this.driver.queryOne<UserSessionRow>(
       "SELECT * FROM user_sessions WHERE session_id = $1",
-      [sessionId]
+      [sessionId],
     );
     return row ? this.mapRow(row) : null;
   }
@@ -111,10 +113,12 @@ export class UserSessionRepository {
   /**
    * Retrieves all active sessions for a specific user ID.
    */
-  public async getSessionsByUserId(userId: string): Promise<readonly UserSessionRecord[]> {
+  public async getSessionsByUserId(
+    userId: string,
+  ): Promise<readonly UserSessionRecord[]> {
     const rows = await this.driver.query<UserSessionRow>(
       "SELECT * FROM user_sessions WHERE user_id = $1 ORDER BY created_at DESC",
-      [userId]
+      [userId],
     );
     return rows.map((r) => this.mapRow(r));
   }
@@ -125,7 +129,7 @@ export class UserSessionRepository {
   public async deleteSession(sessionId: string): Promise<boolean> {
     const res = await this.driver.execute(
       "DELETE FROM user_sessions WHERE session_id = $1",
-      [sessionId]
+      [sessionId],
     );
     return res.rowsAffected > 0;
   }
@@ -137,7 +141,7 @@ export class UserSessionRepository {
     const nowIso = new Date().toISOString();
     const res = await this.driver.execute(
       "DELETE FROM user_sessions WHERE expires_at < $1",
-      [nowIso]
+      [nowIso],
     );
     return res.rowsAffected;
   }
@@ -154,7 +158,7 @@ export class UserSessionRepository {
       refreshTokenEnc: row.refresh_token_enc || undefined,
       expiresAt: String(row.expires_at),
       createdAt: String(row.created_at),
-      updatedAt: String(row.updated_at)
+      updatedAt: String(row.updated_at),
     };
   }
 }

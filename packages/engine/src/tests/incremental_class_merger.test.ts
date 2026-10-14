@@ -117,7 +117,10 @@ export class CacophonyHttpServer {
   });
 
   test("should guard against destructive overwrites when generated snippet is short and not valid class", () => {
-    const original = "export class LargeSystem {\n" + "  public method() { return 1; }\n".repeat(80) + "}\n";
+    const original =
+      "export class LargeSystem {\n" +
+      "  public method() { return 1; }\n".repeat(80) +
+      "}\n";
     const generated = "// fragment with no class declaration\nconst x = 123;\n";
 
     const merged = IncrementalClassMerger.merge(original, generated);
@@ -155,7 +158,7 @@ export class CacophonyHttpServer {
       "  public generateToken(): string {",
       "    return 'token-123';",
       "  }",
-      "}"
+      "}",
     ].join("\n");
 
     const generatedWithoutDocs = [
@@ -167,7 +170,7 @@ export class CacophonyHttpServer {
       "  public generateToken(): string {",
       "    return 'token-456';",
       "  }",
-      "}"
+      "}",
     ].join("\n");
 
     const merged = IncrementalClassMerger.merge(original, generatedWithoutDocs);
@@ -178,4 +181,3 @@ export class CacophonyHttpServer {
     assert.ok(merged.includes("token-456"));
   });
 });
-

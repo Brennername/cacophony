@@ -7,7 +7,10 @@ import type {
 import { ConvergenceAnalyzer } from "./ConvergenceAnalyzer.js";
 
 export interface ITaskHistorySource {
-  listRecent(limit?: number, filter?: { status?: string }): Promise<readonly TaskRecord[]>;
+  listRecent(
+    limit?: number,
+    filter?: { status?: string },
+  ): Promise<readonly TaskRecord[]>;
 }
 
 /**
@@ -27,7 +30,9 @@ export class RollingWindowAnalyticsService {
   /**
    * Computes dynamic rolling window metrics based on configuration and filter criteria.
    */
-  public async computeRollingMetrics(config: IRollingWindowConfig): Promise<IRollingWindowMetrics> {
+  public async computeRollingMetrics(
+    config: IRollingWindowConfig,
+  ): Promise<IRollingWindowMetrics> {
     const windowSize = Math.max(1, config.windowSize);
     const minSampleSize = config.minSampleSize ?? 2;
     const filter: IWindowQualificationFilter = config.filter ?? {};
@@ -47,10 +52,17 @@ export class RollingWindowAnalyticsService {
       if (filter.model && task.modelAssigned !== filter.model) {
         return false;
       }
-      if (filter.commitHash && task.targetBranch !== filter.commitHash && !task.prompt.includes(filter.commitHash)) {
+      if (
+        filter.commitHash &&
+        task.targetBranch !== filter.commitHash &&
+        !task.prompt.includes(filter.commitHash)
+      ) {
         return false;
       }
-      if (filter.category && !task.title.toLowerCase().includes(filter.category.toLowerCase())) {
+      if (
+        filter.category &&
+        !task.title.toLowerCase().includes(filter.category.toLowerCase())
+      ) {
         return false;
       }
       return true;
@@ -64,9 +76,19 @@ export class RollingWindowAnalyticsService {
       return {
         windowSize,
         sampleCount,
-        successCount: windowSlice.filter((t) => t.status === "COMPLETED").length,
+        successCount: windowSlice.filter((t) => t.status === "COMPLETED")
+          .length,
         failureCount: windowSlice.filter((t) => t.status === "FAILED").length,
-        successRatePercent: sampleCount === 0 ? 100.0 : Number(((windowSlice.filter((t) => t.status === "COMPLETED").length / sampleCount) * 100).toFixed(1)),
+        successRatePercent:
+          sampleCount === 0
+            ? 100.0
+            : Number(
+                (
+                  (windowSlice.filter((t) => t.status === "COMPLETED").length /
+                    sampleCount) *
+                  100
+                ).toFixed(1),
+              ),
         velocityDelta: 0.0,
         accelerationDelta: 0.0,
         isPlateaued: false,
@@ -74,9 +96,13 @@ export class RollingWindowAnalyticsService {
       };
     }
 
-    const successCount = windowSlice.filter((t) => t.status === "COMPLETED").length;
+    const successCount = windowSlice.filter(
+      (t) => t.status === "COMPLETED",
+    ).length;
     const failureCount = sampleCount - successCount;
-    const successRatePercent = Number(((successCount / sampleCount) * 100).toFixed(1));
+    const successRatePercent = Number(
+      ((successCount / sampleCount) * 100).toFixed(1),
+    );
 
     // Calculate rates for derivative calculation (slice into chronologically ordered sub-windows)
     const rates: number[] = [];
@@ -87,16 +113,30 @@ export class RollingWindowAnalyticsService {
       rates.unshift(Number(((subSuccess / sub.length) * 100).toFixed(1)));
     }
 
-    const { velocityDelta, accelerationDelta } = ConvergenceAnalyzer.calculateDerivatives(rates);
+    const { velocityDelta, accelerationDelta } =
+      ConvergenceAnalyzer.calculateDerivatives(rates);
 
     // Compute nested short vs long window plateau check
     const shortWindowCount = Math.min(10, sampleCount);
     const shortSlice = windowSlice.slice(0, shortWindowCount);
-    const shortRate = Number(((shortSlice.filter((t) => t.status === "COMPLETED").length / shortWindowCount) * 100).toFixed(1));
-    const { isPlateaued } = ConvergenceAnalyzer.detectPlateau(shortRate, successRatePercent, 2.5);
+    const shortRate = Number(
+      (
+        (shortSlice.filter((t) => t.status === "COMPLETED").length /
+          shortWindowCount) *
+        100
+      ).toFixed(1),
+    );
+    const { isPlateaued } = ConvergenceAnalyzer.detectPlateau(
+      shortRate,
+      successRatePercent,
+      2.5,
+    );
 
-    const newestTaskTimestamp = windowSlice[0]?.completedAt ?? windowSlice[0]?.updatedAt;
-    const oldestTaskTimestamp = windowSlice[windowSlice.length - 1]?.completedAt ?? windowSlice[windowSlice.length - 1]?.updatedAt;
+    const newestTaskTimestamp =
+      windowSlice[0]?.completedAt ?? windowSlice[0]?.updatedAt;
+    const oldestTaskTimestamp =
+      windowSlice[windowSlice.length - 1]?.completedAt ??
+      windowSlice[windowSlice.length - 1]?.updatedAt;
 
     const result: IRollingWindowMetrics = {
       windowSize,

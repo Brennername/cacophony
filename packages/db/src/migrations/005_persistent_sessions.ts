@@ -72,5 +72,5 @@ export const migration005: Migration = {
       DROP TABLE IF EXISTS session_messages;
       DROP TABLE IF EXISTS sessions;
     `);
-  }
+  },
 };

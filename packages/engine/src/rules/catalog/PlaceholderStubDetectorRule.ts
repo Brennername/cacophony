@@ -29,14 +29,18 @@ const PLACEHOLDER_PATTERNS: readonly RegExp[] = [
 export class PlaceholderStubDetectorRule extends BaseRepairRule {
   readonly id = "placeholder_stubs";
   readonly name = "Placeholder Stub Detector";
-  readonly description = "Flags lazy incomplete code stubs, ellipses, and unfulfilled TODO markers.";
+  readonly description =
+    "Flags lazy incomplete code stubs, ellipses, and unfulfilled TODO markers.";
   readonly defaultSeverity: RuleSeverity = "soft_warning";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    options?: { maxAllowed?: number }
+    options?: { maxAllowed?: number },
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -83,6 +87,12 @@ export class PlaceholderStubDetectorRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

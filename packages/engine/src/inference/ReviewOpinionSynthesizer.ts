@@ -1,7 +1,4 @@
-import {
-  ReviewVerdict,
-  PersonaFinding,
-} from "@cacophony/shared-types";
+import { ReviewVerdict, PersonaFinding } from "@cacophony/shared-types";
 import { CandidateReviewExecution } from "./MultiModelConsensusCoordinator.js";
 
 export interface UnifiedFinding extends PersonaFinding {
@@ -30,7 +27,7 @@ export class ReviewOpinionSynthesizer {
    * Synthesizes candidate reviews into a final consensus review and markdown comment.
    */
   public static synthesize(
-    executions: readonly CandidateReviewExecution[]
+    executions: readonly CandidateReviewExecution[],
   ): ConsensusReviewSynthesis {
     if (executions.length === 0) {
       return {
@@ -38,7 +35,8 @@ export class ReviewOpinionSynthesizer {
         approvalCount: 0,
         requestChangesCount: 0,
         unifiedFindings: [],
-        markdownComment: "### Autonomous Review Consensus\nNo candidate reviews were submitted.",
+        markdownComment:
+          "### Autonomous Review Consensus\nNo candidate reviews were submitted.",
       };
     }
 
@@ -68,7 +66,7 @@ export class ReviewOpinionSynthesizer {
       approvalCount,
       requestChangesCount,
       executions,
-      unifiedFindings
+      unifiedFindings,
     );
 
     return {
@@ -84,18 +82,21 @@ export class ReviewOpinionSynthesizer {
    * Aggregates and deduplicates findings from multiple candidate models.
    */
   private static aggregateFindings(
-    executions: readonly CandidateReviewExecution[]
+    executions: readonly CandidateReviewExecution[],
   ): readonly UnifiedFinding[] {
-    const findingsMap = new Map<string, {
-      path: string;
-      lineNumber?: number | undefined;
-      ruleId?: string | undefined;
-      message: string;
-      severity: "info" | "warning" | "blocker";
-      suggestion?: string | undefined;
-      reportingModels: Set<string>;
-      reportingPersonas: Set<string>;
-    }>();
+    const findingsMap = new Map<
+      string,
+      {
+        path: string;
+        lineNumber?: number | undefined;
+        ruleId?: string | undefined;
+        message: string;
+        severity: "info" | "warning" | "blocker";
+        suggestion?: string | undefined;
+        reportingModels: Set<string>;
+        reportingPersonas: Set<string>;
+      }
+    >();
 
     for (const exec of executions) {
       for (const finding of exec.result.findings) {
@@ -109,7 +110,10 @@ export class ReviewOpinionSynthesizer {
           // Elevate severity if higher
           if (finding.severity === "blocker") {
             existing.severity = "blocker";
-          } else if (finding.severity === "warning" && existing.severity === "info") {
+          } else if (
+            finding.severity === "warning" &&
+            existing.severity === "info"
+          ) {
             existing.severity = "warning";
           }
           if (finding.suggestion && !existing.suggestion) {
@@ -150,7 +154,7 @@ export class ReviewOpinionSynthesizer {
     approvals: number,
     rejections: number,
     executions: readonly CandidateReviewExecution[],
-    findings: readonly UnifiedFinding[]
+    findings: readonly UnifiedFinding[],
   ): string {
     const verdictBanner =
       verdict === "APPROVE"
@@ -168,7 +172,7 @@ export class ReviewOpinionSynthesizer {
     for (const exec of executions) {
       const v = exec.result.verdict;
       lines.push(
-        `- **${exec.persona}** (\`${exec.modelId}\`): ${v} (${exec.latencyMs}ms) — ${exec.result.summary}`
+        `- **${exec.persona}** (\`${exec.modelId}\`): ${v} (${exec.latencyMs}ms) — ${exec.result.summary}`,
       );
     }
 
@@ -178,14 +182,17 @@ export class ReviewOpinionSynthesizer {
         const loc = finding.lineNumber ? `:${finding.lineNumber}` : "";
         const sev = finding.severity.toUpperCase();
         lines.push(
-          `- [${sev}] \`${finding.path}${loc}\`: ${finding.message} *(Reported by: ${finding.reportingPersonas.join(", ")})*`
+          `- [${sev}] \`${finding.path}${loc}\`: ${finding.message} *(Reported by: ${finding.reportingPersonas.join(", ")})*`,
         );
         if (finding.suggestion) {
           lines.push(`  - *Suggestion*: ${finding.suggestion}`);
         }
       }
     } else {
-      lines.push("", "No critical findings or blocking issues were identified.");
+      lines.push(
+        "",
+        "No critical findings or blocking issues were identified.",
+      );
     }
 
     return lines.join("\n");

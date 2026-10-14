@@ -6,7 +6,7 @@ describe("Bandit Statistical Role Promotion Suite (T55.5.4)", () => {
   it("should promote superior model arm when empirical win rate statistically outperforms baseline", () => {
     const scheduler = new BanditTaskScheduler({
       policy: "epsilon_greedy",
-      explorationRate: 0.1
+      explorationRate: 0.1,
     });
 
     const baselineModel = "qwen2.5-coder:7b";
@@ -23,10 +23,12 @@ describe("Bandit Statistical Role Promotion Suite (T55.5.4)", () => {
         taskId: `baseline-task-${i}`,
         armId: baselineArm.armId,
         reward: success ? 1.0 : 0.0,
-        executionOutcome: success ? "clean_first_pass" : "test_assertion_failed",
+        executionOutcome: success
+          ? "clean_first_pass"
+          : "test_assertion_failed",
         durationMs: 1200,
         tokensPerSec: 24,
-        vramMb: 4096
+        vramMb: 4096,
       });
     }
 
@@ -37,26 +39,37 @@ describe("Bandit Statistical Role Promotion Suite (T55.5.4)", () => {
         taskId: `challenger-task-${i}`,
         armId: challengerArm.armId,
         reward: success ? 1.0 : 0.0,
-        executionOutcome: success ? "clean_first_pass" : "test_assertion_failed",
+        executionOutcome: success
+          ? "clean_first_pass"
+          : "test_assertion_failed",
         durationMs: 900,
         tokensPerSec: 32,
-        vramMb: 4096
+        vramMb: 4096,
       });
     }
 
     // Evaluate promotion
     const promotion = scheduler.evaluateRolePromotion(role, baselineModel);
-    assert.ok(promotion, "Superior challenger should earn promotion over baseline");
+    assert.ok(
+      promotion,
+      "Superior challenger should earn promotion over baseline",
+    );
     assert.strictEqual(promotion.previousModel, baselineModel);
     assert.strictEqual(promotion.promotedModel, challengerModel);
-    assert.ok(promotion.pValue < 0.05, `p-value (${promotion.pValue}) must be statistically significant (< 0.05)`);
-    assert.ok(promotion.winRateDeltaPct > 8, `Win rate delta (${promotion.winRateDeltaPct}%) must exceed minimum delta threshold`);
+    assert.ok(
+      promotion.pValue < 0.05,
+      `p-value (${promotion.pValue}) must be statistically significant (< 0.05)`,
+    );
+    assert.ok(
+      promotion.winRateDeltaPct > 8,
+      `Win rate delta (${promotion.winRateDeltaPct}%) must exceed minimum delta threshold`,
+    );
   });
 
   it("should not promote when trials count is insufficient or win rate is parity", () => {
     const scheduler = new BanditTaskScheduler({
       policy: "epsilon_greedy",
-      explorationRate: 0.1
+      explorationRate: 0.1,
     });
 
     const baselineModel = "qwen2.5-coder:7b";
@@ -75,7 +88,7 @@ describe("Bandit Statistical Role Promotion Suite (T55.5.4)", () => {
         executionOutcome: "clean_first_pass",
         durationMs: 1000,
         tokensPerSec: 25,
-        vramMb: 4096
+        vramMb: 4096,
       });
       scheduler.recordFeedback({
         taskId: `task-${i}`,
@@ -84,11 +97,15 @@ describe("Bandit Statistical Role Promotion Suite (T55.5.4)", () => {
         executionOutcome: "clean_first_pass",
         durationMs: 1000,
         tokensPerSec: 25,
-        vramMb: 4096
+        vramMb: 4096,
       });
     }
 
     const promotion = scheduler.evaluateRolePromotion(role, baselineModel);
-    assert.strictEqual(promotion, null, "Should not promote with insufficient sample size");
+    assert.strictEqual(
+      promotion,
+      null,
+      "Should not promote with insufficient sample size",
+    );
   });
 });

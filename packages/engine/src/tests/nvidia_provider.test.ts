@@ -59,7 +59,7 @@ describe("NvidiaNvmlProvider Suite (T83.2)", () => {
 
     await assert.rejects(
       async () => provider.sample(),
-      /Failed to query NVIDIA GPU devices/
+      /Failed to query NVIDIA GPU devices/,
     );
   });
 });

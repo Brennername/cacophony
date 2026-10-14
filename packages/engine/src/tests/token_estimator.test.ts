@@ -23,10 +23,13 @@ revert modified state, and assign priority remediation to the most qualified ava
 
     const expectedProseBenchmark = 90;
     const proseEstimated = estimateTokenCount(proseSample);
-    const proseErrorPct = (Math.abs(proseEstimated - expectedProseBenchmark) / expectedProseBenchmark) * 100;
+    const proseErrorPct =
+      (Math.abs(proseEstimated - expectedProseBenchmark) /
+        expectedProseBenchmark) *
+      100;
     assert.ok(
       proseErrorPct <= 5,
-      `Prose token estimation error (${proseErrorPct.toFixed(1)}%) exceeds 5% benchmark tolerance. Got ${proseEstimated}, expected ${expectedProseBenchmark}`
+      `Prose token estimation error (${proseErrorPct.toFixed(1)}%) exceeds 5% benchmark tolerance. Got ${proseEstimated}, expected ${expectedProseBenchmark}`,
     );
 
     // Benchmark code block: standard tokenizer yields 46 tokens
@@ -43,10 +46,13 @@ revert modified state, and assign priority remediation to the most qualified ava
 
     const expectedCodeBenchmark = 62;
     const codeEstimated = estimateTokenCount(codeSample);
-    const codeErrorPct = (Math.abs(codeEstimated - expectedCodeBenchmark) / expectedCodeBenchmark) * 100;
+    const codeErrorPct =
+      (Math.abs(codeEstimated - expectedCodeBenchmark) /
+        expectedCodeBenchmark) *
+      100;
     assert.ok(
       codeErrorPct <= 5,
-      `Code token estimation error (${codeErrorPct.toFixed(1)}%) exceeds 5% benchmark tolerance. Got ${codeEstimated}, expected ${expectedCodeBenchmark}`
+      `Code token estimation error (${codeErrorPct.toFixed(1)}%) exceeds 5% benchmark tolerance. Got ${codeEstimated}, expected ${expectedCodeBenchmark}`,
     );
   });
 });

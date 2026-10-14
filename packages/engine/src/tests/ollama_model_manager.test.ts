@@ -26,8 +26,8 @@ describe("OllamaModelManager Suite", () => {
                 details: {
                   family: "qwen2",
                   parameter_size: "7.6B",
-                  quantization_level: "Q4_K_M"
-                }
+                  quantization_level: "Q4_K_M",
+                },
               },
               {
                 name: "deepseek-r1:8b",
@@ -38,12 +38,12 @@ describe("OllamaModelManager Suite", () => {
                 details: {
                   family: "llama",
                   parameter_size: "8B",
-                  quantization_level: "Q4_0"
-                }
-              }
-            ]
+                  quantization_level: "Q4_0",
+                },
+              },
+            ],
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
 
@@ -54,11 +54,11 @@ describe("OllamaModelManager Suite", () => {
               {
                 name: "qwen2.5-coder:7b-instruct-q4_K_M",
                 model: "qwen2.5-coder:7b-instruct-q4_K_M",
-                size_vram: 4683075584
-              }
-            ]
+                size_vram: 4683075584,
+              },
+            ],
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
 
@@ -70,7 +70,9 @@ describe("OllamaModelManager Suite", () => {
     const models = await manager.listInstalledModels(protectedList);
 
     assert.equal(models.length, 2);
-    const qwen = models.find((m) => m.name === "qwen2.5-coder:7b-instruct-q4_K_M");
+    const qwen = models.find(
+      (m) => m.name === "qwen2.5-coder:7b-instruct-q4_K_M",
+    );
     const deepseek = models.find((m) => m.name === "deepseek-r1:8b");
 
     assert.ok(qwen);
@@ -86,9 +88,19 @@ describe("OllamaModelManager Suite", () => {
   test("should stream pull progress events and calculate percentages accurately", async () => {
     const ndjsonChunks = [
       JSON.stringify({ status: "pulling manifest" }) + "\n",
-      JSON.stringify({ status: "downloading layer", digest: "sha256:111", total: 1000, completed: 250 }) + "\n",
-      JSON.stringify({ status: "downloading layer", digest: "sha256:111", total: 1000, completed: 750 }) + "\n",
-      JSON.stringify({ status: "success" }) + "\n"
+      JSON.stringify({
+        status: "downloading layer",
+        digest: "sha256:111",
+        total: 1000,
+        completed: 250,
+      }) + "\n",
+      JSON.stringify({
+        status: "downloading layer",
+        digest: "sha256:111",
+        total: 1000,
+        completed: 750,
+      }) + "\n",
+      JSON.stringify({ status: "success" }) + "\n",
     ];
 
     globalThis.fetch = (async (url: string | URL | Request) => {
@@ -100,7 +112,7 @@ describe("OllamaModelManager Suite", () => {
               controller.enqueue(new TextEncoder().encode(chunk));
             }
             controller.close();
-          }
+          },
         });
         return new Response(stream, { status: 200 });
       }
@@ -122,7 +134,10 @@ describe("OllamaModelManager Suite", () => {
   });
 
   test("should delete model and handle errors gracefully", async () => {
-    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      url: string | URL | Request,
+      init?: RequestInit,
+    ) => {
       const urlStr = String(url);
       if (urlStr.endsWith("/api/delete") && init?.method === "DELETE") {
         const body = JSON.parse(String(init.body || "{}"));
@@ -138,12 +153,9 @@ describe("OllamaModelManager Suite", () => {
     const success = await manager.deleteModel("deepseek-r1:8b");
     assert.equal(success, true);
 
-    await assert.rejects(
-      async () => {
-        await manager.deleteModel("non-existent");
-      },
-      /Failed to delete model 'non-existent': HTTP 404/
-    );
+    await assert.rejects(async () => {
+      await manager.deleteModel("non-existent");
+    }, /Failed to delete model 'non-existent': HTTP 404/);
   });
 
   test("should show model metadata and quantization details", async () => {
@@ -156,10 +168,10 @@ describe("OllamaModelManager Suite", () => {
             details: {
               format: "gguf",
               family: "qwen2",
-              quantization_level: "Q4_K_M"
-            }
+              quantization_level: "Q4_K_M",
+            },
           }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
       return new Response("Not found", { status: 404 });

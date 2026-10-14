@@ -26,7 +26,10 @@ export interface IModelRegistry {
   register(spec: ModelSpec): Promise<void>;
   deregister(modelId: string): Promise<void>;
   getModel(modelId: string): Promise<ModelSpec | undefined>;
-  listModels(filter?: { provider?: InferenceProviderType; isLocal?: boolean }): Promise<readonly ModelSpec[]>;
+  listModels(filter?: {
+    provider?: InferenceProviderType;
+    isLocal?: boolean;
+  }): Promise<readonly ModelSpec[]>;
   discoverLocalModels(): Promise<readonly ModelSpec[]>;
   getOptimalModelForTask(requirements: {
     contextTokensNeeded: number;

@@ -38,5 +38,5 @@ export const migration009: Migration = {
     await driver.execRaw(`
       DROP TABLE IF EXISTS user_sessions;
     `);
-  }
+  },
 };

@@ -4,7 +4,12 @@ import { ModelAffinityTaskSorter } from "../scheduler/ModelAffinityTaskSorter.js
 import type { TaskRecord } from "@cacophony/shared-types";
 
 describe("Priority Preemption & Starvation Prevention Test Suite (T47.5.4)", () => {
-  const createMockTask = (id: string, priority: "P0" | "P1" | "P2", ageMinutes = 0, model = "model-a"): TaskRecord => {
+  const createMockTask = (
+    id: string,
+    priority: "P0" | "P1" | "P2",
+    ageMinutes = 0,
+    model = "model-a",
+  ): TaskRecord => {
     const created = new Date(Date.now() - ageMinutes * 60 * 1000).toISOString();
     return {
       id,
@@ -21,7 +26,7 @@ describe("Priority Preemption & Starvation Prevention Test Suite (T47.5.4)", () 
       focusFiles: null,
       prUrl: null,
       targetBranch: null,
-      completedAt: null
+      completedAt: null,
     };
   };
 
@@ -45,7 +50,11 @@ describe("Priority Preemption & Starvation Prevention Test Suite (T47.5.4)", () 
     const newP1 = createMockTask("new_p1", "P1", 2); // 2 minutes old
 
     const sorted = sorter.sort([newP1, oldP2], null);
-    assert.equal(sorted[0]?.id, "old_p2", "Starving P2 task should auto-escalate ahead of recent P1");
+    assert.equal(
+      sorted[0]?.id,
+      "old_p2",
+      "Starving P2 task should auto-escalate ahead of recent P1",
+    );
     assert.equal(sorted[1]?.id, "new_p1");
   });
 
@@ -55,7 +64,11 @@ describe("Priority Preemption & Starvation Prevention Test Suite (T47.5.4)", () 
     const p0Newer = createMockTask("p0_newer", "P0", 5);
 
     const sorted = sorter.sort([p0Newer, p0Older], null);
-    assert.equal(sorted[0]?.id, "p0_older", "Older P0 must execute before newer P0");
+    assert.equal(
+      sorted[0]?.id,
+      "p0_older",
+      "Older P0 must execute before newer P0",
+    );
     assert.equal(sorted[1]?.id, "p0_newer");
   });
 });

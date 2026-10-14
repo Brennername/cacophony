@@ -1,7 +1,12 @@
 import type { TaskRecord } from "@cacophony/shared-types";
 
 export interface FleetMessage {
-  readonly type: "heartbeat" | "task_delegate" | "task_token" | "task_complete" | "task_fail";
+  readonly type:
+    | "heartbeat"
+    | "task_delegate"
+    | "task_token"
+    | "task_complete"
+    | "task_fail";
   readonly nodeId: string;
   readonly payload: Record<string, unknown>;
   readonly timestamp: string;
@@ -61,7 +66,7 @@ export class FleetWebSocketClient {
       type: "heartbeat",
       nodeId: this.nodeId,
       payload: capacity,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     this.dispatchMessage(msg);
   }
@@ -71,13 +76,15 @@ export class FleetWebSocketClient {
    */
   public async delegateTask(task: TaskRecord): Promise<void> {
     if (!this.isConnected) {
-      throw new Error(`Cannot delegate task ${task.id}: worker node ${this.nodeId} offline`);
+      throw new Error(
+        `Cannot delegate task ${task.id}: worker node ${this.nodeId} offline`,
+      );
     }
     const msg: FleetMessage = {
       type: "task_delegate",
       nodeId: this.nodeId,
       payload: { task },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     this.dispatchMessage(msg);
   }
@@ -86,7 +93,9 @@ export class FleetWebSocketClient {
    * Checks if node is considered healthy (heartbeat received in last 15s).
    */
   public isHealthy(maxAgeMs = 15000): boolean {
-    return this.isConnected && Date.now() - this.lastHeartbeatTimestamp <= maxAgeMs;
+    return (
+      this.isConnected && Date.now() - this.lastHeartbeatTimestamp <= maxAgeMs
+    );
   }
 
   public onMessage(callback: FleetMessageCallback): () => void {

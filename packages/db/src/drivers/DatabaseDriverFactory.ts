@@ -5,7 +5,8 @@ import { SQLiteDriver } from "./SQLiteDriver.js";
 /**
  * Supported database engine driver identifiers.
  */
-export type SupportedDatabaseDriverType = "pglite" | "postgres" | "sqlite" | "mariadb";
+export type SupportedDatabaseDriverType =
+  "pglite" | "postgres" | "sqlite" | "mariadb";
 
 /**
  * Driver connection configuration options.
@@ -27,14 +28,17 @@ export class DatabaseDriverFactory {
   /**
    * Instantiates and returns an IDatabaseDriver based on provided options or process.env.
    */
-  public static createDriver(config: DatabaseDriverConfig = {}): IDatabaseDriver {
+  public static createDriver(
+    config: DatabaseDriverConfig = {},
+  ): IDatabaseDriver {
     const driverType = (
       config.driver ??
       process.env.DB_DRIVER ??
       "pglite"
     ).toLowerCase() as SupportedDatabaseDriverType;
 
-    const connectionString = config.connectionString ?? process.env.DB_CONNECTION_STRING;
+    const connectionString =
+      config.connectionString ?? process.env.DB_CONNECTION_STRING;
 
     switch (driverType) {
       case "sqlite": {
@@ -45,7 +49,8 @@ export class DatabaseDriverFactory {
       case "postgres":
       default: {
         // PGlite runs in-process PostgreSQL WASM; dataDir or path passed
-        const dataDir = config.dataDir ?? connectionString ?? "data/cacophony_pglite";
+        const dataDir =
+          config.dataDir ?? connectionString ?? "data/cacophony_pglite";
         return new PGliteDriver(dataDir);
       }
     }

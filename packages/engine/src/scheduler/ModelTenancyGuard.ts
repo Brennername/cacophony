@@ -22,7 +22,7 @@ export class ModelTenancyGuard {
   public updateConfig(newConfig: Partial<ModelManagementConfig>): void {
     this.config = {
       ...this.config,
-      ...newConfig
+      ...newConfig,
     };
   }
 
@@ -60,17 +60,24 @@ export class ModelTenancyGuard {
    */
   public canEvict(modelId: string): { allowed: boolean; reason?: string } {
     if (!this.config.managedModelsEnabled) {
-      return { allowed: false, reason: "Automated model management is globally disabled in configuration" };
+      return {
+        allowed: false,
+        reason:
+          "Automated model management is globally disabled in configuration",
+      };
     }
 
     if (!this.config.autoEvictionEnabled) {
-      return { allowed: false, reason: "Automated model eviction is disabled in configuration" };
+      return {
+        allowed: false,
+        reason: "Automated model eviction is disabled in configuration",
+      };
     }
 
     if (this.isProtected(modelId)) {
       return {
         allowed: false,
-        reason: `Model '${modelId}' is protected under user tenancy whitelist and cannot be evicted`
+        reason: `Model '${modelId}' is protected under user tenancy whitelist and cannot be evicted`,
       };
     }
 
@@ -86,8 +93,13 @@ export class ModelTenancyGuard {
    */
   public async checkDiskHeadroom(
     targetDirectory: string = process.cwd(),
-    requiredBytes: number = 3 * 1024 * 1024 * 1024
-  ): Promise<{ hasHeadroom: boolean; availableBytes: number; requiredBytes: number; reason?: string }> {
+    requiredBytes: number = 3 * 1024 * 1024 * 1024,
+  ): Promise<{
+    hasHeadroom: boolean;
+    availableBytes: number;
+    requiredBytes: number;
+    reason?: string;
+  }> {
     try {
       if (typeof fs.statfs === "function") {
         const stats = await fs.statfs(targetDirectory);
@@ -96,7 +108,7 @@ export class ModelTenancyGuard {
         // Require configured maxDiskStorageGb or requiredBytes buffer
         const minimumBufferBytes = Math.min(
           this.config.maxDiskStorageGb * 1024 * 1024 * 1024,
-          2 * 1024 * 1024 * 1024 // 2GB minimum reserve
+          2 * 1024 * 1024 * 1024, // 2GB minimum reserve
         );
 
         if (availableBytes < requiredBytes + minimumBufferBytes) {
@@ -104,9 +116,12 @@ export class ModelTenancyGuard {
             hasHeadroom: false,
             availableBytes,
             requiredBytes,
-            reason: `Insufficient disk space: ${(availableBytes / (1024 * 1024 * 1024)).toFixed(
-              2
-            )}GB available, requires ${(requiredBytes / (1024 * 1024 * 1024)).toFixed(2)}GB with reserve buffer`
+            reason: `Insufficient disk space: ${(
+              availableBytes /
+              (1024 * 1024 * 1024)
+            ).toFixed(
+              2,
+            )}GB available, requires ${(requiredBytes / (1024 * 1024 * 1024)).toFixed(2)}GB with reserve buffer`,
           };
         }
 
@@ -116,6 +131,10 @@ export class ModelTenancyGuard {
       // In virtual or mock environments where statfs is unavailable, allow with nominal values
     }
 
-    return { hasHeadroom: true, availableBytes: 50 * 1024 * 1024 * 1024, requiredBytes };
+    return {
+      hasHeadroom: true,
+      availableBytes: 50 * 1024 * 1024 * 1024,
+      requiredBytes,
+    };
   }
 }

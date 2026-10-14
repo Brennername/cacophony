@@ -2,7 +2,7 @@ import type {
   CodeSignatureRecord,
   CallableSignature,
   PropertySignature,
-  FunctionParameterSignature
+  FunctionParameterSignature,
 } from "@cacophony/shared-types";
 
 /**
@@ -15,13 +15,19 @@ import type {
  * - pub fn / fn function signatures and parameter types
  */
 export class RustSignatureHarvester {
-  public harvest(filePath: string, content: string): readonly CodeSignatureRecord[] {
+  public harvest(
+    filePath: string,
+    content: string,
+  ): readonly CodeSignatureRecord[] {
     const records: CodeSignatureRecord[] = [];
     const lines = content.split("\n");
 
-    const structRegex = /^\s*(?:pub\s+)?struct\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\{?/;
-    const traitRegex = /^\s*(?:pub\s+)?trait\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\{?/;
-    const fnRegex = /^\s*(?:pub(?:\([^)]+\))?\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\(([^)]*)\)\s*(?:->\s*([^{;]+))?\{?/;
+    const structRegex =
+      /^\s*(?:pub\s+)?struct\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\{?/;
+    const traitRegex =
+      /^\s*(?:pub\s+)?trait\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\{?/;
+    const fnRegex =
+      /^\s*(?:pub(?:\([^)]+\))?\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_]+)(?:<[^>]+>)?\s*\(([^)]*)\)\s*(?:->\s*([^{;]+))?\{?/;
 
     let currentBlockName = "";
     let currentBlockKind: "type" | "interface" = "type";
@@ -64,7 +70,7 @@ export class RustSignatureHarvester {
           kind: currentBlockKind,
           callables: currentBlockMethods,
           properties: currentBlockFields,
-          rawCompressed: `pub ${currentBlockKind === "interface" ? "trait" : "struct"} ${currentBlockName} { ${currentBlockFields.map((f) => `${f.name}: ${f.type}`).join(", ")} }`
+          rawCompressed: `pub ${currentBlockKind === "interface" ? "trait" : "struct"} ${currentBlockName} { ${currentBlockFields.map((f) => `${f.name}: ${f.type}`).join(", ")} }`,
         });
         inBlock = false;
         continue;
@@ -74,24 +80,28 @@ export class RustSignatureHarvester {
       if (inBlock && line && !line.startsWith("//")) {
         if (currentBlockKind === "type") {
           // pub field_name: FieldType,
-          const fieldMatch = line.match(/^(?:pub\s+)?([A-Za-z0-9_]+)\s*:\s*([^,;]+)/);
+          const fieldMatch = line.match(
+            /^(?:pub\s+)?([A-Za-z0-9_]+)\s*:\s*([^,;]+)/,
+          );
           if (fieldMatch && fieldMatch[1] && fieldMatch[2]) {
             currentBlockFields.push({
               name: fieldMatch[1],
               type: fieldMatch[2].trim(),
               isOptional: fieldMatch[2].includes("Option<"),
-              isReadonly: false
+              isReadonly: false,
             });
           }
         } else if (currentBlockKind === "interface") {
           // fn method_name(&self, ...) -> RetType;
-          const methodMatch = line.match(/^\s*(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)(?:\s*->\s*([^{;]+))?/);
+          const methodMatch = line.match(
+            /^\s*(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)(?:\s*->\s*([^{;]+))?/,
+          );
           if (methodMatch && methodMatch[1]) {
             currentBlockMethods.push({
               name: methodMatch[1],
               parameters: this.parseRustParams(methodMatch[2] || ""),
               returnType: methodMatch[3]?.trim() || "()",
-              isAsync: line.includes("async ")
+              isAsync: line.includes("async "),
             });
           }
         }
@@ -110,7 +120,7 @@ export class RustSignatureHarvester {
           name: fnName,
           parameters: params,
           returnType,
-          isAsync: line.includes("async ")
+          isAsync: line.includes("async "),
         };
 
         records.push({
@@ -121,7 +131,7 @@ export class RustSignatureHarvester {
           kind: "function",
           callables: [callable],
           properties: [],
-          rawCompressed: `pub fn ${fnName}(${params.map((p) => `${p.name}: ${p.type}`).join(", ")}): ${returnType}`
+          rawCompressed: `pub fn ${fnName}(${params.map((p) => `${p.name}: ${p.type}`).join(", ")}): ${returnType}`,
         });
       }
     }
@@ -136,7 +146,11 @@ export class RustSignatureHarvester {
     const parts = rawParams.split(",");
     for (const p of parts) {
       const trimmed = p.trim();
-      if (trimmed === "&self" || trimmed === "&mut self" || trimmed === "self") {
+      if (
+        trimmed === "&self" ||
+        trimmed === "&mut self" ||
+        trimmed === "self"
+      ) {
         continue;
       }
       const pair = trimmed.split(":");
@@ -144,7 +158,7 @@ export class RustSignatureHarvester {
         params.push({
           name: pair[0].trim(),
           type: pair[1].trim(),
-          isOptional: pair[1].includes("Option<")
+          isOptional: pair[1].includes("Option<"),
         });
       }
     }

@@ -32,16 +32,19 @@ export class LivePromptQueue extends EventEmitter {
     return {
       isStreaming: this.isStreaming,
       activePrompt: this.activePrompt,
-      pendingPrompts: [...this.queue]
+      pendingPrompts: [...this.queue],
     };
   }
 
-  public enqueuePrompt(prompt: string, focusFiles?: readonly string[]): QueuedPrompt {
+  public enqueuePrompt(
+    prompt: string,
+    focusFiles?: readonly string[],
+  ): QueuedPrompt {
     const item: QueuedPrompt = {
       id: `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       prompt,
       submittedAt: Date.now(),
-      focusFiles
+      focusFiles,
     };
 
     this.queue.push(item);
@@ -55,7 +58,9 @@ export class LivePromptQueue extends EventEmitter {
    */
   public injectSteeringGuidance(annotation: string): void {
     if (!this.isStreaming) {
-      throw new Error("Cannot inject mid-stream steering guidance when model is not streaming");
+      throw new Error(
+        "Cannot inject mid-stream steering guidance when model is not streaming",
+      );
     }
     this.guidanceAnnotations.push(annotation);
     this.emit("steered", { annotation, timestamp: Date.now() });

@@ -54,7 +54,9 @@ describe("Hardware Diagnostics & Telemetry Module", () => {
 
   describe("AmdVegaTelemetryProvider with Sysfs Fixtures", () => {
     test("should parse sysfs hwmon and drm nodes correctly", async () => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cacophony-telemetry-test-"));
+      const tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "cacophony-telemetry-test-"),
+      );
       const hwmonBase = path.join(tempDir, "hwmon");
       const drmBase = path.join(tempDir, "drm");
 
@@ -63,8 +65,8 @@ describe("Hardware Diagnostics & Telemetry Module", () => {
       fs.mkdirSync(mockHwmon2, { recursive: true });
       fs.writeFileSync(path.join(mockHwmon2, "name"), "amdgpu\n");
       fs.writeFileSync(path.join(mockHwmon2, "temp1_input"), "72500\n"); // 72.5°C
-      fs.writeFileSync(path.join(mockHwmon2, "in0_input"), "850\n");     // 850 mV
-      fs.writeFileSync(path.join(mockHwmon2, "in1_input"), "700\n");     // 700 mV
+      fs.writeFileSync(path.join(mockHwmon2, "in0_input"), "850\n"); // 850 mV
+      fs.writeFileSync(path.join(mockHwmon2, "in1_input"), "700\n"); // 700 mV
       fs.writeFileSync(path.join(mockHwmon2, "power1_input"), "14250000\n"); // 14.25 W
       fs.writeFileSync(path.join(mockHwmon2, "freq1_input"), "1200000000\n"); // 1200 MHz
 
@@ -72,10 +74,22 @@ describe("Hardware Diagnostics & Telemetry Module", () => {
       const mockDrmCard1 = path.join(drmBase, "card1", "device");
       fs.mkdirSync(mockDrmCard1, { recursive: true });
       fs.writeFileSync(path.join(mockDrmCard1, "gpu_busy_percent"), "65\n");
-      fs.writeFileSync(path.join(mockDrmCard1, "mem_info_vram_used"), "2147483648\n"); // 2 GB
-      fs.writeFileSync(path.join(mockDrmCard1, "mem_info_vram_total"), "4294967296\n"); // 4 GB
-      fs.writeFileSync(path.join(mockDrmCard1, "mem_info_gtt_used"), "1073741824\n");
-      fs.writeFileSync(path.join(mockDrmCard1, "mem_info_gtt_total"), "8589934592\n");
+      fs.writeFileSync(
+        path.join(mockDrmCard1, "mem_info_vram_used"),
+        "2147483648\n",
+      ); // 2 GB
+      fs.writeFileSync(
+        path.join(mockDrmCard1, "mem_info_vram_total"),
+        "4294967296\n",
+      ); // 4 GB
+      fs.writeFileSync(
+        path.join(mockDrmCard1, "mem_info_gtt_used"),
+        "1073741824\n",
+      );
+      fs.writeFileSync(
+        path.join(mockDrmCard1, "mem_info_gtt_total"),
+        "8589934592\n",
+      );
 
       const provider = new AmdVegaTelemetryProvider(drmBase, hwmonBase);
       assert.equal(await provider.isAvailable(), true);
@@ -102,7 +116,7 @@ describe("Hardware Diagnostics & Telemetry Module", () => {
       const poller = new TelemetryPoller({
         provider,
         pollIntervalMs: 50,
-        ollamaBaseUrl: "http://127.0.0.1:9999" // Unused in this test
+        ollamaBaseUrl: "http://127.0.0.1:9999", // Unused in this test
       });
 
       let receivedSnapshot = false;
@@ -115,7 +129,10 @@ describe("Hardware Diagnostics & Telemetry Module", () => {
       const snapshot = await poller.pollOnce();
       assert.ok(snapshot);
       assert.equal(receivedSnapshot, true);
-      assert.equal(poller.getLatest()?.gpu.edgeTempCelsius, snapshot.gpu.edgeTempCelsius);
+      assert.equal(
+        poller.getLatest()?.gpu.edgeTempCelsius,
+        snapshot.gpu.edgeTempCelsius,
+      );
 
       unsubscribe();
       poller.stop();

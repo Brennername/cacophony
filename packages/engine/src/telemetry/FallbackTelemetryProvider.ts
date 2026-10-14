@@ -1,5 +1,8 @@
 import { execSync } from "node:child_process";
-import type { GpuMetrics, HardwareDeviceCategory } from "@cacophony/shared-types";
+import type {
+  GpuMetrics,
+  HardwareDeviceCategory,
+} from "@cacophony/shared-types";
 import type { IHardwareTelemetryProvider } from "./IHardwareTelemetryProvider.js";
 
 /**
@@ -37,7 +40,7 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
     try {
       const sensorsOutput = execSync(
         'sensors 2>/dev/null | grep -E "(Tctl|edge|Package id 0)" | grep -oE "\\+[0-9]+(\\.[0-9]+)?" | tr -d "+" | sort -nr | head -n 1',
-        { encoding: "utf-8", timeout: 1000 }
+        { encoding: "utf-8", timeout: 1000 },
       ).trim();
       const parsedTemp = parseFloat(sensorsOutput);
       if (!Number.isNaN(parsedTemp) && parsedTemp > 0) {
@@ -52,7 +55,10 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
     const vramTotal = 4294967296; // 4 GB fallback base
 
     try {
-      const rtop = execSync("radeontop -d - -l 1 2>/dev/null", { encoding: "utf-8", timeout: 1500 });
+      const rtop = execSync("radeontop -d - -l 1 2>/dev/null", {
+        encoding: "utf-8",
+        timeout: 1500,
+      });
       const matchGpu = rtop.match(/gpu\s+([0-9.]+)%/);
       const matchVram = rtop.match(/vram\s+([0-9.]+)%\s+([0-9.]+mb)/);
       if (matchGpu && matchGpu[1]) gpuBusy = parseFloat(matchGpu[1]);
@@ -63,7 +69,8 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
       // Ignore radeontop failure
     }
 
-    const vramPercent = vramTotal > 0 ? Number(((vramUsed / vramTotal) * 100).toFixed(1)) : 0.0;
+    const vramPercent =
+      vramTotal > 0 ? Number(((vramUsed / vramTotal) * 100).toFixed(1)) : 0.0;
 
     return {
       gpuBusyPercent: gpuBusy,
@@ -76,7 +83,7 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
       vddgfxMilliVolts: 800,
       socMilliVolts: 700,
       pptWatts: 10.0,
-      sclkMhz: 400
+      sclkMhz: 400,
     };
   }
 
@@ -92,7 +99,7 @@ export class FallbackTelemetryProvider implements IHardwareTelemetryProvider {
       vddgfxMilliVolts: 750,
       socMilliVolts: 700,
       pptWatts: 8.5,
-      sclkMhz: 600
+      sclkMhz: 600,
     };
   }
 }

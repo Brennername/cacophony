@@ -10,11 +10,10 @@ export interface TargetedChunk {
 }
 
 export class FocusedDiffBuilder {
-
   public computeTargetedChunks(
     originalContent: string,
     modifiedContent: string,
-    _contextLines = 3
+    _contextLines = 3,
   ): readonly TargetedChunk[] {
     const origLines = originalContent ? originalContent.split("\n") : [];
     const modLines = modifiedContent ? modifiedContent.split("\n") : [];
@@ -28,7 +27,6 @@ export class FocusedDiffBuilder {
     let modIdx = 0;
 
     while (origIdx < origLines.length || modIdx < modLines.length) {
-
       if (
         origIdx < origLines.length &&
         modIdx < modLines.length &&
@@ -80,7 +78,7 @@ export class FocusedDiffBuilder {
         newStartLine: changeModStart + 1,
         newLineCount: chunkNewLines.length,
         oldLines: chunkOldLines,
-        newLines: chunkNewLines
+        newLines: chunkNewLines,
       });
 
       origIdx = diffOrigEnd;
@@ -93,7 +91,7 @@ export class FocusedDiffBuilder {
   public formatUnifiedDiff(
     filePath: string,
     originalContent: string,
-    modifiedContent: string
+    modifiedContent: string,
   ): string {
     const origLines = originalContent ? originalContent.split("\n") : [];
     const modLines = modifiedContent ? modifiedContent.split("\n") : [];
@@ -102,12 +100,16 @@ export class FocusedDiffBuilder {
 
     if (!originalContent) {
       const hunkHeader = `@@ -0,0 +1,${modLines.length} @@\n`;
-      return header + hunkHeader + modLines.map((l) => `+${l}`).join("\n") + "\n";
+      return (
+        header + hunkHeader + modLines.map((l) => `+${l}`).join("\n") + "\n"
+      );
     }
 
     if (!modifiedContent) {
       const hunkHeader = `@@ -1,${origLines.length} +0,0 @@\n`;
-      return header + hunkHeader + origLines.map((l) => `-${l}`).join("\n") + "\n";
+      return (
+        header + hunkHeader + origLines.map((l) => `-${l}`).join("\n") + "\n"
+      );
     }
 
     const chunks = this.computeTargetedChunks(originalContent, modifiedContent);
@@ -134,9 +136,13 @@ export class FocusedDiffBuilder {
   public buildStructuredDiff(
     filePath: string,
     originalContent: string,
-    modifiedContent: string
+    modifiedContent: string,
   ): UnifiedDiff {
-    const rawDiff = this.formatUnifiedDiff(filePath, originalContent, modifiedContent);
+    const rawDiff = this.formatUnifiedDiff(
+      filePath,
+      originalContent,
+      modifiedContent,
+    );
     const chunks = this.computeTargetedChunks(originalContent, modifiedContent);
 
     let additions = 0;
@@ -157,7 +163,7 @@ export class FocusedDiffBuilder {
         oldLines: c.oldLineCount,
         newStart: c.newStartLine,
         newLines: c.newLineCount,
-        lines
+        lines,
       };
     });
 
@@ -166,11 +172,14 @@ export class FocusedDiffBuilder {
       hunks,
       rawDiff,
       additions,
-      deletions
+      deletions,
     };
   }
 
-  public buildDiff(originalLines: readonly string[], modifiedLines: readonly string[]): readonly string[] {
+  public buildDiff(
+    originalLines: readonly string[],
+    modifiedLines: readonly string[],
+  ): readonly string[] {
     const result: string[] = [];
     const max = Math.max(originalLines.length, modifiedLines.length);
 

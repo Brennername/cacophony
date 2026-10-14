@@ -6,11 +6,15 @@ import type { ModelManagementConfig } from "@cacophony/shared-types";
 describe("ModelTenancyGuard Suite", () => {
   const baseConfig: ModelManagementConfig = {
     managedModelsEnabled: true,
-    protectedModels: ["deepseek-r1:8b-4k", "qwen2.5-coder:7b-instruct-q4_K_M", "custom-internal-*"],
+    protectedModels: [
+      "deepseek-r1:8b-4k",
+      "qwen2.5-coder:7b-instruct-q4_K_M",
+      "custom-internal-*",
+    ],
     maxDiskStorageGb: 50,
     autoEvictionEnabled: true,
     minimumSuccessRateThreshold: 0.4,
-    maxConsecutiveFailuresBeforeEviction: 3
+    maxConsecutiveFailuresBeforeEviction: 3,
   };
 
   test("should correctly recognize protected models by exact tag and wildcard pattern", () => {
@@ -31,7 +35,10 @@ describe("ModelTenancyGuard Suite", () => {
 
     const protectedOutcome = guard.canEvict("deepseek-r1:8b-4k");
     assert.equal(protectedOutcome.allowed, false);
-    assert.match(protectedOutcome.reason || "", /protected under user tenancy whitelist/);
+    assert.match(
+      protectedOutcome.reason || "",
+      /protected under user tenancy whitelist/,
+    );
 
     const unprotectedOutcome = guard.canEvict("qwen2.5-coder:3b");
     assert.equal(unprotectedOutcome.allowed, true);
@@ -40,14 +47,14 @@ describe("ModelTenancyGuard Suite", () => {
   test("should disallow eviction when managedModelsEnabled or autoEvictionEnabled is false", () => {
     const disabledGuard = new ModelTenancyGuard({
       ...baseConfig,
-      managedModelsEnabled: false
+      managedModelsEnabled: false,
     });
     assert.equal(disabledGuard.canEvict("qwen2.5-coder:3b").allowed, false);
 
     const noAutoEvictGuard = new ModelTenancyGuard({
       ...baseConfig,
       managedModelsEnabled: true,
-      autoEvictionEnabled: false
+      autoEvictionEnabled: false,
     });
     assert.equal(noAutoEvictGuard.canEvict("qwen2.5-coder:3b").allowed, false);
   });
@@ -57,7 +64,7 @@ describe("ModelTenancyGuard Suite", () => {
     assert.equal(guard.isProtected("phi4-mini"), false);
 
     guard.updateConfig({
-      protectedModels: [...baseConfig.protectedModels, "phi4-mini"]
+      protectedModels: [...baseConfig.protectedModels, "phi4-mini"],
     });
 
     assert.equal(guard.isProtected("phi4-mini"), true);

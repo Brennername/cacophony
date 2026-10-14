@@ -30,7 +30,7 @@ export class EngineAutoTuner {
     this.healthRepo = options.healthRepo;
     this.hardwareSpec = options.hardwareSpec || {
       totalVramGb: 16,
-      availableVramGb: 12
+      availableVramGb: 12,
     };
   }
 
@@ -45,9 +45,12 @@ export class EngineAutoTuner {
   public computeOptimalProfile(
     modelName: string,
     role: "architect" | "implementer" | "reviewer" = "implementer",
-    truncationFrequency = 0
+    truncationFrequency = 0,
   ): Omit<ModelTuningProfile, "createdAt" | "updatedAt"> {
-    const isReasoner = role === "architect" || modelName.includes("r1") || modelName.includes("reasoning");
+    const isReasoner =
+      role === "architect" ||
+      modelName.includes("r1") ||
+      modelName.includes("reasoning");
     const vram = this.hardwareSpec.availableVramGb;
 
     // VRAM-aware context window scaling:
@@ -62,7 +65,9 @@ export class EngineAutoTuner {
     }
 
     // Constrain by explicit environment setting if provided (e.g. OLLAMA_NUM_CTX=8192)
-    const envCtx = process.env["OLLAMA_NUM_CTX"] ? Number(process.env["OLLAMA_NUM_CTX"]) : null;
+    const envCtx = process.env["OLLAMA_NUM_CTX"]
+      ? Number(process.env["OLLAMA_NUM_CTX"])
+      : null;
     if (envCtx && envCtx > 0) {
       numCtx = Math.min(numCtx, envCtx);
     }
@@ -76,7 +81,10 @@ export class EngineAutoTuner {
     // Strictly capped at 8192 for coders to prevent multi-thousand token runaway timeouts
     if (truncationFrequency > 0) {
       const maxPredictCap = isReasoner ? 16384 : 8192;
-      const elevation = Math.min(maxPredictCap, numPredict + (truncationFrequency * 2048));
+      const elevation = Math.min(
+        maxPredictCap,
+        numPredict + truncationFrequency * 2048,
+      );
       numPredict = elevation;
     }
 
@@ -101,7 +109,7 @@ export class EngineAutoTuner {
       topP,
       repeatPenalty,
       autoTuned: true,
-      isActive: true
+      isActive: true,
     };
   }
 
@@ -109,7 +117,9 @@ export class EngineAutoTuner {
    * Executes autonomous auto-tuning across a list of target models,
    * querying health profiles if available, and saving tuned configurations to the database.
    */
-  public async autoTuneModels(modelNames: readonly string[]): Promise<ModelTuningProfile[]> {
+  public async autoTuneModels(
+    modelNames: readonly string[],
+  ): Promise<ModelTuningProfile[]> {
     const tunedProfiles: ModelTuningProfile[] = [];
 
     for (const model of modelNames) {
@@ -122,8 +132,13 @@ export class EngineAutoTuner {
           const health = await this.healthRepo.getProfile(model);
           // Only elevate prediction tokens when specifically encountering truncation errors,
           // rather than general execution timeouts or test failures which require tighter token bounds.
-          const customFailures = (health as unknown as { readonly truncationFailures?: number });
-          if (customFailures?.truncationFailures && customFailures.truncationFailures > 2) {
+          const customFailures = health as unknown as {
+            readonly truncationFailures?: number;
+          };
+          if (
+            customFailures?.truncationFailures &&
+            customFailures.truncationFailures > 2
+          ) {
             truncationCount = Math.floor(customFailures.truncationFailures / 2);
           }
         } catch {

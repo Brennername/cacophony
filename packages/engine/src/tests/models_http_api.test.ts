@@ -16,10 +16,10 @@ class MockDaemon {
         avgLatencyMs: 1200,
         avgTokensPerSec: 25.0,
         status: "ACTIVE",
-        lastUsedAt: new Date().toISOString()
-      }
+        lastUsedAt: new Date().toISOString(),
+      },
     ],
-    updateStatus: async () => {}
+    updateStatus: async () => {},
   };
 
   public tenancyGuard = new ModelTenancyGuard({
@@ -28,7 +28,7 @@ class MockDaemon {
     maxDiskStorageGb: 50,
     autoEvictionEnabled: true,
     minimumSuccessRateThreshold: 0.4,
-    maxConsecutiveFailuresBeforeEviction: 3
+    maxConsecutiveFailuresBeforeEviction: 3,
   });
 
   public modelManager = {
@@ -45,15 +45,15 @@ class MockDaemon {
           family: "qwen2",
           families: ["qwen2"],
           parameterSize: "7B",
-          quantizationLevel: "Q4_K_M"
+          quantizationLevel: "Q4_K_M",
         },
         isProtected: false,
-        isLoadedInVram: true
-      }
+        isLoadedInVram: true,
+      },
     ],
     pullModel: async () => {},
     deleteModel: async () => true,
-    showModelInfo: async () => ({})
+    showModelInfo: async () => ({}),
   };
 
   public benchmarkRunner = {
@@ -65,18 +65,34 @@ class MockDaemon {
       tokensCompletion: 100,
       tokensPerSec: 50.0,
       generatedCodeLength: 200,
-      syntaxValid: true
-    })
+      syntaxValid: true,
+    }),
   };
 
-  public getModelHealthRepository() { return this.healthRepo; }
-  public getTenancyGuard() { return this.tenancyGuard; }
-  public getModelManager() { return this.modelManager; }
-  public getBenchmarkRunner() { return this.benchmarkRunner; }
-  public getStreamTapManager() { return null; }
-  public getTaskRepository() { return { listPending: async () => [] }; }
-  public getTelemetryPoller() { return null; }
-  public getUserSessionRepository() { return null; }
+  public getModelHealthRepository() {
+    return this.healthRepo;
+  }
+  public getTenancyGuard() {
+    return this.tenancyGuard;
+  }
+  public getModelManager() {
+    return this.modelManager;
+  }
+  public getBenchmarkRunner() {
+    return this.benchmarkRunner;
+  }
+  public getStreamTapManager() {
+    return null;
+  }
+  public getTaskRepository() {
+    return { listPending: async () => [] };
+  }
+  public getTelemetryPoller() {
+    return null;
+  }
+  public getUserSessionRepository() {
+    return null;
+  }
 }
 
 describe("Model Management HTTP REST Endpoints Suite", () => {
@@ -92,7 +108,10 @@ describe("Model Management HTTP REST Endpoints Suite", () => {
 
   async function startServer(): Promise<void> {
     const mockDaemon = new MockDaemon();
-    server = new CacophonyHttpServer(mockDaemon as any, { httpPort: 0, httpHost: "127.0.0.1" });
+    server = new CacophonyHttpServer(mockDaemon as any, {
+      httpPort: 0,
+      httpHost: "127.0.0.1",
+    });
     await server.start();
     const address = (server as any).server.address();
     port = address.port;
@@ -119,7 +138,7 @@ describe("Model Management HTTP REST Endpoints Suite", () => {
     const putRes = await fetch(`${baseUrl}/api/models/config`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ autoEvictionEnabled: false })
+      body: JSON.stringify({ autoEvictionEnabled: false }),
     });
     assert.equal(putRes.status, 200);
     const updated = (await putRes.json()) as any;
@@ -130,7 +149,7 @@ describe("Model Management HTTP REST Endpoints Suite", () => {
     await startServer();
     // 1. Attempt deleting protected model
     const rejectRes = await fetch(`${baseUrl}/api/models/protected-model`, {
-      method: "DELETE"
+      method: "DELETE",
     });
     assert.equal(rejectRes.status, 403);
     const rejectData = (await rejectRes.json()) as any;
@@ -138,7 +157,7 @@ describe("Model Management HTTP REST Endpoints Suite", () => {
 
     // 2. Delete non-protected model
     const allowRes = await fetch(`${baseUrl}/api/models/unprotected-model`, {
-      method: "DELETE"
+      method: "DELETE",
     });
     assert.equal(allowRes.status, 200);
     const allowData = (await allowRes.json()) as any;
@@ -150,7 +169,7 @@ describe("Model Management HTTP REST Endpoints Suite", () => {
     const res = await fetch(`${baseUrl}/api/models/benchmark`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "qwen2.5-coder:3b" })
+      body: JSON.stringify({ model: "qwen2.5-coder:3b" }),
     });
     assert.equal(res.status, 200);
     const result = (await res.json()) as any;
@@ -164,7 +183,7 @@ describe("Model Management HTTP REST Endpoints Suite", () => {
     const res = await fetch(`${baseUrl}/api/models/pull`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "qwen2.5-coder:3b" })
+      body: JSON.stringify({ model: "qwen2.5-coder:3b" }),
     });
     assert.equal(res.status, 202);
     const result = (await res.json()) as any;

@@ -21,11 +21,11 @@ export class HashStubMethodSplicer {
   public static splice(
     sourceCode: string,
     targetHash: string,
-    replacementMethodCode: string
+    replacementMethodCode: string,
   ): SpliceResult {
     const stubs = HashStubGenerator.extractStubs(sourceCode);
     const targetStub = stubs.find(
-      (s) => s.hash === targetHash || s.methodName === targetHash
+      (s) => s.hash === targetHash || s.methodName === targetHash,
     );
 
     if (!targetStub) {
@@ -36,7 +36,7 @@ export class HashStubMethodSplicer {
       "temp.ts",
       sourceCode,
       ts.ScriptTarget.Latest,
-      true
+      true,
     );
 
     let methodNodeRange: { start: number; end: number } | null = null;

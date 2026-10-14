@@ -1,5 +1,9 @@
 import type { TaskRepository, StageRepository } from "@cacophony/db";
-import type { TaskRecord, ReviewVerdict, ReviewComment } from "@cacophony/shared-types";
+import type {
+  TaskRecord,
+  ReviewVerdict,
+  ReviewComment,
+} from "@cacophony/shared-types";
 import type { GiteaApiClient } from "./GiteaApiClient.js";
 import type { AutomatedPrWorkflow } from "./AutomatedPrWorkflow.js";
 import type { AutomatedPrReviewLoop } from "./AutomatedPrReviewLoop.js";
@@ -61,20 +65,24 @@ export class ClosedLoopPrCoordinator {
     return this.stageRepo;
   }
 
-
   /**
    * Executes the automated PR publication, evaluation, and remediation loop.
    */
-  public async executeCycle(options: ClosedLoopPrCycleOptions): Promise<ClosedLoopPrCycleResult> {
+  public async executeCycle(
+    options: ClosedLoopPrCycleOptions,
+  ): Promise<ClosedLoopPrCycleResult> {
     // 1. Publish Pull Request
-    const pubResult = await this.prWorkflow.publishPullRequest(options.worktree, {
-      owner: options.owner,
-      repo: options.repo,
-      taskId: options.task.id,
-      title: `[Autonomous PR] ${options.task.title}`,
-      testSummary: options.testSummary,
-      commitMessage: options.commitMessage
-    });
+    const pubResult = await this.prWorkflow.publishPullRequest(
+      options.worktree,
+      {
+        owner: options.owner,
+        repo: options.repo,
+        taskId: options.task.id,
+        title: `[Autonomous PR] ${options.task.title}`,
+        testSummary: options.testSummary,
+        commitMessage: options.commitMessage,
+      },
+    );
 
     if (!pubResult.success || !pubResult.pullRequest) {
       return {
@@ -82,7 +90,7 @@ export class ClosedLoopPrCoordinator {
         verdict: "REJECT",
         merged: false,
         remediationEnqueued: false,
-        comments: []
+        comments: [],
       };
     }
 
@@ -95,7 +103,7 @@ export class ClosedLoopPrCoordinator {
       prNumber,
       taskId: options.task.id,
       reviewerModel: options.reviewerModel,
-      autoMergeOnApproval: options.autoMergeOnApproval ?? true
+      autoMergeOnApproval: options.autoMergeOnApproval ?? true,
     });
 
     // 3. Handle verdict
@@ -104,10 +112,15 @@ export class ClosedLoopPrCoordinator {
       let isMerged = reviewResult.merged;
       if (!isMerged) {
         try {
-          await this.giteaClient.mergePullRequest(options.owner, options.repo, prNumber, {
-            Do: "squash",
-            MergeTitleField: `Merge PR #${prNumber}: ${options.task.title}`
-          });
+          await this.giteaClient.mergePullRequest(
+            options.owner,
+            options.repo,
+            prNumber,
+            {
+              Do: "squash",
+              MergeTitleField: `Merge PR #${prNumber}: ${options.task.title}`,
+            },
+          );
           isMerged = true;
         } catch {
           isMerged = false;
@@ -122,16 +135,22 @@ export class ClosedLoopPrCoordinator {
         verdict: "APPROVE",
         merged: isMerged,
         remediationEnqueued: false,
-        comments: reviewResult.record.comments
+        comments: reviewResult.record.comments,
       };
     }
 
     // 4. Handle remediation request (REQUEST_CHANGES or REJECT)
     let remediationTaskId: string | undefined;
-    if (reviewResult.remediationRequired || reviewResult.verdict === "REQUEST_CHANGES") {
+    if (
+      reviewResult.remediationRequired ||
+      reviewResult.verdict === "REQUEST_CHANGES"
+    ) {
       remediationTaskId = `remedy-${options.task.id}-${Date.now().toString(36)}`;
       const commentsFormatted = reviewResult.record.comments
-        .map((c) => `- ${c.path}:${c.lineNumber ?? 0} [${c.severity}]: ${c.comment}`)
+        .map(
+          (c) =>
+            `- ${c.path}:${c.lineNumber ?? 0} [${c.severity}]: ${c.comment}`,
+        )
         .join("\n");
 
       const remediationPrompt = [
@@ -145,7 +164,7 @@ export class ClosedLoopPrCoordinator {
         commentsFormatted || "(General architectural review feedback)",
         "",
         "Original Prompt:",
-        options.task.prompt
+        options.task.prompt,
       ].join("\n");
 
       await this.taskRepo.create({
@@ -163,7 +182,7 @@ export class ClosedLoopPrCoordinator {
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null
+        completedAt: null,
       });
 
       await this.taskRepo.updateStatus(options.task.id, "REMEDIATING");
@@ -176,7 +195,7 @@ export class ClosedLoopPrCoordinator {
       merged: false,
       remediationEnqueued: Boolean(remediationTaskId),
       remediationTaskId,
-      comments: reviewResult.record.comments
+      comments: reviewResult.record.comments,
     };
   }
 }

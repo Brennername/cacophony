@@ -1,5 +1,9 @@
 import type { TaskRepository, StageRepository } from "@cacophony/db";
-import type { TaskRecord, AgentRole, TaskPriority } from "@cacophony/shared-types";
+import type {
+  TaskRecord,
+  AgentRole,
+  TaskPriority,
+} from "@cacophony/shared-types";
 import type { FrontierTaskDecomposer } from "./FrontierTaskDecomposer.js";
 
 export interface TaskcadeBacklogObjective {
@@ -75,11 +79,13 @@ export class TaskcadePlanningService {
   /**
    * Evaluates queue depth and replenishes pending arena tasks if below minQueueDepth.
    */
-  public async replenishQueueIfLow(options: {
-    readonly minQueueDepth?: number | undefined;
-    readonly modelName?: string | undefined;
-    readonly maxDecomposePerCycle?: number | undefined;
-  } = {}): Promise<ReplenishmentResult> {
+  public async replenishQueueIfLow(
+    options: {
+      readonly minQueueDepth?: number | undefined;
+      readonly modelName?: string | undefined;
+      readonly maxDecomposePerCycle?: number | undefined;
+    } = {},
+  ): Promise<ReplenishmentResult> {
     const minDepth = options.minQueueDepth ?? 3;
     const model = options.modelName ?? "qwen2.5-coder:3b";
     const pending = await this.taskRepo.listPending();
@@ -89,7 +95,7 @@ export class TaskcadePlanningService {
         replenished: false,
         tasksCreatedCount: 0,
         currentPendingCount: pending.length,
-        createdTasks: []
+        createdTasks: [],
       };
     }
 
@@ -98,7 +104,7 @@ export class TaskcadePlanningService {
         replenished: false,
         tasksCreatedCount: 0,
         currentPendingCount: pending.length,
-        createdTasks: []
+        createdTasks: [],
       };
     }
 
@@ -113,7 +119,9 @@ export class TaskcadePlanningService {
         const decomposed = await this.decomposer.decomposeAndPersist(
           `${nextObjective.title}\n${nextObjective.description}`,
           model,
-          nextObjective.targetWorkspacePkg ? `Target Package: ${nextObjective.targetWorkspacePkg}` : ""
+          nextObjective.targetWorkspacePkg
+            ? `Target Package: ${nextObjective.targetWorkspacePkg}`
+            : "",
         );
         created.push(...decomposed);
       } catch {
@@ -132,11 +140,13 @@ export class TaskcadePlanningService {
       replenished: true,
       tasksCreatedCount: created.length,
       currentPendingCount: updatedPending.length,
-      createdTasks: created
+      createdTasks: created,
     };
   }
 
-  private async createDirectTask(objective: TaskcadeBacklogObjective): Promise<TaskRecord> {
+  private async createDirectTask(
+    objective: TaskcadeBacklogObjective,
+  ): Promise<TaskRecord> {
     const now = new Date().toISOString();
     const task: TaskRecord = {
       id: `task-${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -153,7 +163,7 @@ export class TaskcadePlanningService {
       failureCount: 0,
       createdAt: now,
       updatedAt: now,
-      completedAt: null
+      completedAt: null,
     };
 
     await this.taskRepo.create(task);

@@ -157,7 +157,9 @@ test("GeneratedChangeGuard rejects stub replacement on general full-file edits",
     "Refactor calculation logic across service",
   );
 
-  assert.ok(issues.some((issue) => issue.includes("left a stub in Service.calculate")));
+  assert.ok(
+    issues.some((issue) => issue.includes("left a stub in Service.calculate")),
+  );
 });
 
 test("T93.3.2: GeneratedChangeGuard rejects replacements containing residual hash stub comments", () => {
@@ -181,7 +183,7 @@ test("T93.3.2: GeneratedChangeGuard rejects replacements containing residual has
 
   assert.ok(
     issues.some((issue) => issue.includes("residual stub comments")),
-    `Expected issue mentioning residual stub comments, got: ${JSON.stringify(issues)}`
+    `Expected issue mentioning residual stub comments, got: ${JSON.stringify(issues)}`,
   );
 });
 
@@ -224,12 +226,12 @@ export class TestModalComponent {}
     "TestModalComponent.ts",
     "",
     newComponent,
-    "Render test modal with detailed tabs"
+    "Render test modal with detailed tabs",
   );
 
   assert.ok(
     issues.some((i) => i.includes("empty or placeholder template")),
-    `Expected placeholder template issue, got: ${JSON.stringify(issues)}`
+    `Expected placeholder template issue, got: ${JSON.stringify(issues)}`,
   );
 });
 
@@ -242,12 +244,12 @@ migrate("/path/a", "/path/b");
     "MigrationService.ts",
     "",
     libraryFile,
-    "Implement migration service"
+    "Implement migration service",
   );
 
   assert.ok(
     issues.some((i) => i.includes("executes 'migrate(...)' at module root")),
-    `Expected module root execution issue, got: ${JSON.stringify(issues)}`
+    `Expected module root execution issue, got: ${JSON.stringify(issues)}`,
   );
 });
 
@@ -274,13 +276,13 @@ export class MetricService {
     "MetricService.ts",
     docSource,
     stripped,
-    "Update compute logic"
+    "Update compute logic",
   );
 
   assert.ok(
-    issues.some((i) => i.includes("stripped 2 JSDoc documentation comment block(s)")),
-    `Expected JSDoc stripped issue, got: ${JSON.stringify(issues)}`
+    issues.some((i) =>
+      i.includes("stripped 2 JSDoc documentation comment block(s)"),
+    ),
+    `Expected JSDoc stripped issue, got: ${JSON.stringify(issues)}`,
   );
 });
-
-

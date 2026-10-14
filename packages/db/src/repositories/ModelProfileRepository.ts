@@ -1,5 +1,8 @@
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
-import type { ModelTuningProfile, ModelReviewCapability } from "@cacophony/shared-types";
+import type {
+  ModelTuningProfile,
+  ModelReviewCapability,
+} from "@cacophony/shared-types";
 
 export interface ModelTuningProfileDbRow {
   readonly id: string;
@@ -34,11 +37,14 @@ export class ModelProfileRepository {
       autoTuned: Boolean(row.auto_tuned),
       isActive: Boolean(row.is_active),
       createdAt: String(row.created_at),
-      updatedAt: String(row.updated_at)
+      updatedAt: String(row.updated_at),
     };
   }
 
-  public async getActiveProfile(modelName: string, role?: string): Promise<ModelTuningProfile | null> {
+  public async getActiveProfile(
+    modelName: string,
+    role?: string,
+  ): Promise<ModelTuningProfile | null> {
     const isPostgres = this.driver.getDialect() === "postgres";
     let rows: readonly ModelTuningProfileDbRow[] = [];
 
@@ -47,7 +53,7 @@ export class ModelProfileRepository {
         `SELECT * FROM model_tuning_profiles
          WHERE model_name = $1 AND role = $2 AND is_active = ${isPostgres ? "TRUE" : "1"}
          ORDER BY updated_at DESC LIMIT 1`,
-        [modelName, role]
+        [modelName, role],
       );
     }
 
@@ -56,7 +62,7 @@ export class ModelProfileRepository {
         `SELECT * FROM model_tuning_profiles
          WHERE model_name = $1 AND is_active = ${isPostgres ? "TRUE" : "1"}
          ORDER BY updated_at DESC LIMIT 1`,
-        [modelName]
+        [modelName],
       );
     }
 
@@ -66,12 +72,14 @@ export class ModelProfileRepository {
 
   public async listAllProfiles(): Promise<ModelTuningProfile[]> {
     const rows = await this.driver.query<ModelTuningProfileDbRow>(
-      `SELECT * FROM model_tuning_profiles ORDER BY model_name ASC, role ASC`
+      `SELECT * FROM model_tuning_profiles ORDER BY model_name ASC, role ASC`,
     );
     return rows.map((r) => this.mapRowToProfile(r));
   }
 
-  public async upsertProfile(profile: Omit<ModelTuningProfile, "createdAt" | "updatedAt">): Promise<ModelTuningProfile> {
+  public async upsertProfile(
+    profile: Omit<ModelTuningProfile, "createdAt" | "updatedAt">,
+  ): Promise<ModelTuningProfile> {
     const now = new Date().toISOString();
     const isPostgres = this.driver.getDialect() === "postgres";
 
@@ -102,24 +110,24 @@ export class ModelProfileRepository {
         profile.topK,
         profile.topP,
         profile.repeatPenalty,
-        isPostgres ? profile.autoTuned : (profile.autoTuned ? 1 : 0),
-        isPostgres ? profile.isActive : (profile.isActive ? 1 : 0),
+        isPostgres ? profile.autoTuned : profile.autoTuned ? 1 : 0,
+        isPostgres ? profile.isActive : profile.isActive ? 1 : 0,
         now,
-        now
-      ]
+        now,
+      ],
     );
 
     return {
       ...profile,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
   }
 
   public async deleteProfile(id: string): Promise<boolean> {
     const result = await this.driver.execute(
       `DELETE FROM model_tuning_profiles WHERE id = $1`,
-      [id]
+      [id],
     );
     return result.rowsAffected > 0;
   }
@@ -127,7 +135,9 @@ export class ModelProfileRepository {
   /**
    * Retrieves review capabilities (context window, temperature, domain affinities) for a model.
    */
-  public async getReviewCapability(modelName: string): Promise<ModelReviewCapability> {
+  public async getReviewCapability(
+    modelName: string,
+  ): Promise<ModelReviewCapability> {
     const profile = await this.getActiveProfile(modelName, "reviewer");
     if (profile) {
       return {
@@ -153,7 +163,7 @@ export class ModelProfileRepository {
     modelName: string,
     contextWindow: number,
     reviewTemperature: number,
-    domainAffinities?: Record<string, number>
+    domainAffinities?: Record<string, number>,
   ): Promise<ModelReviewCapability> {
     const id = `profile-reviewer-${modelName.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
     await this.upsertProfile({
@@ -174,16 +184,23 @@ export class ModelProfileRepository {
       modelId: modelName,
       contextWindow,
       reviewTemperature,
-      domainAffinities: domainAffinities ?? this.inferDomainAffinities(modelName),
+      domainAffinities:
+        domainAffinities ?? this.inferDomainAffinities(modelName),
     };
   }
 
   /**
    * Heuristically computes baseline domain affinity scores according to model strengths.
    */
-  public inferDomainAffinities(modelName: string): Readonly<Record<string, number>> {
+  public inferDomainAffinities(
+    modelName: string,
+  ): Readonly<Record<string, number>> {
     const lower = modelName.toLowerCase();
-    if (lower.includes("r1") || lower.includes("deepseek") || lower.includes("reasoning")) {
+    if (
+      lower.includes("r1") ||
+      lower.includes("deepseek") ||
+      lower.includes("reasoning")
+    ) {
       return {
         SecurityAuditor: 0.95,
         ArchitectureAuditor: 0.9,

@@ -33,7 +33,10 @@ export class ModelBenchmarkRunner {
   private readonly provider: IInferenceProvider;
   private readonly healthRepo: ModelHealthRepository | undefined;
 
-  constructor(provider: IInferenceProvider, healthRepo?: ModelHealthRepository) {
+  constructor(
+    provider: IInferenceProvider,
+    healthRepo?: ModelHealthRepository,
+  ) {
     this.provider = provider;
     this.healthRepo = healthRepo;
   }
@@ -52,22 +55,30 @@ export class ModelBenchmarkRunner {
         messages: [
           {
             role: "system",
-            content: "You are an expert TypeScript software engineer following SOLID principles."
+            content:
+              "You are an expert TypeScript software engineer following SOLID principles.",
           },
           {
             role: "user",
-            content: SYNTHETIC_BENCHMARK_PROMPT
-          }
+            content: SYNTHETIC_BENCHMARK_PROMPT,
+          },
         ],
         temperature: 0.1,
-        maxTokens: 1024
+        maxTokens: 1024,
       });
 
       const elapsedMs = Math.max(1, Date.now() - startTime);
-      const codeFenceMatch = response.content.match(/```(?:typescript|ts)?\s*([\s\S]*?)```/i);
-      const code = codeFenceMatch ? codeFenceMatch[1]!.trim() : response.content.trim();
+      const codeFenceMatch = response.content.match(
+        /```(?:typescript|ts)?\s*([\s\S]*?)```/i,
+      );
+      const code = codeFenceMatch
+        ? codeFenceMatch[1]!.trim()
+        : response.content.trim();
 
-      const syntaxValid = code.includes("class RingBuffer") && code.includes("push(") && code.includes("pop(");
+      const syntaxValid =
+        code.includes("class RingBuffer") &&
+        code.includes("push(") &&
+        code.includes("pop(");
       const success = syntaxValid && response.tokensCompletion > 20;
 
       const result: BenchmarkResult = {
@@ -76,9 +87,12 @@ export class ModelBenchmarkRunner {
         durationMs: elapsedMs,
         tokensPrompt: response.tokensPrompt,
         tokensCompletion: response.tokensCompletion,
-        tokensPerSec: response.tokensPerSec || Math.round((response.tokensCompletion / (elapsedMs / 1000)) * 10) / 10,
+        tokensPerSec:
+          response.tokensPerSec ||
+          Math.round((response.tokensCompletion / (elapsedMs / 1000)) * 10) /
+            10,
         generatedCodeLength: code.length,
-        syntaxValid
+        syntaxValid,
       };
 
       if (this.healthRepo) {
@@ -87,7 +101,7 @@ export class ModelBenchmarkRunner {
           this.provider.getProviderType(),
           success,
           elapsedMs,
-          result.tokensPerSec
+          result.tokensPerSec,
         );
       }
 
@@ -97,7 +111,13 @@ export class ModelBenchmarkRunner {
       const errorMsg = err instanceof Error ? err.message : String(err);
 
       if (this.healthRepo) {
-        await this.healthRepo.recordRun(modelId, this.provider.getProviderType(), false, elapsedMs, 0.0);
+        await this.healthRepo.recordRun(
+          modelId,
+          this.provider.getProviderType(),
+          false,
+          elapsedMs,
+          0.0,
+        );
       }
 
       return {
@@ -109,7 +129,7 @@ export class ModelBenchmarkRunner {
         tokensPerSec: 0,
         generatedCodeLength: 0,
         syntaxValid: false,
-        error: errorMsg
+        error: errorMsg,
       };
     }
   }

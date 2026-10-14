@@ -36,7 +36,8 @@ export class WorkspaceIsolationManager {
   private readonly workspaces = new Map<string, IsolatedWorkspace>();
 
   constructor(config: WorkspaceIsolationConfig = {}) {
-    this.baseWorkspacesDir = config.baseWorkspacesDir ?? path.join(os.tmpdir(), "cacophony-sandboxes");
+    this.baseWorkspacesDir =
+      config.baseWorkspacesDir ?? path.join(os.tmpdir(), "cacophony-sandboxes");
     this.defaultTtlMs = config.defaultTtlMs ?? 3600_000;
     this.maxConcurrentWorkspaces = config.maxConcurrentWorkspaces ?? 16;
     fs.mkdirSync(this.baseWorkspacesDir, { recursive: true });
@@ -45,7 +46,10 @@ export class WorkspaceIsolationManager {
   /**
    * Allocates an isolated filesystem sandbox root for a task or session.
    */
-  public allocateWorkspace(workspaceId: string, initialTaskIds: readonly string[] = []): IsolatedWorkspace {
+  public allocateWorkspace(
+    workspaceId: string,
+    initialTaskIds: readonly string[] = [],
+  ): IsolatedWorkspace {
     if (this.workspaces.has(workspaceId)) {
       const existing = this.workspaces.get(workspaceId)!;
       for (const t of initialTaskIds) {
@@ -68,7 +72,7 @@ export class WorkspaceIsolationManager {
       createdAt: now,
       expiresAt: now + this.defaultTtlMs,
       activeTaskIds: new Set(initialTaskIds),
-      isCleanedUp: false
+      isCleanedUp: false,
     };
 
     this.workspaces.set(workspaceId, ws);

@@ -7,7 +7,7 @@ export enum TestFailureCategory {
   NetworkError = "NetworkError",
   FileNotFoundException = "FileNotFoundException",
   PermissionError = "PermissionError",
-  UnknownError = "UnknownError"
+  UnknownError = "UnknownError",
 }
 
 export const TestFailure = TestFailureCategory;
@@ -26,7 +26,10 @@ export function triageTestFailure(stderr: string): TestFailureCategory {
     return TestFailureCategory.OutOfMemoryError;
   } else if (stderr.includes("NetworkError")) {
     return TestFailureCategory.NetworkError;
-  } else if (stderr.includes("FileNotFoundError") || stderr.includes("ENOENT")) {
+  } else if (
+    stderr.includes("FileNotFoundError") ||
+    stderr.includes("ENOENT")
+  ) {
     return TestFailureCategory.FileNotFoundException;
   } else if (stderr.includes("PermissionError") || stderr.includes("EACCES")) {
     return TestFailureCategory.PermissionError;

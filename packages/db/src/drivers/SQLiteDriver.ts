@@ -28,7 +28,10 @@ export class SQLiteDriver implements IDatabaseDriver {
     this.db = null;
   }
 
-  public async query<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<readonly T[]> {
+  public async query<T = unknown>(
+    sql: string,
+    params: readonly unknown[] = [],
+  ): Promise<readonly T[]> {
     this.ensureConnected();
     const normalizedSql = this.normalizeSql(sql);
     const stmt = this.db!.prepare(normalizedSql);
@@ -37,16 +40,24 @@ export class SQLiteDriver implements IDatabaseDriver {
     return rows as T[];
   }
 
-  public async queryOne<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<T | null> {
+  public async queryOne<T = unknown>(
+    sql: string,
+    params: readonly unknown[] = [],
+  ): Promise<T | null> {
     const rows = await this.query<T>(sql, params);
     return rows[0] ?? null;
   }
 
-  public async execute(sql: string, params: readonly unknown[] = []): Promise<{ readonly rowsAffected: number }> {
+  public async execute(
+    sql: string,
+    params: readonly unknown[] = [],
+  ): Promise<{ readonly rowsAffected: number }> {
     this.ensureConnected();
     const normalizedSql = this.normalizeSql(sql);
     const stmt = this.db!.prepare(normalizedSql);
-    const result = (stmt.run as (...args: unknown[]) => { changes: number | bigint })(...params);
+    const result = (
+      stmt.run as (...args: unknown[]) => { changes: number | bigint }
+    )(...params);
     return { rowsAffected: Number(result.changes) };
   }
 
@@ -55,7 +66,9 @@ export class SQLiteDriver implements IDatabaseDriver {
     this.db!.exec(sql);
   }
 
-  public async transaction<T>(fn: (driver: IDatabaseDriver) => Promise<T>): Promise<T> {
+  public async transaction<T>(
+    fn: (driver: IDatabaseDriver) => Promise<T>,
+  ): Promise<T> {
     this.ensureConnected();
     this.db!.exec("BEGIN TRANSACTION");
     try {
@@ -81,7 +94,9 @@ export class SQLiteDriver implements IDatabaseDriver {
 
   private ensureConnected(): void {
     if (!this.db) {
-      throw new Error("SQLite database is not connected. Call connect() before issuing queries.");
+      throw new Error(
+        "SQLite database is not connected. Call connect() before issuing queries.",
+      );
     }
   }
 }

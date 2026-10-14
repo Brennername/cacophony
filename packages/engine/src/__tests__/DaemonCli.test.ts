@@ -8,7 +8,10 @@ import { DaemonIPCServer, DaemonIPCClient } from "../daemon/DaemonIPC.js";
 import { CacophonyCli } from "../cli/CacophonyCli.js";
 
 describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
-  const socketPath = path.join(os.tmpdir(), `cacophony-test-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.sock`);
+  const socketPath = path.join(
+    os.tmpdir(),
+    `cacophony-test-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.sock`,
+  );
   const streamTapManager = new StreamTapManager();
   let server: DaemonIPCServer;
   let client: DaemonIPCClient;
@@ -28,7 +31,7 @@ describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
               uptimeSeconds: 42,
               pendingTasksCount: mockTasks.length,
               activeTaskId: streamTapManager.getActiveTask(),
-              schedulerPaused
+              schedulerPaused,
             };
           case "pause":
             schedulerPaused = true;
@@ -40,7 +43,7 @@ describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
             const newTask = {
               id: `task_${Date.now()}`,
               title: String(params?.title || ""),
-              prompt: String(params?.prompt || "")
+              prompt: String(params?.prompt || ""),
             };
             mockTasks.push(newTask);
             return newTask;
@@ -52,13 +55,17 @@ describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
           case "telemetry":
             return { edgeTempC: 45, gpuBusyPct: 15 };
           case "stream.suspend":
-            return { suspended: streamTapManager.suspend(params?.taskId as string) };
+            return {
+              suspended: streamTapManager.suspend(params?.taskId as string),
+            };
           case "stream.resume":
-            return { resumed: streamTapManager.resume(params?.taskId as string) };
+            return {
+              resumed: streamTapManager.resume(params?.taskId as string),
+            };
           default:
             throw new Error(`Unknown mock command: ${cmd}`);
         }
-      }
+      },
     });
 
     await server.start();
@@ -110,35 +117,45 @@ describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
     });
 
     test("should execute status query over IPC", async () => {
-      const res = await client.request("status") as { status: string; uptimeSeconds: number };
+      const res = (await client.request("status")) as {
+        status: string;
+        uptimeSeconds: number;
+      };
       assert.equal(res.status, "ONLINE");
       assert.equal(res.uptimeSeconds, 42);
     });
 
     test("should execute pause and resume lifecycle transitions", async () => {
-      const pauseRes = await client.request("pause") as { message: string };
+      const pauseRes = (await client.request("pause")) as { message: string };
       assert.ok(pauseRes.message.includes("paused"));
 
-      const statusAfterPause = await client.request("status") as { schedulerPaused: boolean };
+      const statusAfterPause = (await client.request("status")) as {
+        schedulerPaused: boolean;
+      };
       assert.equal(statusAfterPause.schedulerPaused, true);
 
-      const resumeRes = await client.request("resume") as { message: string };
+      const resumeRes = (await client.request("resume")) as { message: string };
       assert.ok(resumeRes.message.includes("resumed"));
 
-      const statusAfterResume = await client.request("status") as { schedulerPaused: boolean };
+      const statusAfterResume = (await client.request("status")) as {
+        schedulerPaused: boolean;
+      };
       assert.equal(statusAfterResume.schedulerPaused, false);
     });
 
     test("should enqueue task and query tasks list", async () => {
-      const enqueueRes = await client.request("tasks.enqueue", {
+      const enqueueRes = (await client.request("tasks.enqueue", {
         title: "Test Task 1",
-        prompt: "Fix database index"
-      }) as { id: string; title: string };
+        prompt: "Fix database index",
+      })) as { id: string; title: string };
 
       assert.ok(enqueueRes.id.startsWith("task_"));
       assert.equal(enqueueRes.title, "Test Task 1");
 
-      const listRes = await client.request("tasks.list") as Array<{ id: string; title: string }>;
+      const listRes = (await client.request("tasks.list")) as Array<{
+        id: string;
+        title: string;
+      }>;
       assert.ok(listRes.some((t) => t.title === "Test Task 1"));
     });
 
@@ -166,11 +183,15 @@ describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
     test("should support remote stream suspend and resume", async () => {
       streamTapManager.setActiveTask("task-live-2");
 
-      const suspendRes = await client.request("stream.suspend", { taskId: "task-live-2" }) as { suspended: boolean };
+      const suspendRes = (await client.request("stream.suspend", {
+        taskId: "task-live-2",
+      })) as { suspended: boolean };
       assert.equal(suspendRes.suspended, true);
       assert.equal(streamTapManager.isSuspended("task-live-2"), true);
 
-      const resumeRes = await client.request("stream.resume", { taskId: "task-live-2" }) as { resumed: boolean };
+      const resumeRes = (await client.request("stream.resume", {
+        taskId: "task-live-2",
+      })) as { resumed: boolean };
       assert.equal(resumeRes.resumed, true);
       assert.equal(streamTapManager.isSuspended("task-live-2"), false);
     });
@@ -208,7 +229,10 @@ describe("Daemon IPC, Stream Tapping & Cacophony CLI", () => {
 
     test("should dispatch scrub command on a local source file", async () => {
       const testFile = path.join(os.tmpdir(), `scrub-test-${Date.now()}.ts`);
-      fs.writeFileSync(testFile, 'import { a } from "./a";\nconst hello = "world \u{1F389}";\n');
+      fs.writeFileSync(
+        testFile,
+        'import { a } from "./a";\nconst hello = "world \u{1F389}";\n',
+      );
 
       const code = await cli.run(["scrub", testFile, "--allow-emojis"]);
       assert.equal(code, 0);

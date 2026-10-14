@@ -26,13 +26,18 @@ describe("Phase 23: AST Code Signature Compression & Mechanistic Interface Enfor
         }
       `;
 
-      const records = harvester.harvestTypeScript("src/db/PostgresClient.ts", tsCode);
+      const records = harvester.harvestTypeScript(
+        "src/db/PostgresClient.ts",
+        tsCode,
+      );
       assert.ok(records.length >= 3);
 
       const iface = records.find((r) => r.identifier === "DatabaseConfig");
       assert.ok(iface);
       assert.equal(iface.kind, "interface");
-      assert.ok(iface.properties.some((p) => p.name === "host" && p.type === "string"));
+      assert.ok(
+        iface.properties.some((p) => p.name === "host" && p.type === "string"),
+      );
 
       const cls = records.find((r) => r.identifier === "PostgresClient");
       assert.ok(cls);
@@ -45,7 +50,11 @@ describe("Phase 23: AST Code Signature Compression & Mechanistic Interface Enfor
 
       // Verify compact notation
       assert.ok(cls.rawCompressed.includes("class PostgresClient"));
-      assert.ok(cls.rawCompressed.includes("query(sql: string, params?: readonly unknown[]): Promise<unknown[]>"));
+      assert.ok(
+        cls.rawCompressed.includes(
+          "query(sql: string, params?: readonly unknown[]): Promise<unknown[]>",
+        ),
+      );
     });
 
     test("should harvest Java class signatures and method parameters", () => {
@@ -79,7 +88,11 @@ describe("Phase 23: AST Code Signature Compression & Mechanistic Interface Enfor
 
       const records = harvester.harvestGo("worker.go", goCode);
       assert.equal(records.length, 2);
-      assert.ok(records.some((r) => r.identifier === "ClusterState" && r.kind === "type"));
+      assert.ok(
+        records.some(
+          (r) => r.identifier === "ClusterState" && r.kind === "type",
+        ),
+      );
       const fn = records.find((r) => r.identifier === "DispatchJob");
       assert.ok(fn);
       assert.equal(fn.callables[0]?.parameters.length, 2);
@@ -90,7 +103,10 @@ describe("Phase 23: AST Code Signature Compression & Mechanistic Interface Enfor
   describe("T23.2: SignatureStore & Target Mini-Specification Formatting", () => {
     test("should index signatures and format compressed prompt mini-specification", () => {
       const store = new SignatureStore();
-      store.indexFile("src/math.ts", "export function add(a: number, b: number): number { return a + b; }");
+      store.indexFile(
+        "src/math.ts",
+        "export function add(a: number, b: number): number { return a + b; }",
+      );
 
       const spec = store.formatTargetMiniSpec(["add"]);
       assert.ok(spec.includes("=== Target Interface Mini-Specification"));
@@ -109,7 +125,7 @@ describe("Phase 23: AST Code Signature Compression & Mechanistic Interface Enfor
           priority: string;
         }
         export function createTask(opts: CreateTaskOptions): void {}
-        `
+        `,
       );
 
       const scrubber = new SignatureAlignmentScrubber(store);

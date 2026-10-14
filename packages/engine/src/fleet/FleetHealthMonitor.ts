@@ -1,4 +1,7 @@
-import type { INodeHealthStatus, FleetNodeStatus } from "@cacophony/shared-types";
+import type {
+  INodeHealthStatus,
+  FleetNodeStatus,
+} from "@cacophony/shared-types";
 
 /**
  * FleetHealthMonitorOptions
@@ -48,14 +51,18 @@ export class FleetHealthMonitor {
       status.apuThermal >= this.thermalThresholdCelsius;
 
     let computedStatus: FleetNodeStatus = status.status;
-    if (isThermalThrottling && computedStatus !== "OFFLINE" && computedStatus !== "DRAINING") {
+    if (
+      isThermalThrottling &&
+      computedStatus !== "OFFLINE" &&
+      computedStatus !== "DRAINING"
+    ) {
       computedStatus = "DEGRADED";
     }
 
     const updatedNode: INodeHealthStatus = {
       ...status,
       status: computedStatus,
-      lastHeartbeat: new Date().toISOString()
+      lastHeartbeat: new Date().toISOString(),
     };
 
     this.nodes.set(status.nodeId, updatedNode);
@@ -81,7 +88,9 @@ export class FleetHealthMonitor {
   public getAvailableNodes(): INodeHealthStatus[] {
     this.checkNodeLiveness();
     return Array.from(this.nodes.values()).filter(
-      (node) => node.status === "ONLINE" || (node.status === "BUSY" && node.activeTasksCount < 3)
+      (node) =>
+        node.status === "ONLINE" ||
+        (node.status === "BUSY" && node.activeTasksCount < 3),
     );
   }
 
@@ -99,7 +108,7 @@ export class FleetHealthMonitor {
           ...node,
           status: "OFFLINE",
           activeTasksCount: 0,
-          currentTaskAssignment: null
+          currentTaskAssignment: null,
         });
       }
     }

@@ -1,6 +1,7 @@
 import type { StreamTapManager } from "./StreamTapManager.js";
 
-export type GenerationState = "ingesting_prompt" | "streaming" | "stalled" | "completed";
+export type GenerationState =
+  "ingesting_prompt" | "streaming" | "stalled" | "completed";
 
 export interface GenerationHeartbeat {
   readonly taskId: string;
@@ -100,17 +101,18 @@ export class GenerationHeartbeatTracker {
       state = "streaming";
     }
 
-    const promptIngestionMs = this.firstTokenTime !== null
-      ? this.firstTokenTime - this.startTime
-      : elapsedMs;
+    const promptIngestionMs =
+      this.firstTokenTime !== null
+        ? this.firstTokenTime - this.startTime
+        : elapsedMs;
 
-    const streamingDurationMs = this.firstTokenTime !== null
-      ? Math.max(1, now - this.firstTokenTime)
-      : 1;
+    const streamingDurationMs =
+      this.firstTokenTime !== null ? Math.max(1, now - this.firstTokenTime) : 1;
 
-    const instantaneousTps = this.firstTokenTime !== null && this.tokensCount > 0
-      ? Number(((this.tokensCount / streamingDurationMs) * 1000).toFixed(2))
-      : 0;
+    const instantaneousTps =
+      this.firstTokenTime !== null && this.tokensCount > 0
+        ? Number(((this.tokensCount / streamingDurationMs) * 1000).toFixed(2))
+        : 0;
 
     return {
       taskId: this.taskId,
@@ -118,11 +120,14 @@ export class GenerationHeartbeatTracker {
       state,
       elapsedMs,
       promptIngestionMs,
-      timeToFirstTokenMs: this.firstTokenTime !== null ? this.firstTokenTime - this.startTime : null,
+      timeToFirstTokenMs:
+        this.firstTokenTime !== null
+          ? this.firstTokenTime - this.startTime
+          : null,
       tokensEmitted: this.tokensCount,
       instantaneousTps,
       idleMs,
-      timestamp: now
+      timestamp: now,
     };
   }
 

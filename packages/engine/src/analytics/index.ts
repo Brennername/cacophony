@@ -7,6 +7,6 @@ export * from "./GitRegressionCorrelator.js";
 export {
   IncidentBundleRecorder,
   type IncidentBundle,
-  type IncidentBundleRecorderOptions
+  type IncidentBundleRecorderOptions,
 } from "./IncidentBundleRecorder.js";
 export * from "./RollingWindowAnalyticsService.js";

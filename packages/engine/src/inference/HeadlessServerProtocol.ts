@@ -24,7 +24,9 @@ export interface JsonRpcNotification {
   readonly params: Record<string, unknown>;
 }
 
-export type RpcMethodHandler = (params: Record<string, unknown>) => Promise<unknown> | unknown;
+export type RpcMethodHandler = (
+  params: Record<string, unknown>,
+) => Promise<unknown> | unknown;
 
 /**
  * HeadlessServerProtocol handles JSON-RPC 2.0 dispatching, bi-directional RPC
@@ -46,12 +48,18 @@ export class HeadlessServerProtocol extends EventEmitter {
   /**
    * Processes an incoming JSON-RPC 2.0 message string.
    */
-  public async handleMessage(rawMessage: string, incomingToken?: string): Promise<string | null> {
+  public async handleMessage(
+    rawMessage: string,
+    incomingToken?: string,
+  ): Promise<string | null> {
     if (this.authToken && incomingToken !== this.authToken) {
       const errResp: JsonRpcResponse = {
         jsonrpc: "2.0",
         id: null,
-        error: { code: -32000, message: "Unauthorized: Invalid or missing authentication token" }
+        error: {
+          code: -32000,
+          message: "Unauthorized: Invalid or missing authentication token",
+        },
       };
       return JSON.stringify(errResp);
     }
@@ -63,7 +71,7 @@ export class HeadlessServerProtocol extends EventEmitter {
       const errResp: JsonRpcResponse = {
         jsonrpc: "2.0",
         id: null,
-        error: { code: -32700, message: "Parse error: Invalid JSON" }
+        error: { code: -32700, message: "Parse error: Invalid JSON" },
       };
       return JSON.stringify(errResp);
     }
@@ -72,7 +80,10 @@ export class HeadlessServerProtocol extends EventEmitter {
       const errResp: JsonRpcResponse = {
         jsonrpc: "2.0",
         id: parsed.id ?? null,
-        error: { code: -32600, message: "Invalid Request: Missing required jsonrpc or method" }
+        error: {
+          code: -32600,
+          message: "Invalid Request: Missing required jsonrpc or method",
+        },
       };
       return JSON.stringify(errResp);
     }
@@ -82,7 +93,7 @@ export class HeadlessServerProtocol extends EventEmitter {
       const errResp: JsonRpcResponse = {
         jsonrpc: "2.0",
         id: parsed.id,
-        error: { code: -32601, message: `Method not found: ${parsed.method}` }
+        error: { code: -32601, message: `Method not found: ${parsed.method}` },
       };
       return JSON.stringify(errResp);
     }
@@ -92,7 +103,7 @@ export class HeadlessServerProtocol extends EventEmitter {
       const resp: JsonRpcResponse = {
         jsonrpc: "2.0",
         id: parsed.id,
-        result
+        result,
       };
       return JSON.stringify(resp);
     } catch (err) {
@@ -101,8 +112,8 @@ export class HeadlessServerProtocol extends EventEmitter {
         id: parsed.id,
         error: {
           code: -32603,
-          message: err instanceof Error ? err.message : String(err)
-        }
+          message: err instanceof Error ? err.message : String(err),
+        },
       };
       return JSON.stringify(resp);
     }
@@ -111,11 +122,14 @@ export class HeadlessServerProtocol extends EventEmitter {
   /**
    * Emits a JSON-RPC 2.0 streaming notification.
    */
-  public createNotification(method: string, params: Record<string, unknown>): string {
+  public createNotification(
+    method: string,
+    params: Record<string, unknown>,
+  ): string {
     const notif: JsonRpcNotification = {
       jsonrpc: "2.0",
       method,
-      params
+      params,
     };
     return JSON.stringify(notif);
   }

@@ -1,6 +1,9 @@
 import * as childProcess from "node:child_process";
 import * as util from "node:util";
-import type { GitCheckpointRepository, GitCheckpointRecord } from "@cacophony/db";
+import type {
+  GitCheckpointRepository,
+  GitCheckpointRecord,
+} from "@cacophony/db";
 
 const execFileAsync = util.promisify(childProcess.execFile);
 
@@ -25,11 +28,12 @@ export class GitCheckpointService {
    */
   public async createCheckpoint(
     workspaceRoot: string,
-    options: CheckpointCreationOptions = {}
+    options: CheckpointCreationOptions = {},
   ): Promise<GitCheckpointRecord> {
     const id = `chk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const branch = options.branch ?? "master";
-    const msg = options.message ?? `cacophony checkpoint: ${options.taskId ?? "auto"}`;
+    const msg =
+      options.message ?? `cacophony checkpoint: ${options.taskId ?? "auto"}`;
 
     // 1. Stage changes safely
     await execFileAsync("git", ["add", "-A"], { cwd: workspaceRoot });
@@ -37,7 +41,11 @@ export class GitCheckpointService {
     // 2. Identify files changed
     let filesChanged: string[] = [];
     try {
-      const statusOut = await execFileAsync("git", ["diff", "--cached", "--name-only"], { cwd: workspaceRoot });
+      const statusOut = await execFileAsync(
+        "git",
+        ["diff", "--cached", "--name-only"],
+        { cwd: workspaceRoot },
+      );
       filesChanged = statusOut.stdout.trim().split("\n").filter(Boolean);
     } catch {
       filesChanged = [];
@@ -48,7 +56,9 @@ export class GitCheckpointService {
     let parentHash: string | null = null;
 
     try {
-      const headOut = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: workspaceRoot });
+      const headOut = await execFileAsync("git", ["rev-parse", "HEAD"], {
+        cwd: workspaceRoot,
+      });
       parentHash = headOut.stdout.trim();
     } catch {
       parentHash = null;
@@ -56,12 +66,12 @@ export class GitCheckpointService {
 
     if (filesChanged.length > 0) {
       try {
-        await execFileAsync(
-          "git",
-          ["commit", "-m", msg, "--no-verify"],
-          { cwd: workspaceRoot }
-        );
-        const hashOut = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: workspaceRoot });
+        await execFileAsync("git", ["commit", "-m", msg, "--no-verify"], {
+          cwd: workspaceRoot,
+        });
+        const hashOut = await execFileAsync("git", ["rev-parse", "HEAD"], {
+          cwd: workspaceRoot,
+        });
         commitHash = hashOut.stdout.trim();
       } catch {
         commitHash = parentHash || "HEAD";
@@ -79,7 +89,7 @@ export class GitCheckpointService {
       branch,
       message: msg,
       files_changed_json: JSON.stringify(filesChanged),
-      is_reverted: false
+      is_reverted: false,
     };
 
     if (this.checkpointRepo) {
@@ -88,17 +98,23 @@ export class GitCheckpointService {
 
     return {
       ...record,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
   }
 
   /**
    * Generates a readable unified diff for a checkpoint.
    */
-  public async getCheckpointDiff(workspaceRoot: string, commitHash: string, parentHash?: string): Promise<string> {
+  public async getCheckpointDiff(
+    workspaceRoot: string,
+    commitHash: string,
+    parentHash?: string,
+  ): Promise<string> {
     try {
       const base = parentHash || `${commitHash}~1`;
-      const diffOut = await execFileAsync("git", ["diff", base, commitHash], { cwd: workspaceRoot });
+      const diffOut = await execFileAsync("git", ["diff", base, commitHash], {
+        cwd: workspaceRoot,
+      });
       return diffOut.stdout;
     } catch {
       return "Diff unavailable.";

@@ -4,7 +4,8 @@ import { ReviewVerdictParser } from "../gitea/AutomatedPrReviewLoop.js";
 
 describe("ReviewVerdictParser Test Suite", () => {
   test("should parse JSON verdict format correctly", () => {
-    const input = '{"verdict": "APPROVE", "reviewNotes": "All checks passed", "comments": []}';
+    const input =
+      '{"verdict": "APPROVE", "reviewNotes": "All checks passed", "comments": []}';
     const result = ReviewVerdictParser.parse(input);
     assert.equal(result.verdict, "APPROVE");
     assert.equal(result.reviewNotes, "All checks passed");
@@ -12,7 +13,8 @@ describe("ReviewVerdictParser Test Suite", () => {
   });
 
   test("should parse markdown/plain text containing APPROVE", () => {
-    const input = "I have reviewed this patch and VERDICT: APPROVE. Looks solid.";
+    const input =
+      "I have reviewed this patch and VERDICT: APPROVE. Looks solid.";
     const result = ReviewVerdictParser.parse(input);
     assert.equal(result.verdict, "APPROVE");
   });
@@ -21,7 +23,14 @@ describe("ReviewVerdictParser Test Suite", () => {
     const input = JSON.stringify({
       verdict: "REQUEST_CHANGES",
       reviewNotes: "Missing unit tests",
-      comments: [{ path: "test.ts", lineNumber: 10, comment: "Add assertion", severity: "warning" }]
+      comments: [
+        {
+          path: "test.ts",
+          lineNumber: 10,
+          comment: "Add assertion",
+          severity: "warning",
+        },
+      ],
     });
     const result = ReviewVerdictParser.parse(input);
     assert.equal(result.verdict, "REQUEST_CHANGES");

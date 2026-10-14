@@ -3,24 +3,27 @@ import assert from "node:assert/strict";
 import { BackgroundTestWorkerPool } from "../testing/BackgroundTestWorkerPool.js";
 
 test("BackgroundTestWorkerPool Suite (T92.3.1)", async (t) => {
-  await t.test("should execute test command asynchronously and resolve result", async () => {
-    const pool = new BackgroundTestWorkerPool({ maxConcurrency: 2 });
+  await t.test(
+    "should execute test command asynchronously and resolve result",
+    async () => {
+      const pool = new BackgroundTestWorkerPool({ maxConcurrency: 2 });
 
-    const result = await pool.runTest({
-      taskId: "test-task-1",
-      command: "node -e 'console.log(\"PASS\"); process.exit(0)'",
-      cwd: process.cwd(),
-      timeoutMs: 5000,
-    });
+      const result = await pool.runTest({
+        taskId: "test-task-1",
+        command: "node -e 'console.log(\"PASS\"); process.exit(0)'",
+        cwd: process.cwd(),
+        timeoutMs: 5000,
+      });
 
-    assert.strictEqual(result.taskId, "test-task-1");
-    assert.strictEqual(result.exitCode, 0);
-    assert.strictEqual(result.passed, true);
-    assert.ok(result.stdout.includes("PASS"));
-    assert.ok(result.durationMs >= 0);
+      assert.strictEqual(result.taskId, "test-task-1");
+      assert.strictEqual(result.exitCode, 0);
+      assert.strictEqual(result.passed, true);
+      assert.ok(result.stdout.includes("PASS"));
+      assert.ok(result.durationMs >= 0);
 
-    await pool.shutdown();
-  });
+      await pool.shutdown();
+    },
+  );
 
   await t.test("should emit event on completion", async () => {
     const pool = new BackgroundTestWorkerPool({ maxConcurrency: 2 });

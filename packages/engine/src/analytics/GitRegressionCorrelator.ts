@@ -27,7 +27,10 @@ export class GitRegressionCorrelator {
   private readonly repoDir: string;
   private readonly customRunner?: ((cmd: string) => string) | undefined;
 
-  constructor(repoDir: string = process.cwd(), commandRunner?: (cmd: string) => string) {
+  constructor(
+    repoDir: string = process.cwd(),
+    commandRunner?: (cmd: string) => string,
+  ) {
     this.repoDir = repoDir;
     this.customRunner = commandRunner;
   }
@@ -53,12 +56,24 @@ export class GitRegressionCorrelator {
    */
   public getRecentCommits(limit: number = 20): GitCommitRecord[] {
     try {
-      const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit)) || 20));
-      const output = this.runGit(["log", "-n", String(safeLimit), '--pretty=format:%H|%an|%at|%s']);
-      const lines = output.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+      const safeLimit = Math.max(
+        1,
+        Math.min(100, Math.floor(Number(limit)) || 20),
+      );
+      const output = this.runGit([
+        "log",
+        "-n",
+        String(safeLimit),
+        "--pretty=format:%H|%an|%at|%s",
+      ]);
+      const lines = output
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
 
       return lines.map((line) => {
-        const [hash = "", author = "", atStr = "0", ...subParts] = line.split("|");
+        const [hash = "", author = "", atStr = "0", ...subParts] =
+          line.split("|");
         const subject = subParts.join("|");
         return {
           hash,
@@ -77,12 +92,24 @@ export class GitRegressionCorrelator {
    */
   public getCommitFiles(commitHash: string): string[] {
     try {
-      if (typeof commitHash !== "string" || !/^[a-fA-F0-9]{4,64}$/.test(commitHash.trim())) {
+      if (
+        typeof commitHash !== "string" ||
+        !/^[a-fA-F0-9]{4,64}$/.test(commitHash.trim())
+      ) {
         return [];
       }
       const safeHash = commitHash.trim();
-      const output = this.runGit(["diff-tree", "--no-commit-id", "--name-only", "-r", safeHash]);
-      return output.split("\n").map((f) => f.trim()).filter((f) => f.length > 0);
+      const output = this.runGit([
+        "diff-tree",
+        "--no-commit-id",
+        "--name-only",
+        "-r",
+        safeHash,
+      ]);
+      return output
+        .split("\n")
+        .map((f) => f.trim())
+        .filter((f) => f.length > 0);
     } catch {
       return [];
     }
@@ -93,7 +120,7 @@ export class GitRegressionCorrelator {
    */
   public correlateFailure(
     failedTask: TaskRecord,
-    commitPool?: readonly GitCommitRecord[]
+    commitPool?: readonly GitCommitRecord[],
   ): CommitCorrelationResult {
     const commits = commitPool ?? this.getRecentCommits(15);
     if (commits.length === 0) {
@@ -105,14 +132,18 @@ export class GitRegressionCorrelator {
       };
     }
 
-    const taskTime = new Date(failedTask.completedAt ?? failedTask.updatedAt).getTime();
-    const taskFocusFiles = failedTask.focusFiles ? failedTask.focusFiles.split(",").map((f) => f.trim()) : [];
+    const taskTime = new Date(
+      failedTask.completedAt ?? failedTask.updatedAt,
+    ).getTime();
+    const taskFocusFiles = failedTask.focusFiles
+      ? failedTask.focusFiles.split(",").map((f) => f.trim())
+      : [];
 
     // Find commits before or closely matching the failure event
     for (const commit of commits) {
       const commitFiles = this.getCommitFiles(commit.hash);
       const overlappingFiles = taskFocusFiles.filter((tf) =>
-        commitFiles.some((cf) => cf.includes(tf) || tf.includes(cf))
+        commitFiles.some((cf) => cf.includes(tf) || tf.includes(cf)),
       );
 
       if (overlappingFiles.length > 0) {
@@ -126,7 +157,8 @@ export class GitRegressionCorrelator {
     }
 
     // Temporal fallback: the most recent commit immediately preceding failure
-    const candidate = commits.find((c) => c.timestamp <= taskTime) ?? commits[0];
+    const candidate =
+      commits.find((c) => c.timestamp <= taskTime) ?? commits[0];
     if (candidate) {
       return {
         culpritCommit: candidate,

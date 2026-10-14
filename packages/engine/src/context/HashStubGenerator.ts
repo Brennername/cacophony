@@ -17,7 +17,8 @@ export interface HashStubAnchor {
  */
 export class HashStubGenerator {
   public static readonly STUB_PREFIX = "CACOPHONY_HASH_STUB";
-  public static readonly STUB_REGEX = /\/\*\s*\[CACOPHONY_HASH_STUB:([a-f0-9]{8}):([a-zA-Z0-9_$]+)\]\s*\*\//g;
+  public static readonly STUB_REGEX =
+    /\/\*\s*\[CACOPHONY_HASH_STUB:([a-f0-9]{8}):([a-zA-Z0-9_$]+)\]\s*\*\//g;
 
   /**
    * Generates an 8-character deterministic hex hash for a file and method.
@@ -33,7 +34,10 @@ export class HashStubGenerator {
   /**
    * Creates the standard comment anchor string.
    */
-  public static createStubComment(filePath: string, methodName: string): string {
+  public static createStubComment(
+    filePath: string,
+    methodName: string,
+  ): string {
     const hash = this.generateHash(filePath, methodName);
     return `/* [${this.STUB_PREFIX}:${hash}:${methodName}] */`;
   }
@@ -45,7 +49,7 @@ export class HashStubGenerator {
     methodName: string,
     signature: string,
     filePath: string,
-    fallbackReturn = "throw new Error('Method not implemented.');"
+    fallbackReturn = "throw new Error('Method not implemented.');",
   ): string {
     const comment = this.createStubComment(filePath, methodName);
     return `  public ${signature} {\n    ${comment}\n    ${fallbackReturn}\n  }`;
@@ -60,9 +64,7 @@ export class HashStubGenerator {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] || "";
-      const matches = line.matchAll(
-        new RegExp(this.STUB_REGEX.source, "g")
-      );
+      const matches = line.matchAll(new RegExp(this.STUB_REGEX.source, "g"));
       for (const match of matches) {
         const hash = match[1] || "";
         const methodName = match[2] || "";

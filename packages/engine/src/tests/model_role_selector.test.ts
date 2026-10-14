@@ -11,12 +11,15 @@ test("ModelRoleSelector Suite (T92.4.1)", async (t) => {
     "deepseek-r1:8b",
   ];
 
-  await t.test("should route chore_runner to ultra-lightweight micro-models", () => {
-    const selector = new ModelRoleSelector();
-    const model = selector.selectModelForRole("chore_runner", availableFleet);
-    assert.strictEqual(model, "smollm2:135m");
-    assert.strictEqual(selector.isMicroTaskRole("chore_runner"), true);
-  });
+  await t.test(
+    "should route chore_runner to ultra-lightweight micro-models",
+    () => {
+      const selector = new ModelRoleSelector();
+      const model = selector.selectModelForRole("chore_runner", availableFleet);
+      assert.strictEqual(model, "smollm2:135m");
+      assert.strictEqual(selector.isMicroTaskRole("chore_runner"), true);
+    },
+  );
 
   await t.test("should route architect to high-reasoning model", () => {
     const selector = new ModelRoleSelector();

@@ -27,14 +27,17 @@ export class ReasoningDistillationService {
    * @param rawTranscript Raw content inside <think> tags
    * @param model Model tag to use for distillation if inference provider is available
    */
-  public async distillOpinion(rawTranscript: string, model = "qwen2.5-coder:7b-instruct-q4_K_M"): Promise<ModelOpinionRecord> {
+  public async distillOpinion(
+    rawTranscript: string,
+    model = "qwen2.5-coder:7b-instruct-q4_K_M",
+  ): Promise<ModelOpinionRecord> {
     const trimmed = rawTranscript.trim();
     if (!trimmed) {
       return {
         summary: "No cognitive reasoning trace recorded.",
         keyDecisions: [],
         identifiedRisks: [],
-        confidenceScore: 0.5
+        confidenceScore: 0.5,
       };
     }
 
@@ -62,17 +65,27 @@ ${trimmed.slice(0, 4000)}
         const res = await this.provider.generate({
           model,
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.0
+          temperature: 0.0,
         });
 
         const jsonMatch = res.content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           return {
-            summary: String(parsed.summary || "Architecture strategy outlined in reasoning transcript."),
-            keyDecisions: Array.isArray(parsed.keyDecisions) ? parsed.keyDecisions.map(String) : [],
-            identifiedRisks: Array.isArray(parsed.identifiedRisks) ? parsed.identifiedRisks.map(String) : [],
-            confidenceScore: typeof parsed.confidenceScore === "number" ? Math.max(0, Math.min(1, parsed.confidenceScore)) : 0.8
+            summary: String(
+              parsed.summary ||
+                "Architecture strategy outlined in reasoning transcript.",
+            ),
+            keyDecisions: Array.isArray(parsed.keyDecisions)
+              ? parsed.keyDecisions.map(String)
+              : [],
+            identifiedRisks: Array.isArray(parsed.identifiedRisks)
+              ? parsed.identifiedRisks.map(String)
+              : [],
+            confidenceScore:
+              typeof parsed.confidenceScore === "number"
+                ? Math.max(0, Math.min(1, parsed.confidenceScore))
+                : 0.8,
           };
         }
       } catch (err: unknown) {
@@ -87,11 +100,15 @@ ${trimmed.slice(0, 4000)}
    * Deterministic heuristic extractor when LLM provider is not available or fails.
    */
   public heuristicDistill(transcript: string): ModelOpinionRecord {
-    const lines = transcript.split("\n").map((l) => l.trim()).filter(Boolean);
+    const lines = transcript
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
     const keyDecisions: string[] = [];
     const identifiedRisks: string[] = [];
 
-    let summary = "Analyzed constraints and synthesized implementation strategy.";
+    let summary =
+      "Analyzed constraints and synthesized implementation strategy.";
     if (lines.length > 0) {
       summary = lines[0]!.replace(/^#+\s*/, "").slice(0, 200);
     }
@@ -133,7 +150,7 @@ ${trimmed.slice(0, 4000)}
       summary,
       keyDecisions,
       identifiedRisks,
-      confidenceScore: 0.85
+      confidenceScore: 0.85,
     };
   }
 }

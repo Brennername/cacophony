@@ -12,7 +12,10 @@ export class AutheliaSsoProvider implements ISsoProvider {
   private readonly config: AutheliaConfig;
   private readonly jwtSecret: string;
 
-  constructor(config: AutheliaConfig, jwtSecret: string = "cacophony-authelia-default-jwt-secret") {
+  constructor(
+    config: AutheliaConfig,
+    jwtSecret: string = "cacophony-authelia-default-jwt-secret",
+  ) {
     this.config = config;
     this.jwtSecret = jwtSecret;
   }
@@ -24,7 +27,7 @@ export class AutheliaSsoProvider implements ISsoProvider {
     const portal = this.config.portalUrl.replace(/\/+$/, "");
     const params = new URLSearchParams({
       rd: "/auth/callback",
-      state
+      state,
     });
     return `${portal}/?${params.toString()}`;
   }
@@ -32,7 +35,9 @@ export class AutheliaSsoProvider implements ISsoProvider {
   /**
    * Extracts user session from forward-auth headers or simulated ticket code.
    */
-  public async exchangeCode(_code: string): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
+  public async exchangeCode(
+    _code: string,
+  ): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
     const token = `authelia-session-${crypto.randomBytes(16).toString("hex")}`;
     const user = await this.getUserProfile(token);
     return { accessToken: token, user };
@@ -49,21 +54,33 @@ export class AutheliaSsoProvider implements ISsoProvider {
       displayName: "Authelia Operator",
       groups: ["cacophony-operators", "authelia-users"],
       roles: ["OPERATOR", "VIEWER"],
-      provider: "authelia"
+      provider: "authelia",
     };
   }
 
   /**
    * Parses forward-auth incoming HTTP request headers to authenticate request on the fly.
    */
-  public authenticateHeaders(headers: Record<string, string | string[] | undefined>): SsoUserProfile | null {
-    const userHeader = this.getHeaderValue(headers, this.config.headerRemoteUser);
+  public authenticateHeaders(
+    headers: Record<string, string | string[] | undefined>,
+  ): SsoUserProfile | null {
+    const userHeader = this.getHeaderValue(
+      headers,
+      this.config.headerRemoteUser,
+    );
     if (!userHeader) return null;
 
-    const emailHeader = this.getHeaderValue(headers, this.config.headerRemoteEmail) || `${userHeader}@authelia.local`;
-    const nameHeader = this.getHeaderValue(headers, this.config.headerRemoteName) || userHeader;
-    const groupsRaw = this.getHeaderValue(headers, this.config.headerRemoteGroups) || "";
-    const groups = groupsRaw.split(",").map((g) => g.trim()).filter(Boolean);
+    const emailHeader =
+      this.getHeaderValue(headers, this.config.headerRemoteEmail) ||
+      `${userHeader}@authelia.local`;
+    const nameHeader =
+      this.getHeaderValue(headers, this.config.headerRemoteName) || userHeader;
+    const groupsRaw =
+      this.getHeaderValue(headers, this.config.headerRemoteGroups) || "";
+    const groups = groupsRaw
+      .split(",")
+      .map((g) => g.trim())
+      .filter(Boolean);
 
     const roles: Set<string> = new Set(["VIEWER"]);
     for (const g of groups) {
@@ -83,7 +100,7 @@ export class AutheliaSsoProvider implements ISsoProvider {
       displayName: nameHeader,
       groups,
       roles: Array.from(roles),
-      provider: "authelia"
+      provider: "authelia",
     };
   }
 
@@ -111,7 +128,9 @@ export class AutheliaSsoProvider implements ISsoProvider {
         return { valid: false, error: "Invalid signature" };
       }
 
-      const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8")) as {
+      const payload = JSON.parse(
+        Buffer.from(payloadB64, "base64url").toString("utf-8"),
+      ) as {
         sub: string;
         username: string;
         email: string;
@@ -132,18 +151,24 @@ export class AutheliaSsoProvider implements ISsoProvider {
           email: payload.email,
           groups: payload.groups || [],
           roles: payload.roles || ["VIEWER"],
-          provider: "authelia"
-        }
+          provider: "authelia",
+        },
       };
     } catch (err: unknown) {
-      return { valid: false, error: err instanceof Error ? err.message : "Validation error" };
+      return {
+        valid: false,
+        error: err instanceof Error ? err.message : "Validation error",
+      };
     }
   }
 
   /**
    * Helper to extract case-insensitive header string value.
    */
-  private getHeaderValue(headers: Record<string, string | string[] | undefined>, name: string): string | null {
+  private getHeaderValue(
+    headers: Record<string, string | string[] | undefined>,
+    name: string,
+  ): string | null {
     const target = name.toLowerCase();
     for (const [key, value] of Object.entries(headers)) {
       if (key.toLowerCase() === target) {

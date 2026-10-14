@@ -1,6 +1,9 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { OidcDiscoveryService, JwksKeyManager } from "../OidcDiscoveryService.js";
+import {
+  OidcDiscoveryService,
+  JwksKeyManager,
+} from "../OidcDiscoveryService.js";
 import { JwtValidator } from "../JwtValidator.js";
 import { AuthService } from "../AuthService.js";
 import { UserSessionRepository } from "@cacophony/db";
@@ -9,7 +12,9 @@ import { MigrationRunner } from "@cacophony/db";
 
 describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", () => {
   it("T34.1: should provide OIDC discovery configuration and parse endpoints", async () => {
-    const discovery = new OidcDiscoveryService("http://localhost:9000/application/o/cacophony");
+    const discovery = new OidcDiscoveryService(
+      "http://localhost:9000/application/o/cacophony",
+    );
     const config = await discovery.getConfiguration();
 
     assert.ok(config.authorization_endpoint.includes("/authorize"));
@@ -18,7 +23,9 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
   });
 
   it("T34.1: JwksKeyManager should handle key rotation and cache documents", async () => {
-    const manager = new JwksKeyManager("http://localhost:9000/application/o/cacophony/jwks");
+    const manager = new JwksKeyManager(
+      "http://localhost:9000/application/o/cacophony/jwks",
+    );
     const jwks = await manager.getJwks();
     assert.ok(Array.isArray(jwks.keys));
   });
@@ -34,7 +41,7 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
       email: "alex@company.org",
       roles: ["OPERATOR"],
       provider: "authentik",
-      exp: now + 3600
+      exp: now + 3600,
     });
 
     const result = await validator.validate(token);
@@ -54,7 +61,7 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
       email: "old@company.org",
       roles: ["VIEWER"],
       provider: "authentik",
-      exp: now - 3600
+      exp: now - 3600,
     });
 
     const expiredResult = await validator.validate(expiredToken);
@@ -87,7 +94,7 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
       refreshTokenEnc: "enc_refresh_token_data",
       expiresAt,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     });
 
     const retrieved = await repo.getSession("test-sess-001");
@@ -106,7 +113,10 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
   it("T34.4: AuthService should resolve role hierarchy and enforce RBAC tiers", () => {
     const authService = new AuthService();
 
-    assert.equal(authService.resolvePrimaryRole(["cacophony-admins"], []), "ADMIN");
+    assert.equal(
+      authService.resolvePrimaryRole(["cacophony-admins"], []),
+      "ADMIN",
+    );
     assert.equal(authService.resolvePrimaryRole(["developer"], []), "OPERATOR");
     assert.equal(authService.resolvePrimaryRole([], ["guests"]), "VIEWER");
 
@@ -116,7 +126,7 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
       email: "a@b.com",
       role: "ADMIN" as const,
       provider: "authentik" as const,
-      groups: []
+      groups: [],
     };
     const operatorCtx = {
       userId: "2",
@@ -124,7 +134,7 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
       email: "o@b.com",
       role: "OPERATOR" as const,
       provider: "authentik" as const,
-      groups: []
+      groups: [],
     };
     const viewerCtx = {
       userId: "3",
@@ -132,7 +142,7 @@ describe("Phase 34: Enterprise SSO (Authentik, Authelia, Gitea OAuth2) & RBAC", 
       email: "v@b.com",
       role: "VIEWER" as const,
       provider: "authentik" as const,
-      groups: []
+      groups: [],
     };
 
     assert.equal(authService.isAuthorized(adminCtx, "ADMIN"), true);

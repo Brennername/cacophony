@@ -2,7 +2,10 @@ import type {
   IRollingWindowMetrics,
   TaskRecord,
 } from "@cacophony/shared-types";
-import { GitRegressionCorrelator, type CommitCorrelationResult } from "../analytics/GitRegressionCorrelator.js";
+import {
+  GitRegressionCorrelator,
+  type CommitCorrelationResult,
+} from "../analytics/GitRegressionCorrelator.js";
 
 export interface ISupervisorTaskRepository {
   create(task: TaskRecord): Promise<TaskRecord>;
@@ -40,20 +43,25 @@ export class RegressionDispatchSupervisor {
   constructor(
     taskRepo: ISupervisorTaskRepository,
     correlator?: GitRegressionCorrelator,
-    options?: SupervisorOptions
+    options?: SupervisorOptions,
   ) {
     this.taskRepo = taskRepo;
     this.correlator = correlator ?? new GitRegressionCorrelator();
     this.successThreshold = options?.successThresholdPercent ?? 60.0;
     this.consecutiveTrigger = options?.consecutiveFailuresTrigger ?? 3;
-    this.frontierModel = options?.frontierModel ?? "qwen2.5-coder:7b-instruct-q4_K_M";
+    this.frontierModel =
+      options?.frontierModel ?? "qwen2.5-coder:7b-instruct-q4_K_M";
   }
 
   /**
    * Evaluates recent task stream health, pinpointing commit regressions when failure surges occur.
    */
-  public async evaluateQueueHealth(recentTasks: readonly TaskRecord[]): Promise<HealthEvaluation> {
-    const terminal = recentTasks.filter((t) => t.status === "COMPLETED" || t.status === "FAILED");
+  public async evaluateQueueHealth(
+    recentTasks: readonly TaskRecord[],
+  ): Promise<HealthEvaluation> {
+    const terminal = recentTasks.filter(
+      (t) => t.status === "COMPLETED" || t.status === "FAILED",
+    );
     if (terminal.length === 0) {
       return {
         isTriggered: false,
@@ -76,7 +84,9 @@ export class RegressionDispatchSupervisor {
 
     const sample = terminal.slice(0, 10);
     const successCount = sample.filter((t) => t.status === "COMPLETED").length;
-    const windowSuccessPercent = Number(((successCount / sample.length) * 100).toFixed(1));
+    const windowSuccessPercent = Number(
+      ((successCount / sample.length) * 100).toFixed(1),
+    );
 
     const isTriggered =
       consecutiveFailures >= this.consecutiveTrigger ||
@@ -93,9 +103,14 @@ export class RegressionDispatchSupervisor {
     }
 
     const latestFailed = terminal.find((t) => t.status === "FAILED");
-    const correlation = latestFailed ? this.correlator.correlateFailure(latestFailed) : null;
+    const correlation = latestFailed
+      ? this.correlator.correlateFailure(latestFailed)
+      : null;
 
-    const diagnosticTaskCreated = await this.enqueueDiagnosticTask(latestFailed, correlation);
+    const diagnosticTaskCreated = await this.enqueueDiagnosticTask(
+      latestFailed,
+      correlation,
+    );
 
     return {
       isTriggered: true,
@@ -111,11 +126,13 @@ export class RegressionDispatchSupervisor {
    */
   public async enqueueDiagnosticTask(
     failedTask?: TaskRecord,
-    correlation?: CommitCorrelationResult | null
+    correlation?: CommitCorrelationResult | null,
   ): Promise<TaskRecord> {
     const timestamp = new Date().toISOString();
     const taskId = `remediation-diag-${Date.now()}`;
-    const commitHash = correlation?.culpritCommit?.hash ? correlation.culpritCommit.hash.slice(0, 8) : "HEAD";
+    const commitHash = correlation?.culpritCommit?.hash
+      ? correlation.culpritCommit.hash.slice(0, 8)
+      : "HEAD";
 
     const prompt = [
       `[REGRESSION MITIGATION TASK]`,
@@ -134,7 +151,8 @@ export class RegressionDispatchSupervisor {
       priority: "P0",
       modelAssigned: this.frontierModel,
       testCommand: failedTask?.testCommand ?? "npm test",
-      focusFiles: correlation?.matchedFiles.join(",") || failedTask?.focusFiles || "",
+      focusFiles:
+        correlation?.matchedFiles.join(",") || failedTask?.focusFiles || "",
       targetBranch: null,
       prUrl: null,
       completedAt: null,
@@ -149,7 +167,9 @@ export class RegressionDispatchSupervisor {
   /**
    * Enqueues smart model intervention when execution performance plateaus.
    */
-  public async triggerPlateauIntervention(metrics: IRollingWindowMetrics): Promise<TaskRecord | null> {
+  public async triggerPlateauIntervention(
+    metrics: IRollingWindowMetrics,
+  ): Promise<TaskRecord | null> {
     if (!metrics.isPlateaued) {
       return null;
     }

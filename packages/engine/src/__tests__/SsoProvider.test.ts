@@ -12,7 +12,7 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
     clientId: "cacophony-client-123",
     clientSecret: "client-secret-xyz",
     redirectUri: "http://localhost:24072/auth/callback",
-    scopes: ["openid", "profile", "email", "groups"]
+    scopes: ["openid", "profile", "email", "groups"],
   };
 
   const autheliaConfig: AutheliaConfig = {
@@ -21,7 +21,7 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
     headerRemoteUser: "Remote-User",
     headerRemoteEmail: "Remote-Email",
     headerRemoteGroups: "Remote-Groups",
-    headerRemoteName: "Remote-Name"
+    headerRemoteName: "Remote-Name",
   };
 
   const jwtSecret = "phase17-test-jwt-secret-key-32chars";
@@ -31,7 +31,11 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
       const provider = new AuthentikOAuthProvider(authentikConfig, jwtSecret);
       const url = provider.getAuthorizationUrl("test-state-token");
 
-      assert.ok(url.startsWith("http://localhost:9000/application/o/cacophony/authorize/"));
+      assert.ok(
+        url.startsWith(
+          "http://localhost:9000/application/o/cacophony/authorize/",
+        ),
+      );
       assert.ok(url.includes("client_id=cacophony-client-123"));
       assert.ok(url.includes("state=test-state-token"));
       assert.ok(url.includes("scope=openid+profile+email+groups"));
@@ -45,7 +49,7 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
         email: "devlead@example.com",
         groups: ["cacophony-admins"],
         roles: ["ADMIN", "OPERATOR"],
-        provider: "authentik" as const
+        provider: "authentik" as const,
       };
 
       const token = provider.issueSessionToken(mockProfile, 3600);
@@ -66,7 +70,7 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
         email: "hacker@example.com",
         groups: ["guests"],
         roles: ["VIEWER"],
-        provider: "authentik" as const
+        provider: "authentik" as const,
       };
 
       // Token expired in past (-10 seconds)
@@ -101,7 +105,7 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
         "remote-user": "bob_operator",
         "remote-email": "bob@example.com",
         "remote-groups": "cacophony-operators, developers",
-        "remote-name": "Bob Operator"
+        "remote-name": "Bob Operator",
       };
 
       const user = provider.authenticateHeaders(headers);
@@ -114,7 +118,7 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
     it("should return null when remote-user header is absent", () => {
       const provider = new AutheliaSsoProvider(autheliaConfig, jwtSecret);
       const headers = {
-        "content-type": "application/json"
+        "content-type": "application/json",
       };
 
       const user = provider.authenticateHeaders(headers);
@@ -138,17 +142,23 @@ describe("Phase 17: Enterprise SSO Provider Integration Tests", () => {
 
   describe("T17.1.3.4: SsoProviderFactory Provider Resolution", () => {
     it("should instantiate AuthentikOAuthProvider by default or when configured", () => {
-      const provider = SsoProviderFactory.createProvider({ activeProvider: "authentik" });
+      const provider = SsoProviderFactory.createProvider({
+        activeProvider: "authentik",
+      });
       assert.strictEqual(provider.providerType, "authentik");
     });
 
     it("should instantiate AutheliaSsoProvider when configured", () => {
-      const provider = SsoProviderFactory.createProvider({ activeProvider: "authelia" });
+      const provider = SsoProviderFactory.createProvider({
+        activeProvider: "authelia",
+      });
       assert.strictEqual(provider.providerType, "authelia");
     });
 
     it("should instantiate LocalBypassSsoProvider when configured as local", () => {
-      const provider = SsoProviderFactory.createProvider({ activeProvider: "local" });
+      const provider = SsoProviderFactory.createProvider({
+        activeProvider: "local",
+      });
       assert.strictEqual(provider.providerType, "local");
     });
   });

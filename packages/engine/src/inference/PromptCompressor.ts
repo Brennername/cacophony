@@ -29,7 +29,7 @@ export class PromptCompressor {
         originalLength,
         compressedLength: 0,
         compressionRatio: 1.0,
-        removedCommentsCount: 0
+        removedCommentsCount: 0,
       };
     }
 
@@ -38,36 +38,46 @@ export class PromptCompressor {
 
     if (isSourceCode) {
       // Strip block comments (/* ... */) except those marked as @license or @preserve
-      processed = processed.replace(/\/\*(?![\s*]*@(license|preserve))[\s\S]*?\*\//g, () => {
-        removedComments++;
-        return "";
-      });
+      processed = processed.replace(
+        /\/\*(?![\s*]*@(license|preserve))[\s\S]*?\*\//g,
+        () => {
+          removedComments++;
+          return "";
+        },
+      );
 
       // Strip single line comments (// ...) except compiler directives (/// <reference or // @ts-)
-      processed = processed.replace(/^\s*\/\/(?!\s*(@ts-|[\/]\s*<reference))([^\n]*)$/gm, () => {
-        removedComments++;
-        return "";
-      });
+      processed = processed.replace(
+        /^\s*\/\/(?!\s*(@ts-|[\/]\s*<reference))([^\n]*)$/gm,
+        () => {
+          removedComments++;
+          return "";
+        },
+      );
     }
 
     // Collapse trailing whitespace per line
-    processed = processed.split("\n").map((line) => line.trimEnd()).join("\n");
+    processed = processed
+      .split("\n")
+      .map((line) => line.trimEnd())
+      .join("\n");
 
     // Collapse multiple consecutive newlines into at most two newlines
     processed = processed.replace(/\n{3,}/g, "\n\n");
 
     const trimmed = processed.trim();
     const compressedLength = trimmed.length;
-    const compressionRatio = originalLength > 0
-      ? Number((compressedLength / originalLength).toFixed(3))
-      : 1.0;
+    const compressionRatio =
+      originalLength > 0
+        ? Number((compressedLength / originalLength).toFixed(3))
+        : 1.0;
 
     return {
       compressed: trimmed,
       originalLength,
       compressedLength,
       compressionRatio,
-      removedCommentsCount: removedComments
+      removedCommentsCount: removedComments,
     };
   }
 
@@ -78,7 +88,10 @@ export class PromptCompressor {
    * @param content TypeScript module source
    * @param referencedSymbols Set of identifiers needed by the target context
    */
-  public pruneUnreferencedDeclarations(content: string, referencedSymbols: ReadonlySet<string>): string {
+  public pruneUnreferencedDeclarations(
+    content: string,
+    referencedSymbols: ReadonlySet<string>,
+  ): string {
     if (referencedSymbols.size === 0) {
       return content;
     }
@@ -93,7 +106,9 @@ export class PromptCompressor {
 
       if (!skippingDeclaration) {
         // Detect interface or type declaration: export (interface|type) Foo
-        const declMatch = line.match(/^(\s*export\s+)?(interface|type)\s+([A-Za-z0-9_]+)/);
+        const declMatch = line.match(
+          /^(\s*export\s+)?(interface|type)\s+([A-Za-z0-9_]+)/,
+        );
         if (declMatch) {
           const typeName = declMatch[3]!;
           if (!referencedSymbols.has(typeName)) {
@@ -102,13 +117,15 @@ export class PromptCompressor {
               continue;
             }
             skippingDeclaration = true;
-            braceDepth = (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+            braceDepth =
+              (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
             continue;
           }
         }
         outputLines.push(line);
       } else {
-        braceDepth += (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+        braceDepth +=
+          (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
         if (braceDepth <= 0) {
           skippingDeclaration = false;
           braceDepth = 0;

@@ -14,7 +14,7 @@ describe("FocusedDiffBuilder Test Suite", () => {
       "- line2",
       "+ modified line2",
       "  line3",
-      "+ line4"
+      "+ line4",
     ];
 
     const result = diffBuilder.buildDiff(originalLines, modifiedLines);
@@ -23,7 +23,8 @@ describe("FocusedDiffBuilder Test Suite", () => {
 
   it("should compute targeted chunks for modified lines", () => {
     const original = "function add(a, b) {\n  return a + b;\n}\n";
-    const modified = "function add(a, b) {\n  const sum = a + b;\n  return sum;\n}\n";
+    const modified =
+      "function add(a, b) {\n  const sum = a + b;\n  return sum;\n}\n";
 
     const chunks = diffBuilder.computeTargetedChunks(original, modified);
     assert.ok(chunks.length > 0, "Chunks should be generated for diff");
@@ -34,7 +35,11 @@ describe("FocusedDiffBuilder Test Suite", () => {
     const original = "export const x = 1;\n";
     const modified = "export const x = 2;\n";
 
-    const diff = diffBuilder.formatUnifiedDiff("src/constants.ts", original, modified);
+    const diff = diffBuilder.formatUnifiedDiff(
+      "src/constants.ts",
+      original,
+      modified,
+    );
     assert.ok(diff.startsWith("--- a/src/constants.ts"));
     assert.ok(diff.includes("+++ b/src/constants.ts"));
     assert.ok(diff.includes("-export const x = 1;"));
@@ -42,7 +47,11 @@ describe("FocusedDiffBuilder Test Suite", () => {
   });
 
   it("should handle new file creation diff format", () => {
-    const diff = diffBuilder.formatUnifiedDiff("src/new.ts", "", "console.log(1);\n");
+    const diff = diffBuilder.formatUnifiedDiff(
+      "src/new.ts",
+      "",
+      "console.log(1);\n",
+    );
     assert.ok(diff.includes("--- a/src/new.ts"));
     assert.ok(diff.includes("+++ b/src/new.ts"));
     assert.ok(diff.includes("+console.log(1);"));
@@ -52,7 +61,11 @@ describe("FocusedDiffBuilder Test Suite", () => {
     const original = "alpha\nbeta\n";
     const modified = "alpha\ngamma\n";
 
-    const structured = diffBuilder.buildStructuredDiff("src/letters.ts", original, modified);
+    const structured = diffBuilder.buildStructuredDiff(
+      "src/letters.ts",
+      original,
+      modified,
+    );
     assert.strictEqual(structured.filePath, "src/letters.ts");
     assert.strictEqual(structured.hunks.length, 1);
     assert.strictEqual(structured.deletions, 1);

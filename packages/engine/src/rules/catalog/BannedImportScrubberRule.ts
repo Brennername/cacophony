@@ -17,14 +17,18 @@ import { BaseRepairRule } from "../BaseRepairRule.js";
 export class BannedImportScrubberRule extends BaseRepairRule {
   readonly id = "banned_imports";
   readonly name = "Banned Import Scrubber";
-  readonly description = "Detects or strips hallucinated or forbidden third-party library imports.";
+  readonly description =
+    "Detects or strips hallucinated or forbidden third-party library imports.";
   readonly defaultSeverity: RuleSeverity = "hard_rejection";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = ["post_generation", "pre_test"];
+  readonly applicableHooks: readonly RuleLifecycleHook[] = [
+    "post_generation",
+    "pre_test",
+  ];
 
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    options?: { packages?: string[] }
+    options?: { packages?: string[] },
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
@@ -44,16 +48,22 @@ export class BannedImportScrubberRule extends BaseRepairRule {
       "sinon",
       "express",
       "koa",
-      "fastify"
+      "fastify",
     ];
-    const escapedList = bannedList.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const escapedList = bannedList.map((p) =>
+      p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    );
     const bannedPattern = new RegExp(
       `(?:import\\s+[\\s\\S]*?from\\s+["'](?:${escapedList.join("|")})(?:\\/[^"']*)?["'];?|import\\s+["'](?:${escapedList.join("|")})(?:\\/[^"']*)?["'];?)`,
-      "g"
+      "g",
     );
 
     for (const filePath of context.modifiedFiles) {
-      if (!filePath.endsWith(".ts") && !filePath.endsWith(".js") && !filePath.endsWith(".tsx")) {
+      if (
+        !filePath.endsWith(".ts") &&
+        !filePath.endsWith(".js") &&
+        !filePath.endsWith(".tsx")
+      ) {
         continue;
       }
 
@@ -67,12 +77,20 @@ export class BannedImportScrubberRule extends BaseRepairRule {
           let stripped = content.replace(bannedPattern, "");
 
           // If vscode was stripped and Diagnostic is still referenced, ensure typescript is imported
-          if (content.includes("vscode") && /\bDiagnostic\b/.test(stripped) && !stripped.includes("typescript")) {
+          if (
+            content.includes("vscode") &&
+            /\bDiagnostic\b/.test(stripped) &&
+            !stripped.includes("typescript")
+          ) {
             stripped = `import * as ts from "typescript";\n${stripped}`;
           }
 
           // If jest was stripped and jest. is still referenced, inject native node:test compatibility shim
-          if ((content.includes("jest") || content.includes("@jest/globals")) && /\bjest\./.test(stripped) && !stripped.includes("const jest =")) {
+          if (
+            (content.includes("jest") || content.includes("@jest/globals")) &&
+            /\bjest\./.test(stripped) &&
+            !stripped.includes("const jest =")
+          ) {
             const shim = [
               "// Native node:test compatibility shim for jest APIs",
               "const jest = {",
@@ -122,7 +140,7 @@ export class BannedImportScrubberRule extends BaseRepairRule {
               "  clearAllMocks: () => {},",
               "  resetAllMocks: () => {}",
               "};",
-              ""
+              "",
             ].join("\n");
             stripped = `${shim}\n${stripped}`;
           }
@@ -131,7 +149,8 @@ export class BannedImportScrubberRule extends BaseRepairRule {
             filePath,
             originalContent: content,
             updatedContent: stripped,
-            description: "Stripped banned package import statements and injected necessary type/runner shims",
+            description:
+              "Stripped banned package import statements and injected necessary type/runner shims",
           });
         } else if (severity === "hard_rejection") {
           passed = false;
@@ -153,6 +172,12 @@ export class BannedImportScrubberRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(passed, durationMs, diagnostics, mutations, severity);
+    return this.createResult(
+      passed,
+      durationMs,
+      diagnostics,
+      mutations,
+      severity,
+    );
   }
 }

@@ -9,8 +9,16 @@ import { ContextMinimizer } from "../inference/ContextMinimizer.js";
 import { SecretVault } from "../inference/SecretVault.js";
 import { FrontierTaskDecomposer } from "../inference/FrontierTaskDecomposer.js";
 import type { IInferenceProvider } from "../inference/IInferenceProvider.js";
-import type { InferenceRequest, InferenceResponse } from "@cacophony/shared-types";
-import { PGliteDriver, VaultRepository, TaskRepository, MigrationRunner } from "@cacophony/db";
+import type {
+  InferenceRequest,
+  InferenceResponse,
+} from "@cacophony/shared-types";
+import {
+  PGliteDriver,
+  VaultRepository,
+  TaskRepository,
+  MigrationRunner,
+} from "@cacophony/db";
 
 describe("Model Inference & Adaptation Engine", () => {
   describe("AdaptiveOutputFormatter", () => {
@@ -18,18 +26,36 @@ describe("Model Inference & Adaptation Engine", () => {
 
     test("should generate whole-file rewrite instructions for local models", () => {
       const instruction = formatter.getFormatInstruction(true, "src/index.ts");
-      assert.ok(instruction.includes("[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]"));
+      assert.ok(
+        instruction.includes(
+          "[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]",
+        ),
+      );
       assert.ok(instruction.includes("src/index.ts"));
       assert.ok(instruction.includes("Do NOT use diffs"));
     });
 
     test("should tailor format instructions to model archetype, withholding think instructions for direct coders", () => {
-      const coderInstruction = formatter.getFormatInstruction(true, "src/index.ts", "qwen2.5-coder:3b");
-      assert.ok(coderInstruction.includes("[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]"));
+      const coderInstruction = formatter.getFormatInstruction(
+        true,
+        "src/index.ts",
+        "qwen2.5-coder:3b",
+      );
+      assert.ok(
+        coderInstruction.includes(
+          "[OUTPUT FORMAT REQUIREMENT - WHOLE FILE REWRITE]",
+        ),
+      );
       assert.equal(coderInstruction.includes("Once </think> is closed"), false);
-      assert.ok(coderInstruction.includes("Do NOT emit <think> or </think> tags"));
+      assert.ok(
+        coderInstruction.includes("Do NOT emit <think> or </think> tags"),
+      );
 
-      const reasonerInstruction = formatter.getFormatInstruction(true, "src/index.ts", "deepseek-r1:8b");
+      const reasonerInstruction = formatter.getFormatInstruction(
+        true,
+        "src/index.ts",
+        "deepseek-r1:8b",
+      );
       assert.ok(reasonerInstruction.includes("Once </think> is closed"));
     });
 
@@ -38,11 +64,19 @@ describe("Model Inference & Adaptation Engine", () => {
         true,
         "packages/engine/src/daemon/CacophonyHttpServer.ts",
         undefined,
-        true
+        true,
       );
-      assert.ok(instruction.includes("[OUTPUT FORMAT REQUIREMENT - TARGETED CLASS / METHOD EXTENSION]"));
+      assert.ok(
+        instruction.includes(
+          "[OUTPUT FORMAT REQUIREMENT - TARGETED CLASS / METHOD EXTENSION]",
+        ),
+      );
       assert.ok(instruction.includes("Do NOT output a full rewrite"));
-      assert.ok(instruction.includes("Existing unchanged methods and class members will be automatically merged"));
+      assert.ok(
+        instruction.includes(
+          "Existing unchanged methods and class members will be automatically merged",
+        ),
+      );
     });
 
     test("should cleanly strip orphan </think> tags when extracting code blocks", () => {
@@ -80,7 +114,9 @@ export function add(a: number, b: number): number {
       assert.ok(result.error?.includes("Missing required markdown code fence"));
 
       const correction = parser.buildCorrectionPrompt(result.error!);
-      assert.ok(correction.includes("[PARSER ERROR DETECTED - CORRECTION REQUIRED]"));
+      assert.ok(
+        correction.includes("[PARSER ERROR DETECTED - CORRECTION REQUIRED]"),
+      );
     });
 
     test("should reject missing code fence and not misclassify orphan </think> as completed thinking block", () => {
@@ -92,28 +128,34 @@ export function add(a: number, b: number): number {
     });
 
     test("should reject lazy placeholder comments", () => {
-      const output = "```ts\n// ... existing code ...\nexport const y = 1;\n```";
+      const output =
+        "```ts\n// ... existing code ...\nexport const y = 1;\n```";
       const result = parser.validate(output);
       assert.equal(result.valid, false);
-      assert.ok(result.error?.includes("Forbidden placeholder comment detected"));
+      assert.ok(
+        result.error?.includes("Forbidden placeholder comment detected"),
+      );
     });
 
     test("should drive self-healing retry loop to success", async () => {
       let callCount = 0;
       const mockProvider: IInferenceProvider = {
         getProviderType: () => "ollama",
-        generate: async (_req: InferenceRequest): Promise<InferenceResponse> => {
+        generate: async (
+          _req: InferenceRequest,
+        ): Promise<InferenceResponse> => {
           callCount++;
           if (callCount === 1) {
             // First call fails validation (no fence)
             return {
-              content: "I forgot the code fence, here is the code: export const a = 1;",
+              content:
+                "I forgot the code fence, here is the code: export const a = 1;",
               model: "test-model",
               tokensPrompt: 10,
               tokensCompletion: 10,
               totalTokens: 20,
               latencyMs: 100,
-              tokensPerSec: 100
+              tokensPerSec: 100,
             };
           }
           // Second call adheres to format
@@ -124,15 +166,17 @@ export function add(a: number, b: number): number {
             tokensCompletion: 10,
             totalTokens: 30,
             latencyMs: 100,
-            tokensPerSec: 100
+            tokensPerSec: 100,
           };
         },
-        stream: async () => { throw new Error("Not used"); }
+        stream: async () => {
+          throw new Error("Not used");
+        },
       };
 
       const result = await parser.executeWithSelfHealing(mockProvider, {
         model: "test-model",
-        messages: [{ role: "user", content: "Write a" }]
+        messages: [{ role: "user", content: "Write a" }],
       });
 
       assert.equal(result.attempts, 2);
@@ -142,16 +186,21 @@ export function add(a: number, b: number): number {
 
   describe("ContextMinimizer", () => {
     test("should bundle targeted focus files and compact tree map", () => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cacophony-ctx-test-"));
+      const tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "cacophony-ctx-test-"),
+      );
       const pkgDir = path.join(tempDir, "src");
       fs.mkdirSync(pkgDir, { recursive: true });
-      fs.writeFileSync(path.join(pkgDir, "target.ts"), "export const x = 100;\n");
+      fs.writeFileSync(
+        path.join(pkgDir, "target.ts"),
+        "export const x = 100;\n",
+      );
 
       const minimizer = new ContextMinimizer(tempDir);
       const bundle = minimizer.assembleContext(
         "Update target value",
         ["src/target.ts"],
-        ["Zero Emojis"]
+        ["Zero Emojis"],
       );
 
       assert.ok(bundle.assembledPrompt.includes("=== TASK OBJECTIVE ==="));
@@ -163,8 +212,11 @@ export function add(a: number, b: number): number {
     });
 
     test("T42.1: should slice secondary AST dependencies, preserving type fidelity and achieving >=40% token reduction", async () => {
-      const { AstContextSlicer } = await import("../context/AstContextSlicer.js");
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cacophony-slicer-test-"));
+      const { AstContextSlicer } =
+        await import("../context/AstContextSlicer.js");
+      const tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "cacophony-slicer-test-"),
+      );
       const srcDir = path.join(tempDir, "src");
       fs.mkdirSync(srcDir, { recursive: true });
 
@@ -221,7 +273,10 @@ export class UnrelatedClassWithHeavyLogic {
   }
 }
 `;
-      fs.writeFileSync(path.join(srcDir, "user-repository.ts"), heavyDependencyCode);
+      fs.writeFileSync(
+        path.join(srcDir, "user-repository.ts"),
+        heavyDependencyCode,
+      );
 
       // Create focus file that only imports UserRepository and UserQueryOptions
       const focusCode = `
@@ -238,25 +293,49 @@ export class UserService {
       fs.writeFileSync(path.join(srcDir, "user-service.ts"), focusCode);
 
       const slicer = new AstContextSlicer(tempDir);
-      const imports = slicer.extractImportedSymbols(focusCode, "src/user-service.ts");
+      const imports = slicer.extractImportedSymbols(
+        focusCode,
+        "src/user-service.ts",
+      );
       assert.equal(imports.length, 2);
       assert.ok(imports.some((i: any) => i.importedName === "UserRepository"));
-      assert.ok(imports.some((i: any) => i.importedName === "UserQueryOptions"));
+      assert.ok(
+        imports.some((i: any) => i.importedName === "UserQueryOptions"),
+      );
 
       // 1. Direct AST Type Skeleton Verification
       const sliced = slicer.generateTypeSkeleton(
         heavyDependencyCode,
         ["UserRepository", "UserQueryOptions"],
-        "src/user-repository.ts"
+        "src/user-repository.ts",
       );
-      assert.ok(sliced.skeletonContent.includes("export interface UserQueryOptions"));
+      assert.ok(
+        sliced.skeletonContent.includes("export interface UserQueryOptions"),
+      );
       assert.ok(sliced.skeletonContent.includes("class UserRepository"));
-      assert.ok(sliced.skeletonContent.includes("findUserById(id: string): Promise<any>;"));
-      assert.ok(sliced.skeletonContent.includes("listUsers(options: UserQueryOptions): Promise<any[]>;"));
+      assert.ok(
+        sliced.skeletonContent.includes(
+          "findUserById(id: string): Promise<any>;",
+        ),
+      );
+      assert.ok(
+        sliced.skeletonContent.includes(
+          "listUsers(options: UserQueryOptions): Promise<any[]>;",
+        ),
+      );
       // Ensure private fields and method bodies are pruned
-      assert.equal(sliced.skeletonContent.includes("Massive complex database logic"), false);
-      assert.equal(sliced.skeletonContent.includes("UnrelatedClassWithHeavyLogic"), false);
-      assert.ok(sliced.reductionRatio >= 0.40, `Expected reduction >= 0.40, got ${sliced.reductionRatio}`);
+      assert.equal(
+        sliced.skeletonContent.includes("Massive complex database logic"),
+        false,
+      );
+      assert.equal(
+        sliced.skeletonContent.includes("UnrelatedClassWithHeavyLogic"),
+        false,
+      );
+      assert.ok(
+        sliced.reductionRatio >= 0.4,
+        `Expected reduction >= 0.40, got ${sliced.reductionRatio}`,
+      );
 
       // 2. Integration with ContextMinimizer
       const minimizer = new ContextMinimizer(tempDir);
@@ -264,11 +343,17 @@ export class UserService {
         "Implement cached user retrieval",
         ["src/user-service.ts"],
         ["Zero Emojis"],
-        true
+        true,
       );
 
-      assert.ok(bundle.assembledPrompt.includes("=== SLICED DEPENDENCY SKELETONS ==="));
-      assert.ok(bundle.assembledPrompt.includes("--- Skeleton: src/user-repository.ts ---"));
+      assert.ok(
+        bundle.assembledPrompt.includes("=== SLICED DEPENDENCY SKELETONS ==="),
+      );
+      assert.ok(
+        bundle.assembledPrompt.includes(
+          "--- Skeleton: src/user-repository.ts ---",
+        ),
+      );
       assert.ok(bundle.tokenSavingsEstimate);
       assert.ok(bundle.tokenSavingsEstimate.savingsPercent >= 40);
 
@@ -350,13 +435,18 @@ export class UserService {
           tokensCompletion: 80,
           totalTokens: 130,
           latencyMs: 500,
-          tokensPerSec: 160
+          tokensPerSec: 160,
         }),
-        stream: async () => { throw new Error("Not used"); }
+        stream: async () => {
+          throw new Error("Not used");
+        },
       };
 
       const decomposer = new FrontierTaskDecomposer(mockProvider, taskRepo);
-      const tasks = await decomposer.decomposeAndPersist("Add User Management", "gpt-4o");
+      const tasks = await decomposer.decomposeAndPersist(
+        "Add User Management",
+        "gpt-4o",
+      );
 
       assert.equal(tasks.length, 2);
       assert.equal(tasks[0]?.title, "Create User Entity");
@@ -372,11 +462,16 @@ export class UserService {
 
   describe("Phase 43: Frontier Fallback Router, Circuit Breaker & Quota Tracking (T43.1)", () => {
     test("T43.1.1 & T43.1.2: CircuitBreaker should trip on 429/5xx and route to fallback provider", async () => {
-      const { FrontierFallbackRouter } = await import("../inference/FrontierFallbackRouter.js");
-      const { ProviderCircuitBreaker } = await import("../inference/CircuitBreaker.js");
+      const { FrontierFallbackRouter } =
+        await import("../inference/FrontierFallbackRouter.js");
+      const { ProviderCircuitBreaker } =
+        await import("../inference/CircuitBreaker.js");
 
       // 1. Unit test ProviderCircuitBreaker transitions
-      const breaker = new ProviderCircuitBreaker({ failureThreshold: 2, cooldownMs: 50 });
+      const breaker = new ProviderCircuitBreaker({
+        failureThreshold: 2,
+        cooldownMs: 50,
+      });
       assert.equal(breaker.getState(), "CLOSED");
       assert.equal(breaker.canExecute(), true);
 
@@ -403,7 +498,9 @@ export class UserService {
           primaryAttempts++;
           throw new Error("429 Too Many Requests: Rate limit exceeded");
         },
-        stream: async () => { throw new Error("429 Too Many Requests"); }
+        stream: async () => {
+          throw new Error("429 Too Many Requests");
+        },
       };
 
       let fallbackAttempts = 0;
@@ -418,20 +515,30 @@ export class UserService {
             tokensCompletion: 25,
             totalTokens: 65,
             latencyMs: 150,
-            tokensPerSec: 166.7
+            tokensPerSec: 166.7,
           };
         },
-        stream: async () => { throw new Error("Not implemented"); }
+        stream: async () => {
+          throw new Error("Not implemented");
+        },
       };
 
       const router = new FrontierFallbackRouter("deepseek-r1:8b");
-      router.registerProvider({ providerType: "openai", provider: failingPrimary, priority: 1 });
-      router.registerProvider({ providerType: "ollama", provider: workingSecondary, priority: 2 });
+      router.registerProvider({
+        providerType: "openai",
+        provider: failingPrimary,
+        priority: 1,
+      });
+      router.registerProvider({
+        providerType: "ollama",
+        provider: workingSecondary,
+        priority: 2,
+      });
 
       // Run multiple generation calls to trip the primary circuit
       const res1 = await router.generate({
         model: "deepseek-r1:8b",
-        messages: [{ role: "user", content: "Solve problem" }]
+        messages: [{ role: "user", content: "Solve problem" }],
       });
       assert.equal(res1.content, "Fallback response generated successfully");
       assert.equal(primaryAttempts, 1);
@@ -439,12 +546,12 @@ export class UserService {
 
       await router.generate({
         model: "deepseek-r1:8b",
-        messages: [{ role: "user", content: "Solve problem again" }]
+        messages: [{ role: "user", content: "Solve problem again" }],
       });
 
       await router.generate({
         model: "deepseek-r1:8b",
-        messages: [{ role: "user", content: "Solve problem 3rd time" }]
+        messages: [{ role: "user", content: "Solve problem 3rd time" }],
       });
 
       // Primary breaker should be OPEN

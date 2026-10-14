@@ -33,7 +33,7 @@ export class MigrationRunner {
     await this.ensureMigrationTable();
 
     const appliedRows = await this.driver.query<{ readonly id: string }>(
-      "SELECT id FROM _cacophony_migrations ORDER BY applied_at ASC"
+      "SELECT id FROM _cacophony_migrations ORDER BY applied_at ASC",
     );
     const appliedSet = new Set(appliedRows.map((r) => r.id));
 
@@ -46,7 +46,7 @@ export class MigrationRunner {
         await migration.up(tx);
         await tx.execute(
           "INSERT INTO _cacophony_migrations (id, name, applied_at) VALUES ($1, $2, $3)",
-          [migration.id, migration.name, new Date().toISOString()]
+          [migration.id, migration.name, new Date().toISOString()],
         );
       });
 
