@@ -6,14 +6,14 @@ describe('SensorsParser', () => {
   const sampleSensorsOutput = `
 k10temp-pci-00c3
 Adapter: PCI adapter
-Tctl:         +45.2°C  
-Tdie:         +45.2°C  
+Tctl:         +45.2°C
+Tdie:         +45.2°C
 
 amdgpu-pci-0300
 Adapter: PCI adapter
-vddgfx:        1.15 V  
+vddgfx:        1.15 V
 edge:         +52.0°C  (crit = +100.0°C, hyst = -273.1°C)
-power1:       35.00 W  
+power1:       35.00 W
 
 coretemp-isa-0000
 Adapter: ISA adapter
