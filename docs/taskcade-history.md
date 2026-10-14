@@ -2790,6 +2790,20 @@ _RDF Category: infrastructure_and_scaling_
 
 ---
 
+## Archived Phase 87: Predictive Telemetry Pre-fetching & Caching Optimization
+
+_Completed & Verified in Engineering Session_
+
+_RDF Category: performance_and_optimization_
+
+### T87.1: Pre-fetching Model Weights into VRAM
+
+- [x] T87.1.1: Implement `VramPrefetchCoordinator` in `packages/engine/src/inference/VramPrefetchCoordinator.ts` that monitors the `PENDING` queue and pre-loads the next required model into VRAM during the compilation stage of the current task. [File: packages/engine/src/inference/VramPrefetchCoordinator.ts] [Class: VramPrefetchCoordinator] [Test: npm test -- packages/engine/src/tests/vram_prefetch.test.ts]
+- [x] T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g., if a front-end task is finishing, a reviewer model will be needed next). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: predictNextModel] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
+- [x] T87.1.3: Expose `POST /api/models/preload` to trigger Ollama background loads without blocking task execution. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/preload] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+
+---
+
 ## Archived Phase 63: Automated Remediation Loop & Compiler Diagnostic Feedback Propagation
 
 _Completed & Verified in Engineering Session_

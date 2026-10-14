@@ -205,17 +205,9 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-86-distributed-fleet-load-balancing--elastic-worker-scaling)_
 
----
-
 ## Phase 87: Predictive Telemetry Pre-fetching & Caching Optimization
 
-_RDF Category: performance_and_optimization_
-
-### T87.1: Pre-fetching Model Weights into VRAM
-
-- [ ] T87.1.1: Implement `VramPrefetchCoordinator` in `packages/engine/src/inference/VramPrefetchCoordinator.ts` that monitors the `PENDING` queue and pre-loads the next required model into VRAM during the compilation stage of the current task. [File: packages/engine/src/inference/VramPrefetchCoordinator.ts] [Class: VramPrefetchCoordinator] [Test: npm test -- packages/engine/src/tests/vram_prefetch.test.ts]
-- [ ] T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g., if a front-end task is finishing, a reviewer model will be needed next). [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: predictNextModel] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
-- [ ] T87.1.3: Expose `POST /api/models/preload` to trigger Ollama background loads without blocking task execution. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/preload] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-87-predictive-telemetry-pre-fetching--caching-optimization)_
 
 ---
 
@@ -293,6 +285,15 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t96.5.2.1.1 Rehabilitation [2026-10-14T17:04:15.174Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  (`taskcade-t96.5.2.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.5.2.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: type_specialist] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+  - [ ] `taskcade-t96.5.2.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: implementer] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+
 
 ### Task taskcade-t98.1.3.2 Rehabilitation [2026-10-14T16:49:01.541Z]
 - **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu (`taskcade-t98.1.3.2`)

@@ -89,7 +89,11 @@ export class CacophonyDaemon {
   private workerPipeline?:
     | import("../scheduler/AutonomousWorkerPipeline.js").AutonomousWorkerPipeline
     | undefined;
+  private vramPrefetchCoordinator?:
+    | import("../inference/VramPrefetchCoordinator.js").VramPrefetchCoordinator
+    | undefined;
   private signalHandler?: (() => Promise<void>) | undefined;
+
   private autoTuneTimer: NodeJS.Timeout | null = null;
   private planningTimer: NodeJS.Timeout | null = null;
   private pruningTimer: NodeJS.Timeout | null = null;
@@ -350,6 +354,25 @@ export class CacophonyDaemon {
     );
     this.scheduler.setDispatcher(taskDispatcher);
 
+    const { VramPrefetchCoordinator } =
+      await import("../inference/VramPrefetchCoordinator.js");
+
+    this.vramPrefetchCoordinator = new VramPrefetchCoordinator({
+      ollamaProvider: primaryInferenceProvider as any,
+      modelPredictor: this.scheduler,
+      vramChecker: {
+        getAvailableVramBytes: async () => {
+          const snap = this.telemetryPoller?.getLatest();
+          if (snap?.gpu?.vramTotalBytes && snap?.gpu?.vramUsedBytes) {
+            return Math.max(0, snap.gpu.vramTotalBytes - snap.gpu.vramUsedBytes);
+          }
+          return 8 * 1024 * 1024 * 1024;
+        },
+
+      },
+    });
+    this.scheduler.setVramPrefetchCoordinator(this.vramPrefetchCoordinator);
+
     const worker = new AutonomousWorkerPipeline({
       workspaceRoot: process.cwd(),
       ollamaProvider: primaryInferenceProvider as any,
@@ -364,12 +387,14 @@ export class CacophonyDaemon {
       frontierReviewer,
       banditScheduler: this.banditScheduler,
       modelHealthRepository: this.healthRepo,
+      vramPrefetchCoordinator: this.vramPrefetchCoordinator,
       autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
       repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
       repoName: process.env.GIT_REPO_NAME || "cacophony",
       gitRemote: process.env.GIT_REMOTE || "gitea",
     });
     this.workerPipeline = worker;
+
 
     this.scheduler.setExecutionHandler(async (groomed, model, signal) => {
       if (isDemoMode && this.telemetryPoller) {
@@ -683,6 +708,13 @@ export class CacophonyDaemon {
   public getHttpServer(): CacophonyHttpServer | undefined {
     return this.httpServer;
   }
+
+  public getVramPrefetchCoordinator():
+    | import("../inference/VramPrefetchCoordinator.js").VramPrefetchCoordinator
+    | undefined {
+    return this.vramPrefetchCoordinator;
+  }
+
 
   public getModelManager():
     | import("../inference/OllamaModelManager.js").OllamaModelManager

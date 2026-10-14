@@ -18,8 +18,11 @@ import type {
   TaskPlacementDecision,
 } from "./DistributedTaskDispatcher.js";
 import { ModelVramCatalog } from "../hardware/ModelVramCatalog.js";
-import type { OomPredictiveGuard } from "../hardware/OomPredictiveGuard.js";
 import { StructuredLogger } from "../telemetry/StructuredLogger.js";
+import type {
+  VramPrefetchCoordinator,
+  IModelPredictor,
+} from "../inference/VramPrefetchCoordinator.js";
 
 export type TaskExecutionResult = {
   success: boolean;
@@ -41,7 +44,7 @@ export type TaskExecutionHandler = (
  * Coordinates task prioritization, model affinity sorting, consecutive-failure eviction,
  * thermal pacing, and execution lifecycle state transitions.
  */
-export class TaskScheduler {
+export class TaskScheduler implements IModelPredictor {
   private readonly taskRepo: TaskRepository;
   private readonly stageRepo: StageRepository;
   private readonly mutex: ExecutionMutex;
@@ -58,7 +61,7 @@ export class TaskScheduler {
   private lastPlacementDecision?: TaskPlacementDecision | undefined;
   private readonly maxRetries: number;
   private readonly vramCatalog: ModelVramCatalog;
-  private readonly oomGuard?: OomPredictiveGuard | undefined;
+  private readonly oomGuard?: import("../hardware/OomPredictiveGuard.js").OomPredictiveGuard | undefined;
   private ollamaProvider?:
     | {
         unloadModel(model: string): Promise<void>;
@@ -76,6 +79,9 @@ export class TaskScheduler {
   private loopTimer: NodeJS.Timeout | null = null;
   private executionHandler: TaskExecutionHandler | null = null;
   private activeAbortController?: AbortController | undefined;
+  private vramPrefetchCoordinator?: VramPrefetchCoordinator | undefined;
+  private currentRunningTask?: TaskRecord | undefined;
+  private currentRunningModel?: string | undefined;
   private readonly logger = new StructuredLogger("TaskScheduler");
 
   private readonly perModelTimeoutMs: Readonly<Record<string, number>>;
@@ -100,7 +106,7 @@ export class TaskScheduler {
     readonly sorter?: ModelAffinityTaskSorter;
     readonly dispatcher?: DistributedTaskDispatcher;
     readonly vramCatalog?: ModelVramCatalog;
-    readonly oomGuard?: OomPredictiveGuard;
+    readonly oomGuard?: import("../hardware/OomPredictiveGuard.js").OomPredictiveGuard;
     readonly ollamaProvider?: {
       unloadModel(model: string): Promise<void>;
       waitForModelEviction?(model: string, timeoutMs?: number): Promise<boolean>;
@@ -110,6 +116,7 @@ export class TaskScheduler {
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
     readonly autoReplenish?: boolean;
     readonly rehabilitationService?: TaskRehabilitationService;
+    readonly vramPrefetchCoordinator?: VramPrefetchCoordinator;
     readonly maxRetries?: number;
   }) {
     this.taskRepo = options.taskRepo;
@@ -122,11 +129,9 @@ export class TaskScheduler {
     this.vramCatalog = options.vramCatalog ?? new ModelVramCatalog();
     this.oomGuard = options.oomGuard;
     this.ollamaProvider = options.ollamaProvider;
+    this.vramPrefetchCoordinator = options.vramPrefetchCoordinator;
     this.maxRetries = options.maxRetries ?? 3;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
-    // An inactivity cutoff is opt-in. Some models can legitimately spend a long
-    // time without emitting tokens or stage events; the hard model deadline is
-    // the production safety limit and must not be preempted by a shorter idle timer.
     this.noProgressTimeoutMs = options.noProgressTimeoutMs;
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
       "qwen2.5-coder:3b": 360_000,
@@ -146,6 +151,7 @@ export class TaskScheduler {
     this.autoReplenish =
       options.autoReplenish ?? process.env["AUTO_REPLENISH_QUEUE"] !== "false";
   }
+
 
   /**
    * Normalizes model aliases, tags with context suffixes, and maps to installed host models.
@@ -299,6 +305,38 @@ export class TaskScheduler {
   }): void {
     this.ollamaProvider = provider;
   }
+
+  /**
+   * Sets or updates the VRAM prefetch coordinator at runtime (T87.1.1).
+   */
+  public setVramPrefetchCoordinator(
+    coordinator: VramPrefetchCoordinator,
+  ): void {
+    this.vramPrefetchCoordinator = coordinator;
+  }
+
+  /**
+   * Retrieves the active VRAM prefetch coordinator, if configured.
+   */
+  public getVramPrefetchCoordinator(): VramPrefetchCoordinator | undefined {
+    return this.vramPrefetchCoordinator;
+  }
+
+  /**
+   * Retrieves the task currently active and executing in the scheduler cycle.
+   */
+  public getCurrentRunningTask(): TaskRecord | undefined {
+    return this.currentRunningTask;
+  }
+
+  /**
+   * Retrieves the model identifier currently running in the scheduler cycle.
+   */
+  public getCurrentRunningModel(): string | undefined {
+    return this.currentRunningModel;
+  }
+
+
 
   /**
    * Prepares VRAM environment before loading a model for inference (T68.4.2).
@@ -602,7 +640,78 @@ export class TaskScheduler {
   }
 
   /**
+   * Predicts the next required model using queue heuristics and current task progression (T87.1.2).
+   *
+   * Heuristic logic:
+   * 1. If an active task is finishing code generation / entering test verification and will require
+   *    a frontier reviewer or architect review, returns the reviewer model candidate.
+   * 2. Otherwise, examines the highest priority waiting task in the PENDING queue and resolves
+   *    the candidate model that would be selected for it.
+   * 3. Returns the predicted model tag string, or null if no tasks are waiting.
+   *
+   * @param currentTask - Optional reference to the task currently executing in the pipeline.
+   * @returns Predicted model identifier or null if no task is queued.
+   */
+  public async predictNextModel(
+    currentTask?: TaskRecord,
+  ): Promise<string | null> {
+    const loadedModels = await this.queryLoadedModels();
+    const activeVramModel = loadedModels.length > 0 ? loadedModels[0]! : null;
+
+    // 1. If currentTask is in progress and nearing completion, predict the subsequent reviewer model
+    if (currentTask) {
+      if (
+        currentTask.role !== "reviewer" &&
+        currentTask.role !== "architect"
+      ) {
+        try {
+          const reviewerCandidate = await this.evictionManager.selectModel(
+            "reviewer" as AgentRole,
+            [
+              "deepseek-r1:8b",
+              "qwen2.5-coder:14b",
+              "qwen2.5-coder:7b-instruct-q4_K_M",
+              "qwen2.5-coder:7b",
+            ],
+            activeVramModel,
+          );
+          if (reviewerCandidate) {
+            return reviewerCandidate;
+          }
+        } catch {
+          // fallback to queue inspection
+        }
+      }
+    }
+
+    // 2. Queue heuristic: inspect top pending task in queue
+    try {
+      const allPending = await this.taskRepo.listPending();
+      const waiting = allPending.filter(
+        (t) =>
+          t.status === "PENDING" &&
+          (!currentTask || t.id !== currentTask.id) &&
+          (!this.currentRunningTask || t.id !== this.currentRunningTask.id),
+      );
+
+      if (waiting.length === 0) {
+        return null;
+      }
+
+      // Sort pending tasks by Model Affinity & Effective Priority
+      let sorted = this.sorter.sort(waiting, activeVramModel);
+      sorted = this.groomer.applyStarvationCap(sorted, activeVramModel, 5);
+      const nextTask = sorted.length > 0 ? sorted[0]! : waiting[0]!;
+
+      return await this.selectCandidateModel(nextTask, activeVramModel);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Executes a single scheduling evaluation cycle.
+
    * If force is true, runs even if the continuous background polling loop is stopped.
    */
   public async tick(force = true): Promise<TaskRecord | null> {
@@ -860,6 +969,10 @@ export class TaskScheduler {
       );
       await this.taskRepo.updateStatus(targetTask.id, "RUNNING");
       await this.taskRepo.updateModel(targetTask.id, selectedModel);
+      this.currentRunningTask = targetTask;
+      this.currentRunningModel = selectedModel;
+      this.vramPrefetchCoordinator?.recordScheduledModel(selectedModel);
+
 
       // 8. Dispatch Execution Handler with Per-Model Watchdog Timer
       if (this.executionHandler) {
@@ -1234,8 +1347,11 @@ export class TaskScheduler {
 
       return targetTask;
     } finally {
+      this.currentRunningTask = undefined;
+      this.currentRunningModel = undefined;
       this.activeAbortController = undefined;
       releaseLock();
     }
+
   }
 }

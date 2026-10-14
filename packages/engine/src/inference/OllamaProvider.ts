@@ -454,5 +454,74 @@ export class OllamaProvider implements IInferenceProvider {
 
     return false;
   }
+
+  /**
+   * Pre-loads model weights into memory/VRAM by initiating an empty generation request (T87.1.1, T87.1.3).
+   *
+   * @param modelName Name of the model to warm up in memory.
+   * @param keepAlive Duration to keep model loaded (e.g. "10m", -1, or number of seconds). Defaults to "10m".
+   */
+  public async preloadModel(
+    modelName: string,
+    keepAlive: string | number = "10m",
+  ): Promise<void> {
+    const url = `${this.baseUrl}/api/generate`;
+    const res = await this.fetchFn(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      dispatcher: this.dispatcher as any,
+      body: JSON.stringify({
+        model: modelName,
+        keep_alive: keepAlive,
+      }),
+    } as RequestInit);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(
+        `Failed to preload model '${modelName}' (HTTP ${res.status}): ${errText}`,
+      );
+    }
+  }
+
+  /**
+   * Checks whether a given model is currently resident in VRAM by querying GET /api/ps.
+   *
+   * @param modelName Name or tag of the model to check.
+   * @returns Promise resolving to true if resident, false otherwise.
+   */
+  public async isModelResident(modelName: string): Promise<boolean> {
+    const url = `${this.baseUrl}/api/ps`;
+    try {
+      const res = await this.fetchFn(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        dispatcher: this.dispatcher as any,
+      } as RequestInit);
+
+      if (!res.ok) {
+        return false;
+      }
+
+      const body = (await res.json()) as {
+        models?: Array<{ name?: string; model?: string }>;
+      };
+      const activeModels = body.models ?? [];
+      return activeModels.some(
+        (m) =>
+          m.name === modelName ||
+          m.model === modelName ||
+          (m.name &&
+            (m.name.startsWith(modelName) ||
+              modelName.startsWith(m.name))) ||
+          (m.model &&
+            (m.model.startsWith(modelName) ||
+              modelName.startsWith(m.model))),
+      );
+    } catch {
+      return false;
+    }
+  }
 }
+
 

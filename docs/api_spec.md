@@ -366,7 +366,48 @@ Triggers an asynchronous download of a model via Ollama. Broadcasts incremental 
 }
 ```
 
+### POST `/api/models/preload`
+
+Speculatively pre-loads model weights into GPU VRAM (T87.1.3). Can be invoked programmatically or by background coordinators to eliminate cold-start inference latencies.
+
+**Request Body:**
+
+```json
+{
+  "model": "deepseek-r1:8b",
+  "keep_alive": "10m"
+}
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "status": "ok",
+  "model": "deepseek-r1:8b",
+  "message": "Model preload initiated successfully"
+}
+```
+
+### GET `/api/models/preload`
+
+Queries current telemetry and cache hit/miss statistics for VRAM speculative prefetching.
+
+**Response:** `200 OK`
+
+```json
+{
+  "prefetchesInitiated": 12,
+  "hits": 10,
+  "misses": 2,
+  "hitRatio": 0.83,
+  "lastPrefetchedModel": "deepseek-r1:8b",
+  "isPrefetchInProgress": false
+}
+```
+
 ### DELETE `/api/models/:modelId`
+
 
 Evicts and uninstalls a model from disk via Ollama, marking its health profile status as `EJECTED`. Protected models matching the tenancy whitelist cannot be evicted and will return `403 Forbidden`.
 

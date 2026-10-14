@@ -93,7 +93,22 @@ class MockDaemon {
   public getUserSessionRepository() {
     return null;
   }
+  public vramPrefetchCoordinator = {
+    preloadModel: async (_model: string, _keepAlive?: string | number) => true,
+    getTelemetry: () => ({
+      prefetchesInitiated: 5,
+      hits: 4,
+      misses: 1,
+      hitRatio: 0.8,
+      lastPrefetchedModel: "deepseek-r1:8b",
+      isPrefetchInProgress: false,
+    }),
+  };
+  public getVramPrefetchCoordinator() {
+    return this.vramPrefetchCoordinator as any;
+  }
 }
+
 
 describe("Model Management HTTP REST Endpoints Suite", () => {
   let server: CacophonyHttpServer;
@@ -190,4 +205,43 @@ describe("Model Management HTTP REST Endpoints Suite", () => {
     assert.equal(result.status, "pulling");
     assert.equal(result.model, "qwen2.5-coder:3b");
   });
+
+  test("POST /api/models/preload should reject payload without model parameter with 400", async () => {
+    await startServer();
+    const res = await fetch(`${baseUrl}/api/models/preload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    assert.equal(res.status, 400);
+    const result = (await res.json()) as any;
+    assert.equal(result.error, "Missing or invalid 'model' parameter");
+  });
+
+  test("POST /api/models/preload should trigger model preload and return 200", async () => {
+    await startServer();
+    const res = await fetch(`${baseUrl}/api/models/preload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "deepseek-r1:8b", keep_alive: "15m" }),
+    });
+    assert.equal(res.status, 200);
+    const result = (await res.json()) as any;
+    assert.equal(result.status, "ok");
+    assert.equal(result.model, "deepseek-r1:8b");
+    assert.equal(result.message, "Model preload initiated successfully");
+  });
+
+  test("GET /api/models/preload should return prefetch telemetry", async () => {
+    await startServer();
+    const res = await fetch(`${baseUrl}/api/models/preload`);
+    assert.equal(res.status, 200);
+    const result = (await res.json()) as any;
+    assert.equal(result.prefetchesInitiated, 5);
+    assert.equal(result.hits, 4);
+    assert.equal(result.misses, 1);
+    assert.equal(result.hitRatio, 0.8);
+    assert.equal(result.lastPrefetchedModel, "deepseek-r1:8b");
+  });
 });
+

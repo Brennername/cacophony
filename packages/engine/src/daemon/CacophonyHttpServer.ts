@@ -1834,7 +1834,77 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c0b2. REST API: GET /api/models/preload - Query VRAM Prefetch Telemetry
+    if (url.pathname === "/api/models/preload" && req.method === "GET") {
+      const coordinator = this.daemon.getVramPrefetchCoordinator();
+      const telemetry = coordinator
+        ? coordinator.getTelemetry()
+        : {
+            prefetchesInitiated: 0,
+            hits: 0,
+            misses: 0,
+            hitRatio: 1.0,
+            lastPrefetchedModel: null,
+            isPrefetchInProgress: false,
+          };
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(telemetry));
+      return;
+    }
+
+    // 4c0b3. REST API: POST /api/models/preload - Trigger Speculative/On-Demand Model Pre-warming (T87.1.3)
+    if (url.pathname === "/api/models/preload" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+        if (body.length > 64 * 1024) {
+          req.destroy();
+        }
+      });
+      req.on("end", async () => {
+        try {
+          const parsed = JSON.parse(body || "{}");
+          const { model, keep_alive } = parsed;
+
+          if (!model || typeof model !== "string") {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({ error: "Missing or invalid 'model' parameter" }),
+            );
+            return;
+          }
+
+          const coordinator = this.daemon.getVramPrefetchCoordinator();
+          if (coordinator) {
+            await coordinator.preloadModel(model, keep_alive);
+          } else {
+            const { OllamaProvider } = await import(
+              "../inference/OllamaProvider.js"
+            );
+            const fallbackProvider = new OllamaProvider();
+            await fallbackProvider.preloadModel(model, keep_alive ?? "10m");
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              status: "ok",
+              model,
+              message: "Model preload initiated successfully",
+            }),
+          );
+        } catch (err: unknown) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          this.logger.error("Failed to preload model", { error: errorMsg });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: errorMsg }));
+        }
+      });
+      return;
+    }
+
     // 4c0c. REST API: DELETE /api/models/:modelId - Evict / Delete Model
+
     const modelDeleteMatch = url.pathname.match(/^\/api\/models\/([^/]+)$/);
     if (modelDeleteMatch && req.method === "DELETE") {
       const modelId = decodeURIComponent(modelDeleteMatch[1]!);

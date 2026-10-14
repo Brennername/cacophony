@@ -7,7 +7,9 @@ import type {
   RulePipelineDeclaration,
   StageName,
   StageStatus,
+  TaskRecord,
 } from "@cacophony/shared-types";
+import type { VramPrefetchCoordinator } from "../inference/VramPrefetchCoordinator.js";
 import type { StreamTapManager } from "../inference/StreamTapManager.js";
 import type {
   StageRepository,
@@ -68,7 +70,9 @@ export interface AutonomousWorkerPipelineOptions {
   readonly maxRemediationAttempts?: number | undefined;
   readonly modelHealthRepository?: ModelHealthRepository | undefined;
   readonly diagnosticPreFlightChecker?: DiagnosticPreFlightChecker | undefined;
+  readonly vramPrefetchCoordinator?: VramPrefetchCoordinator | undefined;
 }
+
 
 /**
  * AutonomousWorkerPipeline
@@ -110,7 +114,9 @@ export class AutonomousWorkerPipeline {
   private readonly maxRemediationAttempts: number;
   private readonly modelHealthRepo?: ModelHealthRepository | undefined;
   private readonly diagnosticPreFlightChecker: DiagnosticPreFlightChecker;
+  private readonly vramPrefetchCoordinator?: VramPrefetchCoordinator | undefined;
   private debugTaskPipeline: boolean;
+
   private maxRetainedDiagnostics: number = 100;
 
   /**
@@ -162,6 +168,7 @@ export class AutonomousWorkerPipeline {
     this.banditScheduler = options.banditScheduler;
     this.maxRemediationAttempts = options.maxRemediationAttempts ?? 2;
     this.modelHealthRepo = options.modelHealthRepository;
+    this.vramPrefetchCoordinator = options.vramPrefetchCoordinator;
     this.diagnosticPreFlightChecker =
       options.diagnosticPreFlightChecker ?? new DiagnosticPreFlightChecker();
     this.cognitiveHandoffCoordinator =
@@ -1318,6 +1325,20 @@ export class AutonomousWorkerPipeline {
       // STAGE 4: Scoped Test Verification with SandboxedProcessRunner
       if (groomed.scopedTestCommand) {
         await this.recordAndEmitStage(taskId, "test_execution", "RUNNING");
+
+        // Speculatively pre-warm next model in VRAM during CPU-bound test execution (T87.1.1)
+        if (this.vramPrefetchCoordinator) {
+          const prefetchTask: TaskRecord = {
+            ...groomed.task,
+            status: "RUNNING",
+            modelAssigned: selectedModel,
+          };
+          this.vramPrefetchCoordinator
+            .prefetchForTask(prefetchTask, "test_execution")
+            .catch(() => {});
+        }
+
+
 
         let testPassed = false;
         let testRemediationAttempts = 0;

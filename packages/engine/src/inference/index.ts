@@ -21,3 +21,4 @@ export * from "./PromptCompressor.js";
 export * from "./RemediationPromptFormatter.js";
 export * from "./OpenAICompatibleInferenceProvider.js";
 export * from "./InferenceProviderFactory.js";
+export * from "./VramPrefetchCoordinator.js";
