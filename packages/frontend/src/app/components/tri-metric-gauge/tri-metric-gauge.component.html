@@ -1,5 +1,5 @@
-<div class="tri-metric-container">
-  @if (label()) {
+<div class="tri-metric-container" [class.compact-mode]="variant() === 'compact'">
+  @if (variant() === 'full' && label()) {
     <div class="gauge-header">
       <span class="gauge-label">{{ label() }}</span>
       <span class="gauge-live font-mono">
@@ -10,36 +10,69 @@
   }
 
   <!-- Multi-Point Gauge Track -->
-  <div class="gauge-track">
+  <div class="gauge-track" [class.compact-track]="variant() === 'compact'">
     <!-- Live Fill Bar -->
-    <div class="live-fill" [style.width.%]="livePercent()"></div>
+    <div class="live-fill" [class]="barClass()" [style.width.%]="livePercent()"></div>
 
-    <!-- Trough (Low) Marker in Red -->
-    <div
-      class="metric-marker marker-trough"
-      [style.left.%]="troughPercent()"
-      [title]="'Trough Low: ' + trough().toFixed(digits()) + ' ' + unit()"
-    >
-      <div class="marker-pin pin-red"></div>
-    </div>
+    <!-- Reference Threshold Lines (e.g. 200MHz yellow, 400MHz blue) -->
+    @for (ref of referenceLinesComputed(); track ref.value) {
+      <div
+        class="reference-line"
+        [style.left.%]="ref.percent"
+        [style.border-left-color]="ref.color"
+        [style.border-left-style]="ref.style || 'dotted'"
+        [title]="(ref.label ? ref.label + ': ' : '') + ref.value + ' ' + unit()"
+      >
+        @if (ref.label && variant() === 'full') {
+          <span class="ref-label" [style.color]="ref.color">{{ ref.label }}</span>
+        }
+      </div>
+    }
 
-    <!-- Average Marker in Green -->
-    <div
-      class="metric-marker marker-avg"
-      [style.left.%]="avgPercent()"
-      [title]="'Window Average: ' + avg().toFixed(digits()) + ' ' + unit()"
-    >
-      <div class="marker-pin pin-green"></div>
-    </div>
+    <!-- Clutter-Adaptive Markers -->
+    @if (isCluttered()) {
+      <!-- Collapsed Last Change Point Marker Pin when data moves slowly -->
+      <div
+        class="metric-marker marker-last-change"
+        [style.left.%]="lastChangePercent()"
+        [title]="
+          'Last Change Point: ' +
+          lastChangePoint().toFixed(digits()) +
+          ' ' +
+          unit() +
+          ' (Clutter Reduced)'
+        "
+      >
+        <div class="marker-pin pin-last-change"></div>
+      </div>
+    } @else {
+      <!-- Trough (Low) Marker in Red -->
+      <div
+        class="metric-marker marker-trough"
+        [style.left.%]="troughPercent()"
+        [title]="'Trough Low: ' + trough().toFixed(digits()) + ' ' + unit()"
+      >
+        <div class="marker-pin pin-red"></div>
+      </div>
 
-    <!-- Peak (High) Marker in Red -->
-    <div
-      class="metric-marker marker-peak"
-      [style.left.%]="peakPercent()"
-      [title]="'Peak High: ' + peak().toFixed(digits()) + ' ' + unit()"
-    >
-      <div class="marker-pin pin-red"></div>
-    </div>
+      <!-- Average Marker in Green -->
+      <div
+        class="metric-marker marker-avg"
+        [style.left.%]="avgPercent()"
+        [title]="'Window Average: ' + avg().toFixed(digits()) + ' ' + unit()"
+      >
+        <div class="marker-pin pin-green"></div>
+      </div>
+
+      <!-- Peak (High) Marker in Red -->
+      <div
+        class="metric-marker marker-peak"
+        [style.left.%]="peakPercent()"
+        [title]="'Peak High: ' + peak().toFixed(digits()) + ' ' + unit()"
+      >
+        <div class="marker-pin pin-red"></div>
+      </div>
+    }
 
     <!-- Live Needle / Progress Head -->
     <div
@@ -49,19 +82,36 @@
     ></div>
   </div>
 
-  <!-- KPI Readouts Row: Low (Red) | Avg (Green) | Peak (Red) -->
-  <div class="metric-stats-row font-mono">
-    <div class="stat-item stat-trough" title="Average Low / Trough">
-      <span class="stat-label">LOW</span>
-      <span class="stat-val text-red">{{ trough().toFixed(digits()) }}</span>
+  <!-- KPI Readouts Row (Full variant only) -->
+  @if (variant() === 'full') {
+    <div class="metric-stats-row font-mono">
+      @if (isCluttered()) {
+        <div class="stat-item stat-last" title="Last Change Point">
+          <span class="stat-label">LAST</span>
+          <span class="stat-val text-cyan">{{ lastChangePoint().toFixed(digits()) }}</span>
+        </div>
+        <div class="stat-item stat-avg" title="Window Running Average">
+          <span class="stat-label">AVG</span>
+          <span class="stat-val text-green">{{ avg().toFixed(digits()) }}</span>
+        </div>
+        <div class="stat-item stat-mode" title="Clutter Reduced (Stationary / Low Spread)">
+          <span class="stat-label">SPREAD</span>
+          <span class="stat-val text-muted">STEADY</span>
+        </div>
+      } @else {
+        <div class="stat-item stat-trough" title="Average Low / Trough">
+          <span class="stat-label">LOW</span>
+          <span class="stat-val text-red">{{ trough().toFixed(digits()) }}</span>
+        </div>
+        <div class="stat-item stat-avg" title="Window Running Average">
+          <span class="stat-label">AVG</span>
+          <span class="stat-val text-green">{{ avg().toFixed(digits()) }}</span>
+        </div>
+        <div class="stat-item stat-peak" title="Window Peak">
+          <span class="stat-label">PEAK</span>
+          <span class="stat-val text-red">{{ peak().toFixed(digits()) }}</span>
+        </div>
+      }
     </div>
-    <div class="stat-item stat-avg" title="Window Running Average">
-      <span class="stat-label">AVG</span>
-      <span class="stat-val text-green">{{ avg().toFixed(digits()) }}</span>
-    </div>
-    <div class="stat-item stat-peak" title="Window Peak">
-      <span class="stat-label">PEAK</span>
-      <span class="stat-val text-red">{{ peak().toFixed(digits()) }}</span>
-    </div>
-  </div>
+  }
 </div>

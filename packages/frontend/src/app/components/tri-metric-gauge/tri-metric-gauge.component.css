@@ -10,6 +10,10 @@
   width: 100%;
 }
 
+.tri-metric-container.compact-mode {
+  gap: 0;
+}
+
 .gauge-header {
   display: flex;
   justify-content: space-between;
@@ -44,6 +48,10 @@
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+.gauge-track.compact-track {
+  height: 8px;
+}
+
 .live-fill {
   position: absolute;
   top: 0;
@@ -53,6 +61,48 @@
   border-radius: 9999px;
   transition: width 150ms ease-out;
   pointer-events: none;
+}
+
+/* Color overrides for compact bar embeds */
+.live-fill.brand {
+  background: var(--color-brand);
+}
+.live-fill.emerald {
+  background: #10b981;
+}
+.live-fill.amber {
+  background: #f59e0b;
+}
+.live-fill.cyan {
+  background: #06b6d4;
+}
+.live-fill.purple {
+  background: #a855f7;
+}
+
+/* Threshold Dotted Reference Lines */
+.reference-line {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 0;
+  border-left-width: 2px;
+  border-left-style: dotted;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.ref-label {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.5625rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .metric-marker {
@@ -82,6 +132,12 @@
   width: 3px;
 }
 
+.pin-last-change {
+  background: #06b6d4;
+  box-shadow: 0 0 5px rgba(6, 182, 212, 0.9);
+  width: 3px;
+}
+
 .progress-head {
   position: absolute;
   top: -3px;
@@ -94,6 +150,12 @@
   z-index: 3;
   box-shadow: 0 0 6px rgba(59, 130, 246, 0.9);
   transition: left 120ms ease-out;
+}
+
+.compact-track .progress-head {
+  top: -2px;
+  bottom: -2px;
+  width: 5px;
 }
 
 .metric-stats-row {
@@ -124,4 +186,14 @@
 .text-green {
   color: #10b981;
   font-weight: 700;
+}
+
+.text-cyan {
+  color: #06b6d4;
+  font-weight: 700;
+}
+
+.text-muted {
+  color: var(--text-muted, #94a3b8);
+  font-weight: 500;
 }

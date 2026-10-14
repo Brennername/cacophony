@@ -1,14 +1,27 @@
 import { Component, input, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {
+  TriMetricCalculator,
+  type TriMetricStats,
+  type TelemetryReferenceLine,
+} from '../../utils/tri-metric-calculator';
+
+export interface ComputedReferenceLine extends TelemetryReferenceLine {
+  percent: number;
+}
 
 /**
  * TriMetricGaugeComponent
  *
- * Visual rolling-window gauge displaying:
+ * Visual rolling-window telemetry gauge and progress bar displaying:
  * - Dynamic Peak (High Water Mark, marked in Red)
  * - Windowed Running Average (Arithmetic Mean, marked in Green)
  * - Adaptive Trough (Average Low Baseline, marked in Red)
  * - Real-Time Instantaneous Progress Head tracking live signal ticks
+ * - Dynamic Clutter Collapse: when values are stationary or clustered (< threshold%),
+ *   collapses down to the Last Change Point marker to prevent overlapping clutter.
+ * - Reference Threshold Lines: custom dotted indicators (e.g. 200MHz yellow, 400MHz blue).
+ * - Multi-variant support: 'full' (with header & stats) and 'compact' (bare track).
  */
 @Component({
   selector: 'app-tri-metric-gauge',
@@ -25,7 +38,12 @@ export class TriMetricGaugeComponent {
   public readonly maxRange = input<number>(100);
   public readonly windowSize = input<number>(30);
   public readonly digits = input<number>(0);
-  public readonly externalHistory = input<number[] | undefined>(undefined);
+  public readonly externalHistory = input<readonly number[] | undefined>(undefined);
+  public readonly runFloor = input<number>(0);
+  public readonly clutterThresholdPercent = input<number>(4.0);
+  public readonly referenceLines = input<readonly TelemetryReferenceLine[] | undefined>(undefined);
+  public readonly variant = input<'full' | 'compact'>('full');
+  public readonly barClass = input<string>('');
 
   private readonly samples = signal<number[]>([]);
 
@@ -44,53 +62,44 @@ export class TriMetricGaugeComponent {
     });
   }
 
-  public readonly peak = computed(() => {
-    const list = this.samples();
-    if (list.length === 0) return this.liveValue();
-    return Math.max(...list, this.liveValue());
+  public readonly stats = computed<TriMetricStats>(() => {
+    return TriMetricCalculator.calculate(
+      this.samples(),
+      this.liveValue(),
+      this.minRange(),
+      this.maxRange(),
+      {
+        windowSize: this.windowSize(),
+        runFloor: this.runFloor(),
+        clutterThresholdPercent: this.clutterThresholdPercent(),
+      },
+    );
   });
 
-  public readonly avg = computed(() => {
-    const list = this.samples();
-    if (list.length === 0) return this.liveValue();
-    const sum = list.reduce((acc, v) => acc + v, 0);
-    return sum / list.length;
-  });
+  public readonly peak = computed(() => this.stats().peak);
+  public readonly avg = computed(() => this.stats().avg);
+  public readonly trough = computed(() => this.stats().trough);
+  public readonly lastChangePoint = computed(() => this.stats().lastChangePoint);
+  public readonly isCluttered = computed(() => this.stats().isCluttered);
 
-  public readonly trough = computed(() => {
-    const list = this.samples().filter((v) => v > 0);
-    if (list.length === 0) return 0;
-    const minObserved = Math.min(...list);
-    const mean = this.avg();
-    const high = this.peak();
-    // Distance from peak to avg mapped downwards from average
-    const distance = high - mean;
-    const computedTrough = Math.max(0, mean - distance);
-    // If real samples dip lower than the computed trough, adapt to the minimum observed dip
-    return Math.min(minObserved, computedTrough);
-  });
+  public readonly livePercent = computed(() => this.stats().livePercent);
+  public readonly peakPercent = computed(() => this.stats().peakPercent);
+  public readonly avgPercent = computed(() => this.stats().avgPercent);
+  public readonly troughPercent = computed(() => this.stats().troughPercent);
+  public readonly lastChangePercent = computed(() => this.stats().lastChangePercent);
 
-  public readonly livePercent = computed(() => {
-    return this.toPercent(this.liveValue());
-  });
-
-  public readonly peakPercent = computed(() => {
-    return this.toPercent(this.peak());
-  });
-
-  public readonly avgPercent = computed(() => {
-    return this.toPercent(this.avg());
-  });
-
-  public readonly troughPercent = computed(() => {
-    return this.toPercent(this.trough());
-  });
-
-  private toPercent(val: number): number {
+  public readonly referenceLinesComputed = computed<ComputedReferenceLine[]>(() => {
+    const lines = this.referenceLines();
+    if (!lines || lines.length === 0) return [];
     const min = this.minRange();
     const max = this.maxRange();
-    if (max <= min) return 0;
-    const clamped = Math.max(min, Math.min(max, val));
-    return Number((((clamped - min) / (max - min)) * 100).toFixed(1));
+    return lines.map((line) => ({
+      ...line,
+      percent: TriMetricCalculator.toPercent(line.value, min, max),
+    }));
+  });
+
+  public toPercent(val: number): number {
+    return TriMetricCalculator.toPercent(val, this.minRange(), this.maxRange());
   }
 }

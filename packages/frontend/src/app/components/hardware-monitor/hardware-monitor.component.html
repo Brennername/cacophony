@@ -30,7 +30,7 @@
         <span class="badge-val fixed-model-name">{{ metrics().activeModel }}</span>
       </div>
 
-      <!-- Token Velocity High-Water Mark Meter with Live vs Historic Comparison -->
+      <!-- Token Velocity High-Water Mark Meter with Shared Tri-Metric Track -->
       <div
         class="hwm-badge clickable"
         (click)="navigateToModelStats(metrics().activeModel)"
@@ -41,8 +41,17 @@
           <span class="hwm-peak font-mono">PEAK: {{ highWaterMark().toFixed(1) }} tok/s</span>
         </div>
         <div class="hwm-bar-track">
-          <div class="hwm-bar-fill" [style.width.%]="velocityPercentOfHwm()"></div>
-          <div class="hwm-marker" [style.left.%]="100" title="High-Water Mark"></div>
+          <app-tri-metric-gauge
+            variant="compact"
+            [liveValue]="currentLiveVelocity()"
+            [minRange]="0"
+            [maxRange]="Math.max(highWaterMark(), 1)"
+            [externalHistory]="velocityHistory()"
+            [runFloor]="0"
+            unit="tok/s"
+            barClass="brand"
+            [clutterThresholdPercent]="4"
+          />
         </div>
         <div class="hwm-numbers font-mono">
           <span class="fixed-val num-live" title="Live Velocity">{{
@@ -86,13 +95,19 @@
         </div>
       </div>
 
-      <!-- Multi-gradient temperature progress bar (105C = 100%) -->
-      <div class="progress-bar temp-track">
-        <div
-          class="progress-fill temp-fill"
-          [style.width.%]="tempPercentOfMax()"
-          [style.background]="tempFillColor()"
-        ></div>
+      <!-- Temperature progress meter with tri-metric track -->
+      <div class="meter-wrapper">
+        <app-tri-metric-gauge
+          variant="compact"
+          [liveValue]="metrics().edgeTempCelsius"
+          [minRange]="0"
+          [maxRange]="105"
+          [externalHistory]="store.tempHistory()"
+          [runFloor]="20"
+          unit="°C"
+          barClass="amber"
+          [clutterThresholdPercent]="3"
+        />
       </div>
 
       <div class="sub-stat-row">
@@ -139,8 +154,18 @@
           }}%)</span
         >
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill brand" [style.width.%]="metrics().vramPercent"></div>
+      <div class="meter-wrapper">
+        <app-tri-metric-gauge
+          variant="compact"
+          [liveValue]="metrics().vramPercent"
+          [minRange]="0"
+          [maxRange]="100"
+          [externalHistory]="store.vramHistory()"
+          [runFloor]="0"
+          unit="%"
+          barClass="brand"
+          [clutterThresholdPercent]="4"
+        />
       </div>
       <div class="sub-stat-row">
         <span>Avail: {{ metrics().vramAvailMb }} MB</span>
@@ -170,15 +195,25 @@
         <span class="name">GPU Load</span>
         <span class="val font-mono fixed-load">{{ metrics().gpuBusyPercent }}%</span>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill emerald" [style.width.%]="metrics().gpuBusyPercent"></div>
+      <div class="meter-wrapper">
+        <app-tri-metric-gauge
+          variant="compact"
+          [liveValue]="metrics().gpuBusyPercent"
+          [minRange]="0"
+          [maxRange]="100"
+          [externalHistory]="store.gpuLoadHistory()"
+          [runFloor]="0"
+          unit="%"
+          barClass="emerald"
+          [clutterThresholdPercent]="4"
+        />
       </div>
       <div class="sub-stat-row">
         <span>Core: {{ metrics().sclkMhz }} MHz</span>
         <span>Power: {{ metrics().pptPowerW }} W</span>
       </div>
 
-      <!-- Real-Time Processor Core SCLK MHz Tri-Metric Rolling Gauge -->
+      <!-- Real-Time Processor Core SCLK MHz Tri-Metric Rolling Gauge with 200MHz yellow & 400MHz blue dotted lines -->
       <div class="mhz-gauge-wrapper">
         <app-tri-metric-gauge
           [liveValue]="metrics().sclkMhz"
@@ -187,6 +222,9 @@
           [minRange]="0"
           [maxRange]="2200"
           [digits]="0"
+          [runFloor]="100"
+          [referenceLines]="sclkReferenceLines"
+          [clutterThresholdPercent]="4"
         />
       </div>
       <div class="chart-container">
@@ -216,8 +254,18 @@
         <span class="name">CPU Load</span>
         <span class="val font-mono fixed-cpu">{{ metrics().cpuBusyPercent.toFixed(1) }}%</span>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill amber" [style.width.%]="metrics().cpuBusyPercent"></div>
+      <div class="meter-wrapper">
+        <app-tri-metric-gauge
+          variant="compact"
+          [liveValue]="metrics().cpuBusyPercent"
+          [minRange]="0"
+          [maxRange]="100"
+          [externalHistory]="store.cpuLoadHistory()"
+          [runFloor]="0"
+          unit="%"
+          barClass="amber"
+          [clutterThresholdPercent]="4"
+        />
       </div>
       <div class="sub-stat-row">
         <span>VDDGFX: {{ metrics().vddgfxMv }} mV</span>
@@ -254,8 +302,18 @@
           }}%)</span
         >
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill cyan" [style.width.%]="metrics().systemMemoryPercent"></div>
+      <div class="meter-wrapper">
+        <app-tri-metric-gauge
+          variant="compact"
+          [liveValue]="metrics().systemMemoryPercent"
+          [minRange]="0"
+          [maxRange]="100"
+          [externalHistory]="store.sysMemHistory()"
+          [runFloor]="0"
+          unit="%"
+          barClass="cyan"
+          [clutterThresholdPercent]="4"
+        />
       </div>
       <div class="sub-stat-row">
         <span
@@ -290,13 +348,20 @@
           >{{ metrics().gttUsedMb }} / {{ metrics().gttTotalMb }} MB</span
         >
       </div>
-      <div class="progress-bar">
-        <div
-          class="progress-fill purple"
-          [style.width.%]="
+      <div class="meter-wrapper">
+        <app-tri-metric-gauge
+          variant="compact"
+          [liveValue]="
             metrics().gttTotalMb ? (metrics().gttUsedMb / metrics().gttTotalMb) * 100 : 0
           "
-        ></div>
+          [minRange]="0"
+          [maxRange]="100"
+          [externalHistory]="store.gttHistory()"
+          [runFloor]="0"
+          unit="%"
+          barClass="purple"
+          [clutterThresholdPercent]="4"
+        />
       </div>
       <div class="sub-stat-row">
         <span>SOC/VDDNB: {{ metrics().vddnbMv }} mV</span>

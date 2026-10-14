@@ -160,18 +160,8 @@
 
 .hwm-bar-track {
   position: relative;
-  height: 4px;
-  background: var(--bg-surface);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin: 0.1rem 0;
-}
-
-.hwm-bar-fill {
-  height: 100%;
-  background: linear-gradient(to right, #3b82f6, #10b981);
-  border-radius: var(--radius-full);
-  transition: width 0.3s ease;
+  overflow: visible;
+  margin: 0.2rem 0;
 }
 
 .hwm-marker {
@@ -386,6 +376,12 @@
     opacity: 0.7;
     box-shadow: 0 0 2px rgba(255, 0, 51, 0.2);
   }
+}
+
+.meter-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 0.35rem 0;
 }
 
 .progress-bar {

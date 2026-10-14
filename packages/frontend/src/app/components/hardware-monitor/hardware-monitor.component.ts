@@ -1,9 +1,10 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ArenaStateStore } from '../../services/arena-state.store';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
 import { TriMetricGaugeComponent } from '../tri-metric-gauge/tri-metric-gauge.component';
+import { type TelemetryReferenceLine } from '../../utils/tri-metric-calculator';
 
 /**
  * Modern System Diagnostics and Telemetry Monitor.
@@ -11,11 +12,11 @@ import { TriMetricGaugeComponent } from '../tri-metric-gauge/tri-metric-gauge.co
  * 1. Progress-bar APU Temperature monitor (105C = 100%, fencepost color gradients, normal degree display,
  *    and emergency queue cutoff threshold).
  * 2. Moving Area-of-Curve (AOC) sparkline line graphs under each primary telemetry card.
- * 3. High-water mark token velocity tracker with 2-sigma outlier filtering.
- * 4. Deduplicated metrics: GPU Load, CPU Load, System RAM, VRAM, and GTT Memory.
+ * 3. High-water mark token velocity tracker with 2-sigma outlier filtering and shared tri-metric gauge.
+ * 4. Deduplicated metrics: GPU Load, CPU Load, System RAM, VRAM, and GTT Memory with unified tri-metric tracks.
  * 5. Fixed bounding boxes with tabular numbers to prevent digit change flickering.
  * 6. Interactive click navigation to model statistics view.
- * 7. Real-time Processor SCLK MHz Tri-Metric Rolling Gauge (trough, average, peak).
+ * 7. Real-time Processor SCLK MHz Tri-Metric Rolling Gauge with 200MHz yellow and 400MHz blue dotted reference lines.
  * 8. Live vs Historical Model Velocity Comparison with variance indicator.
  */
 @Component({
@@ -31,11 +32,25 @@ export class HardwareMonitorComponent {
   public readonly metricsService = inject(HistoryMetricsService);
 
   public readonly metrics = this.store.telemetry;
-  public readonly accelerators = signal<readonly { id: string; name: string; pciBus: string; isPrimaryApu: boolean }[]>([]);
+  public readonly accelerators = signal<
+    readonly { id: string; name: string; pciBus: string; isPrimaryApu: boolean }[]
+  >([]);
 
   public readonly currentLiveVelocity = computed(() => this.store.liveTokenVelocity());
   public readonly currentRunVelocity = computed(() => this.store.runTokenVelocity());
   public readonly highWaterMark = computed(() => this.store.activeModelHighWaterMark());
+
+  public readonly velocityHistory = signal<number[]>([15, 22, 28, 35, 32, 38]);
+
+  /**
+   * Core Frequency Reference Lines:
+   * 200 MHz idle baseline (yellow dotted)
+   * 400 MHz low DPM state (blue dotted)
+   */
+  public readonly sclkReferenceLines: readonly TelemetryReferenceLine[] = [
+    { value: 200, color: '#eab308', label: '200M', style: 'dotted' },
+    { value: 400, color: '#3b82f6', label: '400M', style: 'dotted' },
+  ];
 
   public readonly velocityPercentOfHwm = computed(() => {
     const hwm = this.highWaterMark();
@@ -61,6 +76,15 @@ export class HardwareMonitorComponent {
 
   constructor() {
     this.fetchAccelerators();
+
+    effect(() => {
+      const v = this.currentLiveVelocity();
+      if (v > 0) {
+        untracked(() => {
+          this.velocityHistory.update((list) => [...list, v].slice(-30));
+        });
+      }
+    });
   }
 
   public navigateToModelStats(modelId: string): void {
@@ -82,11 +106,11 @@ export class HardwareMonitorComponent {
   public readonly tempFillColor = computed(() => {
     const temp = this.metrics().edgeTempCelsius;
     if (temp >= 100) return '#ff0033'; // Fire engine red
-    if (temp >= 95) return '#ef4444';  // Red
-    if (temp >= 90) return '#f97316';  // Orange
-    if (temp >= 85) return '#eab308';  // Yellow
-    if (temp >= 80) return '#10b981';  // Green
-    return '#3b82f6';                  // Blue
+    if (temp >= 95) return '#ef4444'; // Red
+    if (temp >= 90) return '#f97316'; // Orange
+    if (temp >= 85) return '#eab308'; // Yellow
+    if (temp >= 80) return '#10b981'; // Green
+    return '#3b82f6'; // Blue
   });
 
   public readonly tempZoneClass = computed(() => {
@@ -134,7 +158,9 @@ export class HardwareMonitorComponent {
     try {
       const res = await fetch('/api/system');
       if (res.ok) {
-        const data = (await res.json()) as { accelerators?: { id: string; name: string; pciBus: string; isPrimaryApu: boolean }[] };
+        const data = (await res.json()) as {
+          accelerators?: { id: string; name: string; pciBus: string; isPrimaryApu: boolean }[];
+        };
         if (Array.isArray(data.accelerators) && data.accelerators.length > 0) {
           this.accelerators.set(data.accelerators);
         }
