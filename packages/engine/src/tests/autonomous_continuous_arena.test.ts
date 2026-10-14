@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { TaskcadePlanningService } from "../inference/TaskcadePlanningService.js";
 import { AutonomousWorkerPipeline } from "../scheduler/AutonomousWorkerPipeline.js";
 import type { TaskRepository } from "@cacophony/db";
+import type { TaskRecord } from "@cacophony/shared-types";
 import type { OllamaProvider } from "../inference/OllamaProvider.js";
 import type { ContextMinimizer } from "../inference/ContextMinimizer.js";
 import type { SelfHealingParser } from "../inference/SelfHealingParser.js";
@@ -12,11 +13,12 @@ test("Phase 32: Autonomous Continuous Arena Engine & Self-Taskcade Grooming", as
   await t.test(
     "T32.1: TaskcadePlanningService replenishes queue when pending task count drops",
     async () => {
-      const dbTasks: any[] = [];
+      const dbTasks: TaskRecord[] = [];
 
       const mockTaskRepo = {
-        listPending: async () => dbTasks.filter((t) => t.status === "PENDING"),
-        create: async (task: any) => {
+        listPending: async (): Promise<TaskRecord[]> =>
+          dbTasks.filter((t) => t.status === "PENDING"),
+        create: async (task: TaskRecord): Promise<TaskRecord> => {
           dbTasks.push(task);
           return task;
         },

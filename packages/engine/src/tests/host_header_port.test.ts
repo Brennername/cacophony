@@ -31,6 +31,7 @@ describe("T97.2.1: Dynamic Host Header Resolver with Custom Port Numbers", () =>
       httpPort: testHttpPort,
       httpHost: "127.0.0.1",
       frontendDistPath: distMock,
+      startScheduler: false,
     });
 
     await daemon.start();

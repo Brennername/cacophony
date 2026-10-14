@@ -5,6 +5,14 @@ import * as fs from "node:fs/promises";
 import { GitWorktreeManager } from "../GitWorktreeManager.js";
 import { GiteaWebhookReceiver } from "../GiteaWebhookReceiver.js";
 import { AutomatedPrPublisher } from "../AutomatedPrPublisher.js";
+import type { TaskRepository } from "@cacophony/db";
+import type { TaskRecord, TaskStatus } from "@cacophony/shared-types";
+import type { GiteaApiClient } from "../GiteaApiClient.js";
+import type {
+  MergePullRequestRequest,
+  CreatePullRequestRequest,
+  GiteaPullRequest,
+} from "../giteaTypes.js";
 
 describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints", () => {
   it("T39.1: GitWorktreeManager formats standardized branch names and manages worktree directory", async () => {
@@ -45,24 +53,26 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
   });
 
   it("T39.2: GiteaWebhookReceiver dispatches remediation task when review requests changes", async () => {
-    const createdTasks: any[] = [];
-    const mockTaskRepo: any = {
-      create: async (task: any) => {
+    const createdTasks: TaskRecord[] = [];
+    const mockTaskRepo = {
+      create: async (task: TaskRecord): Promise<TaskRecord> => {
         createdTasks.push(task);
         return task;
       },
-      listPending: async () => [
+      listPending: async (): Promise<Partial<TaskRecord>[]> => [
         {
           id: "parent-task-1",
           targetBranch: "task/p1-task-1-fix-bug",
           status: "RUNNING",
         },
       ],
-      updateStatus: async (id: string, status: string) => {
+      updateStatus: async (id: string, status: TaskStatus): Promise<void> => {
         const t = createdTasks.find((x) => x.id === id);
-        if (t) t.status = status;
+        if (t) {
+          (t as { status: TaskStatus }).status = status;
+        }
       },
-    };
+    } as unknown as TaskRepository;
 
     const receiver = new GiteaWebhookReceiver(mockTaskRepo, "secret-123");
 
@@ -87,41 +97,41 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
     assert.ok(result.taskId?.startsWith("remedy-pr-42-"));
 
     assert.equal(createdTasks.length, 1);
-    assert.equal(createdTasks[0].priority, "P0");
-    assert.ok(createdTasks[0].prompt.includes("null pointer vulnerability"));
-    assert.equal(createdTasks[0].targetBranch, "task/p1-task-1-fix-bug");
+    assert.equal(createdTasks[0]!.priority, "P0");
+    assert.ok(createdTasks[0]!.prompt.includes("null pointer vulnerability"));
+    assert.equal(createdTasks[0]!.targetBranch, "task/p1-task-1-fix-bug");
   });
 
   it("T39.2: GiteaWebhookReceiver triggers automated squash-and-merge on APPROVE", async () => {
     let mergeCalled = false;
-    const mockGiteaClient: any = {
+    const mockGiteaClient = {
       mergePullRequest: async (
         owner: string,
         repo: string,
         prNumber: number,
-        req: any,
-      ) => {
+        req: MergePullRequestRequest,
+      ): Promise<void> => {
         mergeCalled = true;
         assert.equal(owner, "cacophony-org");
         assert.equal(repo, "cacophony");
         assert.equal(prNumber, 55);
         assert.equal(req.Do, "squash");
       },
-    };
+    } as unknown as GiteaApiClient;
 
     const completedStatusUpdates: string[] = [];
-    const mockTaskRepo: any = {
-      listPending: async () => [
+    const mockTaskRepo = {
+      listPending: async (): Promise<Partial<TaskRecord>[]> => [
         {
           id: "task-55-approved",
           targetBranch: "task/p0-task-55-feat",
           status: "IN_REVIEW",
         },
       ],
-      updateStatus: async (id: string, status: string) => {
+      updateStatus: async (id: string, status: TaskStatus): Promise<void> => {
         completedStatusUpdates.push(`${id}:${status}`);
       },
-    };
+    } as unknown as TaskRepository;
 
     const receiver = new GiteaWebhookReceiver(
       mockTaskRepo,
@@ -160,25 +170,29 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
 
   it("T39.2: AutomatedPrPublisher pushes branch and formats structured PR summary", async () => {
     let prCreated = false;
-    const mockGiteaClient: any = {
-      createPullRequest: async (owner: string, repo: string, payload: any) => {
+    const mockGiteaClient = {
+      createPullRequest: async (
+        owner: string,
+        repo: string,
+        payload: CreatePullRequestRequest,
+      ): Promise<GiteaPullRequest> => {
         prCreated = true;
         assert.equal(owner, "devs");
         assert.equal(repo, "repo1");
-        assert.ok(payload.body.includes("Verification Summary"));
+        assert.ok(payload.body?.includes("Verification Summary"));
         return {
           id: 1,
           number: 12,
           title: payload.title,
           html_url: "http://gitea/devs/repo1/pulls/12",
-        };
+        } as GiteaPullRequest;
       },
-    };
+    } as unknown as GiteaApiClient;
 
-    const mockWorktreeManager: any = {
-      commitWorktree: async () => "commit ok",
-      pushBranch: async () => {},
-    };
+    const mockWorktreeManager = {
+      commitWorktree: async (): Promise<string> => "commit ok",
+      pushBranch: async (): Promise<void> => {},
+    } as unknown as GitWorktreeManager;
 
     const publisher = new AutomatedPrPublisher(
       mockGiteaClient,

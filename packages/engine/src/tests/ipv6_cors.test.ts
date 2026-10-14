@@ -31,6 +31,7 @@ describe("T97.2.2: IPv6 Localhost (::1) Dynamic CORS and Loopback Mapping", () =
       httpPort: testHttpPort,
       httpHost: "127.0.0.1",
       frontendDistPath: distMock,
+      startScheduler: false,
     });
 
     await daemon.start();

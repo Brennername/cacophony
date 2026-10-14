@@ -344,11 +344,27 @@ services:
     networks:
       - cacophony-net
 
+  cacophony-docker-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    container_name: cacophony-docker-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      EVENTS: 1
+      INFO: 1
+      VERSION: 1
+      POST: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - cacophony-net
+
   cacophony-authentik-worker:
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2024.8.3}
     container_name: cacophony-authentik-worker
     restart: unless-stopped
     command: worker
+    user: "${AUTHENTIK_UID:-1000}:${AUTHENTIK_GID:-1000}"
     environment:
       AUTHENTIK_REDIS__HOST: cacophony-redis
       AUTHENTIK_POSTGRESQL__HOST: ${AUTHENTIK_POSTGRESQL__HOST:-cacophony-engine}
@@ -357,15 +373,15 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASS:-cacophony}
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-}
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
-    user: root
+      DOCKER_HOST: tcp://cacophony-docker-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - authentik-media:/media
       - authentik-templates:/templates
       - authentik-certs:/certs
       - ./conf/authentik/blueprints:/blueprints:ro
     depends_on:
       - cacophony-redis
+      - cacophony-docker-proxy
     networks:
       - cacophony-net
 

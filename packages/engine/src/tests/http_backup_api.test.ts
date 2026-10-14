@@ -32,6 +32,7 @@ describe("T74.7.2: HTTP API POST /api/admin/backup On-Demand Snapshot Creation",
       httpPort: 0,
       httpHost: "127.0.0.1",
       frontendDistPath: distMock,
+      startScheduler: false,
     });
 
     await daemon.start();

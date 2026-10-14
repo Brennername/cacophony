@@ -110,7 +110,7 @@ test("Phase 31: Closed-Loop PR Review, Remediation & System Tool Diagnostics", a
   await t.test(
     "T31.1: ClosedLoopPrCoordinator enqueues P0 remediation task on REQUEST_CHANGES",
     async () => {
-      let createdRemediationTask: any = null;
+      let createdRemediationTask: TaskRecord | null = null;
       let taskStatusUpdated: string | undefined;
 
       const mockClient = {} as unknown as GiteaApiClient;
@@ -156,7 +156,7 @@ test("Phase 31: Closed-Loop PR Review, Remediation & System Tool Diagnostics", a
         updateStatus: async (_id: string, status: string) => {
           taskStatusUpdated = status;
         },
-        create: async (task: any) => {
+        create: async (task: TaskRecord): Promise<TaskRecord> => {
           createdRemediationTask = task;
           return task;
         },
@@ -204,12 +204,13 @@ test("Phase 31: Closed-Loop PR Review, Remediation & System Tool Diagnostics", a
       assert.strictEqual(res.success, false);
       assert.strictEqual(res.verdict, "REQUEST_CHANGES");
       assert.strictEqual(res.remediationEnqueued, true);
-      assert.ok(createdRemediationTask);
-      assert.strictEqual(createdRemediationTask.priority, "P0");
+      assert.ok(createdRemediationTask !== null);
+      const remediation = createdRemediationTask as TaskRecord;
+      assert.strictEqual(remediation.priority, "P0");
       assert.ok(
-        createdRemediationTask.prompt.includes("Missing null safety check"),
+        remediation.prompt.includes("Missing null safety check"),
       );
-      assert.ok(createdRemediationTask.prompt.includes("src/buffer.ts:42"));
+      assert.ok(remediation.prompt.includes("src/buffer.ts:42"));
       assert.strictEqual(taskStatusUpdated, "REMEDIATING");
     },
   );

@@ -3191,10 +3191,13 @@ export class CacophonyHttpServer {
         res.end(JSON.stringify(result));
         return;
       } catch (err: unknown) {
+        this.logger.error("Failed to create database backup snapshot", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
-            error: err instanceof Error ? err.message : String(err),
+            error: "Failed to create database backup snapshot",
           }),
         );
         return;

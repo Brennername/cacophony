@@ -31,6 +31,7 @@ describe("T97.2.4: Dynamic Origin Whitelist Rejects External Non-Local Domains",
       httpPort: testHttpPort,
       httpHost: "127.0.0.1",
       frontendDistPath: distMock,
+      startScheduler: false,
     });
 
     await daemon.start();

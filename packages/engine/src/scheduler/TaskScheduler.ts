@@ -71,9 +71,11 @@ export class TaskScheduler {
 
   private isRunning = false;
   private isPaused = false;
+  private isStopping = false;
   private drainMode = false;
   private loopTimer: NodeJS.Timeout | null = null;
   private executionHandler: TaskExecutionHandler | null = null;
+  private activeAbortController?: AbortController | undefined;
   private readonly logger = new StructuredLogger("TaskScheduler");
 
   private readonly perModelTimeoutMs: Readonly<Record<string, number>>;
@@ -199,6 +201,7 @@ export class TaskScheduler {
     if (this.isRunning) return;
     this.isRunning = true;
     this.isPaused = false;
+    this.isStopping = false;
     this.drainMode = false;
 
     // Recover any tasks left orphaned in RUNNING status from previous daemon sessions
@@ -251,9 +254,18 @@ export class TaskScheduler {
    */
   public stop(): void {
     this.isRunning = false;
+    this.isStopping = true;
     if (this.loopTimer) {
       clearInterval(this.loopTimer);
       this.loopTimer = null;
+    }
+    if (this.activeAbortController) {
+      try {
+        this.activeAbortController.abort();
+      } catch {
+        // ignore
+      }
+      this.activeAbortController = undefined;
     }
   }
 
@@ -859,6 +871,7 @@ export class TaskScheduler {
         const modelTimeoutMs = this.resolveModelTimeout(selectedModel);
 
         const abortController = new AbortController();
+        this.activeAbortController = abortController;
         let watchdogTimer: NodeJS.Timeout | null = null;
         let progressTimer: NodeJS.Timeout | null = null;
         const watchdogPromise = new Promise<never>((_, reject) => {
@@ -1068,6 +1081,9 @@ export class TaskScheduler {
           if (watchdogTimer) clearTimeout(watchdogTimer);
           if (progressTimer) clearInterval(progressTimer);
           abortController.abort();
+          if (this.isStopping) {
+            return targetTask;
+          }
           const durationMs = Date.now() - stageStartMs;
           const errorMsg = err instanceof Error ? err.message : String(err);
           const classification = FailureClassifier.classify(
@@ -1218,6 +1234,7 @@ export class TaskScheduler {
 
       return targetTask;
     } finally {
+      this.activeAbortController = undefined;
       releaseLock();
     }
   }

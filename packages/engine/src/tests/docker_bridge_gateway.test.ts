@@ -31,6 +31,7 @@ describe("T97.2.3: Local Bridge IP Resolution Detects Docker Gateway (172.17.0.1
       httpPort: testHttpPort,
       httpHost: "127.0.0.1",
       frontendDistPath: distMock,
+      startScheduler: false,
     });
 
     await daemon.start();

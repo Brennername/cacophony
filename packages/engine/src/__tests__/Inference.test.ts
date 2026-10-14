@@ -231,8 +231,8 @@ export interface UserQueryOptions {
 export type UserStatus = "active" | "suspended" | "pending";
 
 export class UserRepository {
-  private cache: Map<string, any> = new Map();
-  private connectionPool: any[] = [];
+  private cache: Map<string, unknown> = new Map();
+  private connectionPool: Array<{ id: number; active: boolean; buffer: Buffer }> = [];
 
   constructor(connectionString: string) {
     for (let i = 0; i < 50; i++) {
@@ -251,7 +251,7 @@ export class UserRepository {
   }
 
   public async listUsers(options: UserQueryOptions): Promise<any[]> {
-    const results: any[] = [];
+    const results: Array<{ id: string; status: string }> = [];
     for (let i = 0; i < options.limit; i++) {
       results.push({ id: "user-" + (options.offset + i), status: "active" });
     }
@@ -298,10 +298,8 @@ export class UserService {
         "src/user-service.ts",
       );
       assert.equal(imports.length, 2);
-      assert.ok(imports.some((i: any) => i.importedName === "UserRepository"));
-      assert.ok(
-        imports.some((i: any) => i.importedName === "UserQueryOptions"),
-      );
+      assert.ok(imports.some((i) => i.importedName === "UserRepository"));
+      assert.ok(imports.some((i) => i.importedName === "UserQueryOptions"));
 
       // 1. Direct AST Type Skeleton Verification
       const sliced = slicer.generateTypeSkeleton(

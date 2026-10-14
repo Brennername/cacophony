@@ -155,93 +155,13 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Phase 74: Security Hardening, Operational Resilience & Infrastructure Mitigations
 
-_RDF Category: security_
-_Source: Operations evaluation conducted 2026-09-28. See operations_evaluation.md for full analysis._
-
-### T74.1: HTTP Server Security Hardening (CORS, CSP, Rate Limiting)
-
-- [x] T74.1.1: Replace open CORS origin reflection with allowlist-based validation accepting only localhost, RFC 1918 LAN, Docker internal, and configured custom_domain. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: resolveAllowedOrigin]
-- [x] T74.1.2: Tighten Content-Security-Policy removing unsafe-eval, restricting sources to 'self', and adding standard security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy). [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleRequest]
-- [x] T74.1.3: Implement in-memory token-bucket rate limiter (configurable via cacophony.json) limiting API requests per IP with separate thresholds for read vs mutating endpoints. [File: packages/engine/src/daemon/RateLimiter.ts] [Class: RateLimiter] [Test: npm test -- packages/engine/src/tests/rate_limiter.test.ts]
-- [x] T74.1.4: Apply rate limiter middleware to all HTTP routes in CacophonyHttpServer.handleRequest() with configurable burst and sustained rate per client IP. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleRequest] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [x] T74.1.5: Write unit tests verifying CORS allowlist rejects untrusted origins, rate limiter enforces token bucket, and security headers are present on all responses. [File: packages/engine/src/tests/http_security.test.ts] [Test: npm test -- packages/engine/src/tests/http_security.test.ts]
-
-### T74.2: Authentication Enforcement & Consistent Auth Middleware
-
-- [x] T74.2.1: Apply auth middleware consistently to all mutating endpoints (POST, PUT, DELETE routes), not just POST /api/tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleRequest] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [x] T74.2.2: Default REQUIRE_AUTH to true when network_profile.mode is 'lan_shared' or 'reverse_proxy', requiring explicit opt-out for unauthenticated access. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [x] T74.2.3: Implement read-only role (VIEWER) for dashboard access without task mutation capability. [File: packages/engine/src/auth/AuthService.ts] [Test: npm test -- packages/engine/src/tests/auth_service.test.ts]
-- [x] T74.2.4: Write unit tests verifying auth enforcement on all mutating routes and VIEWER role restrictions. [File: packages/engine/src/tests/auth_enforcement.test.ts] [Test: npm test -- packages/engine/src/tests/auth_enforcement.test.ts]
-
-### T74.3: Docker Hardening & Container Health Monitoring
-
-- [x] T74.3.1: Add HEALTHCHECK instruction to Dockerfile using curl to /api/status with 30s interval and 3 retries. [File: Dockerfile] [Test: docker build && docker inspect --format='{{json .Config.Healthcheck}}']
-- [x] T74.3.2: Add healthcheck configurations to all services in docker-compose.yml (engine, Gitea, Mailpit, Redis, Authentik). [File: docker-compose.yml] [Test: docker compose config --services]
-- [ ] T74.3.3: Replace Docker socket bind mount for Authentik worker with Docker socket proxy image (ghcr.io/tecnativa/docker-socket-proxy) limiting API access to containers:read. [File: docker-compose.yml] [Service: cacophony-authentik-worker] [Test: docker compose up]
-- [ ] T74.3.4: Remove root user directive from Authentik worker and configure proper UID/GID mapping. [File: docker-compose.yml] [Service: cacophony-authentik-worker] [Test: docker compose config]
-
-### T74.4: CI/CD Security Scanning & Quality Gates
-
-- [x] T74.4.1: Add npm audit --audit-level=moderate step to CI pipeline after npm ci. [File: .github/workflows/ci.yml] [Step: security-audit] [Test: Push to branch and verify CI]
-- [x] T74.4.2: Add npm run lint step to CI pipeline to enforce consistent code quality. [File: .github/workflows/ci.yml] [Step: lint-check] [Test: Push to branch and verify CI]
-- [ ] T74.4.3: Add Docker image scanning step using Trivy or Grype scanning the built container image for CVEs. [File: .github/workflows/ci.yml] [Step: container-scan] [Test: Push to branch and verify CI]
-- [ ] T74.4.4: Add code coverage reporting with minimum threshold gate (e.g. 40% initial, incrementally raised). [File: .github/workflows/ci.yml] [Step: coverage-report] [Test: Push to branch and verify CI]
-
-### T74.5: Vault Key Safety & Secret Lifecycle
-
-- [x] T74.5.1: Add startup safety check in CacophonyDaemon rejecting the default all-zeros VAULT_MASTER_KEY with fatal error (bypassed in demo mode). [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: start]
-- [x] T74.5.2: Remove hardcoded OIDC client secret from cacophony.example.json and replace with empty string. [File: conf/cacophony.example.json]
-- [x] T74.5.3: Add HEROKU_API_KEY placeholder to .env.example for parity with .env usage. [File: .env.example]
-- [x] T74.5.4: Document key rotation procedure for VAULT_MASTER_KEY in SECURITY.md including re-encryption steps for existing vault entries. [File: SECURITY.md] [Section: Key Rotation]
-
-### T74.6: Structured Logging & Operational Observability
-
-- [x] T74.6.1: Create StructuredLogger utility in packages/engine/src/telemetry/ emitting JSON log lines with timestamp, level, module, correlationId, and message. [File: packages/engine/src/telemetry/StructuredLogger.ts] [Class: StructuredLogger] [Test: npm test -- packages/engine/src/tests/structured_logger.test.ts]
-- [x] T74.6.2: Replace bare console.log/console.error calls across CacophonyDaemon, CacophonyHttpServer, and TaskScheduler with StructuredLogger instances. [File: packages/engine/src/daemon/*.ts] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
-- [x] T74.6.3: Add configurable log level (DEBUG, INFO, WARN, ERROR) via LOG_LEVEL env var defaulting to INFO. [File: packages/engine/src/telemetry/StructuredLogger.ts] [Test: npm test -- packages/engine/src/tests/structured_logger.test.ts]
-- [x] T74.6.4: Write unit tests verifying JSON log output format, level filtering, and correlation ID propagation. [File: packages/engine/src/tests/structured_logger.test.ts] [Test: npm test -- packages/engine/src/tests/structured_logger.test.ts]
-
-### T74.7: Database Backup & Recovery Mechanism
-
-- [x] T74.7.1: Implement DatabaseBackupService in packages/db/src/services/ creating timestamped PGlite directory snapshots. [File: packages/db/src/services/DatabaseBackupService.ts] [Class: DatabaseBackupService] [Test: npm test -- packages/db/src/tests/backup_service.test.ts]
-- [x] T74.7.2: Add POST /api/admin/backup endpoint triggering on-demand database snapshot with configurable retention count. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/admin/backup] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [x] T74.7.3: Add CLI command bin/cacophony backup creating timestamped snapshot for cron-driven automated backups. [File: bin/cacophony] [Command: backup] [Test: bin/cacophony backup --dry-run]
-- [x] T74.7.4: Write unit tests verifying backup creation, retention pruning, and error handling for locked databases. [File: packages/db/src/tests/backup_service.test.ts] [Test: npm test -- packages/db/src/tests/backup_service.test.ts]
-
-### T74.8: Test Code Type Safety Cleanup
-
-- [ ] T74.8.1: Replace `: any` mock types in gitea_deep_integration.test.ts with properly typed mock interfaces. [File: packages/engine/src/tests/gitea_deep_integration.test.ts] [Test: npm test -- packages/engine/src/tests/gitea_deep_integration.test.ts]
-- [ ] T74.8.2: Replace `: any` mock types in closed_loop_pr_and_tools.test.ts with properly typed mock interfaces. [File: packages/engine/src/tests/closed_loop_pr_and_tools.test.ts] [Test: npm test -- packages/engine/src/tests/closed_loop_pr_and_tools.test.ts]
-- [ ] T74.8.3: Replace `: any` mock types in autonomous_continuous_arena.test.ts and gitea_integration.test.ts. [File: packages/engine/src/tests/autonomous_continuous_arena.test.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
-- [ ] T74.8.4: Replace `: any` mock types in GitWorktreeAndWebhook.test.ts and Inference.test.ts. [File: packages/engine/src/gitea/**tests**/GitWorktreeAndWebhook.test.ts] [Test: npm test]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-74-security-hardening-operational-resilience--infrastructure-mitigations)_
 
 ---
 
 ## Phase 76: Frontend Model Fleet Manager, Download Terminal & Tenancy Controls
 
-_RDF Category: frontend_
-_Priority: SPRINT PRIORITY 2_
-
-### T76.1: Model Fleet Console & Installed Model Grid
-
-- [x] T76.1.1: Create ModelFleetService in packages/frontend/src/app/services/model-fleet.service.ts wrapping GET /api/models/installed, POST /api/models/pull, DELETE /api/models/:id, and config APIs with Angular Signals. [File: packages/frontend/src/app/services/model-fleet.service.ts] [Class: ModelFleetService] [Test: npm test]
-- [x] T76.1.2: Redesign ModelsViewComponent in packages/frontend/src/app/components/views/models-view.component.ts to include an Installed Fleet Card Grid with parameter size, quantization, memory footprint, and protected tenancy pills. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Template: installed-fleet-grid] [Test: npm test]
-- [x] T76.1.3: Add active memory indicator distinguishing models currently warm in VRAM from models dormant on disk. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Signal: warmModelId] [Test: npm test]
-- [x] T76.1.4: Add action triggers per card: Benchmark Model button, Delete/Evict button (disabled with tooltip for protected models), and View Telemetry link. [File: packages/frontend/src/app/components/views/models-view.component.ts] [Test: npm test]
-
-### T76.2: Model Download Modal & Piped Terminal Progress Log
-
-- [x] T76.2.1: Create ModelPullModalComponent in packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.ts with searchable curated catalog (qwen2.5-coder, gemma3, deepseek-coder) and custom tag input. [File: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.ts] [Class: ModelPullModalComponent] [Test: npm test]
-- [x] T76.2.2: Implement reactive download progress bar computing total downloaded bytes versus total layer size from model_pull_progress SSE stream. [File: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.ts] [Signal: pullProgressPercent] [Test: npm test]
-- [x] T76.2.3: Build embedded TerminalLogViewer component rendering piped monospace log output from Ollama pull stream with auto-scroll and status indicators. [File: packages/frontend/src/app/components/terminal-log-viewer/terminal-log-viewer.component.ts] [Class: TerminalLogViewerComponent] [Test: npm test]
-- [ ] T76.2.4: Write frontend unit tests verifying modal open/close, SSE event binding, and terminal log appending during simulated downloads. [File: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.spec.ts] [Test: npm test]
-
-### T76.3: Tenancy Configuration & Whitelist Management Panel
-
-- [x] T76.3.1: Build TenancyConfigPanelComponent in packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts with toggles for managedModelsEnabled and autoEvictionEnabled. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts] [Class: TenancyConfigPanelComponent] [Test: npm test]
-- [x] T76.3.2: Implement interactive chip tag list for protectedModels whitelist, allowing operators to add and remove protected model wildcards. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts] [Signal: protectedModelsList] [Test: npm test]
-- [x] T76.3.3: Add storage quota slider configuring maxDiskStorageGb with visual gauge indicating current disk usage vs quota. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts] [Test: npm test]
-- [ ] T76.3.4: Write frontend unit tests validating form bindings, validation rules, and PUT /api/models/config payload generation. [File: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.spec.ts] [Test: npm test]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-76-frontend-model-fleet-manager-download-terminal--tenancy-controls)_
 
 ---
 
@@ -373,6 +293,141 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t98.1.2.2 Rehabilitation [2026-10-14T16:46:43.604Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e (`taskcade-t98.1.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e [Role: type_specialist] [Files: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts]
+  - [ ] `taskcade-t98.1.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e [Role: implementer] [Files: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts]
+
+
+### Task taskcade-t98.2.3.1 Rehabilitation [2026-10-14T16:46:00.301Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain (`taskcade-t98.2.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.2.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain [Role: type_specialist] [Files: packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
+  - [ ] `taskcade-t98.2.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain [Role: implementer] [Files: packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
+
+
+### Task taskcade-t98.2.3.2 Rehabilitation [2026-10-14T16:44:54.651Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain (`taskcade-t98.2.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.2.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain [Role: type_specialist] [Files: packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
+  - [ ] `taskcade-t98.2.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain [Role: implementer] [Files: packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
+
+
+### Task taskcade-t98.1.4.1 Rehabilitation [2026-10-14T16:44:12.091Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an (`taskcade-t98.1.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an [Role: type_specialist] [Files: packages/engine/src/tests/remediation_indentation.test.ts]
+  - [ ] `taskcade-t98.1.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an [Role: implementer] [Files: packages/engine/src/tests/remediation_indentation.test.ts]
+
+
+### Task taskcade-t98.1.4.2 Rehabilitation [2026-10-14T16:43:41.796Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an (`taskcade-t98.1.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an [Role: type_specialist] [Files: packages/engine/src/tests/remediation_indentation.test.ts]
+  - [ ] `taskcade-t98.1.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an [Role: implementer] [Files: packages/engine/src/tests/remediation_indentation.test.ts]
+
+
+### Task taskcade-t97.2.1.1 Rehabilitation [2026-10-14T16:43:11.863Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host (`taskcade-t97.2.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.2.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host [Role: type_specialist] [Files: packages/engine/src/tests/host_header_port.test.ts]
+  - [ ] `taskcade-t97.2.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host [Role: implementer] [Files: packages/engine/src/tests/host_header_port.test.ts]
+
+
+### Task taskcade-t97.2.1.2 Rehabilitation [2026-10-14T16:42:14.708Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host (`taskcade-t97.2.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.2.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host [Role: type_specialist] [Files: packages/engine/src/tests/host_header_port.test.ts]
+  - [ ] `taskcade-t97.2.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host [Role: implementer] [Files: packages/engine/src/tests/host_header_port.test.ts]
+
+
+### Task taskcade-t97.1.2.2 Rehabilitation [2026-10-14T16:41:33.450Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  (`taskcade-t97.1.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: type_specialist] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+  - [ ] `taskcade-t97.1.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: implementer] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+
+
+### Task taskcade-t97.1.2.1 Rehabilitation [2026-10-14T16:41:13.027Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  (`taskcade-t97.1.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: type_specialist] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+  - [ ] `taskcade-t97.1.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: implementer] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+
+
+### Task taskcade-t96.1.2.1 Rehabilitation [2026-10-14T16:40:32.558Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun (`taskcade-t96.1.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.1.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: type_specialist] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+  - [ ] `taskcade-t96.1.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: implementer] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+
+
+### Task taskcade-t96.1.2.2 Rehabilitation [2026-10-14T16:40:04.559Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun (`taskcade-t96.1.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.1.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: type_specialist] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+  - [ ] `taskcade-t96.1.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: implementer] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+
+
+### Task taskcade-t97.1.1.1 Rehabilitation [2026-10-14T16:39:31.212Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros (`taskcade-t97.1.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: type_specialist] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+  - [ ] `taskcade-t97.1.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: implementer] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+
+
+### Task taskcade-t97.1.1.2 Rehabilitation [2026-10-14T16:39:00.936Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros (`taskcade-t97.1.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: type_specialist] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+  - [ ] `taskcade-t97.1.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: implementer] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+
+
+### Task task-1791981129435_8qw5 Rehabilitation [2026-10-14T16:38:40.518Z]
+- **Parent Task**: Probe Metadata Ingestion (`task-1791981129435_8qw5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `task-1791981129435_8qw5.1`: [Rehab 1/2] Scaffold & Type Contracts: Probe Metadata Ingestion [Role: type_specialist] [Files: all]
+  - [ ] `task-1791981129435_8qw5.2`: [Rehab 2/2] Implementation & Test Verification: Probe Metadata Ingestion [Role: implementer] [Files: all]
+
+
+### Task taskcade-t96.5.2.2 Rehabilitation [2026-10-14T16:34:39.389Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  (`taskcade-t96.5.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.5.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: type_specialist] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+  - [ ] `taskcade-t96.5.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: implementer] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+
 
 ### Task taskcade-t96.5.2.1 Rehabilitation [2026-10-14T16:14:01.803Z]
 - **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  (`taskcade-t96.5.2.1`)

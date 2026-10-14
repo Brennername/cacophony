@@ -8,6 +8,7 @@ import {
   GiteaPackageClient,
 } from "../gitea/index.js";
 import type { TaskRepository } from "@cacophony/db";
+import type { TaskRecord } from "@cacophony/shared-types";
 
 test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR Engine", async (t) => {
   await t.test(
@@ -100,9 +101,9 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
   await t.test(
     "T29.3: GiteaWebhookReceiver Expanded Events & Command Parsing",
     async () => {
-      const createdTasks: any[] = [];
+      const createdTasks: TaskRecord[] = [];
       const mockTaskRepo = {
-        create: async (task: any) => {
+        create: async (task: TaskRecord): Promise<TaskRecord> => {
           createdTasks.push(task);
           return task;
         },
@@ -156,9 +157,9 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       assert.strictEqual(res.processed, true);
       assert.strictEqual(res.actionTriggered, "command_task_enqueued");
       assert.strictEqual(createdTasks.length, 1);
-      assert.strictEqual(createdTasks[0].priority, "P0");
+      assert.strictEqual(createdTasks[0]!.priority, "P0");
       assert.ok(
-        createdTasks[0].prompt.includes("/cacophony run --profile vega"),
+        createdTasks[0]!.prompt.includes("/cacophony run --profile vega"),
       );
     },
   );
@@ -166,8 +167,14 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
   await t.test(
     "T29.4: GiteaIssueIngestionWorker Automated Ingestion & Comment Feedback",
     async () => {
-      const postedComments: any[] = [];
-      const createdTasks: any[] = [];
+      interface PostedCommentRecord {
+        readonly owner: string;
+        readonly repo: string;
+        readonly num: number;
+        readonly comment: { readonly body: string };
+      }
+      const postedComments: PostedCommentRecord[] = [];
+      const createdTasks: TaskRecord[] = [];
 
       const mockClient = {
         listIssues: async () => [
@@ -199,7 +206,7 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
           owner: string,
           repo: string,
           num: number,
-          comment: any,
+          comment: { readonly body: string },
         ) => {
           postedComments.push({ owner, repo, num, comment });
           return {
@@ -213,7 +220,7 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       } as unknown as GiteaApiClient;
 
       const mockTaskRepo = {
-        create: async (task: any) => {
+        create: async (task: TaskRecord): Promise<TaskRecord> => {
           createdTasks.push(task);
           return task;
         },
@@ -229,12 +236,12 @@ test("Phase 29: Gitea Deep API Integration, Permission Guardrails & Automated PR
       assert.strictEqual(result.totalIngested, 1);
       assert.strictEqual(createdTasks.length, 1);
       assert.strictEqual(
-        createdTasks[0].title,
+        createdTasks[0]!.title,
         "[Gitea Issue #12] Optimize tokenizer memory",
       );
       assert.strictEqual(postedComments.length, 1);
       assert.ok(
-        postedComments[0].comment.body.includes(
+        postedComments[0]!.comment.body.includes(
           "Cacophony Taskcade has ingested this issue",
         ),
       );

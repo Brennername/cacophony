@@ -63,8 +63,8 @@ COPY --from=builder /app/packages/frontend ./packages/frontend
 COPY --from=builder /app/packages/engine ./packages/engine
 COPY --from=builder /app/docs ./docs
 
-# Create persistent storage directories
-RUN mkdir -p /app/data /app/workspaces /app/conf
+# Create persistent storage directories and assign ownership to node user (1000:1000)
+RUN mkdir -p /app/data /app/workspaces /app/conf && chown -R node:node /app
 
 # Expose HTTP API + Frontend (24161) and MCP (21264)
 EXPOSE 24161 21264
@@ -72,6 +72,9 @@ EXPOSE 24161 21264
 # Health verification: ensures the API is responsive before routing traffic
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -sf http://localhost:24161/api/status || exit 1
+
+# Run container as unprivileged node user (UID/GID 1000:1000)
+USER node
 
 # Default start command launches Cacophony daemon via compiled CLI entrypoint
 CMD ["node", "packages/engine/dist/cli/runDaemon.js"]

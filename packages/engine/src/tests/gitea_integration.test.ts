@@ -14,6 +14,7 @@ import type {
 } from "../gitea/GitWorktreeManager.js";
 import type { OllamaProvider } from "../inference/OllamaProvider.js";
 import type { TaskRepository } from "@cacophony/db";
+import type { TaskRecord } from "@cacophony/shared-types";
 
 describe("Gitea Integration & Automated Development Cycle", () => {
   let mockServer: http.Server;
@@ -180,9 +181,9 @@ describe("Gitea Integration & Automated Development Cycle", () => {
   });
 
   it("should handle Gitea webhook issue events and enqueue arena tasks", async () => {
-    const enqueuedTasks: any[] = [];
+    const enqueuedTasks: TaskRecord[] = [];
     const mockTaskRepo: Partial<TaskRepository> = {
-      create: async (task: any) => {
+      create: async (task: TaskRecord): Promise<TaskRecord> => {
         enqueuedTasks.push(task);
         return task;
       },
@@ -225,7 +226,7 @@ describe("Gitea Integration & Automated Development Cycle", () => {
     );
     assert.strictEqual(result.processed, true);
     assert.strictEqual(enqueuedTasks.length, 1);
-    assert.ok(enqueuedTasks[0].prompt.includes("Fix APU memory leak"));
+    assert.ok(enqueuedTasks[0]!.prompt.includes("Fix APU memory leak"));
   });
 
   it("should execute Gitea OAuth2 code exchange and generate signed JWT session", async () => {

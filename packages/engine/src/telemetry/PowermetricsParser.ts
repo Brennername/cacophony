@@ -92,11 +92,17 @@ export function parsePowermetricsDump(dump: string): PowermetricsDump {
       }
 
       // Extract Combined Power in mW
-      const combinedMatch = line.match(/Combined Power[^:]*:\s*([0-9]+(?:\.[0-9]+)?)\s*mW/i);
-      if (combinedMatch && combinedMatch[1]) {
-        const val = parseFloat(combinedMatch[1]);
-        if (Number.isFinite(val)) result.combinedPowerMw = val;
-        continue;
+      if (line.includes("Combined Power")) {
+        const colonIdx = line.indexOf(":");
+        if (colonIdx !== -1) {
+          const afterColon = line.slice(colonIdx + 1).trim();
+          const combinedMatch = afterColon.match(/^([0-9]+(?:\.[0-9]+)?)\s*mW/i);
+          if (combinedMatch && combinedMatch[1]) {
+            const val = parseFloat(combinedMatch[1]);
+            if (Number.isFinite(val)) result.combinedPowerMw = val;
+            continue;
+          }
+        }
       }
     }
   } catch {

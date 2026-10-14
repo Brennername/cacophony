@@ -36,6 +36,8 @@ export interface DaemonConfig {
   readonly frontendDistPath?: string;
   /** Custom domain for CORS origin allowlist (e.g. "cacophony.local") */
   readonly customDomain?: string;
+  /** Whether to automatically start TaskScheduler polling loop (defaults to true) */
+  readonly startScheduler?: boolean;
 }
 
 /**
@@ -392,7 +394,9 @@ export class CacophonyDaemon {
       }
     }
 
-    this.scheduler.start(this.config.pollIntervalMs || 2000);
+    if (this.config.startScheduler !== false) {
+      this.scheduler.start(this.config.pollIntervalMs || 2000);
+    }
 
     // 4b. Autonomous Taskcade Planning & Self-Grooming Service
     const { TaskcadePlanningService } =

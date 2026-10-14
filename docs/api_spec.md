@@ -326,9 +326,127 @@ Resets model health metrics and failure tallies to baseline across all registere
 }
 ```
 
-### GET & PUT `/api/models/config`
+### GET `/api/models/installed`
 
-Reads and updates model tenancy configurations (disk quotas, auto-eviction, model whitelist).
+Lists all installed Ollama models annotated with their tenancy protection status, disk footprint, quantization, and parameter size.
+
+**Response:** `200 OK`
+
+```json
+[
+  {
+    "name": "qwen2.5-coder:7b-instruct-q4_K_M",
+    "size": 4680000000,
+    "parameterSize": "7B",
+    "quantizationLevel": "Q4_K_M",
+    "modifiedAt": "2026-10-14T10:00:00.000Z",
+    "isProtected": true
+  }
+]
+```
+
+### POST `/api/models/pull`
+
+Triggers an asynchronous download of a model via Ollama. Broadcasts incremental download progress events (`model_pull_progress`) across open Server-Sent Events (SSE) connections. Validates disk headroom against tenancy quotas before commencing download.
+
+**Request Body:**
+
+```json
+{
+  "model": "qwen2.5-coder:3b"
+}
+```
+
+**Response:** `202 Accepted`
+
+```json
+{
+  "status": "pulling",
+  "model": "qwen2.5-coder:3b"
+}
+```
+
+### DELETE `/api/models/:modelId`
+
+Evicts and uninstalls a model from disk via Ollama, marking its health profile status as `EJECTED`. Protected models matching the tenancy whitelist cannot be evicted and will return `403 Forbidden`.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "modelId": "qwen2.5-coder:3b",
+  "status": "EVICTED"
+}
+```
+
+### GET `/api/models/config`
+
+Retrieves active model tenancy management configurations.
+
+**Response:** `200 OK`
+
+```json
+{
+  "managedModelsEnabled": true,
+  "protectedModels": [
+    "deepseek-r1:8b-4k",
+    "qwen2.5-coder:7b-instruct-q4_K_M"
+  ],
+  "maxDiskStorageGb": 50,
+  "autoEvictionEnabled": true,
+  "minimumSuccessRateThreshold": 0.4,
+  "maxConsecutiveFailuresBeforeEviction": 3
+}
+```
+
+### PUT `/api/models/config`
+
+Updates model tenancy configuration parameters (storage quotas, whitelist, auto-eviction thresholds).
+
+**Request Body:** Partial or complete `ModelManagementConfig` object.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "config": {
+    "managedModelsEnabled": true,
+    "protectedModels": [
+      "deepseek-r1:8b-4k",
+      "qwen2.5-coder:7b-instruct-q4_K_M"
+    ],
+    "maxDiskStorageGb": 60,
+    "autoEvictionEnabled": true,
+    "minimumSuccessRateThreshold": 0.4,
+    "maxConsecutiveFailuresBeforeEviction": 3
+  }
+}
+```
+
+### POST `/api/models/benchmark`
+
+Executes an isolated baseline evaluation benchmark against a specific model to record tokens per second, prompt latency, and inference responsiveness.
+
+**Request Body:**
+
+```json
+{
+  "model": "qwen2.5-coder:7b-instruct-q4_K_M"
+}
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "model": "qwen2.5-coder:7b-instruct-q4_K_M",
+  "tokensPerSecond": 42.5,
+  "latencyMs": 120
+}
+```
 
 ### POST `/api/fleet/heartbeat`
 

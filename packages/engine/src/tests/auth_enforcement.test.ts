@@ -51,6 +51,7 @@ describe("T74.2: Authentication Enforcement and Role Restrictions on Mutating Ro
       httpPort: testHttpPort,
       httpHost: "127.0.0.1",
       frontendDistPath: distMock,
+      startScheduler: false,
     });
 
     await daemon.start();

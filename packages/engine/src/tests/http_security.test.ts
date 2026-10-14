@@ -34,6 +34,7 @@ describe("T74.1.5: HTTP Security Hardening (CORS Allowlist, Tightened CSP, Secur
       httpPort: testHttpPort,
       httpHost: "127.0.0.1",
       frontendDistPath: distMock,
+      startScheduler: false,
     });
 
     await daemon.start();

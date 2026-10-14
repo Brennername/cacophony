@@ -46,3 +46,21 @@ jobs:
 
       - name: Run unit test suite
         run: npm test
+
+      - name: Enforce test coverage threshold gate
+        id: coverage-report
+        run: npm run --workspace=@cacophony/engine test:coverage
+
+      - name: Build Docker container image for security scan
+        run: docker build -t cacophony:ci .
+
+      - name: Scan container image with Trivy (CVE scanner)
+        id: container-scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'cacophony:ci'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
