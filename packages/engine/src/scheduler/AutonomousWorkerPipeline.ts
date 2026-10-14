@@ -36,6 +36,9 @@ import { MicroModelToolRouter } from "../inference/MicroModelToolRouter.js";
 import { MonorepoBuildGate } from "../gitea/MonorepoBuildGate.js";
 import { DiagnosticPreFlightChecker } from "../testing/DiagnosticPreFlightChecker.js";
 import { ConventionalCommitGenerator } from "../gitea/ConventionalCommitGenerator.js";
+import { SchematicCodeGenerator } from "../generators/SchematicCodeGenerator.js";
+import { SchematicTemplates } from "../generators/SchematicTemplates.js";
+import { SlotFillPromptBuilder } from "../inference/SlotFillPromptBuilder.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -366,11 +369,18 @@ export class AutonomousWorkerPipeline {
           pkgName = "@cacophony/tools";
       }
       let originalExistingContent = "";
+      let fileExistedBeforeTask = false;
       let isLargeExistingFile = false;
       if (targetRel) {
         try {
           const targetAbs = path.resolve(executionRoot, targetRel);
           originalExistingContent = await fs.readFile(targetAbs, "utf-8");
+          if (
+            originalExistingContent &&
+            originalExistingContent.trim().length > 0
+          ) {
+            fileExistedBeforeTask = true;
+          }
           if (
             originalExistingContent.length > 8192 ||
             originalExistingContent.split("\n").length > 250
@@ -379,6 +389,19 @@ export class AutonomousWorkerPipeline {
           }
         } catch {
           originalExistingContent = "";
+          fileExistedBeforeTask = false;
+        }
+
+        // T70.3.1: When target file does not exist, synthesize its typed skeleton scaffold
+        if (!fileExistedBeforeTask) {
+          const synthesized = await this.ensureSkeletonExists(
+            targetRel,
+            executionRoot,
+            groomed.enrichedPrompt,
+          );
+          if (synthesized) {
+            originalExistingContent = synthesized;
+          }
         }
       }
 
@@ -719,6 +742,21 @@ export class AutonomousWorkerPipeline {
           }
         }
 
+        // T70.3.2: Verify and merge slot-fill output into skeleton if slot markers are present
+        if (
+          originalExistingContent &&
+          finalCode.includes(SlotFillPromptBuilder.BEGIN_MARKER)
+        ) {
+          const mergeResult = this.mergeSlotFill(
+            originalExistingContent,
+            finalCode,
+            targetRelFile,
+          );
+          if (mergeResult.valid) {
+            finalCode = mergeResult.mergedCode;
+          }
+        }
+
         const fileContentsMap = new Map<string, string>();
         fileContentsMap.set(targetAbs, finalCode);
 
@@ -778,6 +816,7 @@ export class AutonomousWorkerPipeline {
         }
         if (
           !targetedMethodEdit &&
+          fileExistedBeforeTask &&
           originalExistingContent &&
           originalExistingContent.trim().length > 0
         ) {
@@ -814,7 +853,7 @@ export class AutonomousWorkerPipeline {
         // Format unified code diff and persist directly into task.logSnippet
         const formattedDiff = this.generateUnifiedDiff(
           targetRelFile,
-          originalExistingContent,
+          fileExistedBeforeTask ? originalExistingContent : "",
           scrubbedCode,
         );
         generatedDiff = formattedDiff;
@@ -2081,5 +2120,188 @@ export class AutonomousWorkerPipeline {
   public async verifyCleanBuild(worktreePath: string): Promise<boolean> {
     const buildCheck = await this.monorepoBuildGate.verifyBuild(worktreePath);
     return buildCheck.passed;
+  }
+
+  /**
+   * Synthesizes and writes a typed scaffold skeleton when a focus file does not exist (T70.3.1).
+   * Determines the appropriate architectural archetype (Angular component, scrubber rule,
+   * telemetry provider, HTTP route handler, repository service, or generic class),
+   * creates all parent directories, writes the skeleton to disk, and returns the skeleton code.
+   */
+  public async ensureSkeletonExists(
+    targetRel: string,
+    executionRoot: string,
+    taskPrompt: string,
+  ): Promise<string | null> {
+    if (!targetRel || (!targetRel.endsWith(".ts") && !targetRel.endsWith(".js"))) {
+      return null;
+    }
+
+    const targetAbs = path.resolve(executionRoot, targetRel);
+    try {
+      const existing = await fs.readFile(targetAbs, "utf-8");
+      if (existing && existing.trim().length > 0) {
+        return existing;
+      }
+    } catch {
+      // Target file does not exist on disk, synthesize skeleton below
+    }
+
+    const baseName = path.basename(targetRel, path.extname(targetRel));
+    // Normalize PascalCase class name
+    const className = baseName
+      .replace(/[-_.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ""))
+      .replace(/^[a-z]/, (c) => c.toUpperCase());
+
+    const lowerPath = targetRel.toLowerCase();
+    const lowerPrompt = taskPrompt.toLowerCase();
+    const generator = new SchematicCodeGenerator();
+    let scaffoldSource = "";
+
+    if (
+      targetRel.endsWith(".component.ts") ||
+      lowerPrompt.includes("angular component")
+    ) {
+      const selector = `app-${baseName.replace(/\.component$/, "").toLowerCase()}`;
+      const spec = SchematicTemplates.angularStandaloneComponent(
+        className,
+        selector,
+        `Angular standalone component for ${baseName}`,
+      );
+      scaffoldSource = generator.generateScaffold(spec).sourceCode;
+    } else if (
+      lowerPath.includes("scrubber") ||
+      lowerPath.includes("rule") ||
+      lowerPrompt.includes("scrubber rule")
+    ) {
+      const spec = SchematicTemplates.scrubberRule(
+        className,
+        `Scrubber rule for ${baseName}`,
+      );
+      scaffoldSource = generator.generateScaffold(spec).sourceCode;
+    } else if (
+      lowerPath.includes("telemetry") ||
+      lowerPath.includes("provider") ||
+      lowerPrompt.includes("telemetry provider")
+    ) {
+      const spec = SchematicTemplates.telemetryProvider(
+        className,
+        `Telemetry provider for ${baseName}`,
+      );
+      scaffoldSource = generator.generateScaffold(spec).sourceCode;
+    } else if (
+      lowerPath.includes("route") ||
+      lowerPath.includes("handler") ||
+      lowerPrompt.includes("route handler")
+    ) {
+      const spec = SchematicTemplates.httpRouteHandler(
+        className,
+        `Route handler for ${baseName}`,
+      );
+      scaffoldSource = generator.generateScaffold(spec).sourceCode;
+    } else if (
+      lowerPath.includes("repository") ||
+      lowerPath.includes("service") ||
+      lowerPrompt.includes("repository")
+    ) {
+      const entityName =
+        className.replace(/Repository$|Service$/, "") || "Entity";
+      const spec = SchematicTemplates.repositoryService(
+        className,
+        entityName,
+        `Persistence service for ${entityName}`,
+      );
+      scaffoldSource = generator.generateScaffold(spec).sourceCode;
+    } else if (
+      lowerPrompt.includes("class") ||
+      lowerPrompt.includes("service") ||
+      lowerPrompt.includes("scaffold") ||
+      lowerPath.includes("/services/") ||
+      lowerPath.includes("/classes/")
+    ) {
+      // Generic typed TypeScript class scaffold
+      const spec = {
+        className,
+        description: `Autonomous service scaffold for ${className}`,
+        methods: [
+          {
+            name: "execute",
+            description: "Main execution entrypoint for this service.",
+            parameters: [{ name: "payload", type: "Record<string, unknown>" }],
+            returnType: "Promise<void>",
+            isAsync: true,
+          },
+        ],
+      };
+      scaffoldSource = generator.generateScaffold(spec).sourceCode;
+    } else {
+      // Standalone module or arbitrary utility - do not synthesize class skeleton
+      return null;
+    }
+
+    try {
+      await fs.mkdir(path.dirname(targetAbs), { recursive: true });
+      await fs.writeFile(targetAbs, scaffoldSource, "utf-8");
+      return scaffoldSource;
+    } catch (writeErr) {
+      console.warn(
+        `[AutonomousWorkerPipeline] Failed to write synthesized skeleton for '${targetRel}':`,
+        writeErr,
+      );
+      return scaffoldSource;
+    }
+  }
+
+  /**
+   * Verifies slot-fill output passes AST validation before merging into target skeleton file on disk (T70.3.2).
+   */
+  public mergeSlotFill(
+    scaffoldContent: string,
+    rawSlotOutput: string,
+    targetRel: string,
+    targetSymbol?: string,
+  ): { valid: boolean; mergedCode: string; error?: string } {
+    let symbol = targetSymbol;
+    if (!symbol) {
+      const stubMatch = scaffoldContent.match(
+        /\/\*\s*AST_METHOD_STUB:\s*(\w+)\s*\*\//,
+      );
+      if (stubMatch && stubMatch[1]) {
+        symbol = stubMatch[1];
+      } else {
+        symbol = "execute";
+      }
+    }
+
+    const builder = new SlotFillPromptBuilder({
+      targetFile: targetRel,
+      targetSymbol: symbol,
+      methodSignature: `${symbol}(): void`,
+      scaffoldContent,
+    });
+
+    const slotBody = builder.extractSlotBody(rawSlotOutput);
+    if (!slotBody || slotBody.trim().length === 0) {
+      return {
+        valid: false,
+        mergedCode: scaffoldContent,
+        error: "Extracted slot body is empty",
+      };
+    }
+
+    const validation = builder.validate(slotBody);
+    if (!validation.valid) {
+      return {
+        valid: false,
+        mergedCode: scaffoldContent,
+        error: validation.errors.join("; "),
+      };
+    }
+
+    const merged = builder.synthesize(slotBody);
+    return {
+      valid: true,
+      mergedCode: merged,
+    };
   }
 }

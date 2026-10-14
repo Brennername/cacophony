@@ -147,4 +147,57 @@ export class FrontierFallbackRouter implements IInferenceProvider {
       `All providers failed to stream for request ${request.model}`,
     );
   }
+
+  /**
+   * Implements schema-level fallback (T70.3.3):
+   * When a local model fails slot-fill verification 2 or more consecutive times,
+   * this method escalates code generation to the registered frontier fallback provider
+   * with the complete schematic context and contract signatures.
+   */
+  public async routeSchematicFallback(
+    spec: SchematicFallbackRequest,
+  ): Promise<InferenceResponse> {
+    if (spec.consecutiveFailures < 2) {
+      throw new Error(
+        `Consecutive slot-fill failures (${spec.consecutiveFailures}) does not meet the escalation threshold (2).`,
+      );
+    }
+
+    const fallbackModel = spec.model || this.localFallbackModel;
+    const prompt = [
+      `[FRONTIER SCHEMATIC FALLBACK ESCALATION]`,
+      `Target File: ${spec.targetFile}`,
+      `Task Requirement: ${spec.taskDescription}`,
+      `Previous Slot-Fill Failures: ${spec.consecutiveFailures}`,
+      ``,
+      `=== SKELETON CONTRACT CODE ===`,
+      spec.schematicCode,
+      ``,
+      `Instructions:`,
+      `The previous model repeatedly failed slot-fill AST syntax validation.`,
+      `Provide the complete, strictly-typed implementation fulfilling the contracts defined in the skeleton above.`,
+      `Return valid TypeScript code adhering to SOLID principles.`,
+    ].join("\n");
+
+    const request: InferenceRequest = {
+      model: fallbackModel,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+      maxTokens: 4096,
+    };
+
+    return this.generate(request);
+  }
 }
+
+/**
+ * Specification for escalating a failed slot-fill attempt to a frontier model.
+ */
+export interface SchematicFallbackRequest {
+  readonly taskDescription: string;
+  readonly schematicCode: string;
+  readonly targetFile: string;
+  readonly consecutiveFailures: number;
+  readonly model?: string | undefined;
+}
+
