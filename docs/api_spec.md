@@ -100,7 +100,37 @@ Reclaims stale running tasks back to `PENDING` state.
 
 ### POST `/api/tasks/groom`
 
-Grooms task queue by reconciling completed tasks against merged Gitea PRs.
+Grooms the task queue by reconciling active and pending task records against merged Gitea pull requests. Any task associated with a merged PR is automatically marked `COMPLETED`.
+
+**Response:** `200 OK`
+
+```json
+{
+  "groomedCount": 3,
+  "message": "Task queue reconciled against merged pull requests"
+}
+```
+
+### POST `/api/tasks/:id/rehabilitate`
+
+Executes deterministic task rehabilitation and subtask decomposition for failed tasks that exceeded retry thresholds. Uses git bisect regression isolation, prompt scoping, or subtask breakdown without throwing duplicate key errors.
+
+**Response:** `200 OK`
+
+```json
+{
+  "rehabilitated": true,
+  "action": "DECOMPOSED",
+  "reason": "TypeScript compilation diagnostic error TS2305",
+  "subtasks": [
+    {
+      "id": "taskcade-t65.6.3.1",
+      "title": "Subtask 1: Define missing symbol exports",
+      "priority": "P0"
+    }
+  ]
+}
+```
 
 ### GET `/api/analytics/window-success`
 
@@ -229,9 +259,58 @@ Returns live TypeScript and language server compiler diagnostics.
 
 Returns host hardware diagnostic utilities status (`radeontop`, `sensors`, `btop`) and missing package commands.
 
-### GET `/api/config/network`
+### GET `/api/processes`
 
-Returns resolved client origin URL and network accessibility profile (`lan_shared`, `local_only`).
+Returns active background infrastructure and test runner subprocesses with live PID, CPU utilization percentage, RSS memory allocation (MB), and execution status.
+
+**Response:** `200 OK`
+
+```json
+[
+  {
+    "id": "proc-sys-ollama",
+    "name": "ollama",
+    "command": "ollama serve",
+    "pid": 1042,
+    "cpuPercent": 12.4,
+    "rssMemoryMb": 520,
+    "durationMs": 3600000,
+    "exitCode": null,
+    "status": "RUNNING",
+    "startedAt": "2026-10-14T00:00:00.000Z"
+  }
+]
+```
+
+### POST `/api/processes/:name/restart`
+
+Restarts a specified background subprocess or infrastructure daemon. Role-gated: requires `OPERATOR` or `ADMIN` role when authentication is enforced.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "process": "ollama",
+  "status": "restarted",
+  "timestamp": "2026-10-14T04:12:00.000Z"
+}
+```
+
+### POST `/api/processes/:name/terminate`
+
+Gracefully terminates a running subprocess. Role-gated: requires `OPERATOR` or `ADMIN` role when authentication is enforced.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "process": "test-runner",
+  "status": "terminated",
+  "timestamp": "2026-10-14T04:12:05.000Z"
+}
+```
 
 ---
 

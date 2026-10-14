@@ -69,4 +69,56 @@ describe('Angular Standalone Dashboard Component Tests', () => {
     expect(store.tasks()[0]!.title).toBe('New high-priority unit');
     expect(store.tasks()[0]!.priority).toBe('P0');
   });
+
+  it('should reactively update navigation test counter badge when active tests change', () => {
+    TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [ThemeService, ArenaStateStore, provideRouter(routes)],
+    });
+
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const app = fixture.componentInstance;
+    const store = TestBed.inject(ArenaStateStore);
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    // Initially no tests are running
+    expect(app.activeRunningTestsCount()).toBe(0);
+    expect(compiled.querySelector('.nav-testing-link .nav-badge')).toBeNull();
+
+    // Spawn a running test process
+    store.processes.set([
+      {
+        id: 'proc-1',
+        name: 'vitest-run',
+        command: 'npm test',
+        durationMs: 120,
+        exitCode: null,
+        status: 'RUNNING',
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(app.activeRunningTestsCount()).toBe(1);
+    const badge = compiled.querySelector('.nav-testing-link .nav-badge');
+    expect(badge).not.toBeNull();
+    expect(badge?.textContent?.trim()).toBe('1');
+    expect(badge?.classList.contains('pulse')).toBe(true);
+
+    // Complete the process
+    store.processes.set([
+      {
+        id: 'proc-1',
+        name: 'vitest-run',
+        command: 'npm test',
+        durationMs: 450,
+        exitCode: 0,
+        status: 'SUCCESS',
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(app.activeRunningTestsCount()).toBe(0);
+    expect(compiled.querySelector('.nav-testing-link .nav-badge')).toBeNull();
+  });
 });

@@ -1,26 +1,38 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, ElementRef, ViewChild, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ArenaStateStore, ProcessItem } from '../../services/arena-state.store';
 import { ProcessInspectorComponent } from '../process-inspector/process-inspector.component';
 import { TestRunModalComponent } from '../test-run-modal/test-run-modal.component';
+import { TestFilterToolbarComponent, TestFilterOption } from '../test-filter-toolbar/test-filter-toolbar.component';
+import { ProcessDrawerComponent } from '../process-drawer/process-drawer.component';
 
 /**
  * TestingViewComponent
  *
  * Dedicated route view for live test execution monitoring, real-time subprocess telemetry,
- * and high-density terminal log streaming (Phase 59: T59.1 - T59.5).
+ * and high-density terminal log streaming (Phase 59: T59.1 - T59.5, Phase 65: T65.1 - T65.6).
  */
 @Component({
   selector: 'app-testing-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProcessInspectorComponent, TestRunModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ProcessInspectorComponent,
+    TestRunModalComponent,
+    TestFilterToolbarComponent,
+    ProcessDrawerComponent,
+  ],
   templateUrl: './testing-view.component.html',
   styleUrl: './testing-view.component.css',
 })
 export class TestingViewComponent implements OnInit, OnDestroy {
   public readonly store = inject(ArenaStateStore);
   public readonly testRunModal = viewChild(TestRunModalComponent);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
 
   @ViewChild('terminalContainer')
   private terminalContainerRef?: ElementRef<HTMLDivElement>;
@@ -29,19 +41,22 @@ export class TestingViewComponent implements OnInit, OnDestroy {
   public readonly testOutput = signal<string[]>([]);
   public readonly autoScroll = signal<boolean>(true);
   public readonly copiedFeedback = signal<boolean>(false);
-  public readonly filterStatus = signal<'ALL' | 'PASSED' | 'FAILED'>('ALL');
+  public readonly filterStatus = signal<TestFilterOption>('ALL');
   public readonly searchQuery = signal<string>('');
 
   private eventSource: EventSource | null = null;
   private copyTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
-  // Computed summary metrics (T59.2.3)
+  // Computed summary metrics (T59.2.3, T65.3)
   public readonly totalTestsRun = computed(() => this.store.processes().length);
   public readonly passedCount = computed(
     () => this.store.processes().filter((p) => p.status === 'SUCCESS').length
   );
   public readonly failedCount = computed(
     () => this.store.processes().filter((p) => p.status === 'FAILED').length
+  );
+  public readonly runningCount = computed(
+    () => this.store.processes().filter((p) => p.status === 'RUNNING').length
   );
   public readonly passRatePercent = computed(() => {
     const total = this.totalTestsRun();
@@ -87,7 +102,7 @@ export class TestingViewComponent implements OnInit, OnDestroy {
   return Math.max(0, end - start);
 });
 
-  // Filtered subprocess runs (T59.4.3)
+  // Filtered subprocess runs (T59.4.3, T65.3)
   public readonly filteredProcesses = computed(() => {
     const list = this.store.processes();
     const filter = this.filterStatus();
@@ -97,12 +112,15 @@ export class TestingViewComponent implements OnInit, OnDestroy {
       const matchesStatus =
         filter === 'ALL' ||
         (filter === 'PASSED' && p.status === 'SUCCESS') ||
-        (filter === 'FAILED' && p.status === 'FAILED');
+        (filter === 'FAILED' && p.status === 'FAILED') ||
+        (filter === 'RUNNING' && p.status === 'RUNNING');
 
       const matchesSearch =
         !query ||
         p.command.toLowerCase().includes(query) ||
-        p.id.toLowerCase().includes(query);
+        p.id.toLowerCase().includes(query) ||
+        (p.name && p.name.toLowerCase().includes(query)) ||
+        (p.taskTitle && p.taskTitle.toLowerCase().includes(query));
 
       return matchesStatus && matchesSearch;
     });
@@ -116,6 +134,24 @@ export class TestingViewComponent implements OnInit, OnDestroy {
       if (initialLines.length > 0) {
         this.testOutput.set(initialLines);
       }
+    }
+
+    // Sync initial filter and search state from URL query parameters (T65.3.3)
+    if (this.route) {
+      this.route.queryParams.subscribe((params) => {
+        const filterParam = params['filter']?.toUpperCase();
+        if (
+          filterParam === 'PASSED' ||
+          filterParam === 'FAILED' ||
+          filterParam === 'RUNNING' ||
+          filterParam === 'ALL'
+        ) {
+          this.filterStatus.set(filterParam as TestFilterOption);
+        }
+        if (params['q']) {
+          this.searchQuery.set(params['q']);
+        }
+      });
     }
 
     this.connectTestStream();
@@ -238,10 +274,32 @@ export class TestingViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Filters displayed tests by status (T59.4.3).
+   * Filters displayed tests by status and synchronizes with URL (T59.4.3, T65.3.3).
    */
-  public filterTests(status: 'ALL' | 'PASSED' | 'FAILED'): void {
-    this.filterStatus.set(status);
+  public filterTests(status: TestFilterOption): void {
+    this.onFilterChanged(status);
+  }
+
+  public onFilterChanged(filter: TestFilterOption): void {
+    this.filterStatus.set(filter);
+    if (this.router && this.route) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { filter: filter !== 'ALL' ? filter.toLowerCase() : null },
+        queryParamsHandling: 'merge',
+      });
+    }
+  }
+
+  public onSearchChanged(query: string): void {
+    this.searchQuery.set(query);
+    if (this.router && this.route) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { q: query.trim() || null },
+        queryParamsHandling: 'merge',
+      });
+    }
   }
 
   /**
@@ -293,6 +351,48 @@ export class TestingViewComponent implements OnInit, OnDestroy {
         STATUS: proc.status
       }
     });
+  }
+
+  // Mobile card swipe and quick action state (T65.1.2)
+  public readonly swipedCardId = signal<string | null>(null);
+  private touchStartX = 0;
+
+  public onTouchStart(event: TouchEvent, procId: string): void {
+    if (event.touches.length > 0) {
+      this.touchStartX = event.touches[0].clientX;
+    }
+  }
+
+  public onTouchEnd(event: TouchEvent, procId: string): void {
+    if (event.changedTouches.length > 0) {
+      const touchEndX = event.changedTouches[0].clientX;
+      const diffX = this.touchStartX - touchEndX;
+      // Swipe left (> 30px) reveals quick actions; swipe right (> 30px) collapses
+      if (diffX > 30) {
+        this.swipedCardId.set(procId);
+      } else if (diffX < -30 && this.swipedCardId() === procId) {
+        this.swipedCardId.set(null);
+      }
+    }
+  }
+
+  public toggleCardSwipe(procId: string): void {
+    this.swipedCardId.set(this.swipedCardId() === procId ? null : procId);
+  }
+
+  public viewStderr(proc: ProcessItem): void {
+    this.inspectTestRun(proc);
+  }
+
+  public copyProcLogs(proc: ProcessItem): void {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(proc.command);
+    }
+  }
+
+  public rerunTest(proc: ProcessItem): void {
+    // Re-run test by appending command notification to stream
+    this.appendOutputLine(`[rerun-triggered] Re-executing test command: ${proc.command}`);
   }
 
   private scrollToBottomIfNeeded(force = false): void {

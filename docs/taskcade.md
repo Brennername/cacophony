@@ -44,9 +44,9 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 > **Execution Directives for Next Frontier Model Implementer:**
 > The following phases constitute the highest-priority implementation pipeline above all others, structured for immediate frontier model execution:
 >
-> 1. **Priority 1: Phase 65 (Mobile-First Testing View Polish, Responsive Process Manager & Live Test Telemetry)**: High-density mobile-first test table, gesture triggers, and live process metrics.
-> 2. **Priority 2: Phase 66 (Clean Slate Real-History Persistence & Model Stat Reset Daemon)**: Real-history persistence, automated cleanup, and model health resets.
-> 3. **Priority 3: Phase 67 (SSE Stream Resiliency, Reconnection Protocol & Backpressure Buffering)**: SSE Last-Event-ID catch-up, reconnection replay buffers, and backpressure governor.
+> 1. **Priority 1: Phase 66 (Clean Slate Real-History Persistence & Model Stat Reset Daemon)**: Real-history persistence, automated cleanup, and model health resets.
+> 2. **Priority 2: Phase 67 (Real-Time Stream Tap Filtering & Multi-Task Tap Isolation)**: SSE Last-Event-ID catch-up, multi-task tap isolation, and backpressure governor.
+> 3. **Priority 3: Phase 68 (Dynamic Temperature & Top-P Hyperparameter Adaptation Engine)**: Task-type hyperparameter dynamic tuning and model recovery.
 
 ---
 
@@ -106,49 +106,9 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Phase 65: Mobile-First Testing View Polish, Responsive Process Manager & Live Test Telemetry
 
-_RDF Category: frontend_
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-65-mobile-first-testing-view-polish-responsive-process-manager--live-test-telemetry)_
 
-### T65.1: Mobile-First High-Density Testing Table with Swipeable Action Triggers
-
-- [ ] T65.1.1: Implement mobile-first CSS media queries in TestingViewComponent adapting table into touch-friendly cards on screens <768px. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Styles: mobile-responsive] [Test: npm test]
-- [ ] T65.1.2: Add swipe-to-inspect gesture trigger on mobile cards revealing quick-action buttons (View Stderr, Copy Logs, Re-run). [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: mobile-card-actions] [Test: npm test]
-- [ ] T65.1.3: Ensure all tap targets adhere to WCAG minimum 44x44px spacing on mobile touch interfaces. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Styles: touch-targets] [Test: npm test]
-- [ ] T65.1.4: Write frontend unit tests verifying mobile card view renders required action triggers on small screen viewports. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
-
-### T65.2: Real-Time Test Counter Badge in Root Navigation Header
-
-- [ ] T65.2.1: Add reactive test counter badge to Testing navigation tab in AppComponent header displaying currently active test runs count. [File: packages/frontend/src/app/app.ts] [Template: nav-badge] [Test: npm test]
-- [ ] T65.2.2: Compute activeRunningTestsCount signal from ArenaStateStore; animate badge pulse when new test begins executing. [File: packages/frontend/src/app/app.ts] [Computed: activeRunningTestsCount] [Test: npm test]
-- [ ] T65.2.3: Hide badge or display subtle zero indicator when no tests are actively executing to avoid visual clutter. [File: packages/frontend/src/app/app.ts] [Template: badge-visibility] [Test: npm test]
-- [ ] T65.2.4: Write unit tests in app.spec.ts verifying navigation badge updates reactively when running test signal changes. [File: packages/frontend/src/app/app.spec.ts] [Test: npm test]
-
-### T65.3: Filter and Search Toolbar for Past and Current Test Executions
-
-- [ ] T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, RUNNING) and debounced search input. [File: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts] [Class: TestFilterToolbarComponent] [Test: npm test]
-- [ ] T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, test command, or failing test file name. [File: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts] [Method: onSearchInput] [Test: npm test]
-- [ ] T65.3.3: Persist active filter selection in URL query params (?filter=failed) to allow bookmarking and direct links. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: updateFilterParam] [Test: npm test]
-- [ ] T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correctly filters test rows. [File: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.spec.ts] [Test: npm test]
-
-### T65.4: Collapsible Associated Process Drawer with Live CPU and RSS Memory Metrics
-
-- [ ] T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-drawer/ displaying system processes. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Class: ProcessDrawerComponent] [Test: npm test]
-- [ ] T65.4.2: Render animated toggle header showing process count and cumulative memory usage (e.g. '5 System Processes Active - 1.2 GB RSS'). [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Template: drawer-header] [Test: npm test]
-- [ ] T65.4.3: Implement smooth slide transition when expanding/collapsing drawer using CSS grid-template-rows animation. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Styles: drawer-animation] [Test: npm test]
-- [ ] T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly and displays correct process summaries. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts] [Test: npm test]
-
-### T65.5: Operator Process Control Actions (Restart, Terminate) with Confirmation Modals
-
-- [ ] T65.5.1: Add action buttons (Restart, Terminate) to process table rows with role-gated authorization (ADMIN and OPERATOR only). [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts] [Template: action-buttons] [Test: npm test]
-- [x] T65.5.2: Create ConfirmationDialogComponent prompting operator before restarting critical infrastructure services (Ollama, PGlite). [File: packages/frontend/src/app/components/confirmation-dialog/confirmation-dialog.component.ts] [Class: ConfirmationDialogComponent] [Test: npm test]
-- [ ] T65.5.3: Dispatch POST /api/processes/:name/restart via TaskApiService on confirmation and display transient toast notification. [File: packages/frontend/src/app/services/task-api.service.ts] [Method: restartProcess] [Test: npm test]
-- [ ] T65.5.4: Write unit tests verifying process action modal confirmation flow and role authorization gates. [File: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts] [Test: npm test]
-
-### T65.6: WCAG AAA High-Contrast & OLED Theme Polish for Testing Panel
-
-- [ ] T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 background, #10b981 emerald, #ef4444 red borders). [File: packages/frontend/src/styles.css] [Theme: oled] [Test: npm test]
-- [ ] T65.6.2: Implement High Contrast Mode (WCAG AAA) color definitions ensuring minimum 7:1 contrast ratio across all test badges and terminal text. [File: packages/frontend/src/styles.css] [Theme: high-contrast] [Test: npm test]
-- [ ] T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen reader accessibility. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: aria-live] [Test: npm test]
-- [ ] T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background variable tokens. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+---
 
 ---
 

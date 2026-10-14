@@ -17,7 +17,14 @@ describe('AppRoutes', () => {
     expect(paths).toContain('fleet');
     expect(paths).toContain('settings');
     expect(paths).toContain('auth/callback');
+    expect(paths).toContain('testing');
     expect(paths).toContain('**');
+  });
+
+  it('should map testing path to TestingViewComponent', () => {
+    const testingRoute = routes.find((r) => r.path === 'testing');
+    expect(testingRoute).toBeDefined();
+    expect(testingRoute?.component).toBeDefined();
   });
 
   it('should redirect root and unknown paths to dashboard', () => {

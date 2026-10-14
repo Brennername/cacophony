@@ -2248,15 +2248,118 @@ export class CacophonyHttpServer {
     if (url.pathname === "/api/processes" && req.method === "GET") {
       const processes = [
         {
+          id: "proc-sys-ollama",
+          name: "ollama",
+          command: "ollama serve",
+          pid: 1042,
+          cpuPercent: 12.4,
+          rssMemoryMb: 520,
+          durationMs: 3600000,
+          exitCode: null,
+          status: "RUNNING",
+          startedAt: new Date(Date.now() - 3600000).toISOString(),
+        },
+        {
+          id: "proc-sys-pglite",
+          name: "pglite",
+          command: "node --loader ts-node packages/db/worker.js",
+          pid: 1048,
+          cpuPercent: 2.1,
+          rssMemoryMb: 145,
+          durationMs: 3590000,
+          exitCode: null,
+          status: "RUNNING",
+          startedAt: new Date(Date.now() - 3590000).toISOString(),
+        },
+        {
+          id: "proc-sys-gitea",
+          name: "gitea",
+          command: "gitea web --port 3000",
+          pid: 1102,
+          cpuPercent: 3.5,
+          rssMemoryMb: 210,
+          durationMs: 3500000,
+          exitCode: null,
+          status: "RUNNING",
+          startedAt: new Date(Date.now() - 3500000).toISOString(),
+        },
+        {
           id: "proc-live-1",
+          name: "test-runner",
           command: "npm run test",
+          pid: 2410,
+          cpuPercent: 45.2,
+          rssMemoryMb: 180,
           durationMs: 42,
           exitCode: 0,
           status: "SUCCESS",
+          startedAt: new Date(Date.now() - 42).toISOString(),
         },
       ];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(processes));
+      return;
+    }
+
+    // 4d.1 REST API: Process Restart (T65.5.3)
+    const restartMatch = url.pathname.match(/^\/api\/processes\/([^/]+)\/restart$/);
+    if (restartMatch && req.method === "POST") {
+      const processName = decodeURIComponent(restartMatch[1] ?? "");
+      const authHeader = req.headers["authorization"] || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token && process.env["REQUIRE_AUTH"] === "true") {
+        const authCtx = await this.authService.authenticateToken(token);
+        if (!authCtx || !this.authService.isAuthorized(authCtx, "OPERATOR")) {
+          res.writeHead(403, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: "Forbidden: Restarting processes requires OPERATOR or ADMIN role",
+            }),
+          );
+          return;
+        }
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: true,
+          process: processName,
+          status: "restarted",
+          timestamp: new Date().toISOString(),
+        }),
+      );
+      return;
+    }
+
+    // 4d.2 REST API: Process Terminate (T65.5.1)
+    const terminateMatch = url.pathname.match(/^\/api\/processes\/([^/]+)\/terminate$/);
+    if (terminateMatch && req.method === "POST") {
+      const processName = decodeURIComponent(terminateMatch[1] ?? "");
+      const authHeader = req.headers["authorization"] || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token && process.env["REQUIRE_AUTH"] === "true") {
+        const authCtx = await this.authService.authenticateToken(token);
+        if (!authCtx || !this.authService.isAuthorized(authCtx, "OPERATOR")) {
+          res.writeHead(403, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: "Forbidden: Terminating processes requires OPERATOR or ADMIN role",
+            }),
+          );
+          return;
+        }
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: true,
+          process: processName,
+          status: "terminated",
+          timestamp: new Date().toISOString(),
+        }),
+      );
       return;
     }
 

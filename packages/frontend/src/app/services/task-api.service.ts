@@ -1,7 +1,27 @@
 import { Injectable, signal } from '@angular/core';
 
-class ToastService {
-  showToast(message: string, type: string) {}
+export interface ToastNotification {
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ToastService {
+  public readonly activeToast = signal<ToastNotification | null>(null);
+  private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+  public showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+    if (this.timeoutHandle) {
+      clearTimeout(this.timeoutHandle);
+      this.timeoutHandle = null;
+    }
+    this.activeToast.set({ message, type });
+    this.timeoutHandle = setTimeout(() => {
+      this.activeToast.set(null);
+    }, 3000);
+  }
 }
 
 export interface TaskDto {
@@ -115,18 +135,54 @@ export class TaskApiService {
   }
 
   public async restartTask(taskName: string): Promise<void> {
+    await this.restartProcess(taskName);
+  }
+
+  /**
+   * Dispatches POST /api/processes/:name/restart and displays a transient toast notification (T65.5.3).
+   */
+  public async restartProcess(processName: string): Promise<boolean> {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await fetch(`/api/processes/${taskName}/restart`, {
+      const res = await fetch(`/api/processes/${encodeURIComponent(processName)}/restart`, {
         method: 'POST'
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to restart task`);
-      (this.toastService as any).showToast('Task restarted successfully', 'success');
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to restart process`);
+      }
+      this.toastService.showToast(`Process ${processName} restarted successfully`, 'success');
+      return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       this.error.set(msg);
-      (this.toastService as any).showToast('Failed to restart task', 'error');
+      this.toastService.showToast(`Failed to restart process: ${msg}`, 'error');
+      return false;
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * Dispatches POST /api/processes/:name/terminate and displays a transient toast notification (T65.5.1).
+   */
+  public async terminateProcess(processName: string): Promise<boolean> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/processes/${encodeURIComponent(processName)}/terminate`, {
+        method: 'POST'
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to terminate process`);
+      }
+      this.toastService.showToast(`Process ${processName} terminated successfully`, 'success');
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      this.toastService.showToast(`Failed to terminate process: ${msg}`, 'error');
+      return false;
     } finally {
       this.loading.set(false);
     }

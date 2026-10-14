@@ -1,0 +1,86 @@
+<nav class="filter-toolbar" aria-label="Test run filters">
+  <div class="filter-pills" role="radiogroup" aria-label="Filter test runs by status">
+    <button
+      type="button"
+      role="radio"
+      class="pill-btn"
+      [class.active]="activeFilter() === 'ALL'"
+      [attr.aria-checked]="activeFilter() === 'ALL'"
+      (click)="setFilter('ALL')"
+      id="filter-pill-all"
+    >
+      <span class="pill-label">ALL</span>
+      <span class="pill-badge">{{ totalCount() }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="radio"
+      class="pill-btn pill-passed"
+      [class.active]="activeFilter() === 'PASSED'"
+      [attr.aria-checked]="activeFilter() === 'PASSED'"
+      (click)="setFilter('PASSED')"
+      id="filter-pill-passed"
+    >
+      <span class="pill-label">PASSED</span>
+      <span class="pill-badge">{{ passedCount() }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="radio"
+      class="pill-btn pill-failed"
+      [class.active]="activeFilter() === 'FAILED'"
+      [attr.aria-checked]="activeFilter() === 'FAILED'"
+      (click)="setFilter('FAILED')"
+      id="filter-pill-failed"
+    >
+      <span class="pill-label">FAILED</span>
+      <span class="pill-badge">{{ failedCount() }}</span>
+    </button>
+
+    <button
+      type="button"
+      role="radio"
+      class="pill-btn pill-running"
+      [class.active]="activeFilter() === 'RUNNING'"
+      [attr.aria-checked]="activeFilter() === 'RUNNING'"
+      (click)="setFilter('RUNNING')"
+      id="filter-pill-running"
+    >
+      <span class="pill-label">RUNNING</span>
+      <span class="pill-badge">{{ runningCount() }}</span>
+    </button>
+  </div>
+
+  <div class="search-box-wrapper">
+    <label for="test-search-input" class="sr-only">Search tests</label>
+    <div class="search-input-group">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        id="test-search-input"
+        type="text"
+        class="search-input"
+        placeholder="Filter by task ID, command, or file..."
+        [value]="searchInputState() || searchQuery()"
+        (input)="onSearchInput($event)"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      @if (searchInputState() || searchQuery()) {
+        <button
+          type="button"
+          class="clear-btn"
+          aria-label="Clear search query"
+          (click)="clearSearch()"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" class="clear-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      }
+    </div>
+  </div>
+</nav>

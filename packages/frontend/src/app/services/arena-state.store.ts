@@ -65,6 +65,8 @@ export interface ProcessItem {
   name?: string | undefined;
   startedAt?: string | undefined;
   taskTitle?: string | undefined;
+  cpuPercent?: number | undefined;
+  rssMemoryMb?: number | undefined;
 }
 
 export interface GenerationHeartbeatInfo {

@@ -1,0 +1,194 @@
+/* Mobile-First Layout for Test Filter Toolbar */
+.filter-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--surface-bg, #111827);
+  border: 1px solid var(--border-color, #1f2937);
+  border-radius: 0.5rem;
+  box-sizing: border-box;
+}
+
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 0.875rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color, #374151);
+  background: var(--surface-secondary, #1f2937);
+  color: var(--text-secondary, #9ca3af);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s ease-in-out;
+  flex: 1 1 calc(50% - 0.5rem);
+}
+
+@media (min-width: 640px) {
+  .pill-btn {
+    flex: 0 0 auto;
+  }
+}
+
+.pill-btn:hover {
+  background: var(--surface-hover, #374151);
+  color: var(--text-primary, #f9fafb);
+  border-color: var(--border-focus, #4b5563);
+}
+
+.pill-btn:focus-visible {
+  outline: 2px solid var(--primary-accent, #3b82f6);
+  outline-offset: 2px;
+}
+
+.pill-btn.active {
+  background: var(--primary-accent, #3b82f6);
+  color: #ffffff;
+  border-color: var(--primary-accent, #3b82f6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pill-btn.pill-passed.active {
+  background: var(--success-accent, #10b981);
+  border-color: var(--success-accent, #10b981);
+}
+
+.pill-btn.pill-failed.active {
+  background: var(--danger-accent, #ef4444);
+  border-color: var(--danger-accent, #ef4444);
+}
+
+.pill-btn.pill-running.active {
+  background: var(--warning-accent, #f59e0b);
+  border-color: var(--warning-accent, #f59e0b);
+}
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.pill-btn.active .pill-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.search-box-wrapper {
+  width: 100%;
+}
+
+.search-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.875rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--text-secondary, #6b7280);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.625rem 2.5rem 0.625rem 2.75rem;
+  background: var(--surface-input, #030712);
+  border: 1px solid var(--border-color, #374151);
+  border-radius: 0.375rem;
+  color: var(--text-primary, #f9fafb);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-accent, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.clear-btn {
+  position: absolute;
+  right: 0.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #9ca3af);
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+
+.clear-btn:hover {
+  color: var(--text-primary, #f9fafb);
+}
+
+.clear-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Tablet & Desktop Layout */
+@media (min-width: 768px) {
+  .filter-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .filter-pills {
+    width: auto;
+    flex-wrap: nowrap;
+  }
+
+  .pill-btn {
+    flex: 0 0 auto;
+  }
+
+  .search-box-wrapper {
+    width: 320px;
+  }
+}

@@ -1,3 +1,184 @@
-<div class="component-container">
-  {{ processCount }} System Processes Active - {{ totalMemoryUsage.toFixed(2) }} GB RSS
-</div>
+<section class="process-drawer" aria-label="System Process Manager">
+  <!-- Header Toggle Banner -->
+  <button
+    type="button"
+    class="drawer-header-btn"
+    (click)="toggleDrawer()"
+    [attr.aria-expanded]="isExpanded()"
+    aria-controls="process-drawer-body"
+    id="process-drawer-toggle"
+  >
+    <div class="drawer-header-left">
+      <svg
+        class="chevron-icon"
+        [class.rotated]="isExpanded()"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <span class="drawer-title">System Processes</span>
+    </div>
+
+    <div class="drawer-header-right">
+      <span class="summary-badge" id="process-drawer-summary">
+        {{ headerSummary() }}
+      </span>
+    </div>
+  </button>
+
+  <!-- Collapsible Content Wrapper (Animated via CSS Grid) -->
+  <div
+    class="drawer-grid-wrapper"
+    [class.expanded]="isExpanded()"
+    id="process-drawer-body"
+    role="region"
+    aria-labelledby="process-drawer-toggle"
+  >
+    <div class="drawer-content-inner">
+      @if (processes().length === 0) {
+        <div class="empty-state">
+          <p>No active background processes detected.</p>
+        </div>
+      } @else {
+        <!-- Mobile Card List (< 768px) -->
+        <div class="mobile-process-list">
+          @for (proc of processes(); track proc.id) {
+            <article class="process-card">
+              <div class="process-card-header">
+                <div class="process-info">
+                  <h4 class="process-name">{{ proc.name || proc.command }}</h4>
+                  <span class="process-pid">PID: {{ proc.pid ?? 'N/A' }}</span>
+                </div>
+                <span
+                  class="status-pill"
+                  [class.status-running]="proc.status === 'RUNNING'"
+                  [class.status-success]="proc.status === 'SUCCESS'"
+                  [class.status-failed]="proc.status === 'FAILED'"
+                >
+                  {{ proc.status }}
+                </span>
+              </div>
+
+              <div class="process-metrics">
+                <div class="metric-item">
+                  <span class="metric-label">CPU</span>
+                  <span class="metric-value">{{ proc.cpuPercent ? (proc.cpuPercent | number:'1.1-1') + '%' : '0.0%' }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">Memory</span>
+                  <span class="metric-value">{{ proc.rssMemoryMb ? (proc.rssMemoryMb | number:'1.0-0') + ' MB' : '0 MB' }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">Duration</span>
+                  <span class="metric-value">{{ (proc.durationMs / 1000) | number:'1.1-1' }}s</span>
+                </div>
+              </div>
+
+              @if (canManageProcesses()) {
+                <div class="process-card-actions">
+                  <button
+                    type="button"
+                    class="action-btn restart-btn"
+                    (click)="requestRestart(proc)"
+                    [attr.aria-label]="'Restart process ' + (proc.name || proc.id)"
+                  >
+                    Restart
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn terminate-btn"
+                    (click)="requestTerminate(proc)"
+                    [attr.aria-label]="'Terminate process ' + (proc.name || proc.id)"
+                  >
+                    Terminate
+                  </button>
+                </div>
+              }
+            </article>
+          }
+        </div>
+
+        <!-- Desktop Table (>= 768px) -->
+        <div class="desktop-process-table-wrapper">
+          <table class="desktop-process-table">
+            <thead>
+              <tr>
+                <th scope="col">Process</th>
+                <th scope="col">PID</th>
+                <th scope="col">Status</th>
+                <th scope="col">CPU</th>
+                <th scope="col">RSS Memory</th>
+                <th scope="col">Duration</th>
+                @if (canManageProcesses()) {
+                  <th scope="col" class="actions-header">Actions</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (proc of processes(); track proc.id) {
+                <tr class="process-row">
+                  <td class="cell-name">
+                    <span class="name-text">{{ proc.name || proc.command }}</span>
+                    @if (isCriticalInfrastructure(proc.name)) {
+                      <span class="critical-pill">Critical</span>
+                    }
+                  </td>
+                  <td class="cell-pid">{{ proc.pid ?? '—' }}</td>
+                  <td>
+                    <span
+                      class="status-pill"
+                      [class.status-running]="proc.status === 'RUNNING'"
+                      [class.status-success]="proc.status === 'SUCCESS'"
+                      [class.status-failed]="proc.status === 'FAILED'"
+                    >
+                      {{ proc.status }}
+                    </span>
+                  </td>
+                  <td class="cell-cpu">{{ proc.cpuPercent ? (proc.cpuPercent | number:'1.1-1') + '%' : '0.0%' }}</td>
+                  <td class="cell-memory">{{ proc.rssMemoryMb ? (proc.rssMemoryMb | number:'1.0-0') + ' MB' : '0 MB' }}</td>
+                  <td class="cell-duration">{{ (proc.durationMs / 1000) | number:'1.1-1' }}s</td>
+                  @if (canManageProcesses()) {
+                    <td class="cell-actions">
+                      <button
+                        type="button"
+                        class="action-btn restart-btn"
+                        (click)="requestRestart(proc)"
+                        [attr.aria-label]="'Restart ' + (proc.name || proc.id)"
+                      >
+                        Restart
+                      </button>
+                      <button
+                        type="button"
+                        class="action-btn terminate-btn"
+                        (click)="requestTerminate(proc)"
+                        [attr.aria-label]="'Terminate ' + (proc.name || proc.id)"
+                      >
+                        Terminate
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Reusable Confirmation Modal for Sensitive Actions -->
+  <app-confirmation-dialog
+    [title]="pendingAction() === 'terminate' ? 'Confirm Process Termination' : 'Confirm Service Restart'"
+    [message]="pendingAction() === 'terminate' ? 'Terminating this process may disrupt ongoing tasks and tests. Are you sure you wish to terminate?' : 'Restarting infrastructure services may temporarily disrupt background pipelines and model communication. Continue?'"
+    [confirmText]="pendingAction() === 'terminate' ? 'Terminate Process' : 'Restart Service'"
+    [isDangerous]="true"
+    (confirmed)="onConfirmedAction($event)"
+    (cancelled)="onCancelledAction()"
+  />
+</section>

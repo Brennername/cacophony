@@ -27,6 +27,12 @@
       <a routerLink="/models" routerLinkActive="active" class="nav-link">Models</a>
       <a routerLink="/repomap" routerLinkActive="active" class="nav-link">Repo Map</a>
       <a routerLink="/processes" routerLinkActive="active" class="nav-link">Processes</a>
+      <a routerLink="/testing" routerLinkActive="active" class="nav-link nav-testing-link">
+        Testing
+        @if (activeRunningTestsCount() > 0) {
+          <span class="nav-badge pulse" aria-label="Running tests count">{{ activeRunningTestsCount() }}</span>
+        }
+      </a>
       <a routerLink="/fleet" routerLinkActive="active" class="nav-link">Fleet</a>
       <a routerLink="/settings" routerLinkActive="active" class="nav-link">Settings</a>
     </nav>
@@ -101,6 +107,17 @@
         class="drawer-link"
       >
         Spawned Processes
+      </a>
+      <a
+        routerLink="/testing"
+        routerLinkActive="active"
+        (click)="closeDrawer()"
+        class="drawer-link drawer-testing-link"
+      >
+        Testing & CI
+        @if (activeRunningTestsCount() > 0) {
+          <span class="nav-badge pulse" aria-label="Running tests count">{{ activeRunningTestsCount() }}</span>
+        }
       </a>
       <a routerLink="/fleet" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
         Fleet Accelerators

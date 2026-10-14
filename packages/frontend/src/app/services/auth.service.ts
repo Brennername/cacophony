@@ -116,6 +116,17 @@ export class AuthService {
     });
   }
 
+  public hasRole(role: string): boolean {
+    const roles = this.session().roles || [];
+    return roles.includes(role);
+  }
+
+  public isAuthorized(requiredRole: 'ADMIN' | 'OPERATOR'): boolean {
+    const roles = this.session().roles || [];
+    if (roles.includes('ADMIN')) return true;
+    return roles.includes(requiredRole);
+  }
+
   public logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     this.session.set({

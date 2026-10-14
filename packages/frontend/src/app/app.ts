@@ -1,4 +1,4 @@
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, inject, signal, computed, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from './services/theme.service';
@@ -36,7 +36,11 @@ import { TelemetryBarComponent } from './components/telemetry-bar/telemetry-bar.
 export class AppComponent {
   public readonly themeService = inject(ThemeService);
   public readonly authService = inject(AuthService);
-  private readonly store = inject(ArenaStateStore);
+  public readonly store = inject(ArenaStateStore);
+
+  public readonly activeRunningTestsCount = computed(() => {
+    return this.store.processes().filter((p) => p.status === 'RUNNING').length;
+  });
 
   public readonly frontierModal = viewChild(FrontierModalComponent);
   drawerOpen = signal(false);

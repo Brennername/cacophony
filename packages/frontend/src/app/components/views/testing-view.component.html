@@ -126,56 +126,24 @@
     </div>
   </section>
 
-  <!-- Historical Test Filter Controls (T59.4.3) -->
+  <!-- Test Filter and Search Toolbar (T65.3) -->
   <section class="filter-controls-section" aria-label="Test run filters">
-    <div class="filter-tabs" role="tablist">
-      <button
-        type="button"
-        class="tab-btn"
-        [class.active]="filterStatus() === 'ALL'"
-        (click)="filterTests('ALL')"
-        role="tab"
-        [attr.aria-selected]="filterStatus() === 'ALL'"
-      >
-        ALL ({{ store.processes().length }})
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        [class.active]="filterStatus() === 'PASSED'"
-        (click)="filterTests('PASSED')"
-        role="tab"
-        [attr.aria-selected]="filterStatus() === 'PASSED'"
-      >
-        PASSED ({{ passedCount() }})
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        [class.active]="filterStatus() === 'FAILED'"
-        (click)="filterTests('FAILED')"
-        role="tab"
-        [attr.aria-selected]="filterStatus() === 'FAILED'"
-      >
-        FAILED ({{ failedCount() }})
-      </button>
-    </div>
-
-    <div class="search-box">
-      <input
-        type="search"
-        class="search-input"
-        placeholder="Filter by command or task ID..."
-        [ngModel]="searchQuery()"
-        (ngModelChange)="searchQuery.set($event)"
-        aria-label="Filter test runs"
-      />
-    </div>
+    <app-test-filter-toolbar
+      [activeFilter]="filterStatus()"
+      [searchQuery]="searchQuery()"
+      [totalCount]="totalTestsRun()"
+      [passedCount]="passedCount()"
+      [failedCount]="failedCount()"
+      [runningCount]="runningCount()"
+      (filterChange)="onFilterChanged($event)"
+      (searchChange)="onSearchChanged($event)"
+    />
   </section>
 
-  <!-- Historical Test Runs Table (T59.4.1, T59.4.2) -->
+  <!-- Historical Test Runs Table (Desktop) & Cards (Mobile) (T59.4, T65.1) -->
   <section class="history-table-section" aria-label="Historical test executions">
-    <div class="table-container history-table">
+    <!-- Desktop Table View (>= 768px) -->
+    <div class="table-container history-table desktop-table-container">
       <table class="data-table">
         <thead>
           <tr>
@@ -226,6 +194,74 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Mobile High-Density Cards (< 768px) (T65.1.1, T65.1.2) -->
+    <div class="mobile-cards-container" aria-label="Mobile historical test runs">
+      @if (filteredProcesses().length === 0) {
+        <div class="mobile-empty-card">No historical test runs match filter criteria.</div>
+      } @else {
+        @for (proc of filteredProcesses(); track proc.id) {
+          <div
+            class="mobile-test-card"
+            [class.swiped]="swipedCardId() === proc.id"
+            (touchstart)="onTouchStart($event, proc.id)"
+            (touchend)="onTouchEnd($event, proc.id)"
+          >
+            <div class="card-main-content" (click)="toggleCardSwipe(proc.id)">
+              <div class="card-top-row">
+                <span class="status-badge" [ngClass]="proc.status.toLowerCase()">
+                  {{ proc.status === 'SUCCESS' ? 'PASSED' : proc.status }}
+                </span>
+                <span class="card-duration">{{ proc.durationMs || 0 }}ms</span>
+                <span class="card-timestamp">{{ proc.startedAt | date: 'HH:mm:ss' }}</span>
+              </div>
+              <div class="card-title-row">
+                <span class="task-title">{{ proc.taskTitle || proc.id }}</span>
+              </div>
+              <div class="card-command-row">
+                <code>{{ proc.command }}</code>
+              </div>
+            </div>
+
+            <!-- Swipe Quick Action Triggers (T65.1.2) with WCAG 44x44px touch targets (T65.1.3) -->
+            <div class="card-quick-actions" [class.revealed]="swipedCardId() === proc.id">
+              <button
+                type="button"
+                class="mobile-action-btn btn-view-stderr"
+                (click)="viewStderr(proc); $event.stopPropagation()"
+                aria-label="View Stderr"
+              >
+                View Stderr
+              </button>
+              <button
+                type="button"
+                class="mobile-action-btn btn-copy-logs"
+                (click)="copyProcLogs(proc); $event.stopPropagation()"
+                aria-label="Copy Logs"
+              >
+                Copy Logs
+              </button>
+              <button
+                type="button"
+                class="mobile-action-btn btn-rerun"
+                (click)="rerunTest(proc); $event.stopPropagation()"
+                aria-label="Re-run"
+              >
+                Re-run
+              </button>
+              <button
+                type="button"
+                class="mobile-action-btn btn-inspect"
+                (click)="inspectTestRun(proc); $event.stopPropagation()"
+                aria-label="Inspect"
+              >
+                Inspect
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
   </section>
 
   <!-- Historical Subprocess Inspector Table -->
@@ -233,6 +269,16 @@
     <app-process-inspector />
   </section>
 
+  <!-- Collapsible Associated Process Drawer (T65.4, T65.5) -->
+  <section class="process-drawer-section" aria-label="Process drawer manager">
+    <app-process-drawer />
+  </section>
+
   <!-- Deep Test Run Inspection Modal (T59.6) -->
   <app-test-run-modal #testRunModal />
+
+  <!-- Screen Reader Live Telemetry Announcer (T65.6.3) -->
+  <div class="sr-only" aria-live="polite" aria-atomic="true" id="test-telemetry-live-announcer">
+    Test status update: {{ activeTestStatus() }} - {{ activeTestCommand() }}
+  </div>
 </div>

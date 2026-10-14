@@ -572,6 +572,24 @@ export class GeneratedChangeGuard {
     source: string,
     issues: string[],
   ): void {
+    // Validate companion Angular HTML template files for placeholder stubs
+    if (filePath.endsWith(".html") && filePath.includes("/components/")) {
+      const trimmed = source.trim();
+      if (
+        trimmed === "" ||
+        trimmed === '<div class="component-container"></div>' ||
+        /^<div(\s+class=["'][^"']*["'])?>\s*<\/div>$/i.test(trimmed) ||
+        /^<div(\s+class=["']component-container["'])?>\s*\{\{[^}]+\}\}\s*<\/div>$/i.test(trimmed) ||
+        /^<p>\s*<\/p>$/i.test(trimmed) ||
+        trimmed.length < 15
+      ) {
+        issues.push(
+          `Generated Angular template in ${filePath} contains an empty or placeholder container.`,
+        );
+      }
+      return;
+    }
+
     if (!filePath.endsWith(".ts") || !source.includes("@Component")) return;
     const templateMatch = source.match(/template\s*:\s*[`'"]([\s\S]*?)[`'"]/);
     if (templateMatch && templateMatch[1] !== undefined) {
@@ -585,6 +603,13 @@ export class GeneratedChangeGuard {
       ) {
         issues.push(
           `Generated Angular component in ${filePath} contains an empty or placeholder template.`,
+        );
+      }
+      // Enforce file decomposition standards for inline templates over 30 lines
+      const lineCount = tpl.split("\n").length;
+      if (lineCount > 30) {
+        issues.push(
+          `Generated Angular component in ${filePath} has an inline template with ${lineCount} lines; Angular standards require decomposing components over 30 lines into separate .html and .css files.`,
         );
       }
     }
