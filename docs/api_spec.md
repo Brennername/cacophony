@@ -211,6 +211,41 @@ Server-Sent Events (SSE) stream broadcasting real-time cluster fleet events (`fl
 
 Returns paginated historical task records, stage execution durations, and model win rates.
 
+### DELETE `/api/history`
+
+Purges completed, failed, and cancelled task history while strictly preserving active `PENDING` and `RUNNING` tasks. Cascades deletions across associated stages, telemetry correlations, and test execution runs. Role-gated: requires `ADMIN` role when user session authentication is active.
+
+**Query Parameters:**
+
+- `olderThanDays` (optional): Only purge tasks older than the specified number of days (e.g. `?olderThanDays=30`).
+- `status` (optional): Comma-separated list or query array of task statuses to purge (`COMPLETED`, `FAILED`, `CANCELLED`). `PENDING` and `RUNNING` tasks are unconditionally protected and will never be purged.
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "purgedCount": 42
+}
+```
+
+### GET `/api/stream/buffer`
+
+Retrieves the in-memory or persisted stream buffer output for a specific task ID for live inspection and historical stage replay.
+
+**Query Parameters:**
+
+- `taskId`: Unique identifier of the task.
+
+**Response:** `200 OK`
+
+```json
+{
+  "taskId": "task-102",
+  "buffer": "export class Example {\n  ...\n}"
+}
+```
+
 ### GET `/api/models/leaderboard`
 
 Returns dynamic model leaderboard metrics, win rates, tokens/second, eviction counts, and remediation recovery telemetry.

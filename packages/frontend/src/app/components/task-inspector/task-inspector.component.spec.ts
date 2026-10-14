@@ -3,13 +3,23 @@ import { TestBed } from '@angular/core/testing';
 import { TaskInspectorComponent } from './task-inspector.component';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 
+import { TaskApiService } from '../../services/task-api.service';
+
 describe('TaskInspectorComponent', () => {
   let store: ArenaStateStore;
+  let mockTaskApi: { replayStreamForTask: (id: string) => Promise<string> };
 
   beforeEach(() => {
+    mockTaskApi = {
+      replayStreamForTask: async (id: string) => `[Historical Replay for ${id}]: Stage output replay verified`,
+    };
+
     TestBed.configureTestingModule({
       imports: [TaskInspectorComponent],
-      providers: [ArenaStateStore],
+      providers: [
+        ArenaStateStore,
+        { provide: TaskApiService, useValue: mockTaskApi },
+      ],
     });
     store = TestBed.inject(ArenaStateStore);
   });
@@ -124,4 +134,49 @@ describe('TaskInspectorComponent', () => {
     expect(badge?.classList.contains('badge-stalled')).toBe(true);
     expect(badge?.textContent).toContain('Stall Warning');
   });
+
+  it('should switch cleanly between live SSE streaming and historical stage replay (T67.4.4)', async () => {
+    const liveTask: TaskItem = {
+      id: 'task-live-1',
+      title: 'Active Live Inference Task',
+      status: 'RUNNING',
+      priority: 'P0',
+      role: 'implementer',
+    };
+
+    const completedTask: TaskItem = {
+      id: 'task-completed-1',
+      title: 'Historical Completed Task',
+      status: 'COMPLETED',
+      priority: 'P1',
+      role: 'architect',
+    };
+
+    store.tasks.set([liveTask, completedTask]);
+    store.isStreamActive.set(true);
+    store.liveStreamBuffer.set('Live token stream executing...');
+
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+
+    // 1. Initially inspecting active RUNNING task: should show LIVE status and live buffer
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.hud-pill')?.textContent?.trim()).toBe('LIVE');
+    expect(compiled.querySelector('.terminal-content')?.textContent).toContain('Live token stream executing...');
+
+    // 2. Select completed task for inspection: should transition to COMPLETED status and historical replay
+    await fixture.componentInstance.selectTaskToInspect(completedTask);
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.hud-pill')?.textContent?.trim()).toBe('COMPLETED');
+    expect(compiled.querySelector('.terminal-content')?.textContent).toContain('[Historical Replay for task-completed-1]');
+
+    // 3. Select running task again: should switch back to LIVE status and live buffer
+    await fixture.componentInstance.selectTaskToInspect(liveTask);
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('.hud-pill')?.textContent?.trim()).toBe('LIVE');
+    expect(compiled.querySelector('.terminal-content')?.textContent).toContain('Live token stream executing...');
+  });
 });
+

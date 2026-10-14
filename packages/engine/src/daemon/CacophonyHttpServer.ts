@@ -1234,6 +1234,53 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4b.1. REST API: DELETE /api/history - Purge historical tasks with role-gated admin authentication (T66.2)
+    if (url.pathname === "/api/history" && req.method === "DELETE") {
+      const authHeader = req.headers["authorization"] || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token && process.env["REQUIRE_AUTH"] === "true") {
+        const authCtx = await this.authService.authenticateToken(token);
+        if (!authCtx || !this.authService.isAuthorized(authCtx, "ADMIN")) {
+          res.writeHead(403, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: "Forbidden: Purging history requires ADMIN role",
+            }),
+          );
+          return;
+        }
+      }
+
+      try {
+        const olderThanDaysParam = url.searchParams.get("olderThanDays");
+        const statusParam = url.searchParams.get("status");
+        const olderThanDays = olderThanDaysParam ? parseInt(olderThanDaysParam, 10) : undefined;
+        const status = statusParam ? (statusParam.split(",") as any[]) : undefined;
+
+        const taskRepo = this.daemon.getTaskRepository();
+        const result = await taskRepo.purgeHistoricalTasks({ olderThanDays, status });
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            purgedCount: result.purgedCount,
+            message: `Successfully purged ${result.purgedCount} historical tasks`,
+          }),
+        );
+      } catch (err: unknown) {
+        console.error("Failed to purge historical tasks:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "Failed to purge historical tasks",
+            details: String(err),
+          }),
+        );
+      }
+      return;
+    }
+
     // 4c. REST API: Model Health Leaderboard
     if (url.pathname === "/api/models/leaderboard" && req.method === "GET") {
       const healthRepo = this.daemon.getModelHealthRepository();

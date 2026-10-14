@@ -120,4 +120,69 @@ export class AstValidator {
       exportsCount: 1,
     };
   }
+
+  /**
+   * Validates a discrete slot-fill implementation snippet before merging it
+   * into a host scaffold or target source file.
+   */
+  public validateSlotFillIntegrity(
+    slotCode: string,
+    fileName = "slot_snippet.ts",
+  ): AstValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const trimmed = slotCode.trim();
+
+    if (trimmed.length === 0) {
+      return {
+        valid: false,
+        errors: ["Slot-fill implementation body is empty."],
+        warnings: [],
+        exportsCount: 0,
+      };
+    }
+
+    // Check for banned bypass directives and dummy stubs
+    if (/\/\/\s*@ts-ignore/i.test(trimmed)) {
+      errors.push("Banned directive '// @ts-ignore' detected in slot-fill implementation.");
+    }
+    if (/\[\s*key\s*:\s*string\s*\]\s*:\s*any/i.test(trimmed)) {
+      errors.push("Banned dummy index signature '[key: string]: any' detected.");
+    }
+    if (/\/\*\s*AST_METHOD_STUB:/i.test(trimmed)) {
+      errors.push("Unfulfilled 'AST_METHOD_STUB' marker found in slot-fill output.");
+    }
+    if (/throw\s+new\s+Error\(\s*["'](?:TODO|Not implemented)["']\s*\)/i.test(trimmed)) {
+      errors.push("Unfulfilled placeholder error throw detected.");
+    }
+
+    // Wrap snippet in function scope to check syntactical and block-level validity
+    const wrappedSource = `async function __slotCheck__() {\n${trimmed}\n}`;
+    const sourceFile = ts.createSourceFile(
+      fileName,
+      wrappedSource,
+      ts.ScriptTarget.ES2022,
+      true,
+      ts.ScriptKind.TS,
+    );
+
+    const parseDiagnostics =
+      (sourceFile as unknown as { parseDiagnostics?: ts.Diagnostic[] })
+        .parseDiagnostics || [];
+
+    for (const diag of parseDiagnostics) {
+      const message =
+        typeof diag.messageText === "string"
+          ? diag.messageText
+          : diag.messageText.messageText;
+      errors.push(`TS Syntax Error in slot: ${message}`);
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      exportsCount: 0,
+    };
+  }
 }

@@ -18,6 +18,10 @@ const PLACEHOLDER_PATTERNS: readonly RegExp[] = [
   /\/\/\s*your code here/i,
   /throw\s+new\s+Error\(\s*["']Not implemented["']\s*\)/i,
   /throw\s+new\s+Error\(\s*["']TODO["']\s*\)/i,
+  /\/\*\s*AST_METHOD_STUB:/i,
+  /\/\/\s*@ts-ignore/i,
+  /\[\s*key\s*:\s*string\s*\]\s*:\s*any/i,
+  /Object\.assign\s*\(\s*(?:function)?\s*\(\.\.\._args/i,
 ];
 
 /**

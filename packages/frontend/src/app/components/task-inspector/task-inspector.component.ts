@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 import { StageProgressBarComponent, type StageStepInfo } from '../stage-progress-bar/stage-progress-bar.component';
 import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gantt-transport.component';
+import { TaskApiService } from '../../services/task-api.service';
 
 /**
  * Visual stepper and Gantt transport tracking task pipeline progression:
@@ -17,7 +18,15 @@ import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gant
 })
 export class TaskInspectorComponent {
   private readonly store = inject(ArenaStateStore);
-  public readonly activeTask = this.store.activeTask;
+  private readonly taskApiService = inject(TaskApiService);
+
+  public readonly selectedTaskOverride = signal<TaskItem | null>(null);
+  public readonly historicalStreamBuffer = signal<string | null>(null);
+
+  public readonly activeTask = computed(
+    () => this.selectedTaskOverride() || this.store.selectedTask() || this.store.activeTask(),
+  );
+
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
   public readonly liveReasoningBuffer = this.store.liveReasoningBuffer;
   public readonly liveTestOutput = this.store.testOutputBuffer;
@@ -25,6 +34,23 @@ export class TaskInspectorComponent {
   public readonly liveReviewCritique = this.store.reviewCritiqueBuffer;
   public readonly generationHeartbeat = this.store.generationHeartbeat;
   public readonly activeStreamChannel = signal<'combined' | 'cognitive' | 'testing' | 'ast' | 'review'>('combined');
+
+  public readonly displayedStreamBuffer = computed(() => {
+    const hist = this.historicalStreamBuffer();
+    if (hist !== null && hist !== undefined) {
+      return hist;
+    }
+    return this.liveStreamBuffer();
+  });
+
+  public readonly streamStatus = computed<'LIVE' | 'COMPLETED' | 'ARCHIVED' | 'PAUSED'>(() => {
+    const task = this.activeTask();
+    if (!task) return 'PAUSED';
+    if (task.status === 'COMPLETED') return 'COMPLETED';
+    if (task.status === 'FAILED' || task.status === 'CANCELLED') return 'ARCHIVED';
+    if (this.isStreamActive()) return 'LIVE';
+    return 'PAUSED';
+  });
 
   public readonly heartbeatStatus = computed(() => {
     const hb = this.generationHeartbeat();
@@ -239,8 +265,8 @@ export class TaskInspectorComponent {
 
   constructor() {
     effect(() => {
-      // Whenever buffer changes, auto scroll to bottom
-      const _ = this.liveStreamBuffer();
+      // Whenever displayed buffer changes, auto scroll to bottom
+      const _ = this.displayedStreamBuffer();
       const el = this.terminalContentEl()?.nativeElement;
       if (el) {
         requestAnimationFrame(() => {
@@ -252,7 +278,7 @@ export class TaskInspectorComponent {
     effect(() => {
       // Fetch buffer from backend if active task changes and liveStreamBuffer is currently empty
       const active = this.activeTask();
-      if (active && !this.liveStreamBuffer()) {
+      if (active && !this.liveStreamBuffer() && active.status === 'RUNNING') {
         void this.fetchTaskBuffer(active.id);
       }
     });
@@ -269,6 +295,19 @@ export class TaskInspectorComponent {
       }
     } catch {
       // Ignore network errors
+    }
+  }
+
+  /**
+   * Selects a task for inspection, switching to historical replay if completed/archived (T67.4.2).
+   */
+  public async selectTaskToInspect(task: TaskItem): Promise<void> {
+    this.selectedTaskOverride.set(task);
+    if (task.status === 'COMPLETED' || task.status === 'FAILED' || task.status === 'CANCELLED') {
+      const replay = await this.taskApiService.replayStreamForTask(task.id);
+      this.historicalStreamBuffer.set(replay);
+    } else {
+      this.historicalStreamBuffer.set(null);
     }
   }
 

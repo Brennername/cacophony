@@ -528,4 +528,74 @@ export class TaskRepository {
     );
     return rows.map((r) => this.mapRow(r));
   }
+
+  /**
+   * Purges historical finished tasks and cascades deletion to task_stages,
+   * task_telemetry_correlations, and test_execution_runs.
+   * Strictly preserves PENDING and RUNNING tasks.
+   */
+  public async purgeHistoricalTasks(options?: {
+    olderThanDays?: number | undefined;
+    status?: TaskStatus[] | undefined;
+  }): Promise<{ purgedCount: number }> {
+    const allowedStatuses: TaskStatus[] = options?.status && options.status.length > 0
+      ? options.status.filter((s) => s !== "PENDING" && s !== "RUNNING")
+      : ["COMPLETED", "FAILED", "CANCELLED"];
+
+    if (allowedStatuses.length === 0) {
+      return { purgedCount: 0 };
+    }
+
+    const olderThanDays = options?.olderThanDays;
+    let query = `SELECT id FROM tasks WHERE status IN (${allowedStatuses.map((_, i) => `$${i + 1}`).join(", ")})`;
+    const params: unknown[] = [...allowedStatuses];
+
+    if (olderThanDays !== undefined && olderThanDays > 0) {
+      const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
+      params.push(cutoff);
+      query += ` AND updated_at < $${params.length}`;
+    }
+
+    const rows = await this.driver.query<{ id: string }>(query, params);
+    if (rows.length === 0) {
+      return { purgedCount: 0 };
+    }
+
+    const taskIds = rows.map((r) => r.id);
+    const inPlaceholders = taskIds.map((_, i) => `$${i + 1}`).join(", ");
+
+    try {
+      await this.driver.execute(
+        `DELETE FROM task_stages WHERE task_id IN (${inPlaceholders})`,
+        taskIds,
+      );
+    } catch {
+      // Table may not have rows or table does not exist
+    }
+
+    try {
+      await this.driver.execute(
+        `DELETE FROM task_telemetry_correlations WHERE task_id IN (${inPlaceholders})`,
+        taskIds,
+      );
+    } catch {
+      // Table may not have rows or table does not exist
+    }
+
+    try {
+      await this.driver.execute(
+        `DELETE FROM test_execution_runs WHERE task_id IN (${inPlaceholders})`,
+        taskIds,
+      );
+    } catch {
+      // Table may not have rows or table does not exist
+    }
+
+    await this.driver.execute(
+      `DELETE FROM tasks WHERE id IN (${inPlaceholders})`,
+      taskIds,
+    );
+
+    return { purgedCount: taskIds.length };
+  }
 }

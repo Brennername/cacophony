@@ -114,97 +114,13 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Phase 66: Clean Slate Real-History Persistence & Model Stat Reset Daemon
 
-_RDF Category: persistence_
-
-### T66.1: Database Schema Indexes for High-Velocity Task and Stage Queries
-
-- [ ] T66.1.1: Add migration 011_task_history_indexes.ts creating composite index on tasks(status, updated_at DESC) for fast history pagination. [File: packages/db/src/migrations/011_task_history_indexes.ts] [Migration: 011_task_history_indexes] [Test: npm test -- packages/db/src/**tests**/Database.test.ts]
-- [ ] T66.1.2: Create index on task_stages(task_id, stage_name, started_at DESC) optimizing stage span queries for task detail modals. [File: packages/db/src/migrations/011_task_history_indexes.ts] [Index: idx_stages_task_started] [Test: npm test -- packages/db/src/**tests**/Database.test.ts]
-- [ ] T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health profile lookups during scheduling ticks. [File: packages/db/src/migrations/011_task_history_indexes.ts] [Index: idx_model_health_status] [Test: npm test -- packages/db/src/**tests**/Database.test.ts]
-- [ ] T66.1.4: Write unit tests verifying migration 011 executes idempotently and indexes improve query plan execution speed. [File: packages/db/src/**tests**/Database.test.ts] [Test: npm test -- packages/db/src/**tests**/Database.test.ts]
-
-### T66.2: REST API: DELETE /api/history Purging Mock/Obsolete Task Records
-
-- [ ] T66.2.1: Register route DELETE /api/history in CacophonyHttpServer with role-gated admin authentication. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: DELETE /api/history] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [ ] T66.2.2: Implement TaskRepository.purgeHistoricalTasks(options?: { olderThanDays?: number, status?: TaskStatus[] }) purging finished tasks. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.purgeHistoricalTasks] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
-- [ ] T66.2.3: Cascade delete associated records in task_stages, task_telemetry_correlations, and test_execution_runs. [File: packages/db/src/repositories/TaskRepository.ts] [Method: purgeHistoricalTasks] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
-- [ ] T66.2.4: Write integration tests verifying DELETE /api/history removes COMPLETED and FAILED tasks while preserving PENDING and RUNNING tasks. [File: packages/engine/src/tests/history_purge_api.test.ts] [Test: npm test -- packages/engine/src/tests/history_purge_api.test.ts]
-
-### T66.3: Model Health Profile Reset Routine Clearing Mock Stats
-
-- [ ] T66.3.1: Implement ModelHealthRepository.resetAllStats() resetting total_tasks, total_success, total_failures, and consecutive_failures to 0. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: ModelHealthRepository.resetAllStats] [Test: npm test -- packages/db/src/tests/ModelHealthRepository.test.ts]
-- [ ] T66.3.2: Reset avg_latency_ms and avg_tokens_per_sec to 0.0 and restore status to 'ACTIVE' for all registered models. [File: packages/db/src/repositories/ModelHealthRepository.ts] [Method: resetAllStats] [Test: npm test -- packages/db/src/tests/ModelHealthRepository.test.ts]
-- [ ] T66.3.3: Expose POST /api/models/reset-stats endpoint triggering clean-slate reset of model leaderboard metrics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/models/reset-stats] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [ ] T66.3.4: Write unit tests verifying resetAllStats updates all model rows to clean baseline values without dropping records. [File: packages/db/src/tests/model_health_reset.test.ts] [Test: npm test -- packages/db/src/tests/model_health_reset.test.ts]
-
-### T66.4: Telemetry Snapshot Auto-Compaction Daemon Rolling Up Data Older Than 7 Days
-
-- [ ] T66.4.1: Implement TelemetryCompactorDaemon in packages/engine/src/telemetry/TelemetryCompactorDaemon.ts running every 24 hours. [File: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts] [Class: TelemetryCompactorDaemon] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
-- [ ] T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour average summary records. [File: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts] [Method: aggregateHourlySnapshots] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
-- [ ] T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup insertion, freeing disk space. [File: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts] [Method: pruneRawSnapshots] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
-- [ ] T66.4.4: Write unit tests verifying compactor rolls up 3600 raw records into single hourly average and deletes originals safely. [File: packages/engine/src/tests/telemetry_compactor.test.ts] [Test: npm test -- packages/engine/src/tests/telemetry_compactor.test.ts]
-
-### T66.5: Cacophony CLI Command: cacophony history reset and cacophony history prune
-
-- [ ] T66.5.1: Add CLI subcommand 'history' to bin/cacophony CLI entrypoint with actions: 'list', 'reset', 'prune'. [File: bin/cacophony.ts] [Subcommand: history] [Test: node bin/cacophony.ts history list]
-- [ ] T66.5.2: Support --days=N flag for prune action to retain specified window of historical tasks. [File: bin/cacophony.ts] [Option: --days] [Test: node bin/cacophony.ts history prune --days=7]
-- [ ] T66.5.3: Implement interactive confirmation prompt (or --yes flag for automated scripts) before executing destructive reset. [File: bin/cacophony.ts] [Method: confirmAction] [Test: node bin/cacophony.ts history reset --yes]
-- [ ] T66.5.4: Write CLI integration tests verifying history reset and prune subcommands interact properly with daemon IPC socket. [File: packages/engine/src/tests/cli_history.test.ts] [Test: npm test -- packages/engine/src/tests/cli_history.test.ts]
-
-### T66.6: Automated Backup Snapshot Generation Prior to History Pruning
-
-- [ ] T66.6.1: Implement createDatabaseBackup(backupDir: string) in DatabaseMaintenanceService creating point-in-time snapshot before purge. [File: packages/db/src/services/DatabaseMaintenanceService.ts] [Method: createDatabaseBackup] [Test: npm test -- packages/db/src/tests/database_maintenance.test.ts]
-- [ ] T66.6.2: Save compressed JSON archive containing dumped tasks and task_stages to data/backups/cacophony_backup_<timestamp>.json.gz. [File: packages/db/src/services/DatabaseMaintenanceService.ts] [Method: exportTasksToJson] [Test: npm test -- packages/db/src/tests/database_maintenance.test.ts]
-- [ ] T66.6.3: Automatically prune backups older than 30 days to enforce storage retention limits. [File: packages/db/src/services/DatabaseMaintenanceService.ts] [Method: pruneOldBackups] [Test: npm test -- packages/db/src/tests/database_maintenance.test.ts]
-- [ ] T66.6.4: Write unit tests verifying backup archive is written to disk and can be inspected before purge proceeds. [File: packages/db/src/tests/database_backup.test.ts] [Test: npm test -- packages/db/src/tests/database_backup.test.ts]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-66-clean-slate-real-history-persistence--model-stat-reset-daemon)_
 
 ---
 
 ## Phase 67: Real-Time Stream Tap Filtering & Multi-Task Tap Isolation
 
-_RDF Category: telemetry_
-
-### T67.1: Multi-Task Stream Tap Isolation in StreamTapManager
-
-- [ ] T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId instead of a single global shared buffer. [File: packages/engine/src/inference/StreamTapManager.ts] [Class: StreamTapManager] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
-- [ ] T67.1.2: Prevent token cross-contamination between concurrent or sequential task executions: append tokens strictly to target taskId buffer. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: appendToken] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
-- [ ] T67.1.3: Expose getTaskBuffer(taskId: string) returning the isolated stream buffer for a specific task. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: getTaskBuffer] [Test: npm test -- packages/engine/src/tests/stream_tap_manager.test.ts]
-- [ ] T67.1.4: Write unit tests verifying that tokens appended to task-1 are never visible in task-2 buffer. [File: packages/engine/src/tests/stream_tap_isolation.test.ts] [Test: npm test -- packages/engine/src/tests/stream_tap_isolation.test.ts]
-
-### T67.2: Task-Specific SSE Stream Channel (/api/stream/:taskId)
-
-- [ ] T67.2.1: Add parameterized SSE route GET /api/stream/:taskId in CacophonyHttpServer allowing clients to subscribe to specific task output. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/stream/:taskId] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [ ] T67.2.2: Stream initial buffer chunk (stream_init event) upon client connection containing all tokens accumulated so far for that task. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleTaskSseStream] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [ ] T67.2.3: Stream incremental token chunks (token event) in real time as Ollama delivers inference chunks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastTaskToken] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [ ] T67.2.4: Write integration tests verifying multiple SSE clients connected to different tasks receive their respective token streams. [File: packages/engine/src/tests/task_sse_streams.test.ts] [Test: npm test -- packages/engine/src/tests/task_sse_streams.test.ts]
-
-### T67.3: Instantaneous vs Rolling Token Velocity Smoothing Engine
-
-- [ ] T67.3.1: Implement Exponential Moving Average (EMA) token velocity smoother in ArenaStateStore: smoothed = alpha * instant + (1 - alpha) * smoothed. [File: packages/frontend/src/app/services/arena-state.store.ts] [Method: updateSmoothedVelocity] [Test: npm test]
-- [ ] T67.3.2: Set smoothing coefficient alpha = 0.25 to eliminate visual strobing while maintaining responsiveness to real speed changes. [File: packages/frontend/src/app/services/arena-state.store.ts] [Property: velocityAlpha] [Test: npm test]
-- [ ] T67.3.3: Expose formattedSmoothedVelocity signal formatted to fixed 1 decimal place with tabular numbers font styling. [File: packages/frontend/src/app/services/arena-state.store.ts] [Computed: formattedSmoothedVelocity] [Test: npm test]
-- [ ] T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden token spikes and smoothly decays to 0 on pause. [File: packages/frontend/src/app/services/arena-state.store.spec.ts] [Test: npm test]
-
-### T67.4: Historical Stream Buffer Replay from Persisted Stage Output
-
-- [ ] T67.4.1: Implement replayStreamForTask(taskId: string) in TaskApiService fetching persisted generation stage log output. [File: packages/frontend/src/app/services/task-api.service.ts] [Method: replayStreamForTask] [Test: npm test]
-- [ ] T67.4.2: Update TaskInspectorComponent to display historical log buffer when viewing a non-active or completed task selected from list. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Method: selectTaskToInspect] [Test: npm test]
-- [ ] T67.4.3: Show status pill 'COMPLETED' or 'ARCHIVED' instead of 'LIVE' when viewing historical streams. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts] [Template: stream-status] [Test: npm test]
-- [ ] T67.4.4: Write unit tests verifying task inspector switches cleanly between live SSE streaming and static historical stage replay. [File: packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm test]
-
-### T67.5: SSE Client Reconnect and Last-Event-ID State Restoration
-
-- [ ] T67.5.1: Implement Last-Event-ID tracking in CacophonyHttpServer SSE broadcaster numbering each streamed token event sequentially. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastEventWithId] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [ ] T67.5.2: Handle reconnect requests: when client reconnects with Last-Event-ID, replay missed tokens from the ring buffer before resuming live stream. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: resumeSseStream] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
-- [ ] T67.5.3: Add automatic reconnect logic with exponential backoff in frontend ArenaStateStore eventSource connection handler. [File: packages/frontend/src/app/services/arena-state.store.ts] [Method: connectLiveStreams] [Test: npm test]
-- [ ] T67.5.4: Write integration tests verifying that simulated network disconnection and reconnection causes zero token loss. [File: packages/engine/src/tests/sse_reconnect.test.ts] [Test: npm test -- packages/engine/src/tests/sse_reconnect.test.ts]
-
-### T67.6: Stream Tap Buffer Memory Governor and Rolling Eviction
-
-- [x] T67.6.1: Enforce maximum per-task buffer size limit of 100,000 characters (~25,000 tokens) in StreamTapManager. [File: packages/engine/src/inference/StreamTapManager.ts] [Property: maxBufferSize] [Test: npm test -- packages/engine/src/tests/stream_tap_governor.test.ts]
-- [x] T67.6.2: Implement FIFO rolling truncation: slice oldest characters when buffer exceeds max limit to prevent node process heap bloat. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: enforceBufferLimit] [Test: npm test -- packages/engine/src/tests/stream_tap_governor.test.ts]
-- [x] T67.6.3: Evict buffers for tasks completed more than 30 minutes ago during periodic garbage collection sweep. [File: packages/engine/src/inference/StreamTapManager.ts] [Method: sweepStaleBuffers] [Test: npm test -- packages/engine/src/tests/stream_tap_governor.test.ts]
-- [x] T67.6.4: Write unit tests verifying buffer truncation preserves newest tokens and stale task buffers are purged from memory. [File: packages/engine/src/tests/stream_tap_governor.test.ts] [Test: npm test -- packages/engine/src/tests/stream_tap_governor.test.ts]
+_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-67-real-time-stream-tap-filtering--multi-task-tap-isolation)_
 
 ---
 
@@ -322,8 +238,8 @@ _RDF Category: orchestration_
 
 - [ ] T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated files so local 3B/7B models never have to synthesize boilerplate imports. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Method: injectImports] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
 - [ ] T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript compiler API (ts.createSourceFile). [File: packages/engine/src/generators/SignatureHarvester.ts] [Class: SignatureHarvester] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [ ] T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating only the function body between // <BEGIN_IMPLEMENTATION> and // <END_IMPLEMENTATION>). [File: packages/engine/src/inference/SlotFillPromptBuilder.ts] [Class: SlotFillPromptBuilder] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
-- [ ] T70.2.4: Write unit tests verifying slot-fill code synthesis, template marker extraction, and AST integrity. [File: packages/engine/src/tests/slot_fill.test.ts] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
+- [x] T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating only the function body between // <BEGIN_IMPLEMENTATION> and // <END_IMPLEMENTATION>). [File: packages/engine/src/inference/SlotFillPromptBuilder.ts] [Class: SlotFillPromptBuilder] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
+- [x] T70.2.4: Write unit tests verifying slot-fill code synthesis, template marker extraction, and AST integrity. [File: packages/engine/src/tests/slot_fill.test.ts] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
 
 ### T70.3: AutonomousWorkerPipeline Schematic Integration & Validation Gate
 
@@ -724,6 +640,51 @@ _RDF Category: analytics_and_orchestration_
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t66.4.3 Rehabilitation [2026-10-14T07:30:38.784Z]
+- **Parent Task**: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup (`taskcade-t66.4.3`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.4.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup [Role: type_specialist] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+  - [ ] `taskcade-t66.4.3.2`: [Rehab 2/2] Implementation & Test Verification: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup [Role: implementer] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+
+
+### Task taskcade-t67.1.1 Rehabilitation [2026-10-14T07:28:54.771Z]
+- **Parent Task**: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst (`taskcade-t67.1.1`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst [Role: type_specialist] [Files: packages/engine/src/inference/StreamTapManager.ts]
+  - [ ] `taskcade-t67.1.1.2`: [Rehab 2/2] Implementation & Test Verification: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst [Role: implementer] [Files: packages/engine/src/inference/StreamTapManager.ts]
+
+
+### Task taskcade-t70.1.1 Rehabilitation [2026-10-14T06:02:51.178Z]
+- **Parent Task**: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc (`taskcade-t70.1.1`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [ ] `taskcade-t70.1.1.2`: [Rehab 2/2] Implementation & Test Verification: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+
+
+### Task taskcade-t72.3.1 Rehabilitation [2026-10-14T05:58:12.463Z]
+- **Parent Task**: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a (`taskcade-t72.3.1`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a [Role: type_specialist] [Files: packages/tools/src/implementations/EnqueueTaskcadeTaskTool.ts]
+  - [ ] `taskcade-t72.3.1.2`: [Rehab 2/2] Implementation & Test Verification: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a [Role: implementer] [Files: packages/tools/src/implementations/EnqueueTaskcadeTaskTool.ts]
+
+
+### Task taskcade-t76.3.4 Rehabilitation [2026-10-14T05:46:33.680Z]
+- **Parent Task**: T76.3.4: Write frontend unit tests validating form bindings, validation rules, and PUT /a (`taskcade-t76.3.4`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t76.3.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T76.3.4: Write frontend unit tests validating form bindings, validation rules, and PUT /a [Role: type_specialist] [Files: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.spec.ts]
+  - [ ] `taskcade-t76.3.4.2`: [Rehab 2/2] Implementation & Test Verification: T76.3.4: Write frontend unit tests validating form bindings, validation rules, and PUT /a [Role: implementer] [Files: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.spec.ts]
+
 
 ### Task taskcade-t65.6.3.1 Rehabilitation [2026-10-14T00:03:49.575Z]
 

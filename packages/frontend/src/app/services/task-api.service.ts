@@ -96,6 +96,51 @@ export class TaskApiService {
     }
   }
 
+  /**
+   * Fetches persisted historical stream log output for a given task (T67.4.1).
+   */
+  public async replayStreamForTask(taskId: string): Promise<string> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      // 1. Try to fetch from stream buffer endpoint if still in memory/buffer
+      const bufRes = await fetch(`/api/stream/buffer?taskId=${encodeURIComponent(taskId)}`);
+      if (bufRes.ok) {
+        const bufData = await bufRes.json() as { buffer?: string };
+        if (bufData.buffer && bufData.buffer.trim().length > 0) {
+          return bufData.buffer;
+        }
+      }
+
+      // 2. Fetch full task details and stages
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Failed to fetch task for replay`);
+      }
+      const data = await res.json() as {
+        stages?: Array<{ stageName: string; stageStatus: string; errorLog?: string }>;
+        logSnippet?: string;
+      };
+
+      if (data.logSnippet) {
+        return data.logSnippet;
+      }
+      if (data.stages && data.stages.length > 0) {
+        const stageLogs = data.stages
+          .map((s) => `[Stage: ${s.stageName}] Status: ${s.stageStatus}${s.errorLog ? `\n${s.errorLog}` : ''}`)
+          .join('\n');
+        return stageLogs;
+      }
+      return '';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      return '';
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
   public async updateTask(taskId: string, dto: Partial<TaskDto>): Promise<TaskDto | null> {
     this.loading.set(true);
     this.error.set(null);

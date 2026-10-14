@@ -17,8 +17,14 @@
           </div>
         }
         <div class="speed-badge" [class.live-active]="isStreamActive()">
-          <span class="hud-pill" [class.live]="isStreamActive()" [class.paused]="!isStreamActive()">
-            {{ isStreamActive() ? 'LIVE' : 'PAUSED' }}
+          <span
+            class="hud-pill"
+            [class.live]="streamStatus() === 'LIVE'"
+            [class.paused]="streamStatus() === 'PAUSED'"
+            [class.completed]="streamStatus() === 'COMPLETED'"
+            [class.archived]="streamStatus() === 'ARCHIVED'"
+          >
+            {{ streamStatus() }}
           </span>
           <div class="hud-metric">
             <span class="metric-caption"></span>
@@ -167,7 +173,7 @@
         <pre
           #terminalContent
           class="terminal-content"
-        ><code>{{ liveStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+        ><code>{{ displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
       }
     </div>
 

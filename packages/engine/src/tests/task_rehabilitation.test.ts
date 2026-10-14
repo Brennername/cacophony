@@ -141,6 +141,10 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
         createdSubtasks.push(task);
         return task;
       },
+      createIfNotExists: async (task: TaskRecord) => {
+        createdSubtasks.push(task);
+        return { task, created: true };
+      },
       updateRehabStatus: async (_id: string, status: string) => {
         updatedRehabStatus = status;
       },

@@ -36,7 +36,7 @@ export interface TaskStageItem {
 export interface TaskItem {
   id: string;
   title: string;
-  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'REMEDIATED';
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'REMEDIATED' | 'CANCELLED';
   priority: 'P0' | 'P1' | 'P2';
   role: string;
   prompt?: string;

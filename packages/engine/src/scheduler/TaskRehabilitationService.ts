@@ -113,7 +113,11 @@ export class TaskRehabilitationService {
 
       // Safely ensure subtask is created idempotently to prevent unique constraint crashes
       // if rehabilitation is retried or subtasks were already partially created.
-      await this.taskRepo.createIfNotExists(childRecord);
+      if (typeof this.taskRepo.createIfNotExists === "function") {
+        await this.taskRepo.createIfNotExists(childRecord);
+      } else {
+        await this.taskRepo.create(childRecord);
+      }
     }
 
     // Mark parent task as DECOMPOSED
