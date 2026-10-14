@@ -1970,3 +1970,442 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T80.5.2: Expose `GET /api/promotion/status` returning current staging vs upstream GitHub divergence and pending release candidates. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/promotion/status] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
   - [x] T80.5.3: Add CLI command `bin/cacophony promote [--dry-run] [--target=github]` to trigger automated verification and upstream release. [File: bin/cacophony.ts] [Subcommand: promote] [Test: node bin/cacophony.ts promote --dry-run]
   - [x] T80.5.4: Write integration tests verifying REST API and CLI endpoints validate build and test gates before pushing. [File: packages/engine/src/tests/promotion_api.test.ts] [Test: npm test -- packages/engine/src/tests/promotion_api.test.ts]
+
+---
+
+## Archived Phase 47: Queue Execution Recovery, Stale Task Reclamation & Scheduler Resilience
+*Completed & Verified in Engineering Session*
+
+*RDF Category: persistence*
+
+### T47.1: Stale Running Task Auto-Reclamation on Engine Startup
+  - [x] T47.1.1: Implement TaskRepository.reclaimStaleRunningTasks(timeoutMinutes: number) transitioning tasks stranded in RUNNING state back to PENDING. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.reclaimStaleRunningTasks] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T47.1.2: Invoke reclaimStaleRunningTasks during CacophonyDaemon startup sequence before TaskScheduler.start(). [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: CacophonyDaemon.start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T47.1.3: Add REST endpoint POST /api/tasks/reclaim to trigger manual or scheduled reclamation of orphan running tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/reclaim] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T47.1.4: Write unit tests verifying that stranded RUNNING tasks are cleanly requeued with failure counts preserved. [File: packages/db/src/__tests__/Database.test.ts] [Test: npm test --workspace=@cacophony/db dist/__tests__/Database.test.js]
+
+### T47.2: Task Execution Timeout & Deadlock Watchdog
+  - [x] T47.2.1: Add watchdog timer in TaskScheduler aborting tasks exceeding per-model max execution timeout. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Class: TaskScheduler] [Test: npm test -- packages/engine/src/tests/scheduler_timeout.test.ts]
+  - [x] T47.2.2: Add ExecutionTimeoutError classification to FailureClassifier tagging tasks aborted by watchdog. [File: packages/engine/src/analytics/FailureClassifier.ts] [Class: FailureClassifier] [Test: npm test -- packages/engine/src/tests/failure_classifier.test.ts]
+  - [x] T47.2.3: Record TIMEOUT stage failure in StageRepository with elapsed duration and partial output log. [File: packages/db/src/repositories/StageRepository.ts] [Method: StageRepository.recordStageCompletion] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
+  - [x] T47.2.4: Write unit tests simulating stalled LLM stream triggers watchdog timeout and transitions task to FAILED. [File: packages/engine/src/tests/scheduler_timeout.test.ts] [Test: npm test -- packages/engine/src/tests/scheduler_timeout.test.ts]
+
+### T47.3: Scheduler Task Dispatch Backpressure & APU Temperature Governor
+  - [x] T47.3.1: Implement thermal backpressure check in TaskScheduler.tick() delaying dispatch when edge temp exceeds 85C with emergency shutdown cutoff at 105C. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: TaskScheduler.tick] [Test: npm test -- packages/engine/src/tests/thermal_governor.test.ts]
+  - [x] T47.3.2: Expose scheduler backpressure state (isBackpressured, backpressureReason) in GET /api/status. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/status] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T47.3.3: Update ArenaStateStore to consume scheduler backpressure state and reflect in frontend UI status badge. [File: packages/frontend/src/app/services/arena-state.store.ts] [Class: ArenaStateStore] [Test: npm test]
+  - [x] T47.3.4: Write unit tests verifying scheduler pauses task dispatch during high thermal load and resumes automatically when cool. [File: packages/engine/src/tests/thermal_backpressure.test.ts] [Test: npm test -- packages/engine/src/tests/thermal_backpressure.test.ts]
+
+### T47.4: PGlite Database Reconnection & Lockfile Recovery
+  - [x] T47.4.1: Implement stale lockfile detection in PGliteDriver recovering cleanly from unclean container restarts. [File: packages/db/src/drivers/PGliteDriver.ts] [Class: PGliteDriver] [Test: npm test -- packages/db/src/tests/pglite_driver.test.ts]
+  - [x] T47.4.2: Add health check query verification (SELECT 1) with retry backoff in PGliteDriver.connect(). [File: packages/db/src/drivers/PGliteDriver.ts] [Method: PGliteDriver.connect] [Test: npm test -- packages/db/src/tests/pglite_driver.test.ts]
+  - [x] T47.4.3: Implement safe database disconnect and lock release on process SIGTERM and SIGINT in CacophonyDaemon. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: CacophonyDaemon.stop] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T47.4.4: Write unit tests verifying PGlite driver re-establishes connection and handles concurrency locks gracefully. [File: packages/db/src/tests/pglite_resilience.test.ts] [Test: npm test -- packages/db/src/tests/pglite_resilience.test.ts]
+
+### T47.5: Continuous Queue Ingestion & Priority-Based Preemption
+  - [x] T47.5.1: Enhance TaskRepository.listPending() to order by effective priority considering both base priority and wait age. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.listPending] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T47.5.2: Implement starvation prevention bumping tasks waiting longer than 15 minutes up one priority level. [File: packages/engine/src/scheduler/QueueGroomer.ts] [Class: QueueGroomer] [Test: npm test -- packages/engine/src/tests/queue_groomer.test.ts]
+  - [x] T47.5.3: Add batch task creation endpoint POST /api/tasks/batch for atomic bulk enqueue of decomposed epics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/batch] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T47.5.4: Write unit tests validating that P0 tasks preempt lower-priority tasks while preventing starvation of P2 tasks. [File: packages/engine/src/tests/priority_preemption.test.ts] [Test: npm test -- packages/engine/src/tests/priority_preemption.test.ts]
+
+### T47.6: Queue Seed Dispatcher for Self-Hosting Bootstrap
+  - [x] T47.6.1: Create TaskcadeSeedLoader reading pending tasks from docs/taskcade.md and parsing them into typed TaskRecord objects. [File: packages/engine/src/scheduler/TaskcadeSeedLoader.ts] [Class: TaskcadeSeedLoader] [Test: npm test -- packages/engine/src/tests/seed_loader.test.ts]
+  - [x] T47.6.2: Add CLI command bin/seed-queue.ts to enqueue uncompleted checklist items from active taskcade phase. [File: bin/seed-queue.ts] [Test: node bin/seed-queue.ts --dry-run]
+  - [x] T47.6.3: Implement duplicate task prevention ensuring identical task IDs or titles are not re-enqueued. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.createIfNotExists] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T47.6.4: Write integration tests verifying seed loader correctly extracts markdown task items and registers them in DB. [File: packages/engine/src/tests/seed_loader.test.ts] [Test: npm test -- packages/engine/src/tests/seed_loader.test.ts]
+
+---
+
+## Archived Phase 55: Multi-Armed Bandit Model Exploration & Empirical Reward Engine
+*Completed & Verified in Engineering Session*
+
+*RDF Category: orchestration*
+
+### T55.1: Persist Bandit Arm Records & Beta Distributions in Database
+  - [x] T55.1.1: Write SQL migration creating table bandit_arms (arm_id, model_id, role, alpha, beta, total_reward, trials_count). [File: packages/db/src/migrations/005_bandit_arms.sql] [Migration: 005_bandit_arms.sql] [Test: npm test -- packages/db/src/tests/migrations.test.ts]
+  - [x] T55.1.2: Implement BanditRepository in packages/db/src/repositories/ with CRUD and transactional reward increment operations. [File: packages/db/src/repositories/BanditRepository.ts] [Class: BanditRepository] [Test: npm test -- packages/db/src/tests/BanditRepository.test.ts]
+  - [x] T55.1.3: Initialize BanditTaskScheduler from bandit_arms database records on engine startup. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: loadFromRepository] [Test: npm test -- packages/engine/src/tests/bandit_scheduler.test.ts]
+  - [x] T55.1.4: Write unit tests verifying persistent storage and reloading of Alpha/Beta posterior distributions. [File: packages/db/src/tests/bandit_persistence.test.ts] [Test: npm test -- packages/db/src/tests/bandit_persistence.test.ts]
+
+### T55.2: REST API: GET /api/bandit/arms & PUT /api/bandit/policy
+  - [x] T55.2.1: Implement GET /api/bandit/arms returning all candidate model arms with win rates, trials, alpha, beta, and tok/s. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/bandit/arms] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T55.2.2: Implement PUT /api/bandit/policy accepting { policy, explorationRate, ucbConstant } and updating scheduler. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: PUT /api/bandit/policy] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T55.2.3: Broadcast 'bandit_updated' event over SSE when arm rewards are updated or policy changes. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Event: bandit_updated] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T55.2.4: Write integration tests verifying policy changes via API take immediate effect in dispatch decisions. [File: packages/engine/src/tests/bandit_api.test.ts] [Test: npm test -- packages/engine/src/tests/bandit_api.test.ts]
+
+### T55.3: Empirical Reward Update Hook in AutonomousWorkerPipeline
+  - [x] T55.3.1: Calculate empirical reward score [0.0, 1.0] upon task completion based on test pass, review approval, and tok/s. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: calculateReward] [Test: npm test -- packages/engine/src/tests/bandit_scheduler.test.ts]
+  - [x] T55.3.2: Hook reward calculation into AutonomousWorkerPipeline finalization updating arm Alpha (success) or Beta (failure). [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: finalizeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T55.3.3: Persist updated Alpha/Beta distributions to BanditRepository after every task execution. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: recordReward] [Test: npm test -- packages/engine/src/tests/bandit_scheduler.test.ts]
+  - [x] T55.3.4: Write unit tests verifying that successful task runs increase arm Alpha and boost future selection probability. [File: packages/engine/src/tests/bandit_rewards.test.ts] [Test: npm test -- packages/engine/src/tests/bandit_rewards.test.ts]
+
+### T55.4: Wire ExplorationControlComponent to Real Multi-Armed Bandit Telemetry
+  - [x] T55.4.1: Fetch live arms and active policy from GET /api/bandit/arms on component ngOnInit in ExplorationControlComponent. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Method: ngOnInit] [Test: npm test]
+  - [x] T55.4.2: Connect policy buttons (Epsilon-Greedy, UCB-1, Thompson Sampling) to PUT /api/bandit/policy. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Method: setPolicy] [Test: npm test]
+  - [x] T55.4.3: Connect epsilon slider input to PUT /api/bandit/policy with 300ms debounce. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Method: onEpsilonChange] [Test: npm test]
+  - [x] T55.4.4: Write frontend unit tests verifying policy change triggers API PUT and updates local activePolicy signal. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.spec.ts] [Test: npm test]
+
+### T55.5: Statistical Role Promotion & Demotion Evaluation
+  - [x] T55.5.1: Implement evaluateRolePromotions(role: AgentRole) in BanditTaskScheduler using Welch's t-test for statistical significance. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: evaluateRolePromotions] [Test: npm test -- packages/engine/src/tests/role_promotions.test.ts]
+  - [x] T55.5.2: Promote arm to PRIMARY role model when win rate exceeds current primary with p < 0.05 confidence. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: promoteArm] [Test: npm test -- packages/engine/src/tests/role_promotions.test.ts]
+  - [x] T55.5.3: Record promotion event in model_health_profiles and broadcast 'model_promoted' SSE notification. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Event: model_promoted] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T55.5.4: Write unit tests simulating trial series verifying that superior model earns promotion over baseline. [File: packages/engine/src/tests/role_promotions.test.ts] [Test: npm test -- packages/engine/src/tests/role_promotions.test.ts]
+
+### T55.6: Pareto Frontier 2D Visualization: Quality vs Velocity vs VRAM
+  - [x] T55.6.1: Compute 2D Pareto optimal frontier points (winRatePct vs tokensPerSec) in ExplorationControlComponent. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Computed: paretoFrontier] [Test: npm test]
+  - [x] T55.6.2: Render interactive scatter plot with SVG showing each model arm positioned by tok/s (X) and win rate (Y). [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Template: pareto-scatter] [Test: npm test]
+  - [x] T55.6.3: Draw frontier envelope connecting non-dominated Pareto optimal models. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Template: pareto-envelope] [Test: npm test]
+  - [x] T55.6.4: Write frontend unit tests verifying Pareto frontier calculation identifies dominant models correctly. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.spec.ts] [Test: npm test]
+
+---
+
+## Archived Phase 56: Distributed Heterogeneous Fleet Orchestration & Hardware Telemetry
+*Completed & Verified in Engineering Session*
+
+*RDF Category: telemetry*
+
+### T56.1: Dynamic Node Telemetry Sampling & Aggregation
+  - [x] T56.1.1: Sample local GPU and APU telemetry every 2 seconds via HardwareTelemetryProvider. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Method: sampleLocalNodeTelemetry] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.1.2: Aggregate node metrics: GPU load %, VRAM used/total, temperature, active running tasks count. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Type: FleetNodeSnapshot] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.1.3: Expose local node metrics in GET /api/fleet/nodes alongside any registered remote worker nodes. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/fleet/nodes] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T56.1.4: Write unit tests verifying that local node metrics accurately reflect current hardware sensor values. [File: packages/engine/src/tests/fleet_telemetry.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_telemetry.test.ts]
+
+### T56.2: REST API: GET /api/fleet/nodes Real-Time Status Endpoint
+  - [x] T56.2.1: Query registered fleet nodes from memory cache with fallback to fleet_nodes database table. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/fleet/nodes] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T56.2.2: Include lastHeartbeat timestamp and compute status ('ONLINE' | 'DEGRADED' | 'OFFLINE') based on heartbeat freshness. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Method: computeNodeStatus] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.2.3: Return formatted JSON response matching FleetNodeView frontend interface. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/fleet/nodes] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T56.2.4: Write integration tests verifying /api/fleet/nodes returns 200 with active local node telemetry. [File: packages/engine/src/tests/fleet_api.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_api.test.ts]
+
+### T56.3: Hardware Tool Scanner Implementation via System Execution
+  - [x] T56.3.1: Execute command which for system diagnostics tools: radeontop, lm-sensors, btop, mesa-utils, vulkan-tools. [File: packages/engine/src/hardware/SystemToolScanner.ts] [Method: scan] [Test: npm test -- packages/engine/src/tests/tool_scanner.test.ts]
+  - [x] T56.3.2: Build diagnostic report classifying each tool as installed (path resolved) or missing. [File: packages/engine/src/hardware/SystemToolScanner.ts] [Type: SystemToolReport] [Test: npm test -- packages/engine/src/tests/tool_scanner.test.ts]
+  - [x] T56.3.3: Generate unified package install command (e.g. sudo apt install -y ...) for all detected missing tools. [File: packages/engine/src/hardware/SystemToolScanner.ts] [Method: generateInstallCommand] [Test: npm test -- packages/engine/src/tests/tool_scanner.test.ts]
+  - [x] T56.3.4: Write unit tests verifying that SystemToolScanner correctly categorizes present and missing system binaries. [File: packages/engine/src/tests/tool_scanner.test.ts] [Test: npm test -- packages/engine/src/tests/tool_scanner.test.ts]
+
+### T56.4: Fleet Node Heartbeat Daemon & Dead Node Eviction
+  - [x] T56.4.1: Run heartbeat background loop pinging registered worker nodes every 10 seconds. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Method: startHeartbeatLoop] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.4.2: Mark nodes as OFFLINE when heartbeat fails for 3 consecutive intervals (30 seconds). [File: packages/engine/src/fleet/FleetNodeManager.ts] [Method: evaluateNodeLiveness] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.4.3: Automatically reassign pending or running tasks from dead nodes back to local queue. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Method: evacuateDeadNodeTasks] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.4.4: Write unit tests verifying node state transitions to OFFLINE and stranded tasks are requeued safely. [File: packages/engine/src/tests/fleet_eviction.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_eviction.test.ts]
+
+### T56.5: Fleet Node Registration Endpoint with Security Token
+  - [x] T56.5.1: Implement POST /api/fleet/register validating incoming registration payload and authentication token. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/fleet/register] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T56.5.2: Verify registration token against FLEET_CLUSTER_SECRET stored in secret vault. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Method: validateRegistrationToken] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.5.3: Register valid node in fleet manager and assign unique nodeId and network routing address. [File: packages/engine/src/fleet/FleetNodeManager.ts] [Method: registerNode] [Test: npm test -- packages/engine/src/tests/fleet_manager.test.ts]
+  - [x] T56.5.4: Write integration tests verifying successful node registration and rejection of invalid authentication tokens. [File: packages/engine/src/tests/fleet_registration.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_registration.test.ts]
+
+### T56.6: Multi-Node Task Dispatch Router
+  - [x] T56.6.1: Implement FleetTaskRouter evaluating target node suitability based on model availability and VRAM headroom. [File: packages/engine/src/fleet/FleetTaskRouter.ts] [Class: FleetTaskRouter] [Test: npm test -- packages/engine/src/tests/fleet_router.test.ts]
+  - [x] T56.6.2: Forward task execution payload to remote node API POST /api/tasks/remote-dispatch when offloading. [File: packages/engine/src/fleet/FleetTaskRouter.ts] [Method: dispatchToRemoteNode] [Test: npm test -- packages/engine/src/tests/fleet_router.test.ts]
+  - [x] T56.6.3: Stream remote node execution tokens and stages back to coordinator via SSE proxy. [File: packages/engine/src/fleet/FleetTaskRouter.ts] [Method: proxyRemoteStream] [Test: npm test -- packages/engine/src/tests/fleet_router.test.ts]
+  - [x] T56.6.4: Write unit tests verifying tasks requiring high VRAM are routed to nodes with sufficient available GPU memory. [File: packages/engine/src/tests/fleet_router.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_router.test.ts]
+
+---
+
+## Archived Phase 57: Rolling 100-Task Success Meter & Failure-to-Success Quality Telemetry
+*Completed & Verified in Engineering Session*
+
+*RDF Category: telemetry*
+
+### T57.1: Mathematical Rolling 100-Task Success Rate Window in Backend
+  - [x] T57.1.1: Implement TaskRepository.getRollingSuccessStats(sampleSize: number = 100) querying the last N finished tasks with status in ('COMPLETED', 'FAILED'). [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.getRollingSuccessStats] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T57.1.2: Calculate success percentage as (completedCount / totalFinished) * 100 rounded to 1 decimal place, handling zero-division cleanly when totalFinished is 0. [File: packages/db/src/repositories/TaskRepository.ts] [Type: RollingSuccessStats] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T57.1.3: Track previous window success rate to compute rolling trend direction ('improving' | 'declining' | 'stable') across consecutive 50-task sub-windows. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.getRollingSuccessStats] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
+  - [x] T57.1.4: Write unit tests verifying getRollingSuccessStats accurately computes rates for 0%, 50%, 100%, and arbitrary completion ratios across 100 tasks. [File: packages/db/src/tests/rolling_success.test.ts] [Test: npm test -- packages/db/src/tests/rolling_success.test.ts]
+
+### T57.2: REST API: GET /api/metrics/success-rate Endpoint
+  - [x] T57.2.1: Register route GET /api/metrics/success-rate in CacophonyHttpServer returning structured RollingSuccessStats JSON payload. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/metrics/success-rate] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T57.2.2: Support optional query parameter ?window=N (default 100, min 10, max 500) to allow customized historical sample depths. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleSuccessRateMetric] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T57.2.3: Return breakdown by model assigned: per-model success rate, run count, and failure count within the 100-task rolling window. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/metrics/success-rate] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T57.2.4: Write integration tests verifying /api/metrics/success-rate returns 200 with valid schema and correct calculations. [File: packages/engine/src/tests/success_rate_api.test.ts] [Test: npm test -- packages/engine/src/tests/success_rate_api.test.ts]
+
+### T57.3: Real-Time SSE Success Rate Broadcast on Task Completion
+  - [x] T57.3.1: Broadcast SSE event 'success_rate_updated' to all connected clients whenever a task transitions to COMPLETED or FAILED in AutonomousWorkerPipeline. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: finalizeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T57.3.2: Include updated rolling percentage, total completed count, total failed count, and current streak in the SSE payload. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastSuccessRate] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T57.3.3: Implement throttling in SSE broadcast governor to limit metric broadcasts to at most once per 500ms under high-throughput task completions. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: broadcastThrottled] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T57.3.4: Write integration tests verifying SSE clients receive success_rate_updated notifications immediately upon task status transition. [File: packages/engine/src/tests/sse_telemetry.test.ts] [Test: npm test -- packages/engine/src/tests/sse_telemetry.test.ts]
+
+### T57.4: Frontend SuccessMeterComponent with Color-Coded Radial & Linear Gauges
+  - [x] T57.4.1: Create standalone SuccessMeterComponent in packages/frontend/src/app/components/success-meter/ using Angular Signals and Zoneless change detection. [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Class: SuccessMeterComponent] [Test: npm test]
+  - [x] T57.4.2: Render SVG circular radial gauge with smooth stroke-dashoffset transition visualizing rolling success percentage (0% to 100%). [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Template: radial-gauge] [Test: npm test]
+  - [x] T57.4.3: Implement color-coded threshold status: Critical Red (<50%), Warning Amber (50-79%), Optimal Emerald (>=80%) based on current success rate. [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Computed: statusColorClass] [Test: npm test]
+  - [x] T57.4.4: Display numeric percentage in fixed-width tabular font with pass/fail counts breakdown ('X passed / Y failed in last 100 tasks'). [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Template: metrics-summary] [Test: npm test]
+  - [x] T57.4.5: Write frontend unit tests verifying reactive signal updates, SVG dashoffset calculations, and color threshold classes. [File: packages/frontend/src/app/components/success-meter/success-meter.component.spec.ts] [Test: npm test]
+
+### T57.5: Telemetry Bar & Dashboard Header Success Meter Integration
+  - [x] T57.5.1: Wire SuccessMeterComponent into DashboardViewComponent header adjacent to Active Task Inspector. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Component: DashboardViewComponent] [Test: npm test]
+  - [x] T57.5.2: Integrate compact success percentage pill into root TelemetryBar component visible on all routes. [File: packages/frontend/src/app/components/telemetry-bar/telemetry-bar.component.ts] [Component: TelemetryBarComponent] [Test: npm test]
+  - [x] T57.5.3: Bind ArenaStateStore successRate signal to SSE 'success_rate_updated' events for seamless live updates without polling. [File: packages/frontend/src/app/services/arena-state.store.ts] [Method: handleSseEvent] [Test: npm test]
+  - [x] T57.5.4: Apply responsive mobile-first CSS rules hiding radial graphics on small mobile screens (<480px) while maintaining compact text percentage. [File: packages/frontend/src/app/components/success-meter/success-meter.component.ts] [Styles: media-query] [Test: npm test]
+
+---
+
+## Archived Phase 59: Live Test Execution Stream & Dedicated Testing Panel (Refactoring 'Processes' View to 'Testing')
+*Completed & Verified in Engineering Session*
+
+*RDF Category: frontend*
+
+### T59.1: Global Navigation & Route Refactor: Rename 'Processes' to 'Testing' (/testing Route)
+  - [x] T59.1.1: Rename navigation bar label from 'Processes' to 'Testing' in app.html and update active route link to '/testing'. [File: packages/frontend/src/app/app.html] [Template: nav-links] [Test: npm test]
+  - [x] T59.1.2: Define route '/testing' in app.routes.ts mapping to TestingViewComponent. [File: packages/frontend/src/app/app.routes.ts] [Route: /testing] [Test: npm test]
+  - [x] T59.1.3: Add redirect route from '/processes' to '/testing' in app.routes.ts ensuring bookmark and legacy URL compatibility. [File: packages/frontend/src/app/app.routes.ts] [Route: /processes] [Test: npm test]
+  - [x] T59.1.4: Update frontend route unit tests in app.routes.spec.ts validating presence of '/testing' route and redirect. [File: packages/frontend/src/app/app.routes.spec.ts] [Test: npm test]
+
+### T59.2: Dedicated Testing View Layout & Active Test Execution Dashboard
+  - [x] T59.2.1: Create standalone TestingViewComponent in packages/frontend/src/app/components/views/testing-view.component.ts with modern responsive grid layout. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Class: TestingViewComponent] [Test: npm test]
+  - [x] T59.2.2: Implement Active Test Card displaying currently executing test command, target file paths, elapsed duration timer, and live status pill. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: active-test-card] [Test: npm test]
+  - [x] T59.2.3: Render test execution summary counters: Total Tests Run, Passed Count, Failed Count, Current Pass Rate %, and Average Test Duration. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: summary-counters] [Test: npm test]
+  - [x] T59.2.4: Write unit tests verifying TestingViewComponent renders summary metrics and responds to active test execution signal changes. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.3: Live Test Output Streamer (SSE Terminal Stream for Test Runner Stdout/Stderr)
+  - [x] T59.3.1: Connect TestingViewComponent to SSE event 'test_output' streaming real-time stdout and stderr lines from the active test runner subprocess. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: connectTestStream] [Test: npm test]
+  - [x] T59.3.2: Render high-density terminal log component with auto-scroll to bottom, ANSI color support, and line numbers. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: test-terminal] [Test: npm test]
+  - [x] T59.3.3: Implement live pause/resume auto-scroll toggle and copy log buffer button with visual feedback. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: copyLog] [Test: npm test]
+  - [x] T59.3.4: Write frontend unit tests verifying log buffer appends incoming test stream chunks and triggers auto-scroll. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.4: Historical Test Run Table with High-Density Filtering and Pass/Fail Verdicts
+  - [x] T59.4.1: Implement Historical Test Runs table in TestingViewComponent listing past test executions fetched from GET /api/tests/history. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: history-table] [Test: npm test]
+  - [x] T59.4.2: Render column data: Status badge (PASSED, FAILED, TIMEOUT), Task Title, Test Command, Execution Duration ms, Timestamp, and Actions. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: table-rows] [Test: npm test]
+  - [x] T59.4.3: Add filter tabs (ALL, PASSED, FAILED) and search input filtering test runs by command or task ID. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: filterTests] [Test: npm test]
+  - [x] T59.4.4: Write frontend unit tests validating filter tabs and text search accurately filter displayed historical test rows. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.5: Associated App Subprocess List in Testing View Bottom Drawer
+  - [x] T59.5.1: Create Collapsible Subprocess Drawer component at bottom of TestingViewComponent displaying associated application background processes. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: subprocess-drawer] [Test: npm test]
+  - [x] T59.5.2: Render process table displaying: Daemon Worker, Ollama Engine, PGlite Database, Gitea Git Server, and Mailpit with PID, CPU %, RSS MB, and Uptime. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Template: process-table] [Test: npm test]
+  - [x] T59.5.3: Add operator action button to restart any stuck background process via POST /api/processes/:name/restart with confirmation dialog. [File: packages/frontend/src/app/components/views/testing-view.component.ts] [Method: restartProcess] [Test: npm test]
+  - [x] T59.5.4: Write frontend unit tests verifying subprocess drawer expands/collapses and displays live process metrics from ArenaStateStore. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
+
+### T59.6: Deep Test Run Inspection Modal with Collapsible Stderr Stack Traces
+  - [x] T59.6.1: Create TestRunDetailModalComponent opening upon clicking any historical test run row. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts] [Class: TestRunDetailModalComponent] [Test: npm test]
+  - [x] T59.6.2: Render modal tabs: Full Output, Failing Assertions, Code Diffs, and Environment Variables. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts] [Template: modal-tabs] [Test: npm test]
+  - [x] T59.6.3: Highlight failing test assertion line in red with syntax-highlighted code snippet showing expected vs actual values. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts] [Template: assertion-diff] [Test: npm test]
+  - [x] T59.6.4: Write unit tests verifying modal open/close lifecycle, escape key listener, and assertion extraction parser. [File: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.spec.ts] [Test: npm test]
+
+---
+
+## Archived Phase 60: Real Multi-Armed Bandit Implementation (Thompson Sampling, UCB-1 & Epsilon-Greedy Wireup)
+*Completed & Verified in Engineering Session*
+
+*RDF Category: orchestration*
+
+### T60.1: Empirical Reward Calculation from Real Test Passes and Failure Counts
+  - [x] T60.1.1: Implement calculateEmpiricalReward(testOutcome: boolean, durationMs: number, tokensPerSec: number) in BanditTaskScheduler returning scalar reward [0.0, 1.0]. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: calculateEmpiricalReward] [Test: npm test -- packages/engine/src/tests/bandit_scheduler.test.ts]
+  - [x] T60.1.2: Grant baseline reward 1.0 on test pass; 0.0 on test failure; apply velocity modifier (+0.1 for tok/s > 30, -0.1 for tok/s < 15) clamped to [0.0, 1.0]. [File: packages/engine/src/bandit/BanditTaskScheduler.ts] [Method: calculateEmpiricalReward] [Test: npm test -- packages/engine/src/tests/bandit_scheduler.test.ts]
+  - [x] T60.1.3: Hook reward calculation into AutonomousWorkerPipeline upon stage 'test_execution' completion, updating active model arm in BanditRepository. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: finalizeTask] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T60.1.4: Write unit tests verifying that test passes yield reward >= 0.9 while test failures yield reward 0.0 across varying durations. [File: packages/engine/src/tests/bandit_reward_calc.test.ts] [Test: npm test -- packages/engine/src/tests/bandit_reward_calc.test.ts]
+
+### T60.2: Thompson Sampling Policy Engine with Beta(Alpha, Beta) Distribution Sampling
+  - [x] T60.2.1: Implement sampleBeta(alpha: number, beta: number) using Marsaglia and Tsang method or standard Gamma transform for accurate Beta distribution sampling. [File: packages/engine/src/bandit/ThompsonSamplingPolicy.ts] [Method: sampleBeta] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.2.2: Evaluate all candidate model arms under Thompson Sampling: select arm with highest sample from Beta(alpha + 1, beta + 1). [File: packages/engine/src/bandit/ThompsonSamplingPolicy.ts] [Method: selectArm] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.2.3: Update arm alpha on reward >= 0.5 (success) and beta on reward < 0.5 (failure) in database bandit_arms table. [File: packages/engine/src/bandit/BanditRepository.ts] [Method: recordArmOutcome] [Test: npm test -- packages/engine/src/tests/bandit_repository.test.ts]
+  - [x] T60.2.4: Write unit tests demonstrating that an arm with 90% success rate is selected significantly more frequently than an arm with 20% success rate over 1000 trials. [File: packages/engine/src/tests/thompson_sampling_convergence.test.ts] [Test: npm test -- packages/engine/src/tests/thompson_sampling_convergence.test.ts]
+
+### T60.3: Upper Confidence Bound (UCB-1) Policy Implementation with Tunable Exploration Factor
+  - [x] T60.3.1: Implement Ucb1Policy in packages/engine/src/bandit/ calculating UCB score: averageReward + c * sqrt(2 * ln(totalTrials) / armTrials). [File: packages/engine/src/bandit/Ucb1Policy.ts] [Class: Ucb1Policy] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.3.2: Ensure all arms are sampled at least once before applying UCB formula to guarantee baseline exploration of newly registered models. [File: packages/engine/src/bandit/Ucb1Policy.ts] [Method: selectArm] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.3.3: Expose exploration factor parameter c (default sqrt(2) ~ 1.414) as configurable option via API and UI slider. [File: packages/engine/src/bandit/Ucb1Policy.ts] [Property: explorationFactor] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.3.4: Write unit tests verifying that unvisited arms receive infinite priority and high-variance arms are adequately explored. [File: packages/engine/src/tests/ucb1_policy.test.ts] [Test: npm test -- packages/engine/src/tests/ucb1_policy.test.ts]
+
+### T60.4: Epsilon-Greedy Policy Engine with Exponential Decay Schedule
+  - [x] T60.4.1: Implement EpsilonGreedyPolicy selecting random exploration arm with probability epsilon, and highest empirical mean arm with probability 1 - epsilon. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Class: EpsilonGreedyPolicy] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.4.2: Implement exponential epsilon decay: epsilon = max(minEpsilon, initialEpsilon * (decayRate ^ epoch)) allowing gradual shift from exploration to exploitation. [File: packages/engine/src/bandit/EpsilonGreedyPolicy.ts] [Method: stepEpoch] [Test: npm test -- packages/engine/src/tests/bandit_policies.test.ts]
+  - [x] T60.4.3: Expose initialEpsilon (default 0.2), minEpsilon (default 0.05), and decayRate (default 0.995) as typed configuration options. [File: packages/shared-types/src/bandit.ts] [Type: EpsilonGreedyConfig] [Test: npm test]
+  - [x] T60.4.4: Write unit tests verifying epsilon decreases over epochs and exploitation probability increases as expected. [File: packages/engine/src/tests/epsilon_greedy.test.ts] [Test: npm test -- packages/engine/src/tests/epsilon_greedy.test.ts]
+
+### T60.5: REST API: GET/PUT /api/bandit/policy and GET /api/bandit/arms Real Telemetry Wireup
+  - [x] T60.5.1: Implement GET /api/bandit/arms returning live arm statistics (alpha, beta, winRate, totalRuns, avgTks, status) queried directly from database. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/bandit/arms] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T60.5.2: Implement PUT /api/bandit/policy updating active bandit policy ('thompson' | 'ucb1' | 'epsilon_greedy') and parameters in real time without restart. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: PUT /api/bandit/policy] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T60.5.3: Remove all fallback mock arrays in bandit HTTP handlers; return 100% empirical database records. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Method: handleBanditApi] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T60.5.4: Write integration tests verifying PUT /api/bandit/policy alters runtime scheduler behavior and GET /api/bandit/arms reflects updated stats. [File: packages/engine/src/tests/bandit_api.test.ts] [Test: npm test -- packages/engine/src/tests/bandit_api.test.ts]
+
+### T60.6: ExplorationControlComponent Live Bandit Data Binding and Control UI
+  - [x] T60.6.1: Connect ExplorationControlComponent to GET /api/bandit/arms and GET /api/bandit/policy on component initialization. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Method: ngOnInit] [Test: npm test]
+  - [x] T60.6.2: Wire policy selector buttons (Thompson Sampling, UCB-1, Epsilon-Greedy) to dispatch PUT /api/bandit/policy with optimistic UI update. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Method: switchPolicy] [Test: npm test]
+  - [x] T60.6.3: Render live model arm cards showing real empirical win rates, pull counts, Alpha/Beta distributions, and current selection probability. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.ts] [Template: arm-cards] [Test: npm test]
+  - [x] T60.6.4: Write frontend unit tests verifying policy selection triggers API call and arm statistics display live data from ArenaStateStore. [File: packages/frontend/src/app/components/exploration-control/exploration-control.component.spec.ts] [Test: npm test]
+
+---
+
+## Archived Phase 62: AST Context Slicing, Import Pruning & Focused Prompt Generation
+*Completed & Verified in Engineering Session*
+
+*RDF Category: context*
+
+### T62.1: Abstract Syntax Tree (AST) Context Slicer for TypeScript and Go Codebases
+  - [x] T62.1.1: Create AstContextSlicer in packages/engine/src/context/AstContextSlicer.ts using TypeScript compiler API (ts.createSourceFile). [File: packages/engine/src/context/AstContextSlicer.ts] [Class: AstContextSlicer] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+  - [x] T62.1.2: Traverse AST extracting exported type aliases, interfaces, function signatures, and class method signatures without function bodies. [File: packages/engine/src/context/AstContextSlicer.ts] [Method: extractInterfaceSkeleton] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+  - [x] T62.1.3: Generate compact architectural skeleton file replacing method bodies with '/* implementation */' to reduce token footprint by up to 80%. [File: packages/engine/src/context/AstContextSlicer.ts] [Method: generateSkeleton] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+  - [x] T62.1.4: Write unit tests verifying AST slicer preserves complete interface and function signatures while stripping inner logic. [File: packages/engine/src/tests/ast_slicer.test.ts] [Test: npm test -- packages/engine/src/tests/ast_slicer.test.ts]
+
+### T62.2: Focused Import Skeleton Generator Pruning Unused External Modules
+  - [x] T62.2.1: Create ImportPruningEngine in packages/engine/src/context/ImportPruningEngine.ts analyzing module dependency trees. [File: packages/engine/src/context/ImportPruningEngine.ts] [Class: ImportPruningEngine] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+  - [x] T62.2.2: Identify and strip unused external imports from prompt context that do not intersect with target focus files. [File: packages/engine/src/context/ImportPruningEngine.ts] [Method: pruneUnusedImports] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+  - [x] T62.2.3: Consolidate duplicate import declarations into single clean import statements. [File: packages/engine/src/context/ImportPruningEngine.ts] [Method: consolidateImports] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+  - [x] T62.2.4: Write unit tests verifying that external library declarations (e.g. lodash, rxjs) not needed by the task are omitted from prompt context. [File: packages/engine/src/tests/import_pruner.test.ts] [Test: npm test -- packages/engine/src/tests/import_pruner.test.ts]
+
+### T62.3: Context Budget Allocator Enforcing Strict 4k and 8k Token Boundaries
+  - [x] T62.3.1: Implement ContextBudgetAllocator in packages/engine/src/context/ContextBudgetAllocator.ts calculating token distribution per task. [File: packages/engine/src/context/ContextBudgetAllocator.ts] [Class: ContextBudgetAllocator] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+  - [x] T62.3.2: Allocate budget partitions: 30% for system directives and rules, 35% for codebase context skeletons, 35% reserved for generation completion. [File: packages/engine/src/context/ContextBudgetAllocator.ts] [Method: calculatePartitions] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+  - [x] T62.3.3: Dynamically truncate lower-priority background files when total estimated tokens exceed context ceiling (4096 or 8192). [File: packages/engine/src/context/ContextBudgetAllocator.ts] [Method: enforceBudget] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+  - [x] T62.3.4: Write unit tests verifying budget allocator maintains prompt token count strictly within specified limit. [File: packages/engine/src/tests/context_budget.test.ts] [Test: npm test -- packages/engine/src/tests/context_budget.test.ts]
+
+### T62.4: Markdown Fence Stripper and Self-Healing Code Extractor
+  - [x] T62.4.1: Implement stripMarkdownFences(rawText: string) in SelfHealingParser stripping leading/trailing markdown code fences (```typescript, ```). [File: packages/engine/src/inference/SelfHealingParser.ts] [Method: stripMarkdownFences] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+  - [x] T62.4.2: Detect and strip conversational filler preceding code ('Here is the code:', 'Certainly! Here is...') to produce pure raw source code. [File: packages/engine/src/inference/SelfHealingParser.ts] [Method: stripConversationalPreamble] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+  - [x] T62.4.3: Repair truncated code blocks: close unclosed brackets, parentheses, and string literals when model stream cuts off at max tokens. [File: packages/engine/src/inference/SelfHealingParser.ts] [Method: repairTruncatedSyntax] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+  - [x] T62.4.4: Write unit tests verifying parser extracts clean, compilable TypeScript code from markdown-wrapped and conversational model outputs. [File: packages/engine/src/tests/self_healing_parser.test.ts] [Test: npm test -- packages/engine/src/tests/self_healing_parser.test.ts]
+
+### T62.5: Focused File Diff Builder Generating Minimal Targeted Replacement Patches
+  - [x] T62.5.1: Create FocusedDiffBuilder in packages/engine/src/context/FocusedDiffBuilder.ts generating surgical line-level replacement chunks. [File: packages/engine/src/context/FocusedDiffBuilder.ts] [Class: FocusedDiffBuilder] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+  - [x] T62.5.2: Compare generated code against original file to identify only modified functions and interfaces rather than overwriting entire files. [File: packages/engine/src/context/FocusedDiffBuilder.ts] [Method: computeTargetedChunks] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+  - [x] T62.5.3: Format unified diff format string for display in TaskDetailModal and Pull Request description. [File: packages/engine/src/context/FocusedDiffBuilder.ts] [Method: formatUnifiedDiff] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+  - [x] T62.5.4: Write unit tests verifying diff builder identifies exact changed lines and generates valid unified diff syntax. [File: packages/engine/src/tests/diff_builder.test.ts] [Test: npm test -- packages/engine/src/tests/diff_builder.test.ts]
+
+### T62.6: Prompt Token Estimation and Pre-Flight Context Overflow Detector
+  - [x] T62.6.1: Implement estimateTokenCount(text: string) in packages/engine/src/inference/TokenEstimator.ts using byte-pair encoding (BPE) approximation. [File: packages/engine/src/inference/TokenEstimator.ts] [Class: TokenEstimator] [Test: npm test -- packages/engine/src/tests/token_estimator.test.ts]
+  - [x] T62.6.2: Execute pre-flight check in AutonomousWorkerPipeline before sending inference request to Ollama: reject or compact if tokens exceed 90% of model window. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: validatePromptBudget] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T62.6.3: Log token estimation metrics (promptTokensEstimate, availableCompletionBudget) in task_stages record. [File: packages/db/src/repositories/StageRepository.ts] [Method: recordStageCompletion] [Test: npm test -- packages/db/src/tests/StageRepository.test.ts]
+  - [x] T62.6.4: Write unit tests verifying token estimator accurately predicts token usage within 5% error margin of standard tokenizer. [File: packages/engine/src/tests/token_estimator.test.ts] [Test: npm test -- packages/engine/src/tests/token_estimator.test.ts]
+
+---
+
+## Archived Phase 81: Autonomous Project File Ingestion, Architectural Decomposer & Acceptance Criteria Engine
+*Completed & Verified in Engineering Session*
+
+*RDF Category: architectural_synthesis*
+
+### T81.1: Spec & Project Document Ingestion Engine
+  - [x] T81.1.1: Create `ProjectSpecIngestionService` in `packages/engine/src/inference/ProjectSpecIngestionService.ts` reading dropped specification files (`docs/spec.md`, `README.md`, OpenAPI JSON). [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Class: ProjectSpecIngestionService] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [x] T81.1.2: Parse markdown headings, bulleted requirement lists, and API endpoint definitions into structured `RequirementNode` objects. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: parseRequirements] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [x] T81.1.3: Extract explicit technical constraints (languages, frameworks, database drivers, coding rules) from ingested documents. [File: packages/engine/src/inference/ProjectSpecIngestionService.ts] [Method: extractConstraints] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+  - [x] T81.1.4: Write unit tests verifying parser extracts functional and non-functional requirements from diverse document formats. [File: packages/engine/src/tests/spec_ingestion.test.ts] [Test: npm test -- packages/engine/src/tests/spec_ingestion.test.ts]
+
+### T81.2: Structured Acceptance Criteria Derivation Engine
+  - [x] T81.2.1: Implement `AcceptanceCriteriaEngine` in `packages/engine/src/inference/AcceptanceCriteriaEngine.ts` utilizing high-reasoning models to formulate testable criteria. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Class: AcceptanceCriteriaEngine] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [x] T81.2.2: Convert ambiguous user directives into explicit Given/When/Then scenarios with expected HTTP status codes, error models, and return shapes. [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: deriveCriteria] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [x] T81.2.3: Generate concrete test assertion templates (native `node:test` and `node:assert/strict` for backend, Angular component spec for frontend). [File: packages/engine/src/inference/AcceptanceCriteriaEngine.ts] [Method: generateTestTemplate] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+  - [x] T81.2.4: Write unit tests verifying that acceptance criteria strictly adhere to SOLID principles and mobile-first rules. [File: packages/engine/src/tests/acceptance_criteria.test.ts] [Test: npm test -- packages/engine/src/tests/acceptance_criteria.test.ts]
+
+### T81.3: Architectural Contract & Type Schema Generator
+  - [x] T81.3.1: Create `ContractSynthesizer` in `packages/engine/src/inference/ContractSynthesizer.ts` defining TypeScript interfaces and Zod validation schemas. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Class: ContractSynthesizer] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [x] T81.3.2: Synthesize database migration definitions with primary keys, indexes, foreign keys, and dialect-agnostic column types. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: synthesizeMigration] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [x] T81.3.3: Verify synthesized schemas against existing project types to prevent namespace collisions and circular references. [File: packages/engine/src/inference/ContractSynthesizer.ts] [Method: validateAgainstWorkspace] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+  - [x] T81.3.4: Write unit tests verifying generated contracts compile cleanly with `tsc`. [File: packages/engine/src/tests/contract_synthesizer.test.ts] [Test: npm test -- packages/engine/src/tests/contract_synthesizer.test.ts]
+
+### T81.4: Topological Dependency Graph Task Sequencer
+  - [x] T81.4.1: Build `DependencyGraphSequencer` in `packages/engine/src/inference/DependencyGraphSequencer.ts` arranging decomposed tasks in dependency order. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Class: DependencyGraphSequencer] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [x] T81.4.2: Enforce architectural sequencing: Shared Types & Migrations -> Repositories -> Services -> HTTP Routes -> UI Components -> E2E Tests. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: sequenceTasks] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [x] T81.4.3: Detect and break circular task dependencies by splitting interfaces from concrete implementations. [File: packages/engine/src/inference/DependencyGraphSequencer.ts] [Method: resolveCircularDependencies] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+  - [x] T81.4.4: Write unit tests validating topological sort ordering for complex multi-module feature epics. [File: packages/engine/src/tests/dependency_sequencer.test.ts] [Test: npm test -- packages/engine/src/tests/dependency_sequencer.test.ts]
+
+### T81.5: REST API & Drop-In Ingestion CLI
+  - [x] T81.5.1: Expose `POST /api/tasks/decompose-spec` in `CacophonyHttpServer.ts` ingesting uploaded spec files and persisting atomic tasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/tasks/decompose-spec] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T81.5.2: Create CLI entrypoint `bin/decompose-spec.ts` allowing operators to run `node bin/decompose-spec.ts path/to/spec.md`. [File: bin/decompose-spec.ts] [Test: node bin/decompose-spec.ts --dry-run]
+  - [x] T81.5.3: Add file-watcher daemon monitoring `docs/inbox/` for dropped project specifications and auto-decomposing them into the active queue. [File: packages/engine/src/daemon/SpecInboxWatcher.ts] [Class: SpecInboxWatcher] [Test: npm test -- packages/engine/src/tests/inbox_watcher.test.ts]
+  - [x] T81.5.4: Write integration tests verifying spec decomposition pipeline creates valid `TaskRecord` rows in database. [File: packages/engine/src/tests/spec_decomposition_pipeline.test.ts] [Test: npm test -- packages/engine/src/tests/spec_decomposition_pipeline.test.ts]
+
+---
+
+## Archived Phase 83: Heterogeneous Hardware Detection, Zero-Config Hardware Profiler & Contributor Onboarding Engine
+*Completed & Verified in Engineering Session*
+
+*RDF Category: hardware_telemetry*
+
+### T83.1: Pluggable `IHardwareTelemetryProvider` Abstraction
+  - [x] T83.1.1: Define `IHardwareTelemetryProvider` interface in `packages/shared-types/src/hardware.ts` declaring vendor detection, VRAM measurement, thermal polling, and utilization metrics. [File: packages/shared-types/src/hardware.ts] [Interface: IHardwareTelemetryProvider] [Test: npm test -- packages/shared-types]
+  - [x] T83.1.2: Implement `HardwareProviderFactory` in `packages/engine/src/telemetry/HardwareProviderFactory.ts` dynamically detecting host GPU vendor (NVIDIA, AMD, Apple Silicon, Intel, CPU fallback). [File: packages/engine/src/telemetry/HardwareProviderFactory.ts] [Class: HardwareProviderFactory] [Test: npm test -- packages/engine/src/tests/hardware_factory.test.ts]
+  - [x] T83.1.3: Provide CPU fallback provider computing memory and CPU core utilization via Node.js `os` module when no accelerator is present. [File: packages/engine/src/telemetry/CpuFallbackProvider.ts] [Class: CpuFallbackProvider] [Test: npm test -- packages/engine/src/tests/hardware_factory.test.ts]
+  - [x] T83.1.4: Write unit tests verifying provider factory selects correct provider based on simulated sysfs and CLI outputs. [File: packages/engine/src/tests/hardware_factory.test.ts] [Test: npm test -- packages/engine/src/tests/hardware_factory.test.ts]
+
+### T83.2: NVML / NVIDIA CUDA Hardware Telemetry Provider
+  - [x] T83.2.1: Implement `NvidiaNvmlProvider` in `packages/engine/src/telemetry/NvidiaNvmlProvider.ts` querying `nvidia-smi --query-gpu=... --format=csv`. [File: packages/engine/src/telemetry/NvidiaNvmlProvider.ts] [Class: NvidiaNvmlProvider] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+  - [x] T83.2.2: Parse VRAM total/used/free, GPU temperature, power draw in Watts, and SM compute engine utilization. [File: packages/engine/src/telemetry/NvidiaNvmlProvider.ts] [Method: pollSnapshot] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+  - [x] T83.2.3: Support multi-GPU setups reporting aggregated and per-GPU metrics. [File: packages/engine/src/telemetry/NvidiaNvmlProvider.ts] [Method: listDevices] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+  - [x] T83.2.4: Write unit tests validating CSV parsing and error handling when `nvidia-smi` is unavailable. [File: packages/engine/src/tests/nvidia_provider.test.ts] [Test: npm test -- packages/engine/src/tests/nvidia_provider.test.ts]
+
+### T83.3: Apple Silicon Metal / `powermetrics` Telemetry Provider
+  - [x] T83.3.1: Implement `AppleSiliconProvider` in `packages/engine/src/telemetry/AppleSiliconProvider.ts` detecting M-series chips and unified RAM. [File: packages/engine/src/telemetry/AppleSiliconProvider.ts] [Class: AppleSiliconProvider] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+  - [x] T83.3.2: Measure unified memory allocations, thermal pressure states (`Nominal`, `Fair`, `Serious`, `Critical`), and GPU power. [File: packages/engine/src/telemetry/AppleSiliconProvider.ts] [Method: pollSnapshot] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+  - [x] T83.3.3: Map macOS thermal pressure directly to `ThermalGovernor` backpressure thresholds to prevent thermal throttling. [File: packages/engine/src/telemetry/AppleSiliconProvider.ts] [Method: getThermalState] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+  - [x] T83.3.4: Write unit tests verifying Apple Silicon telemetry parsing and thermal state mapping. [File: packages/engine/src/tests/apple_silicon_provider.test.ts] [Test: npm test -- packages/engine/src/tests/apple_silicon_provider.test.ts]
+
+### T83.4: Dynamic Zero-Config Context & Quantization Auto-Sizer
+  - [x] T83.4.1: Build `HardwareHyperparameterAutoSizer` in `packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts` computing optimal model profiles from hardware profile. [File: packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts] [Class: HardwareHyperparameterAutoSizer] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+  - [x] T83.4.2: Enforce VRAM safety thresholds: allocate 70% of available VRAM to context buffers, reserving 30% for OS and framebuffers. [File: packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts] [Method: computeSafeAllocation] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+  - [x] T83.4.3: Automatically configure Ollama environment variables (`OLLAMA_NUM_PARALLEL`, `OLLAMA_FLASH_ATTENTION`) based on detected card compute capability. [File: packages/engine/src/scheduler/HardwareHyperparameterAutoSizer.ts] [Method: generateOllamaEnv] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+  - [x] T83.4.4: Write unit tests validating hyperparameter sizing across 6GB, 8GB, 12GB, 16GB, 24GB, and 64GB hardware configurations. [File: packages/engine/src/tests/auto_sizer.test.ts] [Test: npm test -- packages/engine/src/tests/auto_sizer.test.ts]
+
+### T83.5: Contributor Hardware Setup Script & Docker Profiles
+  - [x] T83.5.1: Create interactive/automated onboarding script `bin/setup-hardware.sh` detecting host hardware and printing detected configuration. [File: bin/setup-hardware.sh] [Test: bash bin/setup-hardware.sh --dry-run]
+  - [x] T83.5.2: Update `docker-compose.yml` with compose profiles: `default` (standard), `nvidia` (with GPU device reservation), `amd` (with `/dev/kfd` and `/dev/dri`), and `cpu` (lightweight). [File: docker-compose.yml] [Profiles: nvidia, amd, cpu] [Test: docker compose config]
+  - [x] T83.5.3: Document contributor onboarding instructions in `docs/contributing_hardware.md` explaining how external contributors can run the arena. [File: docs/contributing_hardware.md] [Test: markdown-lint]
+  - [x] T83.5.4: Validate that `docker compose --profile nvidia up` properly exposes NVIDIA GPU to container. [File: docker-compose.yml] [Test: docker compose config]
+
+---
+
+## Archived Phase 84: Auto-Mode Hardening & Bi-Directional GitHub Issue Sync
+*Completed & Verified in Engineering Session*
+
+*RDF Category: autonomy*
+
+### T84.1: Auto-Mode Loop Supervisor
+  - [x] T84.1.1: Create `AutoLoopSupervisor` in `packages/engine/src/daemon/AutoLoopSupervisor.ts` keeping the autonomous loop running 24/7. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Class: AutoLoopSupervisor] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [x] T84.1.2: Implement unhandled error containment: if an unhandled promise rejection occurs during task execution, isolate the error, rollback worktree, and resume queue. [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: handleWorkerError] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [x] T84.1.3: Automatically detect empty queue conditions and trigger internal vacancy tasks (test coverage expansion, dead code elimination, AST grooming). [File: packages/engine/src/daemon/AutoLoopSupervisor.ts] [Method: fillVacancy] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+  - [x] T84.1.4: Write unit tests verifying supervisor survives simulated worker crashes and resumes task processing. [File: packages/engine/src/tests/auto_supervisor.test.ts] [Test: npm test -- packages/engine/src/tests/auto_supervisor.test.ts]
+
+### T84.2: Worktree Pre-Commit Monorepo Build Gate in Pipeline
+  - [x] T84.2.1: Add `verifyCleanBuild(worktreePath: string)` call in `AutonomousWorkerPipeline.ts` Stage 6 before `commitWorktree`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executePrReviewStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T84.2.2: Ensure tasks failing pre-commit build verification return `success: false` and do NOT merge into Gitea `main`. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T84.2.3: Forward compiler error outputs from failed build verification to active remediation stage. [File: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Method: executeRemediationStage] [Test: npm test -- packages/engine/src/tests/autonomous_continuous_arena.test.ts]
+  - [x] T84.2.4: Write unit tests verifying that non-compiling worktree changes are blocked from committing to staging `main`. [File: packages/engine/src/tests/worktree_build_gate.test.ts] [Test: npm test -- packages/engine/src/tests/worktree_build_gate.test.ts]
+
+### T84.3: Bi-Directional GitHub Issue Poller & Task Ingestion Daemon
+  - [x] T84.3.1: Implement `GitHubIssueSyncDaemon` in `packages/engine/src/gitea/GitHubIssueSyncDaemon.ts` polling public GitHub issues every 5 minutes. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Class: GitHubIssueSyncDaemon] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.3.2: Filter issues with label `arena:auto`, extracting title, body, and linked focus files into atomic `TaskRecord` rows. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: ingestIssues] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.3.3: Add duplicate detection avoiding re-ingesting issues that already have active or completed tasks in database. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: isDuplicate] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.3.4: Write unit tests verifying GitHub issue ingestion parses labels, bodies, and priorities accurately into database tasks. [File: packages/engine/src/tests/github_issue_sync.test.ts] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+
+### T84.4: Autonomous Issue Resolution & Verification PR Linker
+  - [x] T84.4.1: Link resolved GitHub issue number in commit message (`Fixes #123`) when promoting milestone releases to GitHub. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: linkResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [x] T84.4.2: Post automated verification comment on GitHub issue once staging verification passes in Gitea, providing transparency before public release. [File: packages/engine/src/gitea/GitHubIssueSyncDaemon.ts] [Method: postVerificationStatus] [Test: npm test -- packages/engine/src/tests/github_issue_sync.test.ts]
+  - [x] T84.4.3: Close GitHub issue automatically when the promoted release PR is merged into upstream `main`. [File: packages/engine/src/gitea/GitHubPromotionPipeline.ts] [Method: closeResolvedIssues] [Test: npm test -- packages/engine/src/tests/github_promotion.test.ts]
+  - [x] T84.4.4: Write unit tests simulating full issue ingestion -> local execution -> staging merge -> GitHub PR resolution lifecycle. [File: packages/engine/src/tests/issue_resolution_lifecycle.test.ts] [Test: npm test -- packages/engine/src/tests/issue_resolution_lifecycle.test.ts]
+
+### T84.5: Defocus Plan/Build Modes in Favor of Auto Mode
+  - [x] T84.5.1: Set `DEFAULT_EXECUTION_MODE=auto` across all default configs, daemon initialization, and frontend stores. [File: packages/shared-types/src/config.ts] [Constant: DEFAULT_EXECUTION_MODE] [Test: npm test -- packages/shared-types]
+  - [x] T84.5.2: Streamline UI navigation to highlight Auto Mode telemetry, success yield, and milestone promotion over manual step controls. [File: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts] [Test: npm test]
+  - [x] T84.5.3: Ensure headless server and Docker containers default strictly to Auto Mode on boot. [File: packages/engine/src/daemon/CacophonyDaemon.ts] [Method: start] [Test: npm test -- packages/engine/src/tests/daemon_lifecycle.test.ts]
+  - [x] T84.5.4: Write integration tests verifying that arena boots and executes uninterrupted in Auto Mode with zero manual prompts. [File: packages/engine/src/tests/auto_mode.test.ts] [Test: npm test -- packages/engine/src/tests/auto_mode.test.ts]
+
+---
+
+## Archived Phase 85: Multi-Window Convergence Analytics, Git Regression Pinpointing & Plateau Intervention Dispatcher
+*Completed & Verified in Engineering Session*
+
+*RDF Category: analytics_and_orchestration*
+
+### T85.1: Dynamic Rolling Window Success Rate & Multi-Dimensional Aggregation Engine
+  - [x] T85.1.1: Define typed window configuration and metrics interfaces (`IRollingWindowConfig`, `IRollingWindowMetrics`, `IWindowQualificationFilter`) in `packages/shared-types/src/analytics.ts` supporting arbitrary window sizes (10, 20, 50, 100, 1000, or total qualified task cap) with lower-bound aggregate handling (minimum N >= 2 or 3 tasks to compute meaningful non-binary aggregate ratios). [File: packages/shared-types/src/analytics.ts] [Interface: IRollingWindowMetrics] [Test: npm test -- packages/shared-types]
+  - [x] T85.1.2: Implement `RollingWindowAnalyticsService` in `packages/engine/src/analytics/RollingWindowAnalyticsService.ts` evaluating contiguous time-series and filtered multi-dimensional execution windows (qualified by agent role, model identifier, task category, and git commit hash). [File: packages/engine/src/analytics/RollingWindowAnalyticsService.ts] [Class: RollingWindowAnalyticsService] [Test: npm test -- packages/engine/src/tests/rolling_window_analytics.test.ts]
+  - [x] T85.1.3: Expose REST API endpoint `GET /api/analytics/window-success` supporting query parameters for `windowSize`, `role`, `model`, and `commitHash`, returning success percentage, failure count, window bounds, and convergence metrics. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: GET /api/analytics/window-success] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T85.1.4: Write unit tests verifying dynamic window sizing, edge cases where total tasks < windowSize, boundary conditions (N=0, 1, 2, 3), and multi-dimensional filter projections. [File: packages/engine/src/tests/rolling_window_analytics.test.ts] [Test: npm test -- packages/engine/src/tests/rolling_window_analytics.test.ts]
+
+### T85.2: Calculus Convergence & Plateau Detection Engine
+  - [x] T85.2.1: Implement mathematical convergence and rate-of-change evaluator (`ConvergenceAnalyzer`) in `packages/engine/src/analytics/ConvergenceAnalyzer.ts` calculating first and second discrete derivatives (velocity and acceleration of success/failure deltas) across sliding windows. [File: packages/engine/src/analytics/ConvergenceAnalyzer.ts] [Class: ConvergenceAnalyzer] [Test: npm test -- packages/engine/src/tests/convergence_analyzer.test.ts]
+  - [x] T85.2.2: Implement plateau detection: identify when variance across nested windows (e.g. 50-task window versus 10-task window) stagnates below a delta epsilon (e.g. |rate_50 - rate_10| < epsilon) indicating performance stagnation or systemic deadlocks. [File: packages/engine/src/analytics/ConvergenceAnalyzer.ts] [Method: detectPlateau] [Test: npm test -- packages/engine/src/tests/convergence_analyzer.test.ts]
+  - [x] T85.2.3: Implement spot hallucination and deterministic rule pattern matcher flagging recurring failure signatures suitable for immediate in-situ mitigation versus architectural triage. [File: packages/engine/src/analytics/ConvergenceAnalyzer.ts] [Method: evaluateFailureMode] [Test: npm test -- packages/engine/src/tests/convergence_analyzer.test.ts]
+  - [x] T85.2.4: Write unit tests validating discrete derivative computations, convergence limits, plateau recognition, and threshold alerts. [File: packages/engine/src/tests/convergence_analyzer.test.ts] [Test: npm test -- packages/engine/src/tests/convergence_analyzer.test.ts]
+
+### T85.3: Git Commit Hash Regression Pinpointing & Autonomous Diagnostic Dispatcher
+  - [x] T85.3.1: Implement `GitRegressionCorrelator` in `packages/engine/src/analytics/GitRegressionCorrelator.ts` mapping task failure time offsets back to recent git commit hashes in Gitea/local repository. [File: packages/engine/src/analytics/GitRegressionCorrelator.ts] [Class: GitRegressionCorrelator] [Test: npm test -- packages/engine/src/tests/git_regression_correlator.test.ts]
+  - [x] T85.3.2: Implement threshold-triggered regression dispatch supervisor: when windowed success drops below configurable threshold or consecutive failure run triggers, dispatch a priority analysis task to the optimal model pool (e.g. high-reasoning frontier or top local validator model). [File: packages/engine/src/scheduler/RegressionDispatchSupervisor.ts] [Class: RegressionDispatchSupervisor] [Test: npm test -- packages/engine/src/tests/regression_dispatch.test.ts]
+  - [x] T85.3.3: Construct diagnostic remediation flow: if regression analysis identifies a breaking commit, automatically synthesize targeted test assertions, generate code fix, verify against test suite in isolated worktree, and merge remediation before unpausing regular queue. [File: packages/engine/src/scheduler/RegressionDispatchSupervisor.ts] [Method: executeRemediationLoop] [Test: npm test -- packages/engine/src/tests/regression_dispatch.test.ts]
+  - [x] T85.3.4: Integrate plateau intervention: when performance plateaus across expanded windows, trigger smart model review to propose new deterministic rule definitions, edge-case guards, or hyperparameter adjustments. [File: packages/engine/src/scheduler/RegressionDispatchSupervisor.ts] [Method: triggerPlateauIntervention] [Test: npm test -- packages/engine/src/tests/regression_dispatch.test.ts]
+  - [x] T85.3.5: Write integration tests verifying failure surge -> git hash correlation -> diagnostic dispatch -> automated remediation -> queue resumption lifecycle. [File: packages/engine/src/tests/regression_dispatch.test.ts] [Test: npm test -- packages/engine/src/tests/regression_dispatch.test.ts]
+
+### T85.4: Mobile-First Dashboard Trend & Failure Window Chart UI
+  - [x] T85.4.1: Create `WindowedSuccessTrendComponent` in `packages/frontend/src/app/components/windowed-success-trend/` rendering responsive SVG/Canvas failure and success rate trend lines alongside overall rate. [File: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.ts] [Class: WindowedSuccessTrendComponent] [Test: npm test]
+  - [x] T85.4.2: Add granular interactive controls to adjust window size (10, 20, 50, 100, 1000, Total) and qualification filters (by role, model, branch/commit) with immediate reactive signal updates. [File: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.html] [Test: npm test]
+  - [x] T85.4.3: Integrate trend widget into `DashboardViewComponent` directly adjacent to overall success rate badge, featuring mobile-first responsive layout, dark/light theme support, and visual regression alerts. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Test: npm test]
+  - [x] T85.4.4: Write Angular unit tests validating signal reactions, window selector changes, mobile viewport reflows, and theme token bindings. [File: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.spec.ts] [Test: npm test]

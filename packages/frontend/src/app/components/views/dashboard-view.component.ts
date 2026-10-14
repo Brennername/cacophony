@@ -5,6 +5,7 @@ import { HardwareMonitorComponent } from '../hardware-monitor/hardware-monitor.c
 import { TaskInspectorComponent } from '../task-inspector/task-inspector.component';
 import { QueueManagerComponent } from '../queue-manager/queue-manager.component';
 import { SuccessMeterComponent } from '../success-meter/success-meter.component';
+import { WindowedSuccessTrendComponent } from '../windowed-success-trend/windowed-success-trend.component';
 import { ArenaStateStore } from '../../services/arena-state.store';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
 
@@ -24,6 +25,7 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
     TaskInspectorComponent,
     QueueManagerComponent,
     SuccessMeterComponent,
+    WindowedSuccessTrendComponent,
   ],
   template: `
     <div class="dashboard-grid">
@@ -72,6 +74,9 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
                   <span class="kpi-val">{{ store.pendingCount() }}</span>
                 </div>
               </div>
+            </div>
+            <div class="trend-col">
+              <app-windowed-success-trend />
             </div>
           </div>
         </div>
@@ -180,6 +185,21 @@ import { HistoryMetricsService } from '../../services/history-metrics.service';
       flex: 1;
       min-width: 0;
       width: 100%;
+    }
+
+    .trend-col {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 1024px) {
+      .trend-col {
+        width: 380px;
+        flex-shrink: 0;
+      }
     }
 
     .summary-header {

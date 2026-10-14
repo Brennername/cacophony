@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, ElementRef, ViewChild, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArenaStateStore, ProcessItem } from '../../services/arena-state.store';
 import { ProcessInspectorComponent } from '../process-inspector/process-inspector.component';
+import { TestRunModalComponent } from '../test-run-modal/test-run-modal.component';
 
 /**
  * TestingViewComponent
@@ -13,7 +14,7 @@ import { ProcessInspectorComponent } from '../process-inspector/process-inspecto
 @Component({
   selector: 'app-testing-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProcessInspectorComponent],
+  imports: [CommonModule, FormsModule, ProcessInspectorComponent, TestRunModalComponent],
   template: `
     <div class="testing-view-container">
       <!-- View Header -->
@@ -188,10 +189,70 @@ import { ProcessInspectorComponent } from '../process-inspector/process-inspecto
         </div>
       </section>
 
+      <!-- Historical Test Runs Table (T59.4.1, T59.4.2) -->
+      <section class="history-table-section" aria-label="Historical test executions">
+        <div class="table-container history-table">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Task Title</th>
+                <th>Test Command</th>
+                <th>Duration</th>
+                <th>Timestamp</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody class="table-rows">
+              @if (filteredProcesses().length === 0) {
+                <tr>
+                  <td colspan="6" class="empty-cell">No historical test runs match filter criteria.</td>
+                </tr>
+              } @else {
+                @for (proc of filteredProcesses(); track proc.id) {
+                  <tr class="test-run-row" (click)="inspectTestRun(proc)">
+                    <td>
+                      <span class="status-badge" [ngClass]="proc.status.toLowerCase()">
+                        {{ proc.status === 'SUCCESS' ? 'PASSED' : proc.status }}
+                      </span>
+                    </td>
+                    <td class="task-title-cell">
+                      <span class="task-title">{{ proc.taskTitle || proc.id }}</span>
+                    </td>
+                    <td class="command-cell">
+                      <code>{{ proc.command }}</code>
+                    </td>
+                    <td class="duration-cell tabular">
+                      {{ proc.durationMs || 0 }}ms
+                    </td>
+                    <td class="timestamp-cell">
+                      {{ proc.startedAt | date:'HH:mm:ss' }}
+                    </td>
+                    <td class="actions-cell">
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm btn-inspect"
+                        (click)="inspectTestRun(proc); $event.stopPropagation()"
+                        aria-label="Inspect test execution details"
+                      >
+                        Inspect
+                      </button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Historical Subprocess Inspector Table -->
       <section class="processes-table-section">
         <app-process-inspector />
       </section>
+
+      <!-- Deep Test Run Inspection Modal (T59.6) -->
+      <app-test-run-modal #testRunModal />
     </div>
   `,
   styles: [`
@@ -630,10 +691,94 @@ import { ProcessInspectorComponent } from '../process-inspector/process-inspecto
       outline: none;
       border-color: var(--color-brand);
     }
+
+    /* Historical Table Section (T59.4) */
+    .history-table-section {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md, 8px);
+      overflow-x: auto;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+    }
+
+    .data-table th {
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .data-table td {
+      padding: 0.65rem 0.85rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .test-run-row {
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .test-run-row:hover {
+      background: var(--bg-surface-elevated);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius-sm, 4px);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .status-badge.success, .status-badge.passed {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--status-nominal, #10b981);
+    }
+
+    .status-badge.failed {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--status-danger, #ef4444);
+    }
+
+    .status-badge.timeout {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--status-warm, #f59e0b);
+    }
+
+    .empty-cell {
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 1.5rem !important;
+    }
+
+    .btn-sm {
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+    }
   `],
 })
 export class TestingViewComponent implements OnInit, OnDestroy {
   public readonly store = inject(ArenaStateStore);
+  public readonly testRunModal = viewChild(TestRunModalComponent);
 
   @ViewChild('terminalContainer')
   private terminalContainerRef?: ElementRef<HTMLDivElement>;
@@ -723,7 +868,7 @@ export class TestingViewComponent implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
     // Seed initial output from live buffer if active
-    const buffer = this.store.liveStreamBuffer();
+    const buffer = typeof this.store.liveStreamBuffer === 'function' ? this.store.liveStreamBuffer() : '';
     if (buffer) {
       const initialLines = buffer.split('\n').filter((l) => l.trim().length > 0);
       if (initialLines.length > 0) {
@@ -888,6 +1033,24 @@ export class TestingViewComponent implements OnInit, OnDestroy {
       return 'info';
     }
     return '';
+  }
+
+  /**
+   * Opens the deep test execution inspection modal (T59.6).
+   */
+  public inspectTestRun(proc: ProcessItem): void {
+    this.testRunModal()?.open({
+      id: proc.id,
+      taskTitle: (proc as any).taskTitle || proc.command,
+      fullOutput: (proc as any).output || proc.command,
+      failingAssertions: proc.status === 'FAILED' ? [(proc as any).error || 'Process returned non-zero exit code'] : [],
+      codeDiffs: (proc as any).codeDiffs || '',
+      environmentVariables: (proc as any).env || {
+        PROCESS_NAME: proc.name || 'test-runner',
+        PID: String(proc.pid || 0),
+        STATUS: proc.status
+      }
+    });
   }
 
   private scrollToBottomIfNeeded(force = false): void {

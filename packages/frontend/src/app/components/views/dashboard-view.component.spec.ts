@@ -24,5 +24,6 @@ describe('DashboardViewComponent', () => {
     expect(compiled.querySelector('app-hardware-monitor')).toBeTruthy();
     expect(compiled.querySelector('app-task-inspector')).toBeTruthy();
     expect(compiled.querySelector('app-queue-manager')).toBeTruthy();
+    expect(compiled.querySelector('app-windowed-success-trend')).toBeTruthy();
   });
 });

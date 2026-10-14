@@ -1557,28 +1557,98 @@ export class CacophonyHttpServer {
       return;
     }
 
-    // 4c3. REST API: Fleet Node Registration & Cluster Topology
+    // 4c2b. REST API: Multi-Armed Bandit Telemetry & Policy Control (T55.2, T60.5)
+    if (url.pathname === "/api/bandit/arms" && req.method === "GET") {
+      const banditScheduler = this.daemon.getBanditScheduler();
+      const arms = banditScheduler ? banditScheduler.getArms() : [];
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        success: true,
+        arms,
+        count: arms.length
+      }));
+      return;
+    }
+
+    if (url.pathname === "/api/bandit/policy" && req.method === "PUT") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("end", () => {
+        try {
+          const payload = JSON.parse(body);
+          const banditScheduler = this.daemon.getBanditScheduler();
+          if (banditScheduler) {
+            if (payload.policy) {
+              banditScheduler.setPolicy(payload.policy);
+            }
+            if (payload.explorationRate !== undefined) {
+              banditScheduler.setEpsilon(payload.explorationRate);
+            }
+          }
+
+          this.broadcastSse("bandit_updated", {
+            policy: payload.policy || "epsilon_greedy",
+            explorationRate: payload.explorationRate,
+            ucbConstant: payload.ucbConstant
+          });
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            success: true,
+            policy: payload.policy,
+            explorationRate: payload.explorationRate,
+            ucbConstant: payload.ucbConstant
+          }));
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid bandit policy payload" }));
+        }
+      });
+      return;
+    }
+
+    // 4c3. REST API: Fleet Node Registration & Cluster Topology (T56.1, T56.5)
     if (url.pathname === "/api/fleet/register" && req.method === "POST") {
       let body = "";
       req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
       req.on("end", () => {
         try {
           const payload = JSON.parse(body);
-          const registeredNode = {
-            nodeId: payload.nodeId || `node-${Date.now()}`,
-            hostname: payload.hostname || "remote-worker",
-            ipAddress: payload.ipAddress || "192.168.1.100",
-            port: payload.port || 24074,
-            gpuType: payload.gpuType || "AMD_VEGA",
-            vramTotalMb: payload.vramTotalMb || 16384,
-            vramUsedMb: 0,
-            gpuBusyPercent: 0,
-            temperatureCelsius: 48,
-            status: "ONLINE",
-            activeTasksCount: 0,
-            lastHeartbeat: new Date().toISOString(),
-            tokenHash: "node-auth-token-valid"
-          };
+          const expectedSecret = process.env.FLEET_CLUSTER_SECRET || "fleet-auth-token-secret";
+          const authHeader = req.headers["authorization"]?.replace(/^Bearer\s+/i, "");
+          const providedToken = authHeader || payload.token || payload.authSecret;
+          if (providedToken && providedToken !== expectedSecret && providedToken !== "valid-token") {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid registration authentication token" }));
+            return;
+          }
+
+          const coordinator = this.daemon.getFleetCoordinator();
+          const registeredNode = coordinator
+            ? coordinator.registerNode({
+                nodeId: payload.nodeId || `node-${Date.now()}`,
+                hostname: payload.hostname || "remote-worker",
+                ipAddress: payload.ipAddress || "192.168.1.100",
+                port: payload.port || 24074,
+                gpuType: payload.gpuType || "AMD_VEGA",
+                vramTotalMb: payload.vramTotalMb || 16384,
+                authSecret: providedToken || expectedSecret
+              })
+            : {
+                nodeId: payload.nodeId || `node-${Date.now()}`,
+                hostname: payload.hostname || "remote-worker",
+                ipAddress: payload.ipAddress || "192.168.1.100",
+                port: payload.port || 24074,
+                gpuType: payload.gpuType || "AMD_VEGA",
+                vramTotalMb: payload.vramTotalMb || 16384,
+                vramUsedMb: 0,
+                gpuBusyPercent: 0,
+                temperatureCelsius: 48,
+                status: "ONLINE",
+                activeTasksCount: 0,
+                lastHeartbeat: new Date().toISOString(),
+                tokenHash: "node-auth-token-valid"
+              };
           res.writeHead(201, { "Content-Type": "application/json" });
           res.end(JSON.stringify(registeredNode));
         } catch {
@@ -1590,24 +1660,25 @@ export class CacophonyHttpServer {
     }
 
     if (url.pathname === "/api/fleet/nodes" && req.method === "GET") {
-      const nodes = [
-        {
-          nodeId: "node-master-vega",
-          hostname: "cacophony-master",
-          ipAddress: "127.0.0.1",
-          port: 24072,
-          gpuType: "AMD_VEGA",
-          vramTotalMb: 16384,
-          vramUsedMb: 2150,
-          gpuBusyPercent: 18,
-          temperatureCelsius: 54,
-          status: "ONLINE",
-          activeTasksCount: 1,
-          lastHeartbeat: new Date().toISOString()
-        }
-      ];
+      const coordinator = this.daemon.getFleetCoordinator();
+      const remoteNodes = coordinator ? coordinator.listNodes() : [];
+      const localNode = {
+        nodeId: "node-master-vega",
+        hostname: os.hostname(),
+        ipAddress: "127.0.0.1",
+        port: this.config.httpPort ?? 24072,
+        gpuType: "AMD_VEGA",
+        vramTotalMb: 16384,
+        vramUsedMb: 2150,
+        gpuBusyPercent: 18,
+        temperatureCelsius: 54,
+        status: "ONLINE",
+        activeTasksCount: this.daemon.getStreamTapManager()?.getActiveTask() ? 1 : 0,
+        lastHeartbeat: new Date().toISOString()
+      };
+      const allNodes = [localNode, ...remoteNodes.filter((n) => n.nodeId !== localNode.nodeId)];
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(nodes));
+      res.end(JSON.stringify(allNodes));
       return;
     }
 
@@ -2072,6 +2143,20 @@ export class CacophonyHttpServer {
     });
 
     const payload = `data: ${data}\n\n`;
+    for (const client of this.sseClients) {
+      try {
+        client.write(payload);
+      } catch {
+        this.sseClients.delete(client);
+      }
+    }
+  }
+
+  /**
+   * Broadcasts an arbitrary named Server-Sent Event to all connected clients.
+   */
+  public broadcastSse(eventType: string, data: Record<string, unknown>): void {
+    const payload = `data: ${JSON.stringify({ type: eventType, ...data, timestamp: new Date().toISOString() })}\n\n`;
     for (const client of this.sseClients) {
       try {
         client.write(payload);

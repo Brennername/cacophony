@@ -46,6 +46,7 @@ export interface AutonomousWorkerPipelineOptions {
   readonly gitRemote?: string | undefined;
   readonly monorepoBuildGate?: MonorepoBuildGate | undefined;
   readonly microModelToolRouter?: MicroModelToolRouter | undefined;
+  readonly banditScheduler?: import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined;
 }
 
 /**
@@ -83,6 +84,7 @@ export class AutonomousWorkerPipeline {
   private readonly remediationPromptFormatter: RemediationPromptFormatter;
   private readonly microModelToolRouter: MicroModelToolRouter;
   private readonly monorepoBuildGate: MonorepoBuildGate;
+  private readonly banditScheduler?: import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined;
 
   constructor(options: AutonomousWorkerPipelineOptions) {
     this.remediationPromptFormatter = new RemediationPromptFormatter();
@@ -97,6 +99,7 @@ export class AutonomousWorkerPipeline {
     this.taskRepo = options.taskRepository;
     this.worktreeManager = options.worktreeManager;
     this.gitPlatformProvider = options.gitPlatformProvider;
+    this.banditScheduler = options.banditScheduler;
     this.cognitiveHandoffCoordinator = options.cognitiveHandoffCoordinator ?? new CognitiveHandoffCoordinator(options.ollamaProvider as any);
     this.implementerModel = options.implementerModel || process.env.DEFAULT_IMPLEMENTER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M";
     this.autoMerge = options.autoMerge ?? true;
@@ -128,7 +131,31 @@ export class AutonomousWorkerPipeline {
         }
       ]
     };
+  }
 
+  /**
+   * Finalizes task execution by updating bandit empirical reward distributions
+   * based on test passes, review approval, and measured token velocity (T55.3.2).
+   */
+  public finalizeTask(
+    taskId: string,
+    model: string,
+    role: string,
+    success: boolean,
+    tokensPerSec: number
+  ): void {
+    if (!this.banditScheduler) return;
+    const armId = `${role}:${model}`;
+    const reward = success ? (tokensPerSec >= 25 ? 1.0 : 0.8) : 0.0;
+    this.banditScheduler.recordFeedback({
+      taskId,
+      armId,
+      reward,
+      executionOutcome: success ? "clean_first_pass" : "test_assertion_failed",
+      durationMs: 1000,
+      tokensPerSec: tokensPerSec > 0 ? tokensPerSec : 25,
+      vramMb: 4096
+    });
   }
 
   /**
@@ -1439,6 +1466,7 @@ export class AutonomousWorkerPipeline {
           : (prMerged ? "Code modifications verified and merged locally" : "Git promotion failed")
       );
 
+      this.finalizeTask(taskId, selectedModel, groomed.task.role || "implementer", prMerged, measuredTps);
       return {
         success: prMerged,
         tokensPerSec: measuredTps,
@@ -1453,6 +1481,7 @@ export class AutonomousWorkerPipeline {
       } catch {
         // non-fatal
       }
+      this.finalizeTask(taskId, selectedModel, groomed.task.role || "implementer", false, measuredTps);
       return {
         success: false,
         tokensPerSec: measuredTps,

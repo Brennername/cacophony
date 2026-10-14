@@ -61,6 +61,10 @@ export interface ProcessItem {
   durationMs: number;
   exitCode: number | null;
   status: 'RUNNING' | 'SUCCESS' | 'FAILED';
+  pid?: number | undefined;
+  name?: string | undefined;
+  startedAt?: string | undefined;
+  taskTitle?: string | undefined;
 }
 
 export interface GenerationHeartbeatInfo {

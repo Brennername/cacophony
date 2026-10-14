@@ -68,6 +68,9 @@ export class CacophonyDaemon {
   private benchmarkRunner?: import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined;
   private distillationService?: import("../inference/ReasoningDistillationService.js").ReasoningDistillationService | undefined;
   private autoTuner?: import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined;
+  private banditScheduler?: import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined;
+  private fleetCoordinator?: import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator | undefined;
+  private signalHandler?: (() => Promise<void>) | undefined;
   private autoTuneTimer: NodeJS.Timeout | null = null;
   private planningTimer: NodeJS.Timeout | null = null;
   private pruningTimer: NodeJS.Timeout | null = null;
@@ -239,6 +242,20 @@ export class CacophonyDaemon {
       defaultModel: process.env.FRONTIER_REVIEWER_MODEL || process.env.DEFAULT_REVIEWER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M"
     });
 
+    const { BanditTaskScheduler } = await import("../bandit/BanditTaskScheduler.js");
+    this.banditScheduler = new BanditTaskScheduler({
+      policy: (process.env.BANDIT_POLICY as any) || "epsilon_greedy",
+      explorationRate: 0.15
+    });
+    const defaultArms = ["qwen2.5-coder:7b-instruct-q4_K_M", "qwen2.5-coder:7b", "deepseek-r1:8b"];
+    for (const armModel of defaultArms) {
+      this.banditScheduler.registerArm(armModel, "implementer");
+      this.banditScheduler.registerArm(armModel, "reviewer");
+    }
+
+    const { FleetMasterCoordinator } = await import("../fleet/FleetMasterCoordinator.js");
+    this.fleetCoordinator = new FleetMasterCoordinator();
+
     const worker = new AutonomousWorkerPipeline({
       workspaceRoot: process.cwd(),
       ollamaProvider: primaryInferenceProvider as any,
@@ -251,6 +268,7 @@ export class CacophonyDaemon {
       worktreeManager,
       gitPlatformProvider: gitProvider,
       frontierReviewer,
+      banditScheduler: this.banditScheduler,
       autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
       repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
       repoName: process.env.GIT_REPO_NAME || "cacophony",
@@ -415,6 +433,13 @@ export class CacophonyDaemon {
       await this.httpServer.start();
     }
 
+    // Attach process signal handlers for clean database disconnect and lock release (T47.4.3)
+    this.signalHandler = async () => {
+      await this.stop();
+    };
+    process.once("SIGINT", this.signalHandler);
+    process.once("SIGTERM", this.signalHandler);
+
     this.isRunning = true;
   }
 
@@ -423,6 +448,12 @@ export class CacophonyDaemon {
    */
   public async stop(): Promise<void> {
     if (!this.isRunning) return;
+
+    if (this.signalHandler) {
+      process.off("SIGINT", this.signalHandler);
+      process.off("SIGTERM", this.signalHandler);
+      this.signalHandler = undefined;
+    }
 
     if (this.httpServer) {
       await this.httpServer.stop();
@@ -449,7 +480,13 @@ export class CacophonyDaemon {
     if (this.ipcServer) {
       await this.ipcServer.stop();
     }
-    await this.driver.close();
+    if (this.driver) {
+      try {
+        await this.driver.close();
+      } catch (err) {
+        console.warn("[CacophonyDaemon] Error closing database driver on stop:", err);
+      }
+    }
     this.isRunning = false;
   }
 
@@ -519,6 +556,14 @@ export class CacophonyDaemon {
 
   public getAutoTuner(): import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined {
     return this.autoTuner;
+  }
+
+  public getBanditScheduler(): import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined {
+    return this.banditScheduler;
+  }
+
+  public getFleetCoordinator(): import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator | undefined {
+    return this.fleetCoordinator;
   }
 
   /**

@@ -8,6 +8,7 @@ import { FrontierModalComponent, DecomposedTaskPreview } from './components/fron
 import { TaskDetailModalComponent } from './components/task-detail-modal/task-detail-modal.component';
 import { SessionTabsComponent } from './components/session-tabs/session-tabs.component';
 import { ExecutionModeSelectorComponent } from './components/execution-mode-selector/execution-mode-selector.component';
+import { TelemetryBarComponent } from './components/telemetry-bar/telemetry-bar.component';
 
 /**
  * Root Application Component:
@@ -27,6 +28,7 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
     TaskDetailModalComponent,
     SessionTabsComponent,
     ExecutionModeSelectorComponent,
+    TelemetryBarComponent,
   ],
   template: `
     <div class="app-layout">
@@ -149,6 +151,9 @@ import { ExecutionModeSelectorComponent } from './components/execution-mode-sele
         <app-session-tabs />
         <app-execution-mode-selector />
       </div>
+
+      <!-- Compact Root Telemetry Bar (T57.5.2) -->
+      <app-telemetry-bar />
 
       <!-- Main Routed View Outlet -->
       <main class="main-content">
