@@ -89,6 +89,14 @@ export class ThermalGovernor {
    */
   public evaluate(tempCelsius: number): ThermalEvaluation {
     const isEmergency = tempCelsius >= this.emergencyShutdownTemp;
+    if (isEmergency) {
+      return {
+        tempCelsius,
+        zone: "Danger",
+        pacingDelaySeconds: 10,
+        emergencyHalt: true,
+      };
+    }
 
     if (this.isLegacy3Point) {
       if (tempCelsius >= this.legacyElevatedMax) {

@@ -321,7 +321,9 @@ export class CacophonyHttpServer {
         forwardedProto,
         isLoopback:
           forwardedHost.includes("localhost") ||
-          forwardedHost.includes("127.0.0.1"),
+          forwardedHost.includes("127.0.0.1") ||
+          forwardedHost.includes("::1") ||
+          forwardedHost.includes("[::1]"),
         isLan: /^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(
           forwardedHost,
         ),

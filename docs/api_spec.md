@@ -563,6 +563,43 @@ Retrieves per-model inference rate limits, token budgets, and daily execution ca
 
 Reads or updates agent role model affinity mappings (e.g. mapping `architect` or `reviewer` to preferred models).
 
+### GET `/api/config/network`
+
+Returns dynamic network profile configuration inspected from incoming host headers, reverse proxy headers (`X-Forwarded-Host`, `X-Forwarded-Proto`), and client origins.
+
+**Response:** `200 OK`
+
+```json
+{
+  "resolvedOrigin": "http://127.0.0.1:24161",
+  "forwardedHost": "127.0.0.1:24161",
+  "forwardedProto": "http",
+  "isLoopback": true,
+  "isLan": false
+}
+```
+
+- `isLoopback`: `true` if connected via localhost, 127.0.0.1, or IPv6 loopback (`::1`, `[::1]`).
+- `isLan`: `true` for private RFC 1918 subnets (192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12) and Docker bridge networks (172.17.0.0/16).
+
+### POST `/api/models/epoch`
+
+Advances the active arena telemetry epoch, snapshotting previous performance totals, resetting degraded and eviction counters, and un-ejecting local models following pipeline regression fixes.
+
+**Request Body:**
+
+```json
+{
+  "name": "Epoch 15: Post-Tag-Resolution & Remediation Rebuild Recovery",
+  "reason": "Reset degraded model baselines and clear failure streaks",
+  "notes": "Optional audit metadata"
+}
+```
+
+### POST `/api/models/reset-stats`
+
+Resets active model health run and failure counters directly to baseline without rotating the epoch identifier.
+
 ### GET `/api/promotion/status`
 
 Retrieves the current release promotion gating status, verifying canary benchmarks and test pass thresholds.

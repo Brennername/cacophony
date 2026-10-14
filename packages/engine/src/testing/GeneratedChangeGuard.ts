@@ -643,11 +643,20 @@ export class GeneratedChangeGuard {
       }
     }
 
-    const stylesMatch = source.match(/styles\s*:\s*\[[\s\S]*?\]/);
-    if (stylesMatch && stylesMatch[0].replace(/\s+/g, "") !== "styles:[]") {
-      issues.push(
-        `Generated Angular component in ${filePath} has inline styles; Angular standards require decomposing component styles into separate companion .css files with styleUrl.`,
-      );
+    const stylesIdx = source.search(/\bstyles\s*:/);
+    if (stylesIdx !== -1) {
+      const openBracket = source.indexOf("[", stylesIdx);
+      if (openBracket !== -1) {
+        const closeBracket = source.indexOf("]", openBracket);
+        if (closeBracket !== -1) {
+          const inner = source.slice(openBracket + 1, closeBracket).trim();
+          if (inner.length > 0) {
+            issues.push(
+              `Generated Angular component in ${filePath} has inline styles; Angular standards require decomposing component styles into separate companion .css files with styleUrl.`,
+            );
+          }
+        }
+      }
     }
   }
 

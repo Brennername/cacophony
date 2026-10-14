@@ -46,8 +46,79 @@ export class OllamaProvider implements IInferenceProvider {
     });
   }
 
+  private readonly resolvedTagCache = new Map<string, string>();
+  private availableTagsCache: { tags: string[]; fetchedAt: number } | null =
+    null;
+
   public getProviderType(): InferenceProviderType {
     return "ollama";
+  }
+
+  /**
+   * Resolves requested model tag against active installed Ollama tags (e.g. qwen2.5-coder:7b -> qwen2.5-coder:7b-instruct-q4_K_M).
+   */
+  public async resolveModelTag(requestedModel: string): Promise<string> {
+    if (!requestedModel) return requestedModel;
+    const cached = this.resolvedTagCache.get(requestedModel);
+    if (cached) return cached;
+
+    // Static known aliases for local Ollama environments
+    const staticAliases: Record<string, string> = {
+      "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "qwen2.5-coder:latest": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "gemma3:4b": "gemma3:4b-it-qat",
+      "gemma3:4b-it": "gemma3:4b-it-qat",
+      "deepseek-coder-v2:latest": "deepseek-coder-v2:16b",
+      "deepseek-r1:latest": "deepseek-r1:8b",
+    };
+
+    if (staticAliases[requestedModel]) {
+      this.resolvedTagCache.set(requestedModel, staticAliases[requestedModel]!);
+      return staticAliases[requestedModel]!;
+    }
+
+    try {
+      const now = Date.now();
+      if (
+        !this.availableTagsCache ||
+        now - this.availableTagsCache.fetchedAt > 30000
+      ) {
+        const res = await (this.fetchFn ?? fetch)(`${this.baseUrl}/api/tags`, {
+          dispatcher: this.dispatcher as any,
+          signal: AbortSignal.timeout(5000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            models?: Array<{ name: string }>;
+          };
+          const tags = (data.models || []).map((m) => m.name);
+          this.availableTagsCache = { tags, fetchedAt: now };
+        }
+      }
+
+      if (this.availableTagsCache && this.availableTagsCache.tags.length > 0) {
+        const tags = this.availableTagsCache.tags;
+        if (tags.includes(requestedModel)) {
+          this.resolvedTagCache.set(requestedModel, requestedModel);
+          return requestedModel;
+        }
+
+        const prefixMatch = tags.find(
+          (t) =>
+            t.startsWith(requestedModel) ||
+            t.startsWith(`${requestedModel}:`) ||
+            requestedModel.startsWith(t),
+        );
+        if (prefixMatch) {
+          this.resolvedTagCache.set(requestedModel, prefixMatch);
+          return prefixMatch;
+        }
+      }
+    } catch {
+      // Fallback silently if tags endpoint is unreachable
+    }
+
+    return requestedModel;
   }
 
   /**
@@ -102,15 +173,16 @@ export class OllamaProvider implements IInferenceProvider {
     const startMs = Date.now();
     const url = `${this.baseUrl}/api/chat`;
 
+    const resolvedModel = await this.resolveModelTag(request.model);
     const options = await this.resolveModelOptions(
-      request.model,
+      resolvedModel,
       undefined,
       request.temperature,
       request.maxTokens,
     );
 
     const body = {
-      model: request.model,
+      model: resolvedModel,
       messages: request.messages.map((m) => ({
         role: m.role,
         content: m.content,
@@ -181,15 +253,16 @@ export class OllamaProvider implements IInferenceProvider {
     const startMs = Date.now();
     const url = `${this.baseUrl}/api/chat`;
 
+    const resolvedModel = await this.resolveModelTag(request.model);
     const options = await this.resolveModelOptions(
-      request.model,
+      resolvedModel,
       undefined,
       request.temperature,
       request.maxTokens,
     );
 
     const body = {
-      model: request.model,
+      model: resolvedModel,
       messages: request.messages.map((m) => ({
         role: m.role,
         content: m.content,

@@ -119,7 +119,8 @@ export class ConventionalCommitGenerator {
     const commitType = this.resolveCommitType(options.role, options.isFix);
     const scopePart = options.scope ? `(${options.scope})` : "";
     const breaking = options.breakingChange ? "!" : "";
-    const subject = `${commitType}${scopePart}${breaking}: ${rawDesc}`;
+    const rawSubject = `${commitType}${scopePart}${breaking}: ${rawDesc}`;
+    const subject = this.clampSubject(rawSubject, 72);
 
     const metadataParts: string[] = [];
     if (options.body) {
@@ -127,6 +128,7 @@ export class ConventionalCommitGenerator {
     }
     if (options.taskId) {
       metadataParts.push(`Task: ${options.taskId}`);
+      metadataParts.push(`Closes ${options.taskId}`);
     }
     if (options.role) {
       metadataParts.push(`Role: ${options.role}`);
@@ -137,5 +139,15 @@ export class ConventionalCommitGenerator {
     }
 
     return subject;
+  }
+
+  /**
+   * Clamps commit subject to maximum allowable length (defaults to standard 72 chars).
+   */
+  public clampSubject(subject: string, maxLength: number = 72): string {
+    if (subject.length <= maxLength) {
+      return subject;
+    }
+    return subject.slice(0, maxLength);
   }
 }

@@ -1455,6 +1455,16 @@ export class AutonomousWorkerPipeline {
                 );
 
                 if (worktree) {
+                  if (pkgName) {
+                    await this.sandboxedRunner.run(
+                      `npm run build --workspace=${pkgName}`,
+                      {
+                        cwd: worktree.worktreePath,
+                        timeoutMs: 90000,
+                        maxBufferBytes: 128 * 1024,
+                      },
+                    );
+                  }
                   const retryTest = await this.sandboxedRunner.run(
                     groomed.scopedTestCommand,
                     {

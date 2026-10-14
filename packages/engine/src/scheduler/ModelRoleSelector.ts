@@ -37,7 +37,10 @@ export class ModelRoleSelector {
       "qwen2.5-coder:14b",
       "qwen2.5-coder:7b",
     ];
-    this.defaultModel = config.defaultModel ?? "qwen2.5-coder:7b";
+    this.defaultModel =
+      config.defaultModel ??
+      process.env["DEFAULT_IMPLEMENTER_MODEL"] ??
+      "qwen2.5-coder:7b-instruct-q4_K_M";
   }
 
   public selectModelForRole(
@@ -72,7 +75,11 @@ export class ModelRoleSelector {
 
     for (const pref of preferredList) {
       const match = availableModels.find(
-        (m) => m === pref || m.startsWith(`${pref}:`) || pref.startsWith(m),
+        (m) =>
+          m === pref ||
+          m.startsWith(`${pref}:`) ||
+          m.startsWith(pref) ||
+          pref.startsWith(m),
       );
       if (match) return match;
     }

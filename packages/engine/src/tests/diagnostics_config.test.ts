@@ -37,20 +37,23 @@ class MockWorkerPipeline {
  */
 class MockDaemon {
   public workerPipeline = new MockWorkerPipeline();
-  public taskRecord: Record<string, any> = {
-    "task-test-1": {
-      id: "task-test-1",
-      title: "Test Task Failure",
-      status: "FAILED",
-      role: "implementer",
-      priority: "P0",
-      modelAssigned: "qwen2.5-coder:7b",
-      testCommand: "npm test",
-      logSnippet: "--- a/foo.ts\n+++ b/foo.ts",
-      createdAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-    },
-  };
+  public taskRecord = new Map<string, any>([
+    [
+      "task-test-1",
+      {
+        id: "task-test-1",
+        title: "Test Task Failure",
+        status: "FAILED",
+        role: "implementer",
+        priority: "P0",
+        modelAssigned: "qwen2.5-coder:7b",
+        testCommand: "npm test",
+        logSnippet: "--- a/foo.ts\n+++ b/foo.ts",
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      },
+    ],
+  ]);
 
   public stagesRecord: Record<string, any[]> = {
     "task-test-1": [
@@ -79,10 +82,11 @@ class MockDaemon {
 
   public getTaskRepository() {
     return {
-      getById: async (id: string) => this.taskRecord[id] || null,
+      getById: async (id: string) => this.taskRecord.get(id) || null,
       retryFailedTasks: async (taskId?: string, _force?: boolean) => {
-        if (taskId && this.taskRecord[taskId]) {
-          this.taskRecord[taskId].status = "PENDING";
+        if (taskId && this.taskRecord.has(taskId)) {
+          const rec = this.taskRecord.get(taskId);
+          rec.status = "PENDING";
           return 1;
         }
         return 0;
@@ -203,7 +207,7 @@ describe("Dynamic Diagnostics & Post-Mortem Tracing Suite (T70.4)", () => {
     assert.equal(data.taskId, "task-test-1");
     assert.equal(data.requeued, true);
     assert.equal(data.requeuedCount, 1);
-    assert.equal(mockDaemon.taskRecord["task-test-1"].status, "PENDING");
+    assert.equal(mockDaemon.taskRecord.get("task-test-1")?.status, "PENDING");
   });
 
   test("GET /api/tasks/:id/diagnostics extracts post-mortem telemetry and stage diffs", async () => {
