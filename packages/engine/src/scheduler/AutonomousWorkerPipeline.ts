@@ -2119,6 +2119,9 @@ export class AutonomousWorkerPipeline {
         failureReason: errMsg.slice(0, 500),
       };
     } finally {
+      if (this.streamTapManager) {
+        this.streamTapManager.setActiveTask(null);
+      }
       if (this.worktreeManager && worktree) {
         try {
           await this.worktreeManager.cleanWorktree(

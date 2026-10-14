@@ -811,7 +811,9 @@ export class CacophonyDaemon {
           status: "ONLINE",
           uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
           pendingTasksCount: pending.length,
-          activeTaskId: this.streamTapManager.getActiveTask(),
+          activeTaskId:
+            this.scheduler.getCurrentRunningTask()?.id ??
+            this.streamTapManager.getActiveTask(),
           telemetry: latestTelemetry,
         };
       }

@@ -487,6 +487,8 @@ export class TaskScheduler implements IModelPredictor {
 
 
 
+
+
   /**
    * Prepares VRAM environment before loading a model for inference (T68.4.2).
    * Triggers explicit model unload if switching to a disparate model architecture

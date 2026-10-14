@@ -1903,7 +1903,7 @@ export class CacophonyHttpServer {
           const errorMsg = err instanceof Error ? err.message : String(err);
           this.logger.error("Failed to preload model", { error: errorMsg });
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: errorMsg }));
+          res.end(JSON.stringify({ error: "Failed to preload model" }));
         }
       });
       return;

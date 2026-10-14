@@ -622,38 +622,154 @@ export class GeneratedChangeGuard {
     }
 
     if (!filePath.endsWith(".ts") || !source.includes("@Component")) return;
-    const templateMatch = source.match(/template\s*:\s*([`'"])([\s\S]*?)\1/);
-    if (templateMatch && templateMatch[2] !== undefined) {
-      const tpl = templateMatch[2].trim();
-      if (
-        tpl === "" ||
-        /^<div(\s+class=["'][^"']*["'])?>\s*<\/div>$/i.test(tpl) ||
-        tpl === '<div class="component-container"></div>' ||
-        /^<p>\s*<\/p>$/i.test(tpl) ||
-        tpl.length < 15
-      ) {
-        issues.push(
-          `Generated Angular component in ${filePath} contains an empty or placeholder template.`,
-        );
-      } else {
-        // Enforce file decomposition standards: Angular components must use templateUrl companion files
-        issues.push(
-          `Generated Angular component in ${filePath} has an inline template; Angular standards require decomposing components into separate companion .html and .css files with templateUrl.`,
-        );
-      }
+
+    let astHandled = false;
+    try {
+      const sf = ts.createSourceFile(
+        filePath,
+        source,
+        ts.ScriptTarget.Latest,
+        true,
+      );
+
+      const inspectComponentObject = (obj: ts.ObjectLiteralExpression) => {
+        for (const prop of obj.properties) {
+          if (ts.isPropertyAssignment(prop) && prop.name) {
+            const propName = prop.name.getText(sf).replace(/['"]/g, "");
+            if (propName === "template") {
+              astHandled = true;
+              let tpl = "";
+              if (
+                ts.isStringLiteral(prop.initializer) ||
+                ts.isNoSubstitutionTemplateLiteral(prop.initializer)
+              ) {
+                tpl = prop.initializer.text.trim();
+              } else {
+                tpl = prop.initializer
+                  .getText(sf)
+                  .replace(/^[`'"]|[`'"]$/g, "")
+                  .trim();
+              }
+
+              if (
+                tpl === "" ||
+                /^<div(\s+class=["'][^"']*["'])?>\s*<\/div>$/i.test(tpl) ||
+                tpl === '<div class="component-container"></div>' ||
+                /^<p>\s*<\/p>$/i.test(tpl) ||
+                tpl.length < 15
+              ) {
+                issues.push(
+                  `Generated Angular component in ${filePath} contains an empty or placeholder template.`,
+                );
+              } else {
+                // Enforce file decomposition standards: Angular components must use templateUrl companion files
+                issues.push(
+                  `Generated Angular component in ${filePath} has an inline template; Angular standards require decomposing components into separate companion .html and .css files with templateUrl.`,
+                );
+              }
+            } else if (propName === "styles") {
+              astHandled = true;
+              if (ts.isArrayLiteralExpression(prop.initializer)) {
+                if (prop.initializer.elements.length > 0) {
+                  issues.push(
+                    `Generated Angular component in ${filePath} has inline styles; Angular standards require decomposing component styles into separate companion .css files with styleUrl.`,
+                  );
+                }
+              } else {
+                issues.push(
+                  `Generated Angular component in ${filePath} has inline styles; Angular standards require decomposing component styles into separate companion .css files with styleUrl.`,
+                );
+              }
+            }
+          }
+        }
+      };
+
+      const visit = (node: ts.Node) => {
+        if (ts.isDecorator(node)) {
+          if (
+            ts.isCallExpression(node.expression) &&
+            ts.isIdentifier(node.expression.expression) &&
+            node.expression.expression.text === "Component" &&
+            node.expression.arguments.length > 0 &&
+            ts.isObjectLiteralExpression(node.expression.arguments[0]!)
+          ) {
+            inspectComponentObject(
+              node.expression.arguments[0] as ts.ObjectLiteralExpression,
+            );
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+
+      visit(sf);
+    } catch {
+      // AST parsing fallback
     }
 
-    const stylesIdx = source.search(/\bstyles\s*:/);
-    if (stylesIdx !== -1) {
-      const openBracket = source.indexOf("[", stylesIdx);
-      if (openBracket !== -1) {
-        const closeBracket = source.indexOf("]", openBracket);
-        if (closeBracket !== -1) {
-          const inner = source.slice(openBracket + 1, closeBracket).trim();
-          if (inner.length > 0) {
+    if (!astHandled) {
+      const templateIdx = source.search(/\btemplate\s*:/);
+      if (templateIdx !== -1) {
+        let quoteChar = "";
+        let startIdx = -1;
+        for (let i = templateIdx + "template".length; i < source.length; i++) {
+          const c = source[i];
+          if (c === ":" || c === " " || c === "\t" || c === "\r" || c === "\n") {
+            continue;
+          }
+          if (c === "`" || c === "'" || c === '"') {
+            quoteChar = c;
+            startIdx = i + 1;
+            break;
+          }
+          break;
+        }
+        if (startIdx !== -1) {
+          let endIdx = -1;
+          for (let i = startIdx; i < source.length; i++) {
+            if (source[i] === quoteChar && source[i - 1] !== "\\") {
+              endIdx = i;
+              break;
+            }
+          }
+          if (endIdx !== -1) {
+            const tpl = source.slice(startIdx, endIdx).trim();
+            if (
+              tpl === "" ||
+              /^<div(\s+class=["'][^"']*["'])?>\s*<\/div>$/i.test(tpl) ||
+              tpl === '<div class="component-container"></div>' ||
+              /^<p>\s*<\/p>$/i.test(tpl) ||
+              tpl.length < 15
+            ) {
+              issues.push(
+                `Generated Angular component in ${filePath} contains an empty or placeholder template.`,
+              );
+            } else {
+              // Enforce file decomposition standards: Angular components must use templateUrl companion files
+              issues.push(
+                `Generated Angular component in ${filePath} has an inline template; Angular standards require decomposing components into separate companion .html and .css files with templateUrl.`,
+              );
+            }
+          } else {
             issues.push(
-              `Generated Angular component in ${filePath} has inline styles; Angular standards require decomposing component styles into separate companion .css files with styleUrl.`,
+              `Generated Angular component in ${filePath} has an inline template; Angular standards require decomposing components into separate companion .html and .css files with templateUrl.`,
             );
+          }
+        }
+      }
+
+      const stylesIdx = source.search(/\bstyles\s*:/);
+      if (stylesIdx !== -1) {
+        const openBracket = source.indexOf("[", stylesIdx);
+        if (openBracket !== -1) {
+          const closeBracket = source.indexOf("]", openBracket);
+          if (closeBracket !== -1) {
+            const inner = source.slice(openBracket + 1, closeBracket).trim();
+            if (inner.length > 0) {
+              issues.push(
+                `Generated Angular component in ${filePath} has inline styles; Angular standards require decomposing component styles into separate companion .css files with styleUrl.`,
+              );
+            }
           }
         }
       }

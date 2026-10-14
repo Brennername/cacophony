@@ -457,6 +457,10 @@ Speculatively pre-loads model weights into GPU VRAM (T87.1.3). Can be invoked pr
 }
 ```
 
+**Error Responses:**
+- `400 Bad Request`: `{ "error": "Missing or invalid 'model' parameter" }`
+- `500 Internal Server Error`: `{ "error": "Failed to preload model" }`
+
 ### GET `/api/models/preload`
 
 Queries current telemetry and cache hit/miss statistics for VRAM speculative prefetching.
