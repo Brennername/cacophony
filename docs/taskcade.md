@@ -108,7 +108,14 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-65-mobile-first-testing-view-polish-responsive-process-manager--live-test-telemetry)_
 
----
+### T65.7: Follow-up - Wire Mobile Quick Actions to Real Data (audit found stubs after archive)
+
+The archived T65.1.2 renders the swipe tray, but `rerunTest()` only echoes a notice into the terminal buffer and `copyProcLogs()` copies the command string instead of captured output.
+
+- [ ] T65.7.1: Add POST /api/processes/:id/rerun to CacophonyHttpServer re-spawning the recorded test command through the existing subprocess runner; document in docs/api_spec.md. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/processes/:id/rerun] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+- [ ] T65.7.2: Add TaskApiService.rerunProcess(id) and call it from TestingViewComponent.rerunTest() with toast feedback. [File: packages/frontend/src/app/services/task-api.service.ts] [Method: rerunProcess] [Test: npm test]
+- [ ] T65.7.3: Persist captured stdout/stderr per process run and expose it as ProcessItem.output; copyProcLogs() must copy that output. [File: packages/frontend/src/app/services/arena-state.store.ts] [Field: ProcessItem.output] [Test: npm test]
+- [ ] T65.7.4: Unit tests verifying Re-run dispatches the API call and Copy Logs writes captured output to the clipboard. [File: packages/frontend/src/app/components/views/testing-view.component.spec.ts] [Test: npm test]
 
 ---
 
