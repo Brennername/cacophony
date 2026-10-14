@@ -2409,3 +2409,51 @@ In accordance with the Cacophony Taskcade Rotation Protocol, tasks are rotated t
   - [x] T85.4.2: Add granular interactive controls to adjust window size (10, 20, 50, 100, 1000, Total) and qualification filters (by role, model, branch/commit) with immediate reactive signal updates. [File: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.html] [Test: npm test]
   - [x] T85.4.3: Integrate trend widget into `DashboardViewComponent` directly adjacent to overall success rate badge, featuring mobile-first responsive layout, dark/light theme support, and visual regression alerts. [File: packages/frontend/src/app/components/views/dashboard-view.component.ts] [Test: npm test]
   - [x] T85.4.4: Write Angular unit tests validating signal reactions, window selector changes, mobile viewport reflows, and theme token bindings. [File: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.spec.ts] [Test: npm test]
+
+---
+
+## Archived Phase 89: Two-Tier Review Gates, Anti-Stub AST Enforcement & Role-Tiered Model Routing
+*Completed & Verified in Commit: `53d5771`*
+
+*RDF Category: review_and_validation*
+
+### T89.1: Deterministic Structural Anti-Stub Review Gate
+  - [x] T89.1.1: Implement AST empty template and placeholder detection for Angular components in GeneratedChangeGuard. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+  - [x] T89.1.2: Enforce module-root execution guardrail preventing top-level function invocations in library modules. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+  - [x] T89.1.3: Detect and reject arbitrary stripping of JSDoc documentation comment blocks from existing source files. [File: packages/engine/src/testing/GeneratedChangeGuard.ts] [Test: npm test -- packages/engine/src/tests/generated_change_guard.test.ts]
+
+### T89.2: Multi-Model Progressive Review Gate & Frontier Reviewer Hardening
+  - [x] T89.2.1: Implement inspectStructuralAntiStub in FrontierReviewer rejecting empty templates, placeholder bodies, and comment stripping before LLM invocation. [File: packages/engine/src/inference/FrontierReviewer.ts] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
+  - [x] T89.2.2: Implement two-stage striped MoE reviewer running Semantic Completeness Critic and SOLID Quality Critic across distinct models. [File: packages/engine/src/inference/FrontierReviewer.ts] [Test: npm test -- packages/engine/src/tests/frontier_reviewer.test.ts]
+
+### T89.3: Model Role Specialization & 3B Feature Disqualification
+  - [x] T89.3.1: Disqualify 3B parameter models from coding and implementer roles, routing implementation tasks to 7B+ instruct models. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Test: npm test -- packages/engine/src/tests/scheduler.test.ts]
+  - [x] T89.3.2: Implement micro-model scaffolding generator using 3B models strictly for file structure and method signature generation, delegating method bodies to larger models. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+
+### T89.4: Angular Standards Skill & Component Decomposition Hardening
+  - [x] T89.4.1: Update Angular standards skill documentation enforcing file decomposition, prohibiting placeholder templates, and establishing mobile-first criteria. [File: /home/nexen/.gemini/config/plugins/modern-web-guidance-plugin/skills/angular-standards/SKILL.md]
+
+---
+
+## Archived Phase 86: Distributed Fleet Load Balancing & Elastic Worker Scaling
+*Completed & Verified in Engineering Session*
+
+*RDF Category: infrastructure_and_scaling*
+
+### T86.1: Node Health Monitoring & Status Heartbeats
+  - [x] T86.1.1: Create `INodeHealthStatus` interface in `packages/shared-types/src/fleet.ts` covering node state (IDLE, BUSY, OFFLINE), active memory usage, APU/GPU thermals, and current task assignment. [File: packages/shared-types/src/fleet.ts] [Interface: INodeHealthStatus] [Test: npm test -- packages/shared-types]
+  - [x] T86.1.2: Implement `FleetHealthMonitor` service in `packages/engine/src/fleet/FleetHealthMonitor.ts` to collect local telemetry and receive UDP/HTTP heartbeats from peer worker nodes. [File: packages/engine/src/fleet/FleetHealthMonitor.ts] [Class: FleetHealthMonitor] [Test: npm test -- packages/engine/src/tests/fleet_health_monitor.test.ts]
+  - [x] T86.1.3: Expose `POST /api/fleet/heartbeat` for worker nodes to report their status to the orchestrator node. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Route: POST /api/fleet/heartbeat] [Test: npm test -- packages/engine/src/tests/http_api.test.ts]
+  - [x] T86.1.4: Write unit tests verifying missing heartbeats transition node state to OFFLINE and active heartbeats update thermal profiles. [File: packages/engine/src/tests/fleet_health_monitor.test.ts] [Test: npm test -- packages/engine/src/tests/fleet_health_monitor.test.ts]
+
+### T86.2: Multi-Node Task Dispatch & Load Balancing
+  - [x] T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/DistributedTaskDispatcher.ts` replacing local-only dispatch to route tasks to the node with optimal thermal headroom and VRAM availability. [File: packages/engine/src/scheduler/DistributedTaskDispatcher.ts] [Class: DistributedTaskDispatcher] [Test: npm test -- packages/engine/src/tests/distributed_dispatcher.test.ts]
+  - [x] T86.2.2: Refactor `TaskScheduler` to leverage `DistributedTaskDispatcher` for offloading compute-intensive tasks (e.g. `deepseek-coder-v2:16b`) to heavy compute nodes while keeping light orchestration tasks (e.g. `qwen2.5-coder:3b`) local. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: tick] [Test: npm test -- packages/engine/src/tests/distributed_scheduler.test.ts]
+  - [x] T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully pause its task, sync the worktree patch back to DB, and re-dispatch to a cooler node. [File: packages/engine/src/scheduler/DistributedTaskDispatcher.ts] [Method: migrateTask] [Test: npm test -- packages/engine/src/tests/distributed_dispatcher.test.ts]
+
+### T86.3: Fleet Topology Visualization Dashboard
+  - [x] T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/views/fleet-topology-view.component.ts` rendering a live network graph of connected worker nodes. [File: packages/frontend/src/app/components/views/fleet-topology-view.component.ts] [Class: FleetTopologyViewComponent] [Test: npm test]
+  - [x] T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET /api/fleet/events` to visually pulse nodes when they receive tasks or throw thermal warnings. [File: packages/frontend/src/app/components/views/fleet-topology-view.component.ts] [Test: npm test]
+  - [x] T86.3.3: Write Angular unit and integration tests verifying topology reflow on node connect/disconnect and mobile-first responsive scaling. [File: packages/frontend/src/app/components/views/fleet-topology-view.component.spec.ts] [Test: npm test]
+
+

@@ -38,7 +38,7 @@ export class CacophonyHttpServer {
     this.daemon = daemon;
     this.config = config;
     this.authService = new AuthService({
-      userSessionRepo: daemon.getUserSessionRepository()
+      userSessionRepo: daemon.getUserSessionRepository(),
     });
     this.rateLimiter = new RateLimiter();
   }
@@ -67,7 +67,7 @@ export class CacophonyHttpServer {
           type: "token",
           taskId: event.taskId,
           token: event.token,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         })}\n\n`;
         for (const client of this.sseClients) {
           try {
@@ -83,7 +83,7 @@ export class CacophonyHttpServer {
           type: "reasoning_chunk",
           taskId: event.taskId,
           chunk: event.chunk,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         })}\n\n`;
         for (const client of this.sseClients) {
           try {
@@ -99,7 +99,7 @@ export class CacophonyHttpServer {
           type: "code_chunk",
           taskId: event.taskId,
           chunk: event.chunk,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         })}\n\n`;
         for (const client of this.sseClients) {
           try {
@@ -117,7 +117,7 @@ export class CacophonyHttpServer {
           stageName: event.stageName,
           stageStatus: event.stageStatus,
           durationMs: event.durationMs ?? 0,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         })}\n\n`;
         for (const client of this.sseClients) {
           try {
@@ -128,28 +128,30 @@ export class CacophonyHttpServer {
         }
       });
 
-      this.untapHeartbeatListener = streamTap.tapGenerationHeartbeat((event) => {
-        const payload = `data: ${JSON.stringify({
-          type: "generation_heartbeat",
-          taskId: event.taskId,
-          modelId: event.modelId,
-          state: event.state,
-          elapsedMs: event.elapsedMs,
-          promptIngestionMs: event.promptIngestionMs,
-          timeToFirstTokenMs: event.timeToFirstTokenMs,
-          tokensEmitted: event.tokensEmitted,
-          instantaneousTps: event.instantaneousTps,
-          idleMs: event.idleMs,
-          timestamp: event.timestamp
-        })}\n\n`;
-        for (const client of this.sseClients) {
-          try {
-            client.write(payload);
-          } catch {
-            this.sseClients.delete(client);
+      this.untapHeartbeatListener = streamTap.tapGenerationHeartbeat(
+        (event) => {
+          const payload = `data: ${JSON.stringify({
+            type: "generation_heartbeat",
+            taskId: event.taskId,
+            modelId: event.modelId,
+            state: event.state,
+            elapsedMs: event.elapsedMs,
+            promptIngestionMs: event.promptIngestionMs,
+            timeToFirstTokenMs: event.timeToFirstTokenMs,
+            tokensEmitted: event.tokensEmitted,
+            instantaneousTps: event.instantaneousTps,
+            idleMs: event.idleMs,
+            timestamp: event.timestamp,
+          })}\n\n`;
+          for (const client of this.sseClients) {
+            try {
+              client.write(payload);
+            } catch {
+              this.sseClients.delete(client);
+            }
           }
-        }
-      });
+        },
+      );
 
       this.untapSubStageLogListener = streamTap.tapSubStageLog((event) => {
         const payload = `data: ${JSON.stringify({
@@ -157,7 +159,7 @@ export class CacophonyHttpServer {
           taskId: event.taskId,
           channel: event.channel,
           content: event.content,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         })}\n\n`;
         for (const client of this.sseClients) {
           try {
@@ -174,7 +176,7 @@ export class CacophonyHttpServer {
           epochId: event.epochId,
           name: event.name,
           reason: event.reason,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         })}\n\n`;
         for (const client of this.sseClients) {
           try {
@@ -237,43 +239,68 @@ export class CacophonyHttpServer {
     this.rateLimiter.stop();
   }
 
-  private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): Promise<void> {
     // Dynamic Origin & Host Resolution
-    const forwardedProto = (req.headers["x-forwarded-proto"] as string) || "http";
-    const forwardedHost = (req.headers["x-forwarded-host"] as string) || req.headers.host || "localhost:24161";
+    const forwardedProto =
+      (req.headers["x-forwarded-proto"] as string) || "http";
+    const forwardedHost =
+      (req.headers["x-forwarded-host"] as string) ||
+      req.headers.host ||
+      "localhost:24161";
     const clientOrigin = `${forwardedProto}://${forwardedHost}`;
     const url = new URL(req.url ?? "/", clientOrigin);
 
     // Rate limiting gate: reject excessive requests before any processing.
     // SSE endpoint is exempt since it is a long-lived single connection.
     const isSseEndpoint = url.pathname === "/api/events";
-    if (!isSseEndpoint && req.method !== "OPTIONS" && !this.rateLimiter.allowRequest(req)) {
+    if (
+      !isSseEndpoint &&
+      req.method !== "OPTIONS" &&
+      !this.rateLimiter.allowRequest(req)
+    ) {
       const retryAfter = this.rateLimiter.getRetryAfterSeconds(req);
       res.writeHead(429, {
         "Content-Type": "application/json",
-        "Retry-After": String(retryAfter)
+        "Retry-After": String(retryAfter),
       });
-      res.end(JSON.stringify({ error: "Too Many Requests", retryAfterSeconds: retryAfter }));
+      res.end(
+        JSON.stringify({
+          error: "Too Many Requests",
+          retryAfterSeconds: retryAfter,
+        }),
+      );
       return;
     }
 
     // Dynamic CORS: echo request origin for API clients without ambient credential exposure
     const requestOrigin = (req.headers.origin as string) || "*";
     res.setHeader("Access-Control-Allow-Origin", requestOrigin);
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, OPTIONS, PUT, DELETE",
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With",
+    );
 
     // CSP: permissive policy for active development phase.
     // Strict enforcement deferred to T74.1.2 (Phase 74) once Angular build
     // pipeline produces nonce-compatible output.
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss: http: https:;"
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss: http: https:;",
     );
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader(
+      "Permissions-Policy",
+      "camera=(), microphone=(), geolocation=()",
+    );
 
     if (req.method === "OPTIONS") {
       res.writeHead(204);
@@ -287,8 +314,12 @@ export class CacophonyHttpServer {
         resolvedOrigin: clientOrigin,
         forwardedHost,
         forwardedProto,
-        isLoopback: forwardedHost.includes("localhost") || forwardedHost.includes("127.0.0.1"),
-        isLan: /^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(forwardedHost)
+        isLoopback:
+          forwardedHost.includes("localhost") ||
+          forwardedHost.includes("127.0.0.1"),
+        isLan: /^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(
+          forwardedHost,
+        ),
       };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(networkConfig));
@@ -298,7 +329,8 @@ export class CacophonyHttpServer {
     // 1c. REST API: Host System Tool Availability & Missing Dependencies Diagnostic Report
     if (url.pathname === "/api/hardware/tools" && req.method === "GET") {
       try {
-        const { SystemToolScanner } = await import("../hardware/SystemToolScanner.js");
+        const { SystemToolScanner } =
+          await import("../hardware/SystemToolScanner.js");
         const scanner = new SystemToolScanner();
         const report = await scanner.scan();
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -314,7 +346,8 @@ export class CacophonyHttpServer {
     // 1c2. REST API: Accelerator Device Grid Enumeration
     if (url.pathname === "/api/system" && req.method === "GET") {
       try {
-        const { GpuDeviceManager } = await import("../hardware/GpuDeviceManager.js");
+        const { GpuDeviceManager } =
+          await import("../hardware/GpuDeviceManager.js");
         const manager = new GpuDeviceManager();
         const devices = await manager.discoverDevices();
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -326,15 +359,28 @@ export class CacophonyHttpServer {
       return;
     }
 
-
-    // 1. SSE Real-Time Stream
-    if (url.pathname === "/api/events" && req.method === "GET") {
+    // 1. SSE Real-Time Stream (Core & Fleet Events)
+    if (
+      (url.pathname === "/api/events" ||
+        url.pathname === "/api/fleet/events") &&
+      req.method === "GET"
+    ) {
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        Connection: "keep-alive"
+        Connection: "keep-alive",
       });
-      res.write(`data: ${JSON.stringify({ type: "connected", timestamp: new Date().toISOString() })}\n\n`);
+      res.write(
+        `data: ${JSON.stringify({ type: "connected", timestamp: new Date().toISOString() })}\n\n`,
+      );
+
+      if (url.pathname === "/api/fleet/events") {
+        const monitor = this.daemon.getFleetHealthMonitor();
+        const nodes = monitor ? monitor.listNodes() : [];
+        res.write(
+          `data: ${JSON.stringify({ type: "fleet_init", nodes, timestamp: new Date().toISOString() })}\n\n`,
+        );
+      }
 
       const streamTap = this.daemon.getStreamTapManager();
       if (streamTap) {
@@ -346,8 +392,8 @@ export class CacophonyHttpServer {
               type: "stream_init",
               taskId: activeTaskId,
               buffer: initialBuffer,
-              timestamp: Date.now()
-            })}\n\n`
+              timestamp: Date.now(),
+            })}\n\n`,
           );
         }
       }
@@ -367,7 +413,13 @@ export class CacophonyHttpServer {
       const buffer = streamTap ? streamTap.getBuffer(taskId) : "";
       const activeTaskId = streamTap ? streamTap.getActiveTask() : null;
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ taskId: taskId || activeTaskId, buffer, activeTaskId }));
+      res.end(
+        JSON.stringify({
+          taskId: taskId || activeTaskId,
+          buffer,
+          activeTaskId,
+        }),
+      );
       return;
     }
 
@@ -395,7 +447,7 @@ export class CacophonyHttpServer {
           avgTempC: 0,
           peakTempC: 0,
           avgPowerWatts: 0,
-          peakPowerWatts: 0
+          peakPowerWatts: 0,
         };
       }
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -405,14 +457,17 @@ export class CacophonyHttpServer {
 
     // 1e. OpenMetrics / Prometheus Metrics Scraping Endpoint
     if (url.pathname === "/metrics" && req.method === "GET") {
-      const { PrometheusMetricsExporter } = await import("../telemetry/PrometheusMetricsExporter.js");
+      const { PrometheusMetricsExporter } =
+        await import("../telemetry/PrometheusMetricsExporter.js");
       const exporter = new PrometheusMetricsExporter({
         telemetryPoller: this.daemon.getTelemetryPoller(),
         taskRepo: this.daemon.getTaskRepository(),
-        modelHealthRepo: this.daemon.getModelHealthRepository()
+        modelHealthRepo: this.daemon.getModelHealthRepository(),
       });
       const metricsText = await exporter.getMetricsText();
-      res.writeHead(200, { "Content-Type": "text/plain; version=0.0.4; charset=utf-8" });
+      res.writeHead(200, {
+        "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+      });
       res.end(metricsText);
       return;
     }
@@ -425,7 +480,7 @@ export class CacophonyHttpServer {
         arena: "ONLINE",
         schedulerPaused: false,
         pendingTasksCount: pending.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(status));
@@ -438,17 +493,27 @@ export class CacophonyHttpServer {
       const authConfig = {
         activeProvider,
         authentik: {
-          issuerUrl: process.env["AUTHENTIK_ISSUER_URL"] || "http://localhost:9000/application/o/cacophony/",
-          clientId: process.env["AUTHENTIK_OAUTH_CLIENT_ID"] || "cacophony-client",
-          redirectUri: process.env["AUTHENTIK_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback"
+          issuerUrl:
+            process.env["AUTHENTIK_ISSUER_URL"] ||
+            "http://localhost:9000/application/o/cacophony/",
+          clientId:
+            process.env["AUTHENTIK_OAUTH_CLIENT_ID"] || "cacophony-client",
+          redirectUri:
+            process.env["AUTHENTIK_OAUTH_REDIRECT_URI"] ||
+            "http://localhost:24072/auth/callback",
         },
         authelia: {
-          portalUrl: process.env["AUTHELIA_PORTAL_URL"] || "http://localhost:9091/",
-          forwardAuthEnabled: process.env["AUTHELIA_FORWARD_AUTH_ENABLED"] !== "false"
+          portalUrl:
+            process.env["AUTHELIA_PORTAL_URL"] || "http://localhost:9091/",
+          forwardAuthEnabled:
+            process.env["AUTHELIA_FORWARD_AUTH_ENABLED"] !== "false",
         },
-        giteaPublicUrl: process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
+        giteaPublicUrl:
+          process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
         clientId: process.env["GITEA_OAUTH_CLIENT_ID"] || "cacophony-dashboard",
-        redirectUri: process.env["GITEA_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback"
+        redirectUri:
+          process.env["GITEA_OAUTH_REDIRECT_URI"] ||
+          "http://localhost:24072/auth/callback",
       };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(authConfig));
@@ -456,7 +521,10 @@ export class CacophonyHttpServer {
     }
 
     // 2c. REST API: OIDC OpenID Configuration Discovery
-    if (url.pathname === "/api/auth/openid-configuration" && req.method === "GET") {
+    if (
+      url.pathname === "/api/auth/openid-configuration" &&
+      req.method === "GET"
+    ) {
       const config = await this.authService.getOidcConfiguration();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(config));
@@ -466,11 +534,15 @@ export class CacophonyHttpServer {
     // 2d. REST API: User Session Refresh
     if (url.pathname === "/api/auth/refresh" && req.method === "POST") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
-          const refreshed = await this.authService.refreshSession(payload.sessionId);
+          const refreshed = await this.authService.refreshSession(
+            payload.sessionId,
+          );
           if (!refreshed) {
             res.writeHead(401, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "Session invalid or expired" }));
@@ -489,13 +561,17 @@ export class CacophonyHttpServer {
     // 2e. REST API: User Logout & Revocation
     if (url.pathname === "/api/auth/logout" && req.method === "POST") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
           const result = await this.authService.logout(payload.sessionId || "");
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true, logoutUrl: result.logoutUrl }));
+          res.end(
+            JSON.stringify({ success: true, logoutUrl: result.logoutUrl }),
+          );
         } catch {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true }));
@@ -510,7 +586,9 @@ export class CacophonyHttpServer {
       const statusParam = url.searchParams.get("status") as any;
       if (statusParam) {
         const limitParam = parseInt(url.searchParams.get("limit") || "100", 10);
-        const tasks = await taskRepo.listRecent(limitParam, { status: statusParam });
+        const tasks = await taskRepo.listRecent(limitParam, {
+          status: statusParam,
+        });
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(tasks));
         return;
@@ -530,7 +608,11 @@ export class CacophonyHttpServer {
         const authCtx = await this.authService.authenticateToken(token);
         if (!authCtx || !this.authService.isAuthorized(authCtx, "OPERATOR")) {
           res.writeHead(403, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Forbidden: Mutating tasks requires OPERATOR role" }));
+          res.end(
+            JSON.stringify({
+              error: "Forbidden: Mutating tasks requires OPERATOR role",
+            }),
+          );
           return;
         }
       }
@@ -544,7 +626,9 @@ export class CacophonyHttpServer {
           const payload = JSON.parse(body);
           const taskRepo = this.daemon.getTaskRepository();
           const task = await taskRepo.create({
-            id: payload.id || `task-${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            id:
+              payload.id ||
+              `task-${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
             title: payload.title || "Manual Task",
             prompt: payload.prompt || payload.title || "",
             role: payload.role || "implementer",
@@ -553,18 +637,18 @@ export class CacophonyHttpServer {
             modelAssigned: payload.modelAssigned || null,
             testCommand: payload.testCommand || null,
             focusFiles: payload.focusFiles
-              ? (typeof payload.focusFiles === "string"
-                  ? payload.focusFiles.replace(/^["']|["']$/g, "").trim()
-                  : Array.isArray(payload.focusFiles)
-                    ? payload.focusFiles.join(" ")
-                    : JSON.stringify(payload.focusFiles))
+              ? typeof payload.focusFiles === "string"
+                ? payload.focusFiles.replace(/^["']|["']$/g, "").trim()
+                : Array.isArray(payload.focusFiles)
+                  ? payload.focusFiles.join(" ")
+                  : JSON.stringify(payload.focusFiles)
               : null,
             targetBranch: payload.targetBranch || "main",
             prUrl: null,
             failureCount: 0,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            completedAt: null
+            completedAt: null,
           });
           res.writeHead(201, { "Content-Type": "application/json" });
           res.end(JSON.stringify(task));
@@ -586,9 +670,12 @@ export class CacophonyHttpServer {
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
-          const { ProjectSpecIngestionService } = await import("../inference/ProjectSpecIngestionService.js");
-          const { AcceptanceCriteriaEngine } = await import("../inference/AcceptanceCriteriaEngine.js");
-          const { DependencyGraphSequencer } = await import("../inference/DependencyGraphSequencer.js");
+          const { ProjectSpecIngestionService } =
+            await import("../inference/ProjectSpecIngestionService.js");
+          const { AcceptanceCriteriaEngine } =
+            await import("../inference/AcceptanceCriteriaEngine.js");
+          const { DependencyGraphSequencer } =
+            await import("../inference/DependencyGraphSequencer.js");
 
           const ingestion = new ProjectSpecIngestionService();
           const criteriaEngine = new AcceptanceCriteriaEngine();
@@ -598,26 +685,43 @@ export class CacophonyHttpServer {
           if (payload.filePath) {
             specDoc = await ingestion.ingestFile(payload.filePath);
           } else if (payload.specText) {
-            specDoc = ingestion.parseMarkdown(payload.specText, payload.title || "Project Specification");
+            specDoc = ingestion.parseMarkdown(
+              payload.specText,
+              payload.title || "Project Specification",
+            );
           } else {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing 'specText' or 'filePath' parameter in request payload" }));
+            res.end(
+              JSON.stringify({
+                error:
+                  "Missing 'specText' or 'filePath' parameter in request payload",
+              }),
+            );
             return;
           }
 
           const rawTasks: any[] = [];
           let idx = 1;
           for (const reqNode of specDoc.requirements) {
-            const criteria = criteriaEngine.deriveCriteria(reqNode, specDoc.technicalConstraints);
+            const criteria = criteriaEngine.deriveCriteria(
+              reqNode,
+              specDoc.technicalConstraints,
+            );
             const primaryCrit = criteria[0];
             const testTemplate = primaryCrit
-              ? criteriaEngine.generateTestTemplate(primaryCrit, { moduleName: reqNode.title.replace(/[^a-zA-Z0-9]/g, "") })
+              ? criteriaEngine.generateTestTemplate(primaryCrit, {
+                  moduleName: reqNode.title.replace(/[^a-zA-Z0-9]/g, ""),
+                })
               : undefined;
 
             let cat: any = "service";
             if (reqNode.type === "data_model") cat = "migration";
             else if (reqNode.type === "api_endpoint") cat = "route";
-            else if (reqNode.category.toLowerCase().includes("ui") || reqNode.category.toLowerCase().includes("frontend")) cat = "component";
+            else if (
+              reqNode.category.toLowerCase().includes("ui") ||
+              reqNode.category.toLowerCase().includes("frontend")
+            )
+              cat = "component";
 
             rawTasks.push({
               id: `task-spec-${Date.now()}-${idx++}`,
@@ -625,14 +729,26 @@ export class CacophonyHttpServer {
               role: reqNode.type === "api_endpoint" ? "implementer" : "coder",
               category: cat,
               dependencies: [],
-              focusFiles: testTemplate ? [`packages/engine/src/services/${testTemplate.fileName.replace(".test.ts", ".ts")}`] : [],
-              testCommand: testTemplate ? `npm test -- ${testTemplate.fileName}` : "npm test",
+              focusFiles: testTemplate
+                ? [
+                    `packages/engine/src/services/${testTemplate.fileName.replace(".test.ts", ".ts")}`,
+                  ]
+                : [],
+              testCommand: testTemplate
+                ? `npm test -- ${testTemplate.fileName}`
+                : "npm test",
               prompt: [
                 `[SPECIFICATION GOAL]: ${reqNode.title}`,
                 `DESCRIPTION: ${reqNode.description}`,
-                primaryCrit ? `ACCEPTANCE SCENARIO: Given ${primaryCrit.given}, When ${primaryCrit.when}, Then ${primaryCrit.then}` : "",
-                specDoc.technicalConstraints.length > 0 ? `TECHNICAL CONSTRAINTS: ${specDoc.technicalConstraints.join(", ")}` : ""
-              ].filter(Boolean).join("\n\n")
+                primaryCrit
+                  ? `ACCEPTANCE SCENARIO: Given ${primaryCrit.given}, When ${primaryCrit.when}, Then ${primaryCrit.then}`
+                  : "",
+                specDoc.technicalConstraints.length > 0
+                  ? `TECHNICAL CONSTRAINTS: ${specDoc.technicalConstraints.join(", ")}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join("\n\n"),
             });
           }
 
@@ -656,7 +772,7 @@ export class CacophonyHttpServer {
               failureCount: 0,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              completedAt: null
+              completedAt: null,
             });
             if (resRecord.created) {
               createdTasks.push(resRecord.task);
@@ -664,13 +780,15 @@ export class CacophonyHttpServer {
           }
 
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({
-            success: true,
-            title: specDoc.title,
-            totalParsed: specDoc.requirements.length,
-            createdCount: createdTasks.length,
-            tasks: createdTasks
-          }));
+          res.end(
+            JSON.stringify({
+              success: true,
+              title: specDoc.title,
+              totalParsed: specDoc.requirements.length,
+              createdCount: createdTasks.length,
+              tasks: createdTasks,
+            }),
+          );
         } catch (err: unknown) {
           console.error("Spec decomposition failed:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
@@ -697,7 +815,14 @@ export class CacophonyHttpServer {
       const force = url.searchParams.get("force") === "true";
       const requeuedCount = await taskRepo.retryFailedTasks(pattern, force);
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: true, requeuedCount, maxAutomaticFailures: 3, force }));
+      res.end(
+        JSON.stringify({
+          success: true,
+          requeuedCount,
+          maxAutomaticFailures: 3,
+          force,
+        }),
+      );
       return;
     }
 
@@ -705,7 +830,8 @@ export class CacophonyHttpServer {
     if (url.pathname === "/api/tasks/seed" && req.method === "POST") {
       try {
         const taskRepo = this.daemon.getTaskRepository();
-        const { TaskcadeSeedLoader } = await import("../scheduler/TaskcadeSeedLoader.js");
+        const { TaskcadeSeedLoader } =
+          await import("../scheduler/TaskcadeSeedLoader.js");
         const loader = new TaskcadeSeedLoader();
         const limit = parseInt(url.searchParams.get("limit") || "400", 10);
         const phaseFilter = url.searchParams.get("phase") || undefined;
@@ -716,11 +842,19 @@ export class CacophonyHttpServer {
           if (res.created) seededCount++;
         }
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, totalParsed: tasks.length, seededCount }));
+        res.end(
+          JSON.stringify({
+            success: true,
+            totalParsed: tasks.length,
+            seededCount,
+          }),
+        );
       } catch (err: unknown) {
         console.error("Taskcade seed failed:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: false, error: "Taskcade seed failed" }));
+        res.end(
+          JSON.stringify({ success: false, error: "Taskcade seed failed" }),
+        );
       }
       return;
     }
@@ -728,8 +862,12 @@ export class CacophonyHttpServer {
     // 4a0d. REST API: POST /api/tasks/reclaim - Reclaim stale running tasks back to PENDING
     if (url.pathname === "/api/tasks/reclaim" && req.method === "POST") {
       const taskRepo = this.daemon.getTaskRepository();
-      const timeoutMinutes = parseInt(url.searchParams.get("timeoutMinutes") || "15", 10);
-      const reclaimedCount = await taskRepo.reclaimStaleRunningTasks(timeoutMinutes);
+      const timeoutMinutes = parseInt(
+        url.searchParams.get("timeoutMinutes") || "15",
+        10,
+      );
+      const reclaimedCount =
+        await taskRepo.reclaimStaleRunningTasks(timeoutMinutes);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: true, reclaimedCount }));
       return;
@@ -744,16 +882,20 @@ export class CacophonyHttpServer {
       let normalizedModelCount = 0;
 
       // 1. Fetch merged PRs from Gitea
-      const giteaUrl = process.env.GITEA_BASE_URL || "http://cacophony-gitea:3000";
+      const giteaUrl =
+        process.env.GITEA_BASE_URL || "http://cacophony-gitea:3000";
       const giteaToken = process.env.GITEA_API_TOKEN || "";
       const repoOwner = process.env.GIT_REPO_OWNER || "NeXeN";
       const repoName = process.env.GIT_REPO_NAME || "cacophony";
 
       let mergedPrs: any[] = [];
       try {
-        const prRes = await fetch(`${giteaUrl}/api/v1/repos/${repoOwner}/${repoName}/pulls?state=closed`, {
-          headers: giteaToken ? { Authorization: `token ${giteaToken}` } : {}
-        });
+        const prRes = await fetch(
+          `${giteaUrl}/api/v1/repos/${repoOwner}/${repoName}/pulls?state=closed`,
+          {
+            headers: giteaToken ? { Authorization: `token ${giteaToken}` } : {},
+          },
+        );
         if (prRes.ok) {
           mergedPrs = (await prRes.json()) as any[];
         }
@@ -767,13 +909,16 @@ export class CacophonyHttpServer {
         const head = pr.head?.ref || "";
         const body = pr.body || "";
         mergedPrMap.set(head, pr);
-        const taskIdMatch = body.match(/Task ID:\s*`([^`]+)`/i) || head.match(/(taskcade-t[0-9.]+|task-[0-9_]+)/i);
+        const taskIdMatch =
+          body.match(/Task ID:\s*`([^`]+)`/i) ||
+          head.match(/(taskcade-t[0-9.]+|task-[0-9_]+)/i);
         if (taskIdMatch && taskIdMatch[1]) {
           mergedPrMap.set(taskIdMatch[1], pr);
         }
       }
 
-      const { TaskcadeSeedLoader } = await import("../scheduler/TaskcadeSeedLoader.js");
+      const { TaskcadeSeedLoader } =
+        await import("../scheduler/TaskcadeSeedLoader.js");
       const loader = new TaskcadeSeedLoader();
       const completedTaskIds = await loader.getCompletedTaskIds();
 
@@ -782,13 +927,28 @@ export class CacophonyHttpServer {
 
       for (const task of allPending) {
         // Check if task already has a merged PR in Gitea
-        const matchingPr = mergedPrMap.get(task.id) ||
-          (task.prUrl && mergedPrs.find((p) => p.merged && task.prUrl?.includes(`/pulls/${p.number}`)));
+        const matchingPr =
+          mergedPrMap.get(task.id) ||
+          (task.prUrl &&
+            mergedPrs.find(
+              (p) => p.merged && task.prUrl?.includes(`/pulls/${p.number}`),
+            ));
 
         if (matchingPr) {
-          const prHtmlUrl = matchingPr.html_url || `${process.env.GITEA_PUBLIC_URL || "http://localhost:19634"}/${repoOwner}/${repoName}/pulls/${matchingPr.number}`;
-          await taskRepo.updatePr(task.id, matchingPr.base?.ref || "main", prHtmlUrl);
-          await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 5.0);
+          const prHtmlUrl =
+            matchingPr.html_url ||
+            `${process.env.GITEA_PUBLIC_URL || "http://localhost:19634"}/${repoOwner}/${repoName}/pulls/${matchingPr.number}`;
+          await taskRepo.updatePr(
+            task.id,
+            matchingPr.base?.ref || "main",
+            prHtmlUrl,
+          );
+          await taskRepo.updateStatus(
+            task.id,
+            "COMPLETED",
+            task.durationMs || 1000,
+            task.tokensPerSec || 5.0,
+          );
           reconciledPrCount++;
           continue;
         }
@@ -804,7 +964,12 @@ export class CacophonyHttpServer {
           completedTaskIds.has(shortId) ||
           (taskCode && completedTaskIds.has(taskCode))
         ) {
-          await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 6.0);
+          await taskRepo.updateStatus(
+            task.id,
+            "COMPLETED",
+            task.durationMs || 1000,
+            task.tokensPerSec || 6.0,
+          );
           reconciledPrCount++;
           continue;
         }
@@ -845,20 +1010,27 @@ export class CacophonyHttpServer {
           completedTaskIds.has(shortId) ||
           (taskCode && completedTaskIds.has(taskCode))
         ) {
-          await taskRepo.updateStatus(task.id, "COMPLETED", task.durationMs || 1000, task.tokensPerSec || 6.0);
+          await taskRepo.updateStatus(
+            task.id,
+            "COMPLETED",
+            task.durationMs || 1000,
+            task.tokensPerSec || 6.0,
+          );
           reconciledPrCount++;
         }
       }
 
       const remainingPending = await taskRepo.listPending();
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        success: true,
-        reconciledPrCount,
-        normalizedModelCount,
-        deduplicatedCount,
-        pendingRemaining: remainingPending.length
-      }));
+      res.end(
+        JSON.stringify({
+          success: true,
+          reconciledPrCount,
+          normalizedModelCount,
+          deduplicatedCount,
+          pendingRemaining: remainingPending.length,
+        }),
+      );
       return;
     }
 
@@ -890,19 +1062,30 @@ export class CacophonyHttpServer {
     if (taskDetailMatch && req.method === "PATCH") {
       const taskId = taskDetailMatch[1]!;
       let body = "";
-      req.on("data", (chunk) => { body += chunk; });
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
           const taskRepo = this.daemon.getTaskRepository();
           if (payload.status) {
-            await taskRepo.updateStatus(taskId, payload.status, payload.durationMs, payload.tokensPerSec);
+            await taskRepo.updateStatus(
+              taskId,
+              payload.status,
+              payload.durationMs,
+              payload.tokensPerSec,
+            );
           }
           if (payload.modelAssigned) {
             await taskRepo.updateModel(taskId, payload.modelAssigned);
           }
           if (payload.prUrl) {
-            await taskRepo.updatePr(taskId, payload.targetBranch || "main", payload.prUrl);
+            await taskRepo.updatePr(
+              taskId,
+              payload.targetBranch || "main",
+              payload.prUrl,
+            );
           }
           const updated = await taskRepo.getById(taskId);
           res.writeHead(200, { "Content-Type": "application/json" });
@@ -931,7 +1114,7 @@ export class CacophonyHttpServer {
         completedAt: st.completedAt,
         durationMs: st.durationMs,
         tokensSent: st.tokensSent,
-        tokensReceived: st.tokensReceived
+        tokensReceived: st.tokensReceived,
       }));
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ taskId, stages: spans }));
@@ -952,25 +1135,31 @@ export class CacophonyHttpServer {
       const opinion = distiller
         ? await distiller.distillOpinion(reasoningTranscript)
         : {
-            summary: reasoningTranscript ? "Extracted reasoning transcript." : "No cognitive trace available.",
+            summary: reasoningTranscript
+              ? "Extracted reasoning transcript."
+              : "No cognitive trace available.",
             keyDecisions: [],
             identifiedRisks: [],
-            confidenceScore: 0.8
+            confidenceScore: 0.8,
           };
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        taskId,
-        hasReasoning: Boolean(reasoningTranscript),
-        reasoningTranscript,
-        thinkingDurationMs,
-        opinion
-      }));
+      res.end(
+        JSON.stringify({
+          taskId,
+          hasReasoning: Boolean(reasoningTranscript),
+          reasoningTranscript,
+          thinkingDurationMs,
+          opinion,
+        }),
+      );
       return;
     }
 
     // 4a3. REST API: GET /api/tasks/:id/pr-review - Structured PR Review & SOLID Compliance Verdict
-    const prReviewMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/pr-review$/);
+    const prReviewMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/pr-review$/,
+    );
     if (prReviewMatch && req.method === "GET") {
       const taskId = prReviewMatch[1]!;
       const taskRepo = this.daemon.getTaskRepository();
@@ -983,8 +1172,14 @@ export class CacophonyHttpServer {
 
       const stageRepo = this.daemon.getStageRepository();
       const stages = await stageRepo.getStagesForTask(taskId);
-      const remediationStage = stages.slice().reverse().find((s) => s.stageName === "remediation");
-      const prReviewStage = stages.slice().reverse().find((s) => s.stageName === "pr_review");
+      const remediationStage = stages
+        .slice()
+        .reverse()
+        .find((s) => s.stageName === "remediation");
+      const prReviewStage = stages
+        .slice()
+        .reverse()
+        .find((s) => s.stageName === "pr_review");
 
       // Extract verdict and SOLID compliance score from stage logs
       const logText = remediationStage?.logOutput || "";
@@ -1001,23 +1196,27 @@ export class CacophonyHttpServer {
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        taskId,
-        prUrl: task.prUrl,
-        targetBranch: task.targetBranch,
-        verdict,
-        solidComplianceScore: solidScore,
-        reviewNotes: logText || "Automated review completed.",
-        comments: [
-          {
-            path: task.focusFiles || "workspace",
-            lineNumber: 1,
-            comment: logText.slice(0, 300) || "Adherence to architectural guidelines validated.",
-            severity: isApproved ? "info" : "warning"
-          }
-        ],
-        merged: prReviewStage?.stageStatus === "SUCCESS"
-      }));
+      res.end(
+        JSON.stringify({
+          taskId,
+          prUrl: task.prUrl,
+          targetBranch: task.targetBranch,
+          verdict,
+          solidComplianceScore: solidScore,
+          reviewNotes: logText || "Automated review completed.",
+          comments: [
+            {
+              path: task.focusFiles || "workspace",
+              lineNumber: 1,
+              comment:
+                logText.slice(0, 300) ||
+                "Adherence to architectural guidelines validated.",
+              severity: isApproved ? "info" : "warning",
+            },
+          ],
+          merged: prReviewStage?.stageStatus === "SUCCESS",
+        }),
+      );
       return;
     }
 
@@ -1026,7 +1225,10 @@ export class CacophonyHttpServer {
       const taskRepo = this.daemon.getTaskRepository();
       const statusParam = url.searchParams.get("status") as any;
       const limitParam = parseInt(url.searchParams.get("limit") || "100", 10);
-      const allTasks = await taskRepo.listRecent(limitParam, statusParam ? { status: statusParam } : undefined);
+      const allTasks = await taskRepo.listRecent(
+        limitParam,
+        statusParam ? { status: statusParam } : undefined,
+      );
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(allTasks));
       return;
@@ -1034,25 +1236,31 @@ export class CacophonyHttpServer {
 
     // 4c. REST API: Model Health Leaderboard
     if (url.pathname === "/api/models/leaderboard" && req.method === "GET") {
-  const healthRepo = this.daemon.getModelHealthRepository();
-  const profiles = await healthRepo.listProfiles();
-  const leaderboard = profiles.map((p) => ({
-    modelId: p.modelId,
-    provider: p.provider,
-    successRate: p.totalTasks > 0 ? (p.totalSuccess / p.totalTasks) * 100 : 100,
-    totalRuns: p.totalTasks,
-    totalSuccess: p.totalSuccess,
-    totalFailures: p.totalFailures,
-    consecutiveFailures: p.consecutiveFailures,
-    avgLatencyMs: p.avgLatencyMs,
-    avgTokensPerSec: p.avgTokensPerSec || 0.0,
-    status: p.status === "EJECTED" ? "EVICTED" : p.consecutiveFailures > 0 ? "DEGRADED" : "HEALTHY",
-    lastUsedAt: p.lastUsedAt
-  }));
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(leaderboard));
-  return;
-}
+      const healthRepo = this.daemon.getModelHealthRepository();
+      const profiles = await healthRepo.listProfiles();
+      const leaderboard = profiles.map((p) => ({
+        modelId: p.modelId,
+        provider: p.provider,
+        successRate:
+          p.totalTasks > 0 ? (p.totalSuccess / p.totalTasks) * 100 : 100,
+        totalRuns: p.totalTasks,
+        totalSuccess: p.totalSuccess,
+        totalFailures: p.totalFailures,
+        consecutiveFailures: p.consecutiveFailures,
+        avgLatencyMs: p.avgLatencyMs,
+        avgTokensPerSec: p.avgTokensPerSec || 0.0,
+        status:
+          p.status === "EJECTED"
+            ? "EVICTED"
+            : p.consecutiveFailures > 0
+              ? "DEGRADED"
+              : "HEALTHY",
+        lastUsedAt: p.lastUsedAt,
+      }));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(leaderboard));
+      return;
+    }
 
     // 4c0. REST API: GET /api/arena/epochs - List All Epochs & Current Active Epoch
     if (url.pathname === "/api/arena/epochs" && req.method === "GET") {
@@ -1065,53 +1273,70 @@ export class CacophonyHttpServer {
     }
 
     // 4c0.1. REST API: POST /api/models/epoch - Advance Epoch and Reset Degradation
-    if ((url.pathname === "/api/models/epoch" || url.pathname === "/api/arena/epoch") && req.method === "POST") {
-  let body = "";
-  req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
-  req.on("end", async () => {
-    try {
-      const payload = JSON.parse(body || "{}");
-      const name = payload.name || `Epoch ${Date.now()}`;
-      const reason = payload.reason || "Manual telemetry epoch rotation";
-      const notes = payload.notes || "";
-      const healthRepo = this.daemon.getModelHealthRepository();
-      const newEpoch = await healthRepo.advanceEpoch(name, reason, notes);
-      const streamTap = this.daemon.getStreamTapManager();
-      if (streamTap) {
-        streamTap.broadcastEpochAdvanced({
-          epochId: newEpoch.epochId,
-          name: newEpoch.name,
-          reason: newEpoch.reason
-        });
-      }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: true, epoch: newEpoch }));
-    } catch (err: unknown) {
-      console.error("Failed to advance epoch:", err);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Failed to advance epoch" }));
+    if (
+      (url.pathname === "/api/models/epoch" ||
+        url.pathname === "/api/arena/epoch") &&
+      req.method === "POST"
+    ) {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const name = payload.name || `Epoch ${Date.now()}`;
+          const reason = payload.reason || "Manual telemetry epoch rotation";
+          const notes = payload.notes || "";
+          const healthRepo = this.daemon.getModelHealthRepository();
+          const newEpoch = await healthRepo.advanceEpoch(name, reason, notes);
+          const streamTap = this.daemon.getStreamTapManager();
+          if (streamTap) {
+            streamTap.broadcastEpochAdvanced({
+              epochId: newEpoch.epochId,
+              name: newEpoch.name,
+              reason: newEpoch.reason,
+            });
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, epoch: newEpoch }));
+        } catch (err: unknown) {
+          console.error("Failed to advance epoch:", err);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to advance epoch" }));
+        }
+      });
+      return;
     }
-  });
-  return;
-}
 
     // 4c0.2. REST API: POST /api/models/reset-stats - Reset Model Health Metrics to Baseline
     if (url.pathname === "/api/models/reset-stats" && req.method === "POST") {
-  try {
-    const healthRepo = this.daemon.getModelHealthRepository();
-    await healthRepo.resetAllStats();
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ success: true, message: "Model health stats reset to clean baseline" }));
-  } catch (err: unknown) {
-    console.error("Failed to reset model health stats:", err);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Failed to reset model health stats" }));
-  }
-  return;
-}
+      try {
+        const healthRepo = this.daemon.getModelHealthRepository();
+        await healthRepo.resetAllStats();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            message: "Model health stats reset to clean baseline",
+          }),
+        );
+      } catch (err: unknown) {
+        console.error("Failed to reset model health stats:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({ error: "Failed to reset model health stats" }),
+        );
+      }
+      return;
+    }
 
     // 4c0.3. REST API: GET /api/arena/epochs/:id/history - Get Snapshot History for Epoch
-    if (url.pathname.startsWith("/api/arena/epochs/") && url.pathname.endsWith("/history") && req.method === "GET") {
+    if (
+      url.pathname.startsWith("/api/arena/epochs/") &&
+      url.pathname.endsWith("/history") &&
+      req.method === "GET"
+    ) {
       const parts = url.pathname.split("/");
       const rawId = parts[parts.length - 2];
       const epochId = rawId ? parseInt(rawId, 10) : NaN;
@@ -1129,9 +1354,15 @@ export class CacophonyHttpServer {
 
     // 4c0a. REST API: GET /api/models/installed - List Installed Models Annotated with Tenancy Guard
     if (url.pathname === "/api/models/installed" && req.method === "GET") {
-      const modelManager = this.daemon.getModelManager() || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+      const modelManager =
+        this.daemon.getModelManager() ||
+        new (
+          await import("../inference/OllamaModelManager.js")
+        ).OllamaModelManager();
       const tenancyGuard = this.daemon.getTenancyGuard();
-      const protectedModels = tenancyGuard ? tenancyGuard.getConfig().protectedModels : [];
+      const protectedModels = tenancyGuard
+        ? tenancyGuard.getConfig().protectedModels
+        : [];
       try {
         const models = await modelManager.listInstalledModels(protectedModels);
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1147,14 +1378,18 @@ export class CacophonyHttpServer {
     // 4c0b. REST API: POST /api/models/pull - Pull New Ollama Model with SSE Progress Streaming
     if (url.pathname === "/api/models/pull" && req.method === "POST") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
           const modelName = payload.model;
           if (!modelName || typeof modelName !== "string") {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing required parameter 'model'" }));
+            res.end(
+              JSON.stringify({ error: "Missing required parameter 'model'" }),
+            );
             return;
           }
 
@@ -1163,18 +1398,32 @@ export class CacophonyHttpServer {
             const headroom = await tenancyGuard.checkDiskHeadroom();
             if (!headroom.hasHeadroom) {
               res.writeHead(400, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: headroom.reason || "Insufficient disk headroom" }));
+              res.end(
+                JSON.stringify({
+                  error: headroom.reason || "Insufficient disk headroom",
+                }),
+              );
               return;
             }
           }
 
-          const modelManager = this.daemon.getModelManager() || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+          const modelManager =
+            this.daemon.getModelManager() ||
+            new (
+              await import("../inference/OllamaModelManager.js")
+            ).OllamaModelManager();
 
           // Stream progress events over SSE clients
-          const onProgress = (event: import("@cacophony/shared-types").OllamaPullProgressEvent) => {
+          const onProgress = (
+            event: import("@cacophony/shared-types").OllamaPullProgressEvent,
+          ) => {
             const sseData = `event: model_pull_progress\ndata: ${JSON.stringify({ model: modelName, ...event })}\n\n`;
             for (const client of this.sseClients) {
-              try { client.write(sseData); } catch { /* ignore */ }
+              try {
+                client.write(sseData);
+              } catch {
+                /* ignore */
+              }
             }
           };
 
@@ -1182,17 +1431,25 @@ export class CacophonyHttpServer {
           res.writeHead(202, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ status: "pulling", model: modelName }));
 
-          void modelManager.pullModel(modelName, onProgress).catch((err: unknown) => {
-            console.error("Model pull failed:", err);
-            const sseError = `event: model_pull_progress\ndata: ${JSON.stringify({
-              model: modelName,
-              status: "error",
-              error: "Model pull failed"
-            })}\n\n`;
-            for (const client of this.sseClients) {
-              try { client.write(sseError); } catch { /* ignore */ }
-            }
-          });
+          void modelManager
+            .pullModel(modelName, onProgress)
+            .catch((err: unknown) => {
+              console.error("Model pull failed:", err);
+              const sseError = `event: model_pull_progress\ndata: ${JSON.stringify(
+                {
+                  model: modelName,
+                  status: "error",
+                  error: "Model pull failed",
+                },
+              )}\n\n`;
+              for (const client of this.sseClients) {
+                try {
+                  client.write(sseError);
+                } catch {
+                  /* ignore */
+                }
+              }
+            });
         } catch {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid pull payload" }));
@@ -1215,7 +1472,11 @@ export class CacophonyHttpServer {
         }
       }
 
-      const modelManager = this.daemon.getModelManager() || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+      const modelManager =
+        this.daemon.getModelManager() ||
+        new (
+          await import("../inference/OllamaModelManager.js")
+        ).OllamaModelManager();
       try {
         await modelManager.deleteModel(modelId);
         const healthRepo = this.daemon.getModelHealthRepository();
@@ -1233,21 +1494,28 @@ export class CacophonyHttpServer {
     // 4c0d. REST API: GET & PUT /api/models/config - Read/Update Model Tenancy Configuration
     if (url.pathname === "/api/models/config" && req.method === "GET") {
       const tenancyGuard = this.daemon.getTenancyGuard();
-      const config = tenancyGuard ? tenancyGuard.getConfig() : {
-        managedModelsEnabled: true,
-        protectedModels: ["deepseek-r1:8b-4k", "qwen2.5-coder:7b-instruct-q4_K_M"],
-        maxDiskStorageGb: 50,
-        autoEvictionEnabled: true,
-        minimumSuccessRateThreshold: 0.4,
-        maxConsecutiveFailuresBeforeEviction: 3
-      };
+      const config = tenancyGuard
+        ? tenancyGuard.getConfig()
+        : {
+            managedModelsEnabled: true,
+            protectedModels: [
+              "deepseek-r1:8b-4k",
+              "qwen2.5-coder:7b-instruct-q4_K_M",
+            ],
+            maxDiskStorageGb: 50,
+            autoEvictionEnabled: true,
+            minimumSuccessRateThreshold: 0.4,
+            maxConsecutiveFailuresBeforeEviction: 3,
+          };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(config));
       return;
     }
     if (url.pathname === "/api/models/config" && req.method === "PUT") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", () => {
         try {
           const payload = JSON.parse(body || "{}");
@@ -1255,7 +1523,12 @@ export class CacophonyHttpServer {
           if (tenancyGuard) {
             tenancyGuard.updateConfig(payload);
             res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: true, config: tenancyGuard.getConfig() }));
+            res.end(
+              JSON.stringify({
+                success: true,
+                config: tenancyGuard.getConfig(),
+              }),
+            );
           } else {
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ success: true, config: payload }));
@@ -1271,28 +1544,36 @@ export class CacophonyHttpServer {
     // 4c0e. REST API: POST /api/models/benchmark - Benchmark Model
     if (url.pathname === "/api/models/benchmark" && req.method === "POST") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
           const modelName = payload.model;
           if (!modelName) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing required parameter 'model'" }));
+            res.end(
+              JSON.stringify({ error: "Missing required parameter 'model'" }),
+            );
             return;
           }
 
           const runner = this.daemon.getBenchmarkRunner();
           if (!runner) {
             res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "BenchmarkRunner is not initialized on this daemon" }));
+            res.end(
+              JSON.stringify({
+                error: "BenchmarkRunner is not initialized on this daemon",
+              }),
+            );
             return;
           }
 
           const result = await runner.benchmark(modelName);
           const sanitizedResult = {
             ...result,
-            error: result.error ? "Benchmark execution failed" : null
+            error: result.error ? "Benchmark execution failed" : null,
           };
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(sanitizedResult));
@@ -1321,11 +1602,15 @@ export class CacophonyHttpServer {
     }
 
     // 4c0g. REST API: PUT /api/models/profiles/:id - Upsert Model Tuning Profile
-    const profileMatch = url.pathname.match(/^\/api\/models\/profiles\/([^/]+)$/);
+    const profileMatch = url.pathname.match(
+      /^\/api\/models\/profiles\/([^/]+)$/,
+    );
     if (profileMatch && req.method === "PUT") {
       const profileId = profileMatch[1]!;
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
@@ -1334,14 +1619,20 @@ export class CacophonyHttpServer {
             id: profileId,
             modelName: payload.modelName || payload.model_name || "unknown",
             role: payload.role || "implementer",
-            numPredict: Number(payload.numPredict ?? payload.num_predict ?? 8192),
+            numPredict: Number(
+              payload.numPredict ?? payload.num_predict ?? 8192,
+            ),
             numCtx: Number(payload.numCtx ?? payload.num_ctx ?? 16384),
             temperature: Number(payload.temperature ?? 0.1),
             topK: Number(payload.topK ?? payload.top_k ?? 40),
             topP: Number(payload.topP ?? payload.top_p ?? 0.9),
-            repeatPenalty: Number(payload.repeatPenalty ?? payload.repeat_penalty ?? 1.1),
-            autoTuned: Boolean(payload.autoTuned ?? payload.auto_tuned ?? false),
-            isActive: Boolean(payload.isActive ?? payload.is_active ?? true)
+            repeatPenalty: Number(
+              payload.repeatPenalty ?? payload.repeat_penalty ?? 1.1,
+            ),
+            autoTuned: Boolean(
+              payload.autoTuned ?? payload.auto_tuned ?? false,
+            ),
+            isActive: Boolean(payload.isActive ?? payload.is_active ?? true),
           });
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, profile: saved }));
@@ -1355,13 +1646,22 @@ export class CacophonyHttpServer {
     }
 
     // 4c0h. REST API: POST /api/models/profiles/auto-tune - Autonomous Model Profile Auto-Tuning
-    if (url.pathname === "/api/models/profiles/auto-tune" && req.method === "POST") {
+    if (
+      url.pathname === "/api/models/profiles/auto-tune" &&
+      req.method === "POST"
+    ) {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
-          const modelManager = this.daemon.getModelManager() || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+          const modelManager =
+            this.daemon.getModelManager() ||
+            new (
+              await import("../inference/OllamaModelManager.js")
+            ).OllamaModelManager();
           const profileRepo = this.daemon.getModelProfileRepository();
           const installed = await modelManager.listInstalledModels([]);
 
@@ -1372,20 +1672,29 @@ export class CacophonyHttpServer {
           if (autoTuner) {
             autoTunedProfiles = await autoTuner.autoTuneModels(targetModels);
           } else {
-            const { EngineAutoTuner } = await import("../scheduler/EngineAutoTuner.js");
+            const { EngineAutoTuner } =
+              await import("../scheduler/EngineAutoTuner.js");
             const tuner = new EngineAutoTuner({
               profileRepo,
-              healthRepo: this.daemon.getModelHealthRepository()
+              healthRepo: this.daemon.getModelHealthRepository(),
             });
             autoTunedProfiles = await tuner.autoTuneModels(targetModels);
           }
 
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true, count: autoTunedProfiles.length, profiles: autoTunedProfiles }));
+          res.end(
+            JSON.stringify({
+              success: true,
+              count: autoTunedProfiles.length,
+              profiles: autoTunedProfiles,
+            }),
+          );
         } catch (err: unknown) {
           console.error("Failed to auto-tune model profiles:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to auto-tune model profiles" }));
+          res.end(
+            JSON.stringify({ error: "Failed to auto-tune model profiles" }),
+          );
         }
       });
       return;
@@ -1393,7 +1702,8 @@ export class CacophonyHttpServer {
 
     // 4c1. REST API: Model Telemetry Efficiency Analytics
     if (url.pathname === "/api/analytics/models" && req.method === "GET") {
-      const { TelemetryCorrelationService } = await import("../telemetry/TelemetryCorrelationService.js");
+      const { TelemetryCorrelationService } =
+        await import("../telemetry/TelemetryCorrelationService.js");
       const correlationRepo = (this.daemon as any).correlationRepo;
       const service = new TelemetryCorrelationService(correlationRepo);
       const scores = await service.getModelEfficiencyScores();
@@ -1408,7 +1718,8 @@ export class CacophonyHttpServer {
       const filterModel = url.searchParams.get("model") || undefined;
       const filterRole = url.searchParams.get("role") || undefined;
 
-      const { FailureClassifier } = await import("../analytics/FailureClassifier.js");
+      const { FailureClassifier } =
+        await import("../analytics/FailureClassifier.js");
       const taskRepo = this.daemon.getTaskRepository();
       const stageRepo = this.daemon.getStageRepository();
 
@@ -1422,7 +1733,7 @@ export class CacophonyHttpServer {
         BANNED_IMPORT: 0,
         THERMAL_THROTTLE: 0,
         CONTEXT_OVERFLOW: 0,
-        UNKNOWN: 0
+        UNKNOWN: 0,
       };
 
       const modelBreakdown: Record<string, Record<string, number>> = {};
@@ -1435,12 +1746,21 @@ export class CacophonyHttpServer {
 
         const stages = await stageRepo.getStagesForTask(t.id);
         const richStage = stages.find(
-          (s) => s.stageStatus === "FAILURE" && s.logOutput && s.logOutput !== "Stage failed verification"
+          (s) =>
+            s.stageStatus === "FAILURE" &&
+            s.logOutput &&
+            s.logOutput !== "Stage failed verification",
         );
-        const failedStage = richStage || stages.find((s) => s.stageStatus === "FAILURE") || stages[stages.length - 1];
-        const log = `${t.failureReason ?? ""} ${failedStage?.logOutput ?? ""} ${t.logSnippet ?? ""}`.trim();
+        const failedStage =
+          richStage ||
+          stages.find((s) => s.stageStatus === "FAILURE") ||
+          stages[stages.length - 1];
+        const log =
+          `${t.failureReason ?? ""} ${failedStage?.logOutput ?? ""} ${t.logSnippet ?? ""}`.trim();
 
-        const classification = FailureClassifier.classify(log, { logOutput: log });
+        const classification = FailureClassifier.classify(log, {
+          logOutput: log,
+        });
         const cat = classification.category;
         counts[cat] = (counts[cat] || 0) + 1;
         totalCount++;
@@ -1459,22 +1779,26 @@ export class CacophonyHttpServer {
         .map(([name, count]) => ({
           name,
           count,
-          percentage: totalCount > 0 ? Math.round((count / totalCount) * 1000) / 10 : 0
+          percentage:
+            totalCount > 0 ? Math.round((count / totalCount) * 1000) / 10 : 0,
         }))
         .filter((c) => totalCount === 0 || c.count > 0);
 
       const responsePayload = {
         windowDays,
         totalFailures: totalCount,
-        categories: categories.length > 0 ? categories : [
-          { name: "ASSERTION_FAILURE", count: 0, percentage: 0 },
-          { name: "TYPE_MISMATCH", count: 0, percentage: 0 },
-          { name: "SYNTAX_ERROR", count: 0, percentage: 0 },
-          { name: "MISSING_DEPENDENCY", count: 0, percentage: 0 },
-          { name: "TIMEOUT", count: 0, percentage: 0 }
-        ],
+        categories:
+          categories.length > 0
+            ? categories
+            : [
+                { name: "ASSERTION_FAILURE", count: 0, percentage: 0 },
+                { name: "TYPE_MISMATCH", count: 0, percentage: 0 },
+                { name: "SYNTAX_ERROR", count: 0, percentage: 0 },
+                { name: "MISSING_DEPENDENCY", count: 0, percentage: 0 },
+                { name: "TIMEOUT", count: 0, percentage: 0 },
+              ],
         modelBreakdown,
-        roleBreakdown
+        roleBreakdown,
       };
 
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -1483,14 +1807,18 @@ export class CacophonyHttpServer {
     }
 
     // 4c2b. REST API: Dynamic Multi-Window Success Analytics & Convergence Metrics (T85.1.3)
-    if (url.pathname === "/api/analytics/window-success" && req.method === "GET") {
+    if (
+      url.pathname === "/api/analytics/window-success" &&
+      req.method === "GET"
+    ) {
       const windowSize = Number(url.searchParams.get("windowSize") || "50");
       const role = (url.searchParams.get("role") as any) || undefined;
       const model = url.searchParams.get("model") || undefined;
       const commitHash = url.searchParams.get("commitHash") || undefined;
       const category = url.searchParams.get("category") || undefined;
 
-      const { RollingWindowAnalyticsService } = await import("../analytics/RollingWindowAnalyticsService.js");
+      const { RollingWindowAnalyticsService } =
+        await import("../analytics/RollingWindowAnalyticsService.js");
       const taskRepo = this.daemon.getTaskRepository();
       const service = new RollingWindowAnalyticsService(taskRepo);
 
@@ -1511,10 +1839,14 @@ export class CacophonyHttpServer {
     }
 
     // 4c2c. REST API: Granular Commit-to-Task Attribution & Token Efficiency Impact (T99.4)
-    if (url.pathname === "/api/analytics/commit-impact" && req.method === "GET") {
+    if (
+      url.pathname === "/api/analytics/commit-impact" &&
+      req.method === "GET"
+    ) {
       const commitHash = url.searchParams.get("commitHash") || undefined;
       const limit = Number(url.searchParams.get("limit") || "15");
-      const { CommitImpactTracker } = await import("../analytics/CommitImpactTracker.js");
+      const { CommitImpactTracker } =
+        await import("../analytics/CommitImpactTracker.js");
       const taskRepo = this.daemon.getTaskRepository();
       const stageRepo = this.daemon.getStageRepository();
       const tracker = new CommitImpactTracker({ taskRepo, stageRepo });
@@ -1524,7 +1856,9 @@ export class CacophonyHttpServer {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(report));
       } else {
-        const reports = await tracker.generateRecentImpactReport(Number.isNaN(limit) ? 15 : limit);
+        const reports = await tracker.generateRecentImpactReport(
+          Number.isNaN(limit) ? 15 : limit,
+        );
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(reports));
       }
@@ -1532,7 +1866,10 @@ export class CacophonyHttpServer {
     }
 
     // 4c2d. REST API: Deterministic Task Rehabilitation (T99.3)
-    if (url.pathname.match(/^\/api\/tasks\/([^/]+)\/rehabilitate$/) && req.method === "POST") {
+    if (
+      url.pathname.match(/^\/api\/tasks\/([^/]+)\/rehabilitate$/) &&
+      req.method === "POST"
+    ) {
       const match = url.pathname.match(/^\/api\/tasks\/([^/]+)\/rehabilitate$/);
       const taskId = match![1]!;
       const taskRepo = this.daemon.getTaskRepository();
@@ -1544,12 +1881,15 @@ export class CacophonyHttpServer {
         return;
       }
 
-      const { TaskRehabilitationService } = await import("../scheduler/TaskRehabilitationService.js");
+      const { TaskRehabilitationService } =
+        await import("../scheduler/TaskRehabilitationService.js");
       const rehabService = new TaskRehabilitationService({ taskRepo });
       const plan = await rehabService.rehabilitateTask(
         targetTask,
-        targetTask.failureReason || targetTask.logSnippet || "Manual rehabilitation requested",
-        targetTask.commitHash
+        targetTask.failureReason ||
+          targetTask.logSnippet ||
+          "Manual rehabilitation requested",
+        targetTask.commitHash,
       );
 
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -1562,17 +1902,21 @@ export class CacophonyHttpServer {
       const banditScheduler = this.daemon.getBanditScheduler();
       const arms = banditScheduler ? banditScheduler.getArms() : [];
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        success: true,
-        arms,
-        count: arms.length
-      }));
+      res.end(
+        JSON.stringify({
+          success: true,
+          arms,
+          count: arms.length,
+        }),
+      );
       return;
     }
 
     if (url.pathname === "/api/bandit/policy" && req.method === "PUT") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", () => {
         try {
           const payload = JSON.parse(body);
@@ -1589,16 +1933,18 @@ export class CacophonyHttpServer {
           this.broadcastSse("bandit_updated", {
             policy: payload.policy || "epsilon_greedy",
             explorationRate: payload.explorationRate,
-            ucbConstant: payload.ucbConstant
+            ucbConstant: payload.ucbConstant,
           });
 
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({
-            success: true,
-            policy: payload.policy,
-            explorationRate: payload.explorationRate,
-            ucbConstant: payload.ucbConstant
-          }));
+          res.end(
+            JSON.stringify({
+              success: true,
+              policy: payload.policy,
+              explorationRate: payload.explorationRate,
+              ucbConstant: payload.ucbConstant,
+            }),
+          );
         } catch {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid bandit policy payload" }));
@@ -1610,16 +1956,31 @@ export class CacophonyHttpServer {
     // 4c3. REST API: Fleet Node Registration & Cluster Topology (T56.1, T56.5)
     if (url.pathname === "/api/fleet/register" && req.method === "POST") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", () => {
         try {
           const payload = JSON.parse(body);
-          const expectedSecret = process.env.FLEET_CLUSTER_SECRET || "fleet-auth-token-secret";
-          const authHeader = req.headers["authorization"]?.replace(/^Bearer\s+/i, "");
-          const providedToken = authHeader || payload.token || payload.authSecret;
-          if (providedToken && providedToken !== expectedSecret && providedToken !== "valid-token") {
+          const expectedSecret =
+            process.env.FLEET_CLUSTER_SECRET || "fleet-auth-token-secret";
+          const authHeader = req.headers["authorization"]?.replace(
+            /^Bearer\s+/i,
+            "",
+          );
+          const providedToken =
+            authHeader || payload.token || payload.authSecret;
+          if (
+            providedToken &&
+            providedToken !== expectedSecret &&
+            providedToken !== "valid-token"
+          ) {
             res.writeHead(401, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Invalid registration authentication token" }));
+            res.end(
+              JSON.stringify({
+                error: "Invalid registration authentication token",
+              }),
+            );
             return;
           }
 
@@ -1632,7 +1993,7 @@ export class CacophonyHttpServer {
                 port: payload.port || 24074,
                 gpuType: payload.gpuType || "AMD_VEGA",
                 vramTotalMb: payload.vramTotalMb || 16384,
-                authSecret: providedToken || expectedSecret
+                authSecret: providedToken || expectedSecret,
               })
             : {
                 nodeId: payload.nodeId || `node-${Date.now()}`,
@@ -1647,7 +2008,7 @@ export class CacophonyHttpServer {
                 status: "ONLINE",
                 activeTasksCount: 0,
                 lastHeartbeat: new Date().toISOString(),
-                tokenHash: "node-auth-token-valid"
+                tokenHash: "node-auth-token-valid",
               };
           res.writeHead(201, { "Content-Type": "application/json" });
           res.end(JSON.stringify(registeredNode));
@@ -1662,13 +2023,19 @@ export class CacophonyHttpServer {
     // 4c3b. REST API: POST /api/fleet/heartbeat - Worker Node Telemetry Heartbeat (T86.1.3)
     if (url.pathname === "/api/fleet/heartbeat" && req.method === "POST") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", () => {
         try {
           const payload = JSON.parse(body);
           if (!payload || !payload.nodeId) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing required nodeId in heartbeat payload" }));
+            res.end(
+              JSON.stringify({
+                error: "Missing required nodeId in heartbeat payload",
+              }),
+            );
             return;
           }
 
@@ -1677,15 +2044,33 @@ export class CacophonyHttpServer {
             monitor.recordHeartbeat(payload);
           }
 
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({
-            success: true,
+          this.broadcastSse("fleet_heartbeat", {
             nodeId: payload.nodeId,
-            recordedAt: new Date().toISOString()
-          }));
+            hostname: payload.hostname ?? payload.nodeId,
+            status: payload.status ?? "ONLINE",
+            temperatureCelsius: payload.temperatureCelsius ?? 50,
+            gpuThermal: payload.gpuThermal ?? payload.temperatureCelsius ?? 50,
+            apuThermal: payload.apuThermal ?? 45,
+            vramUsedMb: payload.vramUsedMb ?? 0,
+            vramTotalMb: payload.vramTotalMb ?? 16384,
+            activeTasksCount: payload.activeTasksCount ?? 0,
+            activeMemoryUsage: payload.activeMemoryUsage ?? 0,
+            gpuType: payload.gpuType ?? "UNKNOWN",
+          });
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              success: true,
+              nodeId: payload.nodeId,
+              recordedAt: new Date().toISOString(),
+            }),
+          );
         } catch {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Invalid JSON in heartbeat request body" }));
+          res.end(
+            JSON.stringify({ error: "Invalid JSON in heartbeat request body" }),
+          );
         }
       });
       return;
@@ -1705,10 +2090,15 @@ export class CacophonyHttpServer {
         gpuBusyPercent: 18,
         temperatureCelsius: 54,
         status: "ONLINE",
-        activeTasksCount: this.daemon.getStreamTapManager()?.getActiveTask() ? 1 : 0,
-        lastHeartbeat: new Date().toISOString()
+        activeTasksCount: this.daemon.getStreamTapManager()?.getActiveTask()
+          ? 1
+          : 0,
+        lastHeartbeat: new Date().toISOString(),
       };
-      const allNodes = [localNode, ...remoteNodes.filter((n) => n.nodeId !== localNode.nodeId)];
+      const allNodes = [
+        localNode,
+        ...remoteNodes.filter((n) => n.nodeId !== localNode.nodeId),
+      ];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(allNodes));
       return;
@@ -1717,20 +2107,32 @@ export class CacophonyHttpServer {
     // 4c4. REST API: Gitea Webhook Dispatcher
     if (url.pathname === "/api/webhooks/gitea" && req.method === "POST") {
       let body = "";
-      req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
       req.on("end", async () => {
         try {
-          const { GiteaWebhookReceiver } = await import("../gitea/GiteaWebhookReceiver.js");
+          const { GiteaWebhookReceiver } =
+            await import("../gitea/GiteaWebhookReceiver.js");
           const taskRepo = this.daemon.getTaskRepository();
           const secret = process.env.GITEA_WEBHOOK_SECRET || undefined;
           const receiver = new GiteaWebhookReceiver(taskRepo, secret);
 
-          const event = (req.headers["x-gitea-event"] || req.headers["x-github-event"] || "pull_request") as string;
-          const signature = (req.headers["x-gitea-signature"] || req.headers["x-hub-signature-256"]) as string | undefined;
+          const event = (req.headers["x-gitea-event"] ||
+            req.headers["x-github-event"] ||
+            "pull_request") as string;
+          const signature = (req.headers["x-gitea-signature"] ||
+            req.headers["x-hub-signature-256"]) as string | undefined;
 
-          if (secret && signature && !receiver.verifySignature(body, signature)) {
+          if (
+            secret &&
+            signature &&
+            !receiver.verifySignature(body, signature)
+          ) {
             res.writeHead(401, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Invalid webhook HMAC signature" }));
+            res.end(
+              JSON.stringify({ error: "Invalid webhook HMAC signature" }),
+            );
             return;
           }
 
@@ -1754,9 +2156,21 @@ export class CacophonyHttpServer {
       const suppliedToken = authHeader.replace(/^Bearer\s+/i, "");
       const configured = Buffer.from(configuredToken);
       const supplied = Buffer.from(suppliedToken);
-      if (!configuredToken || configured.length !== supplied.length || !crypto.timingSafeEqual(configured, supplied)) {
-        res.writeHead(configuredToken ? 401 : 503, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: configuredToken ? "Invalid CI callback token" : "CI callback is not configured" }));
+      if (
+        !configuredToken ||
+        configured.length !== supplied.length ||
+        !crypto.timingSafeEqual(configured, supplied)
+      ) {
+        res.writeHead(configuredToken ? 401 : 503, {
+          "Content-Type": "application/json",
+        });
+        res.end(
+          JSON.stringify({
+            error: configuredToken
+              ? "Invalid CI callback token"
+              : "CI callback is not configured",
+          }),
+        );
         return;
       }
 
@@ -1781,13 +2195,19 @@ export class CacophonyHttpServer {
           };
           if (!payload.repository || !payload.commit || !payload.run_id) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "repository, commit, and run_id are required" }));
+            res.end(
+              JSON.stringify({
+                error: "repository, commit, and run_id are required",
+              }),
+            );
             return;
           }
           const id = `ci-failure-${crypto.createHash("sha256").update(`${payload.repository}:${payload.run_id}`).digest("hex").slice(0, 24)}`;
           const title = `CI failure: ${payload.repository} / ${payload.workflow || "workflow"} (${payload.run_id})`;
           const runUrl = payload.run_url || "(run URL unavailable)";
-          const details = (payload.details || "No failure details were provided.").slice(0, 12000);
+          const details = (
+            payload.details || "No failure details were provided."
+          ).slice(0, 12000);
           const now = new Date().toISOString();
           const task = await this.daemon.getTaskRepository().createIfNotExists({
             id,
@@ -1804,14 +2224,18 @@ export class CacophonyHttpServer {
             failureCount: 0,
             createdAt: now,
             updatedAt: now,
-            completedAt: null
+            completedAt: null,
           });
-          res.writeHead(task.created ? 201 : 200, { "Content-Type": "application/json" });
+          res.writeHead(task.created ? 201 : 200, {
+            "Content-Type": "application/json",
+          });
           res.end(JSON.stringify({ queued: task.created, task: task.task }));
         } catch (err: unknown) {
           console.error("Failed to process CI failure callback:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to process CI failure callback" }));
+          res.end(
+            JSON.stringify({ error: "Failed to process CI failure callback" }),
+          );
         }
       });
       return;
@@ -1825,8 +2249,8 @@ export class CacophonyHttpServer {
           command: "npm run test",
           durationMs: 42,
           exitCode: 0,
-          status: "SUCCESS"
-        }
+          status: "SUCCESS",
+        },
       ];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(processes));
@@ -1836,11 +2260,41 @@ export class CacophonyHttpServer {
     // 4e. REST API: Repository Architectural Map
     if (url.pathname === "/api/repomap" && req.method === "GET") {
       const symbols = [
-        { id: "sym-1", name: "TaskScheduler", kind: "class", filePath: "packages/engine/src/scheduler/TaskScheduler.ts", centrality: 0.95 },
-        { id: "sym-2", name: "CacophonyDaemon", kind: "class", filePath: "packages/engine/src/daemon/CacophonyDaemon.ts", centrality: 0.9 },
-        { id: "sym-3", name: "CacophonyHttpServer", kind: "class", filePath: "packages/engine/src/daemon/CacophonyHttpServer.ts", centrality: 0.85 },
-        { id: "sym-4", name: "SessionManager", kind: "class", filePath: "packages/engine/src/inference/SessionManager.ts", centrality: 0.8 },
-        { id: "sym-5", name: "TelemetryPoller", kind: "class", filePath: "packages/engine/src/telemetry/TelemetryPoller.ts", centrality: 0.75 }
+        {
+          id: "sym-1",
+          name: "TaskScheduler",
+          kind: "class",
+          filePath: "packages/engine/src/scheduler/TaskScheduler.ts",
+          centrality: 0.95,
+        },
+        {
+          id: "sym-2",
+          name: "CacophonyDaemon",
+          kind: "class",
+          filePath: "packages/engine/src/daemon/CacophonyDaemon.ts",
+          centrality: 0.9,
+        },
+        {
+          id: "sym-3",
+          name: "CacophonyHttpServer",
+          kind: "class",
+          filePath: "packages/engine/src/daemon/CacophonyHttpServer.ts",
+          centrality: 0.85,
+        },
+        {
+          id: "sym-4",
+          name: "SessionManager",
+          kind: "class",
+          filePath: "packages/engine/src/inference/SessionManager.ts",
+          centrality: 0.8,
+        },
+        {
+          id: "sym-5",
+          name: "TelemetryPoller",
+          kind: "class",
+          filePath: "packages/engine/src/telemetry/TelemetryPoller.ts",
+          centrality: 0.75,
+        },
       ];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(symbols));
@@ -1850,7 +2304,13 @@ export class CacophonyHttpServer {
     // 4f. REST API: Git Checkpoints List
     if (url.pathname === "/api/checkpoints" && req.method === "GET") {
       const checkpoints = [
-        { id: "cp-1", hash: "a1b2c3d4e5f6", message: "Checkpoint: System initialization", createdAt: new Date().toISOString(), filesChanged: 3 }
+        {
+          id: "cp-1",
+          hash: "a1b2c3d4e5f6",
+          message: "Checkpoint: System initialization",
+          createdAt: new Date().toISOString(),
+          filesChanged: 3,
+        },
       ];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(checkpoints));
@@ -1860,7 +2320,8 @@ export class CacophonyHttpServer {
     // 4f1. REST API: Manual Git Checkpoint Pruning
     if (url.pathname === "/api/checkpoints/prune" && req.method === "POST") {
       try {
-        const { GitCheckpointManager } = await import("../gitea/GitCheckpointManager.js");
+        const { GitCheckpointManager } =
+          await import("../gitea/GitCheckpointManager.js");
         const checkpointManager = new GitCheckpointManager(process.cwd());
         const pruned = await checkpointManager.pruneOldCheckpoints(14, 50);
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1868,7 +2329,12 @@ export class CacophonyHttpServer {
       } catch (err: unknown) {
         console.error("Failed to prune checkpoints:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: false, error: "Failed to prune checkpoints" }));
+        res.end(
+          JSON.stringify({
+            success: false,
+            error: "Failed to prune checkpoints",
+          }),
+        );
       }
       return;
     }
@@ -1876,15 +2342,22 @@ export class CacophonyHttpServer {
     // 4f2. REST API: GET /api/promotion/status - Divergence between Staging & Upstream Production
     if (url.pathname === "/api/promotion/status" && req.method === "GET") {
       try {
-        const { SandboxedProcessRunner } = await import("../testing/SandboxedProcessRunner.js");
+        const { SandboxedProcessRunner } =
+          await import("../testing/SandboxedProcessRunner.js");
         const runner = new SandboxedProcessRunner();
-        const branchCheck = await runner.run("git rev-parse --abbrev-ref HEAD", { cwd: process.cwd() });
+        const branchCheck = await runner.run(
+          "git rev-parse --abbrev-ref HEAD",
+          { cwd: process.cwd() },
+        );
         const currentBranch = branchCheck.stdout.trim() || "master";
 
         let aheadCount = 0;
         let behindCount = 0;
         try {
-          const revList = await runner.run(`git rev-list --left-right --count HEAD...origin/${currentBranch}`, { cwd: process.cwd() });
+          const revList = await runner.run(
+            `git rev-list --left-right --count HEAD...origin/${currentBranch}`,
+            { cwd: process.cwd() },
+          );
           const parts = revList.stdout.trim().split(/\s+/);
           if (parts.length >= 2) {
             aheadCount = parseInt(parts[0] || "0", 10) || 0;
@@ -1898,7 +2371,9 @@ export class CacophonyHttpServer {
         try {
           const taskRepo = this.daemon.getTaskRepository();
           if (taskRepo) {
-            const completedTasks = await taskRepo.listRecent(50, { status: "COMPLETED" });
+            const completedTasks = await taskRepo.listRecent(50, {
+              status: "COMPLETED",
+            });
             pendingTasksCount = completedTasks.length;
           }
         } catch {
@@ -1906,16 +2381,18 @@ export class CacophonyHttpServer {
         }
 
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          stagingBranch: currentBranch,
-          upstreamRemote: "origin",
-          upstreamBranch: `origin/${currentBranch}`,
-          aheadCount,
-          behindCount,
-          pendingTasksCount,
-          readyForPromotion: aheadCount > 0 || pendingTasksCount > 0,
-          timestamp: new Date().toISOString()
-        }));
+        res.end(
+          JSON.stringify({
+            stagingBranch: currentBranch,
+            upstreamRemote: "origin",
+            upstreamBranch: `origin/${currentBranch}`,
+            aheadCount,
+            behindCount,
+            pendingTasksCount,
+            readyForPromotion: aheadCount > 0 || pendingTasksCount > 0,
+            timestamp: new Date().toISOString(),
+          }),
+        );
       } catch (err: unknown) {
         console.error("Failed to check promotion status:", err);
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -1926,85 +2403,109 @@ export class CacophonyHttpServer {
 
     // 4f3. REST API: POST /api/promotion/release - Trigger Quarantine Gauntlet and Production Promotion
     if (url.pathname === "/api/promotion/release" && req.method === "POST") {
-  let body = "";
-  req.on("data", (chunk: Buffer) => { body += chunk.toString("utf-8"); });
-  req.on("end", async () => {
-    try {
-      const payload = JSON.parse(body || "{}");
-      const safeIdentifier = /^[a-zA-Z0-9_.\-\/]+$/;
-      if (payload.owner && !safeIdentifier.test(payload.owner)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid repository owner format" }));
-        return;
-      }
-      if (payload.repo && !safeIdentifier.test(payload.repo)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid repository name format" }));
-        return;
-      }
-      if (payload.baseBranch && !safeIdentifier.test(payload.baseBranch)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid base branch format" }));
-        return;
-      }
-      if (payload.gitRemote && !safeIdentifier.test(payload.gitRemote)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid git remote format" }));
-        return;
-      }
-      if (payload.releaseBranch && !safeIdentifier.test(payload.releaseBranch)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid release branch format" }));
-        return;
-      }
-      if (payload.workspacePath && !safeIdentifier.test(payload.workspacePath)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid workspace path format" }));
-        return;
-      }
-
-      const { GitHubPlatformProvider } = await import("../gitea/GitHubPlatformProvider.js");
-      const { GitHubPromotionPipeline } = await import("../gitea/GitHubPromotionPipeline.js");
-
-      const token = process.env.GITHUB_TOKEN || "mock-token";
-      const ghProvider = new GitHubPlatformProvider({ token });
-      const pipeline = new GitHubPromotionPipeline({
-        gitPlatformProvider: ghProvider,
-        repoOwner: payload.owner || process.env.GITHUB_OWNER || "Brennername",
-        repoName: payload.repo || process.env.GITHUB_REPO || "cacophony",
-        baseBranch: payload.baseBranch || "main",
-        gitRemote: payload.gitRemote || "origin"
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
       });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const safeIdentifier = /^[a-zA-Z0-9_.\-\/]+$/;
+          if (payload.owner && !safeIdentifier.test(payload.owner)) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({ error: "Invalid repository owner format" }),
+            );
+            return;
+          }
+          if (payload.repo && !safeIdentifier.test(payload.repo)) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({ error: "Invalid repository name format" }),
+            );
+            return;
+          }
+          if (payload.baseBranch && !safeIdentifier.test(payload.baseBranch)) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid base branch format" }));
+            return;
+          }
+          if (payload.gitRemote && !safeIdentifier.test(payload.gitRemote)) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid git remote format" }));
+            return;
+          }
+          if (
+            payload.releaseBranch &&
+            !safeIdentifier.test(payload.releaseBranch)
+          ) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid release branch format" }));
+            return;
+          }
+          if (
+            payload.workspacePath &&
+            !safeIdentifier.test(payload.workspacePath)
+          ) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid workspace path format" }));
+            return;
+          }
 
-      const releaseBranch = payload.releaseBranch || `release/v${Date.now()}`;
-      const milestoneTitle = payload.milestoneTitle || `Milestone Release ${new Date().toISOString().slice(0, 10)}`;
-      const changelog = payload.changelog || `## Cacophony Automated Release\n- Milestone: ${milestoneTitle}`;
+          const { GitHubPlatformProvider } =
+            await import("../gitea/GitHubPlatformProvider.js");
+          const { GitHubPromotionPipeline } =
+            await import("../gitea/GitHubPromotionPipeline.js");
 
-      const result = await pipeline.promoteMilestoneToGitHub({
-        releaseBranch,
-        milestoneTitle,
-        changelog,
-        workspacePath: payload.workspacePath || process.cwd(),
-        dryRun: Boolean(payload.dryRun),
-        baseBranch: payload.baseBranch,
-        owner: payload.owner,
-        repo: payload.repo,
-        gitRemote: payload.gitRemote,
-        diff: payload.diff,
-        filePaths: payload.filePaths
+          const token = process.env.GITHUB_TOKEN || "mock-token";
+          const ghProvider = new GitHubPlatformProvider({ token });
+          const pipeline = new GitHubPromotionPipeline({
+            gitPlatformProvider: ghProvider,
+            repoOwner:
+              payload.owner || process.env.GITHUB_OWNER || "Brennername",
+            repoName: payload.repo || process.env.GITHUB_REPO || "cacophony",
+            baseBranch: payload.baseBranch || "main",
+            gitRemote: payload.gitRemote || "origin",
+          });
+
+          const releaseBranch =
+            payload.releaseBranch || `release/v${Date.now()}`;
+          const milestoneTitle =
+            payload.milestoneTitle ||
+            `Milestone Release ${new Date().toISOString().slice(0, 10)}`;
+          const changelog =
+            payload.changelog ||
+            `## Cacophony Automated Release\n- Milestone: ${milestoneTitle}`;
+
+          const result = await pipeline.promoteMilestoneToGitHub({
+            releaseBranch,
+            milestoneTitle,
+            changelog,
+            workspacePath: payload.workspacePath || process.cwd(),
+            dryRun: Boolean(payload.dryRun),
+            baseBranch: payload.baseBranch,
+            owner: payload.owner,
+            repo: payload.repo,
+            gitRemote: payload.gitRemote,
+            diff: payload.diff,
+            filePaths: payload.filePaths,
+          });
+
+          const statusCode = result.success
+            ? 200
+            : result.quarantinePassed
+              ? 502
+              : 422;
+          res.writeHead(statusCode, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } catch (err: unknown) {
+          console.error("Milestone promotion failed:", err);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to promote milestone" }));
+        }
       });
-
-      const statusCode = result.success ? 200 : (result.quarantinePassed ? 502 : 422);
-      res.writeHead(statusCode, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(result));
-    } catch (err: unknown) {
-      console.error("Milestone promotion failed:", err);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Failed to promote milestone" }));
+      return;
     }
-  });
-  return;
-}
 
     // 4g. REST API: LSP Diagnostics
     if (url.pathname === "/api/diagnostics" && req.method === "GET") {
@@ -2026,16 +2527,20 @@ export class CacophonyHttpServer {
       const maintenance = this.daemon.getMaintenanceService();
       const isFull = url.searchParams.get("full") === "true";
       const retentionDaysParam = url.searchParams.get("retentionDays");
-      const retentionDays = retentionDaysParam ? parseInt(retentionDaysParam, 10) : undefined;
+      const retentionDays = retentionDaysParam
+        ? parseInt(retentionDaysParam, 10)
+        : undefined;
 
-      const compaction = await maintenance.runVacuumAndCompaction({ full: isFull });
-      const partition = await maintenance.partitionAndArchiveOldTelemetry(retentionDays);
+      const compaction = await maintenance.runVacuumAndCompaction({
+        full: isFull,
+      });
+      const partition =
+        await maintenance.partitionAndArchiveOldTelemetry(retentionDays);
       const metrics = await maintenance.getStorageMetrics();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ compaction, partition, metrics }));
       return;
     }
-
 
     // 4i. REST API: Provider Quotas & Circuit Breaker Health
     if (url.pathname === "/api/config/quotas" && req.method === "GET") {
@@ -2044,12 +2549,14 @@ export class CacophonyHttpServer {
       const usage = router ? router.getQuotaTracker().getAllUsage() : {};
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        status: "HEALTHY",
-        circuitBreakers,
-        quotas: usage,
-        timestamp: new Date().toISOString()
-      }));
+      res.end(
+        JSON.stringify({
+          status: "HEALTHY",
+          circuitBreakers,
+          quotas: usage,
+          timestamp: new Date().toISOString(),
+        }),
+      );
       return;
     }
 
@@ -2063,7 +2570,9 @@ export class CacophonyHttpServer {
 
     if (url.pathname === "/api/config/role-affinity" && req.method === "PUT") {
       let body = "";
-      req.on("data", (chunk) => { body += chunk; });
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
       req.on("end", () => {
         try {
           const payload = JSON.parse(body);
@@ -2088,9 +2597,15 @@ export class CacophonyHttpServer {
     res.end(JSON.stringify({ error: "Endpoint not found" }));
   }
 
-  private async serveStaticFrontend(pathname: string, res: http.ServerResponse): Promise<void> {
+  private async serveStaticFrontend(
+    pathname: string,
+    res: http.ServerResponse,
+  ): Promise<void> {
     const distPath = path.resolve(this.config.frontendDistPath!);
-    let targetFile = path.join(distPath, pathname === "/" ? "index.html" : pathname);
+    let targetFile = path.join(
+      distPath,
+      pathname === "/" ? "index.html" : pathname,
+    );
 
     try {
       const stat = await fs.stat(targetFile);
@@ -2111,10 +2626,12 @@ export class CacophonyHttpServer {
         ".css": "text/css",
         ".ico": "image/x-icon",
         ".json": "application/json",
-        ".svg": "image/svg+xml"
+        ".svg": "image/svg+xml",
       };
 
-      res.writeHead(200, { "Content-Type": contentTypes[ext] || "application/octet-stream" });
+      res.writeHead(200, {
+        "Content-Type": contentTypes[ext] || "application/octet-stream",
+      });
       res.end(content);
     } catch {
       res.writeHead(404, { "Content-Type": "text/plain" });
@@ -2126,7 +2643,9 @@ export class CacophonyHttpServer {
     const latest = this.daemon.getTelemetryPoller()?.getLatest();
     const gpu = latest?.gpu;
     const vramUsedMb = gpu ? Math.round(gpu.vramUsedBytes / (1024 * 1024)) : 0;
-    const vramTotalMb = gpu ? Math.round(gpu.vramTotalBytes / (1024 * 1024)) : 0;
+    const vramTotalMb = gpu
+      ? Math.round(gpu.vramTotalBytes / (1024 * 1024))
+      : 0;
     const vramAvailMb = Math.max(0, vramTotalMb - vramUsedMb);
     const vramPercent = gpu ? gpu.vramPercent : 0;
 
@@ -2134,20 +2653,33 @@ export class CacophonyHttpServer {
     const freeMem = os.freemem();
     const systemMemoryUsedMb = Math.round((totalMem - freeMem) / (1024 * 1024));
     const systemMemoryTotalMb = Math.round(totalMem / (1024 * 1024));
-    const systemMemoryPercent = totalMem > 0 ? Number((((totalMem - freeMem) / totalMem) * 100).toFixed(1)) : 0;
+    const systemMemoryPercent =
+      totalMem > 0
+        ? Number((((totalMem - freeMem) / totalMem) * 100).toFixed(1))
+        : 0;
     const loadAvg = (os.loadavg && os.loadavg()[0]) || 0;
     const cpuCount = (os.cpus && os.cpus().length) || 1;
-    const cpuBusyPercent = Math.min(100, Number(((loadAvg / cpuCount) * 100).toFixed(1)));
+    const cpuBusyPercent = Math.min(
+      100,
+      Number(((loadAvg / cpuCount) * 100).toFixed(1)),
+    );
 
     // Resolve the active model: prefer the running task's assigned model since it is set
     // synchronously when the task starts. The VRAM probe lags behind by however long it
     // takes Ollama to finish loading the model into VRAM, causing the display to show the
     // previous model well into the next task's generation phase.
     const runningTask = await (async () => {
-      try { return await this.daemon.getTaskRepository().listPending().then((p) => p.find((t) => t.status === "RUNNING")); }
-      catch { return null; }
+      try {
+        return await this.daemon
+          .getTaskRepository()
+          .listPending()
+          .then((p) => p.find((t) => t.status === "RUNNING"));
+      } catch {
+        return null;
+      }
     })();
-    const activeModelName = runningTask?.modelAssigned || latest?.activeModel?.name || "None";
+    const activeModelName =
+      runningTask?.modelAssigned || latest?.activeModel?.name || "None";
 
     const data = JSON.stringify({
       type: "telemetry",
@@ -2171,7 +2703,7 @@ export class CacophonyHttpServer {
       pptPowerW: gpu?.pptWatts ?? 0,
       sclkMhz: gpu?.sclkMhz ?? 0,
       mclkMhz: gpu?.mclkMhz ?? 0,
-      activeModel: activeModelName
+      activeModel: activeModelName,
     });
 
     const payload = `data: ${data}\n\n`;

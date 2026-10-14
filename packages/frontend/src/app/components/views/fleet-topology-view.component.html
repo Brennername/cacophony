@@ -1,0 +1,175 @@
+<div class="topology-container">
+  <!-- Header Bar -->
+  <header class="topology-header">
+    <div class="header-titles">
+      <div class="view-tag">INFRASTRUCTURE &amp; SCALING</div>
+      <h1 class="view-title">Fleet Network Topology</h1>
+      <p class="view-description">
+        Live topology graph and telemetry interconnects across orchestrator and worker nodes.
+      </p>
+    </div>
+    <div class="header-actions">
+      <div class="status-indicator" [class.connected]="sseConnected()">
+        <span class="indicator-dot"></span>
+        <span class="indicator-label">{{ sseConnected() ? 'Live SSE' : 'Polling' }}</span>
+      </div>
+      <a routerLink="/fleet" class="btn-subview">Table View</a>
+    </div>
+  </header>
+
+  <!-- Cluster Metric Summary Cards -->
+  <section class="cluster-summary-bar">
+    <div class="summary-card">
+      <span class="summary-label">Active Nodes</span>
+      <span class="summary-value">{{ onlineNodesCount() }} / {{ nodes().length }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Cluster VRAM</span>
+      <span class="summary-value"
+        >{{ (usedClusterVramMb() / 1024).toFixed(1) }} /
+        {{ (totalClusterVramMb() / 1024).toFixed(1) }} GB</span
+      >
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Active Workloads</span>
+      <span class="summary-value">{{ totalActiveTasks() }} tasks</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Cluster Health</span>
+      <span class="summary-value" [class.text-warning]="thermalWarningNodes().size > 0">
+        {{
+          thermalWarningNodes().size > 0 ? thermalWarningNodes().size + ' Warning(s)' : 'Nominal'
+        }}
+      </span>
+    </div>
+  </section>
+
+  <!-- Network Topology Interactive Canvas / Grid -->
+  <main class="topology-canvas">
+    <!-- Orchestrator Node (Center Hub) -->
+    @if (orchestratorNode(); as orch) {
+      <div class="hub-section">
+        <div class="hub-label">ORCHESTRATOR HUB</div>
+        <div
+          class="node-card orchestrator-card"
+          [class.node-pulsing]="pulsingNodes().has(orch.nodeId)"
+          [class.node-thermal]="thermalWarningNodes().has(orch.nodeId)"
+          [class.selected]="selectedNodeId() === orch.nodeId"
+          (click)="selectNode(orch.nodeId)"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Orchestrator node ' + orch.hostname"
+        >
+          <div class="node-header">
+            <span class="badge-role">ORCHESTRATOR</span>
+            <span class="badge-status status-{{ orch.status | lowercase }}">{{ orch.status }}</span>
+          </div>
+          <h2 class="node-title">{{ orch.hostname }}</h2>
+          <div class="node-meta">
+            <span class="meta-tag">{{ orch.gpuType }}</span>
+            <span class="meta-ip">{{ orch.ipAddress }}:{{ orch.port || 24072 }}</span>
+          </div>
+          <div class="telemetry-row">
+            <div class="metric-item">
+              <span class="metric-key">VRAM</span>
+              <span class="metric-val"
+                >{{ (orch.vramUsedMb / 1024).toFixed(1) }} /
+                {{ (orch.vramTotalMb / 1024).toFixed(1) }} GB</span
+              >
+            </div>
+            <div class="metric-item">
+              <span class="metric-key">Temp</span>
+              <span class="metric-val" [class.metric-hot]="orch.temperatureCelsius >= 75"
+                >{{ orch.temperatureCelsius }}&deg;C</span
+              >
+            </div>
+            <div class="metric-item">
+              <span class="metric-key">Tasks</span>
+              <span class="metric-val">{{ orch.activeTasksCount }}</span>
+            </div>
+          </div>
+          <div class="vram-meter">
+            <div
+              class="vram-meter-fill"
+              [style.width.%]="calculateVramPercent(orch.vramUsedMb, orch.vramTotalMb)"
+            ></div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Interconnect Trunk Lines (Visible on >=768px desktop) -->
+    <div class="topology-spine" aria-hidden="true">
+      <div class="spine-line"></div>
+    </div>
+
+    <!-- Worker Nodes Grid -->
+    <div class="workers-section">
+      <div class="workers-header">CONNECTED WORKER NODES ({{ workerNodes().length }})</div>
+      <div class="workers-grid">
+        @for (worker of workerNodes(); track worker.nodeId) {
+          <div
+            class="node-card worker-card"
+            [class.node-pulsing]="pulsingNodes().has(worker.nodeId)"
+            [class.node-thermal]="thermalWarningNodes().has(worker.nodeId)"
+            [class.selected]="selectedNodeId() === worker.nodeId"
+            (click)="selectNode(worker.nodeId)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Worker node ' + worker.hostname"
+          >
+            <div class="node-header">
+              <span class="badge-role worker">WORKER</span>
+              <span class="badge-status status-{{ worker.status | lowercase }}">{{
+                worker.status
+              }}</span>
+            </div>
+            <h3 class="node-title">{{ worker.hostname }}</h3>
+            <div class="node-meta">
+              <span class="meta-tag">{{ worker.gpuType }}</span>
+              <span class="meta-ip">{{ worker.ipAddress }}:{{ worker.port || 24074 }}</span>
+            </div>
+
+            <!-- Thermal Warning Banner -->
+            @if (thermalWarningNodes().has(worker.nodeId)) {
+              <div class="warning-banner">
+                THERMAL THROTTLING ALERT ({{ worker.temperatureCelsius }}&deg;C)
+              </div>
+            }
+
+            <div class="telemetry-row">
+              <div class="metric-item">
+                <span class="metric-key">VRAM</span>
+                <span class="metric-val"
+                  >{{ (worker.vramUsedMb / 1024).toFixed(1) }} /
+                  {{ (worker.vramTotalMb / 1024).toFixed(1) }} GB</span
+                >
+              </div>
+              <div class="metric-item">
+                <span class="metric-key">Temp</span>
+                <span class="metric-val" [class.metric-hot]="worker.temperatureCelsius >= 75"
+                  >{{ worker.temperatureCelsius }}&deg;C</span
+                >
+              </div>
+              <div class="metric-item">
+                <span class="metric-key">Tasks</span>
+                <span class="metric-val">{{ worker.activeTasksCount }}</span>
+              </div>
+            </div>
+
+            <div class="vram-meter">
+              <div
+                class="vram-meter-fill"
+                [style.width.%]="calculateVramPercent(worker.vramUsedMb, worker.vramTotalMb)"
+              ></div>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-workers-card">
+            No remote worker nodes connected. Operating in single-node orchestrator mode.
+          </div>
+        }
+      </div>
+    </div>
+  </main>
+</div>

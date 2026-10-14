@@ -1,5 +1,6 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 export interface FleetNodeView {
   nodeId: string;
@@ -21,7 +22,7 @@ export interface FleetNodeView {
 @Component({
   selector: 'app-fleet-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './fleet-view.component.html',
   styleUrl: './fleet-view.component.css',
 })
@@ -58,7 +59,9 @@ export class FleetViewComponent implements OnInit {
 
   public async copyInstallCommand(): Promise<void> {
     const report = this.diagnosticReport();
-    const cmd = report?.unifiedInstallCommand || 'sudo apt update && sudo apt install -y radeontop lm-sensors btop htop mesa-utils vulkan-tools pciutils';
+    const cmd =
+      report?.unifiedInstallCommand ||
+      'sudo apt update && sudo apt install -y radeontop lm-sensors btop htop mesa-utils vulkan-tools pciutils';
     try {
       await navigator.clipboard.writeText(cmd);
       this.copyButtonText.set('Copied!');
@@ -72,7 +75,7 @@ export class FleetViewComponent implements OnInit {
     try {
       const res = await fetch('/api/fleet/nodes');
       if (res.ok) {
-        const liveNodes = await res.json() as FleetNodeView[];
+        const liveNodes = (await res.json()) as FleetNodeView[];
         if (liveNodes.length > 0) {
           this.nodes.set(liveNodes);
         }
@@ -92,4 +95,3 @@ export class FleetViewComponent implements OnInit {
     }
   }
 }
-

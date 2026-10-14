@@ -10,7 +10,7 @@ import {
   StackProfileRepository,
   ModelRegistryRepository,
   UserSessionRepository,
-  ModelProfileRepository
+  ModelProfileRepository,
 } from "@cacophony/db";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
@@ -25,8 +25,6 @@ import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { DaemonIPCServer } from "./DaemonIPC.js";
 import { CacophonyHttpServer } from "./CacophonyHttpServer.js";
 import * as path from "node:path";
-
-
 
 export interface DaemonConfig {
   readonly dbPath?: string;
@@ -62,15 +60,28 @@ export class CacophonyDaemon {
   private scheduler!: TaskScheduler;
   private ipcServer!: DaemonIPCServer;
   private httpServer?: CacophonyHttpServer | undefined;
-  private fallbackRouter?: import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter | undefined;
-  private modelManager?: import("../inference/OllamaModelManager.js").OllamaModelManager | undefined;
-  private tenancyGuard?: import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined;
-  private benchmarkRunner?: import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined;
-  private distillationService?: import("../inference/ReasoningDistillationService.js").ReasoningDistillationService | undefined;
-  private autoTuner?: import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined;
-  private banditScheduler?: import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined;
-  private fleetCoordinator?: import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator | undefined;
-  private fleetHealthMonitor?: import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined;
+  private fallbackRouter?:
+    | import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter
+    | undefined;
+  private modelManager?:
+    import("../inference/OllamaModelManager.js").OllamaModelManager | undefined;
+  private tenancyGuard?:
+    import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined;
+  private benchmarkRunner?:
+    | import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner
+    | undefined;
+  private distillationService?:
+    | import("../inference/ReasoningDistillationService.js").ReasoningDistillationService
+    | undefined;
+  private autoTuner?:
+    import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined;
+  private banditScheduler?:
+    import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined;
+  private fleetCoordinator?:
+    | import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator
+    | undefined;
+  private fleetHealthMonitor?:
+    import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined;
   private signalHandler?: (() => Promise<void>) | undefined;
   private autoTuneTimer: NodeJS.Timeout | null = null;
   private planningTimer: NodeJS.Timeout | null = null;
@@ -80,14 +91,18 @@ export class CacophonyDaemon {
 
   constructor(config: DaemonConfig = {}) {
     this.config = config;
-    const dbPath = config.dbPath || process.env.DB_PATH || "data/cacophony_pglite";
+    const dbPath =
+      config.dbPath || process.env.DB_PATH || "data/cacophony_pglite";
     this.driver = DatabaseDriverFactory.createDriver({
       dataDir: dbPath,
-      sqliteDbPath: dbPath.endsWith(".db") || dbPath.endsWith(".sqlite") ? dbPath : undefined
+      sqliteDbPath:
+        dbPath.endsWith(".db") || dbPath.endsWith(".sqlite")
+          ? dbPath
+          : undefined,
     });
     this.maintenanceService = new DatabaseMaintenanceService({
       driver: this.driver,
-      dataDirPath: dbPath
+      dataDirPath: dbPath,
     });
     this.streamTapManager = new StreamTapManager();
     this.codeScrubber = new CodeScrubber();
@@ -112,7 +127,7 @@ export class CacophonyDaemon {
     if (isDefaultKey && !isTestOrDemo) {
       console.error(
         "[CacophonyDaemon] FATAL: VAULT_MASTER_KEY is set to the default all-zeros placeholder. " +
-        "Generate a real key with: openssl rand -hex 32"
+          "Generate a real key with: openssl rand -hex 32",
       );
       process.exit(1);
     }
@@ -133,55 +148,72 @@ export class CacophonyDaemon {
     new ModelRegistryRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
-    const isDemoMode = process.env.DEMO_MODE === "true" || process.env.SIMULATION_MODE === "true";
+    const isDemoMode =
+      process.env.DEMO_MODE === "true" ||
+      process.env.SIMULATION_MODE === "true";
     let telemetryProvider;
     if (isDemoMode) {
       telemetryProvider = new FallbackTelemetryProvider(true);
     } else {
       const vegaProvider = new AmdVegaTelemetryProvider();
       const isVegaAvailable = await vegaProvider.isAvailable();
-      telemetryProvider = isVegaAvailable ? vegaProvider : new FallbackTelemetryProvider();
+      telemetryProvider = isVegaAvailable
+        ? vegaProvider
+        : new FallbackTelemetryProvider();
     }
     this.telemetryPoller = new TelemetryPoller({
       provider: telemetryProvider,
       repository: this.telemetryRepo,
-      pollIntervalMs: this.config.pollIntervalMs || 1000
+      pollIntervalMs: this.config.pollIntervalMs || 1000,
     });
     this.telemetryPoller.start();
 
     // 4. Single-Concurrency Task Scheduler & Autonomous Worker Pipeline
-    const { OllamaModelManager } = await import("../inference/OllamaModelManager.js");
-    const { ModelTenancyGuard } = await import("../scheduler/ModelTenancyGuard.js");
-    const { ModelBenchmarkRunner } = await import("../scheduler/ModelBenchmarkRunner.js");
+    const { OllamaModelManager } =
+      await import("../inference/OllamaModelManager.js");
+    const { ModelTenancyGuard } =
+      await import("../scheduler/ModelTenancyGuard.js");
+    const { ModelBenchmarkRunner } =
+      await import("../scheduler/ModelBenchmarkRunner.js");
 
     this.modelManager = new OllamaModelManager();
     this.tenancyGuard = new ModelTenancyGuard({
       managedModelsEnabled: process.env["MANAGED_MODELS_ENABLED"] !== "false",
-      protectedModels: (process.env["PROTECTED_MODELS"] || "deepseek-coder-v2:16b,qwen2.5-coder:14b,deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat")
+      protectedModels: (
+        process.env["PROTECTED_MODELS"] ||
+        "deepseek-coder-v2:16b,qwen2.5-coder:14b,deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat"
+      )
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
       maxDiskStorageGb: Number(process.env["MAX_DISK_STORAGE_GB"] || 50),
       autoEvictionEnabled: process.env["AUTO_EVICTION_ENABLED"] !== "false",
-      minimumSuccessRateThreshold: Number(process.env["MIN_SUCCESS_RATE_THRESHOLD"] || 0.4),
-      maxConsecutiveFailuresBeforeEviction: Number(process.env["MAX_CONSECUTIVE_FAILURES"] || 3)
+      minimumSuccessRateThreshold: Number(
+        process.env["MIN_SUCCESS_RATE_THRESHOLD"] || 0.4,
+      ),
+      maxConsecutiveFailuresBeforeEviction: Number(
+        process.env["MAX_CONSECUTIVE_FAILURES"] || 3,
+      ),
     });
 
     // Register tenancy protection checker so whitelisted/managed models are never marked EJECTED
-    this.healthRepo.setProtectionChecker((modelId: string) => this.tenancyGuard?.isProtected(modelId) ?? false);
+    this.healthRepo.setProtectionChecker(
+      (modelId: string) => this.tenancyGuard?.isProtected(modelId) ?? false,
+    );
 
     const evictionManager = new ModelEvictionManager(
       this.healthRepo,
       3,
       0.25,
       this.tenancyGuard,
-      this.modelManager
+      this.modelManager,
     );
     const governor = new ThermalGovernor();
     const groomer = new QueueGroomer();
-    const { TaskRehabilitationService } = await import("../scheduler/TaskRehabilitationService.js");
+    const { TaskRehabilitationService } =
+      await import("../scheduler/TaskRehabilitationService.js");
     const rehabilitationService = new TaskRehabilitationService({
-      taskRepo: this.taskRepo
+      taskRepo: this.taskRepo,
     });
 
     this.scheduler = new TaskScheduler({
@@ -196,70 +228,103 @@ export class CacophonyDaemon {
       defaultTimeoutMs: 2400000,
       perModelTimeoutMs: {
         "qwen2.5-coder:7b-instruct-q4_K_M": 1800000,
-        "qwen2.5-coder:7b": 1800000
-      }
+        "qwen2.5-coder:7b": 1800000,
+      },
     });
 
     // Wire real or simulated worker pipeline
     const { OllamaProvider } = await import("../inference/OllamaProvider.js");
-    const { MockInferenceStreamProvider } = await import("../inference/MockInferenceStreamProvider.js");
-    const { ContextMinimizer } = await import("../inference/ContextMinimizer.js");
-    const { SelfHealingParser } = await import("../inference/SelfHealingParser.js");
-    const { RulePipelineEngine } = await import("../rules/RulePipelineEngine.js");
-    const { AutonomousWorkerPipeline } = await import("../scheduler/AutonomousWorkerPipeline.js");
+    const { MockInferenceStreamProvider } =
+      await import("../inference/MockInferenceStreamProvider.js");
+    const { ContextMinimizer } =
+      await import("../inference/ContextMinimizer.js");
+    const { SelfHealingParser } =
+      await import("../inference/SelfHealingParser.js");
+    const { RulePipelineEngine } =
+      await import("../rules/RulePipelineEngine.js");
+    const { AutonomousWorkerPipeline } =
+      await import("../scheduler/AutonomousWorkerPipeline.js");
 
     const primaryInferenceProvider = isDemoMode
       ? new MockInferenceStreamProvider(28)
       : new OllamaProvider({ profileRepository: this.modelProfileRepo });
 
-    this.benchmarkRunner = new ModelBenchmarkRunner(primaryInferenceProvider as any, this.healthRepo);
+    this.benchmarkRunner = new ModelBenchmarkRunner(
+      primaryInferenceProvider as any,
+      this.healthRepo,
+    );
 
-    const { ReasoningDistillationService } = await import("../inference/ReasoningDistillationService.js");
-    this.distillationService = new ReasoningDistillationService(primaryInferenceProvider as any);
+    const { ReasoningDistillationService } =
+      await import("../inference/ReasoningDistillationService.js");
+    this.distillationService = new ReasoningDistillationService(
+      primaryInferenceProvider as any,
+    );
 
-    const { FrontierFallbackRouter } = await import("../inference/FrontierFallbackRouter.js");
+    const { FrontierFallbackRouter } =
+      await import("../inference/FrontierFallbackRouter.js");
     this.fallbackRouter = new FrontierFallbackRouter("deepseek-r1:8b");
     this.fallbackRouter.registerProvider({
       providerType: "ollama",
       provider: primaryInferenceProvider,
-      priority: 0
+      priority: 0,
     });
 
     const minimizer = new ContextMinimizer(process.cwd());
     const parser = new SelfHealingParser();
     const ruleEngine = new RulePipelineEngine();
-    const { GitWorktreeManager } = await import("../gitea/GitWorktreeManager.js");
+    const { GitWorktreeManager } =
+      await import("../gitea/GitWorktreeManager.js");
     const worktreeManager = new GitWorktreeManager(
       process.cwd(),
-      path.resolve(process.cwd(), "workspaces")
+      path.resolve(process.cwd(), "workspaces"),
     );
 
-    const { GitPlatformProviderFactory } = await import("../gitea/GitPlatformProviderFactory.js");
-    const { FrontierReviewer } = await import("../inference/FrontierReviewer.js");
+    const { GitPlatformProviderFactory } =
+      await import("../gitea/GitPlatformProviderFactory.js");
+    const { FrontierReviewer } =
+      await import("../inference/FrontierReviewer.js");
 
     const gitProvider = GitPlatformProviderFactory.createFromEnv();
     const frontierReviewer = new FrontierReviewer({
-      inferenceProvider: (this.fallbackRouter ?? primaryInferenceProvider) as any,
-      defaultModel: process.env.FRONTIER_REVIEWER_MODEL || process.env.DEFAULT_REVIEWER_MODEL || "qwen2.5-coder:7b-instruct-q4_K_M"
+      inferenceProvider: (this.fallbackRouter ??
+        primaryInferenceProvider) as any,
+      defaultModel:
+        process.env.FRONTIER_REVIEWER_MODEL ||
+        process.env.DEFAULT_REVIEWER_MODEL ||
+        "qwen2.5-coder:7b-instruct-q4_K_M",
     });
 
-    const { BanditTaskScheduler } = await import("../bandit/BanditTaskScheduler.js");
+    const { BanditTaskScheduler } =
+      await import("../bandit/BanditTaskScheduler.js");
     this.banditScheduler = new BanditTaskScheduler({
       policy: (process.env.BANDIT_POLICY as any) || "epsilon_greedy",
-      explorationRate: 0.15
+      explorationRate: 0.15,
     });
-    const defaultArms = ["qwen2.5-coder:7b-instruct-q4_K_M", "qwen2.5-coder:7b", "deepseek-r1:8b"];
+    const defaultArms = [
+      "qwen2.5-coder:7b-instruct-q4_K_M",
+      "qwen2.5-coder:7b",
+      "deepseek-r1:8b",
+    ];
     for (const armModel of defaultArms) {
       this.banditScheduler.registerArm(armModel, "implementer");
       this.banditScheduler.registerArm(armModel, "reviewer");
     }
 
-    const { FleetMasterCoordinator } = await import("../fleet/FleetMasterCoordinator.js");
+    const { FleetMasterCoordinator } =
+      await import("../fleet/FleetMasterCoordinator.js");
     this.fleetCoordinator = new FleetMasterCoordinator();
 
-    const { FleetHealthMonitor } = await import("../fleet/FleetHealthMonitor.js");
+    const { FleetHealthMonitor } =
+      await import("../fleet/FleetHealthMonitor.js");
     this.fleetHealthMonitor = new FleetHealthMonitor();
     this.fleetHealthMonitor.startLivenessCheck();
+
+    const { DistributedTaskDispatcher } =
+      await import("../scheduler/DistributedTaskDispatcher.js");
+    const taskDispatcher = new DistributedTaskDispatcher(
+      this.fleetHealthMonitor,
+    );
+    this.scheduler.setDispatcher(taskDispatcher);
 
     const worker = new AutonomousWorkerPipeline({
       workspaceRoot: process.cwd(),
@@ -277,7 +342,7 @@ export class CacophonyDaemon {
       autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
       repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
       repoName: process.env.GIT_REPO_NAME || "cacophony",
-      gitRemote: process.env.GIT_REMOTE || "gitea"
+      gitRemote: process.env.GIT_REMOTE || "gitea",
     });
 
     this.scheduler.setExecutionHandler(async (groomed, model, signal) => {
@@ -286,11 +351,16 @@ export class CacophonyDaemon {
       }
       return await worker.executeTask(groomed, model, signal);
     });
-    if (this.taskRepo && typeof this.taskRepo.reclaimStaleRunningTasks === "function") {
+    if (
+      this.taskRepo &&
+      typeof this.taskRepo.reclaimStaleRunningTasks === "function"
+    ) {
       try {
         const reclaimed = await this.taskRepo.reclaimStaleRunningTasks(15);
         if (reclaimed > 0) {
-          console.log(`[CacophonyDaemon] Reclaimed ${reclaimed} stale RUNNING tasks on startup`);
+          console.log(
+            `[CacophonyDaemon] Reclaimed ${reclaimed} stale RUNNING tasks on startup`,
+          );
         }
       } catch {
         // non-fatal
@@ -300,9 +370,14 @@ export class CacophonyDaemon {
     this.scheduler.start(this.config.pollIntervalMs || 2000);
 
     // 4b. Autonomous Taskcade Planning & Self-Grooming Service
-    const { TaskcadePlanningService } = await import("../inference/TaskcadePlanningService.js");
-    const { FrontierTaskDecomposer } = await import("../inference/FrontierTaskDecomposer.js");
-    const decomposer = new FrontierTaskDecomposer(primaryInferenceProvider as any, this.taskRepo);
+    const { TaskcadePlanningService } =
+      await import("../inference/TaskcadePlanningService.js");
+    const { FrontierTaskDecomposer } =
+      await import("../inference/FrontierTaskDecomposer.js");
+    const decomposer = new FrontierTaskDecomposer(
+      primaryInferenceProvider as any,
+      this.taskRepo,
+    );
     const planningService = new TaskcadePlanningService({
       taskRepo: this.taskRepo,
       stageRepo: this.stageRepo,
@@ -313,74 +388,91 @@ export class CacophonyDaemon {
               id: "backlog-git-provider",
               category: "git_lifecycle",
               title: "Implement IGitPlatformProvider Abstraction Interface",
-              description: "Create IGitPlatformProvider interface declaring createBranch, openPullRequest, submitReview, and mergePullRequest with Gitea and GitHub compatibility.",
+              description:
+                "Create IGitPlatformProvider interface declaring createBranch, openPullRequest, submitReview, and mergePullRequest with Gitea and GitHub compatibility.",
               priority: "P1",
               role: "architect",
-              modelAssigned: "deepseek-r1:8b"
+              modelAssigned: "deepseek-r1:8b",
             },
             {
               id: "backlog-gitea-platform",
               category: "git_lifecycle",
               title: "Implement GiteaPlatformProvider REST Client",
-              description: "Implement GiteaPlatformProvider communicating with local Gitea instance via Swagger REST API in packages/engine/src/gitea/.",
+              description:
+                "Implement GiteaPlatformProvider communicating with local Gitea instance via Swagger REST API in packages/engine/src/gitea/.",
               priority: "P1",
               role: "implementer",
-              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M"
+              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M",
             },
             {
               id: "backlog-github-platform",
               category: "git_lifecycle",
               title: "Implement GitHubPlatformProvider REST Client",
-              description: "Implement GitHubPlatformProvider communicating with GitHub REST API using configured GITHUB_TOKEN in packages/engine/src/gitea/.",
+              description:
+                "Implement GitHubPlatformProvider communicating with GitHub REST API using configured GITHUB_TOKEN in packages/engine/src/gitea/.",
               priority: "P1",
               role: "implementer",
-              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M"
+              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M",
             },
             {
               id: "backlog-worktree-isolation",
               category: "git_lifecycle",
-              title: "Enhance GitWorktreeManager with Ephemeral Worktree Isolation",
-              description: "Create isolated ephemeral worktrees under workspaces/worktree-<taskId> and safe branch cleanup in packages/engine/src/gitea/GitWorktreeManager.ts.",
+              title:
+                "Enhance GitWorktreeManager with Ephemeral Worktree Isolation",
+              description:
+                "Create isolated ephemeral worktrees under workspaces/worktree-<taskId> and safe branch cleanup in packages/engine/src/gitea/GitWorktreeManager.ts.",
               priority: "P1",
               role: "implementer",
-              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M"
+              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M",
             },
             {
               id: "backlog-review-stage",
               category: "review_pipeline",
               title: "Automate Structured Stage 5 Code Review Checklist",
-              description: "Wire Stage 5 Review in AutonomousWorkerPipeline to evaluate SOLID principles, test coverage, and security boundaries.",
+              description:
+                "Wire Stage 5 Review in AutonomousWorkerPipeline to evaluate SOLID principles, test coverage, and security boundaries.",
               priority: "P1",
               role: "reviewer",
-              modelAssigned: "gemma3:4b-it-qat"
+              modelAssigned: "gemma3:4b-it-qat",
             },
             {
               id: "backlog-auto-merge",
               category: "git_lifecycle",
               title: "Wire Automated Stage 6 Merge Gate",
-              description: "Merge pull request into target branch when auto-merge is configured and verification stages pass in AutonomousWorkerPipeline.",
+              description:
+                "Merge pull request into target branch when auto-merge is configured and verification stages pass in AutonomousWorkerPipeline.",
               priority: "P1",
               role: "implementer",
-              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M"
-            }
+              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M",
+            },
           ]
         : [],
-      recycleBacklog: isDemoMode
+      recycleBacklog: isDemoMode,
     });
 
     // In demo mode, run queue replenishment every 5 seconds to keep live tasks active across diverse models
     if (isDemoMode) {
-      const fleetModels = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat", "qwen2.5-coder:14b"];
+      const fleetModels = [
+        "qwen2.5-coder:7b-instruct-q4_K_M",
+        "gemma3:4b-it-qat",
+        "qwen2.5-coder:14b",
+      ];
       let replenishIdx = 0;
       this.planningTimer = setInterval(() => {
         if (this.isRunning) {
           const nextModel = fleetModels[replenishIdx % fleetModels.length]!;
           replenishIdx++;
-          void planningService.replenishQueueIfLow({ minQueueDepth: 3, modelName: nextModel });
+          void planningService.replenishQueueIfLow({
+            minQueueDepth: 3,
+            modelName: nextModel,
+          });
         }
       }, 5000);
       try {
-        await planningService.replenishQueueIfLow({ minQueueDepth: 3, modelName: "qwen2.5-coder:7b-instruct-q4_K_M" });
+        await planningService.replenishQueueIfLow({
+          minQueueDepth: 3,
+          modelName: "qwen2.5-coder:7b-instruct-q4_K_M",
+        });
       } catch {
         // ignore
       }
@@ -393,15 +485,19 @@ export class CacophonyDaemon {
       healthRepo: this.healthRepo,
       hardwareSpec: {
         totalVramGb: 16,
-        availableVramGb: 8
-      }
+        availableVramGb: 8,
+      },
     });
 
     // Run autonomous model profile optimization periodically every 30 minutes
     this.autoTuneTimer = setInterval(async () => {
       if (this.isRunning && this.autoTuner) {
         try {
-          const modelManager = this.modelManager || new (await import("../inference/OllamaModelManager.js")).OllamaModelManager();
+          const modelManager =
+            this.modelManager ||
+            new (
+              await import("../inference/OllamaModelManager.js")
+            ).OllamaModelManager();
           const installed = await modelManager.listInstalledModels([]);
           if (installed.length > 0) {
             await this.autoTuner.autoTuneModels(installed.map((m) => m.name));
@@ -419,21 +515,26 @@ export class CacophonyDaemon {
       }
     }, 3600_000);
 
-
     // 5. IPC Server for CLI and Container Control
     this.ipcServer = new DaemonIPCServer({
       socketPath: this.config.socketPath,
       streamTapManager: this.streamTapManager,
-      handler: this.handleCommand.bind(this)
+      handler: this.handleCommand.bind(this),
     });
     await this.ipcServer.start();
 
     // 6. Unified HTTP API, SSE Streaming, and Frontend Server
     if (this.config.httpPort || this.config.frontendDistPath) {
       this.httpServer = new CacophonyHttpServer(this, {
-        ...(this.config.httpPort !== undefined ? { httpPort: this.config.httpPort } : {}),
-        ...(this.config.httpHost !== undefined ? { httpHost: this.config.httpHost } : {}),
-        ...(this.config.frontendDistPath !== undefined ? { frontendDistPath: this.config.frontendDistPath } : {})
+        ...(this.config.httpPort !== undefined
+          ? { httpPort: this.config.httpPort }
+          : {}),
+        ...(this.config.httpHost !== undefined
+          ? { httpHost: this.config.httpHost }
+          : {}),
+        ...(this.config.frontendDistPath !== undefined
+          ? { frontendDistPath: this.config.frontendDistPath }
+          : {}),
       });
       await this.httpServer.start();
     }
@@ -492,7 +593,10 @@ export class CacophonyDaemon {
       try {
         await this.driver.close();
       } catch (err) {
-        console.warn("[CacophonyDaemon] Error closing database driver on stop:", err);
+        console.warn(
+          "[CacophonyDaemon] Error closing database driver on stop:",
+          err,
+        );
       }
     }
     this.isRunning = false;
@@ -542,39 +646,53 @@ export class CacophonyDaemon {
     return this.config;
   }
 
-  public getFallbackRouter(): import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter | undefined {
+  public getFallbackRouter():
+    | import("../inference/FrontierFallbackRouter.js").FrontierFallbackRouter
+    | undefined {
     return this.fallbackRouter;
   }
 
-  public getModelManager(): import("../inference/OllamaModelManager.js").OllamaModelManager | undefined {
+  public getModelManager():
+    | import("../inference/OllamaModelManager.js").OllamaModelManager
+    | undefined {
     return this.modelManager;
   }
 
-  public getTenancyGuard(): import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined {
+  public getTenancyGuard():
+    import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined {
     return this.tenancyGuard;
   }
 
-  public getBenchmarkRunner(): import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner | undefined {
+  public getBenchmarkRunner():
+    | import("../scheduler/ModelBenchmarkRunner.js").ModelBenchmarkRunner
+    | undefined {
     return this.benchmarkRunner;
   }
 
-  public getDistillationService(): import("../inference/ReasoningDistillationService.js").ReasoningDistillationService | undefined {
+  public getDistillationService():
+    | import("../inference/ReasoningDistillationService.js").ReasoningDistillationService
+    | undefined {
     return this.distillationService;
   }
 
-  public getAutoTuner(): import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined {
+  public getAutoTuner():
+    import("../scheduler/EngineAutoTuner.js").EngineAutoTuner | undefined {
     return this.autoTuner;
   }
 
-  public getBanditScheduler(): import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined {
+  public getBanditScheduler():
+    import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler | undefined {
     return this.banditScheduler;
   }
 
-  public getFleetCoordinator(): import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator | undefined {
+  public getFleetCoordinator():
+    | import("../fleet/FleetMasterCoordinator.js").FleetMasterCoordinator
+    | undefined {
     return this.fleetCoordinator;
   }
 
-  public getFleetHealthMonitor(): import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined {
+  public getFleetHealthMonitor():
+    import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined {
     return this.fleetHealthMonitor;
   }
 
@@ -591,7 +709,7 @@ export class CacophonyDaemon {
       const metrics = await this.maintenanceService.getStorageMetrics();
       if (metrics.isOverThreshold) {
         process.stderr.write(
-          `[storage-warning] Database directory size ${metrics.totalSizeMegabytes}MB exceeds threshold ${metrics.thresholdBytes / (1024 * 1024)}MB\n`
+          `[storage-warning] Database directory size ${metrics.totalSizeMegabytes}MB exceeds threshold ${metrics.thresholdBytes / (1024 * 1024)}MB\n`,
         );
       }
     } catch {
@@ -599,7 +717,8 @@ export class CacophonyDaemon {
     }
 
     try {
-      const { GitCheckpointManager } = await import("../gitea/GitCheckpointManager.js");
+      const { GitCheckpointManager } =
+        await import("../gitea/GitCheckpointManager.js");
       const checkpointManager = new GitCheckpointManager(process.cwd());
       await checkpointManager.pruneOldCheckpoints(14, 50);
     } catch {
@@ -607,7 +726,10 @@ export class CacophonyDaemon {
     }
   }
 
-  private async handleCommand(command: string, params?: Record<string, unknown>): Promise<unknown> {
+  private async handleCommand(
+    command: string,
+    params?: Record<string, unknown>,
+  ): Promise<unknown> {
     switch (command) {
       case "status": {
         const pending = await this.taskRepo.listPending();
@@ -618,7 +740,7 @@ export class CacophonyDaemon {
           uptimeSeconds: Math.floor((Date.now() - this.startTime) / 1000),
           pendingTasksCount: pending.length,
           activeTaskId: this.streamTapManager.getActiveTask(),
-          telemetry: latestTelemetry
+          telemetry: latestTelemetry,
         };
       }
 
@@ -634,7 +756,10 @@ export class CacophonyDaemon {
 
       case "drain": {
         this.scheduler.drain();
-        return { message: "Daemon running in drain mode: will stop after current tasks finish" };
+        return {
+          message:
+            "Daemon running in drain mode: will stop after current tasks finish",
+        };
       }
 
       case "kill": {
@@ -682,7 +807,7 @@ export class CacophonyDaemon {
           failureCount: 0,
           createdAt: now,
           updatedAt: now,
-          completedAt: null
+          completedAt: null,
         };
         await this.taskRepo.create(newTask);
         return newTask;
@@ -703,7 +828,6 @@ export class CacophonyDaemon {
         return await this.taskRepo.listPending();
       }
 
-
       case "models": {
         return await this.healthRepo.listProfiles();
       }
@@ -712,23 +836,29 @@ export class CacophonyDaemon {
         return this.telemetryPoller?.getLatest() || null;
       }
 
-
       case "stream.suspend": {
         const targetTask = params?.taskId as string | undefined;
         const suspended = this.streamTapManager.suspend(targetTask);
-        return { suspended, taskId: targetTask || this.streamTapManager.getActiveTask() };
+        return {
+          suspended,
+          taskId: targetTask || this.streamTapManager.getActiveTask(),
+        };
       }
 
       case "stream.resume": {
         const targetTask = params?.taskId as string | undefined;
         const resumed = this.streamTapManager.resume(targetTask);
-        return { resumed, taskId: targetTask || this.streamTapManager.getActiveTask() };
+        return {
+          resumed,
+          taskId: targetTask || this.streamTapManager.getActiveTask(),
+        };
       }
 
       case "scrub": {
         const content = params?.content as string;
         const filePath = params?.filePath as string;
-        if (!content || !filePath) throw new Error("Missing content or filePath for scrub");
+        if (!content || !filePath)
+          throw new Error("Missing content or filePath for scrub");
         return this.codeScrubber.scrubContent(content, filePath, params);
       }
 

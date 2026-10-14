@@ -7,9 +7,16 @@ import { ModelAffinityTaskSorter } from "./ModelAffinityTaskSorter.js";
 import { QueueGroomer, type GroomedTask } from "./QueueGroomer.js";
 import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
-import { FailureClassifier, ExecutionTimeoutError } from "../analytics/FailureClassifier.js";
+import {
+  FailureClassifier,
+  ExecutionTimeoutError,
+} from "../analytics/FailureClassifier.js";
 import type { StreamTapManager } from "../inference/StreamTapManager.js";
 import type { TaskRehabilitationService } from "./TaskRehabilitationService.js";
+import type {
+  DistributedTaskDispatcher,
+  TaskPlacementDecision,
+} from "./DistributedTaskDispatcher.js";
 
 export type TaskExecutionResult = {
   success: boolean;
@@ -18,7 +25,11 @@ export type TaskExecutionResult = {
   baseCommitHash?: string | undefined;
   failureReason?: string | undefined;
 };
-export type TaskExecutionHandler = (groomed: GroomedTask, selectedModel: string, signal?: AbortSignal) => Promise<TaskExecutionResult>;
+export type TaskExecutionHandler = (
+  groomed: GroomedTask,
+  selectedModel: string,
+  signal?: AbortSignal,
+) => Promise<TaskExecutionResult>;
 
 /**
  * TaskScheduler
@@ -38,7 +49,10 @@ export class TaskScheduler {
   private readonly governor: ThermalGovernor;
   private readonly telemetryProvider: IHardwareTelemetryProvider;
   private readonly streamTapManager?: StreamTapManager | undefined;
-  private readonly rehabilitationService?: TaskRehabilitationService | undefined;
+  private readonly rehabilitationService?:
+    TaskRehabilitationService | undefined;
+  private readonly dispatcher?: DistributedTaskDispatcher | undefined;
+  private lastPlacementDecision?: TaskPlacementDecision | undefined;
   private readonly maxRetries: number;
 
   private isRunning = false;
@@ -51,7 +65,8 @@ export class TaskScheduler {
   private readonly defaultTimeoutMs: number;
   private readonly noProgressTimeoutMs: number | undefined;
   private readonly autoReplenish: boolean;
-  private seedLoader?: import("./TaskcadeSeedLoader.js").TaskcadeSeedLoader | undefined;
+  private seedLoader?:
+    import("./TaskcadeSeedLoader.js").TaskcadeSeedLoader | undefined;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
@@ -63,6 +78,7 @@ export class TaskScheduler {
     readonly groomer?: QueueGroomer;
     readonly governor?: ThermalGovernor;
     readonly sorter?: ModelAffinityTaskSorter;
+    readonly dispatcher?: DistributedTaskDispatcher;
     readonly defaultTimeoutMs?: number;
     readonly noProgressTimeoutMs?: number;
     readonly perModelTimeoutMs?: Readonly<Record<string, number>>;
@@ -76,6 +92,7 @@ export class TaskScheduler {
     this.telemetryProvider = options.telemetryProvider;
     this.streamTapManager = options.streamTapManager;
     this.rehabilitationService = options.rehabilitationService;
+    this.dispatcher = options.dispatcher;
     this.maxRetries = options.maxRetries ?? 3;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
     // An inactivity cutoff is opt-in. Some models can legitimately spend a long
@@ -89,7 +106,7 @@ export class TaskScheduler {
       "qwen2.5-coder:7b-instruct-q4_K_M": 600_000,
       "deepseek-r1:8b": 840_000,
       "qwen2.5-coder:14b": 780_000,
-      "deepseek-coder-v2:16b": 840_000
+      "deepseek-coder-v2:16b": 840_000,
     };
 
     this.mutex = new ExecutionMutex();
@@ -97,7 +114,8 @@ export class TaskScheduler {
     this.groomer = options.groomer ?? new QueueGroomer();
     this.governor = options.governor ?? new ThermalGovernor();
     this.sorter = options.sorter ?? new ModelAffinityTaskSorter();
-    this.autoReplenish = options.autoReplenish ?? (process.env["AUTO_REPLENISH_QUEUE"] !== "false");
+    this.autoReplenish =
+      options.autoReplenish ?? process.env["AUTO_REPLENISH_QUEUE"] !== "false";
   }
 
   /**
@@ -113,7 +131,7 @@ export class TaskScheduler {
       "qwen2.5-coder:3b-4k": "qwen2.5-coder:3b",
       "qwen2.5-coder:7b-4k": "qwen2.5-coder:7b",
       "qwen2.5-coder:14b-4k": "qwen2.5-coder:14b",
-      "deepseek-coder-v2:16b-4k": "deepseek-coder-v2:16b"
+      "deepseek-coder-v2:16b-4k": "deepseek-coder-v2:16b",
     };
 
     if (aliasMap[trimmed]) {
@@ -133,7 +151,11 @@ export class TaskScheduler {
    */
   public resolveModelTimeout(model: string): number {
     const normalized = TaskScheduler.normalizeModelName(model);
-    return this.perModelTimeoutMs[normalized] ?? this.perModelTimeoutMs[model] ?? this.defaultTimeoutMs;
+    return (
+      this.perModelTimeoutMs[normalized] ??
+      this.perModelTimeoutMs[model] ??
+      this.defaultTimeoutMs
+    );
   }
 
   /**
@@ -209,6 +231,27 @@ export class TaskScheduler {
   }
 
   /**
+   * Gets the configured DistributedTaskDispatcher, if any.
+   */
+  public getDispatcher(): DistributedTaskDispatcher | undefined {
+    return this.dispatcher;
+  }
+
+  /**
+   * Sets or updates the DistributedTaskDispatcher at runtime.
+   */
+  public setDispatcher(dispatcher: DistributedTaskDispatcher): void {
+    (this as any).dispatcher = dispatcher;
+  }
+
+  /**
+   * Retrieves the most recent distributed task placement decision.
+   */
+  public getLastPlacementDecision(): TaskPlacementDecision | undefined {
+    return this.lastPlacementDecision;
+  }
+
+  /**
    * Executes a single scheduling evaluation cycle.
    * If force is true, runs even if the continuous background polling loop is stopped.
    */
@@ -224,7 +267,8 @@ export class TaskScheduler {
     if (pending.length > 0) {
       try {
         if (!this.seedLoader) {
-          const { TaskcadeSeedLoader } = await import("./TaskcadeSeedLoader.js");
+          const { TaskcadeSeedLoader } =
+            await import("./TaskcadeSeedLoader.js");
           this.seedLoader = new TaskcadeSeedLoader();
         }
         const completedIds = await this.seedLoader.getCompletedTaskIds();
@@ -240,7 +284,12 @@ export class TaskScheduler {
               completedIds.has(shortId) ||
               (taskCode && completedIds.has(taskCode))
             ) {
-              await this.taskRepo.updateStatus(t.id, "COMPLETED", t.durationMs || 1000, t.tokensPerSec || 6.0);
+              await this.taskRepo.updateStatus(
+                t.id,
+                "COMPLETED",
+                t.durationMs || 1000,
+                t.tokensPerSec || 6.0,
+              );
             } else {
               uncompleted.push(t);
             }
@@ -257,9 +306,14 @@ export class TaskScheduler {
         try {
           // 1. Automatically requeue failed tasks under the maximum retry threshold (failure_count < 3)
           if (typeof this.taskRepo.retryFailedTasks === "function") {
-            const requeuedCount = await this.taskRepo.retryFailedTasks(undefined, false);
+            const requeuedCount = await this.taskRepo.retryFailedTasks(
+              undefined,
+              false,
+            );
             if (requeuedCount > 0) {
-              console.log(`[TaskScheduler] Automatically requeued ${requeuedCount} failed tasks for retry`);
+              console.log(
+                `[TaskScheduler] Automatically requeued ${requeuedCount} failed tasks for retry`,
+              );
               const refreshed = await this.taskRepo.listPending();
               pending = refreshed.filter((t) => t.status !== "RUNNING");
             }
@@ -268,17 +322,22 @@ export class TaskScheduler {
           // 2. If still empty, automatically seed uncompleted tasks from docs/taskcade.md
           if (pending.length === 0) {
             if (!this.seedLoader) {
-              const { TaskcadeSeedLoader } = await import("./TaskcadeSeedLoader.js");
+              const { TaskcadeSeedLoader } =
+                await import("./TaskcadeSeedLoader.js");
               this.seedLoader = new TaskcadeSeedLoader();
             }
-            const uncompletedTasks = await this.seedLoader.loadTasks({ limit: 50 });
+            const uncompletedTasks = await this.seedLoader.loadTasks({
+              limit: 50,
+            });
             let seededCount = 0;
             for (const t of uncompletedTasks) {
               const res = await this.taskRepo.createIfNotExists(t);
               if (res.created) seededCount++;
             }
             if (seededCount > 0) {
-              console.log(`[TaskScheduler] Automatically seeded ${seededCount} uncompleted tasks from taskcade.md`);
+              console.log(
+                `[TaskScheduler] Automatically seeded ${seededCount} uncompleted tasks from taskcade.md`,
+              );
               const refreshed = await this.taskRepo.listPending();
               pending = refreshed.filter((t) => t.status !== "RUNNING");
             }
@@ -315,14 +374,21 @@ export class TaskScheduler {
           const normalizedId = targetTask.id.toLowerCase();
           const shortId = normalizedId.replace("taskcade-", "");
           const taskCodeMatch = targetTask.title.match(/^(T\d+\.\d+\.\d+):/i);
-          const taskCode = taskCodeMatch ? taskCodeMatch[1]!.toLowerCase() : null;
+          const taskCode = taskCodeMatch
+            ? taskCodeMatch[1]!.toLowerCase()
+            : null;
 
           if (
             completedIds.has(normalizedId) ||
             completedIds.has(shortId) ||
             (taskCode && completedIds.has(taskCode))
           ) {
-            await this.taskRepo.updateStatus(targetTask.id, "COMPLETED", targetTask.durationMs || 1000, targetTask.tokensPerSec || 6.0);
+            await this.taskRepo.updateStatus(
+              targetTask.id,
+              "COMPLETED",
+              targetTask.durationMs || 1000,
+              targetTask.tokensPerSec || 6.0,
+            );
             return targetTask;
           }
         } catch {
@@ -334,10 +400,22 @@ export class TaskScheduler {
       const groomed = this.groomer.groom(targetTask);
       if ((groomed.preflightIssues?.length ?? 0) > 0) {
         const message = groomed.preflightIssues!.join(" ");
-        const preflightStage = await this.stageRepo.recordStageStart(targetTask.id, "planning");
-        await this.stageRepo.recordStageCompletion(preflightStage, "FAILURE", message, 0, 0, 0);
+        const preflightStage = await this.stageRepo.recordStageStart(
+          targetTask.id,
+          "planning",
+        );
+        await this.stageRepo.recordStageCompletion(
+          preflightStage,
+          "FAILURE",
+          message,
+          0,
+          0,
+          0,
+        );
         await this.taskRepo.updateStatus(targetTask.id, "FAILED");
-        console.warn(`[TaskScheduler] Preflight rejected task ${targetTask.id}: ${message}`);
+        console.warn(
+          `[TaskScheduler] Preflight rejected task ${targetTask.id}: ${message}`,
+        );
         return targetTask;
       }
 
@@ -350,23 +428,40 @@ export class TaskScheduler {
 
       if (normalizedAssigned) {
         // Guard against assigning a pure reasoning model (deepseek-r1) to non-architect tasks
-        if (normalizedAssigned.includes("r1") && role !== "architect" && role !== "reviewer") {
-          candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "qwen2.5-coder:7b", "gemma3:4b-it-qat", "qwen2.5-coder:14b"];
-        } else if (normalizedAssigned === "qwen2.5-coder:3b" && role !== "architect" && role !== "reviewer") {
+        if (
+          normalizedAssigned.includes("r1") &&
+          role !== "architect" &&
+          role !== "reviewer"
+        ) {
+          candidateList = [
+            "qwen2.5-coder:7b-instruct-q4_K_M",
+            "qwen2.5-coder:7b",
+            "gemma3:4b-it-qat",
+            "qwen2.5-coder:14b",
+          ];
+        } else if (
+          normalizedAssigned === "qwen2.5-coder:3b" &&
+          role !== "architect" &&
+          role !== "reviewer"
+        ) {
           // Disqualify 3b models from implementation to prevent superficial stub generation and compilation failures
           candidateList = [
             "qwen2.5-coder:7b-instruct-q4_K_M",
             "qwen2.5-coder:7b",
-            "gemma3:4b-it-qat"
+            "gemma3:4b-it-qat",
           ];
-        } else if (targetTask.failureCount > 0 && role !== "architect" && role !== "reviewer") {
+        } else if (
+          targetTask.failureCount > 0 &&
+          role !== "architect" &&
+          role !== "reviewer"
+        ) {
           // If the task previously failed, prioritize our strongest coding models with automated repair and exclude 3b
           candidateList = [
             "qwen2.5-coder:7b-instruct-q4_K_M",
             "qwen2.5-coder:7b",
             "gemma3:4b-it-qat",
             "qwen2.5-coder:14b",
-            normalizedAssigned
+            normalizedAssigned,
           ].filter((m) => m !== "qwen2.5-coder:3b");
         } else {
           candidateList = [normalizedAssigned];
@@ -376,7 +471,7 @@ export class TaskScheduler {
           "deepseek-r1:8b",
           "qwen2.5-coder:14b",
           "qwen2.5-coder:7b-instruct-q4_K_M",
-          "qwen2.5-coder:7b"
+          "qwen2.5-coder:7b",
         ];
       } else {
         // Implementer, coder, test_engineer: dispatch strictly to capable coding models
@@ -385,7 +480,7 @@ export class TaskScheduler {
           "qwen2.5-coder:7b",
           "gemma3:4b-it-qat",
           "qwen2.5-coder:14b",
-          "deepseek-coder-v2:16b"
+          "deepseek-coder-v2:16b",
         ];
       }
 
@@ -393,7 +488,10 @@ export class TaskScheduler {
       try {
         const sample = await this.telemetryProvider.sample();
         if (sample.edgeTempCelsius >= 75 && !normalizedAssigned) {
-          candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat"];
+          candidateList = [
+            "qwen2.5-coder:7b-instruct-q4_K_M",
+            "gemma3:4b-it-qat",
+          ];
         }
       } catch {
         // ignore
@@ -403,35 +501,63 @@ export class TaskScheduler {
       if (role !== "architect" && role !== "reviewer") {
         candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
         if (candidateList.length === 0) {
-          candidateList = ["qwen2.5-coder:7b-instruct-q4_K_M", "gemma3:4b-it-qat"];
+          candidateList = [
+            "qwen2.5-coder:7b-instruct-q4_K_M",
+            "gemma3:4b-it-qat",
+          ];
         }
       }
 
       const selectedModel = await this.evictionManager.selectModel(
         targetTask.role as AgentRole,
         candidateList,
-        activeVramModel
+        activeVramModel,
       );
 
+      // 5b. Evaluate Distributed Fleet Placement for compute-intensive tasks (T86.2.2)
+      if (this.dispatcher) {
+        this.lastPlacementDecision = this.dispatcher.selectPlacement({
+          taskId: targetTask.id,
+          model: selectedModel,
+          priority: targetTask.priority,
+        });
+        if (!this.lastPlacementDecision.isLocal) {
+          console.log(
+            `[TaskScheduler] Offloading compute-intensive task ${targetTask.id} (${selectedModel}) to remote fleet node '${this.lastPlacementDecision.nodeId}' (${this.lastPlacementDecision.targetHost ?? "remote"}:${this.lastPlacementDecision.targetPort ?? 24072}): ${this.lastPlacementDecision.reason}`,
+          );
+        } else {
+          console.log(
+            `[TaskScheduler] Retaining task ${targetTask.id} (${selectedModel}) locally on orchestrator node: ${this.lastPlacementDecision.reason}`,
+          );
+        }
+      }
+
       // 6. Check & Apply Thermal Governor Pacing
-      const thermalEval = await this.governor.enforcePacing(this.telemetryProvider);
+      const thermalEval = await this.governor.enforcePacing(
+        this.telemetryProvider,
+      );
       if (thermalEval.emergencyHalt) {
         console.error(
-          `[TaskScheduler] OUCH! THERMAL CUTOFF (${thermalEval.tempCelsius}C >= ${this.governor.emergencyShutdownTemp}C). Halting task queue immediately.`
+          `[TaskScheduler] OUCH! THERMAL CUTOFF (${thermalEval.tempCelsius}C >= ${this.governor.emergencyShutdownTemp}C). Halting task queue immediately.`,
         );
         this.isPaused = true;
         return null;
       }
 
       // 7. Transition task state to RUNNING
-      console.log(`[TaskScheduler] Dispatching task ${targetTask.id} ('${targetTask.title}') to model '${selectedModel}'`);
+      console.log(
+        `[TaskScheduler] Dispatching task ${targetTask.id} ('${targetTask.title}') to model '${selectedModel}'`,
+      );
       await this.taskRepo.updateStatus(targetTask.id, "RUNNING");
       await this.taskRepo.updateModel(targetTask.id, selectedModel);
 
       // 8. Dispatch Execution Handler with Per-Model Watchdog Timer
       if (this.executionHandler) {
         const stageStartMs = Date.now();
-        const stageId = await this.stageRepo.recordStageStart(targetTask.id, "generation");
+        const stageId = await this.stageRepo.recordStageStart(
+          targetTask.id,
+          "generation",
+        );
         const modelTimeoutMs = this.resolveModelTimeout(selectedModel);
 
         const abortController = new AbortController();
@@ -445,41 +571,65 @@ export class TaskScheduler {
                 `Task execution exceeded allocated timeout of ${modelTimeoutMs}ms for model '${selectedModel}'`,
                 modelTimeoutMs,
                 targetTask.id,
-                selectedModel
-              )
+                selectedModel,
+              ),
             );
           }, modelTimeoutMs);
         });
-        const progressTimeoutMs = this.noProgressTimeoutMs === undefined
-          ? undefined
-          : Math.min(this.noProgressTimeoutMs, modelTimeoutMs);
-        const progressPromise = this.streamTapManager && progressTimeoutMs !== undefined
-          ? new Promise<never>((_, reject) => {
-              let lastProgressAt = Date.now();
-              let lastActivityAt = this.streamTapManager?.getLastActivityAt(targetTask.id);
-              progressTimer = setInterval(() => {
-                const currentActivityAt = this.streamTapManager?.getLastActivityAt(targetTask.id);
-                if (currentActivityAt !== undefined && currentActivityAt !== lastActivityAt) {
-                  lastActivityAt = currentActivityAt;
-                  lastProgressAt = Date.now();
-                }
-                if (Date.now() - lastProgressAt >= progressTimeoutMs) {
-                  if (progressTimer) clearInterval(progressTimer);
-                  abortController.abort();
-                  reject(new ExecutionTimeoutError(
-                    `Task produced no token or pipeline-stage progress for ${progressTimeoutMs}ms (hard limit ${modelTimeoutMs}ms)`,
-                    progressTimeoutMs,
-                    targetTask.id,
-                    selectedModel
-                  ));
-                }
-              }, Math.min(30_000, Math.max(10, Math.floor(progressTimeoutMs / 4))));
-            })
-          : new Promise<never>(() => {});
+        const progressTimeoutMs =
+          this.noProgressTimeoutMs === undefined
+            ? undefined
+            : Math.min(this.noProgressTimeoutMs, modelTimeoutMs);
+        const progressPromise =
+          this.streamTapManager && progressTimeoutMs !== undefined
+            ? new Promise<never>((_, reject) => {
+                let lastProgressAt = Date.now();
+                let lastActivityAt = this.streamTapManager?.getLastActivityAt(
+                  targetTask.id,
+                );
+                progressTimer = setInterval(
+                  () => {
+                    const currentActivityAt =
+                      this.streamTapManager?.getLastActivityAt(targetTask.id);
+                    if (
+                      currentActivityAt !== undefined &&
+                      currentActivityAt !== lastActivityAt
+                    ) {
+                      lastActivityAt = currentActivityAt;
+                      lastProgressAt = Date.now();
+                    }
+                    if (Date.now() - lastProgressAt >= progressTimeoutMs) {
+                      if (progressTimer) clearInterval(progressTimer);
+                      abortController.abort();
+                      reject(
+                        new ExecutionTimeoutError(
+                          `Task produced no token or pipeline-stage progress for ${progressTimeoutMs}ms (hard limit ${modelTimeoutMs}ms)`,
+                          progressTimeoutMs,
+                          targetTask.id,
+                          selectedModel,
+                        ),
+                      );
+                    }
+                  },
+                  Math.min(
+                    30_000,
+                    Math.max(10, Math.floor(progressTimeoutMs / 4)),
+                  ),
+                );
+              })
+            : new Promise<never>(() => {});
 
         try {
-          const handlerPromise = this.executionHandler(groomed, selectedModel, abortController.signal);
-          const result = await Promise.race([handlerPromise, watchdogPromise, progressPromise]);
+          const handlerPromise = this.executionHandler(
+            groomed,
+            selectedModel,
+            abortController.signal,
+          );
+          const result = await Promise.race([
+            handlerPromise,
+            watchdogPromise,
+            progressPromise,
+          ]);
           if (watchdogTimer) clearTimeout(watchdogTimer);
           if (progressTimer) clearInterval(progressTimer);
 
@@ -490,24 +640,34 @@ export class TaskScheduler {
             await this.taskRepo.updateCommitAttribution(
               targetTask.id,
               result.commitHash,
-              result.baseCommitHash
+              result.baseCommitHash,
             );
           }
 
           if (result.success) {
-            console.log(`[TaskScheduler] Task ${targetTask.id} finished with status COMPLETED in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`);
-            await this.taskRepo.updateStatus(targetTask.id, "COMPLETED", durationMs, actualTps);
+            console.log(
+              `[TaskScheduler] Task ${targetTask.id} finished with status COMPLETED in ${durationMs}ms at ${actualTps.toFixed(1)} tok/s`,
+            );
+            await this.taskRepo.updateStatus(
+              targetTask.id,
+              "COMPLETED",
+              durationMs,
+              actualTps,
+            );
             await this.stageRepo.recordStageCompletion(
               stageId,
               "SUCCESS",
               "Stage completed successfully",
               0,
               0,
-              durationMs
+              durationMs,
             );
           } else {
-            const failureReason = result.failureReason || "Stage failed verification";
-            const newFailureCount = await this.taskRepo.incrementFailure(targetTask.id);
+            const failureReason =
+              result.failureReason || "Stage failed verification";
+            const newFailureCount = await this.taskRepo.incrementFailure(
+              targetTask.id,
+            );
 
             await this.stageRepo.recordStageCompletion(
               stageId,
@@ -515,32 +675,58 @@ export class TaskScheduler {
               failureReason,
               0,
               0,
-              durationMs
+              durationMs,
             );
 
             const effectiveFailureCount =
-              typeof newFailureCount === "number" ? newFailureCount : targetTask.failureCount + 1;
+              typeof newFailureCount === "number"
+                ? newFailureCount
+                : targetTask.failureCount + 1;
 
             if (effectiveFailureCount < this.maxRetries) {
-              console.log(`[TaskScheduler] Task ${targetTask.id} attempt ${effectiveFailureCount}/${this.maxRetries} failed. Requeuing for autonomous remediation.`);
-              await this.taskRepo.updateStatus(targetTask.id, "PENDING", durationMs, actualTps);
+              console.log(
+                `[TaskScheduler] Task ${targetTask.id} attempt ${effectiveFailureCount}/${this.maxRetries} failed. Requeuing for autonomous remediation.`,
+              );
+              await this.taskRepo.updateStatus(
+                targetTask.id,
+                "PENDING",
+                durationMs,
+                actualTps,
+              );
               if (typeof this.taskRepo.updateLogSnippet === "function") {
                 await this.taskRepo.updateLogSnippet(
                   targetTask.id,
-                  `[Attempt ${effectiveFailureCount}/${this.maxRetries} Failed]: ${failureReason}`
+                  `[Attempt ${effectiveFailureCount}/${this.maxRetries} Failed]: ${failureReason}`,
                 );
               }
             } else {
-              console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
-              await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, actualTps);
+              console.log(
+                `[TaskScheduler] Task ${targetTask.id} reached max retries (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`,
+              );
+              await this.taskRepo.updateStatus(
+                targetTask.id,
+                "FAILED",
+                durationMs,
+                actualTps,
+              );
               if (typeof this.taskRepo.updateRehabStatus === "function") {
-                await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+                await this.taskRepo.updateRehabStatus(
+                  targetTask.id,
+                  "PENDING_REHAB",
+                );
               }
               if (this.rehabilitationService) {
                 try {
-                  await this.rehabilitationService.rehabilitateTask(targetTask, failureReason, result.commitHash);
+                  await this.rehabilitationService.rehabilitateTask(
+                    targetTask,
+                    failureReason,
+                    result.commitHash,
+                  );
                 } catch (rehabErr) {
-                  console.error(`[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`, rehabErr);
+                  console.error(
+                    `[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`,
+                    rehabErr,
+                  );
                 }
               }
             }
@@ -552,7 +738,7 @@ export class TaskScheduler {
               selectedModel,
               result.success,
               durationMs,
-              actualTps
+              actualTps,
             );
           } catch {
             // ignore non-critical health recording errors
@@ -563,35 +749,57 @@ export class TaskScheduler {
           abortController.abort();
           const durationMs = Date.now() - stageStartMs;
           const errorMsg = err instanceof Error ? err.message : String(err);
-          const classification = FailureClassifier.classify(err instanceof Error ? err : errorMsg);
-          const isTimeout = classification.category === "TIMEOUT" || err instanceof ExecutionTimeoutError;
+          const classification = FailureClassifier.classify(
+            err instanceof Error ? err : errorMsg,
+          );
+          const isTimeout =
+            classification.category === "TIMEOUT" ||
+            err instanceof ExecutionTimeoutError;
 
           console.error(
             `[TaskScheduler] Task ${targetTask.id} threw error [${classification.category}] after ${durationMs}ms:`,
-            err
+            err,
           );
 
           // Retrieve any measured tokensPerSec from completed stages (e.g. Stage 2 Generation) or live stream buffer
           let recordedTps = 0.0;
           try {
-            const recordedStages = await this.stageRepo.getStagesForTask(targetTask.id);
-            const genStage = recordedStages.find((s) => s.stageName === "generation" && s.tokensReceived > 0);
+            const recordedStages = await this.stageRepo.getStagesForTask(
+              targetTask.id,
+            );
+            const genStage = recordedStages.find(
+              (s) => s.stageName === "generation" && s.tokensReceived > 0,
+            );
             if (genStage && genStage.durationMs > 0) {
-              recordedTps = Number(((genStage.tokensReceived / genStage.durationMs) * 1000).toFixed(2));
+              recordedTps = Number(
+                (
+                  (genStage.tokensReceived / genStage.durationMs) *
+                  1000
+                ).toFixed(2),
+              );
             } else if (this.streamTapManager) {
               const buffer = this.streamTapManager.getBuffer(targetTask.id);
               if (buffer.length > 0 && durationMs > 0) {
-                const estimatedTokens = Math.max(1, Math.round(buffer.length / 3.8));
-                recordedTps = Number(((estimatedTokens / durationMs) * 1000).toFixed(2));
+                const estimatedTokens = Math.max(
+                  1,
+                  Math.round(buffer.length / 3.8),
+                );
+                recordedTps = Number(
+                  ((estimatedTokens / durationMs) * 1000).toFixed(2),
+                );
               }
             }
           } catch {
             // non-fatal
           }
 
-          const newFailureCount = await this.taskRepo.incrementFailure(targetTask.id);
+          const newFailureCount = await this.taskRepo.incrementFailure(
+            targetTask.id,
+          );
           const effectiveFailureCount =
-            typeof newFailureCount === "number" ? newFailureCount : targetTask.failureCount + 1;
+            typeof newFailureCount === "number"
+              ? newFailureCount
+              : targetTask.failureCount + 1;
           const failureReason = isTimeout
             ? `[TIMEOUT]: ${errorMsg}`
             : `[${classification.category}]: ${errorMsg}`;
@@ -602,29 +810,52 @@ export class TaskScheduler {
             failureReason,
             0,
             0,
-            durationMs
+            durationMs,
           );
 
           if (effectiveFailureCount < this.maxRetries) {
-            console.log(`[TaskScheduler] Task ${targetTask.id} caught error attempt ${effectiveFailureCount}/${this.maxRetries}. Requeuing for autonomous retry.`);
-            await this.taskRepo.updateStatus(targetTask.id, "PENDING", durationMs, recordedTps);
+            console.log(
+              `[TaskScheduler] Task ${targetTask.id} caught error attempt ${effectiveFailureCount}/${this.maxRetries}. Requeuing for autonomous retry.`,
+            );
+            await this.taskRepo.updateStatus(
+              targetTask.id,
+              "PENDING",
+              durationMs,
+              recordedTps,
+            );
             if (typeof this.taskRepo.updateLogSnippet === "function") {
               await this.taskRepo.updateLogSnippet(
                 targetTask.id,
-                `[Attempt ${effectiveFailureCount}/${this.maxRetries} Error]: ${failureReason}`
+                `[Attempt ${effectiveFailureCount}/${this.maxRetries} Error]: ${failureReason}`,
               );
             }
           } else {
-            console.log(`[TaskScheduler] Task ${targetTask.id} reached max retries on error (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`);
-            await this.taskRepo.updateStatus(targetTask.id, "FAILED", durationMs, recordedTps);
+            console.log(
+              `[TaskScheduler] Task ${targetTask.id} reached max retries on error (${effectiveFailureCount}/${this.maxRetries}). Marking FAILED and triggering rehabilitation.`,
+            );
+            await this.taskRepo.updateStatus(
+              targetTask.id,
+              "FAILED",
+              durationMs,
+              recordedTps,
+            );
             if (typeof this.taskRepo.updateRehabStatus === "function") {
-              await this.taskRepo.updateRehabStatus(targetTask.id, "PENDING_REHAB");
+              await this.taskRepo.updateRehabStatus(
+                targetTask.id,
+                "PENDING_REHAB",
+              );
             }
             if (this.rehabilitationService) {
               try {
-                await this.rehabilitationService.rehabilitateTask(targetTask, failureReason);
+                await this.rehabilitationService.rehabilitateTask(
+                  targetTask,
+                  failureReason,
+                );
               } catch (rehabErr) {
-                console.error(`[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`, rehabErr);
+                console.error(
+                  `[TaskScheduler] Rehabilitation failed for task ${targetTask.id}:`,
+                  rehabErr,
+                );
               }
             }
           }
@@ -634,7 +865,7 @@ export class TaskScheduler {
               selectedModel,
               false,
               durationMs,
-              recordedTps
+              recordedTps,
             );
           } catch {
             // ignore

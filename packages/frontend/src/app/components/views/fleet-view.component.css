@@ -26,6 +26,31 @@
 
 .header-stat {
   display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-topology-view {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  background: var(--color-brand, #3b82f6);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.btn-topology-view:hover {
+  opacity: 0.9;
+}
+
+.stat-bubble {
+  display: flex;
   flex-direction: column;
   align-items: flex-end;
 }

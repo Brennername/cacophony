@@ -34,7 +34,10 @@ export class DistributedTaskDispatcher {
   private readonly localNodeId: string;
   private readonly healthMonitor: FleetHealthMonitor;
 
-  constructor(healthMonitor: FleetHealthMonitor, localNodeId = "orchestrator-local") {
+  constructor(
+    healthMonitor: FleetHealthMonitor,
+    localNodeId = "orchestrator-local",
+  ) {
     this.healthMonitor = healthMonitor;
     this.localNodeId = localNodeId;
   }
@@ -49,11 +52,13 @@ export class DistributedTaskDispatcher {
       return {
         nodeId: this.localNodeId,
         isLocal: true,
-        reason: "No remote fleet nodes available; falling back to local orchestrator."
+        reason:
+          "No remote fleet nodes available; falling back to local orchestrator.",
       };
     }
 
-    const estimatedVram = req.estimatedVramMb ?? this.estimateModelVram(req.model);
+    const estimatedVram =
+      req.estimatedVramMb ?? this.estimateModelVram(req.model);
 
     // Filter nodes capable of hosting the estimated VRAM
     const candidates = availableNodes.filter((node) => {
@@ -68,7 +73,9 @@ export class DistributedTaskDispatcher {
     if (candidates.length === 0) {
       // Fallback to least busy available node
       const sortedByLoad = [...availableNodes].sort(
-        (a, b) => a.activeTasksCount - b.activeTasksCount || a.temperatureCelsius - b.temperatureCelsius
+        (a, b) =>
+          a.activeTasksCount - b.activeTasksCount ||
+          a.temperatureCelsius - b.temperatureCelsius,
       );
       const fallback = sortedByLoad[0]!;
       return {
@@ -76,8 +83,26 @@ export class DistributedTaskDispatcher {
         isLocal: fallback.nodeId === this.localNodeId,
         targetHost: fallback.ipAddress,
         targetPort: fallback.port,
-        reason: `Insufficient dedicated VRAM for ${estimatedVram}MB; selected node with lowest active load.`
+        reason: `Insufficient dedicated VRAM for ${estimatedVram}MB; selected node with lowest active load.`,
       };
+    }
+
+    // For light orchestration tasks (<= 4096MB VRAM), prefer local node if capable and healthy (T86.2.2)
+    if (estimatedVram <= 4096) {
+      const localCandidate = candidates.find(
+        (n) => n.nodeId === this.localNodeId,
+      );
+      if (
+        localCandidate &&
+        localCandidate.status !== "DEGRADED" &&
+        localCandidate.temperatureCelsius < 75
+      ) {
+        return {
+          nodeId: localCandidate.nodeId,
+          isLocal: true,
+          reason: `Retained light orchestration task locally (${estimatedVram}MB VRAM requirement).`,
+        };
+      }
     }
 
     // Select candidate with highest free VRAM and lowest temperature
@@ -96,21 +121,27 @@ export class DistributedTaskDispatcher {
       isLocal: chosen.nodeId === this.localNodeId,
       targetHost: chosen.ipAddress,
       targetPort: chosen.port,
-      reason: `Routed to node with ${chosen.vramTotalMb - chosen.vramUsedMb}MB free VRAM and ${chosen.temperatureCelsius}C temperature.`
+      reason: `Routed to node with ${chosen.vramTotalMb - chosen.vramUsedMb}MB free VRAM and ${chosen.temperatureCelsius}C temperature.`,
     };
   }
 
   /**
    * Migrates a task away from a node reporting thermal throttling.
    */
-  public migrateTask(taskId: string, currentNodeId: string, model: string): TaskPlacementDecision | null {
+  public migrateTask(
+    taskId: string,
+    currentNodeId: string,
+    model: string,
+  ): TaskPlacementDecision | null {
     const requiredVram = this.estimateModelVram(model);
     const availableNodes = this.healthMonitor
       .getAvailableNodes()
       .filter((n) => {
         if (n.nodeId === currentNodeId || n.status === "DEGRADED") return false;
         const freeVram = Math.max(0, n.vramTotalMb - n.vramUsedMb);
-        return n.gpuType === "CPU_ONLY" ? requiredVram <= 4096 : freeVram >= requiredVram;
+        return n.gpuType === "CPU_ONLY"
+          ? requiredVram <= 4096
+          : freeVram >= requiredVram;
       });
 
     if (availableNodes.length === 0) {
@@ -126,7 +157,7 @@ export class DistributedTaskDispatcher {
       isLocal: destination.nodeId === this.localNodeId,
       targetHost: destination.ipAddress,
       targetPort: destination.port,
-      reason: `Migrated task ${taskId} from throttling node ${currentNodeId} to cooler node ${destination.nodeId} (${destination.temperatureCelsius}C).`
+      reason: `Migrated task ${taskId} from throttling node ${currentNodeId} to cooler node ${destination.nodeId} (${destination.temperatureCelsius}C).`,
     };
   }
 

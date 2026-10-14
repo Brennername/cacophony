@@ -113,6 +113,9 @@ Receives periodic UDP/HTTP worker node health heartbeats (VRAM usage, APU/GPU th
 ### GET `/api/fleet/nodes`
 Lists active and registered fleet worker nodes with availability and load states.
 
+### GET `/api/fleet/events`
+Server-Sent Events (SSE) stream broadcasting real-time cluster fleet events (`fleet_init`, `fleet_heartbeat`, `fleet_node_updated`, `thermal_warning`).
+
 ### GET `/api/history`
 Returns paginated historical task records, stage execution durations, and model win rates.
 

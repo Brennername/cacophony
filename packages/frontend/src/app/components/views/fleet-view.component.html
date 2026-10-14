@@ -7,8 +7,11 @@
       </p>
     </div>
     <div class="header-stat">
-      <span class="stat-num">{{ nodes().length }}</span>
-      <span class="stat-label">Active Cluster Nodes</span>
+      <a routerLink="/fleet/topology" class="btn-topology-view">Topology View</a>
+      <div class="stat-bubble">
+        <span class="stat-num">{{ nodes().length }}</span>
+        <span class="stat-label">Active Nodes</span>
+      </div>
     </div>
   </div>
 
