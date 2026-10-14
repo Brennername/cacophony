@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
 
@@ -6,15 +7,33 @@ export class PGliteDriver implements IDatabaseDriver {
   private pg: PGlite | null = null;
   private readonly dataDir: string | undefined;
   private lockFile: string | null = null;
+  private queue: Promise<unknown> = Promise.resolve();
 
   constructor(dataDir?: string) {
     this.dataDir = dataDir;
+  }
+
+  /**
+   * Serializes async operations to prevent concurrent non-reentrant WASM memory corruption.
+   */
+  private async runSerialized<T>(operation: () => Promise<T>): Promise<T> {
+    const next = this.queue.then(operation, operation);
+    this.queue = next.then(() => {}, () => {});
+    return next;
   }
 
   public async connect(): Promise<void> {
     if (this.pg) return;
     if (this.dataDir) {
       fs.mkdirSync(this.dataDir, { recursive: true });
+      const postmasterPid = path.join(this.dataDir, "postmaster.pid");
+      if (fs.existsSync(postmasterPid)) {
+        try {
+          fs.unlinkSync(postmasterPid);
+        } catch {
+          // ignore
+        }
+      }
     }
     this.lockFile = this.dataDir ? `${this.dataDir}.lock` : null;
     await this.checkLockFile();
@@ -24,8 +43,11 @@ export class PGliteDriver implements IDatabaseDriver {
 
   public async close(): Promise<void> {
     if (!this.pg) return;
-    await this.pg.close();
-    this.pg = null;
+    await this.runSerialized(async () => {
+      if (!this.pg) return;
+      await this.pg.close();
+      this.pg = null;
+    });
     if (this.lockFile && fs.existsSync(this.lockFile)) {
       try {
         fs.unlinkSync(this.lockFile);
@@ -37,8 +59,10 @@ export class PGliteDriver implements IDatabaseDriver {
 
   public async query<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<readonly T[]> {
     this.ensureConnected();
-    const result = await this.pg!.query<T>(sql, params as unknown[]);
-    return result.rows;
+    return this.runSerialized(async () => {
+      const result = await this.pg!.query<T>(sql, params as unknown[]);
+      return result.rows;
+    });
   }
 
   public async queryOne<T = unknown>(sql: string, params: readonly unknown[] = []): Promise<T | null> {
@@ -48,42 +72,48 @@ export class PGliteDriver implements IDatabaseDriver {
 
   public async execute(sql: string, params: readonly unknown[] = []): Promise<{ readonly rowsAffected: number }> {
     this.ensureConnected();
-    const result = await this.pg!.query(sql, params as unknown[]);
-    return { rowsAffected: result.affectedRows ?? 0 };
+    return this.runSerialized(async () => {
+      const result = await this.pg!.query(sql, params as unknown[]);
+      return { rowsAffected: result.affectedRows ?? 0 };
+    });
   }
 
   public async execRaw(sql: string): Promise<void> {
     this.ensureConnected();
-    await this.pg!.exec(sql);
+    return this.runSerialized(async () => {
+      await this.pg!.exec(sql);
+    });
   }
 
   public async transaction<T>(fn: (driver: IDatabaseDriver) => Promise<T>): Promise<T> {
     this.ensureConnected();
-    return this.pg!.transaction(async (tx) => {
-      const txDriver: IDatabaseDriver = {
-        connect: async () => {},
-        close: async () => {},
-        query: async <R = unknown>(sql: string, params: readonly unknown[] = []) => {
-          const res = await tx.query<R>(sql, params as unknown[]);
-          return res.rows;
-        },
-        queryOne: async <R = unknown>(sql: string, params: readonly unknown[] = []) => {
-          const res = await tx.query<R>(sql, params as unknown[]);
-          return res.rows[0] ?? null;
-        },
-        execute: async (sql: string, params: readonly unknown[] = []) => {
-          const res = await tx.query(sql, params as unknown[]);
-          return { rowsAffected: res.affectedRows ?? 0 };
-        },
-        execRaw: async (sql: string) => {
-          await tx.exec(sql);
-        },
-        transaction: async <SubT>(subFn: (driver: IDatabaseDriver) => Promise<SubT>) => {
-          return subFn(txDriver);
-        },
-        getDialect: () => "postgres"
-      };
-      return fn(txDriver);
+    return this.runSerialized(async () => {
+      return this.pg!.transaction(async (tx) => {
+        const txDriver: IDatabaseDriver = {
+          connect: async () => {},
+          close: async () => {},
+          query: async <R = unknown>(sql: string, params: readonly unknown[] = []) => {
+            const res = await tx.query<R>(sql, params as unknown[]);
+            return res.rows;
+          },
+          queryOne: async <R = unknown>(sql: string, params: readonly unknown[] = []) => {
+            const res = await tx.query<R>(sql, params as unknown[]);
+            return res.rows[0] ?? null;
+          },
+          execute: async (sql: string, params: readonly unknown[] = []) => {
+            const res = await tx.query(sql, params as unknown[]);
+            return { rowsAffected: res.affectedRows ?? 0 };
+          },
+          execRaw: async (sql: string) => {
+            await tx.exec(sql);
+          },
+          transaction: async <SubT>(subFn: (driver: IDatabaseDriver) => Promise<SubT>) => {
+            return subFn(txDriver);
+          },
+          getDialect: () => "postgres"
+        };
+        return fn(txDriver);
+      });
     });
   }
 
@@ -101,37 +131,48 @@ export class PGliteDriver implements IDatabaseDriver {
     if (!this.lockFile) return;
     if (fs.existsSync(this.lockFile)) {
       const lockFileContent = fs.readFileSync(this.lockFile, "utf-8").trim();
-      const currentTimestamp = Date.now();
-      const lockFileTimestamp = parseInt(lockFileContent, 10);
+      const parts = lockFileContent.split(":");
+      const pid = parts.length === 2 ? parseInt(parts[0] || "", 10) : NaN;
+      const lockTimestamp = parts.length === 2 ? parseInt(parts[1] || "", 10) : parseInt(parts[0] || "", 10);
 
-      // If lockfile timestamp is NaN or older than 15 seconds, consider it stale from prior run/crash
-      if (isNaN(lockFileTimestamp) || (currentTimestamp - lockFileTimestamp > 15 * 1000)) {
+      let isStale = false;
+      if (!isNaN(pid) && pid > 0) {
+        try {
+          process.kill(pid, 0);
+          isStale = false;
+        } catch (err: unknown) {
+          if ((err as NodeJS.ErrnoException).code === "ESRCH") {
+            isStale = true;
+          }
+        }
+      }
+
+      if (isNaN(lockTimestamp) || (Date.now() - lockTimestamp > 15 * 1000)) {
+        isStale = true;
+      }
+
+      if (isStale) {
         try {
           fs.unlinkSync(this.lockFile);
         } catch {
           // ignore
         }
       } else {
-        // Sleep briefly and check one more time before failing
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        if (fs.existsSync(this.lockFile)) {
-          const recheck = parseInt(fs.readFileSync(this.lockFile, "utf-8").trim(), 10);
-          if (isNaN(recheck) || (Date.now() - recheck > 15 * 1000)) {
-            try {
-              fs.unlinkSync(this.lockFile);
-            } catch {
-              // ignore
-            }
-          } else {
-            throw new Error("Database connection is already in use by another process.");
-          }
-        }
+        throw new Error("Database connection is already in use by another process.");
       }
     }
 
-    // Create a new lock file with the current timestamp
     try {
-      fs.writeFileSync(this.lockFile, `${Date.now()}`);
+      fs.writeFileSync(this.lockFile, `${process.pid}:${Date.now()}`);
+      process.once("exit", () => {
+        if (this.lockFile && fs.existsSync(this.lockFile)) {
+          try {
+            fs.unlinkSync(this.lockFile);
+          } catch {
+            // ignore
+          }
+        }
+      });
     } catch {
       // ignore
     }

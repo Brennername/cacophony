@@ -129,11 +129,13 @@ export class OllamaProvider implements IInferenceProvider {
       readonly total_duration?: number;
     };
 
-    let rawContent = "";
-    if (data.message?.thinking) {
-      rawContent = `\n`;
+    // If thinking exists (e.g. deepseek-r1 or qwen reasoning output), enclose in <think> tags so downstream demuxers and parsers preserve reasoning
+    const thinking = data.message?.thinking?.trim();
+    const content = data.message?.content?.trim() || "";
+    let rawContent = content;
+    if (thinking) {
+      rawContent = `<think>\n${thinking}\n</think>\n${content}`;
     }
-    rawContent += data.message?.content || "";
 
     const latencyMs = Math.max(1, Date.now() - startMs);
     const tokensPrompt = data.prompt_eval_count ?? 0;
@@ -178,7 +180,6 @@ export class OllamaProvider implements IInferenceProvider {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       ...(request.signal ? { signal: request.signal } : {}),
-
       dispatcher: this.dispatcher as any,
       body: JSON.stringify(body)
     });
@@ -191,6 +192,11 @@ export class OllamaProvider implements IInferenceProvider {
     const reader = res.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let accumulatedContent = "";
+    let tokensPrompt = 0;
+    let tokensCompletion = 0;
+
+    let buffer = "";
+    let inThinkingChunkMode = false;
 
     while (true) {
       if (request.signal?.aborted) {
@@ -200,13 +206,55 @@ export class OllamaProvider implements IInferenceProvider {
       const { done, value } = await reader.read();
       if (done) break;
 
-      accumulatedContent += decoder.decode(value, { stream: true });
-      onChunk(accumulatedContent);
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line) as {
+            readonly message?: { readonly content?: string; readonly thinking?: string };
+            readonly prompt_eval_count?: number;
+            readonly eval_count?: number;
+            readonly done?: boolean;
+          };
+
+          const thinking = parsed.message?.thinking;
+          const content = parsed.message?.content;
+
+          if (thinking) {
+            if (!inThinkingChunkMode) {
+              inThinkingChunkMode = true;
+              accumulatedContent += "<think>";
+              onChunk("<think>");
+            }
+            accumulatedContent += thinking;
+            onChunk(thinking);
+          } else if (content) {
+            if (inThinkingChunkMode) {
+              inThinkingChunkMode = false;
+              accumulatedContent += "</think>";
+              onChunk("</think>");
+            }
+            accumulatedContent += content;
+            onChunk(content);
+          }
+
+          if (parsed.prompt_eval_count) tokensPrompt = parsed.prompt_eval_count;
+          if (parsed.eval_count) tokensCompletion = parsed.eval_count;
+        } catch {
+          // Ignore JSON chunk parse error on partial lines
+        }
+      }
+    }
+
+    if (inThinkingChunkMode) {
+      accumulatedContent += "</think>";
+      onChunk("</think>");
     }
 
     const latencyMs = Math.max(1, Date.now() - startMs);
-    const tokensPrompt = 0;
-    const tokensCompletion = 0;
     const totalTokens = tokensPrompt + tokensCompletion;
     const tokensPerSec = tokensCompletion > 0 ? Number(((tokensCompletion / latencyMs) * 1000).toFixed(2)) : 0;
 
@@ -220,4 +268,29 @@ export class OllamaProvider implements IInferenceProvider {
       tokensPerSec
     };
   }
+
+  /**
+   * Unloads the specified model from VRAM by dispatching an empty generate request with keep_alive: 0.
+   * Fulfills task T68.4.1.
+   *
+   * @param modelName Name of the model to unload from memory.
+   */
+  public async unloadModel(modelName: string): Promise<void> {
+    const url = `${this.baseUrl}/api/generate`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      dispatcher: this.dispatcher as any,
+      body: JSON.stringify({
+        model: modelName,
+        keep_alive: 0
+      })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to unload model '${modelName}' (HTTP ${res.status}): ${errText}`);
+    }
+  }
 }
+

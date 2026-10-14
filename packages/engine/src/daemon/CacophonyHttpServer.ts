@@ -1921,13 +1921,18 @@ export class CacophonyHttpServer {
 
     if (url.pathname === "/api/database/maintenance" && req.method === "POST") {
       const maintenance = this.daemon.getMaintenanceService();
-      const compaction = await maintenance.runVacuumAndCompaction();
-      const partition = await maintenance.partitionAndArchiveOldTelemetry();
+      const isFull = url.searchParams.get("full") === "true";
+      const retentionDaysParam = url.searchParams.get("retentionDays");
+      const retentionDays = retentionDaysParam ? parseInt(retentionDaysParam, 10) : undefined;
+
+      const compaction = await maintenance.runVacuumAndCompaction({ full: isFull });
+      const partition = await maintenance.partitionAndArchiveOldTelemetry(retentionDays);
       const metrics = await maintenance.getStorageMetrics();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ compaction, partition, metrics }));
       return;
     }
+
 
     // 4i. REST API: Provider Quotas & Circuit Breaker Health
     if (url.pathname === "/api/config/quotas" && req.method === "GET") {

@@ -21,6 +21,8 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     height: process.stdout.rows || 36
   });
 
+  let cleanupAndExit: () => void = () => {};
+
   // Pre-register standard built-in command palette actions
   app.registerCommand({
     id: "toggle_drawer",
@@ -152,41 +154,45 @@ export async function runInteractiveTui(socketPath = DEFAULT_SOCKET_PATH): Promi
     process.stdout.write("\x1b[H" + rendered);
   };
 
-  const cleanupAndExit = () => {
-    clearInterval(telemetryInterval);
-    if (statusInterval) clearInterval(statusInterval);
-    process.stdin.setRawMode(false);
-    process.stdin.pause();
-    // Restore cursor and clear
-    process.stdout.write("\x1b[?25h\x1b[2J\x1b[H");
-    console.log("Cacophony TUI closed.");
-    process.exit(0);
-  };
+  return new Promise<void>((resolve) => {
+    cleanupAndExit = () => {
+      clearInterval(telemetryInterval);
+      if (statusInterval) clearInterval(statusInterval);
+      if (process.stdin.isTTY) {
+        process.stdin.setRawMode(false);
+      }
+      process.stdin.pause();
+      // Restore cursor and clear
+      process.stdout.write("\x1b[?25h\x1b[2J\x1b[H");
+      console.log("Cacophony TUI closed.");
+      resolve();
+    };
 
-  // Resize handler
-  process.stdout.on("resize", () => {
-    app.resize(process.stdout.columns || 120, process.stdout.rows || 36);
+    // Resize handler
+    process.stdout.on("resize", () => {
+      app.resize(process.stdout.columns || 120, process.stdout.rows || 36);
+      render();
+    });
+
+    // Keypress listener
+    process.stdin.on("keypress", (_str: string, key: readline.Key) => {
+      if (!key) return;
+
+      if (key.ctrl && key.name === "c") {
+        cleanupAndExit();
+        return;
+      }
+
+      if (!app.isCommandPaletteOpen() && key.name === "q" && !key.ctrl) {
+        cleanupAndExit();
+        return;
+      }
+
+      app.handleKeypress(key.name || "", key.ctrl || false);
+      render();
+    });
+
+    // Initial draw
     render();
   });
-
-  // Keypress listener
-  process.stdin.on("keypress", (_str: string, key: readline.Key) => {
-    if (!key) return;
-
-    if (key.ctrl && key.name === "c") {
-      cleanupAndExit();
-      return;
-    }
-
-    if (!app.isCommandPaletteOpen() && key.name === "q" && !key.ctrl) {
-      cleanupAndExit();
-      return;
-    }
-
-    app.handleKeypress(key.name || "", key.ctrl || false);
-    render();
-  });
-
-  // Initial draw
-  render();
 }

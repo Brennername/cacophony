@@ -559,7 +559,7 @@
   - [ ] T68.3.4: Write unit tests demonstrating that tasks matching the currently loaded model are dispatched first while preventing starvation. [File: packages/engine/src/tests/warm_model_affinity.test.ts] [Test: npm test -- packages/engine/src/tests/warm_model_affinity.test.ts]
 
 ### T68.4: Explicit Model Unload Controller (keep_alive: 0) on Architecture Shift
-  - [ ] T68.4.1: Implement unloadModel(modelName: string) in OllamaProvider issuing POST /api/generate with { model: modelName, keep_alive: 0 }. [File: packages/engine/src/inference/OllamaProvider.ts] [Method: unloadModel] [Test: npm test -- packages/engine/src/tests/ollama_provider.test.ts]
+  - [x] T68.4.1: Implement unloadModel(modelName: string) in OllamaProvider issuing POST /api/generate with { model: modelName, keep_alive: 0 }. [File: packages/engine/src/inference/OllamaProvider.ts] [Method: unloadModel] [Test: npm test -- packages/engine/src/tests/ollama_provider.test.ts]
   - [ ] T68.4.2: Trigger explicit model unload before loading a disparate model architecture when free VRAM headroom is insufficient for co-residency. [File: packages/engine/src/scheduler/TaskScheduler.ts] [Method: prepareModelExecution] [Test: npm test -- packages/engine/src/tests/scheduler_model_unload.test.ts]
   - [ ] T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GPU memory before launching next inference request. [File: packages/engine/src/inference/OllamaProvider.ts] [Method: waitForModelEviction] [Test: npm test -- packages/engine/src/tests/ollama_provider.test.ts]
   - [ ] T68.4.4: Write unit tests verifying unloadModel sends keep_alive: 0 and waits for memory reclamation. [File: packages/engine/src/tests/model_unload_flow.test.ts] [Test: npm test -- packages/engine/src/tests/model_unload_flow.test.ts]
@@ -1125,6 +1125,1806 @@
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t65.6.3.1 Rehabilitation [2026-10-14T00:03:49.575Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen rea (`taskcade-t65.6.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.6.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen rea [Role: type_specialist] [Files: packages/frontend/src/app/components/views/testing-view.component.ts]
+  - [ ] `taskcade-t65.6.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen rea [Role: implementer] [Files: packages/frontend/src/app/components/views/testing-view.component.ts]
+
+
+### Task taskcade-t65.6.3.2 Rehabilitation [2026-10-13T22:53:55.515Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen rea (`taskcade-t65.6.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.6.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen rea [Role: type_specialist] [Files: packages/frontend/src/app/components/views/testing-view.component.ts]
+  - [ ] `taskcade-t65.6.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.6.3: Add ARIA live regions (aria-live="polite") to test status updates for screen rea [Role: implementer] [Files: packages/frontend/src/app/components/views/testing-view.component.ts]
+
+
+### Task taskcade-t65.6.1.2 Rehabilitation [2026-10-13T22:48:14.929Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 backg (`taskcade-t65.6.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.6.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 backg [Role: type_specialist] [Files: packages/frontend/src/styles.css]
+  - [ ] `taskcade-t65.6.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 backg [Role: implementer] [Files: packages/frontend/src/styles.css]
+
+
+### Task taskcade-t65.6.1.1 Rehabilitation [2026-10-13T22:23:04.276Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 backg (`taskcade-t65.6.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.6.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 backg [Role: type_specialist] [Files: packages/frontend/src/styles.css]
+  - [ ] `taskcade-t65.6.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.6.1: Define CSS custom properties for Testing panel in OLED Pure Black (#000000 backg [Role: implementer] [Files: packages/frontend/src/styles.css]
+
+
+### Task taskcade-t65.6.4.2 Rehabilitation [2026-10-13T22:10:03.283Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background (`taskcade-t65.6.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.6.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background [Role: type_specialist] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+  - [ ] `taskcade-t65.6.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background [Role: implementer] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+
+
+### Task taskcade-t65.6.4.1 Rehabilitation [2026-10-13T22:06:11.576Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background (`taskcade-t65.6.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.6.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background [Role: type_specialist] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+  - [ ] `taskcade-t65.6.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.6.4: Write unit tests verifying theme CSS classes apply correct foreground/background [Role: implementer] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+
+
+### Task taskcade-t87.1.2.1 Rehabilitation [2026-10-13T21:53:30.087Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g.,  (`taskcade-t87.1.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t87.1.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g.,  [Role: type_specialist] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+  - [ ] `taskcade-t87.1.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g.,  [Role: implementer] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+
+
+### Task taskcade-t87.1.2.2 Rehabilitation [2026-10-13T21:08:40.249Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g.,  (`taskcade-t87.1.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t87.1.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g.,  [Role: type_specialist] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+  - [ ] `taskcade-t87.1.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T87.1.2: Add `predictNextModel()` logic to `TaskScheduler` using queue heuristics (e.g.,  [Role: implementer] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+
+
+### Task taskcade-t68.6.1.2 Rehabilitation [2026-10-13T19:59:14.239Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T68.6.1: Implement OomPredictiveGuard in packages/engine/src/hardware/OomPredictiveGuard. (`taskcade-t68.6.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.6.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T68.6.1: Implement OomPredictiveGuard in packages/engine/src/hardware/OomPredictiveGuard. [Role: type_specialist] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+  - [ ] `taskcade-t68.6.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T68.6.1: Implement OomPredictiveGuard in packages/engine/src/hardware/OomPredictiveGuard. [Role: implementer] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+
+
+### Task taskcade-t68.6.1.1 Rehabilitation [2026-10-13T19:52:11.467Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T68.6.1: Implement OomPredictiveGuard in packages/engine/src/hardware/OomPredictiveGuard. (`taskcade-t68.6.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.6.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T68.6.1: Implement OomPredictiveGuard in packages/engine/src/hardware/OomPredictiveGuard. [Role: type_specialist] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+  - [ ] `taskcade-t68.6.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T68.6.1: Implement OomPredictiveGuard in packages/engine/src/hardware/OomPredictiveGuard. [Role: implementer] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+
+
+### Task taskcade-t66.1.3.2 Rehabilitation [2026-10-13T19:44:24.550Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health pr (`taskcade-t66.1.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.1.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health pr [Role: type_specialist] [Files: packages/db/src/migrations/011_task_history_indexes.ts]
+  - [ ] `taskcade-t66.1.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health pr [Role: implementer] [Files: packages/db/src/migrations/011_task_history_indexes.ts]
+
+
+### Task taskcade-t66.1.3.1 Rehabilitation [2026-10-13T19:33:07.336Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health pr (`taskcade-t66.1.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.1.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health pr [Role: type_specialist] [Files: packages/db/src/migrations/011_task_history_indexes.ts]
+  - [ ] `taskcade-t66.1.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T66.1.3: Create index on model_health_profiles(model_id, status) ensuring rapid health pr [Role: implementer] [Files: packages/db/src/migrations/011_task_history_indexes.ts]
+
+
+### Task taskcade-t72.3.2.2 Rehabilitation [2026-10-13T19:22:32.105Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T72.3.2: Extend POST /api/tasks REST endpoint to validate and accept full metadataHints o (`taskcade-t72.3.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.3.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T72.3.2: Extend POST /api/tasks REST endpoint to validate and accept full metadataHints o [Role: type_specialist] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+  - [ ] `taskcade-t72.3.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T72.3.2: Extend POST /api/tasks REST endpoint to validate and accept full metadataHints o [Role: implementer] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+
+
+### Task taskcade-t72.3.2.1 Rehabilitation [2026-10-13T19:14:00.124Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T72.3.2: Extend POST /api/tasks REST endpoint to validate and accept full metadataHints o (`taskcade-t72.3.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.3.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T72.3.2: Extend POST /api/tasks REST endpoint to validate and accept full metadataHints o [Role: type_specialist] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+  - [ ] `taskcade-t72.3.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T72.3.2: Extend POST /api/tasks REST endpoint to validate and accept full metadataHints o [Role: implementer] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+
+
+### Task taskcade-t86.3.2.1 Rehabilitation [2026-10-13T19:09:50.281Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET (`taskcade-t86.3.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.3.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET [Role: type_specialist] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+  - [ ] `taskcade-t86.3.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET [Role: implementer] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+
+
+### Task taskcade-t86.3.2.2 Rehabilitation [2026-10-13T18:57:29.660Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET (`taskcade-t86.3.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.3.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET [Role: type_specialist] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+  - [ ] `taskcade-t86.3.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T86.3.2: Implement real-time SSE bindings connecting `FleetTopologyViewComponent` to `GET [Role: implementer] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+
+
+### Task taskcade-t68.1.3.2 Rehabilitation [2026-10-13T18:52:45.314Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T68.1.3: Add dynamic KV-cache memory calculation scaling VRAM requirements by configured  (`taskcade-t68.1.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.1.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T68.1.3: Add dynamic KV-cache memory calculation scaling VRAM requirements by configured  [Role: type_specialist] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [ ] `taskcade-t68.1.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T68.1.3: Add dynamic KV-cache memory calculation scaling VRAM requirements by configured  [Role: implementer] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+
+
+### Task taskcade-t68.1.3.1 Rehabilitation [2026-10-13T18:33:33.087Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T68.1.3: Add dynamic KV-cache memory calculation scaling VRAM requirements by configured  (`taskcade-t68.1.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.1.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T68.1.3: Add dynamic KV-cache memory calculation scaling VRAM requirements by configured  [Role: type_specialist] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [ ] `taskcade-t68.1.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T68.1.3: Add dynamic KV-cache memory calculation scaling VRAM requirements by configured  [Role: implementer] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+
+
+### Task taskcade-t68.1.1.2 Rehabilitation [2026-10-13T18:28:16.441Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T68.1.1: Create ModelVramCatalog in packages/engine/src/hardware/ModelVramCatalog.ts defi (`taskcade-t68.1.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.1.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T68.1.1: Create ModelVramCatalog in packages/engine/src/hardware/ModelVramCatalog.ts defi [Role: type_specialist] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [ ] `taskcade-t68.1.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T68.1.1: Create ModelVramCatalog in packages/engine/src/hardware/ModelVramCatalog.ts defi [Role: implementer] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+
+
+### Task taskcade-t68.1.1.1 Rehabilitation [2026-10-13T18:20:39.561Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T68.1.1: Create ModelVramCatalog in packages/engine/src/hardware/ModelVramCatalog.ts defi (`taskcade-t68.1.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.1.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T68.1.1: Create ModelVramCatalog in packages/engine/src/hardware/ModelVramCatalog.ts defi [Role: type_specialist] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [ ] `taskcade-t68.1.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T68.1.1: Create ModelVramCatalog in packages/engine/src/hardware/ModelVramCatalog.ts defi [Role: implementer] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+
+
+### Task taskcade-t70.2.2.1 Rehabilitation [2026-10-13T18:13:13.962Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript (`taskcade-t70.2.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.2.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript [Role: type_specialist] [Files: packages/engine/src/generators/SignatureHarvester.ts]
+  - [ ] `taskcade-t70.2.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript [Role: implementer] [Files: packages/engine/src/generators/SignatureHarvester.ts]
+
+
+### Task taskcade-t70.2.2.2 Rehabilitation [2026-10-13T18:08:22.154Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript (`taskcade-t70.2.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.2.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript [Role: type_specialist] [Files: packages/engine/src/generators/SignatureHarvester.ts]
+  - [ ] `taskcade-t70.2.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript [Role: implementer] [Files: packages/engine/src/generators/SignatureHarvester.ts]
+
+
+### Task taskcade-t86.3.3.1 Rehabilitation [2026-10-13T17:55:29.002Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T86.3.3: Write Angular unit and integration tests verifying topology reflow on node conne (`taskcade-t86.3.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.3.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T86.3.3: Write Angular unit and integration tests verifying topology reflow on node conne [Role: type_specialist] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.spec.ts]
+  - [ ] `taskcade-t86.3.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T86.3.3: Write Angular unit and integration tests verifying topology reflow on node conne [Role: implementer] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.spec.ts]
+
+
+### Task taskcade-t86.3.3.2 Rehabilitation [2026-10-13T17:48:33.151Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T86.3.3: Write Angular unit and integration tests verifying topology reflow on node conne (`taskcade-t86.3.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.3.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T86.3.3: Write Angular unit and integration tests verifying topology reflow on node conne [Role: type_specialist] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.spec.ts]
+  - [ ] `taskcade-t86.3.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T86.3.3: Write Angular unit and integration tests verifying topology reflow on node conne [Role: implementer] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.spec.ts]
+
+
+### Task taskcade-t71.2.1.2 Rehabilitation [2026-10-13T17:39:09.262Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, (`taskcade-t71.2.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t71.2.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, [Role: type_specialist] [Files: packages/engine/src/hardware/ComputeHardwareProfile.ts]
+  - [ ] `taskcade-t71.2.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, [Role: implementer] [Files: packages/engine/src/hardware/ComputeHardwareProfile.ts]
+
+
+### Task taskcade-t71.2.1.1 Rehabilitation [2026-10-13T17:24:13.186Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, (`taskcade-t71.2.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t71.2.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, [Role: type_specialist] [Files: packages/engine/src/hardware/ComputeHardwareProfile.ts]
+  - [ ] `taskcade-t71.2.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T71.2.1: Implement abstract ComputeHardwareProfile interface accommodating discrete GPUs, [Role: implementer] [Files: packages/engine/src/hardware/ComputeHardwareProfile.ts]
+
+
+### Task taskcade-t65.4.4.1 Rehabilitation [2026-10-13T17:14:05.425Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly  (`taskcade-t65.4.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.4.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly  [Role: type_specialist] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts]
+  - [ ] `taskcade-t65.4.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly  [Role: implementer] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts]
+
+
+### Task taskcade-t65.4.4.2 Rehabilitation [2026-10-13T17:10:56.542Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly  (`taskcade-t65.4.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.4.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly  [Role: type_specialist] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts]
+  - [ ] `taskcade-t65.4.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.4.4: Write unit tests verifying ProcessDrawerComponent expands and collapses cleanly  [Role: implementer] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts]
+
+
+### Task taskcade-t74.7.4.1 Rehabilitation [2026-10-13T17:08:24.239Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T74.7.4: Write unit tests verifying backup creation, retention pruning, and error handlin (`taskcade-t74.7.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.7.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T74.7.4: Write unit tests verifying backup creation, retention pruning, and error handlin [Role: type_specialist] [Files: packages/db/src/tests/backup_service.test.ts]
+  - [ ] `taskcade-t74.7.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T74.7.4: Write unit tests verifying backup creation, retention pruning, and error handlin [Role: implementer] [Files: packages/db/src/tests/backup_service.test.ts]
+
+
+### Task taskcade-t74.7.4.2 Rehabilitation [2026-10-13T17:07:04.067Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T74.7.4: Write unit tests verifying backup creation, retention pruning, and error handlin (`taskcade-t74.7.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.7.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T74.7.4: Write unit tests verifying backup creation, retention pruning, and error handlin [Role: type_specialist] [Files: packages/db/src/tests/backup_service.test.ts]
+  - [ ] `taskcade-t74.7.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T74.7.4: Write unit tests verifying backup creation, retention pruning, and error handlin [Role: implementer] [Files: packages/db/src/tests/backup_service.test.ts]
+
+
+### Task taskcade-t72.1.1.2 Rehabilitation [2026-10-13T16:36:21.008Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T72.1.1: Extend TaskcadeSeedLoader markdown parser to extract inline bracket metadata ann (`taskcade-t72.1.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.1.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T72.1.1: Extend TaskcadeSeedLoader markdown parser to extract inline bracket metadata ann [Role: type_specialist] [Files: packages/engine/src/scheduler/TaskcadeSeedLoader.ts]
+  - [ ] `taskcade-t72.1.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T72.1.1: Extend TaskcadeSeedLoader markdown parser to extract inline bracket metadata ann [Role: implementer] [Files: packages/engine/src/scheduler/TaskcadeSeedLoader.ts]
+
+
+### Task taskcade-t72.1.1.1 Rehabilitation [2026-10-13T16:10:05.141Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T72.1.1: Extend TaskcadeSeedLoader markdown parser to extract inline bracket metadata ann (`taskcade-t72.1.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.1.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T72.1.1: Extend TaskcadeSeedLoader markdown parser to extract inline bracket metadata ann [Role: type_specialist] [Files: packages/engine/src/scheduler/TaskcadeSeedLoader.ts]
+  - [ ] `taskcade-t72.1.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T72.1.1: Extend TaskcadeSeedLoader markdown parser to extract inline bracket metadata ann [Role: implementer] [Files: packages/engine/src/scheduler/TaskcadeSeedLoader.ts]
+
+
+### Task taskcade-t68.5.3.2 Rehabilitation [2026-10-13T16:01:45.891Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T68.5.3: Balance concurrent models across discrete GPU and APU when dual-accelerator hard (`taskcade-t68.5.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.5.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T68.5.3: Balance concurrent models across discrete GPU and APU when dual-accelerator hard [Role: type_specialist] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+  - [ ] `taskcade-t68.5.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T68.5.3: Balance concurrent models across discrete GPU and APU when dual-accelerator hard [Role: implementer] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+
+
+### Task taskcade-t68.5.3.1 Rehabilitation [2026-10-13T15:53:44.280Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T68.5.3: Balance concurrent models across discrete GPU and APU when dual-accelerator hard (`taskcade-t68.5.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.5.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T68.5.3: Balance concurrent models across discrete GPU and APU when dual-accelerator hard [Role: type_specialist] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+  - [ ] `taskcade-t68.5.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T68.5.3: Balance concurrent models across discrete GPU and APU when dual-accelerator hard [Role: implementer] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+
+
+### Task taskcade-t74.4.4.2 Rehabilitation [2026-10-13T15:46:21.035Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T74.4.4: Add code coverage reporting with minimum threshold gate (e.g. 40% initial, incre (`taskcade-t74.4.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.4.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T74.4.4: Add code coverage reporting with minimum threshold gate (e.g. 40% initial, incre [Role: type_specialist] [Files: .github/workflows/ci.yml]
+  - [ ] `taskcade-t74.4.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T74.4.4: Add code coverage reporting with minimum threshold gate (e.g. 40% initial, incre [Role: implementer] [Files: .github/workflows/ci.yml]
+
+
+### Task taskcade-t74.4.4.1 Rehabilitation [2026-10-13T15:40:48.581Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T74.4.4: Add code coverage reporting with minimum threshold gate (e.g. 40% initial, incre (`taskcade-t74.4.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.4.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T74.4.4: Add code coverage reporting with minimum threshold gate (e.g. 40% initial, incre [Role: type_specialist] [Files: .github/workflows/ci.yml]
+  - [ ] `taskcade-t74.4.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T74.4.4: Add code coverage reporting with minimum threshold gate (e.g. 40% initial, incre [Role: implementer] [Files: .github/workflows/ci.yml]
+
+
+### Task taskcade-t64.3.1.1 Rehabilitation [2026-10-13T15:14:16.370Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interactin (`taskcade-t64.3.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.3.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interactin [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.3.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interactin [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t64.3.1.2 Rehabilitation [2026-10-13T15:06:57.468Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interactin (`taskcade-t64.3.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.3.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interactin [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.3.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.3.1: Implement GiteaPrClient in packages/engine/src/gitea/GiteaPrClient.ts interactin [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t86.2.2.2 Rehabilitation [2026-10-13T14:40:08.873Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T86.2.2: Refactor `TaskScheduler` to leverage `DistributedTaskDispatcher` for offloading  (`taskcade-t86.2.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.2.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T86.2.2: Refactor `TaskScheduler` to leverage `DistributedTaskDispatcher` for offloading  [Role: type_specialist] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+  - [ ] `taskcade-t86.2.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T86.2.2: Refactor `TaskScheduler` to leverage `DistributedTaskDispatcher` for offloading  [Role: implementer] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+
+
+### Task taskcade-t66.5.4.1 Rehabilitation [2026-10-13T13:39:02.400Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T66.5.4: Write CLI integration tests verifying history reset and prune subcommands intera (`taskcade-t66.5.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.5.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T66.5.4: Write CLI integration tests verifying history reset and prune subcommands intera [Role: type_specialist] [Files: packages/engine/src/tests/cli_history.test.ts]
+  - [ ] `taskcade-t66.5.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T66.5.4: Write CLI integration tests verifying history reset and prune subcommands intera [Role: implementer] [Files: packages/engine/src/tests/cli_history.test.ts]
+
+
+### Task taskcade-t66.5.4.2 Rehabilitation [2026-10-13T13:29:27.352Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T66.5.4: Write CLI integration tests verifying history reset and prune subcommands intera (`taskcade-t66.5.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.5.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T66.5.4: Write CLI integration tests verifying history reset and prune subcommands intera [Role: type_specialist] [Files: packages/engine/src/tests/cli_history.test.ts]
+  - [ ] `taskcade-t66.5.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T66.5.4: Write CLI integration tests verifying history reset and prune subcommands intera [Role: implementer] [Files: packages/engine/src/tests/cli_history.test.ts]
+
+
+### Task taskcade-t86.2.3.2 Rehabilitation [2026-10-13T13:20:03.689Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully (`taskcade-t86.2.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.2.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully [Role: type_specialist] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+  - [ ] `taskcade-t86.2.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully [Role: implementer] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+
+
+### Task taskcade-t86.2.3.1 Rehabilitation [2026-10-13T13:15:35.299Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully (`taskcade-t86.2.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.2.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully [Role: type_specialist] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+  - [ ] `taskcade-t86.2.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T86.2.3: Integrate task migration logic: if a node reports THERMAL_THROTTLING, gracefully [Role: implementer] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+
+
+### Task taskcade-t86.3.1.2 Rehabilitation [2026-10-13T12:58:04.502Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/vie (`taskcade-t86.3.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.3.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/vie [Role: type_specialist] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+  - [ ] `taskcade-t86.3.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/vie [Role: implementer] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+
+
+### Task taskcade-t86.3.1.1 Rehabilitation [2026-10-13T12:48:51.851Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/vie (`taskcade-t86.3.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.3.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/vie [Role: type_specialist] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+  - [ ] `taskcade-t86.3.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T86.3.1: Create `FleetTopologyViewComponent` in `packages/frontend/src/app/components/vie [Role: implementer] [Files: packages/frontend/src/app/components/views/fleet-topology-view.component.ts]
+
+
+### Task taskcade-t64.2.4.2 Rehabilitation [2026-10-13T12:39:57.358Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.2.4: Write unit tests verifying commit message adheres to conventional commits standa (`taskcade-t64.2.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.2.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.2.4: Write unit tests verifying commit message adheres to conventional commits standa [Role: type_specialist] [Files: packages/engine/src/tests/commit_generator.test.ts]
+  - [ ] `taskcade-t64.2.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.2.4: Write unit tests verifying commit message adheres to conventional commits standa [Role: implementer] [Files: packages/engine/src/tests/commit_generator.test.ts]
+
+
+### Task taskcade-t64.2.4.1 Rehabilitation [2026-10-13T12:36:25.987Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.2.4: Write unit tests verifying commit message adheres to conventional commits standa (`taskcade-t64.2.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.2.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.2.4: Write unit tests verifying commit message adheres to conventional commits standa [Role: type_specialist] [Files: packages/engine/src/tests/commit_generator.test.ts]
+  - [ ] `taskcade-t64.2.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.2.4: Write unit tests verifying commit message adheres to conventional commits standa [Role: implementer] [Files: packages/engine/src/tests/commit_generator.test.ts]
+
+
+### Task taskcade-t70.3.4.1 Rehabilitation [2026-10-13T12:20:18.194Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T70.3.4: Write integration tests verifying end-to-end task execution with schematic code  (`taskcade-t70.3.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.3.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.3.4: Write integration tests verifying end-to-end task execution with schematic code  [Role: type_specialist] [Files: packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+  - [ ] `taskcade-t70.3.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.3.4: Write integration tests verifying end-to-end task execution with schematic code  [Role: implementer] [Files: packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+
+
+### Task taskcade-t70.3.4.2 Rehabilitation [2026-10-13T12:17:25.153Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T70.3.4: Write integration tests verifying end-to-end task execution with schematic code  (`taskcade-t70.3.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.3.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T70.3.4: Write integration tests verifying end-to-end task execution with schematic code  [Role: type_specialist] [Files: packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+  - [ ] `taskcade-t70.3.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T70.3.4: Write integration tests verifying end-to-end task execution with schematic code  [Role: implementer] [Files: packages/engine/src/tests/schematic_pipeline_integration.test.ts]
+
+
+### Task taskcade-t70.2.1.2 Rehabilitation [2026-10-13T11:50:38.244Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  (`taskcade-t70.2.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.2.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [ ] `taskcade-t70.2.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+
+
+### Task taskcade-t70.2.1.1 Rehabilitation [2026-10-13T11:30:23.499Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  (`taskcade-t70.2.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.2.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [ ] `taskcade-t70.2.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+
+
+### Task taskcade-t68.5.4.2 Rehabilitation [2026-10-13T11:11:06.510Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T68.5.4: Write unit tests verifying multi-GPU router assigns tasks to the accelerator wit (`taskcade-t68.5.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.5.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T68.5.4: Write unit tests verifying multi-GPU router assigns tasks to the accelerator wit [Role: type_specialist] [Files: packages/engine/src/tests/multi_gpu_router.test.ts]
+  - [ ] `taskcade-t68.5.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T68.5.4: Write unit tests verifying multi-GPU router assigns tasks to the accelerator wit [Role: implementer] [Files: packages/engine/src/tests/multi_gpu_router.test.ts]
+
+
+### Task taskcade-t68.5.4.1 Rehabilitation [2026-10-13T11:06:11.760Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T68.5.4: Write unit tests verifying multi-GPU router assigns tasks to the accelerator wit (`taskcade-t68.5.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.5.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T68.5.4: Write unit tests verifying multi-GPU router assigns tasks to the accelerator wit [Role: type_specialist] [Files: packages/engine/src/tests/multi_gpu_router.test.ts]
+  - [ ] `taskcade-t68.5.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T68.5.4: Write unit tests verifying multi-GPU router assigns tasks to the accelerator wit [Role: implementer] [Files: packages/engine/src/tests/multi_gpu_router.test.ts]
+
+
+### Task taskcade-t86.2.1.1 Rehabilitation [2026-10-13T11:03:21.452Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/Distribu (`taskcade-t86.2.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.2.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/Distribu [Role: type_specialist] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+  - [ ] `taskcade-t86.2.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/Distribu [Role: implementer] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+
+
+### Task taskcade-t86.2.1.2 Rehabilitation [2026-10-13T11:02:18.582Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/Distribu (`taskcade-t86.2.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.2.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/Distribu [Role: type_specialist] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+  - [ ] `taskcade-t86.2.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T86.2.1: Implement `DistributedTaskDispatcher` in `packages/engine/src/scheduler/Distribu [Role: implementer] [Files: packages/engine/src/scheduler/DistributedTaskDispatcher.ts]
+
+
+### Task taskcade-t64.4.3.2 Rehabilitation [2026-10-13T10:46:29.269Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detai (`taskcade-t64.4.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.4.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detai [Role: type_specialist] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+  - [ ] `taskcade-t64.4.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detai [Role: implementer] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+
+
+### Task taskcade-t64.4.3.1 Rehabilitation [2026-10-13T10:34:25.849Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detai (`taskcade-t64.4.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.4.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detai [Role: type_specialist] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+  - [ ] `taskcade-t64.4.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.4.3: Parse structured review verdict: APPROVE, COMMENT, or REQUEST_CHANGES with detai [Role: implementer] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+
+
+### Task taskcade-t70.1.1.2 Rehabilitation [2026-10-13T10:22:40.708Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc (`taskcade-t70.1.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.1.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [ ] `taskcade-t70.1.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+
+
+### Task taskcade-t70.1.1.1 Rehabilitation [2026-10-13T10:06:00.472Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc (`taskcade-t70.1.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.1.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [ ] `taskcade-t70.1.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/Sc [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+
+
+### Task taskcade-t66.4.3.2 Rehabilitation [2026-10-13T09:37:49.417Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup (`taskcade-t66.4.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.4.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup [Role: type_specialist] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+  - [ ] `taskcade-t66.4.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup [Role: implementer] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+
+
+### Task taskcade-t66.4.3.1 Rehabilitation [2026-10-13T09:23:40.634Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup (`taskcade-t66.4.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.4.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup [Role: type_specialist] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+  - [ ] `taskcade-t66.4.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup [Role: implementer] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+
+
+### Task taskcade-t64.2.2.2 Rehabilitation [2026-10-13T09:03:20.504Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, re (`taskcade-t64.2.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.2.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, re [Role: type_specialist] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+  - [ ] `taskcade-t64.2.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, re [Role: implementer] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+
+
+### Task taskcade-t64.2.2.1 Rehabilitation [2026-10-13T09:00:41.153Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, re (`taskcade-t64.2.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.2.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, re [Role: type_specialist] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+  - [ ] `taskcade-t64.2.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.2.2: Map task role to commit type: implementer -> feat/fix, architect -> refactor, re [Role: implementer] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+
+
+### Task taskcade-t64.6.1.1 Rehabilitation [2026-10-13T08:49:45.193Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in  (`taskcade-t64.6.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.6.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in  [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.6.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in  [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t64.6.1.2 Rehabilitation [2026-10-13T08:45:59.159Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in  (`taskcade-t64.6.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.6.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in  [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.6.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.6.1: Implement mergePullRequest(prIndex: number, mergeStyle: 'squash' = 'squash') in  [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t66.4.2.2 Rehabilitation [2026-10-13T08:27:04.597Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour  (`taskcade-t66.4.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.4.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour  [Role: type_specialist] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+  - [ ] `taskcade-t66.4.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour  [Role: implementer] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+
+
+### Task taskcade-t66.4.2.1 Rehabilitation [2026-10-13T08:19:12.403Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour  (`taskcade-t66.4.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.4.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour  [Role: type_specialist] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+  - [ ] `taskcade-t66.4.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T66.4.2: Aggregate high-frequency (1s) telemetry snapshots older than 7 days into 1-hour  [Role: implementer] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+
+
+### Task taskcade-t67.3.4.2 Rehabilitation [2026-10-13T08:14:23.831Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden (`taskcade-t67.3.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.3.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden [Role: type_specialist] [Files: packages/frontend/src/app/services/arena-state.store.spec.ts]
+  - [ ] `taskcade-t67.3.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden [Role: implementer] [Files: packages/frontend/src/app/services/arena-state.store.spec.ts]
+
+
+### Task taskcade-t67.3.4.1 Rehabilitation [2026-10-13T08:06:48.236Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden (`taskcade-t67.3.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.3.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden [Role: type_specialist] [Files: packages/frontend/src/app/services/arena-state.store.spec.ts]
+  - [ ] `taskcade-t67.3.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T67.3.4: Write frontend unit tests verifying smoothed velocity calculation dampens sudden [Role: implementer] [Files: packages/frontend/src/app/services/arena-state.store.spec.ts]
+
+
+### Task taskcade-t65.3.1.2 Rehabilitation [2026-10-13T07:56:13.911Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, R (`taskcade-t65.3.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.3.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, R [Role: type_specialist] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+  - [ ] `taskcade-t65.3.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, R [Role: implementer] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+
+
+### Task taskcade-t65.3.1.1 Rehabilitation [2026-10-13T07:53:05.810Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, R (`taskcade-t65.3.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.3.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, R [Role: type_specialist] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+  - [ ] `taskcade-t65.3.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.3.1: Create TestFilterToolbarComponent providing filter pills (ALL, PASSED, FAILED, R [Role: implementer] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+
+
+### Task taskcade-t64.2.3.1 Rehabilitation [2026-10-13T07:47:42.890Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicod (`taskcade-t64.2.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.2.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicod [Role: type_specialist] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+  - [ ] `taskcade-t64.2.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicod [Role: implementer] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+
+
+### Task taskcade-t64.2.3.2 Rehabilitation [2026-10-13T07:42:21.822Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicod (`taskcade-t64.2.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.2.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicod [Role: type_specialist] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+  - [ ] `taskcade-t64.2.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.2.3: Enforce strict zero-emoji validation: verify commit message contains zero Unicod [Role: implementer] [Files: packages/engine/src/gitea/ConventionalCommitGenerator.ts]
+
+
+### Task taskcade-t70.3.2.1 Rehabilitation [2026-10-13T07:25:05.090Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T70.3.2: Verify slot-fill output passes AST validation (AstValidator) before merging into (`taskcade-t70.3.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.3.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.3.2: Verify slot-fill output passes AST validation (AstValidator) before merging into [Role: type_specialist] [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts]
+  - [ ] `taskcade-t70.3.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.3.2: Verify slot-fill output passes AST validation (AstValidator) before merging into [Role: implementer] [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts]
+
+
+### Task taskcade-t65.3.2.2 Rehabilitation [2026-10-13T07:17:46.354Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, t (`taskcade-t65.3.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.3.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, t [Role: type_specialist] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+  - [ ] `taskcade-t65.3.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, t [Role: implementer] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+
+
+### Task taskcade-t65.3.2.1 Rehabilitation [2026-10-13T07:15:05.346Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, t (`taskcade-t65.3.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.3.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, t [Role: type_specialist] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+  - [ ] `taskcade-t65.3.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.3.2: Implement 200ms debounce on search input filtering historical runs by task ID, t [Role: implementer] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.ts]
+
+
+### Task taskcade-t64.5.2.2 Rehabilitation [2026-10-13T07:02:26.973Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 's (`taskcade-t64.5.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.5.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 's [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.5.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 's [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t64.5.2.1 Rehabilitation [2026-10-13T06:56:41.152Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 's (`taskcade-t64.5.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.5.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 's [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.5.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.5.2: Set commit status check (POST /api/v1/repos/{owner}/{repo}/statuses/{sha}) to 's [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t65.1.4.1 Rehabilitation [2026-10-13T06:44:37.774Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.1.4: Write frontend unit tests verifying mobile card view renders required action tri (`taskcade-t65.1.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.1.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.1.4: Write frontend unit tests verifying mobile card view renders required action tri [Role: type_specialist] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+  - [ ] `taskcade-t65.1.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.1.4: Write frontend unit tests verifying mobile card view renders required action tri [Role: implementer] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+
+
+### Task taskcade-t65.1.4.2 Rehabilitation [2026-10-13T06:36:22.209Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.1.4: Write frontend unit tests verifying mobile card view renders required action tri (`taskcade-t65.1.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.1.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.1.4: Write frontend unit tests verifying mobile card view renders required action tri [Role: type_specialist] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+  - [ ] `taskcade-t65.1.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.1.4: Write frontend unit tests verifying mobile card view renders required action tri [Role: implementer] [Files: packages/frontend/src/app/components/views/testing-view.component.spec.ts]
+
+
+### Task taskcade-t68.4.3.1 Rehabilitation [2026-10-13T06:29:46.330Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GP (`taskcade-t68.4.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.4.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GP [Role: type_specialist] [Files: packages/engine/src/inference/OllamaProvider.ts]
+  - [ ] `taskcade-t68.4.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GP [Role: implementer] [Files: packages/engine/src/inference/OllamaProvider.ts]
+
+
+### Task taskcade-t68.4.3.2 Rehabilitation [2026-10-13T06:14:28.598Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GP (`taskcade-t68.4.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.4.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GP [Role: type_specialist] [Files: packages/engine/src/inference/OllamaProvider.ts]
+  - [ ] `taskcade-t68.4.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T68.4.3: Poll /api/ps with 500ms backoff verifying previous model has been purged from GP [Role: implementer] [Files: packages/engine/src/inference/OllamaProvider.ts]
+
+
+### Task taskcade-t72.1.4.2 Rehabilitation [2026-10-13T05:52:27.660Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p (`taskcade-t72.1.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.1.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: type_specialist] [Files: packages/engine/src/tests/seed_loader.test.ts]
+  - [ ] `taskcade-t72.1.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: implementer] [Files: packages/engine/src/tests/seed_loader.test.ts]
+
+
+### Task taskcade-t72.1.4.1 Rehabilitation [2026-10-13T05:49:26.704Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p (`taskcade-t72.1.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.1.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: type_specialist] [Files: packages/engine/src/tests/seed_loader.test.ts]
+  - [ ] `taskcade-t72.1.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: implementer] [Files: packages/engine/src/tests/seed_loader.test.ts]
+
+
+### Task taskcade-t72.1.3.2 Rehabilitation [2026-10-13T05:27:19.980Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T72.1.3: Update TaskRecord and database schema to store structured metadataHints JSON pay (`taskcade-t72.1.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.1.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T72.1.3: Update TaskRecord and database schema to store structured metadataHints JSON pay [Role: type_specialist] [Files: packages/db/src/repositories/TaskRepository.ts]
+  - [ ] `taskcade-t72.1.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T72.1.3: Update TaskRecord and database schema to store structured metadataHints JSON pay [Role: implementer] [Files: packages/db/src/repositories/TaskRepository.ts]
+
+
+### Task taskcade-t68.6.2.2 Rehabilitation [2026-10-13T04:46:07.678Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T68.6.2: Intercept and abort task dispatch when total system memory availability (MemAvai (`taskcade-t68.6.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.6.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T68.6.2: Intercept and abort task dispatch when total system memory availability (MemAvai [Role: type_specialist] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+  - [ ] `taskcade-t68.6.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T68.6.2: Intercept and abort task dispatch when total system memory availability (MemAvai [Role: implementer] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+
+
+### Task taskcade-t68.6.2.1 Rehabilitation [2026-10-13T04:36:56.479Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T68.6.2: Intercept and abort task dispatch when total system memory availability (MemAvai (`taskcade-t68.6.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.6.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T68.6.2: Intercept and abort task dispatch when total system memory availability (MemAvai [Role: type_specialist] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+  - [ ] `taskcade-t68.6.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T68.6.2: Intercept and abort task dispatch when total system memory availability (MemAvai [Role: implementer] [Files: packages/engine/src/hardware/OomPredictiveGuard.ts]
+
+
+### Task taskcade-t69.6.4.1 Rehabilitation [2026-10-13T04:25:39.990Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T69.6.4: Track per-model rolling success rate and auto-demote models below 50% pass rate  (`taskcade-t69.6.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t69.6.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T69.6.4: Track per-model rolling success rate and auto-demote models below 50% pass rate  [Role: type_specialist] [Files: packages/engine/src/scheduler/ModelEvictionManager.ts]
+  - [ ] `taskcade-t69.6.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T69.6.4: Track per-model rolling success rate and auto-demote models below 50% pass rate  [Role: implementer] [Files: packages/engine/src/scheduler/ModelEvictionManager.ts]
+
+
+### Task taskcade-t69.6.4.2 Rehabilitation [2026-10-13T04:11:37.839Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T69.6.4: Track per-model rolling success rate and auto-demote models below 50% pass rate  (`taskcade-t69.6.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t69.6.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T69.6.4: Track per-model rolling success rate and auto-demote models below 50% pass rate  [Role: type_specialist] [Files: packages/engine/src/scheduler/ModelEvictionManager.ts]
+  - [ ] `taskcade-t69.6.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T69.6.4: Track per-model rolling success rate and auto-demote models below 50% pass rate  [Role: implementer] [Files: packages/engine/src/scheduler/ModelEvictionManager.ts]
+
+
+### Task taskcade-t70.2.3.2 Rehabilitation [2026-10-13T03:59:23.413Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating  (`taskcade-t70.2.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.2.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating  [Role: type_specialist] [Files: packages/engine/src/inference/SlotFillPromptBuilder.ts]
+  - [ ] `taskcade-t70.2.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating  [Role: implementer] [Files: packages/engine/src/inference/SlotFillPromptBuilder.ts]
+
+
+### Task taskcade-t70.2.3.1 Rehabilitation [2026-10-13T03:49:18.460Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating  (`taskcade-t70.2.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.2.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating  [Role: type_specialist] [Files: packages/engine/src/inference/SlotFillPromptBuilder.ts]
+  - [ ] `taskcade-t70.2.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating  [Role: implementer] [Files: packages/engine/src/inference/SlotFillPromptBuilder.ts]
+
+
+### Task taskcade-t65.4.1.2 Rehabilitation [2026-10-13T03:45:31.202Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-dr (`taskcade-t65.4.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.4.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-dr [Role: type_specialist] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+  - [ ] `taskcade-t65.4.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-dr [Role: implementer] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+
+
+### Task taskcade-t65.4.1.1 Rehabilitation [2026-10-13T03:41:39.927Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-dr (`taskcade-t65.4.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.4.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-dr [Role: type_specialist] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+  - [ ] `taskcade-t65.4.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.4.1: Create ProcessDrawerComponent in packages/frontend/src/app/components/process-dr [Role: implementer] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+
+
+### Task taskcade-t86.1.3.1 Rehabilitation [2026-10-13T03:29:44.863Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T86.1.3: Expose `POST /api/fleet/heartbeat` for worker nodes to report their status to th (`taskcade-t86.1.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.1.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T86.1.3: Expose `POST /api/fleet/heartbeat` for worker nodes to report their status to th [Role: type_specialist] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+  - [ ] `taskcade-t86.1.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T86.1.3: Expose `POST /api/fleet/heartbeat` for worker nodes to report their status to th [Role: implementer] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+
+
+### Task taskcade-t72.3.1.2 Rehabilitation [2026-10-13T03:14:49.358Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a (`taskcade-t72.3.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.3.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a [Role: type_specialist] [Files: packages/tools/src/implementations/EnqueueTaskcadeTaskTool.ts]
+  - [ ] `taskcade-t72.3.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a [Role: implementer] [Files: packages/tools/src/implementations/EnqueueTaskcadeTaskTool.ts]
+
+
+### Task taskcade-t72.3.1.1 Rehabilitation [2026-10-13T03:06:15.552Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a (`taskcade-t72.3.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.3.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a [Role: type_specialist] [Files: packages/tools/src/implementations/EnqueueTaskcadeTaskTool.ts]
+  - [ ] `taskcade-t72.3.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T72.3.1: Create EnqueueTaskcadeTaskTool in packages/tools/src/implementations/ exposing a [Role: implementer] [Files: packages/tools/src/implementations/EnqueueTaskcadeTaskTool.ts]
+
+
+### Task taskcade-t88.6.2.2 Rehabilitation [2026-10-13T03:01:48.271Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one qu (`taskcade-t88.6.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.6.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one qu [Role: type_specialist] [Files: packages/engine/src/tests/ci_failure_queue.test.ts]
+  - [ ] `taskcade-t88.6.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one qu [Role: implementer] [Files: packages/engine/src/tests/ci_failure_queue.test.ts]
+
+
+### Task taskcade-t88.6.2.1 Rehabilitation [2026-10-13T02:49:05.337Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one qu (`taskcade-t88.6.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.6.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one qu [Role: type_specialist] [Files: packages/engine/src/tests/ci_failure_queue.test.ts]
+  - [ ] `taskcade-t88.6.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.6.2: Critical: Write integration tests verifying idempotent CI failures create one qu [Role: implementer] [Files: packages/engine/src/tests/ci_failure_queue.test.ts]
+
+
+### Task taskcade-t67.1.1.1 Rehabilitation [2026-10-13T02:36:35.778Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst (`taskcade-t67.1.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.1.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst [Role: type_specialist] [Files: packages/engine/src/inference/StreamTapManager.ts]
+  - [ ] `taskcade-t67.1.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst [Role: implementer] [Files: packages/engine/src/inference/StreamTapManager.ts]
+
+
+### Task taskcade-t67.1.1.2 Rehabilitation [2026-10-13T02:18:54.325Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst (`taskcade-t67.1.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.1.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst [Role: type_specialist] [Files: packages/engine/src/inference/StreamTapManager.ts]
+  - [ ] `taskcade-t67.1.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T67.1.1: Refactor StreamTapManager to maintain discrete ring buffers keyed by taskId inst [Role: implementer] [Files: packages/engine/src/inference/StreamTapManager.ts]
+
+
+### Task taskcade-t88.2.2.2 Rehabilitation [2026-10-13T02:04:38.875Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.2.2: Critical: Define and persist structured assessment reports with verdict, severit (`taskcade-t88.2.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.2.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.2.2: Critical: Define and persist structured assessment reports with verdict, severit [Role: type_specialist] [Files: packages/shared-types/src/review.ts]
+  - [ ] `taskcade-t88.2.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.2.2: Critical: Define and persist structured assessment reports with verdict, severit [Role: implementer] [Files: packages/shared-types/src/review.ts]
+
+
+### Task taskcade-t88.2.2.1 Rehabilitation [2026-10-13T01:49:56.509Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.2.2: Critical: Define and persist structured assessment reports with verdict, severit (`taskcade-t88.2.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.2.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.2.2: Critical: Define and persist structured assessment reports with verdict, severit [Role: type_specialist] [Files: packages/shared-types/src/review.ts]
+  - [ ] `taskcade-t88.2.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.2.2: Critical: Define and persist structured assessment reports with verdict, severit [Role: implementer] [Files: packages/shared-types/src/review.ts]
+
+
+### Task taskcade-t88.6.1.1 Rehabilitation [2026-10-13T01:42:01.396Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.6.1: Critical: Write integration tests for implementation completion -> PR publicatio (`taskcade-t88.6.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.6.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.6.1: Critical: Write integration tests for implementation completion -> PR publicatio [Role: type_specialist] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+  - [ ] `taskcade-t88.6.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.6.1: Critical: Write integration tests for implementation completion -> PR publicatio [Role: implementer] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+
+
+### Task taskcade-t88.6.1.2 Rehabilitation [2026-10-13T01:38:07.466Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.6.1: Critical: Write integration tests for implementation completion -> PR publicatio (`taskcade-t88.6.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.6.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.6.1: Critical: Write integration tests for implementation completion -> PR publicatio [Role: type_specialist] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+  - [ ] `taskcade-t88.6.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.6.1: Critical: Write integration tests for implementation completion -> PR publicatio [Role: implementer] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+
+
+### Task taskcade-t88.5.1.2 Rehabilitation [2026-10-13T01:27:21.302Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.5.1: Critical: Extend method-scoped generation context with resolved member contracts (`taskcade-t88.5.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.5.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.5.1: Critical: Extend method-scoped generation context with resolved member contracts [Role: type_specialist] [Files: packages/engine/src/context/TypeScriptMethodSplicer.ts]
+  - [ ] `taskcade-t88.5.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.5.1: Critical: Extend method-scoped generation context with resolved member contracts [Role: implementer] [Files: packages/engine/src/context/TypeScriptMethodSplicer.ts]
+
+
+### Task taskcade-t88.5.1.1 Rehabilitation [2026-10-13T01:19:12.723Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.5.1: Critical: Extend method-scoped generation context with resolved member contracts (`taskcade-t88.5.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.5.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.5.1: Critical: Extend method-scoped generation context with resolved member contracts [Role: type_specialist] [Files: packages/engine/src/context/TypeScriptMethodSplicer.ts]
+  - [ ] `taskcade-t88.5.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.5.1: Critical: Extend method-scoped generation context with resolved member contracts [Role: implementer] [Files: packages/engine/src/context/TypeScriptMethodSplicer.ts]
+
+
+### Task taskcade-t88.6.3.2 Rehabilitation [2026-10-13T01:07:36.480Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not los (`taskcade-t88.6.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.6.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not los [Role: type_specialist] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+  - [ ] `taskcade-t88.6.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not los [Role: implementer] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+
+
+### Task taskcade-t88.6.3.1 Rehabilitation [2026-10-13T00:56:09.844Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not los (`taskcade-t88.6.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.6.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not los [Role: type_specialist] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+  - [ ] `taskcade-t88.6.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.6.3: Critical: Write integration tests verifying assessor/fixer eviction does not los [Role: implementer] [Files: packages/engine/src/tests/pr_lifecycle.test.ts]
+
+
+### Task taskcade-t88.4.5.2 Rehabilitation [2026-10-13T00:39:34.286Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.4.5: Critical: Add GitHub and Gitea action workflows that validate and execute only a (`taskcade-t88.4.5.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.4.5.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.4.5: Critical: Add GitHub and Gitea action workflows that validate and execute only a [Role: type_specialist] [Files: .github/workflows/review-remediation.yml .gitea/workflows/review-remediation.yml]
+  - [ ] `taskcade-t88.4.5.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.4.5: Critical: Add GitHub and Gitea action workflows that validate and execute only a [Role: implementer] [Files: .github/workflows/review-remediation.yml .gitea/workflows/review-remediation.yml]
+
+
+### Task taskcade-t88.4.5.1 Rehabilitation [2026-10-13T00:37:21.666Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.4.5: Critical: Add GitHub and Gitea action workflows that validate and execute only a (`taskcade-t88.4.5.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.4.5.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.4.5: Critical: Add GitHub and Gitea action workflows that validate and execute only a [Role: type_specialist] [Files: .github/workflows/review-remediation.yml .gitea/workflows/review-remediation.yml]
+  - [ ] `taskcade-t88.4.5.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.4.5: Critical: Add GitHub and Gitea action workflows that validate and execute only a [Role: implementer] [Files: .github/workflows/review-remediation.yml .gitea/workflows/review-remediation.yml]
+
+
+### Task taskcade-t88.3.2.2 Rehabilitation [2026-10-13T00:35:30.142Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.3.2: Critical: Define an explicit approval policy for required independent verdicts,  (`taskcade-t88.3.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.3.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.3.2: Critical: Define an explicit approval policy for required independent verdicts,  [Role: type_specialist] [Files: packages/engine/src/gitea/AssessmentPolicy.ts]
+  - [ ] `taskcade-t88.3.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.3.2: Critical: Define an explicit approval policy for required independent verdicts,  [Role: implementer] [Files: packages/engine/src/gitea/AssessmentPolicy.ts]
+
+
+### Task taskcade-t88.3.2.1 Rehabilitation [2026-10-13T00:31:16.541Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.3.2: Critical: Define an explicit approval policy for required independent verdicts,  (`taskcade-t88.3.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.3.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.3.2: Critical: Define an explicit approval policy for required independent verdicts,  [Role: type_specialist] [Files: packages/engine/src/gitea/AssessmentPolicy.ts]
+  - [ ] `taskcade-t88.3.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.3.2: Critical: Define an explicit approval policy for required independent verdicts,  [Role: implementer] [Files: packages/engine/src/gitea/AssessmentPolicy.ts]
+
+
+### Task taskcade-t74.1.5.1 Rehabilitation [2026-10-13T00:15:53.273Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T74.1.5: Write unit tests verifying CORS allowlist rejects untrusted origins, rate limite (`taskcade-t74.1.5.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.1.5.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T74.1.5: Write unit tests verifying CORS allowlist rejects untrusted origins, rate limite [Role: type_specialist] [Files: packages/engine/src/tests/http_security.test.ts]
+  - [ ] `taskcade-t74.1.5.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T74.1.5: Write unit tests verifying CORS allowlist rejects untrusted origins, rate limite [Role: implementer] [Files: packages/engine/src/tests/http_security.test.ts]
+
+
+### Task taskcade-t74.1.5.2 Rehabilitation [2026-10-13T00:08:34.946Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T74.1.5: Write unit tests verifying CORS allowlist rejects untrusted origins, rate limite (`taskcade-t74.1.5.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.1.5.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T74.1.5: Write unit tests verifying CORS allowlist rejects untrusted origins, rate limite [Role: type_specialist] [Files: packages/engine/src/tests/http_security.test.ts]
+  - [ ] `taskcade-t74.1.5.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T74.1.5: Write unit tests verifying CORS allowlist rejects untrusted origins, rate limite [Role: implementer] [Files: packages/engine/src/tests/http_security.test.ts]
+
+
+### Task taskcade-t67.5.4.1 Rehabilitation [2026-10-12T23:54:16.788Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T67.5.4: Write integration tests verifying that simulated network disconnection and recon (`taskcade-t67.5.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.5.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T67.5.4: Write integration tests verifying that simulated network disconnection and recon [Role: type_specialist] [Files: packages/engine/src/tests/sse_reconnect.test.ts]
+  - [ ] `taskcade-t67.5.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T67.5.4: Write integration tests verifying that simulated network disconnection and recon [Role: implementer] [Files: packages/engine/src/tests/sse_reconnect.test.ts]
+
+
+### Task taskcade-t65.3.4.2 Rehabilitation [2026-10-12T23:49:52.434Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correct (`taskcade-t65.3.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.3.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correct [Role: type_specialist] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.spec.ts]
+  - [ ] `taskcade-t65.3.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correct [Role: implementer] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.spec.ts]
+
+
+### Task taskcade-t65.3.4.1 Rehabilitation [2026-10-12T23:46:46.348Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correct (`taskcade-t65.3.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.3.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correct [Role: type_specialist] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.spec.ts]
+  - [ ] `taskcade-t65.3.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T65.3.4: Write unit tests verifying filter toolbar emits filter change events and correct [Role: implementer] [Files: packages/frontend/src/app/components/test-filter-toolbar/test-filter-toolbar.component.spec.ts]
+
+
+### Task taskcade-t64.3.3.1 Rehabilitation [2026-10-12T23:44:02.308Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.3.3: Open pull request with title matching task title and body formatted with markdow (`taskcade-t64.3.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.3.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.3.3: Open pull request with title matching task title and body formatted with markdow [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.3.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.3.3: Open pull request with title matching task title and body formatted with markdow [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t64.3.3.2 Rehabilitation [2026-10-12T23:36:49.477Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.3.3: Open pull request with title matching task title and body formatted with markdow (`taskcade-t64.3.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.3.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.3.3: Open pull request with title matching task title and body formatted with markdow [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.3.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.3.3: Open pull request with title matching task title and body formatted with markdow [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t64.4.2.2 Rehabilitation [2026-10-12T23:23:31.238Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standa (`taskcade-t64.4.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.4.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standa [Role: type_specialist] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+  - [ ] `taskcade-t64.4.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standa [Role: implementer] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+
+
+### Task taskcade-t64.4.2.1 Rehabilitation [2026-10-12T23:09:26.050Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standa (`taskcade-t64.4.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.4.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standa [Role: type_specialist] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+  - [ ] `taskcade-t64.4.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T64.4.2: Prompt reviewer model to evaluate code against SOLID principles, security standa [Role: implementer] [Files: packages/engine/src/gitea/AutomatedPrReviewer.ts]
+
+
+### Task taskcade-t88.1.2.1 Rehabilitation [2026-10-12T22:43:39.276Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.1.2: Critical: Add a lifecycle coordinator that completes the implementation task aft (`taskcade-t88.1.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.1.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.1.2: Critical: Add a lifecycle coordinator that completes the implementation task aft [Role: type_specialist] [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts]
+  - [ ] `taskcade-t88.1.2.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.1.2: Critical: Add a lifecycle coordinator that completes the implementation task aft [Role: implementer] [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts]
+
+
+### Task taskcade-t88.4.3.2 Rehabilitation [2026-10-12T22:37:51.037Z]
+- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: T88.4.3: Critical: Route whitelisted deterministic transformations through bounded rules; (`taskcade-t88.4.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.4.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T88.4.3: Critical: Route whitelisted deterministic transformations through bounded rules; [Role: type_specialist] [Files: packages/engine/src/gitea/PrFixTaskCoordinator.ts]
+  - [ ] `taskcade-t88.4.3.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T88.4.3: Critical: Route whitelisted deterministic transformations through bounded rules; [Role: implementer] [Files: packages/engine/src/gitea/PrFixTaskCoordinator.ts]
+
+
+### Task taskcade-t88.4.3.1 Rehabilitation [2026-10-12T22:33:27.806Z]
+- **Parent Task**: [Rehab 1/2] Scaffold & Type Contracts: T88.4.3: Critical: Route whitelisted deterministic transformations through bounded rules; (`taskcade-t88.4.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t88.4.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T88.4.3: Critical: Route whitelisted deterministic transformations through bounded rules; [Role: type_specialist] [Files: packages/engine/src/gitea/PrFixTaskCoordinator.ts]
+  - [ ] `taskcade-t88.4.3.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T88.4.3: Critical: Route whitelisted deterministic transformations through bounded rules; [Role: implementer] [Files: packages/engine/src/gitea/PrFixTaskCoordinator.ts]
+
+
+### Task taskcade-t98.1.2 Rehabilitation [2026-10-12T22:20:38.032Z]
+- **Parent Task**: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e (`taskcade-t98.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e [Role: type_specialist] [Files: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts]
+  - [ ] `taskcade-t98.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T98.1.2: Write unit tests validating compiler diagnostic filtering truncates error logs e [Role: implementer] [Files: packages/engine/src/tests/remediation_diagnostic_truncation.test.ts]
+
+
+### Task taskcade-t97.4.4 Rehabilitation [2026-10-12T22:11:17.995Z]
+- **Parent Task**: T97.4.4: Write unit tests verifying StreamTapManager isolates logs across different task  (`taskcade-t97.4.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.4.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.4.4: Write unit tests verifying StreamTapManager isolates logs across different task  [Role: type_specialist] [Files: packages/engine/src/tests/stream_tap_isolation.test.ts]
+  - [ ] `taskcade-t97.4.4.2`: [Rehab 2/2] Implementation & Test Verification: T97.4.4: Write unit tests verifying StreamTapManager isolates logs across different task  [Role: implementer] [Files: packages/engine/src/tests/stream_tap_isolation.test.ts]
+
+
+### Task taskcade-t98.2.4 Rehabilitation [2026-10-12T22:08:13.816Z]
+- **Parent Task**: T98.2.4: Write unit tests verifying task ID metadata is appended in commit body (Closes t (`taskcade-t98.2.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.2.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.2.4: Write unit tests verifying task ID metadata is appended in commit body (Closes t [Role: type_specialist] [Files: packages/engine/src/tests/commit_gen_metadata.test.ts]
+  - [ ] `taskcade-t98.2.4.2`: [Rehab 2/2] Implementation & Test Verification: T98.2.4: Write unit tests verifying task ID metadata is appended in commit body (Closes t [Role: implementer] [Files: packages/engine/src/tests/commit_gen_metadata.test.ts]
+
+
+### Task taskcade-t97.3.3 Rehabilitation [2026-10-12T22:05:10.020Z]
+- **Parent Task**: T97.3.3: Write unit tests validating legacy 3-point thermal governor backwards compatibil (`taskcade-t97.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.3.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.3.3: Write unit tests validating legacy 3-point thermal governor backwards compatibil [Role: type_specialist] [Files: packages/engine/src/tests/governor_legacy_3point.test.ts]
+  - [ ] `taskcade-t97.3.3.2`: [Rehab 2/2] Implementation & Test Verification: T97.3.3: Write unit tests validating legacy 3-point thermal governor backwards compatibil [Role: implementer] [Files: packages/engine/src/tests/governor_legacy_3point.test.ts]
+
+
+### Task taskcade-t98.2.3 Rehabilitation [2026-10-12T22:03:06.164Z]
+- **Parent Task**: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain (`taskcade-t98.2.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.2.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain [Role: type_specialist] [Files: packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
+  - [ ] `taskcade-t98.2.3.2`: [Rehab 2/2] Implementation & Test Verification: T98.2.3: Write unit tests validating zero-emoji validator rejects commit messages contain [Role: implementer] [Files: packages/engine/src/tests/commit_gen_zero_emoji.test.ts]
+
+
+### Task taskcade-t97.2.4 Rehabilitation [2026-10-12T21:58:49.265Z]
+- **Parent Task**: T97.2.4: Write unit tests verifying dynamic origin whitelist rejects non-local external d (`taskcade-t97.2.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.2.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.2.4: Write unit tests verifying dynamic origin whitelist rejects non-local external d [Role: type_specialist] [Files: packages/engine/src/tests/origin_whitelist.test.ts]
+  - [ ] `taskcade-t97.2.4.2`: [Rehab 2/2] Implementation & Test Verification: T97.2.4: Write unit tests verifying dynamic origin whitelist rejects non-local external d [Role: implementer] [Files: packages/engine/src/tests/origin_whitelist.test.ts]
+
+
+### Task taskcade-t98.1.1 Rehabilitation [2026-10-12T21:49:01.844Z]
+- **Parent Task**: T98.1.1: Write unit tests verifying RemediationPromptFormatter produces structured markdo (`taskcade-t98.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.1.1: Write unit tests verifying RemediationPromptFormatter produces structured markdo [Role: type_specialist] [Files: packages/engine/src/tests/remediation_format_sections.test.ts]
+  - [ ] `taskcade-t98.1.1.2`: [Rehab 2/2] Implementation & Test Verification: T98.1.1: Write unit tests verifying RemediationPromptFormatter produces structured markdo [Role: implementer] [Files: packages/engine/src/tests/remediation_format_sections.test.ts]
+
+
+### Task taskcade-t98.1.4 Rehabilitation [2026-10-12T21:32:53.456Z]
+- **Parent Task**: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an (`taskcade-t98.1.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an [Role: type_specialist] [Files: packages/engine/src/tests/remediation_indentation.test.ts]
+  - [ ] `taskcade-t98.1.4.2`: [Rehab 2/2] Implementation & Test Verification: T98.1.4: Write unit tests validating that clean code replacements preserve indentation an [Role: implementer] [Files: packages/engine/src/tests/remediation_indentation.test.ts]
+
+
+### Task taskcade-t97.2.1 Rehabilitation [2026-10-12T21:29:36.385Z]
+- **Parent Task**: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host (`taskcade-t97.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host [Role: type_specialist] [Files: packages/engine/src/tests/host_header_port.test.ts]
+  - [ ] `taskcade-t97.2.1.2`: [Rehab 2/2] Implementation & Test Verification: T97.2.1: Write unit tests verifying dynamic host header resolver handles X-Forwarded-Host [Role: implementer] [Files: packages/engine/src/tests/host_header_port.test.ts]
+
+
+### Task taskcade-t98.1.3 Rehabilitation [2026-10-12T21:21:51.238Z]
+- **Parent Task**: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu (`taskcade-t98.1.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.1.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu [Role: type_specialist] [Files: packages/engine/src/tests/remediation_directives.test.ts]
+  - [ ] `taskcade-t98.1.3.2`: [Rehab 2/2] Implementation & Test Verification: T98.1.3: Write unit tests verifying anti-filler directives forbid introductory and conclu [Role: implementer] [Files: packages/engine/src/tests/remediation_directives.test.ts]
+
+
+### Task taskcade-t98.2.2 Rehabilitation [2026-10-12T21:13:13.025Z]
+- **Parent Task**: T98.2.2: Write unit tests verifying commit subject length is clamped to standard 72-chara (`taskcade-t98.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.2.2: Write unit tests verifying commit subject length is clamped to standard 72-chara [Role: type_specialist] [Files: packages/engine/src/tests/commit_gen_length.test.ts]
+  - [ ] `taskcade-t98.2.2.2`: [Rehab 2/2] Implementation & Test Verification: T98.2.2: Write unit tests verifying commit subject length is clamped to standard 72-chara [Role: implementer] [Files: packages/engine/src/tests/commit_gen_length.test.ts]
+
+
+### Task taskcade-t98.2.1 Rehabilitation [2026-10-12T21:10:15.277Z]
+- **Parent Task**: T98.2.1: Write unit tests verifying ConventionalCommitGenerator maps implementer role to  (`taskcade-t98.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t98.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T98.2.1: Write unit tests verifying ConventionalCommitGenerator maps implementer role to  [Role: type_specialist] [Files: packages/engine/src/tests/commit_gen_roles.test.ts]
+  - [ ] `taskcade-t98.2.1.2`: [Rehab 2/2] Implementation & Test Verification: T98.2.1: Write unit tests verifying ConventionalCommitGenerator maps implementer role to  [Role: implementer] [Files: packages/engine/src/tests/commit_gen_roles.test.ts]
+
+
+### Task taskcade-t97.2.2 Rehabilitation [2026-10-12T21:07:01.322Z]
+- **Parent Task**: T97.2.2: Write unit tests verifying IPv6 localhost (::1) is correctly mapped to localhost (`taskcade-t97.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.2.2: Write unit tests verifying IPv6 localhost (::1) is correctly mapped to localhost [Role: type_specialist] [Files: packages/engine/src/tests/ipv6_cors.test.ts]
+  - [ ] `taskcade-t97.2.2.2`: [Rehab 2/2] Implementation & Test Verification: T97.2.2: Write unit tests verifying IPv6 localhost (::1) is correctly mapped to localhost [Role: implementer] [Files: packages/engine/src/tests/ipv6_cors.test.ts]
+
+
+### Task taskcade-t97.4.2 Rehabilitation [2026-10-12T21:04:58.546Z]
+- **Parent Task**: T97.4.2: Write unit tests verifying tap unsubscribe frees in-memory listener callback ref (`taskcade-t97.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.4.2: Write unit tests verifying tap unsubscribe frees in-memory listener callback ref [Role: type_specialist] [Files: packages/engine/src/tests/stream_tap_cleanup.test.ts]
+  - [ ] `taskcade-t97.4.2.2`: [Rehab 2/2] Implementation & Test Verification: T97.4.2: Write unit tests verifying tap unsubscribe frees in-memory listener callback ref [Role: implementer] [Files: packages/engine/src/tests/stream_tap_cleanup.test.ts]
+
+
+### Task taskcade-t97.1.2 Rehabilitation [2026-10-12T21:03:05.402Z]
+- **Parent Task**: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  (`taskcade-t97.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: type_specialist] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+  - [ ] `taskcade-t97.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T97.1.2: Write unit tests verifying radeontop parser handles non-standard whitespace and  [Role: implementer] [Files: packages/engine/src/tests/radeontop_parser.test.ts]
+
+
+### Task taskcade-t97.1.3 Rehabilitation [2026-10-12T20:55:04.003Z]
+- **Parent Task**: T97.1.3: Write unit tests verifying nvidia-smi parser gracefully discards corrupted CSV r (`taskcade-t97.1.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.1.3: Write unit tests verifying nvidia-smi parser gracefully discards corrupted CSV r [Role: type_specialist] [Files: packages/engine/src/tests/nvidia_corrupt_csv.test.ts]
+  - [ ] `taskcade-t97.1.3.2`: [Rehab 2/2] Implementation & Test Verification: T97.1.3: Write unit tests verifying nvidia-smi parser gracefully discards corrupted CSV r [Role: implementer] [Files: packages/engine/src/tests/nvidia_corrupt_csv.test.ts]
+
+
+### Task taskcade-t97.1.4 Rehabilitation [2026-10-12T20:51:15.208Z]
+- **Parent Task**: T97.1.4: Write unit tests validating powermetrics parser handles multi-line thermal sampl (`taskcade-t97.1.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.1.4: Write unit tests validating powermetrics parser handles multi-line thermal sampl [Role: type_specialist] [Files: packages/engine/src/tests/powermetrics_parser.test.ts]
+  - [ ] `taskcade-t97.1.4.2`: [Rehab 2/2] Implementation & Test Verification: T97.1.4: Write unit tests validating powermetrics parser handles multi-line thermal sampl [Role: implementer] [Files: packages/engine/src/tests/powermetrics_parser.test.ts]
+
+
+### Task taskcade-t97.3.2 Rehabilitation [2026-10-12T20:48:27.752Z]
+- **Parent Task**: T97.3.2: Write unit tests verifying pacing delays scale from 0s at Nominal to 10s at Dang (`taskcade-t97.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.3.2: Write unit tests verifying pacing delays scale from 0s at Nominal to 10s at Dang [Role: type_specialist] [Files: packages/engine/src/tests/governor_pacing_scale.test.ts]
+  - [ ] `taskcade-t97.3.2.2`: [Rehab 2/2] Implementation & Test Verification: T97.3.2: Write unit tests verifying pacing delays scale from 0s at Nominal to 10s at Dang [Role: implementer] [Files: packages/engine/src/tests/governor_pacing_scale.test.ts]
+
+
+### Task taskcade-t97.3.1 Rehabilitation [2026-10-12T20:45:52.898Z]
+- **Parent Task**: T97.3.1: Write unit tests verifying ThermalGovernor emergency shutdown threshold halts qu (`taskcade-t97.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.3.1: Write unit tests verifying ThermalGovernor emergency shutdown threshold halts qu [Role: type_specialist] [Files: packages/engine/src/tests/governor_emergency_halt.test.ts]
+  - [ ] `taskcade-t97.3.1.2`: [Rehab 2/2] Implementation & Test Verification: T97.3.1: Write unit tests verifying ThermalGovernor emergency shutdown threshold halts qu [Role: implementer] [Files: packages/engine/src/tests/governor_emergency_halt.test.ts]
+
+
+### Task taskcade-t97.4.3 Rehabilitation [2026-10-12T20:43:46.643Z]
+- **Parent Task**: T97.4.3: Write unit tests validating SSE broadcast event encoding with special newline ch (`taskcade-t97.4.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.4.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.4.3: Write unit tests validating SSE broadcast event encoding with special newline ch [Role: type_specialist] [Files: packages/engine/src/tests/sse_encoding.test.ts]
+  - [ ] `taskcade-t97.4.3.2`: [Rehab 2/2] Implementation & Test Verification: T97.4.3: Write unit tests validating SSE broadcast event encoding with special newline ch [Role: implementer] [Files: packages/engine/src/tests/sse_encoding.test.ts]
+
+
+### Task taskcade-t97.1.1 Rehabilitation [2026-10-12T20:34:43.474Z]
+- **Parent Task**: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros (`taskcade-t97.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: type_specialist] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+  - [ ] `taskcade-t97.1.1.2`: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: implementer] [Files: packages/engine/src/tests/sensors_parser.test.ts]
+
+
+### Task taskcade-t97.2.3 Rehabilitation [2026-10-12T20:12:13.996Z]
+- **Parent Task**: T97.2.3: Write unit tests verifying local bridge IP resolution detects 172.17.0.1 Docker  (`taskcade-t97.2.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.2.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.2.3: Write unit tests verifying local bridge IP resolution detects 172.17.0.1 Docker  [Role: type_specialist] [Files: packages/engine/src/tests/docker_bridge_gateway.test.ts]
+  - [ ] `taskcade-t97.2.3.2`: [Rehab 2/2] Implementation & Test Verification: T97.2.3: Write unit tests verifying local bridge IP resolution detects 172.17.0.1 Docker  [Role: implementer] [Files: packages/engine/src/tests/docker_bridge_gateway.test.ts]
+
+
+### Task taskcade-t97.4.1 Rehabilitation [2026-10-12T20:11:25.722Z]
+- **Parent Task**: T97.4.1: Write unit tests verifying StreamTapManager ring buffer drops oldest lines when  (`taskcade-t97.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.4.1: Write unit tests verifying StreamTapManager ring buffer drops oldest lines when  [Role: type_specialist] [Files: packages/engine/src/tests/stream_ring_buffer.test.ts]
+  - [ ] `taskcade-t97.4.1.2`: [Rehab 2/2] Implementation & Test Verification: T97.4.1: Write unit tests verifying StreamTapManager ring buffer drops oldest lines when  [Role: implementer] [Files: packages/engine/src/tests/stream_ring_buffer.test.ts]
+
+
+### Task taskcade-t97.3.4 Rehabilitation [2026-10-12T20:08:02.753Z]
+- **Parent Task**: T97.3.4: Write unit tests verifying cool-off disabled flag overrides pacing delay back to (`taskcade-t97.3.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t97.3.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T97.3.4: Write unit tests verifying cool-off disabled flag overrides pacing delay back to [Role: type_specialist] [Files: packages/engine/src/tests/governor_cooloff_disabled.test.ts]
+  - [ ] `taskcade-t97.3.4.2`: [Rehab 2/2] Implementation & Test Verification: T97.3.4: Write unit tests verifying cool-off disabled flag overrides pacing delay back to [Role: implementer] [Files: packages/engine/src/tests/governor_cooloff_disabled.test.ts]
+
+
+### Task taskcade-t96.3.4 Rehabilitation [2026-10-12T19:51:35.927Z]
+- **Parent Task**: T96.3.4: Write unit tests validating FocusedDiffBuilder handles multi-line string replace (`taskcade-t96.3.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.3.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.3.4: Write unit tests validating FocusedDiffBuilder handles multi-line string replace [Role: type_specialist] [Files: packages/engine/src/tests/diff_indentation.test.ts]
+  - [ ] `taskcade-t96.3.4.2`: [Rehab 2/2] Implementation & Test Verification: T96.3.4: Write unit tests validating FocusedDiffBuilder handles multi-line string replace [Role: implementer] [Files: packages/engine/src/tests/diff_indentation.test.ts]
+
+
+### Task taskcade-t96.1.1 Rehabilitation [2026-10-12T19:47:35.717Z]
+- **Parent Task**: T96.1.1: Write unit tests verifying moving average calculations across empty, single-elem (`taskcade-t96.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.1.1: Write unit tests verifying moving average calculations across empty, single-elem [Role: type_specialist] [Files: packages/engine/src/tests/math_utils.test.ts]
+  - [ ] `taskcade-t96.1.1.2`: [Rehab 2/2] Implementation & Test Verification: T96.1.1: Write unit tests verifying moving average calculations across empty, single-elem [Role: implementer] [Files: packages/engine/src/tests/math_utils.test.ts]
+
+
+### Task taskcade-t96.5.1 Rehabilitation [2026-10-12T19:42:26.739Z]
+- **Parent Task**: T96.5.1: Write unit tests verifying TaskRepository.create handles SQL string escaping and (`taskcade-t96.5.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.5.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.5.1: Write unit tests verifying TaskRepository.create handles SQL string escaping and [Role: type_specialist] [Files: packages/db/src/tests/task_sql_escaping.test.ts]
+  - [ ] `taskcade-t96.5.1.2`: [Rehab 2/2] Implementation & Test Verification: T96.5.1: Write unit tests verifying TaskRepository.create handles SQL string escaping and [Role: implementer] [Files: packages/db/src/tests/task_sql_escaping.test.ts]
+
+
+### Task taskcade-t96.3.3 Rehabilitation [2026-10-12T19:28:53.955Z]
+- **Parent Task**: T96.3.3: Write unit tests verifying ImportPruningEngine correctly resolves type-only impo (`taskcade-t96.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.3.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.3.3: Write unit tests verifying ImportPruningEngine correctly resolves type-only impo [Role: type_specialist] [Files: packages/engine/src/tests/import_type_pruning.test.ts]
+  - [ ] `taskcade-t96.3.3.2`: [Rehab 2/2] Implementation & Test Verification: T96.3.3: Write unit tests verifying ImportPruningEngine correctly resolves type-only impo [Role: implementer] [Files: packages/engine/src/tests/import_type_pruning.test.ts]
+
+
+### Task taskcade-t96.5.2 Rehabilitation [2026-10-12T19:27:07.036Z]
+- **Parent Task**: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  (`taskcade-t96.5.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.5.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: type_specialist] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+  - [ ] `taskcade-t96.5.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.5.2: Write unit tests verifying TaskRepository.updateStageState correctly serializes  [Role: implementer] [Files: packages/db/src/tests/stage_json_serialization.test.ts]
+
+
+### Task taskcade-t96.4.3 Rehabilitation [2026-10-12T19:23:46.005Z]
+- **Parent Task**: T96.4.3: Write unit tests verifying ArenaStateStore successRate signal updates accurately (`taskcade-t96.4.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.4.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.4.3: Write unit tests verifying ArenaStateStore successRate signal updates accurately [Role: type_specialist] [Files: packages/frontend/src/app/services/arena_state_success.spec.ts]
+  - [ ] `taskcade-t96.4.3.2`: [Rehab 2/2] Implementation & Test Verification: T96.4.3: Write unit tests verifying ArenaStateStore successRate signal updates accurately [Role: implementer] [Files: packages/frontend/src/app/services/arena_state_success.spec.ts]
+
+
+### Task taskcade-t96.3.2 Rehabilitation [2026-10-12T19:12:09.252Z]
+- **Parent Task**: T96.3.2: Write unit tests verifying AstContextSlicer correctly preserves decorators (@Com (`taskcade-t96.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.3.2: Write unit tests verifying AstContextSlicer correctly preserves decorators (@Com [Role: type_specialist] [Files: packages/engine/src/tests/ast_decorator_slicing.test.ts]
+  - [ ] `taskcade-t96.3.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.3.2: Write unit tests verifying AstContextSlicer correctly preserves decorators (@Com [Role: implementer] [Files: packages/engine/src/tests/ast_decorator_slicing.test.ts]
+
+
+### Task taskcade-t96.5.3 Rehabilitation [2026-10-12T19:08:30.121Z]
+- **Parent Task**: T96.5.3: Write unit tests validating StageRepository stage span queries return chronologi (`taskcade-t96.5.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.5.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.5.3: Write unit tests validating StageRepository stage span queries return chronologi [Role: type_specialist] [Files: packages/db/src/tests/stage_chronology.test.ts]
+  - [ ] `taskcade-t96.5.3.2`: [Rehab 2/2] Implementation & Test Verification: T96.5.3: Write unit tests validating StageRepository stage span queries return chronologi [Role: implementer] [Files: packages/db/src/tests/stage_chronology.test.ts]
+
+
+### Task taskcade-t96.4.2 Rehabilitation [2026-10-12T18:54:17.395Z]
+- **Parent Task**: T96.4.2: Write unit tests verifying ArenaStateStore modelWarmth signal updates when warm  (`taskcade-t96.4.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.4.2: Write unit tests verifying ArenaStateStore modelWarmth signal updates when warm  [Role: type_specialist] [Files: packages/frontend/src/app/services/arena_state_warmth.spec.ts]
+  - [ ] `taskcade-t96.4.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.4.2: Write unit tests verifying ArenaStateStore modelWarmth signal updates when warm  [Role: implementer] [Files: packages/frontend/src/app/services/arena_state_warmth.spec.ts]
+
+
+### Task taskcade-t96.2.3 Rehabilitation [2026-10-12T18:49:06.924Z]
+- **Parent Task**: T96.2.3: Write unit tests validating ModelManagementConfigSchema defaults for protected m (`taskcade-t96.2.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.2.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.2.3: Write unit tests validating ModelManagementConfigSchema defaults for protected m [Role: type_specialist] [Files: packages/shared-types/src/tests/model_config_schema.test.ts]
+  - [ ] `taskcade-t96.2.3.2`: [Rehab 2/2] Implementation & Test Verification: T96.2.3: Write unit tests validating ModelManagementConfigSchema defaults for protected m [Role: implementer] [Files: packages/shared-types/src/tests/model_config_schema.test.ts]
+
+
+### Task taskcade-t96.4.4 Rehabilitation [2026-10-12T18:43:57.701Z]
+- **Parent Task**: T96.4.4: Write unit tests verifying ArenaStateStore thermalThrottleState signal triggers  (`taskcade-t96.4.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.4.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.4.4: Write unit tests verifying ArenaStateStore thermalThrottleState signal triggers  [Role: type_specialist] [Files: packages/frontend/src/app/services/arena_state_thermal.spec.ts]
+  - [ ] `taskcade-t96.4.4.2`: [Rehab 2/2] Implementation & Test Verification: T96.4.4: Write unit tests verifying ArenaStateStore thermalThrottleState signal triggers  [Role: implementer] [Files: packages/frontend/src/app/services/arena_state_thermal.spec.ts]
+
+
+### Task taskcade-t96.2.1 Rehabilitation [2026-10-12T18:34:54.478Z]
+- **Parent Task**: T96.2.1: Write unit tests verifying TaskRecordSchema validates valid task payloads and re (`taskcade-t96.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.2.1: Write unit tests verifying TaskRecordSchema validates valid task payloads and re [Role: type_specialist] [Files: packages/shared-types/src/tests/task_schema.test.ts]
+  - [ ] `taskcade-t96.2.1.2`: [Rehab 2/2] Implementation & Test Verification: T96.2.1: Write unit tests verifying TaskRecordSchema validates valid task payloads and re [Role: implementer] [Files: packages/shared-types/src/tests/task_schema.test.ts]
+
+
+### Task taskcade-t96.3.1 Rehabilitation [2026-10-12T18:32:38.180Z]
+- **Parent Task**: T96.3.1: Write unit tests validating AstContextSlicer handles complex generic interface d (`taskcade-t96.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.3.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.3.1: Write unit tests validating AstContextSlicer handles complex generic interface d [Role: type_specialist] [Files: packages/engine/src/tests/ast_generic_slicing.test.ts]
+  - [ ] `taskcade-t96.3.1.2`: [Rehab 2/2] Implementation & Test Verification: T96.3.1: Write unit tests validating AstContextSlicer handles complex generic interface d [Role: implementer] [Files: packages/engine/src/tests/ast_generic_slicing.test.ts]
+
+
+### Task taskcade-t96.2.4 Rehabilitation [2026-10-12T18:29:13.402Z]
+- **Parent Task**: T96.2.4: Write unit tests verifying AgentRoleSchema enum rejects unknown string identifie (`taskcade-t96.2.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.2.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.2.4: Write unit tests verifying AgentRoleSchema enum rejects unknown string identifie [Role: type_specialist] [Files: packages/shared-types/src/tests/agent_role_schema.test.ts]
+  - [ ] `taskcade-t96.2.4.2`: [Rehab 2/2] Implementation & Test Verification: T96.2.4: Write unit tests verifying AgentRoleSchema enum rejects unknown string identifie [Role: implementer] [Files: packages/shared-types/src/tests/agent_role_schema.test.ts]
+
+
+### Task taskcade-t96.1.4 Rehabilitation [2026-10-12T18:19:22.552Z]
+- **Parent Task**: T96.1.4: Write unit tests verifying percentage rounding precision and boundary clamping [ (`taskcade-t96.1.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.1.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.1.4: Write unit tests verifying percentage rounding precision and boundary clamping [ [Role: type_specialist] [Files: packages/engine/src/tests/percent_math.test.ts]
+  - [ ] `taskcade-t96.1.4.2`: [Rehab 2/2] Implementation & Test Verification: T96.1.4: Write unit tests verifying percentage rounding precision and boundary clamping [ [Role: implementer] [Files: packages/engine/src/tests/percent_math.test.ts]
+
+
+### Task taskcade-t96.4.1 Rehabilitation [2026-10-12T18:11:11.279Z]
+- **Parent Task**: T96.4.1: Write unit tests verifying ArenaStateStore activeTaskId signal transitions react (`taskcade-t96.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.4.1: Write unit tests verifying ArenaStateStore activeTaskId signal transitions react [Role: type_specialist] [Files: packages/frontend/src/app/services/arena_state_dispatch.spec.ts]
+  - [ ] `taskcade-t96.4.1.2`: [Rehab 2/2] Implementation & Test Verification: T96.4.1: Write unit tests verifying ArenaStateStore activeTaskId signal transitions react [Role: implementer] [Files: packages/frontend/src/app/services/arena_state_dispatch.spec.ts]
+
+
+### Task taskcade-t96.1.2 Rehabilitation [2026-10-12T18:07:52.005Z]
+- **Parent Task**: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun (`taskcade-t96.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: type_specialist] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+  - [ ] `taskcade-t96.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.1.2: Write unit tests verifying exponential backoff jitter calculations maintain boun [Role: implementer] [Files: packages/engine/src/tests/backoff_utils.test.ts]
+
+
+### Task taskcade-t96.2.2 Rehabilitation [2026-10-12T18:05:22.926Z]
+- **Parent Task**: T96.2.2: Write unit tests verifying CacophonySystemConfigSchema enforces default executio (`taskcade-t96.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.2.2: Write unit tests verifying CacophonySystemConfigSchema enforces default executio [Role: type_specialist] [Files: packages/shared-types/src/tests/config_schema.test.ts]
+  - [ ] `taskcade-t96.2.2.2`: [Rehab 2/2] Implementation & Test Verification: T96.2.2: Write unit tests verifying CacophonySystemConfigSchema enforces default executio [Role: implementer] [Files: packages/shared-types/src/tests/config_schema.test.ts]
+
+
+### Task taskcade-t96.1.3 Rehabilitation [2026-10-12T17:53:38.211Z]
+- **Parent Task**: T96.1.3: Write unit tests validating token throughput rate calculation clamped against ze (`taskcade-t96.1.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.1.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.1.3: Write unit tests validating token throughput rate calculation clamped against ze [Role: type_specialist] [Files: packages/engine/src/tests/throughput_math.test.ts]
+  - [ ] `taskcade-t96.1.3.2`: [Rehab 2/2] Implementation & Test Verification: T96.1.3: Write unit tests validating token throughput rate calculation clamped against ze [Role: implementer] [Files: packages/engine/src/tests/throughput_math.test.ts]
+
+
+### Task taskcade-t96.5.4 Rehabilitation [2026-10-12T17:50:26.051Z]
+- **Parent Task**: T96.5.4: Write unit tests verifying PGlite driver handles concurrent statement execution  (`taskcade-t96.5.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t96.5.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T96.5.4: Write unit tests verifying PGlite driver handles concurrent statement execution  [Role: type_specialist] [Files: packages/db/src/tests/pglite_concurrent_queue.test.ts]
+  - [ ] `taskcade-t96.5.4.2`: [Rehab 2/2] Implementation & Test Verification: T96.5.4: Write unit tests verifying PGlite driver handles concurrent statement execution  [Role: implementer] [Files: packages/db/src/tests/pglite_concurrent_queue.test.ts]
+
+
+### Task taskcade-t66.4.1 Rehabilitation [2026-10-12T17:47:42.465Z]
+- **Parent Task**: T66.4.1: Implement TelemetryCompactorDaemon in packages/engine/src/telemetry/TelemetryCom (`taskcade-t66.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T66.4.1: Implement TelemetryCompactorDaemon in packages/engine/src/telemetry/TelemetryCom [Role: type_specialist] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+  - [ ] `taskcade-t66.4.1.2`: [Rehab 2/2] Implementation & Test Verification: T66.4.1: Implement TelemetryCompactorDaemon in packages/engine/src/telemetry/TelemetryCom [Role: implementer] [Files: packages/engine/src/telemetry/TelemetryCompactorDaemon.ts]
+
+
+### Task taskcade-t72.3.3 Rehabilitation [2026-10-12T17:38:17.112Z]
+- **Parent Task**: T72.3.3: Document markdown task metadata syntax and hint conventions in docs/taskcade_met (`taskcade-t72.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.3.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T72.3.3: Document markdown task metadata syntax and hint conventions in docs/taskcade_met [Role: type_specialist] [Files: docs/taskcade_metadata_spec.md]
+  - [ ] `taskcade-t72.3.3.2`: [Rehab 2/2] Implementation & Test Verification: T72.3.3: Document markdown task metadata syntax and hint conventions in docs/taskcade_met [Role: implementer] [Files: docs/taskcade_metadata_spec.md]
+
+
+### Task taskcade-t66.4.4 Rehabilitation [2026-10-12T17:24:38.369Z]
+- **Parent Task**: T66.4.4: Write unit tests verifying compactor rolls up 3600 raw records into single hourl (`taskcade-t66.4.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.4.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T66.4.4: Write unit tests verifying compactor rolls up 3600 raw records into single hourl [Role: type_specialist] [Files: packages/engine/src/tests/telemetry_compactor.test.ts]
+  - [ ] `taskcade-t66.4.4.2`: [Rehab 2/2] Implementation & Test Verification: T66.4.4: Write unit tests verifying compactor rolls up 3600 raw records into single hourl [Role: implementer] [Files: packages/engine/src/tests/telemetry_compactor.test.ts]
+
+
+### Task taskcade-t74.3.3 Rehabilitation [2026-10-12T17:14:16.691Z]
+- **Parent Task**: T74.3.3: Replace Docker socket bind mount for Authentik worker with Docker socket proxy i (`taskcade-t74.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.3.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.3.3: Replace Docker socket bind mount for Authentik worker with Docker socket proxy i [Role: type_specialist] [Files: docker-compose.yml]
+  - [ ] `taskcade-t74.3.3.2`: [Rehab 2/2] Implementation & Test Verification: T74.3.3: Replace Docker socket bind mount for Authentik worker with Docker socket proxy i [Role: implementer] [Files: docker-compose.yml]
+
+
+### Task taskcade-t70.1.2 Rehabilitation [2026-10-12T17:02:44.825Z]
+- **Parent Task**: T70.1.2: Generate type-safe method stubs containing parameter contracts, return types, an (`taskcade-t70.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T70.1.2: Generate type-safe method stubs containing parameter contracts, return types, an [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [ ] `taskcade-t70.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T70.1.2: Generate type-safe method stubs containing parameter contracts, return types, an [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+
+
+### Task taskcade-t74.4.3 Rehabilitation [2026-10-12T16:34:52.213Z]
+- **Parent Task**: T74.4.3: Add Docker image scanning step using Trivy or Grype scanning the built container (`taskcade-t74.4.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.4.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.4.3: Add Docker image scanning step using Trivy or Grype scanning the built container [Role: type_specialist] [Files: .github/workflows/ci.yml]
+  - [ ] `taskcade-t74.4.3.2`: [Rehab 2/2] Implementation & Test Verification: T74.4.3: Add Docker image scanning step using Trivy or Grype scanning the built container [Role: implementer] [Files: .github/workflows/ci.yml]
+
+
+### Task taskcade-t68.2.1 Rehabilitation [2026-10-12T16:25:21.526Z]
+- **Parent Task**: T68.2.1: Implement checkVramHeadroom(requiredMb: number) in AmdVegaTelemetryProvider quer (`taskcade-t68.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T68.2.1: Implement checkVramHeadroom(requiredMb: number) in AmdVegaTelemetryProvider quer [Role: type_specialist] [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
+  - [ ] `taskcade-t68.2.1.2`: [Rehab 2/2] Implementation & Test Verification: T68.2.1: Implement checkVramHeadroom(requiredMb: number) in AmdVegaTelemetryProvider quer [Role: implementer] [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
+
+
+### Task taskcade-t74.8.4 Rehabilitation [2026-10-12T15:53:55.802Z]
+- **Parent Task**: T74.8.4: Replace `: any` mock types in GitWorktreeAndWebhook.test.ts and Inference.test.t (`taskcade-t74.8.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.8.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.8.4: Replace `: any` mock types in GitWorktreeAndWebhook.test.ts and Inference.test.t [Role: type_specialist] [Files: packages/engine/src/gitea/__tests__/GitWorktreeAndWebhook.test.ts]
+  - [ ] `taskcade-t74.8.4.2`: [Rehab 2/2] Implementation & Test Verification: T74.8.4: Replace `: any` mock types in GitWorktreeAndWebhook.test.ts and Inference.test.t [Role: implementer] [Files: packages/engine/src/gitea/__tests__/GitWorktreeAndWebhook.test.ts]
+
+
+### Task taskcade-t76.2.4 Rehabilitation [2026-10-12T15:39:36.023Z]
+- **Parent Task**: T76.2.4: Write frontend unit tests verifying modal open/close, SSE event binding, and ter (`taskcade-t76.2.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t76.2.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T76.2.4: Write frontend unit tests verifying modal open/close, SSE event binding, and ter [Role: type_specialist] [Files: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.spec.ts]
+  - [ ] `taskcade-t76.2.4.2`: [Rehab 2/2] Implementation & Test Verification: T76.2.4: Write frontend unit tests verifying modal open/close, SSE event binding, and ter [Role: implementer] [Files: packages/frontend/src/app/components/model-pull-modal/model-pull-modal.component.spec.ts]
+
+
+### Task taskcade-t66.3.4 Rehabilitation [2026-10-12T15:33:13.461Z]
+- **Parent Task**: T66.3.4: Write unit tests verifying resetAllStats updates all model rows to clean baselin (`taskcade-t66.3.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.3.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T66.3.4: Write unit tests verifying resetAllStats updates all model rows to clean baselin [Role: type_specialist] [Files: packages/db/src/tests/model_health_reset.test.ts]
+  - [ ] `taskcade-t66.3.4.2`: [Rehab 2/2] Implementation & Test Verification: T66.3.4: Write unit tests verifying resetAllStats updates all model rows to clean baselin [Role: implementer] [Files: packages/db/src/tests/model_health_reset.test.ts]
+
+
+### Task taskcade-t66.1.2 Rehabilitation [2026-10-12T15:20:22.200Z]
+- **Parent Task**: T66.1.2: Create index on task_stages(task_id, stage_name, started_at DESC) optimizing sta (`taskcade-t66.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T66.1.2: Create index on task_stages(task_id, stage_name, started_at DESC) optimizing sta [Role: type_specialist] [Files: packages/db/src/migrations/011_task_history_indexes.ts]
+  - [ ] `taskcade-t66.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T66.1.2: Create index on task_stages(task_id, stage_name, started_at DESC) optimizing sta [Role: implementer] [Files: packages/db/src/migrations/011_task_history_indexes.ts]
+
+
+### Task taskcade-t70.1.3 Rehabilitation [2026-10-12T15:03:57.434Z]
+- **Parent Task**: T70.1.3: Define declarative schematic templates for common workspace patterns (ScrubberRu (`taskcade-t70.1.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t70.1.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T70.1.3: Define declarative schematic templates for common workspace patterns (ScrubberRu [Role: type_specialist] [Files: packages/engine/src/generators/SchematicTemplates.ts]
+  - [ ] `taskcade-t70.1.3.2`: [Rehab 2/2] Implementation & Test Verification: T70.1.3: Define declarative schematic templates for common workspace patterns (ScrubberRu [Role: implementer] [Files: packages/engine/src/generators/SchematicTemplates.ts]
+
+
+### Task taskcade-t74.8.2 Rehabilitation [2026-10-12T15:01:48.399Z]
+- **Parent Task**: T74.8.2: Replace `: any` mock types in closed_loop_pr_and_tools.test.ts with properly typ (`taskcade-t74.8.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.8.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.8.2: Replace `: any` mock types in closed_loop_pr_and_tools.test.ts with properly typ [Role: type_specialist] [Files: packages/engine/src/tests/closed_loop_pr_and_tools.test.ts]
+  - [ ] `taskcade-t74.8.2.2`: [Rehab 2/2] Implementation & Test Verification: T74.8.2: Replace `: any` mock types in closed_loop_pr_and_tools.test.ts with properly typ [Role: implementer] [Files: packages/engine/src/tests/closed_loop_pr_and_tools.test.ts]
+
+
+### Task taskcade-t64.6.2 Rehabilitation [2026-10-12T14:57:16.768Z]
+- **Parent Task**: T64.6.2: Verify preconditions prior to merge: test status check must be 'success' and rev (`taskcade-t64.6.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.6.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T64.6.2: Verify preconditions prior to merge: test status check must be 'success' and rev [Role: type_specialist] [Files: packages/engine/src/gitea/AutomatedPrWorkflow.ts]
+  - [ ] `taskcade-t64.6.2.2`: [Rehab 2/2] Implementation & Test Verification: T64.6.2: Verify preconditions prior to merge: test status check must be 'success' and rev [Role: implementer] [Files: packages/engine/src/gitea/AutomatedPrWorkflow.ts]
+
+
+### Task taskcade-t65.5.1 Rehabilitation [2026-10-12T14:28:09.985Z]
+- **Parent Task**: T65.5.1: Add action buttons (Restart, Terminate) to process table rows with role-gated au (`taskcade-t65.5.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.5.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T65.5.1: Add action buttons (Restart, Terminate) to process table rows with role-gated au [Role: type_specialist] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+  - [ ] `taskcade-t65.5.1.2`: [Rehab 2/2] Implementation & Test Verification: T65.5.1: Add action buttons (Restart, Terminate) to process table rows with role-gated au [Role: implementer] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+
+
+### Task taskcade-t66.2.4 Rehabilitation [2026-10-12T14:19:00.549Z]
+- **Parent Task**: T66.2.4: Write integration tests verifying DELETE /api/history removes COMPLETED and FAIL (`taskcade-t66.2.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t66.2.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T66.2.4: Write integration tests verifying DELETE /api/history removes COMPLETED and FAIL [Role: type_specialist] [Files: packages/engine/src/tests/history_purge_api.test.ts]
+  - [ ] `taskcade-t66.2.4.2`: [Rehab 2/2] Implementation & Test Verification: T66.2.4: Write integration tests verifying DELETE /api/history removes COMPLETED and FAIL [Role: implementer] [Files: packages/engine/src/tests/history_purge_api.test.ts]
+
+
+### Task taskcade-t68.5.1 Rehabilitation [2026-10-12T14:02:12.862Z]
+- **Parent Task**: T68.5.1: Create MultiGpuTaskRouter in packages/engine/src/hardware/MultiGpuTaskRouter.ts  (`taskcade-t68.5.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.5.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T68.5.1: Create MultiGpuTaskRouter in packages/engine/src/hardware/MultiGpuTaskRouter.ts  [Role: type_specialist] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+  - [ ] `taskcade-t68.5.1.2`: [Rehab 2/2] Implementation & Test Verification: T68.5.1: Create MultiGpuTaskRouter in packages/engine/src/hardware/MultiGpuTaskRouter.ts  [Role: implementer] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+
+
+### Task taskcade-t74.6.4 Rehabilitation [2026-10-12T13:47:15.909Z]
+- **Parent Task**: T74.6.4: Write unit tests verifying JSON log output format, level filtering, and correlat (`taskcade-t74.6.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.6.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.6.4: Write unit tests verifying JSON log output format, level filtering, and correlat [Role: type_specialist] [Files: packages/engine/src/tests/structured_logger.test.ts]
+  - [ ] `taskcade-t74.6.4.2`: [Rehab 2/2] Implementation & Test Verification: T74.6.4: Write unit tests verifying JSON log output format, level filtering, and correlat [Role: implementer] [Files: packages/engine/src/tests/structured_logger.test.ts]
+
+
+### Task taskcade-t68.2.4 Rehabilitation [2026-10-12T13:44:04.837Z]
+- **Parent Task**: T68.2.4: Write unit tests verifying scheduler defers 8b tasks when VRAM headroom is const (`taskcade-t68.2.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.2.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T68.2.4: Write unit tests verifying scheduler defers 8b tasks when VRAM headroom is const [Role: type_specialist] [Files: packages/engine/src/tests/scheduler_vram_check.test.ts]
+  - [ ] `taskcade-t68.2.4.2`: [Rehab 2/2] Implementation & Test Verification: T68.2.4: Write unit tests verifying scheduler defers 8b tasks when VRAM headroom is const [Role: implementer] [Files: packages/engine/src/tests/scheduler_vram_check.test.ts]
+
+
+### Task taskcade-t64.4.4 Rehabilitation [2026-10-12T13:36:48.756Z]
+- **Parent Task**: T64.4.4: Write unit tests verifying review prompt formatting and verdict parsing from mod (`taskcade-t64.4.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.4.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T64.4.4: Write unit tests verifying review prompt formatting and verdict parsing from mod [Role: type_specialist] [Files: packages/engine/src/tests/pr_reviewer.test.ts]
+  - [ ] `taskcade-t64.4.4.2`: [Rehab 2/2] Implementation & Test Verification: T64.4.4: Write unit tests verifying review prompt formatting and verdict parsing from mod [Role: implementer] [Files: packages/engine/src/tests/pr_reviewer.test.ts]
+
+
+### Task taskcade-t86.1.2 Rehabilitation [2026-10-12T13:35:36.700Z]
+- **Parent Task**: T86.1.2: Implement `FleetHealthMonitor` service in `packages/engine/src/fleet/FleetHealth (`taskcade-t86.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t86.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T86.1.2: Implement `FleetHealthMonitor` service in `packages/engine/src/fleet/FleetHealth [Role: type_specialist] [Files: packages/engine/src/fleet/FleetHealthMonitor.ts]
+  - [ ] `taskcade-t86.1.2.2`: [Rehab 2/2] Implementation & Test Verification: T86.1.2: Implement `FleetHealthMonitor` service in `packages/engine/src/fleet/FleetHealth [Role: implementer] [Files: packages/engine/src/fleet/FleetHealthMonitor.ts]
+
+
+### Task taskcade-t65.2.2 Rehabilitation [2026-10-12T13:28:57.169Z]
+- **Parent Task**: T65.2.2: Compute activeRunningTestsCount signal from ArenaStateStore; animate badge pulse (`taskcade-t65.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T65.2.2: Compute activeRunningTestsCount signal from ArenaStateStore; animate badge pulse [Role: type_specialist] [Files: packages/frontend/src/app/app.ts]
+  - [ ] `taskcade-t65.2.2.2`: [Rehab 2/2] Implementation & Test Verification: T65.2.2: Compute activeRunningTestsCount signal from ArenaStateStore; animate badge pulse [Role: implementer] [Files: packages/frontend/src/app/app.ts]
+
+
+### Task taskcade-t64.6.3 Rehabilitation [2026-10-12T12:51:21.769Z]
+- **Parent Task**: T64.6.3: Execute squash-merge via Gitea API (POST /api/v1/repos/{owner}/{repo}/pulls/{ind (`taskcade-t64.6.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t64.6.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T64.6.3: Execute squash-merge via Gitea API (POST /api/v1/repos/{owner}/{repo}/pulls/{ind [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+  - [ ] `taskcade-t64.6.3.2`: [Rehab 2/2] Implementation & Test Verification: T64.6.3: Execute squash-merge via Gitea API (POST /api/v1/repos/{owner}/{repo}/pulls/{ind [Role: implementer] [Files: packages/engine/src/gitea/GiteaPrClient.ts]
+
+
+### Task taskcade-t68.2.2 Rehabilitation [2026-10-12T12:48:15.115Z]
+- **Parent Task**: T68.2.2: Enforce safety margin: require at least 1024 MB buffer above model requirement t (`taskcade-t68.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T68.2.2: Enforce safety margin: require at least 1024 MB buffer above model requirement t [Role: type_specialist] [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
+  - [ ] `taskcade-t68.2.2.2`: [Rehab 2/2] Implementation & Test Verification: T68.2.2: Enforce safety margin: require at least 1024 MB buffer above model requirement t [Role: implementer] [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
+
+
+### Task taskcade-t68.3.2 Rehabilitation [2026-10-12T12:39:42.219Z]
+- **Parent Task**: T68.3.2: Prioritize pending tasks that can be fulfilled by the currently loaded warm mode (`taskcade-t68.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.3.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T68.3.2: Prioritize pending tasks that can be fulfilled by the currently loaded warm mode [Role: type_specialist] [Files: packages/engine/src/scheduler/QueueGroomer.ts]
+  - [ ] `taskcade-t68.3.2.2`: [Rehab 2/2] Implementation & Test Verification: T68.3.2: Prioritize pending tasks that can be fulfilled by the currently loaded warm mode [Role: implementer] [Files: packages/engine/src/scheduler/QueueGroomer.ts]
+
+
+### Task taskcade-t65.4.3 Rehabilitation [2026-10-12T10:30:48.819Z]
+- **Parent Task**: T65.4.3: Implement smooth slide transition when expanding/collapsing drawer using CSS gri (`taskcade-t65.4.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.4.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T65.4.3: Implement smooth slide transition when expanding/collapsing drawer using CSS gri [Role: type_specialist] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+  - [ ] `taskcade-t65.4.3.2`: [Rehab 2/2] Implementation & Test Verification: T65.4.3: Implement smooth slide transition when expanding/collapsing drawer using CSS gri [Role: implementer] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.ts]
+
+
+### Task taskcade-t74.6.2 Rehabilitation [2026-10-12T09:50:32.294Z]
+- **Parent Task**: T74.6.2: Replace bare console.log/console.error calls across CacophonyDaemon, CacophonyHt (`taskcade-t74.6.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.6.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.6.2: Replace bare console.log/console.error calls across CacophonyDaemon, CacophonyHt [Role: type_specialist] [Files: packages/engine/src/daemon/*.ts]
+  - [ ] `taskcade-t74.6.2.2`: [Rehab 2/2] Implementation & Test Verification: T74.6.2: Replace bare console.log/console.error calls across CacophonyDaemon, CacophonyHt [Role: implementer] [Files: packages/engine/src/daemon/*.ts]
+
+
+### Task taskcade-t68.5.2 Rehabilitation [2026-10-12T09:36:54.543Z]
+- **Parent Task**: T68.5.2: Map individual model allocations to target accelerator by passing CUDA_VISIBLE_D (`taskcade-t68.5.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t68.5.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T68.5.2: Map individual model allocations to target accelerator by passing CUDA_VISIBLE_D [Role: type_specialist] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+  - [ ] `taskcade-t68.5.2.2`: [Rehab 2/2] Implementation & Test Verification: T68.5.2: Map individual model allocations to target accelerator by passing CUDA_VISIBLE_D [Role: implementer] [Files: packages/engine/src/hardware/MultiGpuTaskRouter.ts]
+
+
+### Task taskcade-t72.2.3 Rehabilitation [2026-10-12T09:01:06.232Z]
+- **Parent Task**: T72.2.3: Allow explicit model pinning via `[Model: qwen2.5-coder:7b-instruct-q4_K_M]` to  (`taskcade-t72.2.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 1800000ms for model 'qwen2.5-coder:7b-instruct-q4_K_M'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t72.2.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T72.2.3: Allow explicit model pinning via `[Model: qwen2.5-coder:7b-instruct-q4_K_M]` to  [Role: type_specialist] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+  - [ ] `taskcade-t72.2.3.2`: [Rehab 2/2] Implementation & Test Verification: T72.2.3: Allow explicit model pinning via `[Model: qwen2.5-coder:7b-instruct-q4_K_M]` to  [Role: implementer] [Files: packages/engine/src/scheduler/TaskScheduler.ts]
+
+
+### Task taskcade-t65.5.4 Rehabilitation [2026-10-12T08:31:05.288Z]
+- **Parent Task**: T65.5.4: Write unit tests verifying process action modal confirmation flow and role autho (`taskcade-t65.5.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t65.5.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T65.5.4: Write unit tests verifying process action modal confirmation flow and role autho [Role: type_specialist] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts]
+  - [ ] `taskcade-t65.5.4.2`: [Rehab 2/2] Implementation & Test Verification: T65.5.4: Write unit tests verifying process action modal confirmation flow and role autho [Role: implementer] [Files: packages/frontend/src/app/components/process-drawer/process-drawer.component.spec.ts]
+
+
+### Task taskcade-t67.2.2 Rehabilitation [2026-10-12T08:16:29.810Z]
+- **Parent Task**: T67.2.2: Stream initial buffer chunk (stream_init event) upon client connection containin (`taskcade-t67.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t67.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T67.2.2: Stream initial buffer chunk (stream_init event) upon client connection containin [Role: type_specialist] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+  - [ ] `taskcade-t67.2.2.2`: [Rehab 2/2] Implementation & Test Verification: T67.2.2: Stream initial buffer chunk (stream_init event) upon client connection containin [Role: implementer] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts]
+
+
+### Task taskcade-t74.6.3 Rehabilitation [2026-10-12T07:57:37.736Z]
+- **Parent Task**: T74.6.3: Add configurable log level (DEBUG, INFO, WARN, ERROR) via LOG_LEVEL env var defa (`taskcade-t74.6.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t74.6.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T74.6.3: Add configurable log level (DEBUG, INFO, WARN, ERROR) via LOG_LEVEL env var defa [Role: type_specialist] [Files: packages/engine/src/telemetry/StructuredLogger.ts]
+  - [ ] `taskcade-t74.6.3.2`: [Rehab 2/2] Implementation & Test Verification: T74.6.3: Add configurable log level (DEBUG, INFO, WARN, ERROR) via LOG_LEVEL env var defa [Role: implementer] [Files: packages/engine/src/telemetry/StructuredLogger.ts]
+
 
 ### Task taskcade-t74.7.2 Rehabilitation [2026-10-12T04:34:34.206Z]
 - **Parent Task**: T74.7.2: Add POST /api/admin/backup endpoint triggering on-demand database snapshot with  (`taskcade-t74.7.2`)

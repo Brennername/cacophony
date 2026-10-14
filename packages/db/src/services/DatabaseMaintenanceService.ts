@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { gzipSync } from "node:zlib";
+import { createGzip } from "node:zlib";
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
 
 export interface StorageMetrics {
@@ -41,15 +41,29 @@ export class DatabaseMaintenanceService {
     this.archiveDirPath = config.archiveDirPath ?? path.join(this.dataDirPath, "archives");
   }
 
-  public async runVacuumAndCompaction(): Promise<{ readonly durationMs: number; readonly dialect: string }> {
+  /**
+   * Executes database storage compaction and index optimization.
+   * Supports optional full compaction mode to rewrite relation files and reclaim disk space.
+   *
+   * @param options Optional maintenance options including full vacuum execution.
+   */
+  public async runVacuumAndCompaction(options?: { readonly full?: boolean }): Promise<{ readonly durationMs: number; readonly dialect: string }> {
     const start = Date.now();
     const dialect = this.driver.getDialect();
 
     if (dialect === "postgres") {
-
+      // PGlite (WASM) crashes with 'table index is out of bounds' on VACUUM FULL relation replacement.
+      // Standard VACUUM ANALYZE safely reclaims dead tuples into the free-space map and CHECKPOINT flushes WAL.
       await this.driver.execRaw("VACUUM ANALYZE;");
+      try {
+        await this.driver.execRaw("CHECKPOINT;");
+      } catch {
+        // checkpointing may be non-fatal or no-op depending on WASM filesystem sync
+      }
     } else if (dialect === "sqlite") {
-
+      if (options?.full) {
+        await this.driver.execRaw("VACUUM;");
+      }
       await this.driver.execRaw("PRAGMA optimize;");
       await this.driver.execRaw("PRAGMA wal_checkpoint(PASSIVE);");
     }
@@ -117,17 +131,13 @@ export class DatabaseMaintenanceService {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const cutoffIso = cutoffDate.toISOString();
 
-    const oldSnapshots = await this.driver.query<{
-      timestamp: string;
-      gpu_busy_pct: number;
-      edge_temp_c: number;
-      ppt_watts: number;
-    }>(
-      "SELECT timestamp, gpu_busy_pct, edge_temp_c, ppt_watts FROM telemetry_snapshots WHERE timestamp < $1 ORDER BY timestamp ASC",
+    const countRes = await this.driver.query<{ readonly count: string | number }>(
+      "SELECT count(*) as count FROM telemetry_snapshots WHERE timestamp < $1",
       [cutoffIso]
     );
+    const totalMatching = Number(countRes[0]?.count ?? 0);
 
-    if (oldSnapshots.length === 0) {
+    if (totalMatching === 0) {
       return {
         archivedCount: 0,
         cutoffIsoString: cutoffIso
@@ -135,18 +145,59 @@ export class DatabaseMaintenanceService {
     }
 
     fs.mkdirSync(this.archiveDirPath, { recursive: true });
-    const archiveFilename = `telemetry-archive-${cutoffDate.toISOString().replace(/[:.]/g, "-")}.json`;
+    const archiveFilename = `telemetry-archive-${cutoffDate.toISOString().replace(/[:.]/g, "-")}.json.gz`;
     const archivePath = path.join(this.archiveDirPath, archiveFilename);
 
-    const jsonContent = JSON.stringify(oldSnapshots, null, 2);
-    const gzippedContent = gzipSync(jsonContent);
+    const gzipStream = createGzip({ level: 9 });
+    const fileStream = fs.createWriteStream(archivePath, { flags: "w" });
+    gzipStream.pipe(fileStream);
+    gzipStream.write("[\n");
 
-    fs.writeFileSync(archivePath, gzippedContent, "binary");
+    const batchSize = 1000;
+    let archivedCount = 0;
+    let isFirst = true;
 
-    await this.driver.execute("DELETE FROM telemetry_snapshots WHERE timestamp < $1", [cutoffIso]);
+    while (archivedCount < totalMatching) {
+      const batch = await this.driver.query<{
+        readonly timestamp: string;
+        readonly gpu_busy_pct: number;
+        readonly edge_temp_c: number;
+        readonly ppt_watts: number;
+      }>(
+        "SELECT timestamp, gpu_busy_pct, edge_temp_c, ppt_watts FROM telemetry_snapshots WHERE timestamp < $1 ORDER BY timestamp ASC LIMIT $2",
+        [cutoffIso, batchSize]
+      );
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      for (const item of batch) {
+        const line = (isFirst ? "" : ",\n") + JSON.stringify(item);
+        gzipStream.write(line);
+        isFirst = false;
+      }
+
+      const timestamps = batch.map((s) => s.timestamp);
+      const placeholders = timestamps.map((_, idx) => `$${idx + 1}`).join(", ");
+      await this.driver.execute(
+        `DELETE FROM telemetry_snapshots WHERE timestamp IN (${placeholders})`,
+        timestamps
+      );
+
+      archivedCount += batch.length;
+    }
+
+    gzipStream.write("\n]\n");
+    gzipStream.end();
+    await new Promise<void>((resolve, reject) => {
+      fileStream.on("finish", resolve);
+      fileStream.on("error", reject);
+      gzipStream.on("error", reject);
+    });
 
     return {
-      archivedCount: oldSnapshots.length,
+      archivedCount,
       cutoffIsoString: cutoffIso,
       archiveFilePath: archivePath
     };
