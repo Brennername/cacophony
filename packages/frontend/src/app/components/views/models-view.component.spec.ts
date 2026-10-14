@@ -5,6 +5,9 @@ import { ModelsViewComponent } from './models-view.component';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+
 describe('ModelsViewComponent - Epoch Management & Leaderboard Suite (T82.5)', () => {
   let metricsService: HistoryMetricsService;
 
@@ -12,6 +15,8 @@ describe('ModelsViewComponent - Epoch Management & Leaderboard Suite (T82.5)', (
     TestBed.configureTestingModule({
       imports: [ModelsViewComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: ActivatedRoute,
           useValue: {

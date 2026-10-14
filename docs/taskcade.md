@@ -229,15 +229,15 @@ _RDF Category: orchestration_
 
 ### T70.1: Deterministic AST Code Skeleton & Scaffold Generator
 
-- [ ] T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/SchematicCodeGenerator.ts generating typed skeleton source files with verified imports, classes, and exported function signatures. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Class: SchematicCodeGenerator] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [ ] T70.1.2: Generate type-safe method stubs containing parameter contracts, return types, and docstrings, leaving only scoped implementation bodies for local models to fulfill. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Method: generateStubs] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [ ] T70.1.3: Define declarative schematic templates for common workspace patterns (ScrubberRule, TelemetryProvider, HttpRouteHandler, RepositoryService, AngularStandaloneComponent). [File: packages/engine/src/generators/SchematicTemplates.ts] [Class: SchematicTemplates] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [ ] T70.1.4: Write unit tests verifying that SchematicCodeGenerator produces syntactically valid TypeScript passing AstValidator. [File: packages/engine/src/tests/schematic_generator.test.ts] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+- [x] T70.1.1: Design and implement SchematicCodeGenerator in packages/engine/src/generators/SchematicCodeGenerator.ts generating typed skeleton source files with verified imports, classes, and exported function signatures. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Class: SchematicCodeGenerator] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+- [x] T70.1.2: Generate type-safe method stubs containing parameter contracts, return types, and docstrings, leaving only scoped implementation bodies for local models to fulfill. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Method: generateStubs] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+- [x] T70.1.3: Define declarative schematic templates for common workspace patterns (ScrubberRule, TelemetryProvider, HttpRouteHandler, RepositoryService, AngularStandaloneComponent). [File: packages/engine/src/generators/SchematicTemplates.ts] [Class: SchematicTemplates] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+- [x] T70.1.4: Write unit tests verifying that SchematicCodeGenerator produces syntactically valid TypeScript passing AstValidator. [File: packages/engine/src/tests/schematic_generator.test.ts] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
 
 ### T70.2: Import Injection & Slot-Fill Scaffolding Engine
 
-- [ ] T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated files so local 3B/7B models never have to synthesize boilerplate imports. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Method: injectImports] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
-- [ ] T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript compiler API (ts.createSourceFile). [File: packages/engine/src/generators/SignatureHarvester.ts] [Class: SignatureHarvester] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+- [x] T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated files so local 3B/7B models never have to synthesize boilerplate imports. [File: packages/engine/src/generators/SchematicCodeGenerator.ts] [Method: injectImports] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
+- [x] T70.2.2: Extract class names, method signatures, and exported interfaces using TypeScript compiler API (ts.createSourceFile). [File: packages/engine/src/generators/SignatureHarvester.ts] [Class: SignatureHarvester] [Test: npm test -- packages/engine/src/tests/schematic_generator.test.ts]
 - [x] T70.2.3: Restrict local model generation to a strict slot-fill prompt format (generating only the function body between // <BEGIN_IMPLEMENTATION> and // <END_IMPLEMENTATION>). [File: packages/engine/src/inference/SlotFillPromptBuilder.ts] [Class: SlotFillPromptBuilder] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
 - [x] T70.2.4: Write unit tests verifying slot-fill code synthesis, template marker extraction, and AST integrity. [File: packages/engine/src/tests/slot_fill.test.ts] [Test: npm test -- packages/engine/src/tests/slot_fill.test.ts]
 
@@ -297,7 +297,7 @@ _RDF Category: orchestration_
 - [ ] T72.1.1: Extend TaskcadeSeedLoader markdown parser to extract inline bracket metadata annotations: `[Role: ...]`, `[Model: ...]`, `[Temp: ...]`, `[MaxTokens: ...]`, `[Timeout: ...]`, `[BypassRules: ...]`, and `[Stack: ...]`. [File: packages/engine/src/scheduler/TaskcadeSeedLoader.ts] [Class: TaskcadeSeedLoader] [Test: npm test -- packages/engine/src/tests/seed_loader.test.ts]
 - [ ] T72.1.2: Define typed TaskMetadataHints interface in @cacophony/shared-types supporting fine-grained run specifications (model affinity override, temperature float, context budget, rule bypass flags, and targeted execution guardrails). [File: packages/shared-types/src/index.ts] [Interface: TaskMetadataHints] [Test: npm test -- packages/shared-types]
 - [ ] T72.1.3: Update TaskRecord and database schema to store structured metadataHints JSON payload alongside base task records. [File: packages/db/src/repositories/TaskRepository.ts] [Method: TaskRepository.create] [Test: npm test -- packages/db/src/tests/TaskRepository.test.ts]
-- [ ] T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are parsed accurately without corrupting task title or prompt instructions. [File: packages/engine/src/tests/seed_loader.test.ts] [Test: npm test -- packages/engine/src/tests/seed_loader.test.ts]
+- [x] T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are parsed accurately without corrupting task title or prompt instructions. [File: packages/engine/src/tests/seed_loader.test.ts] [Test: npm test -- packages/engine/src/tests/seed_loader.test.ts]
 
 ### T72.2: Dynamic Rule Scrubber Bypasses & Hyperparameter Pipeline Injection
 
@@ -640,6 +640,24 @@ _RDF Category: analytics_and_orchestration_
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t70.2.1 Rehabilitation [2026-10-14T08:58:51.467Z]
+- **Parent Task**: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  (`taskcade-t70.2.1`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t70.2.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [x] `taskcade-t70.2.1.2`: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated  [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+
+
+### Task taskcade-t72.1.4 Rehabilitation [2026-10-14T08:44:23.262Z]
+- **Parent Task**: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p (`taskcade-t72.1.4`)
+- **Failure Count**: 5
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t72.1.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: type_specialist] [Files: packages/engine/src/tests/seed_loader.test.ts]
+  - [x] `taskcade-t72.1.4.2`: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: implementer] [Files: packages/engine/src/tests/seed_loader.test.ts]
+
 
 ### Task taskcade-t66.4.3 Rehabilitation [2026-10-14T07:30:38.784Z]
 - **Parent Task**: T66.4.3: Delete granular sub-hour raw snapshots older than 7 days after successful rollup (`taskcade-t66.4.3`)
@@ -1133,8 +1151,8 @@ _RDF Category: analytics_and_orchestration_
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t70.2.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
-  - [ ] `taskcade-t70.2.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [x] `taskcade-t70.2.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [x] `taskcade-t70.2.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
 
 ### Task taskcade-t70.2.1.1 Rehabilitation [2026-10-13T11:30:23.499Z]
 
@@ -1142,8 +1160,8 @@ _RDF Category: analytics_and_orchestration_
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t70.2.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
-  - [ ] `taskcade-t70.2.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [x] `taskcade-t70.2.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: type_specialist] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
+  - [x] `taskcade-t70.2.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T70.2.1: Pre-populate all requisite monorepo and standard library imports into generated [Role: implementer] [Files: packages/engine/src/generators/SchematicCodeGenerator.ts]
 
 ### Task taskcade-t68.5.4.2 Rehabilitation [2026-10-13T11:11:06.510Z]
 
@@ -1430,8 +1448,8 @@ _RDF Category: analytics_and_orchestration_
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t72.1.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: type_specialist] [Files: packages/engine/src/tests/seed_loader.test.ts]
-  - [ ] `taskcade-t72.1.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: implementer] [Files: packages/engine/src/tests/seed_loader.test.ts]
+  - [x] `taskcade-t72.1.4.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: type_specialist] [Files: packages/engine/src/tests/seed_loader.test.ts]
+  - [x] `taskcade-t72.1.4.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: implementer] [Files: packages/engine/src/tests/seed_loader.test.ts]
 
 ### Task taskcade-t72.1.4.1 Rehabilitation [2026-10-13T05:49:26.704Z]
 
@@ -1439,8 +1457,8 @@ _RDF Category: analytics_and_orchestration_
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t72.1.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: type_specialist] [Files: packages/engine/src/tests/seed_loader.test.ts]
-  - [ ] `taskcade-t72.1.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: implementer] [Files: packages/engine/src/tests/seed_loader.test.ts]
+  - [x] `taskcade-t72.1.4.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: type_specialist] [Files: packages/engine/src/tests/seed_loader.test.ts]
+  - [x] `taskcade-t72.1.4.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/2] Scaffold & Type Contracts: T72.1.4: Write comprehensive unit tests verifying that complex metadata annotations are p [Role: implementer] [Files: packages/engine/src/tests/seed_loader.test.ts]
 
 ### Task taskcade-t72.1.3.2 Rehabilitation [2026-10-13T05:27:19.980Z]
 

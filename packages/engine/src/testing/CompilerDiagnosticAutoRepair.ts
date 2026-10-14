@@ -732,17 +732,43 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         );
         if (tplMatch && tplMatch[1]) {
           const tplPath = tplMatch[1];
-          const escaped = tplPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const regex = new RegExp(`templateUrl:\\s*['"]${escaped}['"]`, "g");
-          const updated = currentCode.replace(
-            regex,
-            `template: '<div class="component-container"></div>'`,
-          );
-          if (updated !== currentCode) {
-            currentCode = updated;
-            repairsApplied.push(
-              `Replaced missing template file '${tplPath}' with inline template`,
+          let createdOnDisk = false;
+          if (targetFilePath && tplPath.startsWith(".")) {
+            try {
+              const absTpl = path.resolve(
+                path.dirname(targetFilePath),
+                tplPath,
+              );
+              if (!fs.existsSync(absTpl)) {
+                fs.mkdirSync(path.dirname(absTpl), { recursive: true });
+                fs.writeFileSync(
+                  absTpl,
+                  `<section class="component-view">\n  <header class="component-header">\n    <h2>Component View</h2>\n  </header>\n  <main class="component-body">\n    <ng-content></ng-content>\n  </main>\n</section>\n`,
+                  "utf8",
+                );
+                createdOnDisk = true;
+                repairsApplied.push(
+                  `Created missing template file at '${tplPath}' with semantic structure`,
+                );
+              }
+            } catch {
+              // Disk write fallback
+            }
+          }
+
+          if (!createdOnDisk) {
+            const escaped = tplPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const regex = new RegExp(`templateUrl:\\s*['"]${escaped}['"]`, "g");
+            const updated = currentCode.replace(
+              regex,
+              `template: \`<section class="component-view"><header class="component-header"><h2>Component View</h2></header><main class="component-body"><ng-content></ng-content></main></section>\``,
             );
+            if (updated !== currentCode) {
+              currentCode = updated;
+              repairsApplied.push(
+                `Replaced missing template file '${tplPath}' with semantic inline template`,
+              );
+            }
           }
         }
       }
@@ -1291,10 +1317,132 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       currentCode = prependCode + currentCode;
     }
 
+    if (targetFilePath && currentCode.includes("@Component")) {
+      const decomp = this.decomposeInlineTemplates(
+        currentCode,
+        targetFilePath,
+      );
+      if (decomp.repairsApplied.length > 0) {
+        currentCode = decomp.repairedCode;
+        repairsApplied.push(...decomp.repairsApplied);
+      }
+    }
+
     return {
       repairedCode: currentCode,
       repairsApplied,
     };
+  }
+
+  /**
+   * Decomposes inlined Angular templates and styles into companion .html and .css files.
+   * Enforces Angular best practices and prevents monolithic component files.
+   */
+  public decomposeInlineTemplates(
+    currentCode: string,
+    targetFilePath?: string,
+  ): {
+    repairedCode: string;
+    repairsApplied: string[];
+    decomposedFiles: Array<{ filePath: string; content: string }>;
+  } {
+    const repairsApplied: string[] = [];
+    const decomposedFiles: Array<{ filePath: string; content: string }> = [];
+    let updatedCode = currentCode;
+
+    if (!targetFilePath || !currentCode.includes("@Component")) {
+      return { repairedCode: updatedCode, repairsApplied, decomposedFiles };
+    }
+
+    const dir = path.dirname(targetFilePath);
+    const fileName = path.basename(targetFilePath);
+    const baseName = fileName
+      .replace(/\.component\.ts$/, "")
+      .replace(/\.ts$/, "");
+
+    // Decompose inline template: template: `...` or template: '...' or template: "..."
+    const templateRegex =
+      /template\s*:\s*(?:`([\s\S]*?)`|'([\s\S]*?)'|"([\s\S]*?)")\s*(,)?/;
+    const templateMatch = updatedCode.match(templateRegex);
+    if (templateMatch) {
+      const templateContent = (
+        templateMatch[1] ??
+        templateMatch[2] ??
+        templateMatch[3] ??
+        ""
+      ).trim();
+      if (templateContent.length > 0) {
+        const htmlRelPath = `./${baseName}.component.html`;
+        const htmlAbsPath = path.resolve(dir, `${baseName}.component.html`);
+
+        decomposedFiles.push({
+          filePath: htmlAbsPath,
+          content: templateContent,
+        });
+        const trailingComma = templateMatch[4] ? "," : "";
+        updatedCode = updatedCode.replace(
+          templateRegex,
+          `templateUrl: '${htmlRelPath}'${trailingComma}`,
+        );
+        repairsApplied.push(
+          `Decomposed inline template into companion file '${htmlRelPath}'`,
+        );
+
+        try {
+          if (!fs.existsSync(htmlAbsPath)) {
+            fs.mkdirSync(path.dirname(htmlAbsPath), { recursive: true });
+            fs.writeFileSync(htmlAbsPath, `${templateContent}\n`, "utf8");
+          }
+        } catch {
+          // Disk write failure is non-fatal in sandboxed or virtual test contexts
+        }
+      }
+    }
+
+    // Decompose inline styles: styles: [`...`] or styles: ['...']
+    const stylesRegex =
+      /styles\s*:\s*\[\s*(?:`([\s\S]*?)`|'([\s\S]*?)'|"([\s\S]*?)")\s*\]\s*(,)?/;
+    const stylesMatch = updatedCode.match(stylesRegex);
+    if (stylesMatch) {
+      const stylesContent = (
+        stylesMatch[1] ??
+        stylesMatch[2] ??
+        stylesMatch[3] ??
+        ""
+      ).trim();
+      const cssRelPath = `./${baseName}.component.css`;
+      const cssAbsPath = path.resolve(dir, `${baseName}.component.css`);
+
+      decomposedFiles.push({
+        filePath: cssAbsPath,
+        content: stylesContent,
+      });
+      const trailingComma = stylesMatch[4] ? "," : "";
+      updatedCode = updatedCode.replace(
+        stylesRegex,
+        `styleUrl: '${cssRelPath}'${trailingComma}`,
+      );
+      repairsApplied.push(
+        `Decomposed inline styles into companion file '${cssRelPath}'`,
+      );
+
+      try {
+        if (!fs.existsSync(cssAbsPath)) {
+          fs.mkdirSync(path.dirname(cssAbsPath), { recursive: true });
+          fs.writeFileSync(
+            cssAbsPath,
+            stylesContent
+              ? `${stylesContent}\n`
+              : "/* component styles */\n",
+            "utf8",
+          );
+        }
+      } catch {
+        // Disk write failure is non-fatal in sandboxed or virtual test contexts
+      }
+    }
+
+    return { repairedCode: updatedCode, repairsApplied, decomposedFiles };
   }
 
   /**

@@ -1274,7 +1274,6 @@ export class CacophonyHttpServer {
         res.end(
           JSON.stringify({
             error: "Failed to purge historical tasks",
-            details: String(err),
           }),
         );
       }

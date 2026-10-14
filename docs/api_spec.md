@@ -347,6 +347,34 @@ Gracefully terminates a running subprocess. Role-gated: requires `OPERATOR` or `
 }
 ```
 
+### GET `/api/diagnostics`
+
+Returns runtime diagnostics, AST parser health, memory usage, and execution counters.
+
+### GET `/api/database/storage`
+
+Returns storage footprint metrics for PGlite/Postgres tables, wal segments, compaction status, and row counts.
+
+### POST `/api/database/maintenance`
+
+Executes vacuum, table reindexing, and historical telemetry compaction.
+
+### GET `/api/config/quotas`
+
+Retrieves per-model inference rate limits, token budgets, and daily execution caps.
+
+### GET & PUT `/api/config/role-affinity`
+
+Reads or updates agent role model affinity mappings (e.g. mapping `architect` or `reviewer` to preferred models).
+
+### GET `/api/promotion/status`
+
+Retrieves the current release promotion gating status, verifying canary benchmarks and test pass thresholds.
+
+### POST `/api/promotion/release`
+
+Triggers release tag promotion, tag creation in Gitea, and changelog generation.
+
 ---
 
 ## 2. Server-Sent Events (SSE) Stream

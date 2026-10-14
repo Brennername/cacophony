@@ -96,7 +96,7 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("Component, signal"));
   });
 
-  it("repairs missing Angular template files with inline placeholder", () => {
+  it("repairs missing Angular template files with semantic template", () => {
     const source = `@Component({\n  selector: 'app-bar',\n  templateUrl: './bar.component.html'\n})\nexport class BarComponent {}`;
     const result = repairer.repair(source, [
       diagnostic(
@@ -106,11 +106,22 @@ describe("CompilerDiagnosticAutoRepair", () => {
     ]);
 
     assert.ok(
-      result.repairedCode.includes(
-        "template: '<div class=\"component-container\"></div>'",
-      ),
+      result.repairedCode.includes("component-view"),
     );
     assert.ok(!result.repairedCode.includes("templateUrl"));
+  });
+
+  it("decomposes inline templates and styles into companion component files", () => {
+    const source = `@Component({\n  selector: 'app-card',\n  template: '<div><h3>Card Header</h3><p>Body</p></div>',\n  styles: ['div { display: flex; }']\n})\nexport class CardComponent {}`;
+    const result = repairer.decomposeInlineTemplates(
+      source,
+      "/fake/dir/card.component.ts",
+    );
+
+    assert.ok(result.repairedCode.includes("templateUrl: './card.component.html'"));
+    assert.ok(result.repairedCode.includes("styleUrl: './card.component.css'"));
+    assert.equal(result.decomposedFiles.length, 2);
+    assert.ok(result.decomposedFiles[0]!.content.includes("Card Header"));
   });
 
   it("repairs TS1002/TS1005 unterminated string literals and balances unclosed braces at EOF", () => {

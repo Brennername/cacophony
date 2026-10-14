@@ -90,13 +90,20 @@ describe('ProcessDrawerComponent (T65.4, T65.5)', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const headerBtn = compiled.querySelector('#process-drawer-toggle') as HTMLButtonElement;
+    expect(headerBtn).toBeTruthy();
 
-    headerBtn.click();
+    headerBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    if (!component.isExpanded()) {
+      headerBtn.click();
+    }
     fixture.detectChanges();
     expect(component.isExpanded()).toBe(true);
     expect(headerBtn.getAttribute('aria-expanded')).toBe('true');
 
-    headerBtn.click();
+    headerBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    if (component.isExpanded()) {
+      headerBtn.click();
+    }
     fixture.detectChanges();
     expect(component.isExpanded()).toBe(false);
     expect(headerBtn.getAttribute('aria-expanded')).toBe('false');

@@ -106,27 +106,38 @@ export class AutomatedPrReviewer {
       }
     }
 
-    // Extract SUMMARY: line
+    // Extract SUMMARY: line deterministically without polynomial regex backtracking
     let summary = "";
-    const summaryMatch = cleanOutput.match(
-      /SUMMARY:\s*([\s\S]*?)(?=(?:FINDINGS:|$))/i,
-    );
-    if (summaryMatch && summaryMatch[1]) {
-      summary = summaryMatch[1].trim();
+    const summaryKeywordIndex = cleanOutput.toUpperCase().indexOf("SUMMARY:");
+    if (summaryKeywordIndex !== -1) {
+      const textAfterSummary = cleanOutput.slice(
+        summaryKeywordIndex + "SUMMARY:".length,
+      );
+      const findingsKeywordIndex =
+        textAfterSummary.toUpperCase().indexOf("FINDINGS:");
+      const rawSummary =
+        findingsKeywordIndex !== -1
+          ? textAfterSummary.slice(0, findingsKeywordIndex)
+          : textAfterSummary;
+      summary = rawSummary.trim();
     } else {
       summary = cleanOutput.slice(0, 300).trim();
     }
 
-    // Extract FINDINGS lines
-    const findingsSectionMatch = cleanOutput.match(/FINDINGS:\s*([\s\S]*)$/i);
-    if (findingsSectionMatch && findingsSectionMatch[1]) {
-      const lines = findingsSectionMatch[1].split("\n");
+    // Extract FINDINGS lines deterministically
+    const findingsKeywordIndex = cleanOutput.toUpperCase().indexOf("FINDINGS:");
+    if (findingsKeywordIndex !== -1) {
+      const findingsText = cleanOutput.slice(
+        findingsKeywordIndex + "FINDINGS:".length,
+      );
+      const lines = findingsText.split("\n");
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed.startsWith("-")) continue;
 
+        // Bounded finding match: - [SEVERITY] [file:line] description
         const findingMatch = trimmed.match(
-          /^-\s*\[(BLOCKER|WARNING|INFO)\]\s*(?:\[([^\]]+)\])?\s*:?\s*(.*)$/i,
+          /^-\s*\[(BLOCKER|WARNING|INFO)\](?:\s*\[([^\]]+)\])?\s*:?\s*(.*)$/i,
         );
         if (findingMatch) {
           const rawSeverity = (findingMatch[1] || "INFO").toLowerCase();

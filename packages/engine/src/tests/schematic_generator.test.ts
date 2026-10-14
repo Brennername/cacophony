@@ -166,4 +166,74 @@ test("SchematicCodeGenerator Suite", async (t) => {
       assert.ok(classFound, "Class declaration should exist after merge");
     },
   );
+
+  await t.test(
+    "T70.2.1: should inject missing imports and avoid duplicate imports",
+    () => {
+      const initialSource = `import { useState } from "react";\n\nexport class ViewComponent {}`;
+      const injected = generator.injectImports(initialSource, [
+        'import { useState } from "react";',
+        'import type { TaskRecord } from "@cacophony/shared-types";',
+        'import * as path from "node:path";',
+      ]);
+
+      assert.ok(
+        injected.includes('import type { TaskRecord } from "@cacophony/shared-types";'),
+      );
+      assert.ok(injected.includes('import * as path from "node:path";'));
+      // Verify no duplicate react import
+      const matches = injected.match(/from "react"/g);
+      assert.strictEqual(matches?.length, 1);
+    },
+  );
+
+  await t.test(
+    "T70.1.3: should generate valid AST source code from declarative SchematicTemplates blueprints",
+    async () => {
+      const { SchematicTemplates } = await import(
+        "../generators/SchematicTemplates.js"
+      );
+
+      // 1. ScrubberRule template
+      const scrubberSpec = SchematicTemplates.scrubberRule("EmojiFilterRule");
+      const scrubberScaffold = generator.generateScaffold(scrubberSpec);
+      assert.ok(scrubberScaffold.sourceCode.includes("export class EmojiFilterRule"));
+      assert.ok(scrubberScaffold.sourceCode.includes("scrub(source: string, filePath: string): ScrubberResult"));
+
+      // 2. TelemetryProvider template
+      const telemetrySpec = SchematicTemplates.telemetryProvider("GpuMetricsProvider");
+      const telemetryScaffold = generator.generateScaffold(telemetrySpec);
+      assert.ok(telemetryScaffold.sourceCode.includes("export class GpuMetricsProvider"));
+      assert.ok(telemetryScaffold.sourceCode.includes("sample(): Promise<TelemetrySnapshot>"));
+
+      // 3. HttpRouteHandler template
+      const httpSpec = SchematicTemplates.httpRouteHandler("TasksRouteHandler");
+      const httpScaffold = generator.generateScaffold(httpSpec);
+      assert.ok(httpScaffold.sourceCode.includes("export class TasksRouteHandler"));
+      assert.ok(httpScaffold.sourceCode.includes("canHandle(pathname: string, method: string): boolean"));
+
+      // 4. RepositoryService template
+      const repoSpec = SchematicTemplates.repositoryService("TaskRepository", "TaskRecord");
+      const repoScaffold = generator.generateScaffold(repoSpec);
+      assert.ok(repoScaffold.sourceCode.includes("export class TaskRepository"));
+      assert.ok(repoScaffold.sourceCode.includes("findById(id: string): Promise<TaskRecord | null>"));
+
+      // 5. AngularStandaloneComponent template
+      const angularSpec = SchematicTemplates.angularStandaloneComponent("StatusBadgeComponent", "app-status-badge");
+      const angularScaffold = generator.generateScaffold(angularSpec);
+      assert.ok(angularScaffold.sourceCode.includes("export class StatusBadgeComponent"));
+      assert.ok(angularScaffold.sourceCode.includes("ngOnInit(): void"));
+
+      // Verify AST validity
+      const sf = ts.createSourceFile(
+        "angular.ts",
+        angularScaffold.sourceCode,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TS,
+      );
+      assert.ok(sf.statements.length > 0);
+    },
+  );
 });
+

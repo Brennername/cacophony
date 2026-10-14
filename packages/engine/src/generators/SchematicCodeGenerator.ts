@@ -281,4 +281,69 @@ export class SchematicCodeGenerator {
 
     return result;
   }
+
+  /**
+   * Injects import statements into the source code while preventing duplicate imports.
+   * Parses existing imports via TypeScript AST and prepends missing statements cleanly.
+   */
+  public injectImports(
+    sourceCode: string,
+    importsToInject: readonly string[],
+    fileName = "source.ts",
+  ): string {
+    if (!importsToInject || importsToInject.length === 0) {
+      return sourceCode;
+    }
+
+    const sourceFile = ts.createSourceFile(
+      fileName,
+      sourceCode,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
+
+    const existingModules = new Set<string>();
+    let lastImportEnd = 0;
+
+    for (const statement of sourceFile.statements) {
+      if (ts.isImportDeclaration(statement)) {
+        if (ts.isStringLiteral(statement.moduleSpecifier)) {
+          existingModules.add(statement.moduleSpecifier.text);
+        }
+        lastImportEnd = statement.getEnd();
+      }
+    }
+
+    const newImports: string[] = [];
+    for (const imp of importsToInject) {
+      const trimmed = imp.trim();
+      if (!trimmed) continue;
+      const modMatch = trimmed.match(/from\s*['"]([^'"]+)['"]/);
+      if (modMatch && modMatch[1]) {
+        if (!existingModules.has(modMatch[1])) {
+          newImports.push(trimmed);
+          existingModules.add(modMatch[1]);
+        }
+      } else if (!sourceCode.includes(trimmed)) {
+        newImports.push(trimmed);
+      }
+    }
+
+    if (newImports.length === 0) {
+      return sourceCode;
+    }
+
+    const importBlock = newImports.join("\n") + "\n";
+    if (lastImportEnd > 0) {
+      return (
+        sourceCode.slice(0, lastImportEnd) +
+        "\n" +
+        importBlock +
+        sourceCode.slice(lastImportEnd).replace(/^\n+/, "")
+      );
+    }
+
+    return importBlock + (sourceCode.length > 0 ? "\n" + sourceCode : "");
+  }
 }

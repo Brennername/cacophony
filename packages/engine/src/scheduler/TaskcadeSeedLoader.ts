@@ -172,13 +172,20 @@ export class TaskcadeSeedLoader {
       const taskCode = match[2]?.trim() || "";
       const rawBody = match[3]?.trim() || "";
 
-      // Extract [File: ...] and [Test: ...] annotations
-      const fileMatch = rawBody.match(/\[File:\s*([^\]]+)\]/i);
+      // Extract [File: ...] / [Files: ...], [Test: ...], [Role: ...], and [Priority: ...] annotations
+      const fileMatch = rawBody.match(/\[Files?:\s*([^\]]+)\]/i);
       const testMatch = rawBody.match(/\[Test:\s*([^\]]+)\]/i);
+      const roleMatch = rawBody.match(/\[Role:\s*([^\]]+)\]/i);
+      const priorityMatch = rawBody.match(/\[Priority:\s*([^\]]+)\]/i);
 
       let cleanPrompt = rawBody
-        .replace(/\[File:\s*[^\]]+\]/gi, "")
+        .replace(/\[Files?:\s*[^\]]+\]/gi, "")
         .replace(/\[Test:\s*[^\]]+\]/gi, "")
+        .replace(/\[Role:\s*[^\]]+\]/gi, "")
+        .replace(/\[Priority:\s*[^\]]+\]/gi, "")
+        .replace(/\[BypassRules:\s*[^\]]+\]/gi, "")
+        .replace(/\[Temp:\s*[^\]]+\]/gi, "")
+        .replace(/\[Model:\s*[^\]]+\]/gi, "")
         .replace(/\[Method:\s*[^\]]+\]/gi, "")
         .replace(/\[Class:\s*[^\]]+\]/gi, "")
         .replace(/\[Route:\s*[^\]]+\]/gi, "")
@@ -218,10 +225,23 @@ export class TaskcadeSeedLoader {
         }
       }
 
-      // Assign agent role based on task nature
+      // Assign agent role based on task nature or explicit annotation
       let role: AgentRole = "implementer";
       const promptLower = cleanPrompt.toLowerCase();
-      if (
+      if (roleMatch && roleMatch[1]) {
+        const rawRole = roleMatch[1].trim().toLowerCase();
+        if (
+          [
+            "architect",
+            "implementer",
+            "test_engineer",
+            "reviewer",
+            "doc_writer",
+          ].includes(rawRole)
+        ) {
+          role = rawRole as AgentRole;
+        }
+      } else if (
         promptLower.includes("write unit test") ||
         promptLower.includes("write frontend unit test") ||
         promptLower.includes("write integration test")
@@ -244,9 +264,14 @@ export class TaskcadeSeedLoader {
         role = "doc_writer";
       }
 
-      // Priority tier mapping: default P1, P0 for critical infra, P2 for maintenance/docs
+      // Priority tier mapping: explicit annotation, or default P1, P0 for critical, P2 for maintenance/docs
       let priority: TaskPriority = "P1";
-      if (
+      if (priorityMatch && priorityMatch[1]) {
+        const rawPri = priorityMatch[1].trim().toUpperCase();
+        if (["P0", "P1", "P2", "P3"].includes(rawPri)) {
+          priority = rawPri as TaskPriority;
+        }
+      } else if (
         promptLower.includes("critical") ||
         promptLower.includes("deadlock") ||
         promptLower.includes("security")

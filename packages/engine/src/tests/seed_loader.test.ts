@@ -83,4 +83,47 @@ test("T47.6: TaskcadeSeedLoader Suite", async (t) => {
       assert.strictEqual(res2.created, false);
     },
   );
+
+  await t.test(
+    "T72.1.4: Parses complex metadata annotations without corrupting task title or prompt instructions",
+    () => {
+      const complexMarkdown = `
+# Extended Taskcade
+## Phase 72: Advanced Scaffolding & Seed Loading
+- [ ] T72.1.4: Complex metadata task specification [Role: test_engineer] [Priority: P0] [Files: packages/engine/src/tests/seed_loader.test.ts] [Test: npm test -- packages/engine/src/tests/seed_loader.test.ts] [BypassRules: no_any] [Temp: 0.2] [Model: qwen2.5-coder:7b]
+`;
+
+      const loader = new TaskcadeSeedLoader("/fake/path");
+      const parsed = loader.parseMarkdown(complexMarkdown);
+
+      assert.strictEqual(parsed.length, 1);
+      const item = parsed[0]!;
+
+      assert.strictEqual(item.taskId, "taskcade-t72.1.4");
+      assert.strictEqual(item.role, "test_engineer");
+      assert.strictEqual(item.priority, "P0");
+      assert.strictEqual(
+        item.focusFiles,
+        "packages/engine/src/tests/seed_loader.test.ts",
+      );
+      assert.strictEqual(
+        item.testCommand,
+        "npm test -- packages/engine/src/tests/seed_loader.test.ts",
+      );
+
+      // Verify that cleanPrompt, title, and prompt instructions do NOT contain raw bracketed annotations
+      assert.ok(!item.title.includes("[Role:"));
+      assert.ok(!item.title.includes("[Priority:"));
+      assert.ok(!item.title.includes("[BypassRules:"));
+      assert.ok(!item.title.includes("[Temp:"));
+      assert.ok(!item.title.includes("[Model:"));
+      assert.ok(item.title.includes("Complex metadata task specification"));
+
+      assert.ok(item.prompt.includes("[TASK OBJECTIVE]: T72.1.4: Complex metadata task specification"));
+      assert.ok(item.prompt.includes("[FOCUS FILE]: packages/engine/src/tests/seed_loader.test.ts"));
+      assert.ok(!item.prompt.includes("[BypassRules:"));
+      assert.ok(!item.prompt.includes("[Temp:"));
+    },
+  );
 });
+
