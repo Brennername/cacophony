@@ -66,10 +66,9 @@ When discovering or fixing an existing defect, follow this four-stage regression
 ### 2. Fork & Clone
 
 ```bash
-git clone [https://github.com/your-username/cacophony.git](https://github.com/your-username/cacophony.git)
+git clone https://github.com/BrennerName/cacophony.git
 cd cacophony
 npm install
-
 ```
 
 ### 3. Environment Configuration

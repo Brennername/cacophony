@@ -112,7 +112,7 @@ The workspace is organized as an npm workspace monorepo under `packages/`:
 ### 1. Clone Repository & Setup Environment
 
 ```bash
-git clone https://github.com/your-org/cacophony.git
+git clone https://github.com/BrennerName/cacophony.git
 cd cacophony
 cp .env.example .env
 ```
