@@ -1,0 +1,29 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+
+@Component({
+  selector: 'app-confirmation-dialog',
+  template: `
+    <div class="confirmation-dialog backdrop">
+      <div class="confirmation-dialog-content">
+        <p>{{ message }}</p>
+        <button (click)="onConfirm()">Confirm</button>
+        <button (click)="onCancel()">Cancel</button>
+      </div>
+    </div>
+  `,
+  styleUrls: ['./confirmation-dialog.component.css']
+})
+export class ConfirmationDialogComponent {
+
+  @Input() message: string = '';
+  @Output() confirm = new EventEmitter<void>();
+  @Output() cancel = new EventEmitter<void>();
+
+  onConfirm(): void {
+    this.confirm.emit();
+  }
+
+  onCancel(): void {
+    this.cancel.emit();
+  }
+}
