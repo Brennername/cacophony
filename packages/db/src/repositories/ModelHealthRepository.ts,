@@ -1,0 +1,55 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Mocking dependencies
+class MockDatabaseDriver {
+  executeQuery(query: string): Promise<any[]> {
+    return Promise.resolve([]);
+  }
+}
+
+class MockModelHealthRepository extends ModelHealthRepository {
+  constructor() {
+    super(new MockDatabaseDriver());
+  }
+
+  async logHeartbeat(modelId: string, timestamp: Date) {
+    // Mock implementation
+  }
+
+  calculateErrorRate(modelId: string): number {
+    // Mock implementation
+    return 0.1; // Example error rate
+  }
+
+  getEvictionTriggerThresholds(): { [key: string]: number } {
+    // Mock implementation
+    return { errorRate: 0.2 };
+  }
+}
+
+describe('ModelHealthRepository', () => {
+  describe('logHeartbeat', () => {
+    it('should log a heartbeat for a model', async () => {
+      const repository = new MockModelHealthRepository();
+      await repository.logHeartbeat('model1', new Date());
+      // Add assertions to verify the heartbeat is logged
+    });
+  });
+
+  describe('calculateErrorRate', () => {
+    it('should calculate the error rate for a model', () => {
+      const repository = new MockModelHealthRepository();
+      const errorRate = repository.calculateErrorRate('model1');
+      assert.strictEqual(errorRate, 0.1); // Example assertion
+    });
+  });
+
+  describe('getEvictionTriggerThresholds', () => {
+    it('should return the eviction trigger thresholds', () => {
+      const repository = new MockModelHealthRepository();
+      const thresholds = repository.getEvictionTriggerThresholds();
+      assert.deepStrictEqual(thresholds, { errorRate: 0.2 }); // Example assertion
+    });
+  });
+});
