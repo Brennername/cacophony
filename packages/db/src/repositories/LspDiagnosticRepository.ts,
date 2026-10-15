@@ -1,0 +1,73 @@
+import { LspDiagnosticRecord } from '@cacophony/shared-types';
+import { IDatabaseDriver } from '../interfaces/IDatabaseDriver';
+import { PGliteDriver, SQLiteDriver } from '../drivers';
+import { MigrationRunner } from '../migrations/MigrationRunner';
+
+export class LspDiagnosticRepository {
+  private readonly databaseDriver: IDatabaseDriver;
+  private readonly migrationRunner: MigrationRunner;
+
+  constructor(databaseDriver: IDatabaseDriver, migrationRunner: MigrationRunner) {
+    this.databaseDriver = databaseDriver;
+    this.migrationRunner = migrationRunner;
+  }
+
+  /**
+   * Upserts a batch of LSP diagnostic records into the database.
+   * @param records An array of LspDiagnosticRecord objects to upsert.
+   * @returns A promise that resolves with the number of records upserted.
+   */
+  async upsertRecords(records: LspDiagnosticRecord[]): Promise<number> {
+    const batchSize = 100; // Adjust as needed for performance
+    let offset = 0;
+    let totalUpserted = 0;
+
+    while (offset < records.length) {
+      const currentBatch = records.slice(offset, offset + batchSize);
+      const upsertResult = await this.databaseDriver.upsertRecords('lsp_diagnostics', currentBatch);
+      totalUpserted += upsertResult.insertedCount;
+      offset += batchSize;
+    }
+
+    return totalUpserted;
+  }
+
+
+  /**
+   * Filters LSP diagnostic records by severity.
+   * @param records An array of LspDiagnosticRecord objects to filter.
+   * @param severity The severity level to filter for (e.g., 'error', 'warning').
+   * @returns A new array containing only the records with the specified severity.
+   */
+  filterBySeverity(records: LspDiagnosticRecord[], severity: string): LspDiagnosticRecord[] {
+    return records.filter((record) => record.severity === severity);
+  }
+
+  /**
+   * Groups LSP diagnostic records by error message.
+   * @param records An array of LspDiagnosticRecord objects to group.
+   * @returns A map where the keys are error messages and the values are arrays of matching records.
+   */
+  groupByErrorMessage(records: LspDiagnosticRecord[]): Map<string, LspDiagnosticRecord[]> {
+    const groupedRecords = new Map<string, LspDiagnosticRecord[]>();
+
+    for (const record of records) {
+      const errorMessage = record.message;
+      if (!groupedRecords.has(errorMessage)) {
+        groupedRecords.set(errorMessage, []);
+      }
+      groupedRecords.get(errorMessage)?.push(record);
+    }
+
+    return groupedRecords;
+  }
+
+
+  /**
+   * Performs a database migration to ensure the LSP diagnostic table schema is up-to-date.
+   */
+  async migrateLspDiagnosticsTable(): Promise<void> {
+    await this.migrationRunner.runMigration('003_lsp_diagnostics');
+  }
+
+}
