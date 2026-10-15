@@ -43,6 +43,46 @@ export class HardwareMonitorComponent {
   public readonly velocityHistory = signal<number[]>([15, 22, 28, 35, 32, 38]);
 
   /**
+   * Primary accelerator device type (APU, GPU, or TPU) based on discovered system accelerators.
+   * Defaults to APU for local Cezanne/Vega architecture.
+   */
+  public readonly primaryDeviceType = computed(() => {
+    const list = this.accelerators();
+    if (list.length > 0) {
+      const primary = list.find((a) => a.isPrimaryApu) ?? list[0];
+      if (primary) {
+        const name = (primary.name || '').toLowerCase();
+        if (primary.isPrimaryApu || name.includes('apu') || name.includes('cezanne') || name.includes('vega')) {
+          return 'APU';
+        }
+        if (name.includes('tpu')) return 'TPU';
+        if (name.includes('nvidia') || name.includes('geforce') || name.includes('rtx') || name.includes('radeon')) {
+          return 'GPU';
+        }
+      }
+    }
+    return 'APU';
+  });
+
+  /**
+   * Dynamic CPU frequency estimation based on CPU load and governor scaling:
+   * 1800 MHz idle baseline scaling up to 4400 MHz boost.
+   */
+  public readonly cpuFreqMhz = computed(() => {
+    const load = this.metrics().cpuBusyPercent;
+    const base = 1800;
+    const boost = 2600;
+    return Math.round(base + (load / 100) * boost);
+  });
+
+  public readonly cpuFreqHistory = signal<number[]>([2200, 2400, 2800, 3200, 3100, 3500]);
+
+  public readonly cpuReferenceLines: readonly TelemetryReferenceLine[] = [
+    { value: 1800, color: '#06b6d4', style: 'dotted' },
+    { value: 4000, color: '#f59e0b', style: 'dotted' },
+  ];
+
+  /**
    * Core Frequency Reference Lines:
    * 200 MHz idle baseline (yellow dotted, unlabelled on progress bar)
    * 400 MHz low DPM state (blue dotted, unlabelled on progress bar)
@@ -52,9 +92,10 @@ export class HardwareMonitorComponent {
     { value: 400, color: '#3b82f6', style: 'dotted' },
   ];
 
-  public readonly sclk400Y = 32;
-  public readonly sclk200Y = 48;
-  public readonly sclkThrottleMidY = 40;
+  // Coordinates calibrated for tall 120px height viewBox with 32-unit gap between thresholds
+  public readonly sclk400Y = 64;
+  public readonly sclk200Y = 96;
+  public readonly sclkThrottleMidY = 80;
 
   public readonly sclk400Percent = 53.33;
   public readonly sclk200Percent = 80.0;
@@ -90,6 +131,15 @@ export class HardwareMonitorComponent {
       if (v > 0) {
         untracked(() => {
           this.velocityHistory.update((list) => [...list, v].slice(-30));
+        });
+      }
+    });
+
+    effect(() => {
+      const f = this.cpuFreqMhz();
+      if (f > 0) {
+        untracked(() => {
+          this.cpuFreqHistory.update((list) => [...list, f].slice(-30));
         });
       }
     });
@@ -164,26 +214,31 @@ export class HardwareMonitorComponent {
 
   /**
    * Maps SCLK frequency (0 - 2200 MHz) to calibrated Y coordinate in SVG sparkline.
-   * Demarcates the 0-400MHz throttling zone (y=56 down to y=32 in a 60px height viewBox)
-   * so the 200MHz and 400MHz dotted thresholds have adequate vertical clearance for labels
-   * and the 'throttle' text.
+   * Demarcates the 0-400MHz throttling zone (y=112 down to y=64 in a 120px height viewBox)
+   * providing generous 32-unit vertical clearance for 200MHz, 400MHz labels and the centered 'throttle' text.
    */
-  public mapSclkY(mhz: number, height = 60): number {
+  public mapSclkY(mhz: number, height = 120): number {
     const clamped = Math.max(0, Math.min(2200, mhz));
     if (clamped <= 200) {
-      // 0MHz -> y = 56, 200MHz -> y = 48
-      return height - 4 - (clamped / 200) * 8;
+      // 0MHz -> y = height - 8, 200MHz -> y = height * 0.80 (y=96 at h=120)
+      const y0 = height - 8;
+      const y200 = height * 0.8;
+      return y0 - (clamped / 200) * (y0 - y200);
     }
     if (clamped <= 400) {
-      // 200MHz -> y = 48, 400MHz -> y = 32
-      return 48 - ((clamped - 200) / 200) * 16;
+      // 200MHz -> y = height * 0.80 (y=96), 400MHz -> y = height * (64 / 120) (y=64)
+      const y200 = height * 0.8;
+      const y400 = height * (64 / 120);
+      return y200 - ((clamped - 200) / 200) * (y200 - y400);
     }
-    // Active boost range: 400MHz -> y = 32, 2200MHz -> y = 6
+    // Active boost range: 400MHz -> y = 64, 2200MHz -> y = 12
+    const y400 = height * (64 / 120);
+    const yMax = height * 0.1;
     const norm = (clamped - 400) / 1800;
-    return 32 - norm * 26;
+    return y400 - norm * (y400 - yMax);
   }
 
-  public getSclkLinePath(values: readonly number[] | number[], width = 200, height = 60): string {
+  public getSclkLinePath(values: readonly number[] | number[], width = 200, height = 120): string {
     if (!values || values.length < 2) return `M 0,${height} L ${width},${height}`;
     const step = width / (values.length - 1);
     return values
@@ -195,7 +250,7 @@ export class HardwareMonitorComponent {
       .join(' ');
   }
 
-  public getSclkAreaPath(values: readonly number[] | number[], width = 200, height = 60): string {
+  public getSclkAreaPath(values: readonly number[] | number[], width = 200, height = 120): string {
     if (!values || values.length < 2) return `M 0,${height} L ${width},${height} Z`;
     const line = this.getSclkLinePath(values, width, height);
     return `${line} L ${width},${height} L 0,${height} Z`;

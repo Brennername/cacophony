@@ -344,57 +344,53 @@
   font-variant-numeric: tabular-nums;
 }
 
-.vertical-meter-layout {
+.sub-card-stats-split {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
-  height: 80px;
-  min-height: 80px;
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  padding: 0.15rem 0;
+  gap: 0.5rem;
 }
 
-.vertical-meter-wrapper {
-  height: 100%;
-  width: 16px;
+.stats-left,
+.stats-right {
   display: flex;
-  justify-content: center;
   align-items: center;
-  flex-shrink: 0;
-  margin: 0 !important;
+  gap: 0.5rem;
 }
 
-.col-stats-tidy {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  height: 100%;
-  flex: 1;
+.stat-pair {
+  display: inline-flex;
+  align-items: baseline;
   gap: 0.25rem;
 }
 
-.tidy-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.05rem;
-}
-
-.tidy-label {
-  font-size: 0.5625rem;
-  font-weight: 600;
+.stat-key {
   color: var(--text-muted);
+  font-size: 0.5625rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.tidy-val {
-  font-size: 0.75rem;
+.stat-val {
   font-weight: 600;
-  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.sub-chart-container {
+  height: 36px;
+  margin-top: 0.35rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .temp-chart-container {
-  height: 36px;
-  margin-top: 0.25rem;
+  margin-top: 0.35rem;
 }
 
 /* Processing Devices: Bottom Half Side-by-Side Charts */
@@ -403,6 +399,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
   width: 100%;
+  flex: 1;
 }
 
 @media (min-width: 600px) {
@@ -420,6 +417,7 @@
   flex-direction: column;
   gap: 0.45rem;
   min-width: 0;
+  height: 100%;
 }
 
 .chart-panel-header {
@@ -441,19 +439,28 @@
   font-variant-numeric: tabular-nums;
 }
 
-.sclk-chart-container {
-  position: relative;
-  height: 60px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.35);
+.cpu-mhz-gauge-wrapper {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
 }
 
-.cpu-chart-container {
-  height: 60px;
+.tall-chart-container {
+  flex: 1;
+  min-height: 150px;
+  position: relative;
   border-radius: 4px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.35);
+  margin-top: 0.35rem;
+}
+
+.sclk-chart-container {
+  position: relative;
+}
+
+.cpu-freq-chart-container {
+  position: relative;
 }
 
 /* Memory Subsystem Blocks List */

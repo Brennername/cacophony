@@ -91,83 +91,98 @@
           <span class="section-title">Processing Devices</span>
           <span class="section-subtext">Compute engines, thermal dissipation, and frequency scaling</span>
         </div>
-      </div>
-
-      <!-- Top Half: Three Vertical Meters & Interspersed Stats -->
+      </div>      <!-- Top Half: Three Sub-Cards with Horizontal Meters & Balanced Sparklines -->
       <div class="processing-top-grid">
-        <!-- 1. GPU Load (Left Column) -->
+        <!-- 1. APU / Accelerator Load (Left Sub-Card) -->
         <div class="processing-meter-col">
           <div class="meter-col-header">
-            <span class="col-name">GPU Load</span>
+            <span class="col-name">{{ primaryDeviceType() }} Load</span>
             <span class="col-val font-mono fixed-load">{{ metrics().gpuBusyPercent }}%</span>
           </div>
-          <div class="vertical-meter-layout">
-            <div class="meter-wrapper vertical-meter-wrapper">
-              <app-tri-metric-gauge
-                variant="compact"
-                orientation="vertical"
-                [liveValue]="metrics().gpuBusyPercent"
-                [minRange]="0"
-                [maxRange]="100"
-                [externalHistory]="store.gpuLoadHistory()"
-                [runFloor]="0"
-                unit="%"
-                barClass="emerald"
-                [clutterThresholdPercent]="4"
+
+          <div class="sub-card-stats-split font-mono">
+            <div class="stats-left">
+              <span class="stat-pair"><span class="stat-key">CLOCK:</span> <span class="stat-val">{{ metrics().sclkMhz }} MHz</span></span>
+            </div>
+            <div class="stats-right">
+              <span class="stat-pair"><span class="stat-key">POWER:</span> <span class="stat-val">{{ metrics().pptPowerW }} W</span></span>
+              <span class="stat-pair"><span class="stat-key">VDDGFX:</span> <span class="stat-val">{{ metrics().vddgfxMv }} mV</span></span>
+            </div>
+          </div>
+
+          <div class="meter-wrapper">
+            <app-tri-metric-gauge
+              variant="compact"
+              [liveValue]="metrics().gpuBusyPercent"
+              [minRange]="0"
+              [maxRange]="100"
+              [externalHistory]="store.gpuLoadHistory()"
+              [runFloor]="0"
+              unit="%"
+              barClass="emerald"
+              [clutterThresholdPercent]="4"
+            />
+          </div>
+
+          <!-- APU Load Sparkline Graph -->
+          <div class="chart-container sub-chart-container">
+            <svg class="sparkline" viewBox="0 0 200 36" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="gpuLoadAoc" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.4" />
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.05" />
+                </linearGradient>
+              </defs>
+              <path
+                class="aoc-fill"
+                [attr.d]="getAreaPath(store.gpuLoadHistory(), 0, 100, 200, 36)"
+                fill="url(#gpuLoadAoc)"
               />
-            </div>
-            <div class="col-stats-tidy">
-              <div class="tidy-stat">
-                <span class="tidy-label">CORE</span>
-                <span class="tidy-val font-mono">{{ metrics().sclkMhz }} MHz</span>
-              </div>
-              <div class="tidy-stat">
-                <span class="tidy-label">POWER</span>
-                <span class="tidy-val font-mono">{{ metrics().pptPowerW }} W</span>
-              </div>
-            </div>
+              <path class="aoc-line line-emerald" [attr.d]="getLinePath(store.gpuLoadHistory(), 0, 100, 200, 36)" />
+            </svg>
           </div>
         </div>
 
-        <!-- 2. APU Temperature (Middle Column) -->
+        <!-- 2. APU / Accelerator Temperature (Middle Sub-Card) -->
         <div class="processing-meter-col temp-meter-col" [ngClass]="tempZoneClass()">
           <div class="meter-col-header">
-            <span class="col-name">APU Temp</span>
+            <span class="col-name">{{ primaryDeviceType() }} Temp</span>
             <div class="val-group">
               <span class="col-val font-mono fixed-temp">{{ metrics().edgeTempCelsius.toFixed(1) }}°C</span>
               <span class="zone-badge" [ngClass]="tempZoneClass()">{{ tempZoneLabel() }}</span>
             </div>
           </div>
-          <div class="vertical-meter-layout">
-            <div class="meter-wrapper vertical-meter-wrapper">
-              <app-tri-metric-gauge
-                variant="compact"
-                orientation="vertical"
-                [liveValue]="metrics().edgeTempCelsius"
-                [minRange]="0"
-                [maxRange]="105"
-                [externalHistory]="store.tempHistory()"
-                [runFloor]="20"
-                unit="°C"
-                barClass="amber"
-                [clutterThresholdPercent]="3"
-              />
+
+          <div class="sub-card-stats-split font-mono">
+            <div class="stats-left">
+              <span class="stat-pair"><span class="stat-key">RANGE:</span> <span class="stat-val">0 - 105°C</span></span>
             </div>
-            <div class="col-stats-tidy">
-              <div class="tidy-stat">
-                <span class="tidy-label">RANGE</span>
-                <span class="tidy-val font-mono">0 - 105°C</span>
-              </div>
-              <div class="tidy-stat">
-                <span class="tidy-label">CUTOFF</span>
-                <span class="tidy-val font-mono" [class.text-danger]="metrics().edgeTempCelsius >= 100">
+            <div class="stats-right">
+              <span class="stat-pair">
+                <span class="stat-key">CUTOFF:</span>
+                <span class="stat-val" [class.text-danger]="metrics().edgeTempCelsius >= 100">
                   105°C {{ metrics().edgeTempCelsius >= 105 ? '(HALT)' : '' }}
                 </span>
-              </div>
+              </span>
             </div>
           </div>
-          <!-- Middle Graph: APU Temperature Sparkline -->
-          <div class="chart-container temp-chart-container">
+
+          <div class="meter-wrapper">
+            <app-tri-metric-gauge
+              variant="compact"
+              [liveValue]="metrics().edgeTempCelsius"
+              [minRange]="0"
+              [maxRange]="105"
+              [externalHistory]="store.tempHistory()"
+              [runFloor]="20"
+              unit="°C"
+              barClass="amber"
+              [clutterThresholdPercent]="3"
+            />
+          </div>
+
+          <!-- APU Temperature Danger Sparkline Graph -->
+          <div class="chart-container sub-chart-container temp-chart-container">
             <svg class="sparkline" viewBox="0 0 200 36" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="tempDangerAoc" x1="0" y1="1" x2="0" y2="0">
@@ -193,47 +208,65 @@
           </div>
         </div>
 
-        <!-- 3. CPU Load (Right Column) -->
+        <!-- 3. CPU Load (Right Sub-Card) -->
         <div class="processing-meter-col">
           <div class="meter-col-header">
             <span class="col-name">CPU Load</span>
             <span class="col-val font-mono fixed-cpu">{{ metrics().cpuBusyPercent.toFixed(1) }}%</span>
           </div>
-          <div class="vertical-meter-layout">
-            <div class="meter-wrapper vertical-meter-wrapper">
-              <app-tri-metric-gauge
-                variant="compact"
-                orientation="vertical"
-                [liveValue]="metrics().cpuBusyPercent"
-                [minRange]="0"
-                [maxRange]="100"
-                [externalHistory]="store.cpuLoadHistory()"
-                [runFloor]="0"
-                unit="%"
-                barClass="amber"
-                [clutterThresholdPercent]="4"
+
+          <div class="sub-card-stats-split font-mono">
+            <div class="stats-left">
+              <span class="stat-pair"><span class="stat-key">CLOCK:</span> <span class="stat-val">{{ cpuFreqMhz() }} MHz</span></span>
+            </div>
+            <div class="stats-right">
+              <span class="stat-pair"><span class="stat-key">SOC/VDDNB:</span> <span class="stat-val">{{ metrics().vddnbMv }} mV</span></span>
+            </div>
+          </div>
+
+          <div class="meter-wrapper">
+            <app-tri-metric-gauge
+              variant="compact"
+              [liveValue]="metrics().cpuBusyPercent"
+              [minRange]="0"
+              [maxRange]="100"
+              [externalHistory]="store.cpuLoadHistory()"
+              [runFloor]="0"
+              unit="%"
+              barClass="amber"
+              [clutterThresholdPercent]="4"
+            />
+          </div>
+
+          <!-- CPU Load Sparkline Graph -->
+          <div class="chart-container sub-chart-container">
+            <svg class="sparkline" viewBox="0 0 200 36" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="cpuLoadAoc" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4" />
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.05" />
+                </linearGradient>
+              </defs>
+              <path
+                class="aoc-fill"
+                [attr.d]="getAreaPath(store.cpuLoadHistory(), 0, 100, 200, 36)"
+                fill="url(#cpuLoadAoc)"
               />
-            </div>
-            <div class="col-stats-tidy">
-              <div class="tidy-stat">
-                <span class="tidy-label">VDDGFX</span>
-                <span class="tidy-val font-mono">{{ metrics().vddgfxMv }} mV</span>
-              </div>
-              <div class="tidy-stat">
-                <span class="tidy-label">POWER</span>
-                <span class="tidy-val font-mono">{{ metrics().pptPowerW }} W</span>
-              </div>
-            </div>
+              <path
+                class="aoc-line line-amber"
+                [attr.d]="getLinePath(store.cpuLoadHistory(), 0, 100, 200, 36)"
+              />
+            </svg>
           </div>
         </div>
       </div>
 
-      <!-- Bottom Half: Side-by-Side Line Graphs (GPU on left, CPU on right) -->
+      <!-- Bottom Half: Side-by-Side Line Graphs (APU on left, CPU on right) Expanding to Bottom -->
       <div class="processing-bottom-grid">
-        <!-- GPU Core Frequency (SCLK) Line Graph (Left) -->
+        <!-- APU Core Frequency (SCLK) Line Graph (Left) -->
         <div class="processing-bottom-chart-panel">
           <div class="chart-panel-header">
-            <span class="panel-name">GPU Core Frequency (SCLK)</span>
+            <span class="panel-name">{{ primaryDeviceType() }} Core Frequency (SCLK)</span>
             <span class="panel-val font-mono">{{ metrics().sclkMhz }} MHz</span>
           </div>
 
@@ -253,8 +286,8 @@
             />
           </div>
 
-          <div class="chart-container sclk-chart-container">
-            <svg class="sparkline" viewBox="0 0 200 60" preserveAspectRatio="none">
+          <div class="chart-container sclk-chart-container tall-chart-container">
+            <svg class="sparkline" viewBox="0 0 200 120" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="sclkAoc" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#10b981" stop-opacity="0.45" />
@@ -274,12 +307,12 @@
               <!-- Live Core Frequency Wave (Area + Line) -->
               <path
                 class="aoc-fill"
-                [attr.d]="getSclkAreaPath(store.sclkHistory(), 200, 60)"
+                [attr.d]="getSclkAreaPath(store.sclkHistory(), 200, 120)"
                 fill="url(#sclkAoc)"
               />
               <path
                 class="aoc-line line-emerald"
-                [attr.d]="getSclkLinePath(store.sclkHistory(), 200, 60)"
+                [attr.d]="getSclkLinePath(store.sclkHistory(), 200, 120)"
               />
 
               <!-- 400MHz Blue Dotted Threshold Line (extends, stops for label, resumes after) -->
@@ -332,32 +365,45 @@
           </div>
         </div>
 
-        <!-- CPU Load Activity Line Graph (Right) -->
+        <!-- CPU Core Frequency Line Graph (Right) -->
         <div class="processing-bottom-chart-panel">
           <div class="chart-panel-header">
-            <span class="panel-name">CPU Activity & Load</span>
-            <span class="panel-val font-mono fixed-cpu">{{ metrics().cpuBusyPercent.toFixed(1) }}%</span>
+            <span class="panel-name">CPU Core Frequency</span>
+            <span class="panel-val font-mono fixed-cpu">{{ cpuFreqMhz() }} MHz</span>
           </div>
-          <div class="sub-stat-row">
-            <span>VDDGFX: {{ metrics().vddgfxMv }} mV</span>
-            <span>Power: {{ metrics().pptPowerW }} W</span>
+
+          <!-- Real-Time CPU Core Frequency Tri-Metric Rolling Gauge with 1800MHz base & 4000MHz boost dotted lines -->
+          <div class="cpu-mhz-gauge-wrapper">
+            <app-tri-metric-gauge
+              [liveValue]="cpuFreqMhz()"
+              unit="MHz"
+              label="CPU Frequency"
+              [minRange]="1000"
+              [maxRange]="4800"
+              [digits]="0"
+              [runFloor]="1800"
+              [referenceLines]="cpuReferenceLines"
+              [showReferenceLabels]="false"
+              [clutterThresholdPercent]="4"
+            />
           </div>
-          <div class="chart-container cpu-chart-container">
-            <svg class="sparkline" viewBox="0 0 200 60" preserveAspectRatio="none">
+
+          <div class="chart-container cpu-freq-chart-container tall-chart-container">
+            <svg class="sparkline" viewBox="0 0 200 120" preserveAspectRatio="none">
               <defs>
-                <linearGradient id="cpuAoc" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="cpuFreqAoc" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.45" />
                   <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.05" />
                 </linearGradient>
               </defs>
               <path
                 class="aoc-fill"
-                [attr.d]="getAreaPath(store.cpuLoadHistory(), 0, 100, 200, 60)"
-                fill="url(#cpuAoc)"
+                [attr.d]="getAreaPath(cpuFreqHistory(), 1000, 4800, 200, 120)"
+                fill="url(#cpuFreqAoc)"
               />
               <path
                 class="aoc-line line-amber"
-                [attr.d]="getLinePath(store.cpuLoadHistory(), 0, 100, 200, 60)"
+                [attr.d]="getLinePath(cpuFreqHistory(), 1000, 4800, 200, 120)"
               />
             </svg>
           </div>
