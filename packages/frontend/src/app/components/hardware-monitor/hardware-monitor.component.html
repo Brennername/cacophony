@@ -213,7 +213,7 @@
         <span>Power: {{ metrics().pptPowerW }} W</span>
       </div>
 
-      <!-- Real-Time Processor Core SCLK MHz Tri-Metric Rolling Gauge with 200MHz yellow & 400MHz blue dotted lines -->
+      <!-- Real-Time Processor Core SCLK MHz Tri-Metric Rolling Gauge with unlabelled 200MHz yellow & 400MHz blue dotted lines -->
       <div class="mhz-gauge-wrapper">
         <app-tri-metric-gauge
           [liveValue]="metrics().sclkMhz"
@@ -224,25 +224,95 @@
           [digits]="0"
           [runFloor]="100"
           [referenceLines]="sclkReferenceLines"
+          [showReferenceLabels]="false"
           [clutterThresholdPercent]="4"
         />
       </div>
       <div class="chart-container">
         <svg class="sparkline" viewBox="0 0 200 40" preserveAspectRatio="none">
           <defs>
-            <linearGradient id="gpuAoc" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="sclkAoc" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#10b981" stop-opacity="0.4" />
               <stop offset="100%" stop-color="#10b981" stop-opacity="0.05" />
             </linearGradient>
           </defs>
+
+          <!-- Demarcated Throttle Zone Shading (between 200MHz and 400MHz) -->
+          <rect
+            x="0"
+            [attr.y]="sclk400Y"
+            width="200"
+            [attr.height]="sclk200Y - sclk400Y"
+            class="throttle-zone-rect"
+          />
+
+          <!-- Live Core Frequency Wave (Area + Line) -->
           <path
             class="aoc-fill"
-            [attr.d]="getAreaPath(store.gpuLoadHistory(), 0, 100)"
-            fill="url(#gpuAoc)"
+            [attr.d]="getSclkAreaPath(store.sclkHistory())"
+            fill="url(#sclkAoc)"
           />
           <path
             class="aoc-line line-emerald"
-            [attr.d]="getLinePath(store.gpuLoadHistory(), 0, 100)"
+            [attr.d]="getSclkLinePath(store.sclkHistory())"
+          />
+
+          <!-- 400MHz Blue Dotted Threshold Line (extends, stops for label, resumes after) -->
+          <line
+            x1="2"
+            [attr.y1]="sclk400Y"
+            x2="10"
+            [attr.y2]="sclk400Y"
+            stroke="#3b82f6"
+            stroke-width="1.2"
+            stroke-dasharray="2,2"
+          />
+          <text
+            x="12"
+            [attr.y]="sclk400Y + 1.75"
+            class="sclk-thresh-label label-400"
+          >400MHz</text>
+          <line
+            x1="44"
+            [attr.y1]="sclk400Y"
+            x2="198"
+            [attr.y2]="sclk400Y"
+            stroke="#3b82f6"
+            stroke-width="1.2"
+            stroke-dasharray="2,2"
+          />
+
+          <!-- Throttle Demarcation Label centered between 200MHz and 400MHz lines -->
+          <text
+            x="100"
+            [attr.y]="sclkThrottleMidY"
+            text-anchor="middle"
+            class="throttle-demarcation-label"
+          >throttle</text>
+
+          <!-- 200MHz Yellow Dotted Threshold Line (extends, stops for label, resumes after) -->
+          <line
+            x1="2"
+            [attr.y1]="sclk200Y"
+            x2="10"
+            [attr.y2]="sclk200Y"
+            stroke="#eab308"
+            stroke-width="1.2"
+            stroke-dasharray="2,2"
+          />
+          <text
+            x="12"
+            [attr.y]="sclk200Y + 1.75"
+            class="sclk-thresh-label label-200"
+          >200MHz</text>
+          <line
+            x1="44"
+            [attr.y1]="sclk200Y"
+            x2="198"
+            [attr.y2]="sclk200Y"
+            stroke="#eab308"
+            stroke-width="1.2"
+            stroke-dasharray="2,2"
           />
         </svg>
       </div>

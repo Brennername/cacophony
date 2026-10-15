@@ -23,7 +23,7 @@
         [style.border-left-style]="ref.style || 'dotted'"
         [title]="(ref.label ? ref.label + ': ' : '') + ref.value + ' ' + unit()"
       >
-        @if (ref.label && variant() === 'full') {
+        @if (showReferenceLabels() && ref.label && variant() === 'full') {
           <span class="ref-label" [style.color]="ref.color">{{ ref.label }}</span>
         }
       </div>

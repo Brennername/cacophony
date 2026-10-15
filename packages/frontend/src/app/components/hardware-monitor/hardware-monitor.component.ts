@@ -44,13 +44,17 @@ export class HardwareMonitorComponent {
 
   /**
    * Core Frequency Reference Lines:
-   * 200 MHz idle baseline (yellow dotted)
-   * 400 MHz low DPM state (blue dotted)
+   * 200 MHz idle baseline (yellow dotted, unlabelled on progress bar)
+   * 400 MHz low DPM state (blue dotted, unlabelled on progress bar)
    */
   public readonly sclkReferenceLines: readonly TelemetryReferenceLine[] = [
-    { value: 200, color: '#eab308', label: '200M', style: 'dotted' },
-    { value: 400, color: '#3b82f6', label: '400M', style: 'dotted' },
+    { value: 200, color: '#eab308', style: 'dotted' },
+    { value: 400, color: '#3b82f6', style: 'dotted' },
   ];
+
+  public readonly sclk400Y = 22;
+  public readonly sclk200Y = 32;
+  public readonly sclkThrottleMidY = 27.5;
 
   public readonly velocityPercentOfHwm = computed(() => {
     const hwm = this.highWaterMark();
@@ -151,6 +155,41 @@ export class HardwareMonitorComponent {
   public getAreaPath(values: number[], minVal = 0, maxVal = 100, width = 200, height = 40): string {
     if (!values || values.length < 2) return `M 0,${height} L ${width},${height} Z`;
     const line = this.getLinePath(values, minVal, maxVal, width, height);
+    return `${line} L ${width},${height} L 0,${height} Z`;
+  }
+
+  /**
+   * Maps SCLK frequency (0 - 2200 MHz) to calibrated Y coordinate in SVG sparkline.
+   * Demarcates the 0-400MHz throttling zone (y=38 down to y=22) so the 200MHz and 400MHz
+   * dotted thresholds have adequate vertical clearance for labels and the 'throttle' text.
+   */
+  public mapSclkY(mhz: number, height = 40): number {
+    const clamped = Math.max(0, Math.min(2200, mhz));
+    if (clamped <= 400) {
+      // Calibrated throttle zone: 0MHz -> y=38, 200MHz -> y=32, 400MHz -> y=22
+      const norm = clamped / 400;
+      return height - 2 - norm * 16;
+    }
+    // Active boost range: 400MHz -> y=22, 2200MHz -> y=4
+    const norm = (clamped - 400) / 1800;
+    return 22 - norm * 18;
+  }
+
+  public getSclkLinePath(values: readonly number[] | number[], width = 200, height = 40): string {
+    if (!values || values.length < 2) return `M 0,${height} L ${width},${height}`;
+    const step = width / (values.length - 1);
+    return values
+      .map((v, i) => {
+        const x = i * step;
+        const y = this.mapSclkY(v, height);
+        return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }
+
+  public getSclkAreaPath(values: readonly number[] | number[], width = 200, height = 40): string {
+    if (!values || values.length < 2) return `M 0,${height} L ${width},${height} Z`;
+    const line = this.getSclkLinePath(values, width, height);
     return `${line} L ${width},${height} L 0,${height} Z`;
   }
 

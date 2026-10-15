@@ -42,6 +42,7 @@ export class TriMetricGaugeComponent {
   public readonly runFloor = input<number>(0);
   public readonly clutterThresholdPercent = input<number>(4.0);
   public readonly referenceLines = input<readonly TelemetryReferenceLine[] | undefined>(undefined);
+  public readonly showReferenceLabels = input<boolean>(false);
   public readonly variant = input<'full' | 'compact'>('full');
   public readonly barClass = input<string>('');
 

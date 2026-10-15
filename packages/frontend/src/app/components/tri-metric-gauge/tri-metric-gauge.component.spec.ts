@@ -86,6 +86,14 @@ describe('TriMetricGaugeComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const refElements = compiled.querySelectorAll('.reference-line');
     expect(refElements.length).toBe(2);
+
+    // Labels are omitted by default on progress bars to prevent header overlap
+    expect(compiled.querySelectorAll('.ref-label').length).toBe(0);
+
+    // Enabling showReferenceLabels renders the text labels
+    fixture.componentRef.setInput('showReferenceLabels', true);
+    fixture.detectChanges();
+    expect(compiled.querySelectorAll('.ref-label').length).toBe(2);
   });
 
   it('should render compact variant without header or stats row', () => {

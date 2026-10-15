@@ -29,8 +29,8 @@ describe('HardwareMonitorComponent - TriMetric Meters & Frequency Reference Line
   it('should configure 200MHz yellow and 400MHz blue dotted reference lines on Core Frequency', () => {
     const lines = component.sclkReferenceLines;
     expect(lines).toEqual([
-      { value: 200, color: '#eab308', label: '200M', style: 'dotted' },
-      { value: 400, color: '#3b82f6', label: '400M', style: 'dotted' },
+      { value: 200, color: '#eab308', style: 'dotted' },
+      { value: 400, color: '#3b82f6', style: 'dotted' },
     ]);
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -40,6 +40,23 @@ describe('HardwareMonitorComponent - TriMetric Meters & Frequency Reference Line
 
     const refLines = coreGauge?.querySelectorAll('.reference-line');
     expect(refLines?.length).toBe(2);
+
+    // On the progress bar, reference lines are unlabelled to avoid collision with Core Frequency label
+    const refLabels = coreGauge?.querySelectorAll('.ref-label');
+    expect(refLabels?.length).toBe(0);
+
+    // In the SCLK line graph, the demarcated throttle zone, threshold lines, and labels are rendered
+    const throttleRect = compiled.querySelector('.throttle-zone-rect');
+    expect(throttleRect).toBeTruthy();
+
+    const throttleText = compiled.querySelector('.throttle-demarcation-label');
+    expect(throttleText?.textContent?.trim()).toBe('throttle');
+
+    const label400 = compiled.querySelector('.sclk-thresh-label.label-400');
+    expect(label400?.textContent?.trim()).toBe('400MHz');
+
+    const label200 = compiled.querySelector('.sclk-thresh-label.label-200');
+    expect(label200?.textContent?.trim()).toBe('200MHz');
   });
 
   it('should render tri-metric compact gauge on the Token Velocity meter', () => {
