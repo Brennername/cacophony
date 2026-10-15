@@ -38,6 +38,10 @@ describe("ModelVramCatalog Unit Test Suite (T102.2.2)", () => {
     const profileGemma = catalog.getProfile("gemma3:4b-it-qat");
     assert.ok(profileGemma);
     assert.strictEqual(profileGemma?.modelId, "gemma3:4b");
+
+    const profileGemma12b = catalog.getProfile("gemma3:12b-it-qat");
+    assert.ok(profileGemma12b);
+    assert.strictEqual(profileGemma12b?.modelId, "gemma3:12b");
   });
 
   it("should return base footprint in GB and MB accurately", () => {
@@ -111,5 +115,43 @@ describe("ModelVramCatalog Unit Test Suite (T102.2.2)", () => {
     assert.strictEqual(catalog.getBaseFootprintMb("phi3:mini"), 2560);
     // Baseline profiles should still exist
     assert.ok(catalog.getProfile("qwen2.5-coder:7b"));
+  });
+
+  it("should dynamically estimate model profile from tag parameter size and byte size", () => {
+    // 12B model estimation
+    const gemma12b = ModelVramCatalog.estimateProfileFromTag("gemma3:12b-it-qat");
+    assert.strictEqual(gemma12b.baseFootprintGb, 9.0);
+    assert.strictEqual(gemma12b.baseFootprintMb, 9216);
+    assert.strictEqual(gemma12b.kvCachePer1kTokensMb, 160);
+
+    // 135M sub-billion model estimation
+    const smollm = ModelVramCatalog.estimateProfileFromTag("smollm2:135m");
+    assert.strictEqual(smollm.baseFootprintGb, 0.3);
+    assert.strictEqual(smollm.kvCachePer1kTokensMb, 32);
+
+    // Dynamic estimation from byte size (e.g. 8 GB file)
+    const exactBytes = ModelVramCatalog.estimateProfileFromTag("custom-pulled:latest", 8 * 1024 * 1024 * 1024);
+    assert.strictEqual(exactBytes.baseFootprintGb, 8.0);
+    assert.strictEqual(exactBytes.baseFootprintMb, 8192);
+  });
+
+  it("should dynamically sync profiles from installed models list", () => {
+    const catalog = new ModelVramCatalog({});
+    assert.strictEqual(catalog.getProfile("new-dynamic-model:14b"), undefined);
+
+    catalog.syncFromInstalledModels([
+      {
+        name: "new-dynamic-model:14b",
+        size: 9663676416, // ~9 GB
+        details: {
+          parameter_size: "14.2B",
+          quantization_level: "Q4_K_M",
+        },
+      },
+    ]);
+
+    const resolved = catalog.getProfile("new-dynamic-model:14b");
+    assert.ok(resolved);
+    assert.strictEqual(resolved?.baseFootprintGb, 9.0);
   });
 });

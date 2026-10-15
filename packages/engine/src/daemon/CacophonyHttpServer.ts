@@ -1746,6 +1746,10 @@ export class CacophonyHttpServer {
         : [];
       try {
         const models = await modelManager.listInstalledModels(protectedModels);
+        const scheduler = this.daemon.getScheduler();
+        if (scheduler && typeof scheduler.getVramCatalog === "function") {
+          scheduler.getVramCatalog().syncFromInstalledModels(models);
+        }
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(models));
       } catch (err: unknown) {

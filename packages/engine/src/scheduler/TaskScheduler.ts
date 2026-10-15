@@ -167,6 +167,7 @@ export class TaskScheduler implements IModelPredictor {
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
       "qwen2.5-coder:3b": 360_000,
       "gemma3:4b-it-qat": 420_000,
+      "gemma3:12b-it-qat": 780_000,
       "qwen2.5-coder:7b": 600_000,
       "qwen2.5-coder:7b-instruct-q4_K_M": 600_000,
       "deepseek-r1:8b": 840_000,
@@ -186,7 +187,7 @@ export class TaskScheduler implements IModelPredictor {
 
   /**
    * Normalizes model aliases, tags with context suffixes, and maps to installed host models.
-   * Prevents HTTP 404 errors when tasks specify model tag variations.
+   * Dynamically handles context suffixes (-4k, -8k, -16k, -32k) and standard model tag variations.
    */
   public static normalizeModelName(rawModel: string): string {
     const trimmed = rawModel.trim();
@@ -194,6 +195,8 @@ export class TaskScheduler implements IModelPredictor {
       "deepseek-r1:8b-4k": "deepseek-r1:8b",
       "gemma3:4b-it-qat-4k": "gemma3:4b-it-qat",
       "gemma3:4b": "gemma3:4b-it-qat",
+      "gemma3:12b-it-qat-4k": "gemma3:12b-it-qat",
+      "gemma3:12b": "gemma3:12b-it-qat",
       "qwen2.5-coder:3b-4k": "qwen2.5-coder:3b",
       "qwen2.5-coder:7b-4k": "qwen2.5-coder:7b",
       "qwen2.5-coder:14b-4k": "qwen2.5-coder:14b",
@@ -209,19 +212,48 @@ export class TaskScheduler implements IModelPredictor {
       return aliasMap[stripped];
     }
 
+    // Dynamic normalization: if model ends in -4k, -8k, -16k, -32k, return the base tag
+    if (/-(?:4|8|16|32)k$/i.test(trimmed)) {
+      return stripped;
+    }
+
     return trimmed;
   }
 
   /**
    * Resolves maximum execution timeout in milliseconds for the given model.
+   * Dynamically scales with parameter size if not explicitly configured in perModelTimeoutMs.
    */
   public resolveModelTimeout(model: string): number {
     const normalized = TaskScheduler.normalizeModelName(model);
-    return (
-      this.perModelTimeoutMs[normalized] ??
-      this.perModelTimeoutMs[model] ??
-      this.defaultTimeoutMs
-    );
+    if (this.perModelTimeoutMs[normalized] !== undefined) {
+      return this.perModelTimeoutMs[normalized]!;
+    }
+    if (this.perModelTimeoutMs[model] !== undefined) {
+      return this.perModelTimeoutMs[model]!;
+    }
+
+    // Dynamic heuristic based on parameter size
+    const paramMatch = normalized.match(/(\d+(?:\.\d+)?)\s*([bm])/i);
+    if (paramMatch && paramMatch[1] && paramMatch[2]) {
+      const val = parseFloat(paramMatch[1]);
+      const unit = paramMatch[2].toLowerCase();
+      if (unit === "m") {
+        return 240_000; // Small models: 4 mins
+      }
+      if (val <= 4) {
+        return 420_000; // 3B-4B: 7 mins
+      }
+      if (val <= 8) {
+        return 600_000; // 7B-8B: 10 mins
+      }
+      if (val <= 16) {
+        return 840_000; // 12B-16B: 14 mins
+      }
+      return 1_200_000; // >16B: 20 mins
+    }
+
+    return this.defaultTimeoutMs;
   }
 
   /**
@@ -443,6 +475,13 @@ export class TaskScheduler implements IModelPredictor {
    */
   public getLastPlacementDecision(): TaskPlacementDecision | undefined {
     return this.lastPlacementDecision;
+  }
+
+  /**
+   * Retrieves the ModelVramCatalog instance.
+   */
+  public getVramCatalog(): ModelVramCatalog {
+    return this.vramCatalog;
   }
 
   /**
@@ -803,13 +842,17 @@ export class TaskScheduler implements IModelPredictor {
         "qwen2.5-coder:7b",
       ];
     } else {
-      candidateList = [
+      const defaultCandidates = [
         "qwen2.5-coder:7b-instruct-q4_K_M",
         "qwen2.5-coder:7b",
+        "gemma3:12b-it-qat",
         "gemma3:4b-it-qat",
         "qwen2.5-coder:14b",
         "deepseek-coder-v2:16b",
       ];
+      candidateList = normalizedAssigned
+        ? [normalizedAssigned, ...defaultCandidates.filter((m) => m !== normalizedAssigned)]
+        : defaultCandidates;
     }
 
     try {
@@ -827,7 +870,7 @@ export class TaskScheduler implements IModelPredictor {
     if (role !== "architect" && role !== "reviewer") {
       candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
       if (candidateList.length === 0) {
-        candidateList = [
+        candidateList = normalizedAssigned ? [normalizedAssigned] : [
           "qwen2.5-coder:7b-instruct-q4_K_M",
           "gemma3:4b-it-qat",
         ];

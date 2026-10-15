@@ -28,6 +28,12 @@ export const MODEL_VRAM_TABLE: Record<string, ModelVramProfile> = {
     baseFootprintMb: 3174,
     kvCachePer1kTokensMb: 80,
   },
+  "gemma3:12b": {
+    modelId: "gemma3:12b",
+    baseFootprintGb: 8.9,
+    baseFootprintMb: 9114,
+    kvCachePer1kTokensMb: 160,
+  },
   "qwen2.5-coder:7b": {
     modelId: "qwen2.5-coder:7b",
     baseFootprintGb: 5.2,
@@ -74,10 +80,97 @@ export class ModelVramCatalog {
   }
 
   /**
-   * Retrieves profile for given model ID with substring matching fallback.
+   * Estimates a ModelVramProfile from raw model tag, parameter size, and byte size.
+   * Enables zero-hardcoding dynamic model support for any pulled model.
+   */
+  public static estimateProfileFromTag(
+    modelId: string,
+    sizeBytes?: number,
+    parameterSizeStr?: string,
+  ): ModelVramProfile {
+    // 1. If sizeBytes is provided, compute baseline weights directly
+    let baseFootprintGb = 4.0;
+    let baseFootprintMb = 4096;
+    let kvCachePer1kTokensMb = 100;
+
+    if (sizeBytes && sizeBytes > 0) {
+      baseFootprintGb = Math.round((sizeBytes / (1024 * 1024 * 1024)) * 10) / 10;
+      baseFootprintMb = Math.round(sizeBytes / (1024 * 1024));
+    } else {
+      // Parse parameter count from tag (e.g. "12b", "7b", "135m", "1.5b")
+      const paramMatch =
+        (parameterSizeStr || modelId).match(/(\d+(?:\.\d+)?)\s*([bm])/i);
+      if (paramMatch && paramMatch[1] && paramMatch[2]) {
+        const val = parseFloat(paramMatch[1]);
+        const unit = paramMatch[2].toLowerCase();
+        if (unit === "m") {
+          baseFootprintGb = Math.max(0.3, Math.round((val / 1000) * 2 * 10) / 10);
+        } else {
+          // Typically ~0.7 to 0.8 GB per billion parameters for 4-bit quantizations
+          baseFootprintGb = Math.max(1.0, Math.round(val * 0.75 * 10) / 10);
+        }
+        baseFootprintMb = Math.round(baseFootprintGb * 1024);
+      }
+    }
+
+    // Scale KV cache overhead with parameter size / hidden dimension
+    if (baseFootprintGb <= 1.5) {
+      kvCachePer1kTokensMb = 32;
+    } else if (baseFootprintGb <= 4.0) {
+      kvCachePer1kTokensMb = 80;
+    } else if (baseFootprintGb <= 7.0) {
+      kvCachePer1kTokensMb = 128;
+    } else if (baseFootprintGb <= 11.0) {
+      kvCachePer1kTokensMb = 160;
+    } else {
+      kvCachePer1kTokensMb = 256;
+    }
+
+    return {
+      modelId,
+      baseFootprintGb,
+      baseFootprintMb,
+      kvCachePer1kTokensMb,
+    };
+  }
+
+  /**
+   * Dynamically populates or refreshes model profiles from installed models list.
+   */
+  public syncFromInstalledModels(
+    installed: readonly {
+      name?: string;
+      model?: string;
+      sizeBytes?: number;
+      size?: number;
+      details?: {
+        parameter_size?: string;
+        parameterSize?: string;
+        quantization_level?: string;
+        [key: string]: unknown;
+      };
+    }[],
+  ): void {
+    for (const item of installed) {
+      const tag = item.name || item.model;
+      if (!tag) continue;
+      const size = item.sizeBytes ?? item.size;
+      const paramSize =
+        item.details?.parameterSize ?? item.details?.parameter_size;
+      const profile = ModelVramCatalog.estimateProfileFromTag(
+        tag,
+        size,
+        paramSize,
+      );
+      this.registerProfile(profile);
+    }
+  }
+
+  /**
+   * Retrieves profile for given model ID with substring matching fallback and dynamic estimation.
    *
    * @param modelId - Exact or partial model name (e.g., 'qwen2.5-coder:7b-instruct-q4_K_M')
-   * @returns ModelVramProfile if resolved, or undefined.
+   * @returns ModelVramProfile if resolved, or dynamically estimated.
    */
   public getProfile(modelId: string): ModelVramProfile | undefined {
     if (this.profiles.has(modelId)) {
@@ -89,6 +182,7 @@ export class ModelVramCatalog {
         return profile;
       }
     }
+
     return undefined;
   }
 

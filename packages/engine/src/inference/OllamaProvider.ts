@@ -68,6 +68,8 @@ export class OllamaProvider implements IInferenceProvider {
       "qwen2.5-coder:latest": "qwen2.5-coder:7b-instruct-q4_K_M",
       "gemma3:4b": "gemma3:4b-it-qat",
       "gemma3:4b-it": "gemma3:4b-it-qat",
+      "gemma3:12b": "gemma3:12b-it-qat",
+      "gemma3:12b-it": "gemma3:12b-it-qat",
       "deepseek-coder-v2:latest": "deepseek-coder-v2:16b",
       "deepseek-r1:latest": "deepseek-r1:8b",
     };

@@ -9,6 +9,7 @@ describe("ModelVramCatalog Unit Tests (T68.1)", () => {
   it("verifies static MODEL_VRAM_TABLE baseline footprints", () => {
     assert.equal(MODEL_VRAM_TABLE["qwen2.5-coder:3b"]?.baseFootprintGb, 2.2);
     assert.equal(MODEL_VRAM_TABLE["gemma3:4b"]?.baseFootprintGb, 3.1);
+    assert.equal(MODEL_VRAM_TABLE["gemma3:12b"]?.baseFootprintGb, 8.9);
     assert.equal(MODEL_VRAM_TABLE["qwen2.5-coder:7b"]?.baseFootprintGb, 5.2);
     assert.equal(MODEL_VRAM_TABLE["deepseek-r1:8b"]?.baseFootprintGb, 6.1);
   });

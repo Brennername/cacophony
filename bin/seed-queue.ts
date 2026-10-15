@@ -43,14 +43,39 @@ async function main() {
     console.log(`[seed-queue] Filtering by phase: ${phaseFilter}`);
   }
 
-  const fleetModels = [
-    "deepseek-coder-v2:16b",
-    "qwen2.5-coder:14b",
-    "qwen2.5-coder:7b-instruct-q4_K_M",
-    "deepseek-r1:8b",
-    "gemma3:4b-it-qat",
-    "qwen2.5-coder:3b"
-  ];
+  let fleetModels: string[] = [];
+  try {
+    const installedRes = await fetch(`${apiUrl}/api/models/installed`, { signal: AbortSignal.timeout(2000) });
+    if (installedRes.ok) {
+      const data = (await installedRes.json()) as Array<{ name?: string; model?: string }>;
+      fleetModels = data.map((m) => m.name || m.model || "").filter(Boolean);
+    }
+  } catch {
+    // API not reachable, probe local Ollama directly
+    try {
+      const ollamaRes = await fetch("http://127.0.0.1:11434/api/tags", { signal: AbortSignal.timeout(2000) });
+      if (ollamaRes.ok) {
+        const data = (await ollamaRes.json()) as { models?: Array<{ name: string }> };
+        fleetModels = (data.models || []).map((m) => m.name).filter(Boolean);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (fleetModels.length === 0) {
+    fleetModels = [
+      "deepseek-coder-v2:16b",
+      "qwen2.5-coder:14b",
+      "gemma3:12b-it-qat",
+      "qwen2.5-coder:7b-instruct-q4_K_M",
+      "deepseek-r1:8b",
+      "gemma3:4b-it-qat",
+      "qwen2.5-coder:3b"
+    ];
+  } else {
+    console.log(`[seed-queue] Dynamically discovered ${fleetModels.length} installed fleet models: ${fleetModels.join(", ")}`);
+  }
 
   const loader = new TaskcadeSeedLoader();
   const tasks = await loader.loadTasks({
