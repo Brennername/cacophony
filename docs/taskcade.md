@@ -67,10 +67,10 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown snippet formatting, and auto-scroll to bottom. [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts, packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs supervised mode switching and indicator badges. [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts, packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.20: Write unit tests verifying `GanttTransportComponent` stage span bar scaling, zoom level adjustments, and hover tooltip positioning. [Files: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.ts, packages/frontend/src/app/components/gantt-transport/gantt-transport.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
-- [ ] T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, missing node handling, and APU fallback metrics. [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts, packages/engine/src/tests/amd_vega_telemetry.test.ts] [Test: node --test packages/engine/dist/tests/amd_vega_telemetry.test.js]
-- [ ] T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing across 3B, 7B, 8B, 14B, and 16B parameter scales with dynamic context window limits. [Files: packages/engine/src/hardware/ModelVramCatalog.ts, packages/engine/src/tests/model_vram_catalog.test.ts] [Test: node --test packages/engine/dist/tests/model_vram_catalog.test.js]
-- [ ] T102.2.3: Write unit tests verifying `ThermalGovernor` throttling state transitions, cooldown timers, and recovery thresholds under fluctuating sensor readings. [Files: packages/engine/src/telemetry/ThermalGovernor.ts, packages/engine/src/tests/thermal_governor.test.ts] [Test: node --test packages/engine/dist/tests/thermal_governor.test.js]
-- [ ] T102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expiry, and HTTP 429 rejection responses. [Files: packages/engine/src/daemon/RateLimiter.ts, packages/engine/src/tests/rate_limiter.test.ts] [Test: node --test packages/engine/dist/tests/rate_limiter.test.js]
+- [x] T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, missing node handling, and APU fallback metrics. [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts, packages/engine/src/tests/amd_vega_telemetry.test.ts] [Test: node --test packages/engine/dist/tests/amd_vega_telemetry.test.js]
+- [x] T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing across 3B, 7B, 8B, 14B, and 16B parameter scales with dynamic context window limits. [Files: packages/engine/src/hardware/ModelVramCatalog.ts, packages/engine/src/tests/model_vram_catalog.test.ts] [Test: node --test packages/engine/dist/tests/model_vram_catalog.test.js]
+- [x] T102.2.3: Write unit tests verifying `ThermalGovernor` throttling state transitions, cooldown timers, and recovery thresholds under fluctuating sensor readings. [Files: packages/engine/src/telemetry/ThermalGovernor.ts, packages/engine/src/tests/thermal_governor.test.ts] [Test: node --test packages/engine/dist/tests/thermal_governor.test.js]
+- [x] T102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expiry, and HTTP 429 rejection responses. [Files: packages/engine/src/daemon/RateLimiter.ts, packages/engine/src/tests/rate_limiter.test.ts] [Test: node --test packages/engine/dist/tests/rate_limiter.test.js]
 - [ ] T102.2.5: Write unit tests verifying `JwtValidator` HS256 signature verification, expired token rejection, and malformed payload handling. [Files: packages/engine/src/auth/JwtValidator.ts, packages/engine/src/tests/jwt_validator.test.ts] [Test: node --test packages/engine/dist/tests/jwt_validator.test.js]
 - [ ] T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core frequency calculation, and synthetic thermal modeling. [Files: packages/engine/src/telemetry/CpuFallbackProvider.ts, packages/engine/src/tests/cpu_fallback_provider.test.ts] [Test: node --test packages/engine/dist/tests/cpu_fallback_provider.test.js]
 - [ ] T102.2.7: Write unit tests verifying `HardwareProviderFactory` auto-detection precedence (amdgpu sysfs, nvidia-smi nvml, cpu fallback). [Files: packages/engine/src/telemetry/HardwareProviderFactory.ts, packages/engine/src/tests/hardware_provider_factory.test.ts] [Test: node --test packages/engine/dist/tests/hardware_provider_factory.test.js]
@@ -403,43 +403,5 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
-### Task taskcade-t102.2.4 Rehabilitation [2026-10-15T01:54:50.657Z]
-- **Parent Task**: T102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expi (`taskcade-t102.2.4`)
-- **Failure Count**: 3
-- **Failure Reason**: Stage failed verification
-- **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.2.4.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expi [Role: type_specialist] [Files: packages/engine/src/daemon/RateLimiter.ts]
-  - [ ] `taskcade-t102.2.4.2`: [Rehab 2/3] Core Implementation Unit: T102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expi [Role: implementer] [Files: packages/engine/src/daemon/RateLimiter.ts]
-  - [ ] `taskcade-t102.2.4.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expi [Role: test_engineer] [Files: packages/engine/src/tests/rate_limiter.test.ts]
+_All active taskcade failure rehabilitations completed and verified. Archived in [`docs/taskcade-history.md`](taskcade-history.md#archived-rehabilitated-tasks-phase-97--phase-102-queue-recovery)_
 
-
-### Task taskcade-t102.2.2 Rehabilitation [2026-10-15T01:40:03.175Z]
-- **Parent Task**: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a (`taskcade-t102.2.2`)
-- **Failure Count**: 3
-- **Failure Reason**: Stage failed verification
-- **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.2.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a [Role: type_specialist] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
-  - [ ] `taskcade-t102.2.2.2`: [Rehab 2/3] Core Implementation Unit: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a [Role: implementer] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
-  - [ ] `taskcade-t102.2.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a [Role: test_engineer] [Files: packages/engine/src/tests/model_vram_catalog.test.ts]
-
-
-### Task taskcade-t102.2.1 Rehabilitation [2026-10-15T00:42:12.346Z]
-- **Parent Task**: T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, miss (`taskcade-t102.2.1`)
-- **Failure Count**: 3
-- **Failure Reason**: Stage failed verification
-- **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.2.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, miss [Role: type_specialist] [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
-  - [ ] `taskcade-t102.2.1.2`: [Rehab 2/3] Core Implementation Unit: T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, miss [Role: implementer] [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
-  - [ ] `taskcade-t102.2.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, miss [Role: test_engineer] [Files: packages/engine/src/tests/amd_vega_telemetry.test.ts]
-
-
-### Task taskcade-t97.1.1.2.2 Rehabilitation [2026-10-14T23:26:09.210Z]
-- **Parent Task**: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros (`taskcade-t97.1.1.2.2`)
-- **Failure Count**: 3
-- **Failure Reason**: Stage failed verification
-- **Decomposed Subtasks**:
-  - [x] `taskcade-t97.1.1.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: type_specialist] [Files: packages/engine/src/tests/sensors_parser.test.ts]
-  - [x] `taskcade-t97.1.1.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/2] Implementation & Test Verification: T97.1.1: Write unit tests verifying lm-sensors regex parser extracts Celsius values acros [Role: implementer] [Files: packages/engine/src/tests/sensors_parser.test.ts]
-
-
-_All active taskcade failure rehabilitations completed and verified. Archived in [`docs/taskcade-history.md`](taskcade-history.md)_

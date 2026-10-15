@@ -3591,3 +3591,25 @@ _Completed & Verified in Commit: `HEAD`_
 - [x] T101.1.3: Author unit regression test suite `test_command_scoping.test.ts` validating direct test scoping, companion resolution, and directory workspace mapping without test inflation. [File: packages/engine/src/tests/test_command_scoping.test.ts] [Test: node --test packages/engine/dist/tests/test_command_scoping.test.js]
 - [x] T101.2.1: Reconcile pending subtasks in `CacophonyHttpServer.ts` (`POST /api/tasks/groom`) against completed tasks archived in `docs/taskcade-history.md` to prevent infinite timeout loops on orphaned subtasks. [File: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: node --test packages/engine/dist/__tests__/Scheduler.test.js packages/engine/dist/tests/subtask_completion_guard.test.js]
 - [x] T101.3.1: Synchronize `docs/api_spec.md` with `/api/tasks/groom` response contracts and epoch reset capabilities. [File: docs/api_spec.md] [Test: npm run lint]
+
+---
+
+## Archived Rehabilitated Tasks: Phase 97 & Phase 102 Queue Recovery
+
+_Completed & Verified in Commit: `HEAD`_
+
+- [x] taskcade-t102.2.4: Write unit tests verifying `RateLimiter` client IP tracking, sliding window expiry, and HTTP 429 rejection responses.
+  - [x] `taskcade-t102.2.4.1`: [Rehab 1/3] Type Contracts & Interfaces: RateLimiter configuration and request contracts. [Files: packages/engine/src/daemon/RateLimiter.ts]
+  - [x] `taskcade-t102.2.4.2`: [Rehab 2/3] Core Implementation Unit: Dual-bucket token rate limiter. [Files: packages/engine/src/daemon/RateLimiter.ts]
+  - [x] `taskcade-t102.2.4.3`: [Rehab 3/3] Unit Test & Validation Suite: Verified burst capacity, IP isolation, X-Forwarded-For parsing, and Retry-After headers. [Files: packages/engine/src/tests/rate_limiter.test.ts] [Test: node --test packages/engine/dist/tests/rate_limiter.test.js]
+- [x] taskcade-t102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing across 3B, 7B, 8B, 14B, and 16B parameter scales with dynamic context window limits.
+  - [x] `taskcade-t102.2.2.1`: [Rehab 1/3] Type Contracts & Interfaces: ModelVramProfile and catalog definitions. [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [x] `taskcade-t102.2.2.2`: [Rehab 2/3] Core Implementation Unit: Dynamic KV-cache memory estimator. [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [x] `taskcade-t102.2.2.3`: [Rehab 3/3] Unit Test & Validation Suite: Verified baseline footprints, fuzzy tag matching, KV cache scaling, and custom profiles. [Files: packages/engine/src/tests/model_vram_catalog.test.ts] [Test: node --test packages/engine/dist/tests/model_vram_catalog.test.js]
+- [x] taskcade-t102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, missing node handling, and APU fallback metrics.
+  - [x] `taskcade-t102.2.1.1`: [Rehab 1/3] Type Contracts & Interfaces: GpuMetrics and provider interfaces. [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
+  - [x] `taskcade-t102.2.1.2`: [Rehab 2/3] Core Implementation Unit: Linux kernel sysfs sensor harvesting. [Files: packages/engine/src/telemetry/AmdVegaTelemetryProvider.ts]
+  - [x] `taskcade-t102.2.1.3`: [Rehab 3/3] Unit Test & Validation Suite: Verified sysfs node discovery, VRAM metrics, 1024MB safety buffer, and fallback telemetry. [Files: packages/engine/src/tests/amd_vega_telemetry.test.ts] [Test: node --test packages/engine/dist/tests/amd_vega_telemetry.test.js]
+- [x] taskcade-t97.1.1.2.2: Write unit tests verifying lm-sensors regex parser extracts Celsius values across k10temp, amdgpu, and coretemp chips.
+  - [x] `taskcade-t97.1.1.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: sensors parser test contracts. [Files: packages/engine/src/tests/sensors_parser.test.ts]
+  - [x] `taskcade-t97.1.1.2.2.2`: [Rehab 2/2] Implementation & Test Verification: Trailing whitespace clean and multi-sensor regex parsing. [Files: packages/engine/src/tests/sensors_parser.test.ts] [Test: node --test packages/engine/dist/tests/sensors_parser.test.js]

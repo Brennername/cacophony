@@ -75,8 +75,8 @@ export class QueueGroomer {
       focusFilesList = task.focusFiles
         .trim()
         .replace(/^["']|["']$/g, "")
-        .split(/\s+/)
-        .map((f) => f.replace(/^["']|["']$/g, "").trim())
+        .split(/[\s,;]+/)
+        .map((f) => f.replace(/^["'`,;]+|["'`,;]+$/g, "").trim())
         .filter(Boolean);
     } else {
       const resolved = this.detectFocusFiles(task.prompt);
@@ -88,9 +88,30 @@ export class QueueGroomer {
     }
 
     if (focusFilesList.length > 1) {
-      const primaryTarget = focusFilesList[0]!;
+      const isTestTask =
+        task.role === "test_engineer" ||
+        task.title.toLowerCase().includes("unit test") ||
+        task.title.toLowerCase().includes("test suite") ||
+        task.prompt.toLowerCase().includes("write unit test") ||
+        task.prompt.toLowerCase().includes("unit tests verifying");
+
+      let primaryTarget: string;
+      if (isTestTask) {
+        // Prioritize test target files if the task is test-focused
+        const testCandidate = focusFilesList.find((f) =>
+          /\.(?:test|spec)\.[cm]?[jt]s$/i.test(f),
+        );
+        primaryTarget = testCandidate ?? focusFilesList[0]!;
+      } else {
+        // Prioritize core implementation files for implementer/architect tasks
+        const implCandidate = focusFilesList.find(
+          (f) => !/\.(?:test|spec)\.[cm]?[jt]s$/i.test(f),
+        );
+        primaryTarget = implCandidate ?? focusFilesList[0]!;
+      }
+
       groomNotes.push(
-        `Selected primary target '${primaryTarget}' from ${focusFilesList.length} declared focus files.`,
+        `Selected primary target '${primaryTarget}' from ${focusFilesList.length} declared focus files (task role: ${task.role}).`,
       );
       focusFilesList = [primaryTarget];
       modified = true;

@@ -277,7 +277,11 @@ export class TaskcadeSeedLoader {
           lowerTest.includes("verify ci") ||
           lowerTest.includes("bin/cacophony")
         ) {
-          const firstFocus = focusFiles ? focusFiles.split(/\s+/)[0] : null;
+          const firstFocus = focusFiles
+            ? focusFiles
+                .split(/[\s,;]+/)[0]
+                ?.replace(/^["'`,;]+|["'`,;]+$/g, "")
+            : null;
           const isJsTs = firstFocus
             ? /\.(?:ts|js|mjs|cjs)$/i.test(firstFocus)
             : false;
