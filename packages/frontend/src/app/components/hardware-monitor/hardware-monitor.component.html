@@ -102,11 +102,11 @@
 
           <div class="sub-card-stats-split font-mono">
             <div class="stats-left">
-              <span class="stat-pair"><span class="stat-key">CLOCK:</span> <span class="stat-val">{{ metrics().sclkMhz }} MHz</span></span>
+              <span class="stat-pair"><span class="stat-key">CLOCK:</span> <span class="stat-val">{{ metrics().sclkMhz }}&nbsp;MHz</span></span>
             </div>
             <div class="stats-right">
-              <span class="stat-pair"><span class="stat-key">POWER:</span> <span class="stat-val">{{ metrics().pptPowerW }} W</span></span>
-              <span class="stat-pair"><span class="stat-key">VDDGFX:</span> <span class="stat-val">{{ metrics().vddgfxMv }} mV</span></span>
+              <span class="stat-pair"><span class="stat-key">POWER:</span> <span class="stat-val">{{ metrics().pptPowerW }}&nbsp;W</span></span>
+              <span class="stat-pair"><span class="stat-key">VDDGFX:</span> <span class="stat-val">{{ metrics().vddgfxMv }}&nbsp;mV</span></span>
             </div>
           </div>
 
@@ -155,13 +155,13 @@
 
           <div class="sub-card-stats-split font-mono">
             <div class="stats-left">
-              <span class="stat-pair"><span class="stat-key">RANGE:</span> <span class="stat-val">0 - 105°C</span></span>
+              <span class="stat-pair"><span class="stat-key">RANGE:</span> <span class="stat-val">0&nbsp;-&nbsp;105°C</span></span>
             </div>
             <div class="stats-right">
               <span class="stat-pair">
                 <span class="stat-key">CUTOFF:</span>
                 <span class="stat-val" [class.text-danger]="metrics().edgeTempCelsius >= 100">
-                  105°C {{ metrics().edgeTempCelsius >= 105 ? '(HALT)' : '' }}
+                  105°C{{ metrics().edgeTempCelsius >= 105 ? '&nbsp;(HALT)' : '' }}
                 </span>
               </span>
             </div>
@@ -217,10 +217,10 @@
 
           <div class="sub-card-stats-split font-mono">
             <div class="stats-left">
-              <span class="stat-pair"><span class="stat-key">CLOCK:</span> <span class="stat-val">{{ cpuFreqMhz() }} MHz</span></span>
+              <span class="stat-pair"><span class="stat-key">CLOCK:</span> <span class="stat-val">{{ cpuFreqMhz() }}&nbsp;MHz</span></span>
             </div>
             <div class="stats-right">
-              <span class="stat-pair"><span class="stat-key">SOC/VDDNB:</span> <span class="stat-val">{{ metrics().vddnbMv }} mV</span></span>
+              <span class="stat-pair"><span class="stat-key">SOC/VDDNB:</span> <span class="stat-val">{{ metrics().vddnbMv }}&nbsp;mV</span></span>
             </div>
           </div>
 
@@ -372,7 +372,7 @@
             <span class="panel-val font-mono fixed-cpu">{{ cpuFreqMhz() }} MHz</span>
           </div>
 
-          <!-- Real-Time CPU Core Frequency Tri-Metric Rolling Gauge with 1800MHz base & 4000MHz boost dotted lines -->
+          <!-- Real-Time CPU Core Frequency Tri-Metric Rolling Gauge -->
           <div class="cpu-mhz-gauge-wrapper">
             <app-tri-metric-gauge
               [liveValue]="cpuFreqMhz()"
@@ -382,8 +382,6 @@
               [maxRange]="4800"
               [digits]="0"
               [runFloor]="1800"
-              [referenceLines]="cpuReferenceLines"
-              [showReferenceLabels]="false"
               [clutterThresholdPercent]="4"
             />
           </div>
@@ -445,10 +443,10 @@
             />
           </div>
           <div class="sub-stat-row">
-            <span>Avail: {{ metrics().vramAvailMb }} MB</span>
-            <span>Clock: {{ metrics().mclkMhz }} MHz</span>
+            <span>Avail: {{ metrics().vramAvailMb }}&nbsp;MB</span>
+            <span>Clock: {{ metrics().mclkMhz }}&nbsp;MHz</span>
           </div>
-          <div class="chart-container">
+          <div class="chart-container memory-chart-container">
             <svg class="sparkline" viewBox="0 0 200 36" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="vramAoc" x1="0" y1="0" x2="0" y2="1">
@@ -490,7 +488,7 @@
             />
           </div>
           <div class="sub-stat-row">
-            <span>SOC/VDDNB: {{ metrics().vddnbMv }} mV</span>
+            <span>SOC/VDDNB: {{ metrics().vddnbMv }}&nbsp;mV</span>
             <span
               >Alloc:
               {{
@@ -500,7 +498,7 @@
               }}%</span
             >
           </div>
-          <div class="chart-container">
+          <div class="chart-container memory-chart-container">
             <svg class="sparkline" viewBox="0 0 200 36" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="gttAoc" x1="0" y1="0" x2="0" y2="1">
@@ -544,11 +542,11 @@
           <div class="sub-stat-row">
             <span
               >Free:
-              {{ Math.max(0, metrics().systemMemoryTotalMb - metrics().systemMemoryUsedMb) }} MB</span
+              {{ Math.max(0, metrics().systemMemoryTotalMb - metrics().systemMemoryUsedMb) }}&nbsp;MB</span
             >
             <span>Usage: {{ metrics().systemMemoryPercent.toFixed(1) }}%</span>
           </div>
-          <div class="chart-container">
+          <div class="chart-container memory-chart-container">
             <svg class="sparkline" viewBox="0 0 200 36" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="sysMemAoc" x1="0" y1="0" x2="0" y2="1">

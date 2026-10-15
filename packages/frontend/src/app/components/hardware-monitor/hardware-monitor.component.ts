@@ -77,10 +77,6 @@ export class HardwareMonitorComponent {
 
   public readonly cpuFreqHistory = signal<number[]>([2200, 2400, 2800, 3200, 3100, 3500]);
 
-  public readonly cpuReferenceLines: readonly TelemetryReferenceLine[] = [
-    { value: 1800, color: '#06b6d4', style: 'dotted' },
-    { value: 4000, color: '#f59e0b', style: 'dotted' },
-  ];
 
   /**
    * Core Frequency Reference Lines:
