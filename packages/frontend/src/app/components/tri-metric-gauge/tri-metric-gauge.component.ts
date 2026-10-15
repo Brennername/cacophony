@@ -43,6 +43,7 @@ export class TriMetricGaugeComponent {
   public readonly clutterThresholdPercent = input<number>(4.0);
   public readonly referenceLines = input<readonly TelemetryReferenceLine[] | undefined>(undefined);
   public readonly showReferenceLabels = input<boolean>(false);
+  public readonly orientation = input<'horizontal' | 'vertical'>('horizontal');
   public readonly variant = input<'full' | 'compact'>('full');
   public readonly barClass = input<string>('');
 

@@ -1,5 +1,9 @@
-<div class="tri-metric-container" [class.compact-mode]="variant() === 'compact'">
-  @if (variant() === 'full' && label()) {
+<div
+  class="tri-metric-container"
+  [class.compact-mode]="variant() === 'compact'"
+  [class.vertical-mode]="orientation() === 'vertical'"
+>
+  @if (variant() === 'full' && label() && orientation() === 'horizontal') {
     <div class="gauge-header">
       <span class="gauge-label">{{ label() }}</span>
       <span class="gauge-live font-mono">
@@ -10,17 +14,29 @@
   }
 
   <!-- Multi-Point Gauge Track -->
-  <div class="gauge-track" [class.compact-track]="variant() === 'compact'">
+  <div
+    class="gauge-track"
+    [class.compact-track]="variant() === 'compact'"
+    [class.vertical-track]="orientation() === 'vertical'"
+  >
     <!-- Live Fill Bar -->
-    <div class="live-fill" [class]="barClass()" [style.width.%]="livePercent()"></div>
+    <div
+      class="live-fill"
+      [class]="barClass()"
+      [style.width.%]="orientation() === 'horizontal' ? livePercent() : 100"
+      [style.height.%]="orientation() === 'vertical' ? livePercent() : 100"
+    ></div>
 
     <!-- Reference Threshold Lines (e.g. 200MHz yellow, 400MHz blue) -->
     @for (ref of referenceLinesComputed(); track ref.value) {
       <div
         class="reference-line"
-        [style.left.%]="ref.percent"
-        [style.border-left-color]="ref.color"
-        [style.border-left-style]="ref.style || 'dotted'"
+        [style.left.%]="orientation() === 'horizontal' ? ref.percent : null"
+        [style.bottom.%]="orientation() === 'vertical' ? ref.percent : null"
+        [style.border-left-color]="orientation() === 'horizontal' ? ref.color : null"
+        [style.border-bottom-color]="orientation() === 'vertical' ? ref.color : null"
+        [style.border-left-style]="orientation() === 'horizontal' ? (ref.style || 'dotted') : null"
+        [style.border-bottom-style]="orientation() === 'vertical' ? (ref.style || 'dotted') : null"
         [title]="(ref.label ? ref.label + ': ' : '') + ref.value + ' ' + unit()"
       >
         @if (showReferenceLabels() && ref.label && variant() === 'full') {
@@ -34,7 +50,8 @@
       <!-- Collapsed Last Change Point Marker Pin when data moves slowly -->
       <div
         class="metric-marker marker-last-change"
-        [style.left.%]="lastChangePercent()"
+        [style.left.%]="orientation() === 'horizontal' ? lastChangePercent() : null"
+        [style.bottom.%]="orientation() === 'vertical' ? lastChangePercent() : null"
         [title]="
           'Last Change Point: ' +
           lastChangePoint().toFixed(digits()) +
@@ -43,47 +60,51 @@
           ' (Clutter Reduced)'
         "
       >
-        <div class="marker-pin pin-last-change"></div>
+        <div class="marker-pin pin-last-change" [class.pin-horizontal]="orientation() === 'vertical'"></div>
       </div>
     } @else {
       <!-- Trough (Low) Marker in Red -->
       <div
         class="metric-marker marker-trough"
-        [style.left.%]="troughPercent()"
+        [style.left.%]="orientation() === 'horizontal' ? troughPercent() : null"
+        [style.bottom.%]="orientation() === 'vertical' ? troughPercent() : null"
         [title]="'Trough Low: ' + trough().toFixed(digits()) + ' ' + unit()"
       >
-        <div class="marker-pin pin-red"></div>
+        <div class="marker-pin pin-red" [class.pin-horizontal]="orientation() === 'vertical'"></div>
       </div>
 
       <!-- Average Marker in Green -->
       <div
         class="metric-marker marker-avg"
-        [style.left.%]="avgPercent()"
+        [style.left.%]="orientation() === 'horizontal' ? avgPercent() : null"
+        [style.bottom.%]="orientation() === 'vertical' ? avgPercent() : null"
         [title]="'Window Average: ' + avg().toFixed(digits()) + ' ' + unit()"
       >
-        <div class="marker-pin pin-green"></div>
+        <div class="marker-pin pin-green" [class.pin-horizontal]="orientation() === 'vertical'"></div>
       </div>
 
       <!-- Peak (High) Marker in Red -->
       <div
         class="metric-marker marker-peak"
-        [style.left.%]="peakPercent()"
+        [style.left.%]="orientation() === 'horizontal' ? peakPercent() : null"
+        [style.bottom.%]="orientation() === 'vertical' ? peakPercent() : null"
         [title]="'Peak High: ' + peak().toFixed(digits()) + ' ' + unit()"
       >
-        <div class="marker-pin pin-red"></div>
+        <div class="marker-pin pin-red" [class.pin-horizontal]="orientation() === 'vertical'"></div>
       </div>
     }
 
     <!-- Live Needle / Progress Head -->
     <div
       class="progress-head"
-      [style.left.%]="livePercent()"
+      [style.left.%]="orientation() === 'horizontal' ? livePercent() : null"
+      [style.bottom.%]="orientation() === 'vertical' ? livePercent() : null"
       [title]="'Live: ' + liveValue().toFixed(digits()) + ' ' + unit()"
     ></div>
   </div>
 
   <!-- KPI Readouts Row (Full variant only) -->
-  @if (variant() === 'full') {
+  @if (variant() === 'full' && orientation() === 'horizontal') {
     <div class="metric-stats-row font-mono">
       @if (isCluttered()) {
         <div class="stat-item stat-last" title="Last Change Point">

@@ -52,9 +52,13 @@ export class HardwareMonitorComponent {
     { value: 400, color: '#3b82f6', style: 'dotted' },
   ];
 
-  public readonly sclk400Y = 22;
-  public readonly sclk200Y = 32;
-  public readonly sclkThrottleMidY = 27.5;
+  public readonly sclk400Y = 32;
+  public readonly sclk200Y = 48;
+  public readonly sclkThrottleMidY = 40;
+
+  public readonly sclk400Percent = 53.33;
+  public readonly sclk200Percent = 80.0;
+  public readonly sclkThrottleMidPercent = 66.67;
 
   public readonly velocityPercentOfHwm = computed(() => {
     const hwm = this.highWaterMark();
@@ -160,22 +164,26 @@ export class HardwareMonitorComponent {
 
   /**
    * Maps SCLK frequency (0 - 2200 MHz) to calibrated Y coordinate in SVG sparkline.
-   * Demarcates the 0-400MHz throttling zone (y=38 down to y=22) so the 200MHz and 400MHz
-   * dotted thresholds have adequate vertical clearance for labels and the 'throttle' text.
+   * Demarcates the 0-400MHz throttling zone (y=56 down to y=32 in a 60px height viewBox)
+   * so the 200MHz and 400MHz dotted thresholds have adequate vertical clearance for labels
+   * and the 'throttle' text.
    */
-  public mapSclkY(mhz: number, height = 40): number {
+  public mapSclkY(mhz: number, height = 60): number {
     const clamped = Math.max(0, Math.min(2200, mhz));
-    if (clamped <= 400) {
-      // Calibrated throttle zone: 0MHz -> y=38, 200MHz -> y=32, 400MHz -> y=22
-      const norm = clamped / 400;
-      return height - 2 - norm * 16;
+    if (clamped <= 200) {
+      // 0MHz -> y = 56, 200MHz -> y = 48
+      return height - 4 - (clamped / 200) * 8;
     }
-    // Active boost range: 400MHz -> y=22, 2200MHz -> y=4
+    if (clamped <= 400) {
+      // 200MHz -> y = 48, 400MHz -> y = 32
+      return 48 - ((clamped - 200) / 200) * 16;
+    }
+    // Active boost range: 400MHz -> y = 32, 2200MHz -> y = 6
     const norm = (clamped - 400) / 1800;
-    return 22 - norm * 18;
+    return 32 - norm * 26;
   }
 
-  public getSclkLinePath(values: readonly number[] | number[], width = 200, height = 40): string {
+  public getSclkLinePath(values: readonly number[] | number[], width = 200, height = 60): string {
     if (!values || values.length < 2) return `M 0,${height} L ${width},${height}`;
     const step = width / (values.length - 1);
     return values
@@ -187,7 +195,7 @@ export class HardwareMonitorComponent {
       .join(' ');
   }
 
-  public getSclkAreaPath(values: readonly number[] | number[], width = 200, height = 40): string {
+  public getSclkAreaPath(values: readonly number[] | number[], width = 200, height = 60): string {
     if (!values || values.length < 2) return `M 0,${height} L ${width},${height} Z`;
     const line = this.getSclkLinePath(values, width, height);
     return `${line} L ${width},${height} L 0,${height} Z`;

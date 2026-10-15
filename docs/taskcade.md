@@ -403,6 +403,16 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.2.2 Rehabilitation [2026-10-15T01:40:03.175Z]
+- **Parent Task**: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a (`taskcade-t102.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.2.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a [Role: type_specialist] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [ ] `taskcade-t102.2.2.2`: [Rehab 2/3] Core Implementation Unit: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a [Role: implementer] [Files: packages/engine/src/hardware/ModelVramCatalog.ts]
+  - [ ] `taskcade-t102.2.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.2: Write unit tests verifying `ModelVramCatalog` model parameter footprint sizing a [Role: test_engineer] [Files: packages/engine/src/tests/model_vram_catalog.test.ts]
+
+
 ### Task taskcade-t102.2.1 Rehabilitation [2026-10-15T00:42:12.346Z]
 - **Parent Task**: T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, miss (`taskcade-t102.2.1`)
 - **Failure Count**: 3

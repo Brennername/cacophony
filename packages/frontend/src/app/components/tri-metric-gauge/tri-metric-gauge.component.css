@@ -1,6 +1,7 @@
 :host {
   display: block;
   width: 100%;
+  height: 100%;
 }
 
 .tri-metric-container {
@@ -12,6 +13,65 @@
 
 .tri-metric-container.compact-mode {
   gap: 0;
+}
+
+.tri-metric-container.vertical-mode {
+  flex-direction: row;
+  height: 100%;
+  width: auto;
+  justify-content: center;
+  align-items: center;
+}
+
+.gauge-track.vertical-track {
+  width: 10px;
+  height: 100%;
+  min-height: 70px;
+}
+
+.vertical-track .live-fill {
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  transition: height 150ms ease-out;
+}
+
+.vertical-track .reference-line {
+  top: auto;
+  left: -2px;
+  right: -2px;
+  width: auto;
+  height: 0;
+  border-left-width: 0;
+  border-bottom-width: 2px;
+  border-bottom-style: dotted;
+  transform: translateY(50%);
+}
+
+.vertical-track .metric-marker {
+  left: -2px;
+  right: -2px;
+  top: auto;
+  width: auto;
+  height: 2px;
+  transform: translateY(50%);
+}
+
+.vertical-track .pin-horizontal {
+  width: 100%;
+  height: 2px;
+}
+
+.vertical-track .progress-head {
+  left: -2px;
+  right: -2px;
+  top: auto;
+  width: auto;
+  height: 6px;
+  transform: translateY(50%);
+  transition: bottom 120ms ease-out;
 }
 
 .gauge-header {

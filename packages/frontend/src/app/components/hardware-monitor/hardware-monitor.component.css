@@ -249,35 +249,229 @@
   border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
 }
 
-/* Sensor Grid */
-.sensors-grid {
+/* Two-Card Layout: Processing Devices & Memory Subsystem */
+.telemetry-two-cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
-  min-width: 0;
-  max-width: 100%;
-}
-
-@media (min-width: 640px) {
-  .sensors-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  gap: 1rem;
+  width: 100%;
 }
 
 @media (min-width: 1024px) {
-  .sensors-grid {
+  .telemetry-two-cards {
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+}
+
+.large-telemetry-card {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  box-sizing: border-box;
+  min-width: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.section-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.section-subtext {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+/* Processing Devices: Top Half 3-Column Vertical Meters */
+.processing-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .processing-top-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-.sensor-block {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem;
+.processing-meter-col {
+  background: var(--bg-surface, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-sm, 4px);
+  padding: 0.625rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.meter-col-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+}
+
+.col-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.col-val {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vertical-meter-layout {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 80px;
+  min-height: 80px;
+}
+
+.vertical-meter-wrapper {
+  height: 100%;
+  width: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+.col-stats-tidy {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+  flex: 1;
+  gap: 0.25rem;
+}
+
+.tidy-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.tidy-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tidy-val {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.temp-chart-container {
+  height: 36px;
+  margin-top: 0.25rem;
+}
+
+/* Processing Devices: Bottom Half Side-by-Side Charts */
+.processing-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .processing-bottom-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.processing-bottom-chart-panel {
+  background: var(--bg-surface, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-sm, 4px);
+  padding: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.chart-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+}
+
+.panel-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.panel-val {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sclk-chart-container {
+  position: relative;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.cpu-chart-container {
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Memory Subsystem Blocks List */
+.memory-blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.memory-sub-block {
+  background: var(--bg-surface, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-sm, 4px);
+  padding: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .sensor-header {
@@ -384,35 +578,6 @@
   margin: 0.35rem 0;
 }
 
-.progress-bar {
-  height: 6px;
-  background: var(--bg-surface);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: var(--radius-full);
-  transition: width 0.3s ease;
-}
-
-.progress-fill.brand {
-  background: var(--color-brand);
-}
-.progress-fill.emerald {
-  background: #10b981;
-}
-.progress-fill.amber {
-  background: #f59e0b;
-}
-.progress-fill.cyan {
-  background: #06b6d4;
-}
-.progress-fill.purple {
-  background: #a855f7;
-}
-
 .sub-stat-row {
   display: flex;
   justify-content: space-between;
@@ -429,7 +594,7 @@
 /* Area-Under-Curve (AOC) Sparklines */
 .chart-container {
   width: 100%;
-  height: 38px;
+  height: 36px;
   margin-top: 0.25rem;
   overflow: hidden;
   border-radius: 3px;
@@ -475,30 +640,53 @@
   pointer-events: none;
 }
 
-.throttle-demarcation-label {
-  font-family: var(--font-mono, monospace);
-  font-size: 5.5px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  fill: rgba(239, 68, 68, 0.85);
+/* HTML Overlay for Crisp, Readable Typography */
+.sclk-html-overlay {
+  position: absolute;
+  inset: 0;
   pointer-events: none;
-  dominant-baseline: middle;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
 
 .sclk-thresh-label {
+  position: absolute;
+  left: 10px;
+  transform: translateY(-50%);
   font-family: var(--font-mono, monospace);
-  font-size: 5px;
+  font-size: 0.625rem;
   font-weight: 700;
-  pointer-events: none;
-  dominant-baseline: middle;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
 }
 
-.label-400 {
-  fill: #3b82f6;
+.sclk-thresh-label.label-400 {
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.6);
 }
 
-.label-200 {
-  fill: #eab308;
+.sclk-thresh-label.label-200 {
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.6);
+}
+
+.throttle-demarcation-label {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
 }
