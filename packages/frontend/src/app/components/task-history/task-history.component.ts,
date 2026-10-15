@@ -1,0 +1,41 @@
+import { Component, Input, OnInit } from '@angular/core';
+import { TaskHistoryComponent } from '../task-history.component';
+import { TaskItem } from '@cacophony/shared-types';
+import { ArenaStateStore } from '@app/services/arena-state.store';
+
+@Component({
+  selector: 'app-task-history',
+  templateUrl: './task-history.component.html',
+  styleUrls: ['./task-history.component.css'],
+})
+export class TaskHistoryComponent implements OnInit {
+
+  @Input() taskItem!: TaskItem;
+
+  constructor(private arenaStateStore: ArenaStateStore) {}
+
+  ngOnInit(): void {
+    // This component primarily displays the status pill and duration.
+    // The actual formatting of the duration is handled by the parent component.
+    // No specific logic needs to be implemented here for task item selection, as that's managed externally.
+  }
+
+  getStatusPillText(): string {
+    const status = this.taskItem.status;
+    switch (status) {
+      case 'running':
+        return 'Running';
+      case 'completed':
+        return 'Completed';
+      case 'failed':
+        return 'Failed';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  getFormattedDuration(): string {
+    // Duration formatting is handled by the parent component. This method serves as a placeholder.
+    return 'N/A';
+  }
+}
