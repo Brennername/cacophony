@@ -1,0 +1,13 @@
+import { AstInspectParamsSchema, AstInspectParams } from '@cacophony/shared-types';
+import { ToolExecutionContext } from '../src/ICacophonyTool';
+
+export class AstInspectTool implements ICacophonyTool {
+  constructor(private readonly executionContext: ToolExecutionContext) {}
+
+  public async execute(params: AstInspectParams): Promise<string> {
+    // Implement the logic to inspect the AST based on the provided parameters.
+    // This is a placeholder implementation and should be replaced with actual functionality.
+    console.log('AstInspectTool executing with params:', params);
+    return 'AST inspection completed successfully.';
+  }
+}
