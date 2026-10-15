@@ -1,0 +1,55 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Assuming UserSessionRepository and related types are defined in the package
+import { UserSessionRecord, UserSessionRepository } from '@cacophony/db';
+
+describe('UserSessionRepository', () => {
+  let userSessionRepository: UserSessionRepository;
+
+  beforeEach(() => {
+    // Initialize the repository with a mock database driver or similar setup
+    userSessionRepository = new UserSessionRepository(/* mock database driver */);
+  });
+
+  it('should create a session and return its token', async () => {
+    const userId = 'user123';
+    const sessionId = await userSessionRepository.createSession(userId);
+
+    assert(typeof sessionId === 'string');
+    assert(sessionId.length > 0);
+  });
+
+  it('should lookup a session by token and return the session record', async () => {
+    const userId = 'user123';
+    const sessionId = await userSessionRepository.createSession(userId);
+
+    const sessionRecord = await userSessionRepository.getSessionByToken(sessionId);
+    assert(sessionRecord instanceof UserSessionRecord);
+    assert.strictEqual(sessionRecord.userId, userId);
+  });
+
+  it('should touch the activity timestamp of a session', async () => {
+    const userId = 'user123';
+    const sessionId = await userSessionRepository.createSession(userId);
+
+    await userSessionRepository.touchActivityTimestamp(sessionId);
+
+    // Assuming there's a way to retrieve the updated session record
+    const updatedSessionRecord = await userSessionRepository.getSessionByToken(sessionId);
+    assert(updatedSessionRecord.lastActiveAt > new Date(Date.now() - 1000));
+  });
+
+  it('should purge expired sessions', async () => {
+    // Assuming there's a way to set up an expired session
+    const userId = 'user123';
+    const sessionId = await userSessionRepository.createSession(userId);
+    await userSessionRepository.touchActivityTimestamp(sessionId); // Expire the session
+
+    await userSessionRepository.purgeExpiredSessions();
+
+    // Assuming there's a way to check if the session is still in the database
+    const expiredSessionRecord = await userSessionRepository.getSessionByToken(sessionId);
+    assert(expiredSessionRecord === null);
+  });
+});
