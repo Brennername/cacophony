@@ -1,0 +1,71 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { ArenaStateStore } from '../services/arena-state.store';
+import { TaskApiService } from '../services/task-api.service';
+import { ToastService } from '../services/task-api.service';
+
+@Component({
+  selector: 'app-queue-manager',
+  templateUrl: './queue-manager.component.html',
+  styleUrls: ['./queue-manager.component.css']
+})
+export class QueueManagerComponent {
+
+  @Input() queueId: string = '';
+  @Output() taskCancelled = new EventEmitter<string>();
+
+  tasks: TaskDto[] = [];
+  priorityBadges: Record<string, string> = {};
+  loading = false;
+  error = '';
+
+  constructor(private arenaStateStore: ArenaStateStore, private taskApiService: TaskApiService, private toastService: ToastService) { }
+
+  ngOnInit(): void {
+    this.loadTasks();
+  }
+
+  async loadTasks(): Promise<void> {
+    this.loading = true;
+    try {
+      const tasks = await this.taskApiService.getTasksByQueue(this.queueId);
+      this.tasks = tasks;
+      this.updatePriorityBadges();
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+      this.error = 'Failed to load tasks.';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async cancelTask(taskId: string): Promise<void> {
+    try {
+      await this.taskApiService.cancelTask(taskId);
+      this.toastService.show('Task cancelled.', 'success');
+      this.taskCancelled.emit(taskId);
+    } catch (error) {
+      console.error('Error cancelling task:', error);
+      this.error = 'Failed to cancel task.';
+    }
+  }
+
+  private updatePriorityBadges(): void {
+    for (const task of this.tasks) {
+      if (task.priority === 1) {
+        this.priorityBadges[task.taskId] = 'high';
+      } else if (task.priority === 2) {
+        this.priorityBadges[task.taskId] = 'medium';
+      } else {
+        this.priorityBadges[task.taskId] = 'low';
+      }
+    }
+  }
+}
+
+interface TaskDto {
+  taskId: string;
+  queueId: string;
+  priority: number;
+  status: string;
+  // Add other task properties as needed
+}
