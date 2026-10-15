@@ -1,0 +1,50 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { BanditArmUi, ExplorationControlComponent as ExplorationControl } from '@cacophony/frontend';
+import { ModelFleetService } from '@cacophony/frontend/src/app/services/model-fleet.service';
+import { ArenaStateStore } from '@cacophony/frontend/src/app/services/arena-state.store';
+
+@Component({
+  selector: 'exploration-control',
+  templateUrl: './exploration-control.component.html',
+  styleUrls: ['./exploration-control.component.css'],
+})
+export class ExplorationControlComponent implements ExplorationControl {
+  @Input() banditArmUi!: BanditArmUi;
+  @Output() onEpsilonSliderChange = new EventEmitter<number>();
+
+  modelStrategyOptions = [
+    { value: 'random', label: 'Random' },
+    { value: 'best', label: 'Best' },
+    { value: 'default', label: 'Default' },
+  ];
+
+  budget: number = 100;
+  epsilon: number = 0.1;
+
+  constructor(private modelFleetService: ModelFleetService, private arenaStateStore: ArenaStateStore) {}
+
+  onEpsilonSliderChangeHandler(event: Event): void {
+    const epsilonValue = (event as HTMLInputElement).value;
+    this.epsilon = parseFloat(epsilonValue);
+    this.onEpsilonSliderChange.emit(this.epsilon);
+  }
+
+  onModelStrategyChangeHandler(event: Event): void {
+    const strategyValue = (event as HTMLSelectElement).value;
+    this.budget = 0; // Reset budget when changing model strategy
+    this.onEpsilonSliderChangeHandler({ target: { value: '0' } });
+  }
+
+  onBudgetChangeHandler(event: Event): void {
+    const budgetValue = (event as HTMLInputElement).value;
+    this.budget = parseFloat(budgetValue);
+  }
+
+  get isBudgetValid(): boolean {
+    return this.budget > 0 && this.budget <= 1000;
+  }
+
+  get isEpsilonValid(): boolean {
+    return this.epsilon >= 0 && this.epsilon <= 1;
+  }
+}
