@@ -1,0 +1,60 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Assuming TelemetryRepository is already defined and imported correctly
+import { TelemetryRepository } from '../TelemetryRepository.js';
+
+describe('TelemetryRepository', () => {
+  let telemetryRepository: TelemetryRepository;
+
+  beforeEach(() => {
+    // Initialize the repository before each test
+    telemetryRepository = new TelemetryRepository();
+  });
+
+  describe('hardware sample batch insertion', () => {
+    it('should insert a batch of hardware samples', async () => {
+      const samples = [
+        { timestamp: Date.now(), temperature: 25, humidity: 40 },
+        { timestamp: Date.now() + 1000, temperature: 26, humidity: 41 }
+      ];
+
+      await telemetryRepository.insertHardwareSamples(samples);
+
+      // Assuming there's a method to retrieve the inserted samples
+      const insertedSamples = await telemetryRepository.getHardwareSamples();
+      assert.deepStrictEqual(insertedSamples, samples);
+    });
+  });
+
+  describe('temperature peak querying', () => {
+    it('should return the highest temperature recorded', async () => {
+      const samples = [
+        { timestamp: Date.now(), temperature: 25, humidity: 40 },
+        { timestamp: Date.now() + 1000, temperature: 30, humidity: 41 }
+      ];
+
+      await telemetryRepository.insertHardwareSamples(samples);
+
+      const peakTemperature = await telemetryRepository.getHighestTemperature();
+      assert.strictEqual(peakTemperature, 30);
+    });
+  });
+
+  describe('retention pruning', () => {
+    it('should remove old records that exceed the retention period', async () => {
+      const samples = [
+        { timestamp: Date.now() - 1000 * 60 * 60 * 24, temperature: 25, humidity: 40 },
+        { timestamp: Date.now(), temperature: 30, humidity: 41 }
+      ];
+
+      await telemetryRepository.insertHardwareSamples(samples);
+
+      // Assuming there's a method to simulate time passing
+      await telemetryRepository.pruneOldRecords(Date.now() - 1000 * 60 * 60 * 24);
+
+      const remainingSamples = await telemetryRepository.getHardwareSamples();
+      assert.deepStrictEqual(remainingSamples, [samples[1]]);
+    });
+  });
+});
