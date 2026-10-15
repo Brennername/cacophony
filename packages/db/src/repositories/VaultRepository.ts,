@@ -1,0 +1,54 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Assuming VaultRepository is already defined and exported from VaultRepository.ts
+import { VaultRepository } from '../VaultRepository.js';
+
+describe('VaultRepository', () => {
+  let vaultRepository: VaultRepository;
+
+  beforeEach(() => {
+    // Initialize the VaultRepository instance before each test
+    vaultRepository = new VaultRepository();
+  });
+
+  describe('secret encryption key storage', () => {
+    it('should store a secret encryption key', async () => {
+      const keyName = 'testKey';
+      const keyValue = 'testValue';
+
+      await vaultRepository.storeSecretEncryptionKey(keyName, keyValue);
+
+      // Assuming there's a method to retrieve the stored key for verification
+      const retrievedKeyValue = await vaultRepository.getSecretEncryptionKey(keyName);
+      assert.strictEqual(retrievedKeyValue, keyValue);
+    });
+  });
+
+  describe('secret retrieval by key name', () => {
+    it('should retrieve a secret encryption key by its name', async () => {
+      const keyName = 'testKey';
+      const keyValue = 'testValue';
+
+      await vaultRepository.storeSecretEncryptionKey(keyName, keyValue);
+
+      const retrievedKeyValue = await vaultRepository.getSecretEncryptionKey(keyName);
+      assert.strictEqual(retrievedKeyValue, keyValue);
+    });
+  });
+
+  describe('deletion', () => {
+    it('should delete a secret encryption key by its name', async () => {
+      const keyName = 'testKey';
+      const keyValue = 'testValue';
+
+      await vaultRepository.storeSecretEncryptionKey(keyName, keyValue);
+
+      await vaultRepository.deleteSecretEncryptionKey(keyName);
+
+      // Assuming there's a method to check if the key is deleted
+      const retrievedKeyValue = await vaultRepository.getSecretEncryptionKey(keyName);
+      assert.strictEqual(retrievedKeyValue, undefined);
+    });
+  });
+});
