@@ -46,12 +46,9 @@ describe("ModelVramCatalog Unit Tests (T68.1)", () => {
   it("calculates dynamic total VRAM scaling by context window KV-cache size", () => {
     const catalog = new ModelVramCatalog();
 
-    // qwen2.5-coder:7b baseMb = 5325, kvCachePer1kTokensMb = 128
-    // Context 4096 tokens: 5325 + (4096 / 1024) * 128 = 5325 + 512 = 5837 MB
     const total4096 = catalog.estimateTotalVramMb("qwen2.5-coder:7b", 4096);
     assert.equal(total4096, 5837);
 
-    // Context 8192 tokens: 5325 + (8192 / 1024) * 128 = 5325 + 1024 = 6349 MB
     const total8192 = catalog.estimateTotalVramMb("qwen2.5-coder:7b", 8192);
     assert.equal(total8192, 6349);
 
@@ -86,7 +83,6 @@ describe("ModelVramCatalog Unit Tests (T68.1)", () => {
     assert.equal(catalog.getProfile("completely-unknown-model"), undefined);
     assert.equal(catalog.getVramForModel("completely-unknown-model"), undefined);
 
-    // estimateTotalVramMb uses default fallback (4096 MB base + kv overhead)
     const fallbackEstimate = catalog.estimateTotalVramMb("completely-unknown-model", 4096);
     assert.equal(fallbackEstimate, 4096 + 400); // 4096 + 4 * 100
   });
