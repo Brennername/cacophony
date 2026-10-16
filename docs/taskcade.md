@@ -4,6 +4,395 @@
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.12.11 Rehabilitation [2026-10-16T21:23:39.004Z]
+- **Parent Task**: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf (`taskcade-t102.12.11`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.11.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: type_specialist] [Files: packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `taskcade-t102.12.11.2`: [Rehab 2/3] Core Implementation Unit: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: implementer] [Files: packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `taskcade-t102.12.11.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+
+
+### Task taskcade-t102.1.18 Rehabilitation [2026-10-16T21:12:28.166Z]
+- **Parent Task**: T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown (`taskcade-t102.1.18`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.18.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown [Role: type_specialist] [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts]
+  - [ ] `taskcade-t102.1.18.2`: [Rehab 2/3] Core Implementation Unit: T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown [Role: implementer] [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts]
+  - [ ] `taskcade-t102.1.18.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.12.12 Rehabilitation [2026-10-16T20:51:16.278Z]
+- **Parent Task**: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali (`taskcade-t102.12.12`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.12.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali [Role: type_specialist] [Files: packages/tools/src/ToolRegistry.ts]
+  - [ ] `taskcade-t102.12.12.2`: [Rehab 2/3] Core Implementation Unit: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali [Role: implementer] [Files: packages/tools/src/ToolRegistry.ts]
+  - [ ] `taskcade-t102.12.12.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali [Role: test_engineer] [Files: packages/tools/src/tests/tool_registry.test.ts]
+
+
+### Task taskcade-t102.12.8 Rehabilitation [2026-10-16T20:24:04.179Z]
+- **Parent Task**: T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, l (`taskcade-t102.12.8`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.8.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, l [Role: type_specialist] [Files: packages/tools/src/implementations/GrepSearchTool.ts]
+  - [ ] `taskcade-t102.12.8.2`: [Rehab 2/3] Core Implementation Unit: T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, l [Role: implementer] [Files: packages/tools/src/implementations/GrepSearchTool.ts]
+  - [ ] `taskcade-t102.12.8.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, l [Role: test_engineer] [Files: packages/tools/src/tests/grep_search_tool.test.ts]
+
+
+### Task taskcade-t102.2.6 Rehabilitation [2026-10-16T20:17:03.895Z]
+- **Parent Task**: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq (`taskcade-t102.2.6`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.2.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: type_specialist] [Files: packages/engine/src/telemetry/CpuFallbackProvider.ts]
+  - [ ] `taskcade-t102.2.6.2`: [Rehab 2/3] Core Implementation Unit: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: implementer] [Files: packages/engine/src/telemetry/CpuFallbackProvider.ts]
+  - [ ] `taskcade-t102.2.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: test_engineer] [Files: packages/engine/src/tests/cpu_fallback_provider.test.ts]
+
+
+### Task taskcade-t102.1.13 Rehabilitation [2026-10-16T20:13:56.174Z]
+- **Parent Task**: T102.1.13: Write unit tests verifying `TenancyConfigPanelComponent` tenant isolation toggle (`taskcade-t102.1.13`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.13.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.1.13: Write unit tests verifying `TenancyConfigPanelComponent` tenant isolation toggle [Role: type_specialist] [Files: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts]
+  - [ ] `taskcade-t102.1.13.2`: [Rehab 2/3] Core Implementation Unit: T102.1.13: Write unit tests verifying `TenancyConfigPanelComponent` tenant isolation toggle [Role: implementer] [Files: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts]
+  - [ ] `taskcade-t102.1.13.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.1.13: Write unit tests verifying `TenancyConfigPanelComponent` tenant isolation toggle [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.12.9 Rehabilitation [2026-10-16T19:33:43.657Z]
+- **Parent Task**: T102.12.9: Write unit tests verifying `RunCommandTool` command execution, timeout terminati (`taskcade-t102.12.9`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.9.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.9: Write unit tests verifying `RunCommandTool` command execution, timeout terminati [Role: type_specialist] [Files: packages/tools/src/implementations/RunCommandTool.ts]
+  - [ ] `taskcade-t102.12.9.2`: [Rehab 2/3] Core Implementation Unit: T102.12.9: Write unit tests verifying `RunCommandTool` command execution, timeout terminati [Role: implementer] [Files: packages/tools/src/implementations/RunCommandTool.ts]
+  - [ ] `taskcade-t102.12.9.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.9: Write unit tests verifying `RunCommandTool` command execution, timeout terminati [Role: test_engineer] [Files: packages/tools/src/tests/run_command_tool.test.ts]
+
+
+### Task taskcade-t102.14.1 Rehabilitation [2026-10-16T19:01:31.832Z]
+- **Parent Task**: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment (`taskcade-t102.14.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment [Role: type_specialist] [Files: packages/engine/src/context/HashStubGenerator.ts]
+  - [ ] `taskcade-t102.14.1.2`: [Rehab 2/3] Core Implementation Unit: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment [Role: implementer] [Files: packages/engine/src/context/HashStubGenerator.ts]
+  - [ ] `taskcade-t102.14.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment [Role: test_engineer] [Files: packages/engine/src/tests/hash_stub_generator.test.ts]
+
+
+### Task taskcade-t102.3.3 Rehabilitation [2026-10-16T18:40:32.130Z]
+- **Parent Task**: T102.3.3: Write unit tests verifying `GitPlatformProviderFactory` provider selection based (`taskcade-t102.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.3.3: Write unit tests verifying `GitPlatformProviderFactory` provider selection based [Role: type_specialist] [Files: packages/engine/src/gitea/GitPlatformProviderFactory.ts]
+  - [ ] `taskcade-t102.3.3.2`: [Rehab 2/3] Core Implementation Unit: T102.3.3: Write unit tests verifying `GitPlatformProviderFactory` provider selection based [Role: implementer] [Files: packages/engine/src/gitea/GitPlatformProviderFactory.ts]
+  - [ ] `taskcade-t102.3.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.3.3: Write unit tests verifying `GitPlatformProviderFactory` provider selection based [Role: test_engineer] [Files: packages/engine/src/tests/git_platform_provider_factory.test.ts]
+
+
+### Task taskcade-t102.8.2 Rehabilitation [2026-10-16T18:25:54.723Z]
+- **Parent Task**: T102.8.2: Write unit tests verifying `TestFailureTriager` classification of syntax vs asse (`taskcade-t102.8.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.8.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.8.2: Write unit tests verifying `TestFailureTriager` classification of syntax vs asse [Role: type_specialist] [Files: packages/engine/src/testing/TestFailureTriager.ts]
+  - [ ] `taskcade-t102.8.2.2`: [Rehab 2/3] Core Implementation Unit: T102.8.2: Write unit tests verifying `TestFailureTriager` classification of syntax vs asse [Role: implementer] [Files: packages/engine/src/testing/TestFailureTriager.ts]
+  - [ ] `taskcade-t102.8.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.8.2: Write unit tests verifying `TestFailureTriager` classification of syntax vs asse [Role: test_engineer] [Files: packages/engine/src/tests/test_failure_triager.test.ts]
+
+
+### Task taskcade-t102.13.2 Rehabilitation [2026-10-16T18:15:34.537Z]
+- **Parent Task**: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil (`taskcade-t102.13.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil [Role: type_specialist] [Files: packages/frontend/src/app/services/repo-state.service.ts]
+  - [ ] `taskcade-t102.13.2.2`: [Rehab 2/3] Core Implementation Unit: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil [Role: implementer] [Files: packages/frontend/src/app/services/repo-state.service.ts]
+  - [ ] `taskcade-t102.13.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.12.7 Rehabilitation [2026-10-16T17:47:45.469Z]
+- **Parent Task**: T102.12.7: Write unit tests verifying `ListDirTool` recursive directory listing, child coun (`taskcade-t102.12.7`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.7.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.7: Write unit tests verifying `ListDirTool` recursive directory listing, child coun [Role: type_specialist] [Files: packages/tools/src/implementations/ListDirTool.ts]
+  - [ ] `taskcade-t102.12.7.2`: [Rehab 2/3] Core Implementation Unit: T102.12.7: Write unit tests verifying `ListDirTool` recursive directory listing, child coun [Role: implementer] [Files: packages/tools/src/implementations/ListDirTool.ts]
+  - [ ] `taskcade-t102.12.7.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.7: Write unit tests verifying `ListDirTool` recursive directory listing, child coun [Role: test_engineer] [Files: packages/tools/src/tests/list_dir_tool.test.ts]
+
+
+### Task taskcade-t102.15.3 Rehabilitation [2026-10-16T17:33:02.752Z]
+- **Parent Task**: T102.15.3: Write unit tests verifying `SymbolExtractor` interface, function, and variable e (`taskcade-t102.15.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.15.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.15.3: Write unit tests verifying `SymbolExtractor` interface, function, and variable e [Role: type_specialist] [Files: packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `taskcade-t102.15.3.2`: [Rehab 2/3] Core Implementation Unit: T102.15.3: Write unit tests verifying `SymbolExtractor` interface, function, and variable e [Role: implementer] [Files: packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `taskcade-t102.15.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.15.3: Write unit tests verifying `SymbolExtractor` interface, function, and variable e [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts]
+
+
+### Task taskcade-t102.13.6 Rehabilitation [2026-10-16T17:12:59.658Z]
+- **Parent Task**: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig (`taskcade-t102.13.6`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig [Role: type_specialist] [Files: packages/frontend/src/app/services/reactive-signal.service.ts]
+  - [ ] `taskcade-t102.13.6.2`: [Rehab 2/3] Core Implementation Unit: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig [Role: implementer] [Files: packages/frontend/src/app/services/reactive-signal.service.ts]
+  - [ ] `taskcade-t102.13.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.8.1 Rehabilitation [2026-10-16T17:10:11.114Z]
+- **Parent Task**: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac (`taskcade-t102.8.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.8.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac [Role: type_specialist] [Files: packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `taskcade-t102.8.1.2`: [Rehab 2/3] Core Implementation Unit: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac [Role: implementer] [Files: packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `taskcade-t102.8.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts]
+
+
+### Task taskcade-t102.1.16 Rehabilitation [2026-10-16T17:01:28.015Z]
+- **Parent Task**: T102.1.16: Write unit tests verifying `WindowedSuccessTrendComponent` moving average calcul (`taskcade-t102.1.16`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.16.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.1.16: Write unit tests verifying `WindowedSuccessTrendComponent` moving average calcul [Role: type_specialist] [Files: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.ts]
+  - [ ] `taskcade-t102.1.16.2`: [Rehab 2/3] Core Implementation Unit: T102.1.16: Write unit tests verifying `WindowedSuccessTrendComponent` moving average calcul [Role: implementer] [Files: packages/frontend/src/app/components/windowed-success-trend/windowed-success-trend.component.ts]
+  - [ ] `taskcade-t102.1.16.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.1.16: Write unit tests verifying `WindowedSuccessTrendComponent` moving average calcul [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.3.1 Rehabilitation [2026-10-16T16:54:36.289Z]
+- **Parent Task**: T102.3.1: Write unit tests verifying `GiteaPermissionGuard` repository permission role che (`taskcade-t102.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.3.1: Write unit tests verifying `GiteaPermissionGuard` repository permission role che [Role: type_specialist] [Files: packages/engine/src/gitea/GiteaPermissionGuard.ts]
+  - [ ] `taskcade-t102.3.1.2`: [Rehab 2/3] Core Implementation Unit: T102.3.1: Write unit tests verifying `GiteaPermissionGuard` repository permission role che [Role: implementer] [Files: packages/engine/src/gitea/GiteaPermissionGuard.ts]
+  - [ ] `taskcade-t102.3.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.3.1: Write unit tests verifying `GiteaPermissionGuard` repository permission role che [Role: test_engineer] [Files: packages/engine/src/tests/gitea_permission_guard.test.ts]
+
+
+### Task taskcade-t102.13.4 Rehabilitation [2026-10-16T16:51:46.414Z]
+- **Parent Task**: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign (`taskcade-t102.13.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.4.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign [Role: type_specialist] [Files: packages/frontend/src/app/services/auth.service.ts]
+  - [ ] `taskcade-t102.13.4.2`: [Rehab 2/3] Core Implementation Unit: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign [Role: implementer] [Files: packages/frontend/src/app/services/auth.service.ts]
+  - [ ] `taskcade-t102.13.4.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.1.15 Rehabilitation [2026-10-16T16:47:37.117Z]
+- **Parent Task**: T102.1.15: Write unit tests verifying `TestRunModalComponent` test output live streaming, p (`taskcade-t102.1.15`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.15.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.1.15: Write unit tests verifying `TestRunModalComponent` test output live streaming, p [Role: type_specialist] [Files: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts]
+  - [ ] `taskcade-t102.1.15.2`: [Rehab 2/3] Core Implementation Unit: T102.1.15: Write unit tests verifying `TestRunModalComponent` test output live streaming, p [Role: implementer] [Files: packages/frontend/src/app/components/test-run-modal/test-run-modal.component.ts]
+  - [ ] `taskcade-t102.1.15.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.1.15: Write unit tests verifying `TestRunModalComponent` test output live streaming, p [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.13.3 Rehabilitation [2026-10-16T16:33:35.929Z]
+- **Parent Task**: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u (`taskcade-t102.13.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u [Role: type_specialist] [Files: packages/frontend/src/app/services/model-fleet.service.ts]
+  - [ ] `taskcade-t102.13.3.2`: [Rehab 2/3] Core Implementation Unit: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u [Role: implementer] [Files: packages/frontend/src/app/services/model-fleet.service.ts]
+  - [ ] `taskcade-t102.13.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.2.14 Rehabilitation [2026-10-16T16:32:47.850Z]
+- **Parent Task**: T102.2.14: Write unit tests verifying `HardwareDiscoveryEngine` APU vs discrete GPU classif (`taskcade-t102.2.14`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.2.14.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.14: Write unit tests verifying `HardwareDiscoveryEngine` APU vs discrete GPU classif [Role: type_specialist] [Files: packages/engine/src/hardware/HardwareDiscoveryEngine.ts]
+  - [ ] `taskcade-t102.2.14.2`: [Rehab 2/3] Core Implementation Unit: T102.2.14: Write unit tests verifying `HardwareDiscoveryEngine` APU vs discrete GPU classif [Role: implementer] [Files: packages/engine/src/hardware/HardwareDiscoveryEngine.ts]
+  - [ ] `taskcade-t102.2.14.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.14: Write unit tests verifying `HardwareDiscoveryEngine` APU vs discrete GPU classif [Role: test_engineer] [Files: packages/engine/src/tests/hardware_discovery_engine.test.ts]
+
+
+### Task taskcade-t102.4.1 Rehabilitation [2026-10-16T16:24:11.171Z]
+- **Parent Task**: T102.4.1: Write unit tests verifying `FailureClassifier` error string pattern matching, ca (`taskcade-t102.4.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.4.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.4.1: Write unit tests verifying `FailureClassifier` error string pattern matching, ca [Role: type_specialist] [Files: packages/engine/src/analytics/FailureClassifier.ts]
+  - [ ] `taskcade-t102.4.1.2`: [Rehab 2/3] Core Implementation Unit: T102.4.1: Write unit tests verifying `FailureClassifier` error string pattern matching, ca [Role: implementer] [Files: packages/engine/src/analytics/FailureClassifier.ts]
+  - [ ] `taskcade-t102.4.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.4.1: Write unit tests verifying `FailureClassifier` error string pattern matching, ca [Role: test_engineer] [Files: packages/engine/src/tests/failure_classifier.test.ts]
+
+
+### Task taskcade-t102.3.5 Rehabilitation [2026-10-16T16:24:02.237Z]
+- **Parent Task**: T102.3.5: Write unit tests verifying `GitUndoManager` single-commit revert generation, dir (`taskcade-t102.3.5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.5.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.3.5: Write unit tests verifying `GitUndoManager` single-commit revert generation, dir [Role: type_specialist] [Files: packages/engine/src/git/GitUndoManager.ts]
+  - [ ] `taskcade-t102.3.5.2`: [Rehab 2/3] Core Implementation Unit: T102.3.5: Write unit tests verifying `GitUndoManager` single-commit revert generation, dir [Role: implementer] [Files: packages/engine/src/git/GitUndoManager.ts]
+  - [ ] `taskcade-t102.3.5.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.3.5: Write unit tests verifying `GitUndoManager` single-commit revert generation, dir [Role: test_engineer] [Files: packages/engine/src/tests/git_undo_manager.test.ts]
+
+
+### Task taskcade-t102.13.9 Rehabilitation [2026-10-16T16:18:25.431Z]
+- **Parent Task**: T102.13.9: Write unit tests verifying `ProcessesViewComponent` process table sorting, CPU/m (`taskcade-t102.13.9`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.9.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.9: Write unit tests verifying `ProcessesViewComponent` process table sorting, CPU/m [Role: type_specialist] [Files: packages/frontend/src/app/components/views/processes-view.component.ts]
+  - [ ] `taskcade-t102.13.9.2`: [Rehab 2/3] Core Implementation Unit: T102.13.9: Write unit tests verifying `ProcessesViewComponent` process table sorting, CPU/m [Role: implementer] [Files: packages/frontend/src/app/components/views/processes-view.component.ts]
+  - [ ] `taskcade-t102.13.9.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.9: Write unit tests verifying `ProcessesViewComponent` process table sorting, CPU/m [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.13.7 Rehabilitation [2026-10-16T16:04:29.344Z]
+- **Parent Task**: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica (`taskcade-t102.13.7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.7.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: type_specialist] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [ ] `taskcade-t102.13.7.2`: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: implementer] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [ ] `taskcade-t102.13.7.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.15.8 Rehabilitation [2026-10-16T15:57:36.358Z]
+- **Parent Task**: T102.15.8: Write unit tests verifying `ContextManager` multi-source context assembly, prior (`taskcade-t102.15.8`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.15.8.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.15.8: Write unit tests verifying `ContextManager` multi-source context assembly, prior [Role: type_specialist] [Files: packages/engine/src/context/ContextManager.ts]
+  - [ ] `taskcade-t102.15.8.2`: [Rehab 2/3] Core Implementation Unit: T102.15.8: Write unit tests verifying `ContextManager` multi-source context assembly, prior [Role: implementer] [Files: packages/engine/src/context/ContextManager.ts]
+  - [ ] `taskcade-t102.15.8.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.15.8: Write unit tests verifying `ContextManager` multi-source context assembly, prior [Role: test_engineer] [Files: packages/engine/src/tests/context_manager.test.ts]
+
+
+### Task taskcade-t102.17.3 Rehabilitation [2026-10-16T15:32:46.135Z]
+- **Parent Task**: T102.17.3: Write unit tests verifying `DatasetVersionMigrator` schema version validation, t (`taskcade-t102.17.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.17.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.17.3: Write unit tests verifying `DatasetVersionMigrator` schema version validation, t [Role: type_specialist] [Files: packages/engine/src/optimization/DatasetVersionMigrator.ts]
+  - [ ] `taskcade-t102.17.3.2`: [Rehab 2/3] Core Implementation Unit: T102.17.3: Write unit tests verifying `DatasetVersionMigrator` schema version validation, t [Role: implementer] [Files: packages/engine/src/optimization/DatasetVersionMigrator.ts]
+  - [ ] `taskcade-t102.17.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.17.3: Write unit tests verifying `DatasetVersionMigrator` schema version validation, t [Role: test_engineer] [Files: packages/engine/src/tests/dataset_version_migrator.test.ts]
+
+
+### Task taskcade-t102.6.3.3 Rehabilitation [2026-10-16T15:25:34.765Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.6.3: Write unit tests verifying `BannedImportScrubberRule` forbidden package detectio (`taskcade-t102.6.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.3.3.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 3/3] Unit Test & Validation Suite: T102.6.3: Write unit tests verifying `BannedImportScrubberRule` forbidden package detectio [Role: type_specialist] [Files: packages/engine/src/tests/banned_import_scrubber_rule.test.ts]
+  - [ ] `taskcade-t102.6.3.3.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 3/3] Unit Test & Validation Suite: T102.6.3: Write unit tests verifying `BannedImportScrubberRule` forbidden package detectio [Role: implementer] [Files: packages/engine/src/tests/banned_import_scrubber_rule.test.ts]
+
+
+### Task taskcade-t102.4.3 Rehabilitation [2026-10-16T15:25:11.838Z]
+- **Parent Task**: T102.4.3: Write unit tests verifying `GitRegressionCorrelator` commit blame mapping, diff  (`taskcade-t102.4.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.4.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.4.3: Write unit tests verifying `GitRegressionCorrelator` commit blame mapping, diff  [Role: type_specialist] [Files: packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [ ] `taskcade-t102.4.3.2`: [Rehab 2/3] Core Implementation Unit: T102.4.3: Write unit tests verifying `GitRegressionCorrelator` commit blame mapping, diff  [Role: implementer] [Files: packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [ ] `taskcade-t102.4.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.4.3: Write unit tests verifying `GitRegressionCorrelator` commit blame mapping, diff  [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts]
+
+
+### Task taskcade-t102.12.4 Rehabilitation [2026-10-16T15:17:59.903Z]
+- **Parent Task**: T102.12.4: Write unit tests verifying `ReplaceFileContentTool` single chunk replacement, ex (`taskcade-t102.12.4`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.4.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.4: Write unit tests verifying `ReplaceFileContentTool` single chunk replacement, ex [Role: type_specialist] [Files: packages/tools/src/implementations/ReplaceFileContentTool.ts]
+  - [ ] `taskcade-t102.12.4.2`: [Rehab 2/3] Core Implementation Unit: T102.12.4: Write unit tests verifying `ReplaceFileContentTool` single chunk replacement, ex [Role: implementer] [Files: packages/tools/src/implementations/ReplaceFileContentTool.ts]
+  - [ ] `taskcade-t102.12.4.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.4: Write unit tests verifying `ReplaceFileContentTool` single chunk replacement, ex [Role: test_engineer] [Files: packages/tools/src/tests/replace_file_content_tool.test.ts]
+
+
+### Task taskcade-t102.12.3 Rehabilitation [2026-10-16T14:31:40.399Z]
+- **Parent Task**: T102.12.3: Write unit tests verifying `MultiReplaceFileContentTool` multi-chunk replacement (`taskcade-t102.12.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.3: Write unit tests verifying `MultiReplaceFileContentTool` multi-chunk replacement [Role: type_specialist] [Files: packages/tools/src/implementations/MultiReplaceFileContentTool.ts]
+  - [ ] `taskcade-t102.12.3.2`: [Rehab 2/3] Core Implementation Unit: T102.12.3: Write unit tests verifying `MultiReplaceFileContentTool` multi-chunk replacement [Role: implementer] [Files: packages/tools/src/implementations/MultiReplaceFileContentTool.ts]
+  - [ ] `taskcade-t102.12.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.3: Write unit tests verifying `MultiReplaceFileContentTool` multi-chunk replacement [Role: test_engineer] [Files: packages/tools/src/tests/multi_replace_file_content_tool.test.ts]
+
+
+### Task taskcade-t102.13.1 Rehabilitation [2026-10-16T14:17:39.727Z]
+- **Parent Task**: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio (`taskcade-t102.13.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio [Role: type_specialist] [Files: packages/frontend/src/app/services/task-api.service.ts]
+  - [ ] `taskcade-t102.13.1.2`: [Rehab 2/3] Core Implementation Unit: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio [Role: implementer] [Files: packages/frontend/src/app/services/task-api.service.ts]
+  - [ ] `taskcade-t102.13.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.12.2 Rehabilitation [2026-10-16T12:54:27.333Z]
+- **Parent Task**: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati (`taskcade-t102.12.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati [Role: type_specialist] [Files: packages/tools/src/implementations/LocateFeatureTool.ts]
+  - [ ] `taskcade-t102.12.2.2`: [Rehab 2/3] Core Implementation Unit: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati [Role: implementer] [Files: packages/tools/src/implementations/LocateFeatureTool.ts]
+  - [ ] `taskcade-t102.12.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati [Role: test_engineer] [Files: packages/tools/src/tests/locate_feature_tool.test.ts]
+
+
+### Task taskcade-t102.1.19 Rehabilitation [2026-10-16T12:18:58.289Z]
+- **Parent Task**: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv (`taskcade-t102.1.19`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.19.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: type_specialist] [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts]
+  - [ ] `taskcade-t102.1.19.2`: [Rehab 2/3] Core Implementation Unit: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: implementer] [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts]
+  - [ ] `taskcade-t102.1.19.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.7.5 Rehabilitation [2026-10-16T11:48:35.401Z]
+- **Parent Task**: T102.7.5: Write unit tests verifying `SsoProviderFactory` provider selection based on SSO_ (`taskcade-t102.7.5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.7.5.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.7.5: Write unit tests verifying `SsoProviderFactory` provider selection based on SSO_ [Role: type_specialist] [Files: packages/engine/src/auth/SsoProviderFactory.ts]
+  - [ ] `taskcade-t102.7.5.2`: [Rehab 2/3] Core Implementation Unit: T102.7.5: Write unit tests verifying `SsoProviderFactory` provider selection based on SSO_ [Role: implementer] [Files: packages/engine/src/auth/SsoProviderFactory.ts]
+  - [ ] `taskcade-t102.7.5.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.7.5: Write unit tests verifying `SsoProviderFactory` provider selection based on SSO_ [Role: test_engineer] [Files: packages/engine/src/tests/sso_provider_factory.test.ts]
+
+
+### Task taskcade-t102.12.6 Rehabilitation [2026-10-16T11:36:34.515Z]
+- **Parent Task**: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o (`taskcade-t102.12.6`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o [Role: type_specialist] [Files: packages/tools/src/implementations/ViewFileTool.ts]
+  - [ ] `taskcade-t102.12.6.2`: [Rehab 2/3] Core Implementation Unit: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o [Role: implementer] [Files: packages/tools/src/implementations/ViewFileTool.ts]
+  - [ ] `taskcade-t102.12.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o [Role: test_engineer] [Files: packages/tools/src/tests/view_file_tool.test.ts]
+
+
+### Task taskcade-t102.3.4 Rehabilitation [2026-10-16T11:24:33.127Z]
+- **Parent Task**: T102.3.4: Write unit tests verifying `ReleaseBundlerService` changelog aggregation, semant (`taskcade-t102.3.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.4.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.3.4: Write unit tests verifying `ReleaseBundlerService` changelog aggregation, semant [Role: type_specialist] [Files: packages/engine/src/gitea/ReleaseBundlerService.ts]
+  - [ ] `taskcade-t102.3.4.2`: [Rehab 2/3] Core Implementation Unit: T102.3.4: Write unit tests verifying `ReleaseBundlerService` changelog aggregation, semant [Role: implementer] [Files: packages/engine/src/gitea/ReleaseBundlerService.ts]
+  - [ ] `taskcade-t102.3.4.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.3.4: Write unit tests verifying `ReleaseBundlerService` changelog aggregation, semant [Role: test_engineer] [Files: packages/engine/src/tests/release_bundler_service.test.ts]
+
+
+### Task taskcade-t102.13.5 Rehabilitation [2026-10-16T11:24:22.056Z]
+- **Parent Task**: T102.13.5: Write unit tests verifying `HistoryMetricsService` epoch statistics rollup, succ (`taskcade-t102.13.5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.5.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.5: Write unit tests verifying `HistoryMetricsService` epoch statistics rollup, succ [Role: type_specialist] [Files: packages/frontend/src/app/services/history-metrics.service.ts]
+  - [ ] `taskcade-t102.13.5.2`: [Rehab 2/3] Core Implementation Unit: T102.13.5: Write unit tests verifying `HistoryMetricsService` epoch statistics rollup, succ [Role: implementer] [Files: packages/frontend/src/app/services/history-metrics.service.ts]
+  - [ ] `taskcade-t102.13.5.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.5: Write unit tests verifying `HistoryMetricsService` epoch statistics rollup, succ [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.12.10 Rehabilitation [2026-10-16T10:55:10.264Z]
+- **Parent Task**: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline (`taskcade-t102.12.10`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.10.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline [Role: type_specialist] [Files: packages/tools/src/implementations/RegexTool.ts]
+  - [ ] `taskcade-t102.12.10.2`: [Rehab 2/3] Core Implementation Unit: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline [Role: implementer] [Files: packages/tools/src/implementations/RegexTool.ts]
+  - [ ] `taskcade-t102.12.10.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline [Role: test_engineer] [Files: packages/tools/src/tests/regex_tool.test.ts]
+
+
 ### Task taskcade-t102.1.17 Rehabilitation [2026-10-16T10:06:53.930Z]
 - **Parent Task**: T102.1.17: Write unit tests verifying `CheckpointTimelineComponent` undo/redo button state  (`taskcade-t102.1.17`)
 - **Failure Count**: 3

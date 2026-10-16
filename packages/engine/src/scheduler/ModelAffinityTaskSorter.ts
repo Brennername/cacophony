@@ -28,15 +28,30 @@ export class ModelAffinityTaskSorter {
     const now = Date.now();
 
     return [...tasks].sort((a, b) => {
-      // 1. Starvation auto-escalation: evaluate effective priority
-      const effA = this.getEffectivePriority(a, now);
-      const effB = this.getEffectivePriority(b, now);
+      // 1. Evaluate effective priority tiers:
+      // Explicit P0 is rank 0.
+      // Auto-escalated starved tasks are rank 1.
+      // Normal P1 is rank 2.
+      // Normal P2 is rank 3.
+      const rankA = this.getPriorityRank(a, now);
+      const rankB = this.getPriorityRank(b, now);
 
-      // P0 tasks take absolute precedence
-      if (effA === "P0" && effB !== "P0") return -1;
-      if (effB === "P0" && effA !== "P0") return 1;
+      // Explicit P0 emergency tasks take absolute precedence over everything else
+      if (rankA === 0 && rankB !== 0) return -1;
+      if (rankB === 0 && rankA !== 0) return 1;
 
-      // 2. Model Affinity: If one task matches the active VRAM model, prioritize it
+      // Both are explicit P0: FIFO age ordering
+      if (rankA === 0 && rankB === 0) {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+
+      // Auto-escalated starved tasks (rank 1) preempt non-starved tasks (rank >= 2)
+      // even if a non-starved task matches the currently loaded model
+      if (rankA === 1 && rankB > 1) return -1;
+      if (rankB === 1 && rankA > 1) return 1;
+
+      // 2. Model Affinity: Within the same tier (e.g. between normal tasks or between starved tasks),
+      // if one task matches the active VRAM model, prioritize it to eliminate model switch latency
       if (currentlyLoadedModel) {
         const aMatches = a.modelAssigned === currentlyLoadedModel;
         const bMatches = b.modelAssigned === currentlyLoadedModel;
@@ -45,8 +60,6 @@ export class ModelAffinityTaskSorter {
       }
 
       // 3. Priority tier (P1 before P2)
-      const rankA = this.getPriorityRank(effA);
-      const rankB = this.getPriorityRank(effB);
       if (rankA !== rankB) {
         return rankA - rankB;
       }
@@ -56,26 +69,27 @@ export class ModelAffinityTaskSorter {
     });
   }
 
-  private getEffectivePriority(task: TaskRecord, nowMs: number): string {
-    if (task.priority === "P0") return "P0";
+  private getPriorityRank(task: TaskRecord, nowMs: number): number {
+    // Explicit operator emergency priority
+    if (task.priority === "P0") {
+      return 0;
+    }
+
     const createdMs = new Date(task.createdAt).getTime();
     const ageSeconds = Math.max(0, (nowMs - createdMs) / 1000);
-    if (ageSeconds >= this.maxWaitSeconds) {
-      return "P0"; // Auto-escalate to prevent starvation
-    }
-    return task.priority;
-  }
 
-  private getPriorityRank(priority: string): number {
-    switch (priority) {
-      case "P0":
-        return 0;
+    // Aging tasks auto-escalate to prevent indefinite starvation behind newer tasks
+    if (ageSeconds >= this.maxWaitSeconds) {
+      return 1;
+    }
+
+    switch (task.priority) {
       case "P1":
-        return 1;
-      case "P2":
         return 2;
-      default:
+      case "P2":
         return 3;
+      default:
+        return 4;
     }
   }
 }
