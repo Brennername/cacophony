@@ -34,6 +34,9 @@ export class JwtValidator {
   /**
    * Validates a JWT string and verifies its signature and claims.
    */
+  /**
+   * Validates a JWT string and verifies its signature and claims.
+   */
   public async validate(
     token: string,
     options?: JwtValidationOptions,
@@ -137,11 +140,9 @@ export class JwtValidator {
       return { valid: false, error: "Invalid signature" };
     }
 
-    // Claims validations
     const nowSec = Math.floor(Date.now() / 1000);
     const clockTolerance = options?.clockToleranceSeconds ?? 60;
 
-    // Check expiration (exp)
     if (typeof payload.exp === "number") {
       if (nowSec - clockTolerance > payload.exp) {
         return {
@@ -151,14 +152,12 @@ export class JwtValidator {
       }
     }
 
-    // Check not-before (nbf)
     if (typeof payload.nbf === "number") {
       if (nowSec + clockTolerance < payload.nbf) {
         return { valid: false, error: `Token not valid before ${payload.nbf}` };
       }
     }
 
-    // Check issuer (iss)
     if (options?.expectedIssuer && payload.iss !== options.expectedIssuer) {
       return {
         valid: false,
@@ -166,7 +165,6 @@ export class JwtValidator {
       };
     }
 
-    // Check audience (aud)
     if (options?.expectedAudience) {
       const aud = payload.aud;
       const audMatches = Array.isArray(aud)
@@ -180,7 +178,6 @@ export class JwtValidator {
       }
     }
 
-    // Check nonce if requested
     if (options?.expectedNonce && payload.nonce !== options.expectedNonce) {
       return {
         valid: false,
@@ -191,6 +188,9 @@ export class JwtValidator {
     return { valid: true, payload };
   }
 
+  /**
+   * Creates an internal HS256 signed session token using the HMAC secret.
+   */
   /**
    * Creates an internal HS256 signed session token using the HMAC secret.
    */
@@ -207,7 +207,7 @@ export class JwtValidator {
     const signature = crypto
       .createHmac("sha256", this.hmacSecret)
       .update(signedData)
-      .digest("base64url");
+      .digest();
     return `${signedData}.${signature}`;
   }
 }
