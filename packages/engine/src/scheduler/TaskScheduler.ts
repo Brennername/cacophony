@@ -842,22 +842,28 @@ export class TaskScheduler implements IModelPredictor {
         "qwen2.5-coder:7b",
       ];
     } else {
+      const catalogModels = this.vramCatalog
+        .getAllProfiles()
+        .map((p) => p.modelId)
+        .filter((m) => m !== "qwen2.5-coder:3b");
       const defaultCandidates = [
+        "gemma3:12b-it-qat",
         "qwen2.5-coder:7b-instruct-q4_K_M",
         "qwen2.5-coder:7b",
-        "gemma3:12b-it-qat",
         "gemma3:4b-it-qat",
         "qwen2.5-coder:14b",
         "deepseek-coder-v2:16b",
       ];
+      const combined = Array.from(new Set([...defaultCandidates, ...catalogModels]));
       candidateList = normalizedAssigned
-        ? [normalizedAssigned, ...defaultCandidates.filter((m) => m !== normalizedAssigned)]
-        : defaultCandidates;
+        ? [normalizedAssigned, ...combined.filter((m) => m !== normalizedAssigned)]
+        : combined;
     }
 
     try {
       const sample = await this.telemetryProvider.sample();
-      if (sample.edgeTempCelsius >= 75 && !normalizedAssigned) {
+      // Only throttle heavy models if hardware temperature reaches the Critical Red zone (>= 95C)
+      if (sample.edgeTempCelsius >= (this.governor ? this.governor.redMax : 95) && !normalizedAssigned) {
         candidateList = [
           "qwen2.5-coder:7b-instruct-q4_K_M",
           "gemma3:4b-it-qat",
@@ -871,6 +877,7 @@ export class TaskScheduler implements IModelPredictor {
       candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
       if (candidateList.length === 0) {
         candidateList = normalizedAssigned ? [normalizedAssigned] : [
+          "gemma3:12b-it-qat",
           "qwen2.5-coder:7b-instruct-q4_K_M",
           "gemma3:4b-it-qat",
         ];

@@ -4,6 +4,26 @@
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.6.7 Rehabilitation [2026-10-16T01:12:50.569Z]
+- **Parent Task**: T102.6.7: Write unit tests verifying `WhitespaceAndEolNormalizerRule` mixed CRLF/LF normal (`taskcade-t102.6.7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.7.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.6.7: Write unit tests verifying `WhitespaceAndEolNormalizerRule` mixed CRLF/LF normal [Role: type_specialist] [Files: packages/engine/src/rules/catalog/WhitespaceAndEolNormalizerRule.ts]
+  - [ ] `taskcade-t102.6.7.2`: [Rehab 2/3] Core Implementation Unit: T102.6.7: Write unit tests verifying `WhitespaceAndEolNormalizerRule` mixed CRLF/LF normal [Role: implementer] [Files: packages/engine/src/rules/catalog/WhitespaceAndEolNormalizerRule.ts]
+  - [ ] `taskcade-t102.6.7.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.6.7: Write unit tests verifying `WhitespaceAndEolNormalizerRule` mixed CRLF/LF normal [Role: test_engineer] [Files: packages/engine/src/tests/whitespace_normalizer_rule.test.ts]
+
+
+### Task taskcade-t102.16.2 Rehabilitation [2026-10-15T23:36:42.198Z]
+- **Parent Task**: T102.16.2: Write unit tests verifying `FleetWebSocketClient` connection lifecycle, handshak (`taskcade-t102.16.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.16.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.16.2: Write unit tests verifying `FleetWebSocketClient` connection lifecycle, handshak [Role: type_specialist] [Files: packages/engine/src/fleet/FleetWebSocketClient.ts]
+  - [ ] `taskcade-t102.16.2.2`: [Rehab 2/3] Core Implementation Unit: T102.16.2: Write unit tests verifying `FleetWebSocketClient` connection lifecycle, handshak [Role: implementer] [Files: packages/engine/src/fleet/FleetWebSocketClient.ts]
+  - [ ] `taskcade-t102.16.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.16.2: Write unit tests verifying `FleetWebSocketClient` connection lifecycle, handshak [Role: test_engineer] [Files: packages/engine/src/tests/fleet_websocket_client.test.ts]
+
+
 ### Task taskcade-t102.16.4 Rehabilitation [2026-10-15T23:02:49.370Z]
 - **Parent Task**: T102.16.4: Write unit tests verifying `WorkspaceIsolationManager` ephemeral worktree creati (`taskcade-t102.16.4`)
 - **Failure Count**: 3
