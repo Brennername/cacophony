@@ -1746,7 +1746,9 @@ export class CacophonyHttpServer {
         : [];
       try {
         const models = await modelManager.listInstalledModels(protectedModels);
-        const scheduler = this.daemon.getScheduler();
+        const scheduler = typeof (this.daemon as any).getScheduler === "function"
+          ? (this.daemon as any).getScheduler()
+          : null;
         if (scheduler && typeof scheduler.getVramCatalog === "function") {
           scheduler.getVramCatalog().syncFromInstalledModels(models);
         }
