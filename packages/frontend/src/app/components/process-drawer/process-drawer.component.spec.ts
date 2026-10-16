@@ -75,7 +75,7 @@ describe('ProcessDrawerComponent (T65.4, T65.5)', () => {
   });
 
   it('should calculate active processes and cumulative RSS memory in header summary', () => {
-    // 2 running processes: 1024 + 512 = 1536 MB = 1.5 GB
+
     expect(component.activeProcessCount()).toBe(2);
     expect(component.totalRssGb()).toBe('1.5');
     expect(component.headerSummary()).toBe('2 System Processes Active - 1.5 GB RSS');
