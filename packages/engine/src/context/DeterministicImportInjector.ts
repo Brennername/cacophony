@@ -51,6 +51,9 @@ export class DeterministicImportInjector {
   /**
    * Analyzes source code and injects missing import declarations.
    */
+  /**
+   * Analyzes source code and injects missing import declarations.
+   */
   public injectMissingImports(sourceCode: string): ImportInjectionResult {
     const sourceFile = ts.createSourceFile(
       "temp.ts",
@@ -102,7 +105,6 @@ export class DeterministicImportInjector {
 
     visit(sourceFile);
 
-    // Identify symbols in catalog that are referenced, not imported, and not declared
     const missingByModule = new Map<string, string[]>();
     const allInjected: string[] = [];
 
@@ -126,7 +128,6 @@ export class DeterministicImportInjector {
       return { updatedCode: sourceCode, injectedSymbols: [] };
     }
 
-    // Build new import lines
     const importLines: string[] = [];
     for (const [moduleSpec, symbols] of missingByModule.entries()) {
       importLines.push(
