@@ -14,6 +14,9 @@ export class SignatureStore {
   /**
    * Indexes signatures from raw file content.
    */
+  /**
+   * Indexes signatures from raw file content.
+   */
   public indexFile(
     filePath: string,
     content: string,
@@ -33,7 +36,7 @@ export class SignatureStore {
 
     for (const rec of harvested) {
       this.records.set(`${rec.filePath}#${rec.identifier}`, rec);
-      // Also index by bare identifier for quick lookup
+
       if (!this.records.has(rec.identifier)) {
         this.records.set(rec.identifier, rec);
       }
