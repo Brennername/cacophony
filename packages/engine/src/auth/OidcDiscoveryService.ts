@@ -1,7 +1,4 @@
-import type {
-  OidcDiscoveryConfig,
-  JwksDocument,
-} from "@cacophony/shared-types";
+import type { OidcDiscoveryConfig, JwksDocument } from "@cacophony/shared-types";
 
 /**
  * Service to dynamically discover and cache OpenID Connect endpoint configurations
@@ -49,7 +46,7 @@ export class OidcDiscoveryService {
       if (this.cachedConfig) {
         return this.cachedConfig;
       }
-      // Provide intelligent fallback defaults conforming to standard OIDC endpoints
+
       const fallbackConfig: OidcDiscoveryConfig = {
         issuer: this.issuerUrl,
         authorization_endpoint: `${this.issuerUrl}/authorize`,
@@ -145,4 +142,16 @@ export class JwksKeyManager {
     this.cachedJwks = null;
     this.lastFetchTimeMs = 0;
   }
+}
+
+export interface IOidcDiscoveryService {
+  getConfiguration(): Promise<OidcDiscoveryConfig>;
+  setConfiguration(config: OidcDiscoveryConfig): void;
+  clearCache(): void;
+}
+
+export interface IJwksKeyManager {
+  getJwks(): Promise<JwksDocument>;
+  getKey(kid?: string): Promise<JwksDocument["keys"][number] | undefined>;
+  invalidate(): void;
 }
