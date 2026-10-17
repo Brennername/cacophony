@@ -6,6 +6,20 @@ import type {
   BanditPolicyType,
 } from "@cacophony/shared-types";
 
+// Define strict types for configuration options
+interface IEpsilonGreedyConfig {
+  initialEpsilon: number;
+  minEpsilon: number;
+  decayRate: number;
+}
+
+// Default configuration values
+const DEFAULT_CONFIG: IEpsilonGreedyConfig = {
+  initialEpsilon: 0.2,
+  minEpsilon: 0.05,
+  decayRate: 0.995,
+};
+
 export class EpsilonGreedyPolicy implements IBanditPolicy {
   public readonly policyType: BanditPolicyType = "epsilon_greedy";
   private readonly initialEpsilon: number;
@@ -15,9 +29,10 @@ export class EpsilonGreedyPolicy implements IBanditPolicy {
   private currentEpoch: number = 0;
 
   constructor(config: EpsilonGreedyConfig = {}) {
-    this.initialEpsilon = config.initialEpsilon ?? 0.2;
-    this.minEpsilon = config.minEpsilon ?? 0.05;
-    this.decayRate = config.decayRate ?? 0.995;
+    const { initialEpsilon, minEpsilon, decayRate } = { ...DEFAULT_CONFIG, ...config };
+    this.initialEpsilon = initialEpsilon;
+    this.minEpsilon = minEpsilon;
+    this.decayRate = decayRate;
     this.currentEpsilon = this.initialEpsilon;
   }
 
@@ -77,7 +92,7 @@ export class EpsilonGreedyPolicy implements IBanditPolicy {
     return this.currentEpoch;
   }
 
-  public calculateMeanWinRate(arm: BanditArmRecord): number {
+  private calculateMeanWinRate(arm: BanditArmRecord): number {
     if (arm.trialsCount <= 0) {
       return arm.alpha / (arm.alpha + arm.beta);
     }
