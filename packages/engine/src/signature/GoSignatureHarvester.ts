@@ -37,7 +37,6 @@ export class GoSignatureHarvester {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]?.trim() ?? "";
 
-      // Check struct / interface start
       const typeMatch = line.match(typeDefRegex);
       if (typeMatch && typeMatch[1] && typeMatch[2]) {
         currentBlockName = typeMatch[1];
@@ -48,7 +47,6 @@ export class GoSignatureHarvester {
         continue;
       }
 
-      // Check block closing
       if (inBlock && line === "}") {
         records.push({
           id: `${filePath}#${currentBlockName}`,
@@ -64,10 +62,9 @@ export class GoSignatureHarvester {
         continue;
       }
 
-      // Inside struct or interface block
       if (inBlock && line && !line.startsWith("//")) {
         if (currentBlockKind === "type") {
-          // Struct field: Name Type `tags`
+
           const parts = line.split(/\s+/);
           if (parts.length >= 2 && parts[0] && parts[1]) {
             currentBlockFields.push({
@@ -78,7 +75,7 @@ export class GoSignatureHarvester {
             });
           }
         } else if (currentBlockKind === "interface") {
-          // Interface method: MethodName(param Type) ReturnType
+
           const ifaceMethodMatch = line.match(
             /^([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^;]*)/,
           );
@@ -94,7 +91,6 @@ export class GoSignatureHarvester {
         continue;
       }
 
-      // Top-level function or receiver method
       const funcMatch = line.match(funcRegex);
       if (funcMatch && funcMatch[2]) {
         const receiver = funcMatch[1]?.trim();
