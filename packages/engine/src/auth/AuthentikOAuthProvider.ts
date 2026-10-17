@@ -1,6 +1,6 @@
 import * as crypto from "node:crypto";
 import type { ISsoProvider, SsoValidationResult } from "./ISsoProvider.js";
-import type { SsoUserProfile, AuthentikConfig } from "@cacophony/shared-types";
+import { SsoUserProfile, AuthentikConfig } from '@cacophony/shared-types';
 
 /**
  * Enterprise Authentik OIDC OAuth2 Provider.
@@ -74,7 +74,7 @@ export class AuthentikOAuthProvider implements ISsoProvider {
       const json = (await response.json()) as { access_token?: string };
       accessToken = json.access_token || "";
     } catch (err: unknown) {
-      // If network unreachable in offline/mock test, fallback to simulated exchange if code matches test pattern
+
       if (code.startsWith("simulated-authentik-code")) {
         accessToken = `authentik-simulated-token-${Date.now()}`;
       } else {
@@ -124,11 +124,10 @@ export class AuthentikOAuthProvider implements ISsoProvider {
         };
         return userProfile;
       }
-    } catch {
-      // In offline tests or when Authentik is unreachable
+    } catch (err) {
+
     }
 
-    // Default parsed fallback profile
     return {
       id: "authentik-default-id",
       username: "authentik_admin",
@@ -196,10 +195,10 @@ export class AuthentikOAuthProvider implements ISsoProvider {
           email: payload.email,
           groups,
           roles,
-          provider: "authentik",
+          provider: this.providerType,
         },
       };
-    } catch (err: unknown) {
+    } catch (err) {
       return {
         valid: false,
         error: err instanceof Error ? err.message : "Token validation error",
