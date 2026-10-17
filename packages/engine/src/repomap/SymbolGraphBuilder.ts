@@ -52,3 +52,9 @@ export class SymbolGraphBuilder {
     });
   }
 }
+
+
+export interface ISymbolGraphBuilder {
+  getGraph(): SymbolGraph;
+  processSourceFile(sourceFile: ts.SourceFile, fileSymbols?: readonly ExtractedSymbol[]): void;
+}
