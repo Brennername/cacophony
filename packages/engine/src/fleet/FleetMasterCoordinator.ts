@@ -77,6 +77,9 @@ export class FleetMasterCoordinator {
   /**
    * Selects the most optimal available node for a given model requirement.
    */
+  /**
+   * Selects the most optimal available node for a given model requirement.
+   */
   public selectBestNode(
     requiredVramMb: number,
     preferredGpu?: FleetGpuType,
@@ -90,7 +93,6 @@ export class FleetMasterCoordinator {
 
     if (candidates.length === 0) return null;
 
-    // Filter by preferred GPU if specified
     if (preferredGpu) {
       const matched = candidates.filter((c) => c.gpuType === preferredGpu);
       if (matched.length > 0) {
@@ -100,7 +102,6 @@ export class FleetMasterCoordinator {
       }
     }
 
-    // Default to lowest load
     return candidates.sort((a, b) => {
       if (a.activeTasksCount !== b.activeTasksCount) {
         return a.activeTasksCount - b.activeTasksCount;
