@@ -36,8 +36,6 @@ export class EnforceEsmJsExtensionRule extends BaseRepairRule {
     const mutations: FileMutation[] = [];
     let passed = true;
 
-    // Pattern for relative imports/exports missing extensions
-    // e.g. from "./foo" or from '../bar'
     const importRegex = /(from\s+["'])((\.\.?\/)[^"'\n]+)(["'])/g;
 
     for (const filePath of context.modifiedFiles) {
@@ -56,7 +54,7 @@ export class EnforceEsmJsExtensionRule extends BaseRepairRule {
       const updated = content.replace(
         importRegex,
         (match, prefix, importPath, _relPrefix, suffix) => {
-          // If it already ends with .js, .json, .wasm, .css, etc., keep it
+
           if (/\.[a-zA-Z0-9]+$/.test(importPath)) {
             return match;
           }
