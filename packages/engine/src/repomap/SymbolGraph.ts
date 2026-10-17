@@ -41,7 +41,7 @@ export class SymbolGraph {
     for (const sym of symbols) {
       this.addSymbol(sym);
     }
-    // Wire up edges based on referenced symbols
+
     for (const sym of symbols) {
       for (const ref of sym.references) {
         const targetIds = this.nameToIds.get(ref);
