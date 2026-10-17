@@ -27,6 +27,9 @@ export class SignatureAlignmentScrubber {
   /**
    * Evaluates generated TypeScript code and corrects parameter and method hallucinations.
    */
+  /**
+   * Evaluates generated TypeScript code and corrects parameter and method hallucinations.
+   */
   public scrubTypeScript(filePath: string, code: string): AlignmentResult {
     const corrections: AlignmentCorrection[] = [];
     let updatedCode = code;
@@ -40,7 +43,7 @@ export class SignatureAlignmentScrubber {
     );
 
     const visit = (node: ts.Node) => {
-      // 1. Inspect function and method invocations
+
       if (ts.isCallExpression(node)) {
         const expr = node.expression;
 
@@ -58,7 +61,7 @@ export class SignatureAlignmentScrubber {
               sig.callables.find((c) => c.name === targetIdent) ||
               sig.callables[0];
             if (callable && callable.parameters.length > 0) {
-              // Check object literal argument parameter name mismatches
+
               if (
                 node.arguments.length === 1 &&
                 ts.isObjectLiteralExpression(node.arguments[0]!)
@@ -66,7 +69,6 @@ export class SignatureAlignmentScrubber {
                 const objArg = node.arguments[0]!;
                 const firstParam = callable.parameters[0]!;
 
-                // Collect valid keys either from parameter name or from its type signature if it refers to an interface
                 let validKeys = [firstParam.name];
                 const typeRecord = this.signatureStore.get(firstParam.type);
                 if (typeRecord && typeRecord.properties.length > 0) {
