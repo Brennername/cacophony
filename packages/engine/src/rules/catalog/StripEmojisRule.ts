@@ -46,7 +46,7 @@ export class StripEmojisRule extends BaseRepairRule {
       if (!content) continue;
 
       if (EMOJI_REGEX.test(content)) {
-        // Reset regex index
+
         EMOJI_REGEX.lastIndex = 0;
 
         if (severity === "silent_repair") {
