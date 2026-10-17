@@ -31,7 +31,6 @@ export interface DetectedTestSuite {
  */
 export class TestRunnerDetector {
   public async detect(workspaceRoot: string): Promise<DetectedTestSuite> {
-    // 1. Check Node package.json scripts and dependencies
     try {
       const pkgPath = path.resolve(workspaceRoot, "package.json");
       const pkgRaw = await fs.readFile(pkgPath, "utf-8");
@@ -82,10 +81,9 @@ export class TestRunnerDetector {
         };
       }
     } catch {
-      // Not a standard node root
+      // Ignore errors and continue to other detection methods
     }
 
-    // 2. Check Java (Maven / Gradle)
     try {
       await fs.stat(path.resolve(workspaceRoot, "pom.xml"));
       return {
@@ -104,7 +102,6 @@ export class TestRunnerDetector {
       };
     } catch {}
 
-    // 3. Check Go
     try {
       await fs.stat(path.resolve(workspaceRoot, "go.mod"));
       return {
@@ -114,7 +111,6 @@ export class TestRunnerDetector {
       };
     } catch {}
 
-    // 4. Check Rust
     try {
       await fs.stat(path.resolve(workspaceRoot, "Cargo.toml"));
       return {
