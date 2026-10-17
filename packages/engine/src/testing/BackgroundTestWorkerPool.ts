@@ -51,6 +51,9 @@ export class BackgroundTestWorkerPool {
   /**
    * Enqueues a test execution job and returns a Promise that resolves when the job completes.
    */
+  /**
+   * Enqueues a test execution job and returns a Promise that resolves when the job completes.
+   */
   public async runTest(job: TestJobRequest): Promise<TestJobResult> {
     if (this.isShuttingDown) {
       throw new Error("BackgroundTestWorkerPool is shutting down");
@@ -115,7 +118,6 @@ export class BackgroundTestWorkerPool {
           this.emitter.emit(`test_completed:${job.taskId}`, result);
           resolve(result);
 
-          // Drain next queued job
           this.drainQueue();
         });
 
