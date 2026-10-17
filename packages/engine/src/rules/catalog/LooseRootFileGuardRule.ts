@@ -56,7 +56,6 @@ export class LooseRootFileGuardRule extends BaseRepairRule {
         ? path.relative(context.projectRoot, filePath)
         : filePath;
 
-      // Check if file is directly in the project root (no subdirectory slashes)
       if (!relPath.includes(path.sep) && !relPath.includes("/")) {
         if (!allowed.has(relPath)) {
           if (severity === "hard_rejection") {
