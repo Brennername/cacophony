@@ -24,6 +24,13 @@ export class EmptyFileGuardRule extends BaseRepairRule {
     "pre_test",
   ];
 
+  public options: IEmptyFileGuardRuleOptions;
+
+  constructor(options?: IEmptyFileGuardRuleOptions) {
+    super();
+    this.options = { ...this.defaultOptions, ...options };
+  }
+
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
@@ -59,7 +66,7 @@ export class EmptyFileGuardRule extends BaseRepairRule {
     }
 
     const durationMs = performance.now() - start;
-    return this.createResult(
+    return super.createResult(
       passed,
       durationMs,
       diagnostics,
@@ -67,4 +74,14 @@ export class EmptyFileGuardRule extends BaseRepairRule {
       severity,
     );
   }
+
+  public get defaultOptions(): IEmptyFileGuardRuleOptions {
+    return {
+      severity: this.defaultSeverity,
+    };
+  }
+}
+
+export interface IEmptyFileGuardRuleOptions {
+  severity: RuleSeverity;
 }
