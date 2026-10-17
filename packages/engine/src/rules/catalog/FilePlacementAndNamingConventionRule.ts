@@ -52,7 +52,6 @@ export class FilePlacementAndNamingConventionRule extends BaseRepairRule {
       const normalizedPath = relPath.replace(/\\/g, "/");
       const baseName = path.basename(filePath);
 
-      // Check 1: Disallow phase-numbered filenames (e.g. phase15-components.spec.ts, phase1.ts)
       if (disallowPhaseNaming && /phase\d+/i.test(baseName)) {
         if (severity === "hard_rejection") {
           passed = false;
@@ -65,8 +64,6 @@ export class FilePlacementAndNamingConventionRule extends BaseRepairRule {
         });
       }
 
-      // Check 2: Disallow loose component spec files in the parent components directory
-      // (e.g. packages/frontend/src/app/components/*.spec.ts or src/app/components/*.spec.ts)
       if (enforceColocatedAngularSpecs) {
         const looseComponentSpecPattern =
           /(?:^|\/)src\/app\/components\/[^/]+\.spec\.ts$/;
