@@ -10,8 +10,14 @@ export class WorkspaceSymbolHarvester {
    * @param sourceFile - The TypeScript source file to traverse.
    * @returns An array of extracted declarations.
    */
+  /**
+   * Traverses the AST and extracts ClassDeclaration, InterfaceDeclaration, and FunctionDeclaration nodes.
+   * @param sourceFile - The TypeScript source file to traverse.
+   * @returns An array of extracted declarations.
+   */
   public static extractSymbols(
     sourceFile: ts.SourceFile,
+    options: IWorkspaceSymbolHarvesterOptions = {}
   ): (
     ts.ClassDeclaration | ts.InterfaceDeclaration | ts.FunctionDeclaration
   )[] {
@@ -25,12 +31,20 @@ export class WorkspaceSymbolHarvester {
         node.kind === SyntaxKind.InterfaceDeclaration ||
         node.kind === SyntaxKind.FunctionDeclaration
       ) {
-        symbols.push(
-          node as
-            | ts.ClassDeclaration
-            | ts.InterfaceDeclaration
-            | ts.FunctionDeclaration,
+        const fileName = sourceFile.fileName;
+        const ignorePatterns = options.ignorePatterns || [];
+        const shouldIgnore = ignorePatterns.some(pattern =>
+          new RegExp(pattern).test(fileName)
         );
+
+        if (!shouldIgnore) {
+          symbols.push(
+            node as
+              | ts.ClassDeclaration
+              | ts.InterfaceDeclaration
+              | ts.FunctionDeclaration,
+          );
+        }
       }
 
       ts.forEachChild(node, visit);
@@ -39,4 +53,9 @@ export class WorkspaceSymbolHarvester {
     visit(sourceFile);
     return symbols;
   }
+}
+
+
+export interface IWorkspaceSymbolHarvesterOptions {
+  ignorePatterns?: string[];
 }
