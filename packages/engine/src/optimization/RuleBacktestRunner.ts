@@ -26,6 +26,9 @@ export class RuleBacktestRunner {
   /**
    * Replays historical task records against a pipeline.
    */
+  /**
+   * Replays historical task records against a pipeline.
+   */
   public async runBacktest(
     pipeline: RulePipelineDeclaration,
     tasks: readonly HistoricalTaskRecord[],
@@ -36,7 +39,7 @@ export class RuleBacktestRunner {
     let totalLatency = 0;
 
     for (const task of tasks) {
-      // Simulate file content from patch or synthetic content
+
       const fakeFilePath = task.focusFiles || "src/index.ts";
       const fileContent =
         task.patchContent ||
