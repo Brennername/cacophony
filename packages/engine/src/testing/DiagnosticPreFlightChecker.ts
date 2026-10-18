@@ -31,6 +31,12 @@ export class DiagnosticPreFlightChecker {
    * @param code The TypeScript/JavaScript source code to inspect.
    * @param fileName Optional virtual filename for error location reporting.
    */
+  /**
+   * Validates code syntax in-memory and returns structured diagnostics.
+   *
+   * @param code The TypeScript/JavaScript source code to inspect.
+   * @param fileName Optional virtual filename for error location reporting.
+   */
   public checkSyntax(
     code: string,
     fileName = "virtual_preflight.ts",
@@ -53,7 +59,6 @@ export class DiagnosticPreFlightChecker {
 
     const diagnostics: PreFlightDiagnostic[] = [];
 
-    // 1. Fast AST parse diagnostics check
     const sourceFile = ts.createSourceFile(
       fileName,
       code,
@@ -86,7 +91,6 @@ export class DiagnosticPreFlightChecker {
       });
     }
 
-    // 2. Transpile diagnostics check (catches illegal lexical/syntactic constructs)
     const transpileResult = ts.transpileModule(code, {
       fileName,
       reportDiagnostics: true,
@@ -109,7 +113,6 @@ export class DiagnosticPreFlightChecker {
             ? diag.messageText
             : diag.messageText.messageText;
 
-        // Deduplicate against AST parse diagnostics
         const exists = diagnostics.some(
           (d) => d.line === pos.line + 1 && d.code === diag.code,
         );
