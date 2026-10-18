@@ -53,7 +53,6 @@ export class SandboxedProcessRunner {
       let stdout = "";
       let stderr = "";
 
-      // Spawn using shell with detached: true to allocate a new process group (pid becomes pgid)
       const child = spawn(command, {
         shell: true,
         cwd: options.cwd,
@@ -135,24 +134,26 @@ export class SandboxedProcessRunner {
   /**
    * Safely kills the entire process group rooted at the child PID.
    */
+  /**
+   * Safely kills the entire process group rooted at the child PID.
+   */
   public killProcessGroup(pid: number | undefined): void {
     if (!pid) {
       return;
     }
     try {
-      // Negative PID targets the entire process group in POSIX
+
       process.kill(-pid, "SIGTERM");
 
-      // Follow up with SIGKILL if still active after 1.5 seconds
       setTimeout(() => {
         try {
           process.kill(-pid, "SIGKILL");
         } catch {
-          // Process already terminated
+
         }
       }, 1500).unref();
     } catch {
-      // Process might have already exited
+
     }
   }
 }
