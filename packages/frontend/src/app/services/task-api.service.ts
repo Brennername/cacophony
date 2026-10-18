@@ -118,18 +118,21 @@ export class TaskApiService {
         throw new Error(`HTTP ${res.status}: Failed to fetch task for replay`);
       }
       const data = await res.json() as {
-        stages?: Array<{ stageName: string; stageStatus: string; errorLog?: string }>;
+        stages?: Array<{ stageName: string; stageStatus: string; logOutput?: string; errorLog?: string }>;
         logSnippet?: string;
       };
 
-      if (data.logSnippet) {
-        return data.logSnippet;
-      }
       if (data.stages && data.stages.length > 0) {
         const stageLogs = data.stages
-          .map((s) => `[Stage: ${s.stageName}] Status: ${s.stageStatus}${s.errorLog ? `\n${s.errorLog}` : ''}`)
-          .join('\n');
-        return stageLogs;
+          .filter((s) => (s.logOutput && s.logOutput.trim().length > 0) || (s.errorLog && s.errorLog.trim().length > 0))
+          .map((s) => `=== [Stage: ${s.stageName}] Status: ${s.stageStatus} ===\n${s.logOutput || s.errorLog}`)
+          .join('\n\n');
+        if (stageLogs.trim().length > 0) {
+          return stageLogs;
+        }
+      }
+      if (data.logSnippet) {
+        return data.logSnippet;
       }
       return '';
     } catch (err: unknown) {
@@ -138,6 +141,19 @@ export class TaskApiService {
       return '';
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /**
+   * Fetches full task details with all stage records for inspection.
+   */
+  public async fetchTaskWithStages(taskId: string): Promise<any | null> {
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
     }
   }
 

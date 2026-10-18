@@ -5,6 +5,18 @@ import { StageProgressBarComponent, type StageStepInfo } from '../stage-progress
 import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gantt-transport.component';
 import { TaskApiService } from '../../services/task-api.service';
 
+export interface StageTabEntry {
+  readonly id: string;
+  readonly stageName: string;
+  readonly label: string;
+  readonly status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILURE';
+  readonly durationMs: number | null;
+  readonly logContent: string;
+  readonly channelKey: string;
+  readonly badgeClass: string;
+  readonly themeClass: string;
+}
+
 /**
  * Visual stepper and Gantt transport tracking task pipeline progression:
  * 1/6 Planning through 6/6 PR Review with intra-stage token velocity.
@@ -33,7 +45,11 @@ export class TaskInspectorComponent {
   public readonly liveAstScrubbing = this.store.astScrubbingBuffer;
   public readonly liveReviewCritique = this.store.reviewCritiqueBuffer;
   public readonly generationHeartbeat = this.store.generationHeartbeat;
-  public readonly activeStreamChannel = signal<'combined' | 'cognitive' | 'testing' | 'ast' | 'review'>('combined');
+  public readonly activeStreamChannel = signal<string>('combined');
+  public readonly viewMode = signal<'tabs' | 'accordion' | 'combined'>('tabs');
+  public readonly autoFollow = signal<boolean>(true);
+  public readonly terminalHeight = signal<number>(380);
+  public readonly expandedAccordionStages = signal<Record<string, boolean>>({});
 
   public readonly displayedStreamBuffer = computed(() => {
     const hist = this.historicalStreamBuffer();
@@ -279,6 +295,152 @@ export class TaskInspectorComponent {
     return Math.max(3000, last.startOffsetMs + last.durationMs);
   });
 
+  public readonly allStageEntries = computed<StageTabEntry[]>(() => {
+    const task = this.activeTask();
+    if (!task) return [];
+    const stages = task.stages ?? [];
+    const pipeline = this.pipelineSteps();
+
+    const stageNameMap: Record<string, { label: string; themeClass: string }> = {
+      planning: { label: 'Planning', themeClass: 'stage-theme-plan' },
+      generation: { label: 'Generation', themeClass: 'stage-theme-generation' },
+      deterministic_scrub: { label: 'AST Scrub', themeClass: 'stage-theme-ast' },
+      test_execution: { label: 'Test Execution', themeClass: 'stage-theme-test' },
+      remediation: { label: 'Code Review', themeClass: 'stage-theme-review' },
+      pr_review: { label: 'PR & Merge', themeClass: 'stage-theme-pr' },
+    };
+
+    if (stages.length > 0) {
+      const occurrenceCount: Record<string, number> = {};
+      return stages.map((s, idx) => {
+        const info = stageNameMap[s.stageName] || { label: s.stageName, themeClass: 'stage-theme-generic' };
+        occurrenceCount[s.stageName] = (occurrenceCount[s.stageName] || 0) + 1;
+        const attempt = occurrenceCount[s.stageName];
+        const attemptSuffix = attempt > 1 ? ` (Attempt ${attempt})` : '';
+
+        let logContent = s.logOutput || '';
+        if (s.stageName === 'generation') {
+          logContent = this.displayedStreamBuffer() || s.logOutput || task.logSnippet || '// Awaiting model code generation...';
+        } else if (s.stageName === 'test_execution') {
+          logContent = this.liveTestOutput() || s.logOutput || '// Awaiting test runner stdout/stderr stream...';
+        } else if (s.stageName === 'deterministic_scrub') {
+          logContent = this.liveAstScrubbing() || s.logOutput || '// Awaiting deterministic AST rule engine & diagnostic repairs...';
+        } else if (s.stageName === 'remediation') {
+          logContent = this.liveReviewCritique() || s.logOutput || '// Awaiting PR review evaluation & gate status...';
+        } else if (s.stageName === 'pr_review') {
+          logContent = s.logOutput || (task.prUrl ? `Pull Request: ${task.prUrl}\nTarget Base: ${task.targetBranch || 'main'}` : '// Awaiting PR review & merge verification...');
+        } else if (s.stageName === 'planning') {
+          logContent = s.logOutput || (task.focusFiles ? `Focus files:\n${task.focusFiles}` : '// Planning directives verified');
+        }
+
+        const status = (s.stageStatus as 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILURE') || 'PENDING';
+
+        return {
+          id: s.id ? `stage-${s.id}` : `stage-${s.stageName}-${idx}`,
+          stageName: s.stageName,
+          label: `${info.label}${attemptSuffix}`,
+          status,
+          durationMs: s.durationMs ?? null,
+          logContent,
+          channelKey: s.id ? `stage-${s.id}` : `stage-${s.stageName}-${idx}`,
+          badgeClass: `badge-${status.toLowerCase()}`,
+          themeClass: info.themeClass,
+        };
+      });
+    }
+
+    return pipeline.map((step, idx) => {
+      const info = stageNameMap[step.name] || { label: step.label, themeClass: 'stage-theme-generic' };
+      let logContent = '';
+      if (step.name === 'generation') {
+        logContent = this.displayedStreamBuffer() || task.logSnippet || '// Awaiting model code generation...';
+      } else if (step.name === 'test_execution') {
+        logContent = this.liveTestOutput() || '// Awaiting test runner stdout/stderr stream...';
+      } else if (step.name === 'deterministic_scrub') {
+        logContent = this.liveAstScrubbing() || '// Awaiting deterministic AST rule engine repairs...';
+      } else if (step.name === 'remediation') {
+        logContent = this.liveReviewCritique() || '// Awaiting PR review evaluation...';
+      } else if (step.name === 'planning') {
+        logContent = task.focusFiles ? `Focus files:\n${task.focusFiles}` : '// Planning completed';
+      } else if (step.name === 'pr_review') {
+        logContent = task.prUrl ? `Pull Request: ${task.prUrl}` : '// Awaiting PR merge...';
+      }
+
+      return {
+        id: `pipeline-${step.name}`,
+        stageName: step.name,
+        label: `${idx + 1}/6 ${info.label}`,
+        status: step.status,
+        durationMs: step.durationMs,
+        logContent,
+        channelKey: step.name,
+        badgeClass: `badge-${step.status.toLowerCase()}`,
+        themeClass: info.themeClass,
+      };
+    });
+  });
+
+  public readonly combinedStreamLog = computed<string>(() => {
+    const task = this.activeTask();
+    if (!task) return '';
+    const entries = this.allStageEntries();
+    if (entries.length === 0) {
+      return this.displayedStreamBuffer() || task.logSnippet || 'No execution logs available.';
+    }
+
+    if (this.isStreamActive() && this.liveStreamBuffer().length > 0) {
+      return this.displayedStreamBuffer();
+    }
+
+    const sections = entries
+      .filter((e) => e.logContent && e.logContent.trim().length > 0 && !e.logContent.startsWith('// Awaiting'))
+      .map((e) => {
+        const dur = e.durationMs !== null && e.durationMs > 0 ? ` (${(e.durationMs / 1000).toFixed(2)}s)` : '';
+        return `=== [${e.label.toUpperCase()}] Status: ${e.status}${dur} ===\n${e.logContent.trim()}`;
+      });
+
+    if (sections.length > 0) {
+      return sections.join('\n\n');
+    }
+
+    return this.displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...';
+  });
+
+  public readonly currentChannelLogContent = computed<string>(() => {
+    const ch = this.activeStreamChannel();
+    const task = this.activeTask();
+    if (!task) return '// No task selected';
+
+    if (ch === 'cognitive') {
+      return this.liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...';
+    }
+    if (ch === 'testing') {
+      const testStage = (task.stages ?? []).slice().reverse().find((s) => s.stageName === 'test_execution');
+      return this.liveTestOutput() || testStage?.logOutput || '// Awaiting test runner stdout/stderr stream...';
+    }
+    if (ch === 'ast') {
+      const astStage = (task.stages ?? []).slice().reverse().find((s) => s.stageName === 'deterministic_scrub');
+      return this.liveAstScrubbing() || astStage?.logOutput || '// Awaiting deterministic AST rule engine & diagnostic repairs...';
+    }
+    if (ch === 'review') {
+      const revStage = (task.stages ?? []).slice().reverse().find((s) => s.stageName === 'remediation');
+      return this.liveReviewCritique() || revStage?.logOutput || '// Awaiting PR review evaluation & gate status...';
+    }
+    if (ch === 'combined') {
+      if (this.isStreamActive() && this.liveStreamBuffer().length > 0) {
+        return this.displayedStreamBuffer();
+      }
+      return this.combinedStreamLog();
+    }
+
+    const matchedEntry = this.allStageEntries().find((e) => e.id === ch || e.channelKey === ch || e.stageName === ch);
+    if (matchedEntry) {
+      return matchedEntry.logContent || '// No log output recorded for this stage.';
+    }
+
+    return this.displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...';
+  });
+
   private terminalContentEl = viewChild<ElementRef<HTMLElement>>('terminalContent');
 
   constructor() {
@@ -300,6 +462,129 @@ export class TaskInspectorComponent {
         void this.fetchTaskBuffer(active.id);
       }
     });
+
+    effect(() => {
+      // Auto-follow active pipeline stage if enabled and task is running
+      if (!this.autoFollow()) return;
+      const task = this.activeTask();
+      if (!task || task.status !== 'RUNNING') return;
+
+      const steps = this.pipelineSteps();
+      const runningStep = steps.find((s) => s.status === 'RUNNING');
+      if (runningStep) {
+        if (runningStep.name === 'generation') {
+          if (this.liveReasoningBuffer().length > 0 && !this.liveStreamBuffer()) {
+            this.activeStreamChannel.set('cognitive');
+          } else {
+            this.activeStreamChannel.set('combined');
+          }
+        } else if (runningStep.name === 'test_execution') {
+          this.activeStreamChannel.set('testing');
+        } else if (runningStep.name === 'deterministic_scrub') {
+          this.activeStreamChannel.set('ast');
+        } else if (runningStep.name === 'remediation' || runningStep.name === 'pr_review') {
+          this.activeStreamChannel.set('review');
+        }
+      }
+    });
+
+    effect(() => {
+      // Ensure full stage details are loaded if missing
+      const active = this.activeTask();
+      if (active && (!active.stages || active.stages.length === 0)) {
+        void this.fetchTaskStages(active.id);
+      }
+    });
+  }
+
+  public selectStreamChannel(channel: string, userClick = false): void {
+    this.activeStreamChannel.set(channel);
+    if (userClick) {
+      this.autoFollow.set(false);
+    }
+  }
+
+  public toggleAutoFollow(): void {
+    this.autoFollow.update((v) => !v);
+  }
+
+  public toggleStageAccordion(stageId: string): void {
+    this.expandedAccordionStages.update((prev) => ({
+      ...prev,
+      [stageId]: !this.isStageAccordionOpen(stageId),
+    }));
+  }
+
+  public isStageAccordionOpen(stageId: string): boolean {
+    const explicit = this.expandedAccordionStages()[stageId];
+    if (explicit !== undefined) return explicit;
+    const entry = this.allStageEntries().find((e) => e.id === stageId);
+    return entry ? entry.status === 'RUNNING' || entry.status === 'FAILURE' : true;
+  }
+
+  public expandAllStages(): void {
+    const updated: Record<string, boolean> = {};
+    for (const e of this.allStageEntries()) {
+      updated[e.id] = true;
+    }
+    this.expandedAccordionStages.set(updated);
+  }
+
+  public collapseAllStages(): void {
+    const updated: Record<string, boolean> = {};
+    for (const e of this.allStageEntries()) {
+      updated[e.id] = false;
+    }
+    this.expandedAccordionStages.set(updated);
+  }
+
+  public formatDuration(ms: number | null): string {
+    if (ms === null || ms === undefined || ms <= 0) return '';
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(1)}s`;
+  }
+
+  public setTerminalHeight(pixels: number): void {
+    this.terminalHeight.set(Math.max(180, Math.min(pixels, 1200)));
+  }
+
+  public onResizeMouseDown(event: MouseEvent): void {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startHeight = this.terminalHeight();
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      this.terminalHeight.set(Math.max(180, Math.min(startHeight + deltaY, 1200)));
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  public onResizeTouchStart(event: TouchEvent): void {
+    if (event.touches.length !== 1) return;
+    const startY = event.touches[0].clientY;
+    const startHeight = this.terminalHeight();
+
+    const onTouchMove = (moveEvent: TouchEvent) => {
+      if (moveEvent.touches.length !== 1) return;
+      const deltaY = moveEvent.touches[0].clientY - startY;
+      this.terminalHeight.set(Math.max(180, Math.min(startHeight + deltaY, 1200)));
+    };
+
+    const onTouchEnd = () => {
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+
+    window.addEventListener('touchmove', onTouchMove);
+    window.addEventListener('touchend', onTouchEnd);
   }
 
   private async fetchTaskBuffer(taskId: string): Promise<void> {
@@ -316,6 +601,20 @@ export class TaskInspectorComponent {
     }
   }
 
+  private async fetchTaskStages(taskId: string): Promise<void> {
+    try {
+      const detailed = await this.taskApiService.fetchTaskWithStages(taskId);
+      if (detailed && detailed.stages && detailed.stages.length > 0) {
+        const curr = this.activeTask();
+        if (curr && curr.id === taskId) {
+          this.selectedTaskOverride.set({ ...curr, stages: detailed.stages });
+        }
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+
   /**
    * Selects a task for inspection, switching to historical replay if completed/archived (T67.4.2).
    */
@@ -326,6 +625,10 @@ export class TaskInspectorComponent {
       this.historicalStreamBuffer.set(replay);
     } else {
       this.historicalStreamBuffer.set(null);
+    }
+
+    if (!task.stages || task.stages.length === 0) {
+      await this.fetchTaskStages(task.id);
     }
   }
 

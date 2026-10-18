@@ -216,5 +216,160 @@ describe('TaskInspectorComponent', () => {
     expect(strip?.textContent).toContain('c0ffee12');
     expect(strip?.textContent).toContain('2 (1 crit)');
   });
+
+  it('should adjust terminal height when resizing or using presets', () => {
+    const mockTask: TaskItem = {
+      id: 'task-resize-1',
+      title: 'Terminal Resizer Test',
+      status: 'RUNNING',
+      priority: 'P1',
+      role: 'engineer',
+    };
+    store.tasks.set([mockTask]);
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.terminalHeight()).toBe(380);
+
+    comp.setTerminalHeight(220);
+    expect(comp.terminalHeight()).toBe(220);
+
+    comp.setTerminalHeight(680);
+    expect(comp.terminalHeight()).toBe(680);
+
+    // Clamps to min/max
+    comp.setTerminalHeight(50);
+    expect(comp.terminalHeight()).toBe(180);
+
+    comp.setTerminalHeight(2000);
+    expect(comp.terminalHeight()).toBe(1200);
+  });
+
+  it('should display dynamic stage chips and switch between stage outputs', () => {
+    const mockTask: TaskItem = {
+      id: 'task-multi-stage-1',
+      title: 'Multi Stage Verification',
+      status: 'RUNNING',
+      priority: 'P0',
+      role: 'engineer',
+      stages: [
+        {
+          id: 'st-plan',
+          stageName: 'planning',
+          stageStatus: 'SUCCESS',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs: 120,
+          logOutput: 'Plan: Add resizable handle to terminal box',
+        },
+        {
+          id: 'st-gen',
+          stageName: 'generation',
+          stageStatus: 'SUCCESS',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs: 2400,
+          logOutput: 'export function render() { return true; }',
+        },
+        {
+          id: 'st-test',
+          stageName: 'test_execution',
+          stageStatus: 'SUCCESS',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs: 1800,
+          logOutput: 'Exit Code: 0\n[STDOUT]:\nTAP version 13\nok 1 - test passes\n1..1',
+        },
+        {
+          id: 'st-review',
+          stageName: 'remediation',
+          stageStatus: 'SUCCESS',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs: 900,
+          logOutput: 'Verdict: APPROVED\nSOLID score: 98/100\nNo defects found.',
+        },
+      ],
+    };
+
+    store.tasks.set([mockTask]);
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    const entries = comp.allStageEntries();
+    expect(entries.length).toBe(4);
+    expect(entries[0].label).toContain('Planning');
+    expect(entries[1].label).toContain('Generation');
+    expect(entries[2].label).toContain('Test Execution');
+    expect(entries[3].label).toContain('Code Review');
+
+    // Selecting test stage
+    comp.selectStreamChannel('stage-st-test', true);
+    fixture.detectChanges();
+    expect(comp.currentChannelLogContent()).toContain('TAP version 13');
+
+    // Selecting review stage
+    comp.selectStreamChannel('stage-st-review', true);
+    fixture.detectChanges();
+    expect(comp.currentChannelLogContent()).toContain('Verdict: APPROVED');
+  });
+
+  it('should toggle accordion mode and expand/collapse stage cards', () => {
+    const mockTask: TaskItem = {
+      id: 'task-accordion-1',
+      title: 'Accordion View Verification',
+      status: 'RUNNING',
+      priority: 'P1',
+      role: 'engineer',
+      stages: [
+        {
+          id: 'st-1',
+          stageName: 'planning',
+          stageStatus: 'SUCCESS',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs: 100,
+          logOutput: 'Planning step log content',
+        },
+        {
+          id: 'st-2',
+          stageName: 'test_execution',
+          stageStatus: 'FAILURE',
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          durationMs: 500,
+          logOutput: 'FAIL test/auth.test.ts: assertion failed',
+        },
+      ],
+    };
+
+    store.tasks.set([mockTask]);
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    comp.viewMode.set('accordion');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.accordion-content-scroll')).toBeTruthy();
+
+    const cards = compiled.querySelectorAll('.stage-card');
+    expect(cards.length).toBe(2);
+
+    // Failed stage is expanded by default
+    expect(comp.isStageAccordionOpen('stage-st-2')).toBe(true);
+
+    // Collapse all
+    comp.collapseAllStages();
+    expect(comp.isStageAccordionOpen('stage-st-2')).toBe(false);
+
+    // Expand all
+    comp.expandAllStages();
+    expect(comp.isStageAccordionOpen('stage-st-1')).toBe(true);
+    expect(comp.isStageAccordionOpen('stage-st-2')).toBe(true);
+  });
 });
 

@@ -155,21 +155,29 @@
       }
     </div>
 
-    <!-- Live Terminal Stream Preview (Dual Channel: Code vs Cognitive Trace) -->
-    <div class="terminal-box">
+    <!-- Live Terminal Stream Preview (Multi-Stage Tabs & Resizable Box) -->
+    <div
+      class="terminal-box"
+      [style.height.px]="terminalHeight()"
+    >
       <div class="terminal-bar">
+        <!-- Channel / Stage Tabs -->
         <div class="stream-channel-tabs">
           <button
+            type="button"
             class="stream-tab-btn"
             [class.active]="activeStreamChannel() === 'combined'"
-            (click)="activeStreamChannel.set('combined')"
+            (click)="selectStreamChannel('combined', true)"
+            title="Combined stream showing real-time token output or full chronological log"
           >
             Output Stream
           </button>
           <button
+            type="button"
             class="stream-tab-btn cognitive"
             [class.active]="activeStreamChannel() === 'cognitive'"
-            (click)="activeStreamChannel.set('cognitive')"
+            (click)="selectStreamChannel('cognitive', true)"
+            title="Reasoning model cognitive thinking trace"
           >
             Cognitive Trace
             @if (liveReasoningBuffer().length > 0) {
@@ -177,9 +185,11 @@
             }
           </button>
           <button
+            type="button"
             class="stream-tab-btn testing"
             [class.active]="activeStreamChannel() === 'testing'"
-            (click)="activeStreamChannel.set('testing')"
+            (click)="selectStreamChannel('testing', true)"
+            title="Vitest & test runner execution output"
           >
             Test Execution
             @if (liveTestOutput().length > 0) {
@@ -187,9 +197,11 @@
             }
           </button>
           <button
+            type="button"
             class="stream-tab-btn ast"
             [class.active]="activeStreamChannel() === 'ast'"
-            (click)="activeStreamChannel.set('ast')"
+            (click)="selectStreamChannel('ast', true)"
+            title="Deterministic AST syntax and compiler repairs"
           >
             AST Scrubbing
             @if (liveAstScrubbing().length > 0) {
@@ -197,9 +209,11 @@
             }
           </button>
           <button
+            type="button"
             class="stream-tab-btn review"
             [class.active]="activeStreamChannel() === 'review'"
-            (click)="activeStreamChannel.set('review')"
+            (click)="selectStreamChannel('review', true)"
+            title="FrontierReviewer evaluation, score and critique"
           >
             PR Review
             @if (liveReviewCritique().length > 0) {
@@ -207,35 +221,154 @@
             }
           </button>
         </div>
-        <span class="terminal-title">task: {{ task.id }}</span>
-        <button class="expand-btn" (click)="drillDown(task)">Expand Log</button>
+
+        <!-- Right Side: View Mode, Auto-Follow, Task ID & Expand -->
+        <div class="terminal-actions">
+          <div class="view-mode-toggle" role="group" aria-label="View Mode">
+            <button
+              type="button"
+              class="mode-btn"
+              [class.active]="viewMode() === 'tabs'"
+              (click)="viewMode.set('tabs')"
+              title="Tabbed view"
+            >
+              Tabs
+            </button>
+            <button
+              type="button"
+              class="mode-btn"
+              [class.active]="viewMode() === 'accordion'"
+              (click)="viewMode.set('accordion')"
+              title="Accordion view listing all stages"
+            >
+              Accordion
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="auto-follow-btn"
+            [class.active]="autoFollow()"
+            (click)="toggleAutoFollow()"
+            [title]="autoFollow() ? 'Auto-following active stage (click to lock)' : 'Auto-follow paused (click to follow active stage)'"
+          >
+            <span class="auto-follow-dot"></span>
+            Auto-Follow
+          </button>
+
+          <span class="terminal-title">task: {{ task.id }}</span>
+          <button type="button" class="expand-btn" (click)="drillDown(task)">Expand Log</button>
+        </div>
       </div>
-      @if (activeStreamChannel() === 'cognitive') {
-        <pre
-          #terminalContent
-          class="terminal-content cognitive-content"
-        ><code>{{ liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...' }}</code></pre>
-      } @else if (activeStreamChannel() === 'testing') {
-        <pre
-          #terminalContent
-          class="terminal-content test-content"
-        ><code>{{ liveTestOutput() || '// Awaiting test runner stdout/stderr stream...' }}</code></pre>
-      } @else if (activeStreamChannel() === 'ast') {
-        <pre
-          #terminalContent
-          class="terminal-content ast-content"
-        ><code>{{ liveAstScrubbing() || '// Awaiting deterministic AST rule engine & diagnostic repairs...' }}</code></pre>
-      } @else if (activeStreamChannel() === 'review') {
-        <pre
-          #terminalContent
-          class="terminal-content review-content"
-        ><code>{{ liveReviewCritique() || '// Awaiting PR review evaluation & gate status...' }}</code></pre>
-      } @else {
-        <pre
-          #terminalContent
-          class="terminal-content"
-        ><code>{{ displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+
+      <!-- Secondary Bar: Dynamic Stage Tabs (When in 'tabs' mode) -->
+      @if (viewMode() === 'tabs' && allStageEntries().length > 0) {
+        <div class="dynamic-stage-tabs-bar">
+          <span class="stage-tabs-label">Stages:</span>
+          <div class="stage-tabs-scroll">
+            @for (stage of allStageEntries(); track stage.id) {
+              <button
+                type="button"
+                class="stage-chip-btn"
+                [class.active]="activeStreamChannel() === stage.channelKey || activeStreamChannel() === stage.stageName"
+                [class]="stage.themeClass"
+                (click)="selectStreamChannel(stage.channelKey, true)"
+              >
+                <span class="chip-status-dot" [class]="stage.status.toLowerCase()"></span>
+                <span class="chip-label">{{ stage.label }}</span>
+                @if (stage.durationMs) {
+                  <span class="chip-duration">{{ formatDuration(stage.durationMs) }}</span>
+                }
+              </button>
+            }
+          </div>
+        </div>
       }
+
+      <!-- Main Log Display: Tabs Mode -->
+      @if (viewMode() === 'tabs') {
+        @if (activeStreamChannel() === 'cognitive') {
+          <pre
+            #terminalContent
+            class="terminal-content cognitive-content"
+          ><code>{{ liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...' }}</code></pre>
+        } @else if (activeStreamChannel() === 'testing') {
+          <pre
+            #terminalContent
+            class="terminal-content test-content"
+          ><code>{{ liveTestOutput() || currentChannelLogContent() || '// Awaiting test runner stdout/stderr stream...' }}</code></pre>
+        } @else if (activeStreamChannel() === 'ast') {
+          <pre
+            #terminalContent
+            class="terminal-content ast-content"
+          ><code>{{ liveAstScrubbing() || currentChannelLogContent() || '// Awaiting deterministic AST rule engine & diagnostic repairs...' }}</code></pre>
+        } @else if (activeStreamChannel() === 'review') {
+          <pre
+            #terminalContent
+            class="terminal-content review-content"
+          ><code>{{ liveReviewCritique() || currentChannelLogContent() || '// Awaiting PR review evaluation & gate status...' }}</code></pre>
+        } @else {
+          <pre
+            #terminalContent
+            class="terminal-content"
+          ><code>{{ currentChannelLogContent() || displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+        }
+      } @else {
+        <!-- Accordion Mode: All stages stacked and expandable -->
+        <div class="terminal-content accordion-content-scroll" #terminalContent>
+          <div class="accordion-top-bar">
+            <span class="accordion-summary-text">All Model & Pipeline Stage Outputs ({{ allStageEntries().length }} stages)</span>
+            <div class="accordion-actions">
+              <button type="button" class="mini-btn" (click)="expandAllStages()">Expand All</button>
+              <button type="button" class="mini-btn" (click)="collapseAllStages()">Collapse All</button>
+            </div>
+          </div>
+          <div class="accordion-list">
+            @for (stage of allStageEntries(); track stage.id) {
+              <div
+                class="stage-card"
+                [class]="stage.themeClass"
+                [class.card-running]="stage.status === 'RUNNING'"
+                [class.card-failure]="stage.status === 'FAILURE'"
+                [class.card-success]="stage.status === 'SUCCESS'"
+              >
+                <div class="stage-card-header" (click)="toggleStageAccordion(stage.id)">
+                  <span class="stage-chevron" [class.open]="isStageAccordionOpen(stage.id)">&#9654;</span>
+                  <span class="stage-card-title">{{ stage.label }}</span>
+                  @if (stage.durationMs) {
+                    <span class="stage-duration-pill">{{ formatDuration(stage.durationMs) }}</span>
+                  }
+                  <span class="stage-card-status" [class]="stage.status.toLowerCase()">{{ stage.status }}</span>
+                </div>
+                @if (isStageAccordionOpen(stage.id)) {
+                  <div class="stage-card-body">
+                    <pre class="stage-log-box"><code>{{ stage.logContent || '// No log output recorded for this stage' }}</code></pre>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Bottom Drag-to-Resize Bar with Quick Presets -->
+      <div
+        class="terminal-resize-bar"
+        (mousedown)="onResizeMouseDown($event)"
+        (touchstart)="onResizeTouchStart($event)"
+        title="Drag vertically to resize terminal window"
+      >
+        <div class="resize-handle-indicator">
+          <span class="resize-grip-line"></span>
+          <span class="resize-grip-line"></span>
+          <span class="resize-label">Resize Height</span>
+        </div>
+        <div class="resize-presets" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+          <button type="button" class="preset-btn" [class.active]="terminalHeight() === 220" (click)="setTerminalHeight(220)">Compact</button>
+          <button type="button" class="preset-btn" [class.active]="terminalHeight() === 420" (click)="setTerminalHeight(420)">Standard</button>
+          <button type="button" class="preset-btn" [class.active]="terminalHeight() === 680" (click)="setTerminalHeight(680)">Large</button>
+        </div>
+      </div>
     </div>
 
     <!-- Interactive Gantt Transport Timeline -->
