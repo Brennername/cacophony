@@ -35,9 +35,10 @@ export class AutheliaSsoProvider implements ISsoProvider {
   /**
    * Extracts user session from forward-auth headers or simulated ticket code.
    */
-  public async exchangeCode(
-    _code: string,
-  ): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
+  /**
+   * Extracts user session from forward-auth headers or simulated ticket code.
+   */
+  public async exchangeCode(_code: string): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
     const token = `authelia-session-${crypto.randomBytes(16).toString("hex")}`;
     const user = await this.getUserProfile(token);
     return { accessToken: token, user };
@@ -46,8 +47,12 @@ export class AutheliaSsoProvider implements ISsoProvider {
   /**
    * Resolves user profile from headers or token.
    */
+  /**
+   * Resolves user profile from headers or token.
+   */
   public async getUserProfile(_accessToken: string): Promise<SsoUserProfile> {
-    return {
+    // Assuming a hypothetical function to fetch user profile from Authelia SSO
+    const userProfile: SsoUserProfile = {
       id: "authelia-user-1",
       username: "authelia_operator",
       email: "operator@authelia.local",
@@ -56,31 +61,23 @@ export class AutheliaSsoProvider implements ISsoProvider {
       roles: ["OPERATOR", "VIEWER"],
       provider: "authelia",
     };
+    return userProfile;
   }
 
   /**
    * Parses forward-auth incoming HTTP request headers to authenticate request on the fly.
    */
-  public authenticateHeaders(
-    headers: Record<string, string | string[] | undefined>,
-  ): SsoUserProfile | null {
-    const userHeader = this.getHeaderValue(
-      headers,
-      this.config.headerRemoteUser,
-    );
+  /**
+   * Parses forward-auth incoming HTTP request headers to authenticate request on the fly.
+   */
+  public authenticateHeaders(headers: Record<string, string | string[] | undefined>): SsoUserProfile | null {
+    const userHeader = this.getHeaderValue(headers, this.config.headerRemoteUser);
     if (!userHeader) return null;
 
-    const emailHeader =
-      this.getHeaderValue(headers, this.config.headerRemoteEmail) ||
-      `${userHeader}@authelia.local`;
-    const nameHeader =
-      this.getHeaderValue(headers, this.config.headerRemoteName) || userHeader;
-    const groupsRaw =
-      this.getHeaderValue(headers, this.config.headerRemoteGroups) || "";
-    const groups = groupsRaw
-      .split(",")
-      .map((g) => g.trim())
-      .filter(Boolean);
+    const emailHeader = this.getHeaderValue(headers, this.config.headerRemoteEmail) || `${userHeader}@authelia.local`;
+    const nameHeader = this.getHeaderValue(headers, this.config.headerRemoteName) || userHeader;
+    const groupsRaw = this.getHeaderValue(headers, this.config.headerRemoteGroups) || "";
+    const groups = groupsRaw.split(",").map((g) => g.trim()).filter(Boolean);
 
     const roles: Set<string> = new Set(["VIEWER"]);
     for (const g of groups) {
@@ -107,6 +104,9 @@ export class AutheliaSsoProvider implements ISsoProvider {
   /**
    * Validates Authelia session JWT.
    */
+  /**
+   * Validates Authelia session JWT.
+   */
   public async verifyToken(token: string): Promise<SsoValidationResult> {
     if (!token) return { valid: false, error: "Empty token" };
 
@@ -119,18 +119,13 @@ export class AutheliaSsoProvider implements ISsoProvider {
         return { valid: false, error: "Malformed token parts" };
       }
 
-      const expectedSig = crypto
-        .createHmac("sha256", this.jwtSecret)
-        .update(`${headerB64}.${payloadB64}`)
-        .digest("base64url");
+      const expectedSig = crypto.createHmac("sha256", this.jwtSecret).update(`${headerB64}.${payloadB64}`).digest("base64url");
 
       if (signatureB64 !== expectedSig) {
         return { valid: false, error: "Invalid signature" };
       }
 
-      const payload = JSON.parse(
-        Buffer.from(payloadB64, "base64url").toString("utf-8"),
-      ) as {
+      const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8")) as {
         sub: string;
         username: string;
         email: string;
@@ -155,20 +150,17 @@ export class AutheliaSsoProvider implements ISsoProvider {
         },
       };
     } catch (err: unknown) {
-      return {
-        valid: false,
-        error: err instanceof Error ? err.message : "Validation error",
-      };
+      return { valid: false, error: err instanceof Error ? err.message : "Validation error" };
     }
   }
 
   /**
    * Helper to extract case-insensitive header string value.
    */
-  private getHeaderValue(
-    headers: Record<string, string | string[] | undefined>,
-    name: string,
-  ): string | null {
+  /**
+   * Helper to extract case-insensitive header string value.
+   */
+  private getHeaderValue(headers: Record<string, string | string[] | undefined>, name: string): string | null {
     const target = name.toLowerCase();
     for (const [key, value] of Object.entries(headers)) {
       if (key.toLowerCase() === target) {
