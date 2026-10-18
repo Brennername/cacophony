@@ -1,7 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Mocking the SignatureStore class for testing
 class MockSignatureStore {
   private cache: Map<string, string> = new Map();
 
