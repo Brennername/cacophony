@@ -198,7 +198,8 @@ export class TaskScheduler implements IModelPredictor {
       "gemma3:12b-it-qat-4k": "gemma3:12b-it-qat",
       "gemma3:12b": "gemma3:12b-it-qat",
       "qwen2.5-coder:3b-4k": "qwen2.5-coder:3b",
-      "qwen2.5-coder:7b-4k": "qwen2.5-coder:7b",
+      "qwen2.5-coder:7b-4k": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
       "qwen2.5-coder:14b-4k": "qwen2.5-coder:14b",
       "deepseek-coder-v2:16b-4k": "deepseek-coder-v2:16b",
     };
@@ -804,8 +805,8 @@ export class TaskScheduler implements IModelPredictor {
         role !== "reviewer"
       ) {
         candidateList = [
+          "gemma3:12b-it-qat",
           "qwen2.5-coder:7b-instruct-q4_K_M",
-          "qwen2.5-coder:7b",
           "gemma3:4b-it-qat",
           "qwen2.5-coder:14b",
         ];
@@ -815,8 +816,8 @@ export class TaskScheduler implements IModelPredictor {
         role !== "reviewer"
       ) {
         candidateList = [
+          "gemma3:12b-it-qat",
           "qwen2.5-coder:7b-instruct-q4_K_M",
-          "qwen2.5-coder:7b",
           "gemma3:4b-it-qat",
         ];
       } else if (
@@ -825,8 +826,8 @@ export class TaskScheduler implements IModelPredictor {
         role !== "reviewer"
       ) {
         candidateList = [
+          "gemma3:12b-it-qat",
           "qwen2.5-coder:7b-instruct-q4_K_M",
-          "qwen2.5-coder:7b",
           "gemma3:4b-it-qat",
           "qwen2.5-coder:14b",
           normalizedAssigned,
@@ -838,8 +839,8 @@ export class TaskScheduler implements IModelPredictor {
       candidateList = [
         "deepseek-r1:8b",
         "qwen2.5-coder:14b",
+        "gemma3:12b-it-qat",
         "qwen2.5-coder:7b-instruct-q4_K_M",
-        "qwen2.5-coder:7b",
       ];
     } else {
       const catalogModels = this.vramCatalog
@@ -849,7 +850,6 @@ export class TaskScheduler implements IModelPredictor {
       const defaultCandidates = [
         "gemma3:12b-it-qat",
         "qwen2.5-coder:7b-instruct-q4_K_M",
-        "qwen2.5-coder:7b",
         "gemma3:4b-it-qat",
         "qwen2.5-coder:14b",
         "deepseek-coder-v2:16b",

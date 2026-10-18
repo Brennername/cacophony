@@ -215,9 +215,14 @@ export class ModelEvictionManager {
         p.totalTasks === 0 &&
         p.modelId !== currentlyLoadedModel,
     );
+
+    // Prioritize evaluating fresh/undersampled models so newly introduced models get immediate evaluation runs
+    if (underSampled.length > 0) {
+      return underSampled[0]!.modelId;
+    }
+
     const shouldExplore =
-      this.explorationRate > 0 &&
-      (underSampled.length > 0 || Math.random() < this.explorationRate);
+      this.explorationRate > 0 && Math.random() < this.explorationRate;
 
     if (currentlyLoadedModel && !shouldExplore) {
       const activeMatch = profiles.find(

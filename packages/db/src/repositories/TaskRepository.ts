@@ -377,14 +377,14 @@ export class TaskRepository {
     const now = new Date().toISOString();
     if (pattern) {
       const res = await this.driver.execute(
-        `UPDATE tasks SET status = 'PENDING', updated_at = $1, completed_at = NULL
+        `UPDATE tasks SET status = 'PENDING', failure_count = (CASE WHEN $3 = 1 THEN 0 ELSE failure_count END), rehab_status = (CASE WHEN $3 = 1 THEN 'NONE' ELSE rehab_status END), updated_at = $1, completed_at = NULL
          WHERE status = 'FAILED' AND (id LIKE $2 OR title LIKE $2) AND ($3 = 1 OR failure_count < 3)`,
         [now, pattern, force ? 1 : 0],
       );
       return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
     }
     const res = await this.driver.execute(
-      `UPDATE tasks SET status = 'PENDING', updated_at = $1, completed_at = NULL
+      `UPDATE tasks SET status = 'PENDING', failure_count = (CASE WHEN $2 = 1 THEN 0 ELSE failure_count END), rehab_status = (CASE WHEN $2 = 1 THEN 'NONE' ELSE rehab_status END), updated_at = $1, completed_at = NULL
        WHERE status = 'FAILED' AND ($2 = 1 OR failure_count < 3)`,
       [now, force ? 1 : 0],
     );

@@ -46,7 +46,15 @@ export class TaskRehabilitationService {
    * Determines whether a given task has exceeded retry limits and requires rehabilitation.
    */
   public shouldRehabilitate(task: TaskRecord): boolean {
-    return task.failureCount >= this.maxRetries;
+    if (task.failureCount < this.maxRetries) {
+      return false;
+    }
+    // Limit recursive decomposition depth to prevent exponential subtask explosion
+    const segments = task.id.split(".");
+    if (segments.length >= 5) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -171,13 +179,64 @@ export class TaskRehabilitationService {
         !f.includes(".test.") && !f.includes(".spec.") && !f.includes("types"),
     );
 
+    // Determine if this is purely a test authoring task with no production implementation files.
+    // Pure test tasks must never decompose into modifying working production code.
+    // Multi-file tasks with implementation files will proceed to the 3-way feature decomposition.
+    const isPureTestTask =
+      (task.role === "test_engineer" ||
+        task.title.toLowerCase().includes("unit test") ||
+        task.title.toLowerCase().includes("test suite") ||
+        task.title.toLowerCase().includes("validation suite") ||
+        task.prompt.toLowerCase().includes("write unit test") ||
+        task.prompt.toLowerCase().includes("unit tests verifying")) &&
+      (implFiles.length === 0 ||
+        rawFocus.every((f) => f.includes(".test.") || f.includes(".spec.")));
+
     const subtasks: EnqueueTaskDto[] = [];
     const culpritContext = culpritCommitHash
       ? `\nRecent correlated commit: ${culpritCommitHash}. Verify compatibility with recent changes.`
       : "";
 
+    if (isPureTestTask) {
+      // Unit test tasks must NEVER decompose into rewriting working production source files.
+      // Target the test file directly for scaffolding and hardening.
+      const targetTestFile =
+        rawFocus.find((f) => f.includes(".test.") || f.includes(".spec.")) ??
+        rawFocus[0] ??
+        task.focusFiles;
+
+      const baseTestCommand =
+        task.testCommand && task.testCommand.includes(".test.")
+          ? task.testCommand
+          : targetTestFile
+            ? `node --test ${targetTestFile.replace("/src/", "/dist/").replace(/\.(?:ts|tsx)$/, ".js")}`
+            : "npm test";
+
+      subtasks.push({
+        title: `[Rehab 1/2] Test Scaffold & Assertions: ${task.title}`,
+        prompt: `Part 1 of decomposed test task ${task.id}.\nAuthor initial test scaffold, imports, and core assertions for: ${task.title}.\nTarget test file: ${targetTestFile}.\nDiagnostic context from prior failure: ${failureReason.slice(0, 300)}\nOriginal Requirements:\n${task.prompt}${culpritContext}`,
+        role: "test_engineer",
+        priority: task.priority,
+        focusFiles: targetTestFile ?? undefined,
+        testCommand: baseTestCommand,
+        parentTaskId: task.id,
+      });
+
+      subtasks.push({
+        title: `[Rehab 2/2] Test Hardening & Edge-Case Coverage: ${task.title}`,
+        prompt: `Part 2 of decomposed test task ${task.id}.\nFlesh out edge-case validation, boundary conditions, and complete test verification for: ${task.title}.\nTarget test file: ${targetTestFile}.\nOriginal Requirements:\n${task.prompt}`,
+        role: "test_engineer",
+        priority: task.priority,
+        focusFiles: targetTestFile ?? undefined,
+        testCommand: baseTestCommand,
+        parentTaskId: task.id,
+      });
+
+      return subtasks;
+    }
+
     if (isMultiFile && implFiles.length > 0) {
-      // 3-way decomposition: Types -> Implementation -> Tests
+      // 3-way decomposition for multi-file features: Types -> Implementation -> Tests
       const typeFocus =
         typeFiles.length > 0 ? typeFiles.join(",") : rawFocus[0];
       subtasks.push({

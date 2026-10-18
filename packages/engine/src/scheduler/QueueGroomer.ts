@@ -158,13 +158,20 @@ export class QueueGroomer {
       const srcExists =
         fs.existsSync(testSrc) ||
         fs.existsSync(path.resolve(this.projectDir, candidateTest));
-      const targetListed = focusFilesList.some(
-        (focus) =>
-          path.resolve(this.projectDir, focus) ===
-          path.resolve(repoRoot, candidateTest),
-      );
 
-      if (srcExists || targetListed) {
+      const candidateBase = path.basename(candidateTest).replace(/\.[cm]?[jt]sx?$/, "");
+      const isTargetTest = focusFilesList.some((focus) => {
+        const focusBase = path.basename(focus).replace(/\.[cm]?[jt]sx?$/, "");
+        return (
+          focusBase === candidateBase ||
+          candidateTest.includes(focusBase) ||
+          focus.includes(candidateBase)
+        );
+      });
+
+      const isSpecificTestFile = /\.(?:test|spec)\.(?:ts|tsx|js|mjs|cjs)$/.test(candidateTest);
+
+      if (srcExists || isTargetTest || isSpecificTestFile) {
         if (
           /^packages\/[^/]+\/src\//.test(candidateTest) &&
           /\.(?:ts|tsx)$/.test(candidateTest)
@@ -191,29 +198,13 @@ export class QueueGroomer {
           groomNotes.push(
             `Scoped package test command to workspace '${packageName}': ${testCommand}`,
           );
-        } else if (
-          candidateTest.startsWith("packages/") &&
-          !candidateTest.includes("/src/") &&
-          !/\.(?:js|mjs|cjs|ts|tsx)$/.test(candidateTest)
-        ) {
-          const packageName = candidateTest.split("/")[1];
-          testCommand = `npm run test --workspace=@cacophony/${packageName}`;
+        } else {
+          testCommand = `node --test ${testDist}`;
           modified = true;
           groomNotes.push(
-            `Scoped package test command to workspace '${packageName}': ${testCommand}`,
+            `Target test suite '${candidateTest}' scoped to compiled test file: ${testCommand}`,
           );
-        } else {
-          testCommand = `node --test ${candidateTest}`;
-          modified = true;
         }
-      } else if (
-        focusFilesList.some((f) => candidateTest.endsWith(path.basename(f)))
-      ) {
-        testCommand = `node --test ${testDist}`;
-        modified = true;
-        groomNotes.push(
-          `Target test suite '${candidateTest}' will be created by this task; scoped to compiled test file: ${testCommand}`,
-        );
       } else {
         const isDocTask =
           task.role === "doc_writer" ||
@@ -526,9 +517,8 @@ export class QueueGroomer {
             }
           }
 
-          return pkgName === "engine"
-            ? `npm run test --workspace=@cacophony/${pkgName}`
-            : `npm test --workspace=@cacophony/${pkgName} --if-present`;
+          // Target specific unit test file rather than invoking the entire engine test suite
+          return `node --test packages/${pkgName}/dist/tests/${snakeName}.test.js`;
         }
 
         if (pkgName === "frontend") {
