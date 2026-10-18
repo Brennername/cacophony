@@ -632,6 +632,20 @@ export class TaskInspectorComponent {
     }
   }
 
+  /**
+   * Translates vertical mouse wheel scroll over horizontal stage tabs bar
+   * to horizontal scroll and strictly prevents vertical page or container jitter.
+   */
+  public onStageTabsWheel(event: WheelEvent): void {
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      const target = event.currentTarget as HTMLElement | null;
+      if (target) {
+        event.preventDefault();
+        target.scrollLeft += event.deltaY;
+      }
+    }
+  }
+
   public drillDown(task: TaskItem): void {
     void this.store.selectTask(task);
   }

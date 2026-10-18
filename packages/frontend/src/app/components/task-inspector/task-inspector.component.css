@@ -205,10 +205,16 @@
   justify-content: space-between;
   padding: 0.5rem 0;
   overflow-x: auto;
+  overflow-y: hidden;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.stepper-container::-webkit-scrollbar {
+  display: none;
 }
 
 .step {
@@ -327,11 +333,26 @@
   padding: 0.375rem 0.75rem;
   background: #11141c;
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  overflow-y: hidden;
+  min-height: 40px;
+  box-sizing: border-box;
 }
 
 .stream-channel-tabs {
   display: flex;
+  align-items: center;
   gap: 0.25rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  scrollbar-width: none;
+}
+
+.stream-channel-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .stream-tab-btn {
@@ -553,11 +574,36 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0.75rem;
+  padding: 0.35rem 0.75rem;
   background: #090c12;
   border-bottom: 1px solid var(--border-subtle);
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
   white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 38px;
+  max-height: 38px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.dynamic-stage-tabs-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.dynamic-stage-tabs-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dynamic-stage-tabs-bar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.dynamic-stage-tabs-bar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .stage-tabs-label {
@@ -667,9 +713,9 @@
   overflow-wrap: anywhere;
   flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
   max-height: none;
   overflow-y: auto;
+  overflow-x: hidden;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -701,6 +747,10 @@
   gap: 0.5rem;
   padding: 0.75rem;
   background: #05070a;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .accordion-top-bar {
@@ -1103,6 +1153,11 @@
 :host-context([data-theme="light"]) .dynamic-stage-tabs-bar {
   background: #f1f5f9;
   border-color: #e2e8f0;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+:host-context([data-theme="light"]) .dynamic-stage-tabs-bar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 :host-context([data-theme="light"]) .terminal-resize-bar {

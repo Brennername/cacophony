@@ -371,5 +371,28 @@ describe('TaskInspectorComponent', () => {
     expect(comp.isStageAccordionOpen('stage-st-1')).toBe(true);
     expect(comp.isStageAccordionOpen('stage-st-2')).toBe(true);
   });
+
+  it('should translate vertical wheel scroll over stage tabs bar to horizontal scroll and prevent vertical jitter', () => {
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    const comp = fixture.componentInstance;
+
+    const fakeContainer = document.createElement('div');
+    fakeContainer.scrollLeft = 20;
+
+    let defaultPrevented = false;
+    const fakeEvent = {
+      deltaY: 50,
+      deltaX: 0,
+      currentTarget: fakeContainer,
+      preventDefault: () => {
+        defaultPrevented = true;
+      },
+    } as unknown as WheelEvent;
+
+    comp.onStageTabsWheel(fakeEvent);
+
+    expect(defaultPrevented).toBe(true);
+    expect(fakeContainer.scrollLeft).toBe(70);
+  });
 });
 

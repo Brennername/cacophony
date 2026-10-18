@@ -263,7 +263,7 @@
 
       <!-- Secondary Bar: Dynamic Stage Tabs (When in 'tabs' mode) -->
       @if (viewMode() === 'tabs' && allStageEntries().length > 0) {
-        <div class="dynamic-stage-tabs-bar">
+        <div class="dynamic-stage-tabs-bar" (wheel)="onStageTabsWheel($event)">
           <span class="stage-tabs-label">Stages:</span>
           <div class="stage-tabs-scroll">
             @for (stage of allStageEntries(); track stage.id) {

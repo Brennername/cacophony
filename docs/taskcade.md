@@ -4,10 +4,105 @@
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.8.3.3 Rehabilitation [2026-10-18T03:50:08.764Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.8.3: Write unit tests verifying `SandboxedProcessRunner` timeout termination, memory  (`taskcade-t102.8.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.8.3.3.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 3/3] Unit Test & Validation Suite: T102.8.3: Write unit tests verifying `SandboxedProcessRunner` timeout termination, memory  [Role: type_specialist] [Files: packages/engine/src/tests/sandboxed_process_runner.test.ts]
+  - [ ] `taskcade-t102.8.3.3.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 3/3] Unit Test & Validation Suite: T102.8.3: Write unit tests verifying `SandboxedProcessRunner` timeout termination, memory  [Role: implementer] [Files: packages/engine/src/tests/sandboxed_process_runner.test.ts]
+
+
+### Task taskcade-t102.10.1.1 Rehabilitation [2026-10-18T03:27:10.645Z]
+- **Parent Task**: [Rehab 1/3] Type Contracts & Interfaces: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi (`taskcade-t102.10.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.10.1.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/3] Type Contracts & Interfaces: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: type_specialist] [Files: packages/engine/src/lsp/LspDiagnosticIngestor.ts]
+  - [ ] `taskcade-t102.10.1.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/3] Type Contracts & Interfaces: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: implementer] [Files: packages/engine/src/lsp/LspDiagnosticIngestor.ts]
+
+
+### Task taskcade-t102.15.1.3 Rehabilitation [2026-10-18T03:19:45.568Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.15.1: Write unit tests verifying `WorkspaceSymbolHarvester` recursive file crawling, i (`taskcade-t102.15.1.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.15.1.3.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 3/3] Unit Test & Validation Suite: T102.15.1: Write unit tests verifying `WorkspaceSymbolHarvester` recursive file crawling, i [Role: type_specialist] [Files: packages/engine/src/tests/workspace_symbol_harvester.test.ts]
+  - [ ] `taskcade-t102.15.1.3.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 3/3] Unit Test & Validation Suite: T102.15.1: Write unit tests verifying `WorkspaceSymbolHarvester` recursive file crawling, i [Role: implementer] [Files: packages/engine/src/tests/workspace_symbol_harvester.test.ts]
+
+
+### Task taskcade-t102.10.1.3 Rehabilitation [2026-10-18T02:40:39.510Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi (`taskcade-t102.10.1.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.10.1.3.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 3/3] Unit Test & Validation Suite: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: type_specialist] [Files: packages/engine/src/tests/lsp_diagnostic_ingestor.test.ts]
+  - [ ] `taskcade-t102.10.1.3.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 3/3] Unit Test & Validation Suite: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: implementer] [Files: packages/engine/src/tests/lsp_diagnostic_ingestor.test.ts]
+
+
+### Task taskcade-t102.14.10.2 Rehabilitation [2026-10-18T02:11:54.036Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.14.10: Write unit tests verifying `TypeScriptMethodSplicer` method replacement by AST n (`taskcade-t102.14.10.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.10.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.14.10: Write unit tests verifying `TypeScriptMethodSplicer` method replacement by AST n [Role: type_specialist] [Files: packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `taskcade-t102.14.10.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.14.10: Write unit tests verifying `TypeScriptMethodSplicer` method replacement by AST n [Role: implementer] [Files: packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task taskcade-t102.1.13.2 Rehabilitation [2026-10-18T02:03:42.236Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.1.13: Write unit tests verifying `TenancyConfigPanelComponent` tenant isolation toggle (`taskcade-t102.1.13.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.13.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.1.13: Write unit tests verifying `TenancyConfigPanelComponent` tenant isolation toggle [Role: type_specialist] [Files: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts]
+  - [ ] `taskcade-t102.1.13.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.1.13: Write unit tests verifying `TenancyConfigPanelComponent` tenant isolation toggle [Role: implementer] [Files: packages/frontend/src/app/components/tenancy-config-panel/tenancy-config-panel.component.ts]
+
+
+### Task taskcade-t102.14.10.3 Rehabilitation [2026-10-18T01:54:15.858Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.14.10: Write unit tests verifying `TypeScriptMethodSplicer` method replacement by AST n (`taskcade-t102.14.10.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.10.3.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 3/3] Unit Test & Validation Suite: T102.14.10: Write unit tests verifying `TypeScriptMethodSplicer` method replacement by AST n [Role: type_specialist] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts]
+  - [ ] `taskcade-t102.14.10.3.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 3/3] Unit Test & Validation Suite: T102.14.10: Write unit tests verifying `TypeScriptMethodSplicer` method replacement by AST n [Role: implementer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts]
+
+
+### Task taskcade-t102.6.1.3 Rehabilitation [2026-10-18T01:04:10.460Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  (`taskcade-t102.6.1.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.1.3.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 3/3] Unit Test & Validation Suite: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  [Role: type_specialist] [Files: packages/engine/src/tests/ast_signature_align_rule.test.ts]
+  - [ ] `taskcade-t102.6.1.3.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 3/3] Unit Test & Validation Suite: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  [Role: implementer] [Files: packages/engine/src/tests/ast_signature_align_rule.test.ts]
+
+
+### Task taskcade-t102.6.1.2 Rehabilitation [2026-10-18T01:04:02.037Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  (`taskcade-t102.6.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  [Role: type_specialist] [Files: packages/engine/src/rules/catalog/AstSignatureAlignRule.ts]
+  - [ ] `taskcade-t102.6.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  [Role: implementer] [Files: packages/engine/src/rules/catalog/AstSignatureAlignRule.ts]
+
+
+### Task taskcade-t102.8.5.3 Rehabilitation [2026-10-18T00:42:13.802Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b (`taskcade-t102.8.5.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.8.5.3.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: type_specialist] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [ ] `taskcade-t102.8.5.3.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: implementer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
 ### Task taskcade-t103.1.1: Multi-Stage Model Output Inspection & Vertical Resizer [COMPLETED]
 - **Summary**: Implemented dynamic stage output tabs, accordion view with collapse/expand, live auto-follow of active pipeline stages (showing tests running and reviewer evaluations live), vertical resizable grab handle with preset heights (compact 220px, standard 420px, large 680px), humanized PR descriptions with checklists and structured line review comments.
 - **Status**: [x] Completed
 - **Components**: `TaskInspectorComponent`, `AutonomousWorkerPipeline`, `TaskApiService`
+
+### Task taskcade-t103.1.2: Horizontal Stage Tabs Containment & North-South Scroll Elimination [COMPLETED]
+- **Summary**: Bound stage tabs and channel tabs containers strictly to horizontal scrolling by enforcing overflow-y: hidden, flex-shrink: 0, fixed container heights (38px), overscroll-behavior: contain, and sleek thin scrollbars. Implemented onStageTabsWheel handler mapping vertical mouse wheel deltaY to horizontal scrollLeft to prevent north-south vertical scrolling or clipping.
+- **Status**: [x] Completed
+- **Components**: `TaskInspectorComponent`, `task-inspector.component.css`, `task-inspector.component.html`, `task-inspector.component.spec.ts`
 
 ### Task taskcade-t102.15.6.2 Rehabilitation [2026-10-17T23:47:53.341Z]
 - **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.15.6: Write unit tests verifying `MethodEditAdapter` diff application, boundary valida (`taskcade-t102.15.6.2`)
