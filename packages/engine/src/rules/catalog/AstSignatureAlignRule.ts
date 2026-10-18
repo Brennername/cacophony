@@ -99,3 +99,8 @@ export class AstSignatureAlignRule extends BaseRepairRule {
     );
   }
 }
+
+
+export interface AstSignatureAlignRuleOptions {
+  signatureStore?: SignatureStore;
+}
