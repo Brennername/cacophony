@@ -4,7 +4,7 @@ import { ComponentRef } from '@angular/core';
 import { TenancyConfigPanelComponent } from './tenancy-config-panel.component';
 import type { ModelManagementConfig } from '@cacophony/shared-types';
 
-describe('TenancyConfigPanelComponent (T76.3.4)', () => {
+describe('TenancyConfigPanelComponent (T102.1.13)', () => {
   let component: TenancyConfigPanelComponent;
   let componentRef: ComponentRef<TenancyConfigPanelComponent>;
   let fixture: ComponentFixture<TenancyConfigPanelComponent>;
