@@ -41,10 +41,6 @@
     min-height: 0;
     resize: none;
   }
-
-  .modal-resize-grip {
-    display: none;
-  }
 }
 
 @keyframes modalFadeIn {
@@ -515,8 +511,11 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 0.75rem 1rem;
-  max-height: 220px;
-  overflow-y: auto;
+  min-height: 80px;
+  max-height: 480px;
+  overflow: auto;
+  resize: vertical;
+  box-sizing: border-box;
 }
 
 .prompt-text,
@@ -533,11 +532,21 @@
 .diff-content {
   font-family: var(--font-mono);
   color: #38bdf8;
+  min-height: 80px;
+  max-height: 480px;
+  overflow: auto;
+  resize: vertical;
+  box-sizing: border-box;
 }
 
 .stderr-content {
   font-family: var(--font-mono);
   color: #f87171;
+  min-height: 80px;
+  max-height: 480px;
+  overflow: auto;
+  resize: vertical;
+  box-sizing: border-box;
 }
 
 .stages-list {
@@ -602,9 +611,11 @@
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
-  max-height: 160px;
-  overflow-y: auto;
-  overflow-x: auto;
+  min-height: 80px;
+  max-height: 480px;
+  overflow: auto;
+  resize: vertical;
+  box-sizing: border-box;
 }
 
 .full-terminal-box {
@@ -652,9 +663,12 @@
   font-size: 0.8125rem;
   color: #38bdf8;
   white-space: pre-wrap;
-  max-height: 260px;
-  overflow-y: auto;
+  min-height: 120px;
+  max-height: 520px;
+  overflow: auto;
+  resize: vertical;
   line-height: 1.4;
+  box-sizing: border-box;
 }
 
 /* Cognitive Trace & Distilled Opinion Styles */
@@ -745,7 +759,12 @@
   font-size: 0.8125rem;
   color: #a5b4fc;
   white-space: pre-wrap;
+  min-height: 120px;
+  max-height: 520px;
+  overflow: auto;
+  resize: vertical;
   line-height: 1.4;
+  box-sizing: border-box;
 }
 
 .modal-footer {
@@ -757,27 +776,6 @@
   background: var(--bg-surface-elevated);
   flex-shrink: 0;
   position: relative;
-  padding-right: 2rem;
-}
-
-.modal-resize-grip {
-  position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: se-resize;
-  color: var(--text-muted);
-  touch-action: none;
-  user-select: none;
-  transition: color 0.15s ease;
-}
-
-.modal-resize-grip:hover {
-  color: var(--color-brand);
 }
 
 .btn {
@@ -972,10 +970,13 @@
   font-size: 0.75rem;
   line-height: 1.45;
   color: var(--text-primary);
-  max-height: 260px;
+  min-height: 80px;
+  max-height: 480px;
   overflow: auto;
+  resize: vertical;
   white-space: pre-wrap;
   word-break: break-word;
+  box-sizing: border-box;
 }
 
 .diff-box {

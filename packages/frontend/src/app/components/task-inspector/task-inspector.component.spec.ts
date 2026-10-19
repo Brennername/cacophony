@@ -394,5 +394,58 @@ describe('TaskInspectorComponent', () => {
     expect(defaultPrevented).toBe(true);
     expect(fakeContainer.scrollLeft).toBe(70);
   });
+
+  it('should render ANSI styled output safely via renderAnsi', () => {
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    const comp = fixture.componentInstance;
+
+    const ansiOutput = '\u001b[32mPASS\u001b[0m \u001b[1;31mFAIL\u001b[0m <script>safe</script>';
+    const html = comp.renderAnsi(ansiOutput);
+
+    expect(html).toContain('class="ansi-fg-green"');
+    expect(html).toContain('class="ansi-bold ansi-fg-red"');
+    expect(html).toContain('&lt;script&gt;safe&lt;/script&gt;');
+    expect(html).not.toContain('<script>');
+  });
+
+  it('should handle dynamic stage tabs arrow navigation', () => {
+    const mockTask: TaskItem = {
+      id: 'task-tabs-overflow',
+      title: 'Dynamic Stage Tabs Overflow Test',
+      status: 'RUNNING',
+      priority: 'P1',
+      role: 'engineer',
+      stages: [
+        { id: '1', stageName: 'planning', stageStatus: 'SUCCESS', durationMs: 100, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+        { id: '2', stageName: 'generation', stageStatus: 'SUCCESS', durationMs: 200, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+        { id: '3', stageName: 'deterministic_scrub', stageStatus: 'SUCCESS', durationMs: 150, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+        { id: '4', stageName: 'test_execution', stageStatus: 'RUNNING', durationMs: 300, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+        { id: '5', stageName: 'remediation', stageStatus: 'PENDING', durationMs: null, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+        { id: '6', stageName: 'pr_review', stageStatus: 'PENDING', durationMs: null, startedAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+      ],
+    };
+
+    store.tasks.set([mockTask]);
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+
+    // Simulate scroll overflow
+    comp.canScrollStageTabsLeft.set(true);
+    comp.canScrollStageTabsRight.set(true);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const leftArrow = compiled.querySelector('.stage-tab-nav-arrow.left') as HTMLButtonElement;
+    const rightArrow = compiled.querySelector('.stage-tab-nav-arrow.right') as HTMLButtonElement;
+
+    expect(leftArrow).toBeTruthy();
+    expect(rightArrow).toBeTruthy();
+
+    // Call scrollStageTabs in both directions without errors
+    comp.scrollStageTabs('left');
+    comp.scrollStageTabs('right');
+  });
 });
 

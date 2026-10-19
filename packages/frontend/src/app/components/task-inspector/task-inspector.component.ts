@@ -1,9 +1,10 @@
-import { Component, inject, effect, viewChild, ElementRef, computed, signal } from '@angular/core';
+import { Component, inject, effect, viewChild, ElementRef, computed, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
 import { StageProgressBarComponent, type StageStepInfo } from '../stage-progress-bar/stage-progress-bar.component';
 import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gantt-transport.component';
 import { TaskApiService } from '../../services/task-api.service';
+import { ansiToHtml } from '../../utils/ansi-to-html';
 
 export interface StageTabEntry {
   readonly id: string;
@@ -50,6 +51,10 @@ export class TaskInspectorComponent {
   public readonly autoFollow = signal<boolean>(true);
   public readonly terminalHeight = signal<number>(380);
   public readonly expandedAccordionStages = signal<Record<string, boolean>>({});
+
+  public readonly stageTabsScrollRef = viewChild<ElementRef<HTMLDivElement>>('stageTabsScroll');
+  public readonly canScrollStageTabsLeft = signal<boolean>(false);
+  public readonly canScrollStageTabsRight = signal<boolean>(false);
 
   public readonly displayedStreamBuffer = computed(() => {
     const hist = this.historicalStreamBuffer();
@@ -444,16 +449,23 @@ export class TaskInspectorComponent {
   private terminalContentEl = viewChild<ElementRef<HTMLElement>>('terminalContent');
 
   constructor() {
-    effect(() => {
-      // Whenever displayed buffer changes, auto scroll to bottom
-      const _ = this.displayedStreamBuffer();
-      const el = this.terminalContentEl()?.nativeElement;
-      if (el) {
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
-        });
-      }
-    });
+      effect(() => {
+        // Whenever displayed buffer changes, auto scroll to bottom
+        const _ = this.displayedStreamBuffer();
+        const el = this.terminalContentEl()?.nativeElement;
+        if (el) {
+          requestAnimationFrame(() => {
+            el.scrollTop = el.scrollHeight;
+          });
+        }
+      });
+
+      effect(() => {
+        // Re-evaluate stage tabs overflow whenever stages or viewMode changes
+        const _ = this.allStageEntries();
+        const __ = this.viewMode();
+        setTimeout(() => this.checkStageTabsOverflow(), 60);
+      });
 
     effect(() => {
       // Fetch buffer from backend if active task changes and liveStreamBuffer is currently empty
@@ -633,17 +645,61 @@ export class TaskInspectorComponent {
   }
 
   /**
+   * Evaluates if the stage tabs overflow horizontally to conditionally
+   * reveal left/right scroll navigation buttons and eliminate native scrollbars.
+   */
+  public checkStageTabsOverflow(): void {
+    const el = this.stageTabsScrollRef()?.nativeElement;
+    if (!el) {
+      this.canScrollStageTabsLeft.set(false);
+      this.canScrollStageTabsRight.set(false);
+      return;
+    }
+    const scrollLeft = el.scrollLeft;
+    const maxScrollLeft = el.scrollWidth - el.clientWidth;
+    this.canScrollStageTabsLeft.set(scrollLeft > 2);
+    this.canScrollStageTabsRight.set(scrollLeft < maxScrollLeft - 2);
+  }
+
+  public onStageTabsScroll(): void {
+    this.checkStageTabsOverflow();
+  }
+
+  public scrollStageTabs(direction: 'left' | 'right'): void {
+    const el = this.stageTabsScrollRef()?.nativeElement;
+    if (!el) return;
+    const delta = direction === 'left' ? -200 : 200;
+    if (typeof el.scrollBy === 'function') {
+      el.scrollBy({ left: delta, behavior: 'smooth' });
+    } else {
+      el.scrollLeft += delta;
+    }
+    setTimeout(() => this.checkStageTabsOverflow(), 250);
+  }
+
+  @HostListener('window:resize')
+  public onWindowResize(): void {
+    this.checkStageTabsOverflow();
+  }
+
+  /**
    * Translates vertical mouse wheel scroll over horizontal stage tabs bar
-   * to horizontal scroll and strictly prevents vertical page or container jitter.
+   * to horizontal scroll and updates overflow status.
    */
   public onStageTabsWheel(event: WheelEvent): void {
-    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-      const target = event.currentTarget as HTMLElement | null;
-      if (target) {
-        event.preventDefault();
-        target.scrollLeft += event.deltaY;
-      }
+    const el = this.stageTabsScrollRef()?.nativeElement || (event.currentTarget as HTMLElement | null);
+    if (el && Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      event.preventDefault();
+      el.scrollLeft += event.deltaY;
+      this.checkStageTabsOverflow();
     }
+  }
+
+  /**
+   * Transforms raw log/stream output containing ANSI codes into safe, styled HTML.
+   */
+  public renderAnsi(text: string | null | undefined): string {
+    return ansiToHtml(text);
   }
 
   public drillDown(task: TaskItem): void {

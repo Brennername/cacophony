@@ -573,37 +573,44 @@
 .dynamic-stage-tabs-bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.75rem;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
   background: #090c12;
   border-bottom: 1px solid var(--border-subtle);
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior: contain;
+  position: relative;
+  overflow: hidden;
   white-space: nowrap;
   flex-shrink: 0;
-  min-height: 38px;
-  max-height: 38px;
+  min-height: 40px;
+  max-height: 40px;
   box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.dynamic-stage-tabs-bar::-webkit-scrollbar {
-  height: 4px;
+.stage-tab-nav-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 50%;
+  background: var(--bg-surface-elevated, #161d2f);
+  border: 1px solid var(--border-strong, #36466f);
+  color: var(--text-primary, #f0f4fc);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  z-index: 2;
 }
 
-.dynamic-stage-tabs-bar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dynamic-stage-tabs-bar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-}
-
-.dynamic-stage-tabs-bar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
+.stage-tab-nav-arrow:hover {
+  background: var(--color-brand, #3b82f6);
+  border-color: var(--color-brand, #3b82f6);
+  color: #ffffff;
+  box-shadow: 0 0 8px var(--color-brand-glow);
 }
 
 .stage-tabs-label {
@@ -620,6 +627,16 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.stage-tabs-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .stage-chip-btn {
@@ -896,9 +913,12 @@
   white-space: pre-wrap;
   word-break: break-all;
   overflow-wrap: anywhere;
-  max-height: 350px;
-  overflow-y: auto;
+  min-height: 80px;
+  max-height: 450px;
+  overflow: auto;
+  resize: vertical;
   color: #cbd5e1;
+  box-sizing: border-box;
 }
 
 .stage-card.stage-theme-generation .stage-log-box {
@@ -1153,11 +1173,12 @@
 :host-context([data-theme="light"]) .dynamic-stage-tabs-bar {
   background: #f1f5f9;
   border-color: #e2e8f0;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
-:host-context([data-theme="light"]) .dynamic-stage-tabs-bar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+:host-context([data-theme="light"]) .stage-tab-nav-arrow {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 :host-context([data-theme="light"]) .terminal-resize-bar {

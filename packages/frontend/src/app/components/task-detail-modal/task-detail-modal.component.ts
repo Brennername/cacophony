@@ -1,6 +1,7 @@
 import { Component, inject, signal, HostListener, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
+import { ansiToHtml } from '../../utils/ansi-to-html';
 
 export type TaskModalTab =
   | 'overview'
@@ -454,5 +455,12 @@ export class TaskDetailModalComponent {
         }
       }
     }
+  }
+
+  /**
+   * Transforms raw log/stream output containing ANSI codes into safe, styled HTML.
+   */
+  public renderAnsi(text: string | null | undefined): string {
+    return ansiToHtml(text);
   }
 }

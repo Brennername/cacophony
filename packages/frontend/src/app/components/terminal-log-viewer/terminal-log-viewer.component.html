@@ -18,7 +18,7 @@
       @for (line of lines(); track $index) {
         <div class="log-line" [ngClass]="getLineClass(line)">
           <span class="line-number tabular">{{ $index + 1 }}</span>
-          <span class="line-text">{{ line }}</span>
+          <span class="line-text" [innerHTML]="renderAnsi(line)"></span>
         </div>
       }
     }

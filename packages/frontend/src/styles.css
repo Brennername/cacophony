@@ -46,6 +46,25 @@
   --scrollbar-thumb: #242f4c;
   --scrollbar-track: #0a0d14;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+
+  /* ANSI Terminal Palette (Dark Theme Default) */
+  --ansi-black: #1e293b;
+  --ansi-red: #f87171;
+  --ansi-green: #4ade80;
+  --ansi-yellow: #facc15;
+  --ansi-blue: #60a5fa;
+  --ansi-magenta: #c084fc;
+  --ansi-cyan: #38bdf8;
+  --ansi-white: #e2e8f0;
+
+  --ansi-bright-black: #64748b;
+  --ansi-bright-red: #ef4444;
+  --ansi-bright-green: #22c55e;
+  --ansi-bright-yellow: #eab308;
+  --ansi-bright-blue: #3b82f6;
+  --ansi-bright-magenta: #a855f7;
+  --ansi-bright-cyan: #06b6d4;
+  --ansi-bright-white: #ffffff;
 }
 
 /* Light Theme */
@@ -70,6 +89,25 @@
 
   --scrollbar-thumb: #cbd5e1;
   --scrollbar-track: #f8fafc;
+
+  /* ANSI Terminal Palette (Light Theme) */
+  --ansi-black: #0f172a;
+  --ansi-red: #dc2626;
+  --ansi-green: #16a34a;
+  --ansi-yellow: #ca8a04;
+  --ansi-blue: #2563eb;
+  --ansi-magenta: #9333ea;
+  --ansi-cyan: #0891b2;
+  --ansi-white: #64748b;
+
+  --ansi-bright-black: #475569;
+  --ansi-bright-red: #b91c1c;
+  --ansi-bright-green: #15803d;
+  --ansi-bright-yellow: #a16207;
+  --ansi-bright-blue: #1d4ed8;
+  --ansi-bright-magenta: #7e22ce;
+  --ansi-bright-cyan: #0e7490;
+  --ansi-bright-white: #0f172a;
 }
 
 /* High Contrast Theme (WCAG AAA Stark Contrast) */
@@ -99,6 +137,24 @@
 
   --scrollbar-thumb: #ffff00;
   --scrollbar-track: #000000;
+
+  /* ANSI High Contrast Overrides */
+  --ansi-black: #000000;
+  --ansi-red: #ff3333;
+  --ansi-green: #00ff66;
+  --ansi-yellow: #ffff00;
+  --ansi-blue: #3399ff;
+  --ansi-magenta: #ff66ff;
+  --ansi-cyan: #00ffff;
+  --ansi-white: #ffffff;
+  --ansi-bright-black: #888888;
+  --ansi-bright-red: #ff0000;
+  --ansi-bright-green: #00ff00;
+  --ansi-bright-yellow: #ffff33;
+  --ansi-bright-blue: #0066ff;
+  --ansi-bright-magenta: #ff00ff;
+  --ansi-bright-cyan: #00ffff;
+  --ansi-bright-white: #ffffff;
 }
 
 /* OLED Pure Black Theme */
@@ -386,3 +442,50 @@ code, pre, .font-mono {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* ==========================================================================
+   ANSI Terminal Color & Typography Classes
+   ========================================================================== */
+.ansi-fg-black { color: var(--ansi-black); }
+.ansi-fg-red { color: var(--ansi-red); }
+.ansi-fg-green { color: var(--ansi-green); }
+.ansi-fg-yellow { color: var(--ansi-yellow); }
+.ansi-fg-blue { color: var(--ansi-blue); }
+.ansi-fg-magenta { color: var(--ansi-magenta); }
+.ansi-fg-cyan { color: var(--ansi-cyan); }
+.ansi-fg-white { color: var(--ansi-white); }
+
+.ansi-fg-bright-black { color: var(--ansi-bright-black); }
+.ansi-fg-bright-red { color: var(--ansi-bright-red); }
+.ansi-fg-bright-green { color: var(--ansi-bright-green); }
+.ansi-fg-bright-yellow { color: var(--ansi-bright-yellow); }
+.ansi-fg-bright-blue { color: var(--ansi-bright-blue); }
+.ansi-fg-bright-magenta { color: var(--ansi-bright-magenta); }
+.ansi-fg-bright-cyan { color: var(--ansi-bright-cyan); }
+.ansi-fg-bright-white { color: var(--ansi-bright-white); }
+
+.ansi-bg-black { background-color: var(--ansi-black); }
+.ansi-bg-red { background-color: var(--ansi-red); }
+.ansi-bg-green { background-color: var(--ansi-green); }
+.ansi-bg-yellow { background-color: var(--ansi-yellow); color: #000; }
+.ansi-bg-blue { background-color: var(--ansi-blue); }
+.ansi-bg-magenta { background-color: var(--ansi-magenta); }
+.ansi-bg-cyan { background-color: var(--ansi-cyan); color: #000; }
+.ansi-bg-white { background-color: var(--ansi-white); color: #000; }
+
+.ansi-bg-bright-black { background-color: var(--ansi-bright-black); }
+.ansi-bg-bright-red { background-color: var(--ansi-bright-red); }
+.ansi-bg-bright-green { background-color: var(--ansi-bright-green); }
+.ansi-bg-bright-yellow { background-color: var(--ansi-bright-yellow); color: #000; }
+.ansi-bg-bright-blue { background-color: var(--ansi-bright-blue); }
+.ansi-bg-bright-magenta { background-color: var(--ansi-bright-magenta); }
+.ansi-bg-bright-cyan { background-color: var(--ansi-bright-cyan); color: #000; }
+.ansi-bg-bright-white { background-color: var(--ansi-bright-white); color: #000; }
+
+.ansi-bold { font-weight: 700; }
+.ansi-dim { opacity: 0.65; }
+.ansi-italic { font-style: italic; }
+.ansi-underline { text-decoration: underline; }
+.ansi-strikethrough { text-decoration: line-through; }
+.ansi-invert { filter: invert(1); }
+

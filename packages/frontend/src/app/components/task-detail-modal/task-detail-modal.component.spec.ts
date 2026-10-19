@@ -102,15 +102,18 @@ describe('TaskDetailModalComponent', () => {
     expect(comp.customWidth()).toBeNull();
     expect(comp.customHeight()).toBeNull();
 
-    // Verify modal element and resize grip exist
+    // Verify modal element and ensure footer resize grip is removed (only single dialog resize corner exists)
     const compiled = fixture.nativeElement as HTMLElement;
     const modalEl = compiled.querySelector('.modal-content') as HTMLElement;
-    const resizeGrip = compiled.querySelector('.modal-resize-grip') as HTMLElement;
+    const footerResizeGrip = compiled.querySelector('.modal-resize-grip');
     const tabBar = compiled.querySelector('.tab-bar') as HTMLElement;
 
     expect(modalEl).toBeTruthy();
-    expect(resizeGrip).toBeTruthy();
+    expect(footerResizeGrip).toBeNull();
     expect(tabBar).toBeTruthy();
+
+    // Verify renderAnsi helper transforms ANSI sequences in logs/streams
+    expect(comp.renderAnsi('\u001b[32mPASS\u001b[0m')).toBe('<span class="ansi-fg-green">PASS</span>');
 
     // Switch between tabs: dimensions remain null (static CSS size) without expansion
     comp.activeTab.set('stages');
@@ -159,7 +162,7 @@ describe('TaskDetailModalComponent', () => {
 
     const comp = fixture.componentInstance;
     const compiled = fixture.nativeElement as HTMLElement;
-    const resizeGrip = compiled.querySelector('.modal-resize-grip') as HTMLElement;
+    const modalEl = compiled.querySelector('.modal-content') as HTMLElement;
 
     let defaultPrevented = false;
     let propagationStopped = false;
@@ -168,7 +171,7 @@ describe('TaskDetailModalComponent', () => {
       stopPropagation: () => { propagationStopped = true; },
       clientX: 500,
       clientY: 400,
-      currentTarget: resizeGrip,
+      currentTarget: modalEl,
     } as unknown as PointerEvent;
 
     comp.startResize(mockPointerEvent);
@@ -211,15 +214,14 @@ describe('TaskDetailModalComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const backdropEl = compiled.querySelector('.modal-backdrop') as HTMLElement;
     const modalContent = compiled.querySelector('.modal-content') as HTMLElement;
-    const resizeGrip = compiled.querySelector('.modal-resize-grip') as HTMLElement;
 
-    // 1. When resizing via grip handle, releasing on backdrop must not dismiss the dialog
+    // 1. When resizing via corner handle, releasing on backdrop must not dismiss the dialog
     comp.startResize({
       preventDefault: () => {},
       stopPropagation: () => {},
       clientX: 500,
       clientY: 400,
-      currentTarget: resizeGrip,
+      currentTarget: modalContent,
     } as unknown as PointerEvent);
 
     expect(comp.isResizing).toBe(true);

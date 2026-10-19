@@ -263,9 +263,25 @@
 
       <!-- Secondary Bar: Dynamic Stage Tabs (When in 'tabs' mode) -->
       @if (viewMode() === 'tabs' && allStageEntries().length > 0) {
-        <div class="dynamic-stage-tabs-bar" (wheel)="onStageTabsWheel($event)">
+        <div class="dynamic-stage-tabs-bar">
           <span class="stage-tabs-label">Stages:</span>
-          <div class="stage-tabs-scroll">
+          @if (canScrollStageTabsLeft()) {
+            <button
+              type="button"
+              class="stage-tab-nav-arrow left"
+              (click)="scrollStageTabs('left')"
+              aria-label="Scroll stage tabs left"
+              title="Scroll left"
+            >
+              &lsaquo;
+            </button>
+          }
+          <div
+            #stageTabsScroll
+            class="stage-tabs-scroll"
+            (scroll)="onStageTabsScroll()"
+            (wheel)="onStageTabsWheel($event)"
+          >
             @for (stage of allStageEntries(); track stage.id) {
               <button
                 type="button"
@@ -282,6 +298,17 @@
               </button>
             }
           </div>
+          @if (canScrollStageTabsRight()) {
+            <button
+              type="button"
+              class="stage-tab-nav-arrow right"
+              (click)="scrollStageTabs('right')"
+              aria-label="Scroll stage tabs right"
+              title="Scroll right"
+            >
+              &rsaquo;
+            </button>
+          }
         </div>
       }
 
@@ -291,27 +318,27 @@
           <pre
             #terminalContent
             class="terminal-content cognitive-content"
-          ><code>{{ liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...' }}</code></pre>
+          ><code [innerHTML]="renderAnsi(liveReasoningBuffer() || '// Awaiting cognitive trace from reasoning model...')"></code></pre>
         } @else if (activeStreamChannel() === 'testing') {
           <pre
             #terminalContent
             class="terminal-content test-content"
-          ><code>{{ liveTestOutput() || currentChannelLogContent() || '// Awaiting test runner stdout/stderr stream...' }}</code></pre>
+          ><code [innerHTML]="renderAnsi(liveTestOutput() || currentChannelLogContent() || '// Awaiting test runner stdout/stderr stream...')"></code></pre>
         } @else if (activeStreamChannel() === 'ast') {
           <pre
             #terminalContent
             class="terminal-content ast-content"
-          ><code>{{ liveAstScrubbing() || currentChannelLogContent() || '// Awaiting deterministic AST rule engine & diagnostic repairs...' }}</code></pre>
+          ><code [innerHTML]="renderAnsi(liveAstScrubbing() || currentChannelLogContent() || '// Awaiting deterministic AST rule engine & diagnostic repairs...')"></code></pre>
         } @else if (activeStreamChannel() === 'review') {
           <pre
             #terminalContent
             class="terminal-content review-content"
-          ><code>{{ liveReviewCritique() || currentChannelLogContent() || '// Awaiting PR review evaluation & gate status...' }}</code></pre>
+          ><code [innerHTML]="renderAnsi(liveReviewCritique() || currentChannelLogContent() || '// Awaiting PR review evaluation & gate status...')"></code></pre>
         } @else {
           <pre
             #terminalContent
             class="terminal-content"
-          ><code>{{ currentChannelLogContent() || displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...' }}</code></pre>
+          ><code [innerHTML]="renderAnsi(currentChannelLogContent() || displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...')"></code></pre>
         }
       } @else {
         <!-- Accordion Mode: All stages stacked and expandable -->
@@ -342,7 +369,7 @@
                 </div>
                 @if (isStageAccordionOpen(stage.id)) {
                   <div class="stage-card-body">
-                    <pre class="stage-log-box"><code>{{ stage.logContent || '// No log output recorded for this stage' }}</code></pre>
+                    <pre class="stage-log-box"><code [innerHTML]="renderAnsi(stage.logContent || '// No log output recorded for this stage')"></code></pre>
                   </div>
                 }
               </div>

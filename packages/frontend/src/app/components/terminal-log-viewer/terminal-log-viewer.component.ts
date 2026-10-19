@@ -1,5 +1,6 @@
 import { Component, input, output, ElementRef, viewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ansiToHtml } from '../../utils/ansi-to-html';
 
 /**
  * TerminalLogViewerComponent
@@ -42,5 +43,9 @@ export class TerminalLogViewerComponent {
     if (lower.includes('[ok]') || lower.includes('success')) return 'ok';
     if (lower.includes('[info]')) return 'info';
     return '';
+  }
+
+  public renderAnsi(line: string): string {
+    return ansiToHtml(line);
   }
 }
