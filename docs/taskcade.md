@@ -411,6 +411,26 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.8.7 Rehabilitation [2026-10-19T23:03:42.975Z]
+- **Parent Task**: T102.8.7: Write unit tests verifying `TestRunnerDetector` framework auto-detection (node:t (`taskcade-t102.8.7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.8.7.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.8.7: Write unit tests verifying `TestRunnerDetector` framework auto-detection (node:t [Role: type_specialist] [Files: packages/engine/src/testing/TestRunnerDetector.ts]
+  - [ ] `taskcade-t102.8.7.2`: [Rehab 2/3] Core Implementation Unit: T102.8.7: Write unit tests verifying `TestRunnerDetector` framework auto-detection (node:t [Role: implementer] [Files: packages/engine/src/testing/TestRunnerDetector.ts]
+  - [ ] `taskcade-t102.8.7.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.8.7: Write unit tests verifying `TestRunnerDetector` framework auto-detection (node:t [Role: test_engineer] [Files: packages/engine/src/tests/test_runner_detector.test.ts]
+
+
+### Task taskcade-t102.17.6 Rehabilitation [2026-10-19T22:41:08.687Z]
+- **Parent Task**: T102.17.6: Write unit tests verifying `PlateauInterventionDispatcher` stagnation detection  (`taskcade-t102.17.6`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.17.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.17.6: Write unit tests verifying `PlateauInterventionDispatcher` stagnation detection  [Role: type_specialist] [Files: packages/engine/src/analytics/PlateauInterventionDispatcher.ts]
+  - [ ] `taskcade-t102.17.6.2`: [Rehab 2/3] Core Implementation Unit: T102.17.6: Write unit tests verifying `PlateauInterventionDispatcher` stagnation detection  [Role: implementer] [Files: packages/engine/src/analytics/PlateauInterventionDispatcher.ts]
+  - [ ] `taskcade-t102.17.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.17.6: Write unit tests verifying `PlateauInterventionDispatcher` stagnation detection  [Role: test_engineer] [Files: packages/engine/src/tests/plateau_intervention_dispatcher.test.ts]
+
+
 ### Task taskcade-t102.7.2 Rehabilitation [2026-10-19T21:45:51.992Z]
 - **Parent Task**: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  (`taskcade-t102.7.2`)
 - **Failure Count**: 3
