@@ -1,216 +1,144 @@
-import ts from "typescript";
+import { describe, it } from "node:test";
+import * as assert from "node:assert/strict";
+import { ImportPruningEngine } from "../context/ImportPruningEngine.js";
 
-export interface ParsedImport {
-  readonly moduleSpecifier: string;
-  readonly defaultImport?: string;
-  readonly namedImports: readonly string[];
-  readonly namespaceImport?: string;
-  readonly rawText: string;
-}
+describe("T102.14.4: ImportPruningEngine Unit Tests", () => {
+  const engine = new ImportPruningEngine();
 
-export class ImportPruningEngine {
-  public pruneUnusedImports(
-    sourceCode: string,
-    allowedOrRequiredModules: readonly string[] = [],
-  ): string {
-    const trimmed = sourceCode.trim();
-    if (!trimmed) return sourceCode;
+  describe("pruneUnusedImports", () => {
+    it("should prune unused named imports from external packages", () => {
+      const source = [
+        'import { unusedA, unusedB } from "lodash";',
+        'import { usedFunction } from "utility-lib";',
+        "",
+        "const result = usedFunction(123);",
+        "console.log(result);",
+      ].join("\n");
 
-    let sourceFile: ts.SourceFile;
-    try {
-      sourceFile = ts.createSourceFile(
-        "temp.ts",
-        sourceCode,
-        ts.ScriptTarget.ES2022,
-        true,
-      );
-    } catch {
-      return sourceCode;
-    }
+      const pruned = engine.pruneUnusedImports(source);
 
-    const importsToRemove: ts.ImportDeclaration[] = [];
-    const requiredSet = new Set(allowedOrRequiredModules);
+      assert.ok(!pruned.includes("lodash"), "Unused lodash import should be removed");
+      assert.ok(pruned.includes('import { usedFunction } from "utility-lib";'), "Used function import must be retained");
+      assert.ok(pruned.includes("usedFunction(123)"), "Body code must remain intact");
+    });
 
-    const nonImportIdentifiers = new Set<string>();
+    it("should preserve side-effect imports without import clauses", () => {
+      const source = [
+        'import "reflect-metadata";',
+        'import "./polyfills.js";',
+        'import { unused } from "heavy-dep";',
+        "",
+        "console.log('App running');",
+      ].join("\n");
 
-    function visit(node: ts.Node) {
-      if (ts.isImportDeclaration(node)) {
-        return; // Do not traverse into imports when collecting used symbols
-      }
-      if (ts.isIdentifier(node)) {
-        nonImportIdentifiers.add(node.text);
-      }
-      ts.forEachChild(node, visit);
-    }
+      const pruned = engine.pruneUnusedImports(source);
 
-    ts.forEachChild(sourceFile, visit);
+      assert.ok(pruned.includes('import "reflect-metadata";'), "Side-effect import must be preserved");
+      assert.ok(pruned.includes('import "./polyfills.js";'), "Relative side-effect import must be preserved");
+      assert.ok(!pruned.includes("heavy-dep"), "Unused external import must be pruned");
+    });
 
-    for (const stmt of sourceFile.statements) {
-      if (!ts.isImportDeclaration(stmt)) {
-        continue;
-      }
+    it("should preserve relative module imports even if symbols appear unused", () => {
+      const source = [
+        'import { localConfig } from "./config.js";',
+        'import { relativeHelper } from "../helpers/tool.js";',
+        "",
+        "console.log('Relative test');",
+      ].join("\n");
 
-      const moduleSpecifier = (stmt.moduleSpecifier as ts.StringLiteral).text;
+      const pruned = engine.pruneUnusedImports(source);
 
-      if (requiredSet.has(moduleSpecifier) || moduleSpecifier.startsWith(".")) {
-        continue;
-      }
+      assert.ok(pruned.includes("./config.js"), "Relative ./ import must be preserved");
+      assert.ok(pruned.includes("../helpers/tool.js"), "Relative ../ import must be preserved");
+    });
 
-      const importClause = stmt.importClause;
-      if (!importClause) {
-        continue;
-      }
+    it("should preserve explicitly allowed or required modules", () => {
+      const source = [
+        'import { inject } from "@angular/core";',
+        'import { Observable } from "rxjs";',
+        "",
+        "console.log('Framework boilerplate');",
+      ].join("\n");
 
-      let isAnySymbolUsed = false;
+      const pruned = engine.pruneUnusedImports(source, ["@angular/core"]);
 
-      if (
-        importClause.name &&
-        nonImportIdentifiers.has(importClause.name.text)
-      ) {
-        isAnySymbolUsed = true;
-      }
+      assert.ok(pruned.includes("@angular/core"), "Explicitly allowed module must be preserved");
+      assert.ok(!pruned.includes("rxjs"), "Unallowed unused module must be pruned");
+    });
 
-      if (importClause.namedBindings) {
-        if (ts.isNamespaceImport(importClause.namedBindings)) {
-          if (nonImportIdentifiers.has(importClause.namedBindings.name.text)) {
-            isAnySymbolUsed = true;
-          }
-        } else if (ts.isNamedImports(importClause.namedBindings)) {
-          for (const spec of importClause.namedBindings.elements) {
-            const symbolName = spec.name.text;
-            if (nonImportIdentifiers.has(symbolName)) {
-              isAnySymbolUsed = true;
-              break;
-            }
-          }
-        }
-      }
+    it("should preserve default and namespace imports when referenced in code", () => {
+      const source = [
+        'import React from "react";',
+        'import * as path from "node:path";',
+        'import * as fs from "node:fs";',
+        "",
+        "const p = path.join('a', 'b');",
+        "export default React;",
+      ].join("\n");
 
-      if (!isAnySymbolUsed) {
-        importsToRemove.push(stmt);
-      }
-    }
+      const pruned = engine.pruneUnusedImports(source);
 
-    if (importsToRemove.length === 0) {
-      return sourceCode;
-    }
+      assert.ok(pruned.includes('import React from "react";'), "Used default import must be preserved");
+      assert.ok(pruned.includes('import * as path from "node:path";'), "Used namespace import must be preserved");
+      assert.ok(!pruned.includes("node:fs"), "Unused namespace import must be pruned");
+    });
 
-    let updatedCode = sourceCode;
+    it("should handle empty strings and malformed source gracefully", () => {
+      assert.equal(engine.pruneUnusedImports(""), "");
+      assert.equal(engine.pruneUnusedImports("   "), "   ");
+      const plainCode = "const a = 1;\nconsole.log(a);";
+      assert.equal(engine.pruneUnusedImports(plainCode), plainCode);
+    });
+  });
 
-    importsToRemove.sort(
-      (a, b) => b.getStart(sourceFile) - a.getStart(sourceFile),
-    );
+  describe("consolidateImports", () => {
+    it("should consolidate duplicate named imports from the same specifier", () => {
+      const source = [
+        'import { alpha } from "my-module";',
+        'import { beta } from "my-module";',
+        'import { gamma } from "other-module";',
+        "",
+        "console.log(alpha, beta, gamma);",
+      ].join("\n");
 
-    for (const imp of importsToRemove) {
-      const start = imp.getStart(sourceFile);
-      let end = imp.getEnd();
+      const consolidated = engine.consolidateImports(source);
 
-      if (updatedCode[end] === "\n") {
-        end++;
-      } else if (updatedCode.slice(end, end + 2) === "\r\n") {
-        end += 2;
-      }
-      updatedCode = updatedCode.slice(0, start) + updatedCode.slice(end);
-    }
+      // Should contain consolidated import for my-module with both alpha and beta
+      assert.ok(consolidated.includes('from "my-module";'));
+      assert.ok(consolidated.includes("alpha"));
+      assert.ok(consolidated.includes("beta"));
+      // Only 1 import statement for my-module
+      const myModuleOccurrences = (consolidated.match(/from "my-module"/g) || []).length;
+      assert.equal(myModuleOccurrences, 1);
+    });
 
-    return updatedCode;
-  }
+    it("should retain default import when consolidating with named imports", () => {
+      const source = [
+        'import defaultItem from "shared-lib";',
+        'import { namedItem } from "shared-lib";',
+        "",
+        "console.log(defaultItem, namedItem);",
+      ].join("\n");
 
-  public consolidateImports(sourceCode: string): string {
-    const trimmed = sourceCode.trim();
-    if (!trimmed) return sourceCode;
+      const consolidated = engine.consolidateImports(source);
 
-    let sourceFile: ts.SourceFile;
-    try {
-      sourceFile = ts.createSourceFile(
-        "temp.ts",
-        sourceCode,
-        ts.ScriptTarget.ES2022,
-        true,
-      );
-    } catch {
-      return sourceCode;
-    }
+      assert.ok(consolidated.includes("defaultItem"));
+      assert.ok(consolidated.includes("namedItem"));
+      assert.ok(consolidated.includes('from "shared-lib";'));
+      const occurrences = (consolidated.match(/from "shared-lib"/g) || []).length;
+      assert.equal(occurrences, 1);
+    });
 
-    const importsByModule = new Map<string, ts.ImportDeclaration[]>();
-    for (const stmt of sourceFile.statements) {
-      if (
-        ts.isImportDeclaration(stmt) &&
-        ts.isStringLiteral(stmt.moduleSpecifier)
-      ) {
-        const mod = stmt.moduleSpecifier.text;
-        const list = importsByModule.get(mod) ?? [];
-        list.push(stmt);
-        importsByModule.set(mod, list);
-      }
-    }
+    it("should return unchanged code when no duplicate imports exist", () => {
+      const source = [
+        'import { a } from "mod-a";',
+        'import { b } from "mod-b";',
+        "",
+        "console.log(a, b);",
+      ].join("\n");
 
-    let hasDuplicates = false;
-    for (const list of importsByModule.values()) {
-      if (list.length > 1) {
-        hasDuplicates = true;
-        break;
-      }
-    }
-
-    if (!hasDuplicates) {
-      return sourceCode;
-    }
-
-    let updatedCode = sourceCode;
-    for (const [mod, list] of importsByModule.entries()) {
-      if (list.length <= 1) continue;
-
-      let defaultImport: string | undefined;
-      const namedSymbols = new Set<string>();
-
-      for (const imp of list) {
-        if (imp.importClause?.name) {
-          defaultImport = imp.importClause.name.text;
-        }
-        if (
-          imp.importClause?.namedBindings &&
-          ts.isNamedImports(imp.importClause.namedBindings)
-        ) {
-          for (const el of imp.importClause.namedBindings.elements) {
-            namedSymbols.add(el.getText(sourceFile));
-          }
-        }
-      }
-
-      const parts: string[] = [];
-      if (defaultImport) parts.push(defaultImport);
-      if (namedSymbols.size > 0) {
-        parts.push(`{ ${Array.from(namedSymbols).join(", ")} }`);
-      }
-      const consolidatedStmt = `import ${parts.join(", ")} from "${mod}";`;
-
-      const sortedList = [...list].sort(
-        (a, b) => b.getStart(sourceFile) - a.getStart(sourceFile),
-      );
-      for (let i = 0; i < sortedList.length - 1; i++) {
-        const item = sortedList[i]!;
-        const start = item.getStart(sourceFile);
-        let end = item.getEnd();
-        if (updatedCode[end] === "\n") end++;
-        else if (updatedCode.slice(end, end + 2) === "\r\n") end += 2;
-        updatedCode = updatedCode.slice(0, start) + updatedCode.slice(end);
-      }
-
-      const firstItem = sortedList[sortedList.length - 1]!;
-      const start = firstItem.getStart(sourceFile);
-      const end = firstItem.getEnd();
-      updatedCode =
-        updatedCode.slice(0, start) + consolidatedStmt + updatedCode.slice(end);
-
-      sourceFile = ts.createSourceFile(
-        "temp.ts",
-        updatedCode,
-        ts.ScriptTarget.ES2022,
-        true,
-      );
-    }
-
-    return updatedCode;
-  }
-}
+      const result = engine.consolidateImports(source);
+      assert.equal(result, source);
+    });
+  });
+});
