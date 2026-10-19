@@ -1,7 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Mocking LspProcessSupervisor for testing purposes
 class MockLspProcessSupervisor {
   spawn() {
     return new Promise((resolve) => resolve('Language server spawned'));
