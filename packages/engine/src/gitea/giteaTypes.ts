@@ -98,6 +98,20 @@ export interface GiteaIssue {
   readonly updated_at: string;
 }
 
+export interface CreateIssueRequest {
+  readonly title: string;
+  readonly body?: string | undefined;
+  readonly closed?: boolean | undefined;
+  readonly labels?: readonly number[] | undefined;
+  readonly assignee?: string | undefined;
+}
+
+export interface UpdateIssueRequest {
+  readonly title?: string | undefined;
+  readonly body?: string | undefined;
+  readonly state?: "open" | "closed" | undefined;
+}
+
 export interface CreateIssueCommentRequest {
   readonly body: string;
 }

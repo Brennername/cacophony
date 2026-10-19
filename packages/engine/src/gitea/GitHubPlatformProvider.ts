@@ -2,10 +2,14 @@ import type {
   IGitPlatformProvider,
   GitPlatformBranch,
   GitPlatformPullRequest,
+  GitPlatformIssue,
   CreateGitBranchOptions,
   CreateGitPullRequestOptions,
+  CreateGitIssueOptions,
+  CloseGitIssueOptions,
   SubmitGitReviewOptions,
   MergeGitPullRequestOptions,
+  DependabotSecurityAlert,
 } from "./IGitPlatformProvider.js";
 
 export interface GitHubProviderConfig {
@@ -162,6 +166,40 @@ export class GitHubPlatformProvider implements IGitPlatformProvider {
     };
   }
 
+  public async listPullRequests(
+    owner: string,
+    repo: string,
+    state: "open" | "closed" | "all" = "open",
+  ): Promise<GitPlatformPullRequest[]> {
+    const list = await this.request<
+      Array<{
+        id: number;
+        number: number;
+        title: string;
+        body: string;
+        state: string;
+        merged_at: string | null;
+        head: { ref: string };
+        base: { ref: string };
+        html_url: string;
+        diff_url: string;
+      }>
+    >(`/repos/${owner}/${repo}/pulls?state=${encodeURIComponent(state)}`);
+
+    return list.map((data) => ({
+      id: data.id,
+      number: data.number,
+      title: data.title,
+      body: data.body,
+      state: data.state === "closed" ? "closed" : "open",
+      merged: Boolean(data.merged_at),
+      headRef: data.head?.ref ?? "",
+      baseRef: data.base?.ref ?? "",
+      htmlUrl: data.html_url,
+      diffUrl: data.diff_url,
+    }));
+  }
+
   public async getPullRequestDiff(
     owner: string,
     repo: string,
@@ -309,6 +347,186 @@ export class GitHubPlatformProvider implements IGitPlatformProvider {
           }),
         },
       );
+    }
+  }
+
+  public async createIssue(
+    owner: string,
+    repo: string,
+    options: CreateGitIssueOptions,
+  ): Promise<GitPlatformIssue> {
+    const data = await this.request<{
+      id: number;
+      number: number;
+      title: string;
+      body: string;
+      state: "open" | "closed";
+      labels?: Array<{ name: string } | string>;
+      html_url: string;
+      created_at: string;
+      updated_at: string;
+    }>(`/repos/${owner}/${repo}/issues`, {
+      method: "POST",
+      body: JSON.stringify({
+        title: options.title,
+        body: options.body,
+        labels: options.labels,
+      }),
+    });
+
+    return {
+      id: data.id,
+      number: data.number,
+      title: data.title,
+      body: data.body,
+      state: data.state,
+      labels: (data.labels || []).map((l) =>
+        typeof l === "string" ? l : l.name,
+      ),
+      htmlUrl: data.html_url,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  public async listIssues(
+    owner: string,
+    repo: string,
+    state: "open" | "closed" | "all" = "open",
+  ): Promise<GitPlatformIssue[]> {
+    const data = await this.request<
+      Array<{
+        id: number;
+        number: number;
+        title: string;
+        body: string;
+        state: "open" | "closed";
+        labels?: Array<{ name: string } | string>;
+        html_url: string;
+        pull_request?: unknown;
+        created_at: string;
+        updated_at: string;
+      }>
+    >(`/repos/${owner}/${repo}/issues?state=${state}`);
+
+    return data
+      .filter((item) => !item.pull_request)
+      .map((item) => ({
+        id: item.id,
+        number: item.number,
+        title: item.title,
+        body: item.body,
+        state: item.state,
+        labels: (item.labels || []).map((l) =>
+          typeof l === "string" ? l : l.name,
+        ),
+        htmlUrl: item.html_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+      }));
+  }
+
+  public async getIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GitPlatformIssue> {
+    const data = await this.request<{
+      id: number;
+      number: number;
+      title: string;
+      body: string;
+      state: "open" | "closed";
+      labels?: Array<{ name: string } | string>;
+      html_url: string;
+      created_at: string;
+      updated_at: string;
+    }>(`/repos/${owner}/${repo}/issues/${issueNumber}`);
+
+    return {
+      id: data.id,
+      number: data.number,
+      title: data.title,
+      body: data.body,
+      state: data.state,
+      labels: (data.labels || []).map((l) =>
+        typeof l === "string" ? l : l.name,
+      ),
+      htmlUrl: data.html_url,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  public async closeIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    options?: CloseGitIssueOptions,
+  ): Promise<void> {
+    if (options?.comment) {
+      await this.createIssueComment(owner, repo, issueNumber, options.comment);
+    }
+    await this.request(`/repos/${owner}/${repo}/issues/${issueNumber}`, {
+      method: "PATCH",
+      body: JSON.stringify({ state: "closed" }),
+    });
+  }
+
+  public async createIssueComment(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    body: string,
+  ): Promise<void> {
+    await this.request(
+      `/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify({ body }),
+      },
+    );
+  }
+
+  public async listDependabotAlerts(
+    owner: string,
+    repo: string,
+    state: "open" | "fixed" | "dismissed" = "open",
+  ): Promise<DependabotSecurityAlert[]> {
+    try {
+      const data = await this.request<
+        Array<{
+          number: number;
+          state: "open" | "fixed" | "dismissed";
+          dependency: { package: { name: string; ecosystem: string } };
+          security_advisory: {
+            summary: string;
+            description: string;
+            severity: "low" | "medium" | "high" | "critical";
+            cve_id?: string;
+          };
+          html_url: string;
+        }>
+      >(`/repos/${owner}/${repo}/dependabot/alerts?state=${state}`);
+
+      return data.map((alert) => ({
+        number: alert.number,
+        state: alert.state,
+        dependencyPackage: alert.dependency?.package?.name || "unknown",
+        dependencyEcosystem: alert.dependency?.package?.ecosystem || "npm",
+        securityAdvisorySummary:
+          alert.security_advisory?.summary || "Security vulnerability",
+        securityAdvisoryDescription: alert.security_advisory?.description || "",
+        severity: alert.security_advisory?.severity || "high",
+        cveId: alert.security_advisory?.cve_id,
+        htmlUrl: alert.html_url,
+      }));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("404") || msg.includes("403")) {
+        return [];
+      }
+      throw err;
     }
   }
 }

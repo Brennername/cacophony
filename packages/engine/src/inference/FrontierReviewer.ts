@@ -65,6 +65,10 @@ export class FrontierReviewer {
     this.reviewTimeoutMs = options?.reviewTimeoutMs ?? 45_000;
   }
 
+  public getDefaultModel(): string {
+    return this.defaultModel;
+  }
+
   /**
    * Generates a structured review evaluation checklist.
    */

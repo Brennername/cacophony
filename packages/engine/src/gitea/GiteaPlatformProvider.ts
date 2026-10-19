@@ -2,8 +2,11 @@ import type {
   IGitPlatformProvider,
   GitPlatformBranch,
   GitPlatformPullRequest,
+  GitPlatformIssue,
   CreateGitBranchOptions,
   CreateGitPullRequestOptions,
+  CreateGitIssueOptions,
+  CloseGitIssueOptions,
   SubmitGitReviewOptions,
   MergeGitPullRequestOptions,
 } from "./IGitPlatformProvider.js";
@@ -108,6 +111,26 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     };
   }
 
+  public async listPullRequests(
+    owner: string,
+    repo: string,
+    state: "open" | "closed" | "all" = "open",
+  ): Promise<GitPlatformPullRequest[]> {
+    const prs = await this.client.listPullRequests(owner, repo, state);
+    return prs.map((pr) => ({
+      id: pr.id,
+      number: pr.number,
+      title: pr.title,
+      body: pr.body,
+      state: pr.state,
+      merged: pr.merged,
+      headRef: pr.head?.ref ?? "",
+      baseRef: pr.base?.ref ?? "main",
+      htmlUrl: pr.html_url,
+      diffUrl: pr.diff_url,
+    }));
+  }
+
   public async getPullRequestDiff(
     owner: string,
     repo: string,
@@ -150,5 +173,88 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       MergeMessageField: options?.message,
     });
     return true;
+  }
+
+  public async createIssue(
+    owner: string,
+    repo: string,
+    options: CreateGitIssueOptions,
+  ): Promise<GitPlatformIssue> {
+    const issue = await this.client.createIssue(owner, repo, {
+      title: options.title,
+      body: options.body,
+    });
+    return {
+      id: issue.id,
+      number: issue.number,
+      title: issue.title,
+      body: issue.body,
+      state: issue.state,
+      labels: issue.labels?.map((l) => l.name) ?? [],
+      htmlUrl: `${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`,
+      createdAt: issue.created_at,
+      updatedAt: issue.updated_at,
+    };
+  }
+
+  public async listIssues(
+    owner: string,
+    repo: string,
+    state: "open" | "closed" | "all" = "open",
+  ): Promise<GitPlatformIssue[]> {
+    const issues = await this.client.listIssues(owner, repo, state);
+    return issues.map((issue) => ({
+      id: issue.id,
+      number: issue.number,
+      title: issue.title,
+      body: issue.body,
+      state: issue.state,
+      labels: issue.labels?.map((l) => l.name) ?? [],
+      htmlUrl: `${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`,
+      createdAt: issue.created_at,
+      updatedAt: issue.updated_at,
+    }));
+  }
+
+  public async getIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GitPlatformIssue> {
+    const issue = await this.client.getIssue(owner, repo, issueNumber);
+    return {
+      id: issue.id,
+      number: issue.number,
+      title: issue.title,
+      body: issue.body,
+      state: issue.state,
+      labels: issue.labels?.map((l) => l.name) ?? [],
+      htmlUrl: `${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`,
+      createdAt: issue.created_at,
+      updatedAt: issue.updated_at,
+    };
+  }
+
+  public async closeIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    options?: CloseGitIssueOptions,
+  ): Promise<void> {
+    if (options?.comment) {
+      await this.client.createIssueComment(owner, repo, issueNumber, {
+        body: options.comment,
+      });
+    }
+    await this.client.closeIssue(owner, repo, issueNumber);
+  }
+
+  public async createIssueComment(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    body: string,
+  ): Promise<void> {
+    await this.client.createIssueComment(owner, repo, issueNumber, { body });
   }
 }

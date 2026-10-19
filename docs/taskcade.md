@@ -43,6 +43,14 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 > [!NOTE]
 > Phase 102 is active: Focused strictly on unit testing, component spec coverage, and edge-case verification across frontend components and backend services. Major architectural pipeline implementations will be conducted via frontier models.
 
+## Phase 103: Human-Resonant PR Workflow, Issue Synthesis, GitHub Sync, & Multi-Model Review Roles
+
+- [x] T103.1: Implement `HumanResonantPrGenerator` for human-like narrative PR descriptions discussing code properties, SOLID decisions, cross-model dialogue, and blast radius without dry checklists. [Files: packages/engine/src/gitea/HumanResonantPrGenerator.ts, packages/engine/src/tests/human_resonant_pr_generator.test.ts] [Test: node --test packages/engine/dist/tests/human_resonant_pr_generator.test.js]
+- [x] T103.2: Extend `IGitPlatformProvider`, `GiteaPlatformProvider`, `GiteaApiClient`, and `GitHubPlatformProvider` with issue management lifecycle (create, list, get, close, comment). [Files: packages/engine/src/gitea/IGitPlatformProvider.ts, packages/engine/src/gitea/GiteaPlatformProvider.ts, packages/engine/src/gitea/GitHubPlatformProvider.ts, packages/engine/src/gitea/GiteaApiClient.ts, packages/engine/src/tests/git_platform_provider.test.ts] [Test: node --test packages/engine/dist/tests/git_platform_provider.test.js]
+- [x] T103.3: Implement `AutomatedIssueSynthesizer` for autonomous detection of stubs, mocks, and regressions with Gitea/GitHub issue creation and arena task queueing. [Files: packages/engine/src/gitea/AutomatedIssueSynthesizer.ts, packages/engine/src/tests/automated_issue_synthesizer.test.ts] [Test: node --test packages/engine/dist/tests/automated_issue_synthesizer.test.js]
+- [x] T103.4: Implement `GitHubSecurityAndIssueBridge` for Dependabot alert ingestion, external GitHub issue/PR synchronization, reasoning model review, and bidirectional verification merge/close. [Files: packages/engine/src/gitea/GitHubSecurityAndIssueBridge.ts, packages/engine/src/tests/github_security_and_issue_bridge.test.ts] [Test: node --test packages/engine/dist/tests/github_security_and_issue_bridge.test.js]
+- [x] T103.5: Implement `MultiModelReviewCoordinator` providing multi-role review (Security, DX/UX/UI, Architecture) with reviewer retries, fallback models, and transparent sub-stage timing telemetry. [Files: packages/engine/src/inference/MultiModelReviewCoordinator.ts, packages/engine/src/tests/multi_model_review_coordinator.test.ts] [Test: node --test packages/engine/dist/tests/multi_model_review_coordinator.test.js]
+
 ---
 
 ## Phase 102: Comprehensive Unit Test Expansion & Edge-Case Coverage
@@ -402,6 +410,66 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t102.7.2 Rehabilitation [2026-10-19T21:45:51.992Z]
+- **Parent Task**: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  (`taskcade-t102.7.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.7.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  [Role: type_specialist] [Files: packages/engine/src/auth/AutheliaSsoProvider.ts]
+  - [ ] `taskcade-t102.7.2.2`: [Rehab 2/3] Core Implementation Unit: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  [Role: implementer] [Files: packages/engine/src/auth/AutheliaSsoProvider.ts]
+  - [ ] `taskcade-t102.7.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  [Role: test_engineer] [Files: packages/engine/src/tests/authelia_sso_provider.test.ts]
+
+
+### Task taskcade-t102.2.6 Rehabilitation [2026-10-19T21:24:56.167Z]
+- **Parent Task**: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq (`taskcade-t102.2.6`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.2.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: type_specialist] [Files: packages/engine/src/telemetry/CpuFallbackProvider.ts]
+  - [ ] `taskcade-t102.2.6.2`: [Rehab 2/3] Core Implementation Unit: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: implementer] [Files: packages/engine/src/telemetry/CpuFallbackProvider.ts]
+  - [ ] `taskcade-t102.2.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: test_engineer] [Files: packages/engine/src/tests/cpu_fallback_provider.test.ts]
+
+
+### Task taskcade-t102.13.7 Rehabilitation [2026-10-19T15:37:45.197Z]
+- **Parent Task**: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica (`taskcade-t102.13.7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.7.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: type_specialist] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [ ] `taskcade-t102.13.7.2`: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: implementer] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [ ] `taskcade-t102.13.7.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.3.2 Rehabilitation [2026-10-19T14:39:17.604Z]
+- **Parent Task**: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na (`taskcade-t102.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na [Role: type_specialist] [Files: packages/engine/src/gitea/GitCheckpointManager.ts]
+  - [ ] `taskcade-t102.3.2.2`: [Rehab 2/3] Core Implementation Unit: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na [Role: implementer] [Files: packages/engine/src/gitea/GitCheckpointManager.ts]
+  - [ ] `taskcade-t102.3.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na [Role: test_engineer] [Files: packages/engine/src/tests/git_checkpoint_manager.test.ts]
+
+
+### Task taskcade-t102.5.1 Rehabilitation [2026-10-19T11:37:53.135Z]
+- **Parent Task**: T102.5.1: Write unit tests verifying `EpsilonGreedyPolicy` exploration vs exploitation dec (`taskcade-t102.5.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.5.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.5.1: Write unit tests verifying `EpsilonGreedyPolicy` exploration vs exploitation dec [Role: type_specialist] [Files: packages/engine/src/bandit/EpsilonGreedyPolicy.ts]
+  - [ ] `taskcade-t102.5.1.2`: [Rehab 2/3] Core Implementation Unit: T102.5.1: Write unit tests verifying `EpsilonGreedyPolicy` exploration vs exploitation dec [Role: implementer] [Files: packages/engine/src/bandit/EpsilonGreedyPolicy.ts]
+  - [ ] `taskcade-t102.5.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.5.1: Write unit tests verifying `EpsilonGreedyPolicy` exploration vs exploitation dec [Role: test_engineer] [Files: packages/engine/src/tests/epsilon_greedy_policy.test.ts]
+
+
+### Task taskcade-t102.13.3 Rehabilitation [2026-10-19T09:08:29.481Z]
+- **Parent Task**: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u (`taskcade-t102.13.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u [Role: type_specialist] [Files: packages/frontend/src/app/services/model-fleet.service.ts]
+  - [ ] `taskcade-t102.13.3.2`: [Rehab 2/3] Core Implementation Unit: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u [Role: implementer] [Files: packages/frontend/src/app/services/model-fleet.service.ts]
+  - [ ] `taskcade-t102.13.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status u [Role: test_engineer] [Files: all]
+
 
 ### Task taskcade-t102.15.6 Rehabilitation [2026-10-19T06:11:43.834Z]
 - **Parent Task**: T102.15.6: Write unit tests verifying `MethodEditAdapter` diff application, boundary valida (`taskcade-t102.15.6`)

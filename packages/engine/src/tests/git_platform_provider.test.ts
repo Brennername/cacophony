@@ -147,6 +147,187 @@ describe("Unified Git Platform Provider Suite (Gitea & GitHub)", () => {
         return;
       }
 
+      // Gitea Issue Endpoints
+      if (
+        url.includes("/api/v1/repos/test-owner/test-repo/issues/10/comments") &&
+        method === "POST"
+      ) {
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ id: 101, body: "comment created" }));
+        return;
+      }
+
+      if (
+        url.includes("/api/v1/repos/test-owner/test-repo/issues/10") &&
+        method === "PATCH"
+      ) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            id: 10,
+            number: 10,
+            title: "Closed Issue",
+            body: "Closed description",
+            state: "closed",
+          }),
+        );
+        return;
+      }
+
+      if (
+        url.includes("/api/v1/repos/test-owner/test-repo/issues/10") &&
+        method === "GET"
+      ) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            id: 10,
+            number: 10,
+            title: "Single Issue",
+            body: "Issue description",
+            state: "open",
+          }),
+        );
+        return;
+      }
+
+      if (
+        url.includes("/api/v1/repos/test-owner/test-repo/issues") &&
+        method === "POST"
+      ) {
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            id: 10,
+            number: 10,
+            title: "Created Issue",
+            body: "Created body",
+            state: "open",
+          }),
+        );
+        return;
+      }
+
+      if (
+        url.includes("/api/v1/repos/test-owner/test-repo/issues") &&
+        method === "GET"
+      ) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify([
+            {
+              id: 10,
+              number: 10,
+              title: "Listed Issue",
+              body: "Listed body",
+              state: "open",
+            },
+          ]),
+        );
+        return;
+      }
+
+      // GitHub Issue & Dependabot Endpoints
+      if (
+        url.includes("/repos/gh-owner/gh-repo/issues/77/comments") &&
+        method === "POST"
+      ) {
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ id: 202, body: "gh comment" }));
+        return;
+      }
+
+      if (
+        url.includes("/repos/gh-owner/gh-repo/issues/77") &&
+        method === "PATCH"
+      ) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            id: 77,
+            number: 77,
+            title: "Closed GH Issue",
+            body: "Closed body",
+            state: "closed",
+          }),
+        );
+        return;
+      }
+
+      if (
+        url.includes("/repos/gh-owner/gh-repo/issues/77") &&
+        method === "GET"
+      ) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            id: 77,
+            number: 77,
+            title: "Single GH Issue",
+            body: "GH Body",
+            state: "open",
+            html_url: "https://github.com/gh-owner/gh-repo/issues/77",
+          }),
+        );
+        return;
+      }
+
+      if (url.includes("/repos/gh-owner/gh-repo/issues") && method === "POST") {
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            id: 77,
+            number: 77,
+            title: "New GH Issue",
+            body: "New GH body",
+            state: "open",
+            html_url: "https://github.com/gh-owner/gh-repo/issues/77",
+          }),
+        );
+        return;
+      }
+
+      if (url.includes("/repos/gh-owner/gh-repo/issues") && method === "GET") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify([
+            {
+              id: 77,
+              number: 77,
+              title: "Listed GH Issue",
+              body: "Listed GH body",
+              state: "open",
+              html_url: "https://github.com/gh-owner/gh-repo/issues/77",
+            },
+          ]),
+        );
+        return;
+      }
+
+      if (
+        url.includes("/repos/gh-owner/gh-repo/dependabot/alerts") &&
+        method === "GET"
+      ) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify([
+            {
+              number: 101,
+              state: "open",
+              dependency: { package: { name: "tar", ecosystem: "npm" } },
+              security_advisory: {
+                summary: "Arbitrary File Overwrite in tar",
+                description: "Symlink traversal vulnerability in tar extraction",
+                severity: "high",
+                cve_id: "CVE-2026-9999",
+              },
+              html_url: "https://github.com/gh-owner/gh-repo/security/dependabot/101",
+            },
+          ]),
+        );
+        return;
+      }
+
       res.writeHead(404);
       res.end();
     });
@@ -203,6 +384,31 @@ describe("Unified Git Platform Provider Suite (Gitea & GitHub)", () => {
       1,
     );
     assert.strictEqual(merged, true);
+
+    // Test Issue Lifecycle on Gitea
+    const issue = await provider.createIssue("test-owner", "test-repo", {
+      title: "Created Issue",
+      body: "Created body",
+    });
+    assert.strictEqual(issue.number, 10);
+    assert.strictEqual(issue.state, "open");
+
+    const issues = await provider.listIssues("test-owner", "test-repo");
+    assert.strictEqual(issues.length, 1);
+    assert.strictEqual(issues[0]?.number, 10);
+
+    const singleIssue = await provider.getIssue("test-owner", "test-repo", 10);
+    assert.strictEqual(singleIssue.number, 10);
+
+    await provider.createIssueComment(
+      "test-owner",
+      "test-repo",
+      10,
+      "Progress update",
+    );
+    await provider.closeIssue("test-owner", "test-repo", 10, {
+      comment: "Closing verified issue",
+    });
   });
 
   it("should create branch, open PR, and submit review via GitHubPlatformProvider", async () => {
@@ -241,6 +447,38 @@ describe("Unified Git Platform Provider Suite (Gitea & GitHub)", () => {
 
     const merged = await provider.mergePullRequest("gh-owner", "gh-repo", 42);
     assert.strictEqual(merged, true);
+
+    // Test Issue Lifecycle on GitHub
+    const issue = await provider.createIssue("gh-owner", "gh-repo", {
+      title: "New GH Issue",
+      body: "New GH body",
+    });
+    assert.strictEqual(issue.number, 77);
+    assert.strictEqual(issue.state, "open");
+
+    const issues = await provider.listIssues("gh-owner", "gh-repo");
+    assert.strictEqual(issues.length, 1);
+    assert.strictEqual(issues[0]?.number, 77);
+
+    const singleIssue = await provider.getIssue("gh-owner", "gh-repo", 77);
+    assert.strictEqual(singleIssue.number, 77);
+
+    await provider.createIssueComment(
+      "gh-owner",
+      "gh-repo",
+      77,
+      "Automated verification note",
+    );
+    await provider.closeIssue("gh-owner", "gh-repo", 77, {
+      comment: "Resolved in upstream branch",
+    });
+
+    // Test Dependabot Alerts
+    const alerts = await provider.listDependabotAlerts("gh-owner", "gh-repo");
+    assert.strictEqual(alerts.length, 1);
+    assert.strictEqual(alerts[0]?.dependencyPackage, "tar");
+    assert.strictEqual(alerts[0]?.severity, "high");
+    assert.strictEqual(alerts[0]?.cveId, "CVE-2026-9999");
   });
 
   it("should dynamically instantiate correct provider via GitPlatformProviderFactory", () => {

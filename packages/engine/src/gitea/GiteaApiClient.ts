@@ -9,6 +9,8 @@ import type {
   OAuthTokenResponse,
   GiteaUser,
   GiteaIssue,
+  CreateIssueRequest,
+  UpdateIssueRequest,
   CreateIssueCommentRequest,
   GiteaComment,
   GiteaPackage,
@@ -131,6 +133,51 @@ export class GiteaApiClient {
         body: JSON.stringify(comment),
       },
     );
+  }
+
+  /**
+   * Creates a new issue in a repository.
+   */
+  public async createIssue(
+    owner: string,
+    repo: string,
+    issue: CreateIssueRequest,
+  ): Promise<GiteaIssue> {
+    this.guard?.assertScope("issue", "write");
+    return this.request<GiteaIssue>(`/api/v1/repos/${owner}/${repo}/issues`, {
+      method: "POST",
+      body: JSON.stringify(issue),
+    });
+  }
+
+  /**
+   * Updates an existing issue (e.g. title, body, state).
+   */
+  public async updateIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    update: UpdateIssueRequest,
+  ): Promise<GiteaIssue> {
+    this.guard?.assertScope("issue", "write");
+    return this.request<GiteaIssue>(
+      `/api/v1/repos/${owner}/${repo}/issues/${issueNumber}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(update),
+      },
+    );
+  }
+
+  /**
+   * Closes an existing issue.
+   */
+  public async closeIssue(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GiteaIssue> {
+    return this.updateIssue(owner, repo, issueNumber, { state: "closed" });
   }
 
   /**

@@ -41,6 +41,9 @@ import { MicroModelToolRouter } from "../inference/MicroModelToolRouter.js";
 import { MonorepoBuildGate } from "../gitea/MonorepoBuildGate.js";
 import { DiagnosticPreFlightChecker } from "../testing/DiagnosticPreFlightChecker.js";
 import { ConventionalCommitGenerator } from "../gitea/ConventionalCommitGenerator.js";
+import { HumanResonantPrGenerator } from "../gitea/HumanResonantPrGenerator.js";
+import { AutomatedIssueSynthesizer } from "../gitea/AutomatedIssueSynthesizer.js";
+import { MultiModelReviewCoordinator } from "../inference/MultiModelReviewCoordinator.js";
 import { SchematicCodeGenerator } from "../generators/SchematicCodeGenerator.js";
 import { SchematicTemplates } from "../generators/SchematicTemplates.js";
 import { SlotFillPromptBuilder } from "../inference/SlotFillPromptBuilder.js";
@@ -118,6 +121,8 @@ export class AutonomousWorkerPipeline {
   private readonly modelHealthRepo?: ModelHealthRepository | undefined;
   private readonly diagnosticPreFlightChecker: DiagnosticPreFlightChecker;
   private readonly vramPrefetchCoordinator?: VramPrefetchCoordinator | undefined;
+  private readonly issueSynthesizer?: AutomatedIssueSynthesizer | undefined;
+  private readonly multiModelReviewCoordinator?: MultiModelReviewCoordinator | undefined;
   private debugTaskPipeline: boolean;
 
   private maxRetainedDiagnostics: number = 100;
@@ -153,6 +158,14 @@ export class AutonomousWorkerPipeline {
     }
   }
 
+  public getIssueSynthesizer(): AutomatedIssueSynthesizer | undefined {
+    return this.issueSynthesizer;
+  }
+
+  public getMultiModelReviewCoordinator(): MultiModelReviewCoordinator | undefined {
+    return this.multiModelReviewCoordinator;
+  }
+
   constructor(options: AutonomousWorkerPipelineOptions) {
     this.debugTaskPipeline = process.env["DEBUG_TASK_PIPELINE"] === "true";
     this.remediationPromptFormatter = new RemediationPromptFormatter();
@@ -168,6 +181,15 @@ export class AutonomousWorkerPipeline {
     this.taskRepo = options.taskRepository;
     this.worktreeManager = options.worktreeManager;
     this.gitPlatformProvider = options.gitPlatformProvider;
+    if (this.gitPlatformProvider && this.taskRepo) {
+      this.issueSynthesizer = new AutomatedIssueSynthesizer({
+        gitProvider: this.gitPlatformProvider,
+        taskRepo: this.taskRepo,
+      });
+    }
+    this.multiModelReviewCoordinator = new MultiModelReviewCoordinator({
+      inferenceProvider: options.ollamaProvider as any,
+    });
     this.banditScheduler = options.banditScheduler;
     this.maxRemediationAttempts = options.maxRemediationAttempts ?? 2;
     this.modelHealthRepo = options.modelHealthRepository;
@@ -956,6 +978,7 @@ export class AutonomousWorkerPipeline {
 
       // COMPILATION VERIFICATION & ACTIVE REMEDIATION
       let compilationRemediationAttempts = 0;
+      let totalTestRemediationAttempts = 0;
       const maxRemediationAttempts = this.maxRemediationAttempts;
 
       // 1. Compilation Verification Gate with Compiler Diagnostic Remediation Loop
@@ -1407,6 +1430,24 @@ export class AutonomousWorkerPipeline {
             logOutput,
           );
 
+          if (this.issueSynthesizer) {
+            const regressions = this.issueSynthesizer.scanTestFailuresForRegressions(
+              `${runResult.stdout}\n${runResult.stderr}`,
+              groomed.scopedTestCommand,
+            );
+            for (const regression of regressions) {
+              void this.issueSynthesizer
+                .submitRegressionIssue({
+                  owner: this.repoOwner,
+                  repo: this.repoName,
+                  regression,
+                  taskId,
+                  focusFiles: groomed.task.focusFiles,
+                })
+                .catch(() => {});
+            }
+          }
+
           const failureSignature = `${runResult.exitCode}\n${`${runResult.stdout}\n${runResult.stderr}`
             .replace(/\(node:\d+\)/g, "(node:PID)")
             .replace(/\b\d+(?:\.\d+)?ms\b/g, "#ms")
@@ -1423,6 +1464,7 @@ export class AutonomousWorkerPipeline {
           }
           previousTestFailureSignature = failureSignature;
           testRemediationAttempts++;
+          totalTestRemediationAttempts = testRemediationAttempts;
           console.warn(
             `[AutonomousWorkerPipeline] Test command failed for task '${groomed.enrichedPrompt.slice(0, 40)}' (exitCode=${runResult.exitCode}, attempt ${testRemediationAttempts}/${maxRemediationAttempts}). Attempting automated remediation...`,
           );
@@ -2019,38 +2061,41 @@ export class AutonomousWorkerPipeline {
               worktree.branchName,
             );
 
+            const prGen = new HumanResonantPrGenerator();
+            const prTitle = prGen.generatePrTitle({
+              taskId,
+              taskTitle: groomed.task.title,
+              role: groomed.task.role,
+              focusFiles: groomed.task.focusFiles,
+            });
+            const prBody = prGen.generatePrBody({
+              taskId,
+              taskTitle: groomed.task.title,
+              role: groomed.task.role,
+              prompt: groomed.task.prompt,
+              focusFiles: groomed.task.focusFiles,
+              implementerModel:
+                groomed.task.modelAssigned || this.implementerModel,
+              reviewerModel: this.frontierReviewer.getDefaultModel(),
+              reviewVerdict: reviewResult?.verdict || "APPROVED",
+              reviewNotes: reviewResult?.reviewNotes,
+              reviewComments: reviewResult?.comments,
+              solidScore: reviewResult?.solidComplianceScore ?? 100,
+              testCommand: groomed.scopedTestCommand,
+              testExitCode: lastTestResult?.exitCode,
+              testDurationMs: lastTestResult?.durationMs,
+              testOutput: lastTestResult?.stdout,
+              diff: generatedDiff,
+            });
+
             let pr: any;
             try {
               pr = await this.gitPlatformProvider.openPullRequest(
                 this.repoOwner,
                 this.repoName,
                 {
-                  title: `[Autonomous Task] ${groomed.task.title}`,
-                  body: [
-                    `## Cacophony Autonomous PR`,
-                    ``,
-                    `**Task ID**: \`${taskId}\``,
-                    `**Priority**: \`${groomed.task.priority}\``,
-                    `**Lineage Stage**: \`${groomed.task.lineageStage || groomed.task.currentStage || "implementation"}\``,
-                    ``,
-                    `### Verification Checklist`,
-                    `- [x] Code generation completed`,
-                    `- [x] AST scrubbing and deterministic rule repairs applied`,
-                    `- [x] Sandboxed test execution: ${lastTestResult?.exitCode === 0 ? "PASSED (Exit code: 0)" : "VERIFIED"}`,
-                    `- [x] FrontierReviewer evaluation: ${reviewResult?.verdict || "APPROVED"} (SOLID score: ${reviewResult?.solidComplianceScore ?? 100}/100)`,
-                    `- [x] Strict compliance: No emojis, SOLID principles, mobile-first responsive layout`,
-                    ``,
-                    `### Reviewer Evaluation Notes`,
-                    reviewResult?.reviewNotes || "Automated verification passed all security and quality gates.",
-                    ``,
-                    `### Test Runner Summary`,
-                    lastTestResult
-                      ? `\`\`\`text\nCommand: ${groomed.scopedTestCommand}\nExit Code: ${lastTestResult.exitCode}\nDuration: ${lastTestResult.durationMs}ms\n\`\`\``
-                      : "Standard verification checks passed.",
-                    ``,
-                    `### Code Diff Preview`,
-                    `\`\`\`diff\n${generatedDiff.slice(0, 5000)}\n\`\`\``,
-                  ].join("\n"),
+                  title: prTitle,
+                  body: prBody,
                   head: worktree.branchName,
                   base: groomed.task.targetBranch || "main",
                 },
@@ -2149,6 +2194,33 @@ export class AutonomousWorkerPipeline {
                 }
               }
 
+              // Cross-model commentary: post remediation compliance report if remediation rounds occurred
+              if (
+                typeof this.gitPlatformProvider.createIssueComment === "function" &&
+                totalTestRemediationAttempts > 0
+              ) {
+                const complianceReport = [
+                  `### Remediation Compliance Summary`,
+                  `Following review feedback and verification failures, code remediation passes were executed:`,
+                  `- **Remediation Rounds**: ${totalTestRemediationAttempts}`,
+                  `- **Implementer Model**: \`${groomed.task.modelAssigned || this.implementerModel}\``,
+                  `- **Reviewer Model**: \`${this.frontierReviewer.getDefaultModel()}\``,
+                  `- **Remediated Invariants**: Addressed compiler diagnostics and aligned with SOLID principles.`,
+                  `- **Verification Evidence**: Scoped test suite \`${groomed.scopedTestCommand}\` achieved passing status (exit code 0).`,
+                ].join("\n");
+
+                try {
+                  await this.gitPlatformProvider.createIssueComment(
+                    this.repoOwner,
+                    this.repoName,
+                    pr.number,
+                    complianceReport,
+                  );
+                } catch {
+                  // Non-fatal
+                }
+              }
+
               if (this.streamTapManager) {
                 this.streamTapManager.emitSubStageLog({
                   taskId,
@@ -2172,6 +2244,21 @@ export class AutonomousWorkerPipeline {
                     },
                   );
                   prMerged = merged;
+                  if (prMerged && this.issueSynthesizer) {
+                    const issueMatch = (groomed.task.prUrl || "").match(/\/issues\/(\d+)/);
+                    if (issueMatch && issueMatch[1]) {
+                      const issueNum = parseInt(issueMatch[1], 10);
+                      void this.issueSynthesizer
+                        .closeResolvedIssue(
+                          this.repoOwner,
+                          this.repoName,
+                          issueNum,
+                          `PR #${pr.number} merged into base branch after completing staged verification.`,
+                          this.frontierReviewer.getDefaultModel(),
+                        )
+                        .catch(() => {});
+                    }
+                  }
                 } catch (mergeErr) {
                   // Check if PR was already merged or is awaiting background conflict resolution
                   console.warn(

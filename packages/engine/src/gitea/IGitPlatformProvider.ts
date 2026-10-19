@@ -48,6 +48,40 @@ export interface MergeGitPullRequestOptions {
   readonly message?: string;
 }
 
+export interface GitPlatformIssue {
+  readonly id: number;
+  readonly number: number;
+  readonly title: string;
+  readonly body: string;
+  readonly state: "open" | "closed";
+  readonly labels?: readonly string[];
+  readonly htmlUrl: string;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+}
+
+export interface CreateGitIssueOptions {
+  readonly title: string;
+  readonly body: string;
+  readonly labels?: readonly string[];
+}
+
+export interface CloseGitIssueOptions {
+  readonly comment?: string;
+}
+
+export interface DependabotSecurityAlert {
+  readonly number: number;
+  readonly state: "open" | "fixed" | "dismissed";
+  readonly dependencyPackage: string;
+  readonly dependencyEcosystem: string;
+  readonly securityAdvisorySummary: string;
+  readonly securityAdvisoryDescription: string;
+  readonly severity: "low" | "medium" | "high" | "critical";
+  readonly cveId?: string | undefined;
+  readonly htmlUrl: string;
+}
+
 export interface IGitPlatformProvider {
   /**
    * The platform provider type identifier: 'gitea' or 'github'.
@@ -82,6 +116,15 @@ export interface IGitPlatformProvider {
   ): Promise<GitPlatformPullRequest>;
 
   /**
+   * Lists pull requests from the remote platform.
+   */
+  listPullRequests?(
+    owner: string,
+    repo: string,
+    state?: "open" | "closed" | "all",
+  ): Promise<GitPlatformPullRequest[]>;
+
+  /**
    * Retrieves pull request diff.
    */
   getPullRequestDiff(
@@ -109,4 +152,60 @@ export interface IGitPlatformProvider {
     prNumber: number,
     options?: MergeGitPullRequestOptions,
   ): Promise<boolean>;
+
+  /**
+   * Creates an issue on the remote platform.
+   */
+  createIssue?(
+    owner: string,
+    repo: string,
+    options: CreateGitIssueOptions,
+  ): Promise<GitPlatformIssue>;
+
+  /**
+   * Lists issues from the remote platform.
+   */
+  listIssues?(
+    owner: string,
+    repo: string,
+    state?: "open" | "closed" | "all",
+  ): Promise<GitPlatformIssue[]>;
+
+  /**
+   * Retrieves a single issue by number.
+   */
+  getIssue?(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GitPlatformIssue>;
+
+  /**
+   * Closes an issue on the remote platform with optional resolution comment.
+   */
+  closeIssue?(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    options?: CloseGitIssueOptions,
+  ): Promise<void>;
+
+  /**
+   * Creates a comment on an issue thread.
+   */
+  createIssueComment?(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    body: string,
+  ): Promise<void>;
+
+  /**
+   * Optional: Lists Dependabot security alerts for GitHub platform providers.
+   */
+  listDependabotAlerts?(
+    owner: string,
+    repo: string,
+    state?: "open" | "fixed" | "dismissed",
+  ): Promise<DependabotSecurityAlert[]>;
 }

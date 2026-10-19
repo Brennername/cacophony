@@ -26,3 +26,6 @@ export * from "./GiteaPrClient.js";
 export * from "./AssessmentPolicy.js";
 export * from "./PrAssessmentPublisher.js";
 export * from "./PrFixTaskCoordinator.js";
+export * from "./HumanResonantPrGenerator.js";
+export * from "./AutomatedIssueSynthesizer.js";
+export * from "./GitHubSecurityAndIssueBridge.js";
