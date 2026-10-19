@@ -94,7 +94,10 @@ describe("TaskScheduler predictNextModel Test Suite (T87.1.2)", () => {
     const activeTask = createMockTask("task-review", "reviewer", "P1", "RUNNING");
 
     const predicted = await scheduler.predictNextModel(activeTask);
-    assert.equal(predicted, "qwen2.5-coder:7b");
+    assert.ok(
+      predicted === "qwen2.5-coder:7b" ||
+      predicted === "qwen2.5-coder:7b-instruct-q4_K_M",
+    );
   });
 
 

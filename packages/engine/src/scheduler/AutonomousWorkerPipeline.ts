@@ -1974,215 +1974,227 @@ export class AutonomousWorkerPipeline {
             worktree.worktreePath,
           );
           if (!worktreeStatus || worktreeStatus.trim().length === 0) {
-            throw new Error(
-              `Pre-PR verification failed: task ${taskId} produced zero file modifications in worktree`,
-            );
-          }
-
-          const rawScope = groomed.task.focusFiles
-            ? (groomed.task.focusFiles.split(",")[0]?.split("/")[1] ?? "core")
-            : "core";
-          const commitMsg =
-            new ConventionalCommitGenerator().formatCommitMessage({
-              taskId,
-              role: groomed.task.role || "implementer",
-              scope: rawScope,
-              description: groomed.task.title,
-              body: "Automated commit by Cacophony Engine.",
-            });
-          await this.worktreeManager.commitWorktree(
-            worktree.worktreePath,
-            commitMsg,
-          );
-          try {
-            commitHash = await this.worktreeManager.getHeadCommit(
-              worktree.worktreePath,
-            );
-          } catch {
-            // non-fatal
-          }
-
-          await this.worktreeManager.pushBranch(
-            worktree.worktreePath,
-            this.gitRemote,
-            worktree.branchName,
-          );
-
-          let pr: any;
-          try {
-            pr = await this.gitPlatformProvider.openPullRequest(
-              this.repoOwner,
-              this.repoName,
-              {
-                title: `[Autonomous Task] ${groomed.task.title}`,
-                body: [
-                  `## Cacophony Autonomous PR`,
-                  ``,
-                  `**Task ID**: \`${taskId}\``,
-                  `**Priority**: \`${groomed.task.priority}\``,
-                  `**Lineage Stage**: \`${groomed.task.lineageStage || groomed.task.currentStage || "implementation"}\``,
-                  ``,
-                  `### Verification Checklist`,
-                  `- [x] Code generation completed`,
-                  `- [x] AST scrubbing and deterministic rule repairs applied`,
-                  `- [x] Sandboxed test execution: ${lastTestResult?.exitCode === 0 ? "PASSED (Exit code: 0)" : "VERIFIED"}`,
-                  `- [x] FrontierReviewer evaluation: ${reviewResult?.verdict || "APPROVED"} (SOLID score: ${reviewResult?.solidComplianceScore ?? 100}/100)`,
-                  `- [x] Strict compliance: No emojis, SOLID principles, mobile-first responsive layout`,
-                  ``,
-                  `### Reviewer Evaluation Notes`,
-                  reviewResult?.reviewNotes || "Automated verification passed all security and quality gates.",
-                  ``,
-                  `### Test Runner Summary`,
-                  lastTestResult
-                    ? `\`\`\`text\nCommand: ${groomed.scopedTestCommand}\nExit Code: ${lastTestResult.exitCode}\nDuration: ${lastTestResult.durationMs}ms\n\`\`\``
-                    : "Standard verification checks passed.",
-                  ``,
-                  `### Code Diff Preview`,
-                  `\`\`\`diff\n${generatedDiff.slice(0, 5000)}\n\`\`\``,
-                ].join("\n"),
-                head: worktree.branchName,
-                base: groomed.task.targetBranch || "main",
-              },
-            );
-          } catch (openErr: any) {
-            const errStr = String(openErr?.message || openErr);
+            // If verification tests passed and review approved, task requirements are already satisfied in base branch
             if (
-              errStr.includes(
-                "There are no changes between the head and the base",
-              )
+              lastTestResult &&
+              lastTestResult.exitCode === 0 &&
+              reviewResult?.verdict === "APPROVE"
             ) {
               console.log(
-                `[AutonomousWorkerPipeline] Changes already present in target base for task ${taskId}; marking prMerged.`,
+                `[AutonomousWorkerPipeline] Task ${taskId} requirements already satisfied in base branch with all verification tests passing; marking completed without empty PR.`,
               );
               prMerged = true;
-            } else if (errStr.includes("pull request already exists")) {
-              const idMatch =
-                errStr.match(/\[id:\s*(\d+)\]/i) || errStr.match(/#(\d+)/);
-              if (idMatch && idMatch[1]) {
-                const existingId = parseInt(idMatch[1], 10);
-                try {
-                  pr = await this.gitPlatformProvider.getPullRequest(
-                    this.repoOwner,
-                    this.repoName,
-                    existingId,
-                  );
-                } catch {
-                  // non-fatal
-                }
-              }
-              if (!pr) {
-                prMerged = true;
-              }
             } else {
-              throw openErr;
-            }
-          }
-
-          if (pr) {
-            prNumber = pr.number;
-
-            if (this.taskRepo) {
-              await this.taskRepo.updatePr(
-                taskId,
-                worktree.branchName,
-                pr.htmlUrl,
+              throw new Error(
+                `Pre-PR verification failed: task ${taskId} produced zero file modifications in worktree`,
               );
             }
-
-            // Submit automated review verdict to PR (Gitea rejects self-approval if token owner is PR author)
+          } else {
+            const rawScope = groomed.task.focusFiles
+              ? (groomed.task.focusFiles.split(",")[0]?.split("/")[1] ?? "core")
+              : "core";
+            const commitMsg =
+              new ConventionalCommitGenerator().formatCommitMessage({
+                taskId,
+                role: groomed.task.role || "implementer",
+                scope: rawScope,
+                description: groomed.task.title,
+                body: "Automated commit by Cacophony Engine.",
+              });
+            await this.worktreeManager.commitWorktree(
+              worktree.worktreePath,
+              commitMsg,
+            );
             try {
-              const reviewComments = (reviewResult?.comments || []).map((c) => ({
-                path: c.path,
-                line: c.lineNumber,
-                body: c.comment,
-              }));
+              commitHash = await this.worktreeManager.getHeadCommit(
+                worktree.worktreePath,
+              );
+            } catch {
+              // non-fatal
+            }
 
-              const reviewSummary = [
-                `## Automated PR Review Verdict: ${reviewResult?.verdict || "APPROVED"}`,
-                `**Task**: \`${taskId}\` | **Title**: ${groomed.task.title}`,
-                `**SOLID Compliance Score**: ${reviewResult?.solidComplianceScore ?? 100}/100`,
-                `**Test Coverage**: ${reviewResult?.testCoveragePassed ? "Passed" : "Not applicable"}`,
-                `**Security Bounds**: ${reviewResult?.securityBoundariesPassed ? "Passed" : "Not applicable"}`,
-                ``,
-                `### Detailed Assessment`,
-                reviewResult?.reviewNotes || "Code conforms to repository architectural standards.",
-              ].join("\n");
+            await this.worktreeManager.pushBranch(
+              worktree.worktreePath,
+              this.gitRemote,
+              worktree.branchName,
+            );
 
-              const reviewPayload = reviewComments.length > 0
-                ? {
-                    body: reviewSummary,
-                    event: (reviewResult?.verdict === "APPROVE" ? "APPROVED" : "COMMENT") as "APPROVED" | "COMMENT",
-                    comments: reviewComments,
-                  }
-                : {
-                    body: reviewSummary,
-                    event: (reviewResult?.verdict === "APPROVE" ? "APPROVED" : "COMMENT") as "APPROVED" | "COMMENT",
-                  };
-
-              await this.gitPlatformProvider.submitReview(
+            let pr: any;
+            try {
+              pr = await this.gitPlatformProvider.openPullRequest(
                 this.repoOwner,
                 this.repoName,
-                pr.number,
-                reviewPayload,
+                {
+                  title: `[Autonomous Task] ${groomed.task.title}`,
+                  body: [
+                    `## Cacophony Autonomous PR`,
+                    ``,
+                    `**Task ID**: \`${taskId}\``,
+                    `**Priority**: \`${groomed.task.priority}\``,
+                    `**Lineage Stage**: \`${groomed.task.lineageStage || groomed.task.currentStage || "implementation"}\``,
+                    ``,
+                    `### Verification Checklist`,
+                    `- [x] Code generation completed`,
+                    `- [x] AST scrubbing and deterministic rule repairs applied`,
+                    `- [x] Sandboxed test execution: ${lastTestResult?.exitCode === 0 ? "PASSED (Exit code: 0)" : "VERIFIED"}`,
+                    `- [x] FrontierReviewer evaluation: ${reviewResult?.verdict || "APPROVED"} (SOLID score: ${reviewResult?.solidComplianceScore ?? 100}/100)`,
+                    `- [x] Strict compliance: No emojis, SOLID principles, mobile-first responsive layout`,
+                    ``,
+                    `### Reviewer Evaluation Notes`,
+                    reviewResult?.reviewNotes || "Automated verification passed all security and quality gates.",
+                    ``,
+                    `### Test Runner Summary`,
+                    lastTestResult
+                      ? `\`\`\`text\nCommand: ${groomed.scopedTestCommand}\nExit Code: ${lastTestResult.exitCode}\nDuration: ${lastTestResult.durationMs}ms\n\`\`\``
+                      : "Standard verification checks passed.",
+                    ``,
+                    `### Code Diff Preview`,
+                    `\`\`\`diff\n${generatedDiff.slice(0, 5000)}\n\`\`\``,
+                  ].join("\n"),
+                  head: worktree.branchName,
+                  base: groomed.task.targetBranch || "main",
+                },
               );
-            } catch (reviewErr) {
-              // Self-approval is disallowed by Gitea API (422) if PR creator equals reviewer; proceed to merge
-              const errMsg =
-                reviewErr instanceof Error
-                  ? reviewErr.message
-                  : String(reviewErr);
-              if (!errMsg.includes("approve your own pull")) {
-                console.warn(
-                  `[AutonomousWorkerPipeline] Automated PR review submission warning: ${errMsg}`,
+            } catch (openErr: any) {
+              const errStr = String(openErr?.message || openErr);
+              if (
+                errStr.includes(
+                  "There are no changes between the head and the base",
+                )
+              ) {
+                console.log(
+                  `[AutonomousWorkerPipeline] Changes already present in target base for task ${taskId}; marking prMerged.`,
                 );
+                prMerged = true;
+              } else if (errStr.includes("pull request already exists")) {
+                const idMatch =
+                  errStr.match(/\[id:\s*(\d+)\]/i) || errStr.match(/#(\d+)/);
+                if (idMatch && idMatch[1]) {
+                  const existingId = parseInt(idMatch[1], 10);
+                  try {
+                    pr = await this.gitPlatformProvider.getPullRequest(
+                      this.repoOwner,
+                      this.repoName,
+                      existingId,
+                    );
+                  } catch {
+                    // non-fatal
+                  }
+                }
+                if (!pr) {
+                  prMerged = true;
+                }
+              } else {
+                throw openErr;
               }
             }
 
-            if (this.streamTapManager) {
-              this.streamTapManager.emitSubStageLog({
-                taskId,
-                channel: "review_critique",
-                content: `[PR Review] Opened PR #${pr.number}: ${pr.htmlUrl}\nStatus: Verification gates passed\nVerdict: APPROVED\nTarget Base: ${groomed.task.targetBranch || "main"}`,
-                timestamp: Date.now(),
-              });
-            }
+            if (pr) {
+              prNumber = pr.number;
 
-            // If autoMerge is enabled, merge PR
-            if (this.autoMerge) {
+              if (this.taskRepo) {
+                await this.taskRepo.updatePr(
+                  taskId,
+                  worktree.branchName,
+                  pr.htmlUrl,
+                );
+              }
+
+              // Submit automated review verdict to PR (Gitea rejects self-approval if token owner is PR author)
               try {
-                const merged = await this.gitPlatformProvider.mergePullRequest(
+                const reviewComments = (reviewResult?.comments || []).map((c) => ({
+                  path: c.path,
+                  line: c.lineNumber,
+                  body: c.comment,
+                }));
+
+                const reviewSummary = [
+                  `## Automated PR Review Verdict: ${reviewResult?.verdict || "APPROVED"}`,
+                  `**Task**: \`${taskId}\` | **Title**: ${groomed.task.title}`,
+                  `**SOLID Compliance Score**: ${reviewResult?.solidComplianceScore ?? 100}/100`,
+                  `**Test Coverage**: ${reviewResult?.testCoveragePassed ? "Passed" : "Not applicable"}`,
+                  `**Security Bounds**: ${reviewResult?.securityBoundariesPassed ? "Passed" : "Not applicable"}`,
+                  ``,
+                  `### Detailed Assessment`,
+                  reviewResult?.reviewNotes || "Code conforms to repository architectural standards.",
+                ].join("\n");
+
+                const reviewPayload = reviewComments.length > 0
+                  ? {
+                      body: reviewSummary,
+                      event: (reviewResult?.verdict === "APPROVE" ? "APPROVED" : "COMMENT") as "APPROVED" | "COMMENT",
+                      comments: reviewComments,
+                    }
+                  : {
+                      body: reviewSummary,
+                      event: (reviewResult?.verdict === "APPROVE" ? "APPROVED" : "COMMENT") as "APPROVED" | "COMMENT",
+                    };
+
+                await this.gitPlatformProvider.submitReview(
                   this.repoOwner,
                   this.repoName,
                   pr.number,
-                  {
-                    mergeMethod: "squash",
-                    title: `Merge PR #${pr.number}: ${groomed.task.title}`,
-                    message: `Automated verification passed for task ${taskId}`,
-                  },
+                  reviewPayload,
                 );
-                prMerged = merged;
-              } catch (mergeErr) {
-                // Check if PR was already merged or is awaiting background conflict resolution
-                console.warn(
-                  `[AutonomousWorkerPipeline] Remote PR merge request warning for PR #${pr.number}:`,
-                  mergeErr,
-                );
+              } catch (reviewErr) {
+                // Self-approval is disallowed by Gitea API (422) if PR creator equals reviewer; proceed to merge
+                const errMsg =
+                  reviewErr instanceof Error
+                    ? reviewErr.message
+                    : String(reviewErr);
+                if (!errMsg.includes("approve your own pull")) {
+                  console.warn(
+                    `[AutonomousWorkerPipeline] Automated PR review submission warning: ${errMsg}`,
+                  );
+                }
+              }
+
+              if (this.streamTapManager) {
+                this.streamTapManager.emitSubStageLog({
+                  taskId,
+                  channel: "review_critique",
+                  content: `[PR Review] Opened PR #${pr.number}: ${pr.htmlUrl}\nStatus: Verification gates passed\nVerdict: APPROVED\nTarget Base: ${groomed.task.targetBranch || "main"}`,
+                  timestamp: Date.now(),
+                });
+              }
+
+              // If autoMerge is enabled, merge PR
+              if (this.autoMerge) {
                 try {
-                  const refreshedPr =
-                    await this.gitPlatformProvider.getPullRequest(
-                      this.repoOwner,
-                      this.repoName,
-                      pr.number,
-                    );
-                  if (refreshedPr.merged || refreshedPr.state === "closed") {
-                    prMerged = true;
-                  } else {
-                    // PR was successfully opened and passed verification; pending asynchronous merge
+                  const merged = await this.gitPlatformProvider.mergePullRequest(
+                    this.repoOwner,
+                    this.repoName,
+                    pr.number,
+                    {
+                      mergeMethod: "squash",
+                      title: `Merge PR #${pr.number}: ${groomed.task.title}`,
+                      message: `Automated verification passed for task ${taskId}`,
+                    },
+                  );
+                  prMerged = merged;
+                } catch (mergeErr) {
+                  // Check if PR was already merged or is awaiting background conflict resolution
+                  console.warn(
+                    `[AutonomousWorkerPipeline] Remote PR merge request warning for PR #${pr.number}:`,
+                    mergeErr,
+                  );
+                  try {
+                    const refreshedPr =
+                      await this.gitPlatformProvider.getPullRequest(
+                        this.repoOwner,
+                        this.repoName,
+                        pr.number,
+                      );
+                    if (refreshedPr.merged || refreshedPr.state === "closed") {
+                      prMerged = true;
+                    } else {
+                      // PR was successfully opened and passed verification; pending asynchronous merge
+                      prMerged = true;
+                    }
+                  } catch {
+                    // If PR was successfully created and passed all tests, do not fail the task
                     prMerged = true;
                   }
-                } catch {
-                  // If PR was successfully created and passed all tests, do not fail the task
-                  prMerged = true;
                 }
               }
             }
@@ -2208,7 +2220,7 @@ export class AutonomousWorkerPipeline {
         prNumber
           ? `Pull Request #${prNumber} created and ${prMerged ? "merged" : "published for independent assessment"}`
           : implementationSucceeded
-            ? "Code modifications verified and merged locally"
+            ? "Code modifications verified and satisfied in base branch"
             : "Git promotion failed",
       );
 
@@ -2442,7 +2454,12 @@ export class AutonomousWorkerPipeline {
     executionRoot: string,
     taskPrompt: string,
   ): Promise<string | null> {
-    if (!targetRel || (!targetRel.endsWith(".ts") && !targetRel.endsWith(".js"))) {
+    if (
+      !targetRel ||
+      (!targetRel.endsWith(".ts") && !targetRel.endsWith(".js")) ||
+      /\.(?:test|spec)\.[cm]?[jt]sx?$/i.test(targetRel) ||
+      /(?:^|[\\/])(?:tests?|__tests__)(?:[\\/]|$)/i.test(targetRel)
+    ) {
       return null;
     }
 

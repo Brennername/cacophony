@@ -13,16 +13,14 @@ describe('TypeScriptMethodSplicer', () => {
     `;
 
     const newMethod = `
-      function newMethod() {
-        console.log('New Method');
-      }
+      console.log('New Method');
     `;
 
     const splicer = new TypeScriptMethodSplicer();
-    const result = await (splicer as any).splice(originalCode, 'oldMethod', newMethod);
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
-    assert(result.includes(newMethod));
-    assert(!result.includes('oldMethod'));
+    assert(result.includes('New Method'));
+    assert(!result.includes('Old Method'));
   });
 
   it('should retain comments during method replacement', async () => {
@@ -36,14 +34,12 @@ describe('TypeScriptMethodSplicer', () => {
     `;
 
     const newMethod = `
-      function newMethod() {
-        // This is a new method
-        console.log('New Method');
-      }
+      // This is a new method
+      console.log('New Method');
     `;
 
     const splicer = new TypeScriptMethodSplicer();
-    const result = await (splicer as any).splice(originalCode, 'oldMethod', newMethod);
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
     assert(result.includes('// This is an old method'));
     assert(result.includes('// This is a new method'));
@@ -59,35 +55,31 @@ describe('TypeScriptMethodSplicer', () => {
     `;
 
     const newMethod = `
-      function newMethod() {
-        console.log('New Method');
-      }
+      console.log('New Method');
     `;
 
     const splicer = new TypeScriptMethodSplicer();
-    const result = await (splicer as any).splice(originalCode, 'oldMethod', newMethod);
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
-    assert(result.includes('console.log(\'Old Method\');'));
+    assert(!result.includes('console.log(\'Old Method\');'));
     assert(result.includes('console.log(\'New Method\');'));
   });
 
   it('should handle methods with parameters', async () => {
     const originalCode = `
       class ExampleClass {
-        oldMethod(param1, param2) {
+        oldMethod(param1: string, param2: number) {
           console.log(param1, param2);
         }
       }
     `;
 
     const newMethod = `
-      function newMethod(param1, param2) {
-        console.log('New Method', param1, param2);
-      }
+      console.log('New Method', param1, param2);
     `;
 
     const splicer = new TypeScriptMethodSplicer();
-    const result = await (splicer as any).splice(originalCode, 'oldMethod', newMethod);
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
     assert(result.includes('console.log(\'New Method\', param1, param2);'));
   });
@@ -95,20 +87,18 @@ describe('TypeScriptMethodSplicer', () => {
   it('should handle methods with return values', async () => {
     const originalCode = `
       class ExampleClass {
-        oldMethod() {
+        oldMethod(): string {
           return 'Old Result';
         }
       }
     `;
 
     const newMethod = `
-      function newMethod() {
-        return 'New Result';
-      }
+      return 'New Result';
     `;
 
     const splicer = new TypeScriptMethodSplicer();
-    const result = await (splicer as any).splice(originalCode, 'oldMethod', newMethod);
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
     assert(result.includes('return \'New Result\';'));
   });
@@ -127,17 +117,15 @@ describe('TypeScriptMethodSplicer', () => {
     `;
 
     const newMethod = `
-      function newMethod() {
-        if (false) {
-          console.log('True');
-        } else {
-          console.log('False');
-        }
+      if (false) {
+        console.log('True');
+      } else {
+        console.log('False');
       }
     `;
 
     const splicer = new TypeScriptMethodSplicer();
-    const result = await (splicer as any).splice(originalCode, 'oldMethod', newMethod);
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
     assert(result.includes('if (false) {'));
   });

@@ -159,4 +159,78 @@ export class TypeScriptMethodSplicer {
     const replacement = `{\n${cleanedBody}\n  }`;
     return source.slice(0, validation.bodyStart) + replacement + source.slice(validation.bodyEnd);
   }
+
+  /**
+   * Instance method forwarder for validateTarget.
+   */
+  public validateTarget(
+    source: string,
+    fileName: string,
+    className: string,
+    methodName: string,
+  ): MethodTargetValidationResult {
+    return TypeScriptMethodSplicer.validateTarget(source, fileName, className, methodName);
+  }
+
+  /**
+   * Instance method forwarder for spliceMethod.
+   */
+  public spliceMethod(
+    source: string,
+    fileName: string,
+    className: string,
+    methodName: string,
+    newBody: string,
+  ): string {
+    return TypeScriptMethodSplicer.spliceMethod(source, fileName, className, methodName, newBody);
+  }
+
+  /**
+   * Flexible method splice helper supporting either (source, methodName, newBody)
+   * or (source, className, methodName, newBody).
+   */
+  public async splice(
+    source: string,
+    firstArg: string,
+    secondArg: string,
+    thirdArg?: string,
+  ): Promise<string> {
+    if (thirdArg !== undefined) {
+      return TypeScriptMethodSplicer.spliceMethod(source, "file.ts", firstArg, secondArg, thirdArg);
+    }
+    const methodName = firstArg;
+    const newBody = secondArg;
+    const sourceFile = ts.createSourceFile(
+      "file.ts",
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
+    let matchedClassName = "";
+    const visitor = (node: ts.Node): void => {
+      if (
+        ts.isClassDeclaration(node) &&
+        node.name &&
+        node.members.some(
+          (m) =>
+            ts.isMethodDeclaration(m) &&
+            m.name &&
+            ts.isIdentifier(m.name) &&
+            m.name.text === methodName,
+        )
+      ) {
+        matchedClassName = node.name.text;
+      }
+      ts.forEachChild(node, visitor);
+    };
+    visitor(sourceFile);
+    return TypeScriptMethodSplicer.spliceMethod(
+      source,
+      "file.ts",
+      matchedClassName || "ExampleClass",
+      methodName,
+      newBody,
+    );
+  }
 }

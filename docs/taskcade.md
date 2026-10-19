@@ -403,6 +403,16 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.3.6 Rehabilitation [2026-10-18T17:49:37.906Z]
+- **Parent Task**: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals (`taskcade-t102.3.6`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals [Role: type_specialist] [Files: packages/engine/src/git/GitCheckpointService.ts]
+  - [ ] `taskcade-t102.3.6.2`: [Rehab 2/3] Core Implementation Unit: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals [Role: implementer] [Files: packages/engine/src/git/GitCheckpointService.ts]
+  - [ ] `taskcade-t102.3.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals [Role: test_engineer] [Files: packages/engine/src/tests/git_checkpoint_service.test.ts]
+
+
 ### Task taskcade-t102.2.1 Rehabilitation [2026-10-15T00:42:12.346Z]
 - **Parent Task**: T102.2.1: Write unit tests verifying `AmdVegaTelemetryProvider` sysfs path discovery, miss (`taskcade-t102.2.1`)
 - **Failure Count**: 3

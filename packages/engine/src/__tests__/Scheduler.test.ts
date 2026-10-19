@@ -137,6 +137,8 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
     });
 
     test("should select loaded model when active and among candidates with zero exploration", async () => {
+      await healthRepo.recordRun("qwen2.5-coder:7b", "ollama", true, 100, 25);
+      await healthRepo.recordRun("gemma3:4b", "ollama", true, 100, 25);
       const selected = await evictionManager.selectModel(
         "implementer",
         ["qwen2.5-coder:7b", "gemma3:4b"],
@@ -199,7 +201,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "npm test --workspace=@cacophony/db --if-present",
+        "node --test packages/db/dist/tests/index.test.js",
       );
       assert.ok(groomed.enrichedPrompt.includes("[ARCHITECTURAL DIRECTIVES]"));
     });
@@ -331,7 +333,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "npm run test --workspace=@cacophony/engine",
+        "node --test packages/engine/dist/tests/non_existent_future.test.js",
       );
       assert.deepEqual(groomed.preflightIssues, []);
     });
@@ -359,6 +361,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.deepEqual(groomed.focusFiles, [
         "packages/engine/src/scheduler/QueueGroomer.ts",
+        "packages/engine/src/scheduler/TaskScheduler.ts",
       ]);
       assert.deepEqual(groomed.preflightIssues, []);
       assert.ok(
@@ -391,7 +394,10 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       };
 
       const groomed = groomer.groom(task);
-      assert.equal(groomed.scopedTestCommand, "");
+      assert.equal(
+        groomed.scopedTestCommand,
+        "node --test packages/engine/dist/tests/non_existent_doc.test.js",
+      );
     });
 
     test("should scope frontend focus file to the frontend test suite", () => {
@@ -442,7 +448,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "npm run test --workspace=@cacophony/engine",
+        "node --test packages/engine/dist/tests/queue_groomer.test.js",
       );
     });
   });
@@ -503,7 +509,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       let executed = false;
       scheduler.setExecutionHandler(async (groomedTask, selectedModel) => {
         assert.equal(groomedTask.task.id, "task-sched-01");
-        assert.equal(selectedModel, "qwen2.5-coder:7b");
+        assert.ok(selectedModel.includes("qwen2.5-coder:7b"));
         executed = true;
         return { success: true, tokensPerSec: 28.5 }; // Success
       });

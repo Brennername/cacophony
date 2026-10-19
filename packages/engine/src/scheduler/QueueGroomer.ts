@@ -113,7 +113,11 @@ export class QueueGroomer {
       groomNotes.push(
         `Selected primary target '${primaryTarget}' from ${focusFilesList.length} declared focus files (task role: ${task.role}).`,
       );
-      focusFilesList = [primaryTarget];
+      // Re-order so primaryTarget is at index 0 for editing/authoring, while retaining secondary focus files for LLM context assembly
+      focusFilesList = [
+        primaryTarget,
+        ...focusFilesList.filter((f) => f !== primaryTarget),
+      ];
       modified = true;
     }
     for (const focusFile of focusFilesList) {

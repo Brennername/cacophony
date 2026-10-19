@@ -59,6 +59,11 @@ describe("QueueGroomer Focus Files & Role Target Selection Suite", () => {
       groomed.focusFiles[0],
       "packages/engine/src/tests/thermal_governor.test.ts",
     );
+    // Implementation file must be preserved for context assembly
+    assert.strictEqual(
+      groomed.focusFiles[1],
+      "packages/engine/src/telemetry/ThermalGovernor.ts",
+    );
   });
 
   it("should select the test file when prompt explicitly requests unit tests", () => {
