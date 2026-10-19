@@ -143,7 +143,11 @@ describe("Database & Persistence Layer", () => {
       );
       assert.equal(
         (await taskRepo.getById("task-quarantined"))?.failureCount,
-        3,
+        0,
+      );
+      assert.equal(
+        (await taskRepo.getById("task-quarantined"))?.rehabStatus,
+        "NONE",
       );
     });
 

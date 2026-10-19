@@ -403,6 +403,16 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.15.6 Rehabilitation [2026-10-19T06:11:43.834Z]
+- **Parent Task**: T102.15.6: Write unit tests verifying `MethodEditAdapter` diff application, boundary valida (`taskcade-t102.15.6`)
+- **Failure Count**: 5
+- **Failure Reason**: REMEDIATION_EXHAUSTED
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.15.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.15.6: Write unit tests verifying `MethodEditAdapter` diff application, boundary valida [Role: type_specialist] [Files: packages/engine/src/refactoring/MethodEditAdapter.ts]
+  - [ ] `taskcade-t102.15.6.2`: [Rehab 2/3] Core Implementation Unit: T102.15.6: Write unit tests verifying `MethodEditAdapter` diff application, boundary valida [Role: implementer] [Files: packages/engine/src/refactoring/MethodEditAdapter.ts]
+  - [ ] `taskcade-t102.15.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.15.6: Write unit tests verifying `MethodEditAdapter` diff application, boundary valida [Role: test_engineer] [Files: packages/engine/src/tests/method_edit_adapter.test.ts]
+
+
 ### Task taskcade-t102.3.6 Rehabilitation [2026-10-18T17:49:37.906Z]
 - **Parent Task**: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals (`taskcade-t102.3.6`)
 - **Failure Count**: 3
