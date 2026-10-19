@@ -323,15 +323,32 @@ export class TaskInspectorComponent {
         const attempt = occurrenceCount[s.stageName];
         const attemptSuffix = attempt > 1 ? ` (Attempt ${attempt})` : '';
 
+        const isRunningStage = s.stageStatus === 'RUNNING';
         let logContent = s.logOutput || '';
         if (s.stageName === 'generation') {
-          logContent = this.displayedStreamBuffer() || s.logOutput || task.logSnippet || '// Awaiting model code generation...';
+          if (isRunningStage) {
+            logContent = this.displayedStreamBuffer() || s.logOutput || task.logSnippet || '// Awaiting model code generation...';
+          } else {
+            logContent = s.logOutput || '// No generation output recorded for this attempt.';
+          }
         } else if (s.stageName === 'test_execution') {
-          logContent = this.liveTestOutput() || s.logOutput || '// Awaiting test runner stdout/stderr stream...';
+          if (isRunningStage) {
+            logContent = this.liveTestOutput() || s.logOutput || '// Awaiting test runner stdout/stderr stream...';
+          } else {
+            logContent = s.logOutput || '// No test runner output recorded for this attempt.';
+          }
         } else if (s.stageName === 'deterministic_scrub') {
-          logContent = this.liveAstScrubbing() || s.logOutput || '// Awaiting deterministic AST rule engine & diagnostic repairs...';
+          if (isRunningStage) {
+            logContent = this.liveAstScrubbing() || s.logOutput || '// Awaiting deterministic AST rule engine & diagnostic repairs...';
+          } else {
+            logContent = s.logOutput || '// No AST scrubbing log recorded for this attempt.';
+          }
         } else if (s.stageName === 'remediation') {
-          logContent = this.liveReviewCritique() || s.logOutput || '// Awaiting PR review evaluation & gate status...';
+          if (isRunningStage) {
+            logContent = this.liveReviewCritique() || s.logOutput || '// Awaiting PR review evaluation & gate status...';
+          } else {
+            logContent = s.logOutput || '// No review critique recorded for this attempt.';
+          }
         } else if (s.stageName === 'pr_review') {
           logContent = s.logOutput || (task.prUrl ? `Pull Request: ${task.prUrl}\nTarget Base: ${task.targetBranch || 'main'}` : '// Awaiting PR review & merge verification...');
         } else if (s.stageName === 'planning') {
@@ -438,9 +455,15 @@ export class TaskInspectorComponent {
       return this.combinedStreamLog();
     }
 
-    const matchedEntry = this.allStageEntries().find((e) => e.id === ch || e.channelKey === ch || e.stageName === ch);
+    const matchedEntry = this.allStageEntries().find((e) => e.id === ch || e.channelKey === ch);
     if (matchedEntry) {
       return matchedEntry.logContent || '// No log output recorded for this stage.';
+    }
+
+    const nameMatches = this.allStageEntries().filter((e) => e.stageName === ch);
+    if (nameMatches.length > 0) {
+      const running = nameMatches.find((e) => e.status === 'RUNNING');
+      return (running ?? nameMatches[nameMatches.length - 1]).logContent || '// No log output recorded for this stage.';
     }
 
     return this.displayedStreamBuffer() || task.logSnippet || 'Streaming tokens...';
@@ -531,7 +554,24 @@ export class TaskInspectorComponent {
     const explicit = this.expandedAccordionStages()[stageId];
     if (explicit !== undefined) return explicit;
     const entry = this.allStageEntries().find((e) => e.id === stageId);
-    return entry ? entry.status === 'RUNNING' || entry.status === 'FAILURE' : true;
+    return entry ? entry.status === 'RUNNING' : false;
+  }
+
+  public isStageChipActive(stage: StageTabEntry): boolean {
+    const ch = this.activeStreamChannel();
+    if (ch === stage.channelKey || ch === stage.id) return true;
+    if (ch === stage.stageName) {
+      const matches = this.allStageEntries().filter((e) => e.stageName === stage.stageName);
+      if (matches.length <= 1) return true;
+      const running = matches.find((e) => e.status === 'RUNNING');
+      return (running ?? matches[matches.length - 1]).id === stage.id;
+    }
+    return false;
+  }
+
+  public isLogReduced(logContent: string | null | undefined): boolean {
+    if (!logContent) return false;
+    return logContent.includes("The log of this has been reduced, this is it's histogram:");
   }
 
   public expandAllStages(): void {

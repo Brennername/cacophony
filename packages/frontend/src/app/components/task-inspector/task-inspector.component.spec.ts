@@ -356,10 +356,11 @@ describe('TaskInspectorComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.accordion-content-scroll')).toBeTruthy();
 
-    const cards = compiled.querySelectorAll('.stage-card');
-    expect(cards.length).toBe(2);
+    // Only RUNNING stages are open by default; completed and failed stages are closed
+    expect(comp.isStageAccordionOpen('stage-st-2')).toBe(false);
 
-    // Failed stage is expanded by default
+    // Expand single stage
+    comp.toggleStageAccordion('stage-st-2');
     expect(comp.isStageAccordionOpen('stage-st-2')).toBe(true);
 
     // Collapse all
@@ -447,5 +448,87 @@ describe('TaskInspectorComponent', () => {
     comp.scrollStageTabs('left');
     comp.scrollStageTabs('right');
   });
+
+  it('should keep accordions closed by default except the currently RUNNING stage', () => {
+    const mockTask: TaskItem = {
+      id: 'task-accordion-test',
+      title: 'Accordion Default Behavior Test',
+      status: 'RUNNING',
+      priority: 'P1',
+      role: 'engineer',
+      stages: [
+        { id: 'st-1', stageName: 'planning', stageStatus: 'SUCCESS', durationMs: 120, startedAt: new Date().toISOString(), completedAt: new Date().toISOString(), logOutput: 'Planning done' },
+        { id: 'st-2', stageName: 'generation', stageStatus: 'FAILURE', durationMs: 450, startedAt: new Date().toISOString(), completedAt: new Date().toISOString(), logOutput: 'Gen attempt 1 failed' },
+        { id: 'st-3', stageName: 'generation', stageStatus: 'RUNNING', durationMs: 0, startedAt: new Date().toISOString(), completedAt: null, logOutput: '' },
+        { id: 'st-4', stageName: 'test_execution', stageStatus: 'PENDING', durationMs: null, startedAt: new Date().toISOString(), completedAt: null },
+      ],
+    };
+
+    store.tasks.set([mockTask]);
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    // Check default accordion states
+    expect(comp.isStageAccordionOpen('stage-st-1')).toBe(false); // SUCCESS stage is closed
+    expect(comp.isStageAccordionOpen('stage-st-2')).toBe(false); // FAILURE stage is closed
+    expect(comp.isStageAccordionOpen('stage-st-3')).toBe(true);  // RUNNING stage is OPEN
+    expect(comp.isStageAccordionOpen('stage-st-4')).toBe(false); // PENDING stage is closed
+
+    // User explicitly toggles stage-st-1 open
+    comp.toggleStageAccordion('stage-st-1');
+    expect(comp.isStageAccordionOpen('stage-st-1')).toBe(true);
+
+    // User explicitly toggles stage-st-3 closed
+    comp.toggleStageAccordion('stage-st-3');
+    expect(comp.isStageAccordionOpen('stage-st-3')).toBe(false);
+  });
+
+  it('should isolate historical stage attempt outputs from live generation stream buffer', () => {
+    const mockTask: TaskItem = {
+      id: 'task-multi-attempt',
+      title: 'Multi Attempt Generation Fidelity Test',
+      status: 'RUNNING',
+      priority: 'P1',
+      role: 'engineer',
+      stages: [
+        { id: 'att-1', stageName: 'generation', stageStatus: 'FAILURE', durationMs: 2500, startedAt: new Date().toISOString(), completedAt: new Date().toISOString(), logOutput: 'const codeV1 = "first attempt syntax error";' },
+        { id: 'att-2', stageName: 'generation', stageStatus: 'SUCCESS', durationMs: 3100, startedAt: new Date().toISOString(), completedAt: new Date().toISOString(), logOutput: 'const codeV2 = "second attempt passed scrub";' },
+        { id: 'att-3', stageName: 'generation', stageStatus: 'RUNNING', durationMs: 0, startedAt: new Date().toISOString(), completedAt: null, logOutput: '' },
+      ],
+    };
+
+    store.tasks.set([mockTask]);
+    store.liveStreamBuffer.set('const codeV3 = "live third attempt token stream...";');
+
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    const entries = comp.allStageEntries();
+    expect(entries.length).toBe(3);
+
+    // Attempt 1 (FAILURE) must retain authentic recorded output, NOT the live stream buffer!
+    expect(entries[0].label).toBe('Generation');
+    expect(entries[0].logContent).toBe('const codeV1 = "first attempt syntax error";');
+
+    // Attempt 2 (SUCCESS) must retain authentic recorded output, NOT the live stream buffer!
+    expect(entries[1].label).toContain('(Attempt 2)');
+    expect(entries[1].logContent).toBe('const codeV2 = "second attempt passed scrub";');
+
+    // Attempt 3 (RUNNING) should use the live stream buffer!
+    expect(entries[2].label).toContain('(Attempt 3)');
+    expect(entries[2].logContent).toContain('live third attempt token stream');
+  });
+
+  it('should identify reduced stage logs with isLogReduced', () => {
+    const fixture = TestBed.createComponent(TaskInspectorComponent);
+    const comp = fixture.componentInstance;
+
+    expect(comp.isLogReduced(null)).toBe(false);
+    expect(comp.isLogReduced('Normal verbose vitest test logs')).toBe(false);
+    expect(comp.isLogReduced("The log of this has been reduced, this is it's histogram:\nDuration: 4200ms\nStatus: FAILURE")).toBe(true);
+  });
 });
+
 

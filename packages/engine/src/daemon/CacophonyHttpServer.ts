@@ -3235,15 +3235,65 @@ export class CacophonyHttpServer {
       const retentionDays = retentionDaysParam
         ? parseInt(retentionDaysParam, 10)
         : undefined;
+      const reduceParam = url.searchParams.get("reduce") !== "false";
 
       const compaction = await maintenance.runVacuumAndCompaction({
         full: isFull,
       });
       const partition =
         await maintenance.partitionAndArchiveOldTelemetry(retentionDays);
+      const reduction = reduceParam
+        ? await maintenance.reduceOldTaskLogs()
+        : null;
       const metrics = await maintenance.getStorageMetrics();
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ compaction, partition, metrics }));
+      res.end(JSON.stringify({ compaction, partition, reduction, metrics }));
+      return;
+    }
+
+    if (url.pathname === "/api/database/reduce" && req.method === "POST") {
+      const maintenance = this.daemon.getMaintenanceService();
+      const taskId = url.searchParams.get("taskId");
+      const minAgeParam = url.searchParams.get("minAgeDays");
+      const limitParam = url.searchParams.get("limit");
+      const preserveRecentParam = url.searchParams.get("preserveRecent");
+
+      const reductionService = maintenance.getLogReductionService();
+      if (taskId) {
+        const result = await reductionService.reduceTaskById(
+          taskId,
+          "Manual on-demand API reduction",
+        );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ taskId, result }));
+        return;
+      }
+
+      const batchResult = await reductionService.reduceEligibleTasks({
+        ...(minAgeParam ? { minAgeDays: parseInt(minAgeParam, 10) } : {}),
+        ...(limitParam ? { limit: parseInt(limitParam, 10) } : {}),
+        ...(preserveRecentParam
+          ? { preserveRecent: parseInt(preserveRecentParam, 10) }
+          : {}),
+      });
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(batchResult));
+      return;
+    }
+
+    if (
+      url.pathname === "/api/database/reduction-logs" &&
+      req.method === "GET"
+    ) {
+      const maintenance = this.daemon.getMaintenanceService();
+      const limitParam = url.searchParams.get("limit");
+      const limit = limitParam ? parseInt(limitParam, 10) : 50;
+
+      const logs = await maintenance
+        .getLogReductionService()
+        .getReductionLogs(limit);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(logs));
       return;
     }
 

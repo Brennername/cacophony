@@ -216,6 +216,9 @@
                       <span class="stage-duration font-mono">{{
                         st.durationMs ? st.durationMs + 'ms' : 'Active'
                       }}</span>
+                      @if (isLogReduced(st.logOutput)) {
+                        <span class="reduced-pill" title="Raw log reduced to statistical histogram">Reduced</span>
+                      }
                     </div>
                     @if (st.logOutput) {
                       <pre class="stage-log"><code [innerHTML]="renderAnsi(st.logOutput)"></code></pre>

@@ -23,3 +23,4 @@ export * from "./repositories/PrReviewRepository.js";
 export * from "./repositories/ReviewReportRepository.js";
 export * from "./services/DatabaseMaintenanceService.js";
 export * from "./services/DatabaseBackupService.js";
+export * from "./services/LogReductionService.js";

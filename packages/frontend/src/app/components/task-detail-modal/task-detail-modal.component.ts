@@ -262,6 +262,11 @@ export class TaskDetailModalComponent {
     return '// No historical stream token log recorded for this completed/pending task.';
   }
 
+  public isLogReduced(log: string | null | undefined): boolean {
+    if (!log) return false;
+    return log.includes("The log of this has been reduced, this is it's histogram:");
+  }
+
   @HostListener('window:keydown.escape')
   public handleEscape(): void {
     this.close();

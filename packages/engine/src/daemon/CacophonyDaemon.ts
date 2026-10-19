@@ -778,6 +778,7 @@ export class CacophonyDaemon {
     try {
       await this.maintenanceService.runVacuumAndCompaction();
       await this.maintenanceService.partitionAndArchiveOldTelemetry();
+      await this.maintenanceService.reduceOldTaskLogs();
       const metrics = await this.maintenanceService.getStorageMetrics();
       if (metrics.isOverThreshold) {
         process.stderr.write(

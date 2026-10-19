@@ -286,7 +286,7 @@
               <button
                 type="button"
                 class="stage-chip-btn"
-                [class.active]="activeStreamChannel() === stage.channelKey || activeStreamChannel() === stage.stageName"
+                [class.active]="isStageChipActive(stage)"
                 [class]="stage.themeClass"
                 (click)="selectStreamChannel(stage.channelKey, true)"
               >
@@ -362,6 +362,9 @@
                 <div class="stage-card-header" (click)="toggleStageAccordion(stage.id)">
                   <span class="stage-chevron" [class.open]="isStageAccordionOpen(stage.id)">&#9654;</span>
                   <span class="stage-card-title">{{ stage.label }}</span>
+                  @if (isLogReduced(stage.logContent)) {
+                    <span class="reduced-badge" title="Raw log data reduced to statistical histogram">Reduced</span>
+                  }
                   @if (stage.durationMs) {
                     <span class="stage-duration-pill">{{ formatDuration(stage.durationMs) }}</span>
                   }

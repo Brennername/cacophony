@@ -2,6 +2,10 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { createGzip } from "node:zlib";
 import type { IDatabaseDriver } from "../interfaces/IDatabaseDriver.js";
+import {
+  LogReductionService,
+  type LogReductionBatchResult,
+} from "./LogReductionService.js";
 
 export interface StorageMetrics {
   readonly dataDirPath: string;
@@ -24,6 +28,7 @@ export interface DatabaseMaintenanceConfig {
   readonly maxStorageThresholdBytes?: number; // Default 500 MB
   readonly telemetryRetentionDays?: number; // Default 30 days
   readonly archiveDirPath?: string;
+  readonly logReductionService?: LogReductionService;
 }
 
 export class DatabaseMaintenanceService {
@@ -32,6 +37,7 @@ export class DatabaseMaintenanceService {
   private readonly maxStorageThresholdBytes: number;
   private readonly telemetryRetentionDays: number;
   private readonly archiveDirPath: string;
+  private readonly logReductionService: LogReductionService;
 
   constructor(config: DatabaseMaintenanceConfig) {
     this.driver = config.driver;
@@ -41,6 +47,12 @@ export class DatabaseMaintenanceService {
     this.telemetryRetentionDays = config.telemetryRetentionDays ?? 30;
     this.archiveDirPath =
       config.archiveDirPath ?? path.join(this.dataDirPath, "archives");
+    this.logReductionService =
+      config.logReductionService ??
+      new LogReductionService({
+        driver: this.driver,
+        maxStorageThresholdBytes: this.maxStorageThresholdBytes,
+      });
   }
 
   /**
@@ -206,4 +218,17 @@ export class DatabaseMaintenanceService {
       archiveFilePath: archivePath,
     };
   }
+
+  public getLogReductionService(): LogReductionService {
+    return this.logReductionService;
+  }
+
+  public async reduceOldTaskLogs(options?: {
+    readonly minAgeDays?: number;
+    readonly limit?: number;
+    readonly preserveRecent?: number;
+  }): Promise<LogReductionBatchResult> {
+    return this.logReductionService.reduceEligibleTasks(options);
+  }
 }
+

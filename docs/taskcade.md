@@ -51,6 +51,14 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [x] T103.4: Implement `GitHubSecurityAndIssueBridge` for Dependabot alert ingestion, external GitHub issue/PR synchronization, reasoning model review, and bidirectional verification merge/close. [Files: packages/engine/src/gitea/GitHubSecurityAndIssueBridge.ts, packages/engine/src/tests/github_security_and_issue_bridge.test.ts] [Test: node --test packages/engine/dist/tests/github_security_and_issue_bridge.test.js]
 - [x] T103.5: Implement `MultiModelReviewCoordinator` providing multi-role review (Security, DX/UX/UI, Architecture) with reviewer retries, fallback models, and transparent sub-stage timing telemetry. [Files: packages/engine/src/inference/MultiModelReviewCoordinator.ts, packages/engine/src/tests/multi_model_review_coordinator.test.ts] [Test: node --test packages/engine/dist/tests/multi_model_review_coordinator.test.js]
 
+## Phase 104: Log Profile Reduction, Statistical Histograms & Inspector Multi-Attempt Fidelity
+
+- [x] T104.1: Close stage accordions by default in `TaskInspectorComponent` except for the currently `RUNNING` stage, and isolate historical stage attempt outputs so older attempts do not mirror the live stream buffer. [Files: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts, packages/frontend/src/app/components/task-inspector/task-inspector.component.html, packages/frontend/src/app/components/task-inspector/task-inspector.component.css, packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- src/app/components/task-inspector/task-inspector.component.spec.ts]
+- [x] T104.2: Create database migration `020_reduction_logs` and register in `MigrationRegistry` to record profile reductions and statistical summaries. [Files: packages/db/src/migrations/020_reduction_logs.ts, packages/db/src/migrations/MigrationRegistry.ts] [Test: npm run test --workspace=@cacophony/db]
+- [x] T104.3: Implement `LogReductionService` with empirical size ratio documentation (test_execution: 50x, generation: 20x, remediation: 8x, deterministic_scrub: 1x, planning: 0.5x), statistical histogram generation, generous age/retention policies, and reduction logging. [Files: packages/db/src/services/LogReductionService.ts, packages/db/src/index.ts, packages/db/src/__tests__/log_reduction_service.test.ts] [Test: node --test packages/db/dist/__tests__/log_reduction_service.test.js]
+- [x] T104.4: Integrate `LogReductionService` into `DatabaseMaintenanceService`, `CacophonyDaemon`, and HTTP routes (`POST /api/database/reduce`, `GET /api/database/reduction-logs`, `POST /api/database/maintenance`). [Files: packages/db/src/services/DatabaseMaintenanceService.ts, packages/engine/src/daemon/CacophonyDaemon.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/tests/log_reduction_api.test.ts] [Test: node --test packages/engine/dist/tests/log_reduction_api.test.js]
+- [x] T104.5: Update ticket drill-down modal (`TaskDetailModalComponent`) and inspector to recognize reduced logs (`The log of this has been reduced, this is it's histogram:`) and display statistical badges for reconstructed tickets. [Files: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css] [Test: npm run test --workspace=@cacophony/frontend]
+
 ---
 
 ## Phase 102: Comprehensive Unit Test Expansion & Edge-Case Coverage
@@ -410,6 +418,16 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t102.1.19 Rehabilitation [2026-10-19T23:27:22.045Z]
+- **Parent Task**: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv (`taskcade-t102.1.19`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.19.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: type_specialist] [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts]
+  - [ ] `taskcade-t102.1.19.2`: [Rehab 2/3] Core Implementation Unit: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: implementer] [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts]
+  - [ ] `taskcade-t102.1.19.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: test_engineer] [Files: all]
+
 
 ### Task taskcade-t102.8.7 Rehabilitation [2026-10-19T23:03:42.975Z]
 - **Parent Task**: T102.8.7: Write unit tests verifying `TestRunnerDetector` framework auto-detection (node:t (`taskcade-t102.8.7`)
