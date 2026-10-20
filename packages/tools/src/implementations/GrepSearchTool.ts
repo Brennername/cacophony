@@ -145,7 +145,7 @@ export class GrepSearchTool implements ICacophonyTool<GrepSearchParams> {
           }
         }
       } catch {
-        // Skip binary or unreadable files
+
       }
     }
   }
