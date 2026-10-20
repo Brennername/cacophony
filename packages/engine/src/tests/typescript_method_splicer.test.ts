@@ -30,11 +30,11 @@ describe('TypeScriptMethodSplicer', () => {
         oldMethod() {
           console.log('Old Method');
         }
+        // This is a new method
       }
     `;
 
     const newMethod = `
-      // This is a new method
       console.log('New Method');
     `;
 
@@ -128,5 +128,44 @@ describe('TypeScriptMethodSplicer', () => {
     const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
     assert(result.includes('if (false) {'));
+  });
+
+  it('should handle replacing a method with an empty body', async () => {
+    const originalCode = `
+      class ExampleClass {
+        oldMethod() {
+          console.log('Old Method');
+        }
+      }
+    `;
+
+    const newMethod = `
+      ;
+    `;
+
+    const splicer = new TypeScriptMethodSplicer();
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
+
+    assert(!result.includes('Old Method'));
+    assert(result.includes(';'));
+  });
+
+  it('should handle replacing a method with an empty string body', async () => {
+    const originalCode = `
+      class ExampleClass {
+        oldMethod() {
+          console.log('Old Method');
+        }
+      }
+    `;
+
+    const newMethod = `;
+    `;
+
+    const splicer = new TypeScriptMethodSplicer();
+    const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
+
+    assert(!result.includes('Old Method'));
+    assert(result.includes(';'));
   });
 });
