@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RepoMapViewerComponent } from '../repo-map-viewer/repo-map-viewer.component';
-import { LspTestLoopPanelComponent } from '../lsp-test-loop-panel/lsp-test-loop-panel.component';
-import { RepoStateService } from '../../services/repo-state.service';
+import { RepoMapViewerComponent } from '../../repo-map-viewer/repo-map-viewer.component';
+import { LspTestLoopPanelComponent } from '../../lsp-test-loop-panel/lsp-test-loop-panel.component';
+import { RepoStateService } from '../../../services/repo-state.service';
 
 /**
  * Repository Map & AST Symbols route view:

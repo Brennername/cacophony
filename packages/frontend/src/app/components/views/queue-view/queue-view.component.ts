@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { QueueManagerComponent } from '../queue-manager/queue-manager.component';
+import { QueueManagerComponent } from '../../queue-manager/queue-manager.component';
 
 /**
  * Dedicated Task Queue Management route view:

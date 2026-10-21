@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TestingViewComponent } from './testing-view.component';
-import { ArenaStateStore } from '../../services/arena-state.store';
-import { TaskApiService } from '../../services/task-api.service';
-import { AuthService } from '../../services/auth.service';
+import { ArenaStateStore } from '../../../services/arena-state.store';
+import { TaskApiService } from '../../../services/task-api.service';
+import { AuthService } from '../../../services/auth.service';
 import { signal } from '@angular/core';
 
 describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {

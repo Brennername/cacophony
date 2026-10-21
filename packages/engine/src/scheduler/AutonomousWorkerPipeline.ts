@@ -407,7 +407,9 @@ export class AutonomousWorkerPipeline {
       const planningStart = Date.now();
       await this.recordAndEmitStage(taskId, "planning", "RUNNING");
 
-      const focusFiles = groomed.focusFiles;
+      const focusFiles = groomed.focusFiles
+        .map((f) => f.replace(/^["'`,;:]+|["'`,;:]+$/g, "").trim())
+        .filter(Boolean);
       const targetRel = focusFiles[0];
       let pkgName = "";
       if (targetRel?.startsWith("packages/frontend"))

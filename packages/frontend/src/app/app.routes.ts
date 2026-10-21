@@ -1,15 +1,17 @@
 import { Routes } from '@angular/router';
 import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
-import { DashboardViewComponent } from './components/views/dashboard-view.component';
-import { QueueViewComponent } from './components/views/queue-view.component';
-import { HistoryViewComponent } from './components/views/history-view.component';
-import { ModelsViewComponent } from './components/views/models-view.component';
-import { RepoMapViewComponent } from './components/views/repomap-view.component';
-import { ProcessesViewComponent } from './components/views/processes-view.component';
-import { SettingsViewComponent } from './components/views/settings-view.component';
-import { FleetViewComponent } from './components/views/fleet-view.component';
-import { FleetTopologyViewComponent } from './components/views/fleet-topology-view.component';
-import { TestingViewComponent } from './components/views/testing-view.component';
+import {
+  DashboardViewComponent,
+  QueueViewComponent,
+  HistoryViewComponent,
+  ModelsViewComponent,
+  RepoMapViewComponent,
+  ProcessesViewComponent,
+  SettingsViewComponent,
+  FleetViewComponent,
+  FleetTopologyViewComponent,
+  TestingViewComponent,
+} from './components/views';
 
 export const routes: Routes = [
   {

@@ -1,8 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ThemeService, AppTheme } from '../../services/theme.service';
-import { AuthService } from '../../services/auth.service';
+import { ThemeService, AppTheme } from '../../../services/theme.service';
+import { AuthService } from '../../../services/auth.service';
 
 interface NetworkProfileConfig {
   baseUrl: string;

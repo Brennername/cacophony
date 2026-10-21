@@ -419,6 +419,16 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t102.8.5 Rehabilitation [2026-10-21T01:39:08.749Z]
+- **Parent Task**: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b (`taskcade-t102.8.5`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.8.5.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: type_specialist] [Files: packages/engine/src/testing/DiagnosticPreFlightChecker.ts]
+  - [ ] `taskcade-t102.8.5.2`: [Rehab 2/3] Core Implementation Unit: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: implementer] [Files: packages/engine/src/testing/DiagnosticPreFlightChecker.ts]
+  - [ ] `taskcade-t102.8.5.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
 ### Task regr-mvg9gvu4-tyjt Rehabilitation [2026-10-21T00:59:34.802Z]
 - **Parent Task**: [TDD Regression] blocks path traversal with .. (`regr-mvg9gvu4-tyjt`)
 - **Failure Count**: 3

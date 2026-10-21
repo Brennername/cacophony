@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { ModelsViewComponent } from './models-view.component';
-import { HistoryMetricsService } from '../../services/history-metrics.service';
+import { HistoryMetricsService } from '../../../services/history-metrics.service';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

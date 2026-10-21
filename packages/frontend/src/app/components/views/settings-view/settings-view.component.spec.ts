@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SettingsViewComponent } from './settings-view.component';
-import { ThemeService } from '../../services/theme.service';
-import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../../services/theme.service';
+import { AuthService } from '../../../services/auth.service';
 
 describe('SettingsViewComponent', () => {
   beforeEach(() => {

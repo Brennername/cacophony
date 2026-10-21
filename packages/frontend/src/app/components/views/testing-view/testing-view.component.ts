@@ -2,12 +2,12 @@ import { Component, OnInit, OnDestroy, inject, signal, computed, ElementRef, Vie
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ArenaStateStore, ProcessItem } from '../../services/arena-state.store';
-import { TaskApiService } from '../../services/task-api.service';
-import { ProcessInspectorComponent } from '../process-inspector/process-inspector.component';
-import { TestRunModalComponent } from '../test-run-modal/test-run-modal.component';
-import { TestFilterToolbarComponent, TestFilterOption } from '../test-filter-toolbar/test-filter-toolbar.component';
-import { ProcessDrawerComponent } from '../process-drawer/process-drawer.component';
+import { ArenaStateStore, ProcessItem } from '../../../services/arena-state.store';
+import { TaskApiService } from '../../../services/task-api.service';
+import { ProcessInspectorComponent } from '../../process-inspector/process-inspector.component';
+import { TestRunModalComponent } from '../../test-run-modal/test-run-modal.component';
+import { TestFilterToolbarComponent, TestFilterOption } from '../../test-filter-toolbar/test-filter-toolbar.component';
+import { ProcessDrawerComponent } from '../../process-drawer/process-drawer.component';
 
 /**
  * TestingViewComponent

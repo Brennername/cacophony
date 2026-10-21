@@ -260,7 +260,11 @@ export class TaskcadeSeedLoader {
 
       const focusFiles =
         fileMatch && fileMatch[1]
-          ? fileMatch[1].replace(/^["']|["']$/g, "").trim()
+          ? fileMatch[1]
+              .split(/[\s,;]+/)
+              .map((f) => f.replace(/^["'`,;:]+|["'`,;:]+$/g, "").trim())
+              .filter(Boolean)
+              .join(" ")
           : null;
       let testCommand =
         testMatch && testMatch[1]

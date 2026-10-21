@@ -1,13 +1,13 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HistoryMetricsService, type HistoryItem, type ModelLeaderboardEntry } from '../../services/history-metrics.service';
-import { ArenaStateStore, type TaskItem } from '../../services/arena-state.store';
-import { ExplorationControlComponent } from '../exploration-control/exploration-control.component';
-import { TenancyConfigPanelComponent } from '../tenancy-config-panel/tenancy-config-panel.component';
-import { ModelPullModalComponent } from '../model-pull-modal/model-pull-modal.component';
-import { ModelTuningPanelComponent } from '../model-tuning-panel/model-tuning-panel.component';
-import { ModelFleetService } from '../../services/model-fleet.service';
+import { HistoryMetricsService, type HistoryItem, type ModelLeaderboardEntry } from '../../../services/history-metrics.service';
+import { ArenaStateStore, type TaskItem } from '../../../services/arena-state.store';
+import { ExplorationControlComponent } from '../../exploration-control/exploration-control.component';
+import { TenancyConfigPanelComponent } from '../../tenancy-config-panel/tenancy-config-panel.component';
+import { ModelPullModalComponent } from '../../model-pull-modal/model-pull-modal.component';
+import { ModelTuningPanelComponent } from '../../model-tuning-panel/model-tuning-panel.component';
+import { ModelFleetService } from '../../../services/model-fleet.service';
 
 /**
  * Model Leaderboard & Health Analytics route view:

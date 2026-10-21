@@ -1,13 +1,13 @@
 import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { HardwareMonitorComponent } from '../hardware-monitor/hardware-monitor.component';
-import { TaskInspectorComponent } from '../task-inspector/task-inspector.component';
-import { QueueManagerComponent } from '../queue-manager/queue-manager.component';
-import { SuccessMeterComponent } from '../success-meter/success-meter.component';
-import { WindowedSuccessTrendComponent } from '../windowed-success-trend/windowed-success-trend.component';
-import { ArenaStateStore } from '../../services/arena-state.store';
-import { HistoryMetricsService } from '../../services/history-metrics.service';
+import { HardwareMonitorComponent } from '../../hardware-monitor/hardware-monitor.component';
+import { TaskInspectorComponent } from '../../task-inspector/task-inspector.component';
+import { QueueManagerComponent } from '../../queue-manager/queue-manager.component';
+import { SuccessMeterComponent } from '../../success-meter/success-meter.component';
+import { WindowedSuccessTrendComponent } from '../../windowed-success-trend/windowed-success-trend.component';
+import { ArenaStateStore } from '../../../services/arena-state.store';
+import { HistoryMetricsService } from '../../../services/history-metrics.service';
 
 /**
  * Dashboard Overview route view:

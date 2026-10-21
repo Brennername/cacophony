@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ProcessInspectorComponent } from '../process-inspector/process-inspector.component';
-import { ArenaStateStore } from '../../services/arena-state.store';
+import { ProcessInspectorComponent } from '../../process-inspector/process-inspector.component';
+import { ArenaStateStore } from '../../../services/arena-state.store';
 
 /**
  * Process Inspector route view:

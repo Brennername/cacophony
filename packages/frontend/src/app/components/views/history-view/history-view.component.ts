@@ -1,9 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TaskHistoryComponent } from '../task-history/task-history.component';
-import { CheckpointTimelineComponent } from '../checkpoint-timeline/checkpoint-timeline.component';
-import { TrendChartComponent } from '../trend-chart/trend-chart.component';
-import { RepoStateService } from '../../services/repo-state.service';
+import { TaskHistoryComponent } from '../../task-history/task-history.component';
+import { CheckpointTimelineComponent } from '../../checkpoint-timeline/checkpoint-timeline.component';
+import { TrendChartComponent } from '../../trend-chart/trend-chart.component';
+import { RepoStateService } from '../../../services/repo-state.service';
 
 /**
  * Task History route view:

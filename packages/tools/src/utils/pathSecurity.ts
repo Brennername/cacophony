@@ -10,9 +10,10 @@ import * as path from "node:path";
  */
 export function resolveSafePath(workspaceRoot: string, relativeOrAbsolutePath: string): string {
   const normalizedRoot = path.resolve(workspaceRoot);
-  const resolved = path.isAbsolute(relativeOrAbsolutePath)
-    ? path.resolve(relativeOrAbsolutePath)
-    : path.resolve(normalizedRoot, relativeOrAbsolutePath);
+  const cleanPath = relativeOrAbsolutePath.trim().replace(/[,;:]+$/, "");
+  const resolved = path.isAbsolute(cleanPath)
+    ? path.resolve(cleanPath)
+    : path.resolve(normalizedRoot, cleanPath);
 
   // Check boundary constraints
   if (!resolved.startsWith(normalizedRoot)) {

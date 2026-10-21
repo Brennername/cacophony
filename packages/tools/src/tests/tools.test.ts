@@ -182,4 +182,28 @@ describe("Tool Execution Suite & Security Tests", () => {
     assert.strictEqual(rmToolResult.success, false);
     assert.ok(rmToolResult.error?.includes("Execution Guard Violation"));
   });
+
+  it("should sanitize trailing punctuation from paths to mitigate comma filename typos", async () => {
+    const writeResult = await registry.executeTool(
+      {
+        toolName: "write_to_file",
+        parameters: {
+          path: "src/sanitized_example.ts,",
+          content: "export const sanitized = true;",
+          overwrite: true
+        }
+      },
+      context
+    );
+    assert.strictEqual(writeResult.success, true);
+
+    const cleanPath = path.join(tempDir, "src/sanitized_example.ts");
+    const typoPath = path.join(tempDir, "src/sanitized_example.ts,");
+
+    const cleanExists = await fs.access(cleanPath).then(() => true).catch(() => false);
+    const typoExists = await fs.access(typoPath).then(() => true).catch(() => false);
+
+    assert.strictEqual(cleanExists, true);
+    assert.strictEqual(typoExists, false);
+  });
 });
