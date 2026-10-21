@@ -18,10 +18,18 @@ import type { IInferenceProvider } from "./IInferenceProvider.js";
  */
 export class MockInferenceStreamProvider implements IInferenceProvider {
   private readonly defaultSnippet: string;
-  private readonly defaultTokensPerSecond: number;
+  private readonly targetTokensPerSecond: number;
+  private readonly burstAllowance: number;
 
-  constructor(tokensPerSecond: number = 32) {
-    this.defaultTokensPerSecond = tokensPerSecond;
+  /**
+   * Initializes MockInferenceStreamProvider with rate limiting and burst bounds.
+   *
+   * @param targetTokensPerSecond - Baseline average generation velocity (defaults to 11.0 tok/s).
+   * @param burstAllowance - Maximum random burst delta in either direction (defaults to half the target: 5.5 tok/s).
+   */
+  constructor(targetTokensPerSecond: number = 11.0, burstAllowance?: number) {
+    this.targetTokensPerSecond = targetTokensPerSecond;
+    this.burstAllowance = burstAllowance !== undefined ? burstAllowance : targetTokensPerSecond / 2;
     this.defaultSnippet = [
       "// Autonomous Worker Pipeline: Synthetic Implementation",
       "import { Injectable, signal, computed } from '@angular/core';",
@@ -53,23 +61,26 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
   }
 
   /**
-   * Derives a realistic tokens-per-second rate from the model name.
-   * Calibrated to typical AMD APU Vega throughput per model family size:
-   *   - 3B  (fast coder): ~54 tok/s
-   *   - 4B  (balanced):   ~38 tok/s
-   *   - 7B  (larger):     ~28 tok/s
-   *   - 8B  (reasoning):  ~16 tok/s
-   * Falls back to the constructor default for unknown model names.
+   * Derives a realistic average tokens-per-second baseline for the model family,
+   * centered strictly around the target rate (~11.0 tok/s) and constrained within the burst allowance.
    */
-  private getTokensPerSecondForModel(modelName?: string): number {
-    if (!modelName) return this.defaultTokensPerSecond;
+  public getTokensPerSecondForModel(modelName?: string): number {
+    const base = this.targetTokensPerSecond;
+    if (!modelName) return base;
     const lower = modelName.toLowerCase();
-    if (lower.includes(":3b") || lower.includes("-3b")) return 54.0;
-    if (lower.includes(":4b") || lower.includes("-4b")) return 38.0;
-    if (lower.includes(":7b") || lower.includes("-7b")) return 28.5;
-    if (lower.includes(":8b") || lower.includes("-8b")) return 16.5;
-    if (lower.includes("deepseek-r1")) return 16.5;
-    return this.defaultTokensPerSecond;
+
+    // Minor model family nuances centered around target (e.g. 11.0 tok/s)
+    const deltaRatio = this.burstAllowance / 5.5;
+    if (lower.includes(":3b") || lower.includes("-3b")) {
+      return Number((base + 1.5 * deltaRatio).toFixed(2));
+    }
+    if (lower.includes(":4b") || lower.includes("-4b")) {
+      return Number((base + 0.5 * deltaRatio).toFixed(2));
+    }
+    if (lower.includes(":8b") || lower.includes("-8b") || lower.includes("deepseek-r1")) {
+      return Number(Math.max(1, base - 1.5 * deltaRatio).toFixed(2));
+    }
+    return base;
   }
 
   public getProviderType(): InferenceProviderType {
@@ -148,24 +159,28 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
     request: InferenceRequest,
     onChunk: (chunk: string) => void,
   ): Promise<InferenceResponse> {
-    const tokensPerSecond = this.getTokensPerSecondForModel(request.model);
+    const averageTarget = this.getTokensPerSecondForModel(request.model);
+    const burst = this.burstAllowance;
     const startMs = Date.now();
     const content = this.resolveContentForRequest(request);
 
     // Divide snippet into small code tokens/words
     const tokens = content.match(/(\s+|\w+|[^\s\w]+)/g) || [content];
-    const delayPerChunkMs = Math.max(10, Math.min(25, Math.round(1000 / (tokensPerSecond * 2))));
 
     for (const chunk of tokens) {
       onChunk(chunk);
-      // Pacing breath between tokens to simulate live model generation
-      await new Promise((resolve) => setTimeout(resolve, delayPerChunkMs));
+      // Realistic random burst pacing: instantaneous velocity fluctuates up to half the average target in either direction
+      // For default 11 tok/s target, instantaneous rate oscillates randomly between [5.5, 16.5] tok/s
+      const jitter = (Math.random() * 2 - 1) * burst;
+      const instantaneousRate = Math.max(1, averageTarget + jitter);
+      const delayMs = Math.round(1000 / instantaneousRate);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
-    const durationMs = Date.now() - startMs;
+    const durationMs = Math.max(1, Date.now() - startMs);
     const tokensGenerated = tokens.length;
     const measuredTps = Number(
-      (tokensGenerated / (durationMs / 1000) || tokensPerSecond).toFixed(1),
+      (tokensGenerated / (durationMs / 1000) || averageTarget).toFixed(1),
     );
 
     return {

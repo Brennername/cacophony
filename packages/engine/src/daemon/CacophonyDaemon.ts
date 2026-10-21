@@ -297,7 +297,7 @@ export class CacophonyDaemon {
       await import("../scheduler/AutonomousWorkerPipeline.js");
 
     const primaryInferenceProvider = isDemoMode
-      ? new MockInferenceStreamProvider(28)
+      ? new MockInferenceStreamProvider(11.0, 5.5)
       : new OllamaProvider({ profileRepository: this.modelProfileRepo });
 
     this.scheduler.setOllamaProvider(primaryInferenceProvider as any);

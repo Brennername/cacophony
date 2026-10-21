@@ -337,4 +337,59 @@ describe('TaskDetailModalComponent', () => {
       globalThis.fetch = origFetch;
     }
   });
+
+  it('manages side-scrolling tab bar navigation with scroll buttons and touch swipe', () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    store.selectedTask.set({
+      id: 'task-tabs-scroll-test',
+      title: 'Tabs Scroll Test',
+      status: 'RUNNING',
+      priority: 'P1',
+      role: 'implementer',
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    const compiled = fixture.nativeElement as HTMLElement;
+    const tabBarContainer = compiled.querySelector('.tab-bar-container');
+    const tabBar = compiled.querySelector('.tab-bar') as HTMLElement;
+
+    expect(tabBarContainer).toBeTruthy();
+    expect(tabBar).toBeTruthy();
+
+    // Verify selectTab switches activeTab and signals
+    comp.selectTab('cognitive');
+    expect(comp.activeTab()).toBe('cognitive');
+
+    // Trigger tab scroll checks
+    comp.checkTabScroll();
+    expect(typeof comp.canScrollTabsLeft()).toBe('boolean');
+    expect(typeof comp.canScrollTabsRight()).toBe('boolean');
+
+    // Test scrollTabs left and right without throwing
+    comp.scrollTabs('left');
+    comp.scrollTabs('right');
+
+    // Test touch gestures
+    const mockTouchStart = {
+      touches: [{ clientX: 200 }],
+      currentTarget: tabBar,
+    } as unknown as TouchEvent;
+    comp.onTabTouchStart(mockTouchStart);
+
+    const mockTouchMove = {
+      touches: [{ clientX: 120 }],
+      currentTarget: tabBar,
+    } as unknown as TouchEvent;
+    comp.onTabTouchMove(mockTouchMove);
+
+    // Test window resize handler triggers checkTabScroll
+    comp.onWindowResize();
+  });
 });

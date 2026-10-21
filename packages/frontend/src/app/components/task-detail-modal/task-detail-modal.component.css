@@ -13,10 +13,10 @@
 .modal-content {
   width: 860px;
   height: 640px;
-  max-width: calc(100vw - 1rem);
-  max-height: calc(100vh - 1.5rem);
-  min-width: 320px;
-  min-height: 380px;
+  max-width: min(calc(100vw - 1rem), 1100px) !important;
+  max-height: min(calc(100vh - 1rem), calc(100dvh - 1rem)) !important;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--bg-surface);
@@ -25,21 +25,27 @@
   overflow: hidden;
   position: relative;
   resize: both;
+  box-sizing: border-box !important;
   box-shadow:
     0 20px 48px -8px rgba(0, 0, 0, 0.65),
     0 0 0 1px var(--border-strong);
   animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .modal-backdrop {
+    padding: 0.25rem;
+  }
+
   .modal-content {
-    width: calc(100vw - 1rem);
-    height: calc(100vh - 1.5rem);
-    max-width: 100vw;
-    max-height: 100vh;
+    width: calc(100vw - 0.5rem) !important;
+    height: calc(100dvh - 0.5rem) !important;
+    max-width: calc(100vw - 0.5rem) !important;
+    max-height: calc(100dvh - 0.5rem) !important;
     min-width: 0;
     min-height: 0;
-    resize: none;
+    resize: none !important;
+    border-radius: var(--radius-sm);
   }
 }
 
@@ -58,7 +64,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 1rem 1.25rem;
+  padding: 0.875rem 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface-elevated);
   flex-shrink: 0;
@@ -70,44 +76,106 @@
   min-width: 44px;
 }
 
-.tab-bar {
+.tab-bar-container {
   display: flex;
-  gap: 0.25rem;
-  padding: 0.5rem 1rem;
+  align-items: center;
+  position: relative;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-subtle);
-  overflow-x: auto;
-  scrollbar-width: none;
   flex-shrink: 0;
-  position: sticky;
-  top: 0;
   z-index: 8;
+  padding: 0.35rem 0.5rem;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tab-scroll-arrow {
+  background: var(--bg-surface-elevated, #1e2230);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  color: var(--text-primary, #ffffff);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.875rem;
+  font-weight: 700;
+  width: 32px;
+  height: 36px;
+  min-width: 32px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  flex-shrink: 0;
+  z-index: 10;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.tab-scroll-arrow:hover {
+  background: var(--color-brand, #3b82f6);
+  color: #ffffff;
+  border-color: var(--color-brand, #3b82f6);
+}
+
+.tab-scroll-arrow.left {
+  margin-right: 0.35rem;
+}
+
+.tab-scroll-arrow.right {
+  margin-left: 0.35rem;
+}
+
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.25rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scroll-behavior: smooth;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-weight: 500;
+  background: var(--bg-surface-elevated, #1c202a);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  color: var(--text-secondary, #94a3b8);
+  font-weight: 600;
   font-size: 0.8125rem;
-  padding: 0.5rem 0.875rem;
-  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.875rem;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   white-space: nowrap;
+  flex: 0 0 auto;
   transition:
     background 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .tab-btn:hover {
-  color: var(--text-primary);
-  background: var(--bg-surface-elevated);
+  color: var(--text-primary, #ffffff);
+  background: var(--bg-surface, #242938);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.25));
 }
 
 .tab-btn.active {
-  color: var(--color-brand);
-  background: var(--bg-surface);
-  font-weight: 600;
+  color: #ffffff;
+  background: var(--color-brand, #2563eb);
+  border-color: var(--color-brand, #2563eb);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  font-weight: 700;
 }
 
 .copy-banner {

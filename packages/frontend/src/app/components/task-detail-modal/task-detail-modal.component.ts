@@ -1,4 +1,4 @@
-import { Component, inject, signal, HostListener, effect } from '@angular/core';
+import { Component, inject, signal, HostListener, effect, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
 import { ansiToHtml } from '../../utils/ansi-to-html';
@@ -55,7 +55,9 @@ export interface PrReviewData {
  * test commands, execution stages timeline, diffs, stderr, PR reviews, and full scrollable LLM terminal stream.
  *
  * Implements:
- * - Tabbed sub-views: Overview, Stages & Timings, Code Diffs, Full Stream Log, PR Reviews, Test Stderr.
+ * - Side-scrolling defined tab bar with `<` and `>` arrow navigation buttons and touch swiping.
+ * - Strict maximum screen dimension bounds preventing overflow across all viewports.
+ * - Tabbed sub-views: Overview, Stages & Timings, Code Diffs, Full Stream Log, PR Reviews, Test Stderr, Diagnostics.
  * - Copy-to-clipboard actions for prompt, diff, test command, and terminal logs.
  * - Touch-friendly close buttons and Escape key listener complying with mobile-first standards.
  */
@@ -66,11 +68,17 @@ export interface PrReviewData {
   templateUrl: './task-detail-modal.component.html',
   styleUrl: './task-detail-modal.component.css',
 })
-export class TaskDetailModalComponent {
+export class TaskDetailModalComponent implements AfterViewInit {
   public readonly store = inject(ArenaStateStore);
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
   public readonly activeTab = signal<TaskModalTab>('overview');
   public readonly copiedMessage = signal<string | null>(null);
+
+  // Tab horizontal scroll state (arrows < and > visibility)
+  public readonly canScrollTabsLeft = signal<boolean>(false);
+  public readonly canScrollTabsRight = signal<boolean>(false);
+  private touchStartX = 0;
+  private touchScrollLeft = 0;
 
   // User-defined static custom dimensions to prevent dynamic tab jumps
   public readonly customWidth = signal<number | null>(null);
@@ -129,7 +137,91 @@ export class TaskDetailModalComponent {
       void this.fetchOpinion(task.id);
       void this.fetchPrReview(task.id);
       void this.fetchDiagnostics(task.id);
+
+      // Recalculate tab scrolling after rendering
+      setTimeout(() => this.checkTabScroll(), 120);
     });
+  }
+
+  public ngAfterViewInit(): void {
+    setTimeout(() => this.checkTabScroll(), 100);
+  }
+
+  /**
+   * Recalculates horizontal scroll bounds on the tab bar to toggle < and > arrows.
+   */
+  public checkTabScroll(): void {
+    if (typeof document === 'undefined') return;
+    const el = document.querySelector('.tab-bar') as HTMLElement | null;
+    if (!el) {
+      this.canScrollTabsLeft.set(false);
+      this.canScrollTabsRight.set(false);
+      return;
+    }
+    const canLeft = el.scrollLeft > 2;
+    const canRight = el.scrollLeft < (el.scrollWidth - el.clientWidth - 2);
+    this.canScrollTabsLeft.set(canLeft);
+    this.canScrollTabsRight.set(canRight);
+  }
+
+  /**
+   * Smoothly scrolls the tab bar left or right via button clicks.
+   */
+  public scrollTabs(direction: 'left' | 'right'): void {
+    if (typeof document === 'undefined') return;
+    const el = document.querySelector('.tab-bar') as HTMLElement | null;
+    if (!el) return;
+    const offset = direction === 'left' ? -180 : 180;
+    if (typeof el.scrollBy === 'function') {
+      el.scrollBy({ left: offset, behavior: 'smooth' });
+    } else {
+      el.scrollLeft += offset;
+    }
+    setTimeout(() => this.checkTabScroll(), 250);
+  }
+
+  /**
+   * Switches the active tab and scrolls it into view if partially hidden.
+   */
+  public selectTab(tab: TaskModalTab): void {
+    this.activeTab.set(tab);
+    if (typeof document !== 'undefined') {
+      setTimeout(() => {
+        const activeBtn = document.querySelector('.tab-btn.active') as HTMLElement | null;
+        if (activeBtn && typeof activeBtn.scrollIntoView === 'function') {
+          activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+        this.checkTabScroll();
+      }, 50);
+    }
+  }
+
+  /**
+   * Touch gesture start handler for mobile swipe navigation on tab bar.
+   */
+  public onTabTouchStart(event: TouchEvent): void {
+    if (event.touches.length === 1) {
+      this.touchStartX = event.touches[0].clientX;
+      const el = event.currentTarget as HTMLElement;
+      this.touchScrollLeft = el.scrollLeft;
+    }
+  }
+
+  /**
+   * Touch gesture move handler for mobile swipe navigation on tab bar.
+   */
+  public onTabTouchMove(event: TouchEvent): void {
+    if (event.touches.length === 1) {
+      const deltaX = this.touchStartX - event.touches[0].clientX;
+      const el = event.currentTarget as HTMLElement;
+      el.scrollLeft = this.touchScrollLeft + deltaX;
+      this.checkTabScroll();
+    }
+  }
+
+  @HostListener('window:resize')
+  public onWindowResize(): void {
+    this.checkTabScroll();
   }
 
   public async fetchDiagnostics(taskId: string): Promise<void> {

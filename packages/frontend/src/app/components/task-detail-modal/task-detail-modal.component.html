@@ -70,64 +70,93 @@
         </div>
       }
 
-      <!-- Tab Bar Navigation (Mobile-first horizontal scroll) -->
-      <div class="tab-bar">
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'overview'"
-          (click)="activeTab.set('overview')"
+      <!-- Tab Bar Navigation (Mobile-first horizontal side-scrolling bar with navigation arrows) -->
+      <div class="tab-bar-container">
+        @if (canScrollTabsLeft()) {
+          <button
+            type="button"
+            class="tab-scroll-arrow left touch-target"
+            (click)="scrollTabs('left')"
+            aria-label="Scroll tabs left"
+          >
+            &lt;
+          </button>
+        }
+
+        <div
+          class="tab-bar"
+          (scroll)="checkTabScroll()"
+          (touchstart)="onTabTouchStart($event)"
+          (touchmove)="onTabTouchMove($event)"
         >
-          Overview
-        </button>
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'stages'"
-          (click)="activeTab.set('stages')"
-        >
-          Stages ({{ task.stages?.length ?? 0 }})
-        </button>
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'diffs'"
-          (click)="activeTab.set('diffs')"
-        >
-          Code Diffs
-        </button>
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'stream'"
-          (click)="activeTab.set('stream')"
-        >
-          Stream Log
-        </button>
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'cognitive'"
-          (click)="activeTab.set('cognitive')"
-        >
-          Cognitive Trace
-        </button>
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'reviews'"
-          (click)="activeTab.set('reviews')"
-        >
-          PR Reviews
-        </button>
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'stderr'"
-          (click)="activeTab.set('stderr')"
-        >
-          Test Stderr
-        </button>
-        <button
-          class="tab-btn touch-target"
-          [class.active]="activeTab() === 'diagnostics'"
-          (click)="activeTab.set('diagnostics')"
-        >
-          Diagnostics
-        </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'overview'"
+            (click)="selectTab('overview')"
+          >
+            Overview
+          </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'stages'"
+            (click)="selectTab('stages')"
+          >
+            Stages ({{ task.stages?.length ?? 0 }})
+          </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'diffs'"
+            (click)="selectTab('diffs')"
+          >
+            Code Diffs
+          </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'stream'"
+            (click)="selectTab('stream')"
+          >
+            Stream Log
+          </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'cognitive'"
+            (click)="selectTab('cognitive')"
+          >
+            Cognitive Trace
+          </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'reviews'"
+            (click)="selectTab('reviews')"
+          >
+            PR Reviews
+          </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'stderr'"
+            (click)="selectTab('stderr')"
+          >
+            Test Stderr
+          </button>
+          <button
+            class="tab-btn touch-target"
+            [class.active]="activeTab() === 'diagnostics'"
+            (click)="selectTab('diagnostics')"
+          >
+            Diagnostics
+          </button>
+        </div>
+
+        @if (canScrollTabsRight()) {
+          <button
+            type="button"
+            class="tab-scroll-arrow right touch-target"
+            (click)="scrollTabs('right')"
+            aria-label="Scroll tabs right"
+          >
+            &gt;
+          </button>
+        }
       </div>
 
       <div class="modal-body">

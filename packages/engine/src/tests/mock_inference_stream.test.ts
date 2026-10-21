@@ -36,4 +36,16 @@ describe("T71.3: MockInferenceStreamProvider & Synthetic Token Streaming", () =>
     assert.equal(chunks.join(""), res.content);
     assert.ok(res.tokensPerSec > 0);
   });
+
+  it("should configure default rate of 11.0 tok/s with burst allowance of 5.5 tok/s", () => {
+    const provider = new MockInferenceStreamProvider();
+    const rate7b = provider.getTokensPerSecondForModel("qwen2.5-coder:7b");
+    assert.equal(rate7b, 11.0);
+
+    const rate3b = provider.getTokensPerSecondForModel("qwen2.5-coder:3b");
+    assert.ok(rate3b >= 11.0 && rate3b <= 16.5);
+
+    const rate8b = provider.getTokensPerSecondForModel("deepseek-r1:8b");
+    assert.ok(rate8b >= 5.5 && rate8b <= 11.0);
+  });
 });

@@ -47,17 +47,35 @@ export class WindowedSuccessTrendComponent {
     return 'critical';
   });
 
+  /**
+   * Translates a success rate percentage (0-100) to an SVG Y coordinate.
+   * Clamped strictly between 14 (100%) and 68 (0%) within the 80px viewBox height,
+   * guaranteeing the trend line and shaded area never clip or overrun legend typography.
+   */
+  public rateToY(percentage: number): number {
+    const clamped = Math.max(0, Math.min(100, percentage));
+    return Math.round(68 - (clamped / 100) * 54);
+  }
+
   public readonly svgPolylinePoints = computed(() => {
     const rate = this.currentWindowRate();
-    // Generate 6 sample historical points leading up to the current rate
-    const points = [
-      { x: 0, y: 50 },
-      { x: 60, y: Math.max(10, rate - 15) },
-      { x: 120, y: Math.max(10, rate - 5) },
-      { x: 180, y: Math.max(10, rate - 8) },
-      { x: 240, y: Math.max(10, rate - 2) },
-      { x: 300, y: 80 - (rate / 100) * 60 }
+    const clampedRate = Math.max(0, Math.min(100, rate));
+
+    // Synthesize historical rate progression leading up to current rate
+    const historicalRates = [
+      Math.max(0, Math.min(100, clampedRate - 12)),
+      Math.max(0, Math.min(100, clampedRate - 6)),
+      Math.max(0, Math.min(100, clampedRate + 3)),
+      Math.max(0, Math.min(100, clampedRate - 4)),
+      Math.max(0, Math.min(100, clampedRate - 1)),
+      clampedRate,
     ];
+
+    const xCoords = [0, 60, 120, 180, 240, 300];
+    const points = xCoords.map((x, idx) => ({
+      x,
+      y: this.rateToY(historicalRates[idx]),
+    }));
 
     return points.map((p) => `${p.x},${p.y}`).join(' ');
   });

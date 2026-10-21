@@ -1166,7 +1166,12 @@
   }
 
   .stream-channel-tabs {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    scrollbar-width: none;
+    max-width: 100%;
   }
 
   .terminal-actions {
