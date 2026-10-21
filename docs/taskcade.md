@@ -419,6 +419,232 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvg9gvu4-tyjt Rehabilitation [2026-10-21T00:59:34.802Z]
+- **Parent Task**: [TDD Regression] blocks path traversal with .. (`regr-mvg9gvu4-tyjt`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg9gvu4-tyjt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvg9gvu4-tyjt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd Rehabilitation [2026-10-21T00:39:45.970Z]
+- **Parent Task**: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg9gvu8-bbfd.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvg9gvu8-bbfd.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task taskcade-t102.6.1 Rehabilitation [2026-10-20T23:39:49.030Z]
+- **Parent Task**: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  (`taskcade-t102.6.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  [Role: type_specialist] [Files: packages/engine/src/rules/catalog/AstSignatureAlignRule.ts]
+  - [ ] `taskcade-t102.6.1.2`: [Rehab 2/3] Core Implementation Unit: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  [Role: implementer] [Files: packages/engine/src/rules/catalog/AstSignatureAlignRule.ts]
+  - [ ] `taskcade-t102.6.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison,  [Role: test_engineer] [Files: packages/engine/src/tests/ast_signature_align_rule.test.ts]
+
+
+### Task taskcade-t102.13.2 Rehabilitation [2026-10-20T23:03:27.081Z]
+- **Parent Task**: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil (`taskcade-t102.13.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil [Role: type_specialist] [Files: packages/frontend/src/app/services/repo-state.service.ts]
+  - [ ] `taskcade-t102.13.2.2`: [Rehab 2/3] Core Implementation Unit: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil [Role: implementer] [Files: packages/frontend/src/app/services/repo-state.service.ts]
+  - [ ] `taskcade-t102.13.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, fil [Role: test_engineer] [Files: all]
+
+
+### Task regr-mvg7wsyb-jshd Rehabilitation [2026-10-20T22:51:19.314Z]
+- **Parent Task**: [TDD Regression] should extract Python symbols correctly (`regr-mvg7wsyb-jshd`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg7wsyb-jshd.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract Python symbols correctly [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `regr-mvg7wsyb-jshd.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract Python symbols correctly [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+
+
+### Task regr-mvg7wsy2-68gw Rehabilitation [2026-10-20T22:09:32.348Z]
+- **Parent Task**: [TDD Regression] SymbolExtractor (`regr-mvg7wsy2-68gw`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg7wsy2-68gw.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] SymbolExtractor [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `regr-mvg7wsy2-68gw.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] SymbolExtractor [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+
+
+### Task taskcade-t102.2.11.3 Rehabilitation [2026-10-20T21:55:31.677Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, (`taskcade-t102.2.11.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.2.11.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts]
+  - [ ] `taskcade-t102.2.11.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts]
+
+
+### Task regr-mvg7wsy8-i7rf Rehabilitation [2026-10-20T21:34:00.874Z]
+- **Parent Task**: [TDD Regression] should extract Go symbols correctly (`regr-mvg7wsy8-i7rf`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg7wsy8-i7rf.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract Go symbols correctly [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `regr-mvg7wsy8-i7rf.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract Go symbols correctly [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+
+
+### Task regr-mvgi6ep9-kda2 Rehabilitation [2026-10-20T20:43:12.554Z]
+- **Parent Task**: [TDD Regression] should handle plateaus with overlapping ranges (`regr-mvgi6ep9-kda2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvgi6ep9-kda2.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle plateaus with overlapping ranges [Role: test_engineer] [Files: packages/engine/src/tests/plateau_intervention_dispatcher.test.ts packages/engine/src/analytics/PlateauInterventionDispatcher.ts]
+  - [ ] `regr-mvgi6ep9-kda2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle plateaus with overlapping ranges [Role: test_engineer] [Files: packages/engine/src/tests/plateau_intervention_dispatcher.test.ts packages/engine/src/analytics/PlateauInterventionDispatcher.ts]
+
+
+### Task regr-mvg7wsy5-8y40 Rehabilitation [2026-10-20T20:21:53.199Z]
+- **Parent Task**: [TDD Regression] extractFileSymbols (`regr-mvg7wsy5-8y40`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg7wsy5-8y40.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFileSymbols [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `regr-mvg7wsy5-8y40.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFileSymbols [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+
+
+### Task regr-mvg7wsxu-qxil Rehabilitation [2026-10-20T19:37:31.024Z]
+- **Parent Task**: [TDD Regression] should extract Java symbols correctly (`regr-mvg7wsxu-qxil`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg7wsxu-qxil.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract Java symbols correctly [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `regr-mvg7wsxu-qxil.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract Java symbols correctly [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+
+
+### Task taskcade-t102.7.3 Rehabilitation [2026-10-20T18:44:33.306Z]
+- **Parent Task**: T102.7.3: Write unit tests verifying `LocalBypassSsoProvider` mock user injection, demo cr (`taskcade-t102.7.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.7.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.7.3: Write unit tests verifying `LocalBypassSsoProvider` mock user injection, demo cr [Role: type_specialist] [Files: packages/engine/src/auth/LocalBypassSsoProvider.ts]
+  - [ ] `taskcade-t102.7.3.2`: [Rehab 2/3] Core Implementation Unit: T102.7.3: Write unit tests verifying `LocalBypassSsoProvider` mock user injection, demo cr [Role: implementer] [Files: packages/engine/src/auth/LocalBypassSsoProvider.ts]
+  - [ ] `taskcade-t102.7.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.7.3: Write unit tests verifying `LocalBypassSsoProvider` mock user injection, demo cr [Role: test_engineer] [Files: packages/engine/src/tests/local_bypass_sso_provider.test.ts]
+
+
+### Task taskcade-t102.16.5 Rehabilitation [2026-10-20T18:38:24.678Z]
+- **Parent Task**: T102.16.5: Write unit tests verifying `ScreenBuffer` character cell grid updates, ANSI colo (`taskcade-t102.16.5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.16.5.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.16.5: Write unit tests verifying `ScreenBuffer` character cell grid updates, ANSI colo [Role: type_specialist] [Files: packages/engine/src/tui/ScreenBuffer.ts]
+  - [ ] `taskcade-t102.16.5.2`: [Rehab 2/3] Core Implementation Unit: T102.16.5: Write unit tests verifying `ScreenBuffer` character cell grid updates, ANSI colo [Role: implementer] [Files: packages/engine/src/tui/ScreenBuffer.ts]
+  - [ ] `taskcade-t102.16.5.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.16.5: Write unit tests verifying `ScreenBuffer` character cell grid updates, ANSI colo [Role: test_engineer] [Files: packages/engine/src/tests/screen_buffer.test.ts]
+
+
+### Task taskcade-t102.12.2 Rehabilitation [2026-10-20T18:29:20.782Z]
+- **Parent Task**: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati (`taskcade-t102.12.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.2.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati [Role: type_specialist] [Files: packages/tools/src/implementations/LocateFeatureTool.ts]
+  - [ ] `taskcade-t102.12.2.2`: [Rehab 2/3] Core Implementation Unit: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati [Role: implementer] [Files: packages/tools/src/implementations/LocateFeatureTool.ts]
+  - [ ] `taskcade-t102.12.2.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.2: Write unit tests verifying `LocateFeatureTool` fuzzy token search, symbol locati [Role: test_engineer] [Files: packages/tools/src/tests/locate_feature_tool.test.ts]
+
+
+### Task taskcade-t102.12.6 Rehabilitation [2026-10-20T17:54:18.551Z]
+- **Parent Task**: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o (`taskcade-t102.12.6`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o [Role: type_specialist] [Files: packages/tools/src/implementations/ViewFileTool.ts]
+  - [ ] `taskcade-t102.12.6.2`: [Rehab 2/3] Core Implementation Unit: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o [Role: implementer] [Files: packages/tools/src/implementations/ViewFileTool.ts]
+  - [ ] `taskcade-t102.12.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.6: Write unit tests verifying `ViewFileTool` line slicing, windowed viewing, byte o [Role: test_engineer] [Files: packages/tools/src/tests/view_file_tool.test.ts]
+
+
+### Task taskcade-t102.14.5.3 Rehabilitation [2026-10-20T16:50:01.195Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.14.5: Write unit tests verifying `FocusedDiffBuilder` hunk generation, line offset ali (`taskcade-t102.14.5.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.5.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.14.5: Write unit tests verifying `FocusedDiffBuilder` hunk generation, line offset ali [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [ ] `taskcade-t102.14.5.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.14.5: Write unit tests verifying `FocusedDiffBuilder` hunk generation, line offset ali [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvg3or7z-q82h Rehabilitation [2026-10-20T16:24:35.326Z]
+- **Parent Task**: [TDD Regression] should retain comments during method replacement (`regr-mvg3or7z-q82h`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg3or7z-q82h.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvg3or7z-q82h.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task regr-mvfvieet-z2ef Rehabilitation [2026-10-20T15:32:17.603Z]
+- **Parent Task**: [TDD Regression] RegexTool (`regr-mvfvieet-z2ef`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvfvieet-z2ef.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] RegexTool [Role: test_engineer] [Files: packages/tools/src/tests/regex_tool.test.ts packages/tools/src/implementations/RegexTool.ts]
+  - [ ] `regr-mvfvieet-z2ef.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] RegexTool [Role: test_engineer] [Files: packages/tools/src/tests/regex_tool.test.ts packages/tools/src/implementations/RegexTool.ts]
+
+
+### Task taskcade-t102.2.11 Rehabilitation [2026-10-20T15:08:20.240Z]
+- **Parent Task**: T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, (`taskcade-t102.2.11`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.2.11.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, [Role: type_specialist] [Files: packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `taskcade-t102.2.11.2`: [Rehab 2/3] Core Implementation Unit: T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, [Role: implementer] [Files: packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `taskcade-t102.2.11.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts]
+
+
+### Task taskcade-t102.17.1.2 Rehabilitation [2026-10-20T14:18:33.768Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.17.1: Write unit tests verifying `StochasticHyperparameterOptimizer` temperature pertu (`taskcade-t102.17.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.17.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.17.1: Write unit tests verifying `StochasticHyperparameterOptimizer` temperature pertu [Role: type_specialist] [Files: packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts]
+  - [ ] `taskcade-t102.17.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.17.1: Write unit tests verifying `StochasticHyperparameterOptimizer` temperature pertu [Role: implementer] [Files: packages/engine/src/optimization/StochasticHyperparameterOptimizer.ts]
+
+
+### Task taskcade-t102.13.1 Rehabilitation [2026-10-20T13:53:54.502Z]
+- **Parent Task**: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio (`taskcade-t102.13.1`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio [Role: type_specialist] [Files: packages/frontend/src/app/services/task-api.service.ts]
+  - [ ] `taskcade-t102.13.1.2`: [Rehab 2/3] Core Implementation Unit: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio [Role: implementer] [Files: packages/frontend/src/app/services/task-api.service.ts]
+  - [ ] `taskcade-t102.13.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellatio [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.12.12 Rehabilitation [2026-10-20T13:32:41.931Z]
+- **Parent Task**: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali (`taskcade-t102.12.12`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.12.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali [Role: type_specialist] [Files: packages/tools/src/ToolRegistry.ts]
+  - [ ] `taskcade-t102.12.12.2`: [Rehab 2/3] Core Implementation Unit: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali [Role: implementer] [Files: packages/tools/src/ToolRegistry.ts]
+  - [ ] `taskcade-t102.12.12.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema vali [Role: test_engineer] [Files: packages/tools/src/tests/tool_registry.test.ts]
+
+
+### Task taskcade-t102.12.10 Rehabilitation [2026-10-20T13:05:47.212Z]
+- **Parent Task**: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline (`taskcade-t102.12.10`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.10.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline [Role: type_specialist] [Files: packages/tools/src/implementations/RegexTool.ts]
+  - [ ] `taskcade-t102.12.10.2`: [Rehab 2/3] Core Implementation Unit: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline [Role: implementer] [Files: packages/tools/src/implementations/RegexTool.ts]
+  - [ ] `taskcade-t102.12.10.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline [Role: test_engineer] [Files: packages/tools/src/tests/regex_tool.test.ts]
+
+
+### Task regr-mvg3or7v-fx9z Rehabilitation [2026-10-20T12:51:47.105Z]
+- **Parent Task**: [TDD Regression] TypeScriptMethodSplicer (`regr-mvg3or7v-fx9z`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg3or7v-fx9z.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvg3or7v-fx9z.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
 ### Task taskcade-t102.13.10 Rehabilitation [2026-10-20T10:13:43.496Z]
 - **Parent Task**: T102.13.10: Write unit tests verifying `RepomapViewComponent` SVG graph rendering, zoom/pan  (`taskcade-t102.13.10`)
 - **Failure Count**: 3

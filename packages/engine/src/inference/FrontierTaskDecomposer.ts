@@ -128,7 +128,7 @@ export class FrontierTaskDecomposer {
         role: item.role as AgentRole,
         status: "PENDING",
         priority: item.priority as TaskPriority,
-        modelAssigned: null,
+        modelAssigned: modelName || null,
         testCommand: item.testCommand ?? null,
         focusFiles: item.focusFiles ?? null,
         targetBranch: null,

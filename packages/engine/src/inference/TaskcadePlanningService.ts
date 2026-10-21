@@ -126,11 +126,11 @@ export class TaskcadePlanningService {
         created.push(...decomposed);
       } catch {
         // Fallback: create direct task if LLM decomposition fails
-        const directTask = await this.createDirectTask(nextObjective);
+        const directTask = await this.createDirectTask(nextObjective, model);
         created.push(directTask);
       }
     } else {
-      const directTask = await this.createDirectTask(nextObjective);
+      const directTask = await this.createDirectTask(nextObjective, model);
       created.push(directTask);
     }
 
@@ -146,6 +146,7 @@ export class TaskcadePlanningService {
 
   private async createDirectTask(
     objective: TaskcadeBacklogObjective,
+    fallbackModel?: string,
   ): Promise<TaskRecord> {
     const now = new Date().toISOString();
     const task: TaskRecord = {
@@ -155,7 +156,7 @@ export class TaskcadePlanningService {
       role: objective.role || ("implementer" as AgentRole),
       status: "PENDING",
       priority: objective.priority,
-      modelAssigned: objective.modelAssigned ?? null,
+      modelAssigned: objective.modelAssigned ?? fallbackModel ?? null,
       testCommand: "npm test",
       focusFiles: null,
       targetBranch: null,

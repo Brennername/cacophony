@@ -25,6 +25,7 @@ import { CodeScrubber } from "../scrubber/CodeScrubber.js";
 import { DaemonIPCServer } from "./DaemonIPC.js";
 import { CacophonyHttpServer } from "./CacophonyHttpServer.js";
 import { StructuredLogger } from "../telemetry/StructuredLogger.js";
+import type { AutonomousWorkerPipeline } from "../scheduler/AutonomousWorkerPipeline.js";
 import * as path from "node:path";
 
 export interface DaemonConfig {
@@ -159,18 +160,40 @@ export class CacophonyDaemon {
     new ModelRegistryRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
-    const isDemoMode =
+    const isHeroku = Boolean(
+      process.env.HEROKU === "true" ||
+      process.env.DYNO ||
+      process.env.HEROKU_APP_ID ||
+      process.env.HEROKU_DYNO_ID,
+    );
+    const isExplicitDemo =
       process.env.DEMO_MODE === "true" ||
       process.env.SIMULATION_MODE === "true";
+    const isExplicitReal =
+      process.env.DEMO_MODE === "false" ||
+      process.env.SIMULATION_MODE === "false" ||
+      process.env.FORCE_REAL === "true";
+
+    const vegaProvider = new AmdVegaTelemetryProvider();
+    const isVegaAvailable = await vegaProvider.isAvailable();
+
+    // Auto-detect demo mode: if running on Heroku, or if no AMD Vega APU can be found,
+    // or if explicitly configured for demo/simulation, activate the mock engine.
+    const isDemoMode = !isExplicitReal && (isExplicitDemo || isHeroku || !isVegaAvailable);
+
     let telemetryProvider;
     if (isDemoMode) {
       telemetryProvider = new FallbackTelemetryProvider(true);
+      this.logger.info(
+        `Autonomous Daemon initialized in DEMO/MOCK mode (isHeroku=${isHeroku}, isVegaAvailable=${isVegaAvailable})`,
+        { isHeroku, isVegaAvailable, isDemoMode },
+      );
     } else {
-      const vegaProvider = new AmdVegaTelemetryProvider();
-      const isVegaAvailable = await vegaProvider.isAvailable();
-      telemetryProvider = isVegaAvailable
-        ? vegaProvider
-        : new FallbackTelemetryProvider();
+      telemetryProvider = vegaProvider;
+      this.logger.info(
+        "Autonomous Daemon initialized with hardware APU telemetry and real Ollama pipeline",
+        { isVegaAvailable, isDemoMode },
+      );
     }
     this.telemetryPoller = new TelemetryPoller({
       provider: telemetryProvider,
@@ -375,34 +398,50 @@ export class CacophonyDaemon {
     });
     this.scheduler.setVramPrefetchCoordinator(this.vramPrefetchCoordinator);
 
-    const worker = new AutonomousWorkerPipeline({
-      workspaceRoot: process.cwd(),
-      ollamaProvider: primaryInferenceProvider as any,
-      contextMinimizer: minimizer,
-      parser,
-      ruleEngine,
-      streamTapManager: this.streamTapManager,
-      stageRepository: this.stageRepo,
-      taskRepository: this.taskRepo,
-      worktreeManager,
-      gitPlatformProvider: gitProvider,
-      frontierReviewer,
-      banditScheduler: this.banditScheduler,
-      modelHealthRepository: this.healthRepo,
-      vramPrefetchCoordinator: this.vramPrefetchCoordinator,
-      autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
-      repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
-      repoName: process.env.GIT_REPO_NAME || "cacophony",
-      gitRemote: process.env.GIT_REMOTE || "gitea",
-    });
-    this.workerPipeline = worker;
+    const { MockAutonomousWorkerPipeline } = await import(
+      "../scheduler/MockAutonomousWorkerPipeline.js"
+    );
 
+    const mockWorker = new MockAutonomousWorkerPipeline({
+      taskRepository: this.taskRepo,
+      stageRepository: this.stageRepo,
+      streamTapManager: this.streamTapManager,
+      telemetryPoller: this.telemetryPoller,
+    });
+
+    let realWorker: AutonomousWorkerPipeline | undefined;
+    if (!isDemoMode) {
+      realWorker = new AutonomousWorkerPipeline({
+        workspaceRoot: process.cwd(),
+        ollamaProvider: primaryInferenceProvider as any,
+        contextMinimizer: minimizer,
+        parser,
+        ruleEngine,
+        streamTapManager: this.streamTapManager,
+        stageRepository: this.stageRepo,
+        taskRepository: this.taskRepo,
+        worktreeManager,
+        gitPlatformProvider: gitProvider,
+        frontierReviewer,
+        banditScheduler: this.banditScheduler,
+        modelHealthRepository: this.healthRepo,
+        vramPrefetchCoordinator: this.vramPrefetchCoordinator,
+        autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
+        repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
+        repoName: process.env.GIT_REPO_NAME || "cacophony",
+        gitRemote: process.env.GIT_REMOTE || "gitea",
+      });
+      this.workerPipeline = realWorker;
+    }
 
     this.scheduler.setExecutionHandler(async (groomed, model, signal) => {
-      if (isDemoMode && this.telemetryPoller) {
-        this.telemetryPoller.setSimulatedActiveModel(model);
+      if (isDemoMode) {
+        if (this.telemetryPoller) {
+          this.telemetryPoller.setSimulatedActiveModel(model);
+        }
+        return await mockWorker.executeTask(groomed, model, signal);
       }
-      return await worker.executeTask(groomed, model, signal);
+      return await realWorker!.executeTask(groomed, model, signal);
     });
     if (
       this.taskRepo &&
@@ -501,15 +540,76 @@ export class CacophonyDaemon {
               role: "implementer",
               modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M",
             },
+            {
+              id: "backlog-stream-tap",
+              category: "streaming",
+              title: "Implement Realtime SSE Sub-Stage Progress Broadcaster",
+              description:
+                "Broadcast fine-grained sub-stage AST transforms, token throughput telemetry, and test outputs over Server-Sent Events.",
+              priority: "P1",
+              role: "architect",
+              modelAssigned: "deepseek-r1:8b",
+            },
+            {
+              id: "backlog-bandit-scheduler",
+              category: "scheduling",
+              title: "Configure Multi-Armed Bandit Exploration Policy",
+              description:
+                "Deploy contextual epsilon-greedy exploration arm selection for implementer and reviewer model routing.",
+              priority: "P1",
+              role: "implementer",
+              modelAssigned: "qwen2.5-coder:14b",
+            },
+            {
+              id: "backlog-vram-prefetch",
+              category: "hardware",
+              title: "Optimize Asynchronous Model Weight Eviction and Prefetching",
+              description:
+                "Predict upcoming queue models and coordinate zero-downtime model swaps across AMD Vega APU unified memory boundaries.",
+              priority: "P1",
+              role: "implementer",
+              modelAssigned: "gemma3:4b-it-qat",
+            },
+            {
+              id: "backlog-metrics-exporter",
+              category: "telemetry",
+              title: "Build Prometheus and OpenTelemetry Diagnostic Exporters",
+              description:
+                "Expose standard Prometheus metrics format for temperature, power draw, token velocity, and model transition latencies.",
+              priority: "P2",
+              role: "implementer",
+              modelAssigned: "qwen2.5-coder:7b-instruct-q4_K_M",
+            },
+            {
+              id: "backlog-ast-scrubber",
+              category: "scrubbing",
+              title: "Strengthen AST Import Sanitization and Emoji Neutralization",
+              description:
+                "Enforce deterministic AST sanitization passes removing illegal emojis and repairing broken relative imports prior to testing.",
+              priority: "P1",
+              role: "type_specialist",
+              modelAssigned: "gemma3:4b-it-qat",
+            },
+            {
+              id: "backlog-test-harness",
+              category: "testing",
+              title: "Construct Ephemeral Vitest Container Sandboxing Harness",
+              description:
+                "Isolate unit test execution runs in lightweight sandboxed worker threads with deterministic timeouts.",
+              priority: "P1",
+              role: "test_engineer",
+              modelAssigned: "qwen2.5-coder:14b",
+            },
           ]
         : [],
       recycleBacklog: isDemoMode,
     });
 
-    // In demo mode, run queue replenishment every 5 seconds to keep live tasks active across diverse models
+    // In demo mode, run queue replenishment continuously to keep live tasks active across diverse models
     if (isDemoMode) {
       const fleetModels = [
         "qwen2.5-coder:7b-instruct-q4_K_M",
+        "deepseek-r1:8b",
         "gemma3:4b-it-qat",
         "qwen2.5-coder:14b",
       ];
@@ -523,46 +623,48 @@ export class CacophonyDaemon {
             modelName: nextModel,
           });
         }
-      }, 5000);
+      }, 4000);
       try {
         await planningService.replenishQueueIfLow({
           minQueueDepth: 3,
-          modelName: "qwen2.5-coder:7b-instruct-q4_K_M",
+          modelName: fleetModels[0]!,
         });
       } catch {
         // ignore
       }
     }
 
-    // 4c. Autonomous Engine Auto-Tuner & Profile Optimization
-    const { EngineAutoTuner } = await import("../scheduler/EngineAutoTuner.js");
-    this.autoTuner = new EngineAutoTuner({
-      profileRepo: this.modelProfileRepo,
-      healthRepo: this.healthRepo,
-      hardwareSpec: {
-        totalVramGb: 16,
-        availableVramGb: 8,
-      },
-    });
+    // 4c. Autonomous Engine Auto-Tuner & Profile Optimization (active only when running live hardware/Ollama)
+    if (!isDemoMode) {
+      const { EngineAutoTuner } = await import("../scheduler/EngineAutoTuner.js");
+      this.autoTuner = new EngineAutoTuner({
+        profileRepo: this.modelProfileRepo,
+        healthRepo: this.healthRepo,
+        hardwareSpec: {
+          totalVramGb: 16,
+          availableVramGb: 8,
+        },
+      });
 
-    // Run autonomous model profile optimization periodically every 30 minutes
-    this.autoTuneTimer = setInterval(async () => {
-      if (this.isRunning && this.autoTuner) {
-        try {
-          const modelManager =
-            this.modelManager ||
-            new (
-              await import("../inference/OllamaModelManager.js")
-            ).OllamaModelManager();
-          const installed = await modelManager.listInstalledModels([]);
-          if (installed.length > 0) {
-            await this.autoTuner.autoTuneModels(installed.map((m) => m.name));
+      // Run autonomous model profile optimization periodically every 30 minutes
+      this.autoTuneTimer = setInterval(async () => {
+        if (this.isRunning && this.autoTuner) {
+          try {
+            const modelManager =
+              this.modelManager ||
+              new (
+                await import("../inference/OllamaModelManager.js")
+              ).OllamaModelManager();
+            const installed = await modelManager.listInstalledModels([]);
+            if (installed.length > 0) {
+              await this.autoTuner.autoTuneModels(installed.map((m) => m.name));
+            }
+          } catch {
+            // ignore transient auto-tune errors
           }
-        } catch {
-          // ignore transient auto-tune errors
         }
-      }
-    }, 1800_000);
+      }, 1800_000);
+    }
 
     // Run periodic database maintenance and checkpoint garbage collection
     this.pruningTimer = setInterval(async () => {

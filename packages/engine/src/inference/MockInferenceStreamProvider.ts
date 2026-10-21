@@ -76,9 +76,60 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
     return "ollama";
   }
 
+  private resolveContentForRequest(request: InferenceRequest): string {
+    const userMessage = request.messages?.find((m) => m.role === "user")?.content || "";
+
+    if (userMessage.includes("Decompose the following high-level objective") || userMessage.includes("raw JSON array")) {
+      return JSON.stringify(
+        [
+          {
+            title: "Define type contracts and interfaces",
+            prompt: "Create comprehensive TypeScript interfaces enforcing clean structural contracts.",
+            role: "architect",
+            priority: "P1",
+            focusFiles: "packages/engine/src/core/contracts.ts",
+            testCommand: "npm test --workspace=@cacophony/engine --if-present",
+          },
+          {
+            title: "Implement core service unit",
+            prompt: "Implement domain service satisfying interface contracts with robust error boundaries.",
+            role: "implementer",
+            priority: "P1",
+            focusFiles: "packages/engine/src/core/service.ts",
+            testCommand: "npm test --workspace=@cacophony/engine --if-present",
+          },
+          {
+            title: "Write unit test verification suite",
+            prompt: "Construct node:test suite verifying happy path and failure edge cases.",
+            role: "test_engineer",
+            priority: "P1",
+            focusFiles: "packages/engine/src/tests/service.test.ts",
+            testCommand: "node --test packages/engine/dist/tests/service.test.js",
+          },
+        ],
+        null,
+        2,
+      );
+    }
+
+    if (userMessage.includes("Review") || userMessage.includes("APPROVE") || userMessage.includes("verdict")) {
+      return JSON.stringify({
+        verdict: "APPROVE",
+        summary: "Code adheres to single responsibility principle and strict typing invariants.",
+        comments: [
+          "Contract boundaries are well defined.",
+          "Error boundaries prevent unhandled exceptions.",
+        ],
+      });
+    }
+
+    // Default to markdown-fenced TypeScript code
+    return `\`\`\`typescript\n${this.defaultSnippet}\n\`\`\``;
+  }
+
   public async generate(request: InferenceRequest): Promise<InferenceResponse> {
     const tokensPerSecond = this.getTokensPerSecondForModel(request.model);
-    const content = this.defaultSnippet;
+    const content = this.resolveContentForRequest(request);
     const totalTokens = Math.round(content.length / 4);
     const durationMs = (totalTokens / tokensPerSecond) * 1000;
 
@@ -99,11 +150,11 @@ export class MockInferenceStreamProvider implements IInferenceProvider {
   ): Promise<InferenceResponse> {
     const tokensPerSecond = this.getTokensPerSecondForModel(request.model);
     const startMs = Date.now();
-    const content = this.defaultSnippet;
+    const content = this.resolveContentForRequest(request);
 
     // Divide snippet into small code tokens/words
     const tokens = content.match(/(\s+|\w+|[^\s\w]+)/g) || [content];
-    const delayPerChunkMs = Math.max(15, Math.round(1000 / tokensPerSecond));
+    const delayPerChunkMs = Math.max(10, Math.min(25, Math.round(1000 / (tokensPerSecond * 2))));
 
     for (const chunk of tokens) {
       onChunk(chunk);
