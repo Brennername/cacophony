@@ -87,7 +87,7 @@ export class ListDirTool implements ICacophonyTool<ListDirParams> {
     const results: DirEntryInfo[] = [];
 
     for (const item of items) {
-      // Skip VCS and package caches
+
       if (item.name === ".git" || item.name === "node_modules" || item.name === "dist") {
         continue;
       }
@@ -101,7 +101,7 @@ export class ListDirTool implements ICacophonyTool<ListDirParams> {
           const subChildren = await fs.readdir(fullItemPath);
           childCount = subChildren.length;
         } catch {
-          // ignore permission errors
+
         }
 
         results.push({
@@ -121,7 +121,7 @@ export class ListDirTool implements ICacophonyTool<ListDirParams> {
           const s = await fs.stat(fullItemPath);
           sizeBytes = s.size;
         } catch {
-          // ignore
+
         }
         results.push({
           name: item.name,
