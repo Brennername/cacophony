@@ -4,6 +4,11 @@ import assert from 'node:assert/strict';
 const dispatcher = {
   triggerIntervention: () => {
     console.log('Intervention triggered');
+  },
+  dispatchIntervention: (task: any) => {
+    if (task.status === 'stagnant') {
+      dispatcher.triggerIntervention();
+    }
   }
 };
 
