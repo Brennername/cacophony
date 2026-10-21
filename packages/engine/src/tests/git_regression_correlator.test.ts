@@ -14,7 +14,6 @@ describe('GitRegressionCorrelator', () => {
     const commitHash = 'abc123';
     const expectedFiles = ['file1.js', 'file2.ts'];
 
-    // Mock the runGit method to return expected output
     correlator['runGit'] = (args: readonly string[]): string => {
       if (args.includes(commitHash)) {
         return expectedFiles.join('\n');
@@ -30,7 +29,6 @@ describe('GitRegressionCorrelator', () => {
     const commitHash = 'invalid';
     const expectedFiles: string[] = [];
 
-    // Mock the runGit method to throw an error for invalid hash
     correlator['runGit'] = (args: readonly string[]): string => {
       if (args.includes(commitHash)) {
         throw new Error('Invalid commit hash');
