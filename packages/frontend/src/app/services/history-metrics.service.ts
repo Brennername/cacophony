@@ -131,6 +131,8 @@ export class HistoryMetricsService {
           role?: string;
           priority?: string;
           failureCount?: number;
+          failureReason?: string | null;
+          commitHash?: string | null;
           completedAt?: string | null;
           createdAt?: string | null;
           prUrl?: string | null;
@@ -140,6 +142,7 @@ export class HistoryMetricsService {
         const mapStatus = (rawStatus: string): HistoryItem['status'] => {
           switch (rawStatus) {
             case 'COMPLETED':
+            case 'PASSED':
               return 'PASSED';
             case 'FAILED':
               return 'FAILED';
@@ -169,15 +172,14 @@ export class HistoryMetricsService {
             role: t.role || 'implementer',
             priority: t.priority || 'P1',
             failureCount: t.failureCount || 0,
+            failureReason: t.failureReason || undefined,
             prNumber: t.prUrl ? (parseInt(t.prUrl.match(/\/pulls\/(\d+)/)?.[1] || '0', 10) || 0) : 0,
             prUrl: t.prUrl || '',
-            commitDiffUrl: '',
+            commitDiffUrl: t.commitHash ? `/NeXeN/cacophony/commit/${t.commitHash}` : '',
             timestamp: t.completedAt || 'Recently',
           };
         });
-        if (items.length > 0) {
-          this.historyItems.set(items);
-        }
+        this.historyItems.set(items);
       }
     } catch {
       // offline
