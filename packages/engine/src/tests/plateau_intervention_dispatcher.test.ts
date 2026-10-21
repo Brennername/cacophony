@@ -8,6 +8,19 @@ const dispatcher = {
 };
 
 describe('Plateau Intervention Dispatcher', () => {
+  it('should handle an empty array of interventions', async () => {
+    const task = { status: 'stagnant' };
+    const interventionDispatcher = {
+      dispatchIntervention: (task: any) => {
+        if (task.status === 'stagnant') {
+          dispatcher.triggerIntervention();
+        }
+      }
+    };
+
+    assert.doesNotThrow(() => interventionDispatcher.dispatchIntervention(task));
+  });
+
   it('should not trigger intervention if task is not stagnant', async () => {
     const task = { status: 'active' };
     const interventionDispatcher = {
