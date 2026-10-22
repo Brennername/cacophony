@@ -6,22 +6,22 @@ import {
 } from "../hardware/SystemToolScanner.js";
 
 describe("SystemToolScanner Diagnostic & Discovery Tests", () => {
-  it("should discover docker when in PATH", async () => {
+  it("should discover git when in PATH", async () => {
     const customExec = async (file: string, args: string[]) => {
-      if (file === "which" && args[0] === "docker") {
-        return { stdout: "/usr/bin/docker\n", stderr: "" };
+      if (file === "which" && args[0] === "git") {
+        return { stdout: "/usr/bin/git\n", stderr: "" };
       }
-      if (file === "docker") {
-        return { stdout: "Docker version 24.0.5, build ced0996\n", stderr: "" };
+      if (file === "git") {
+        return { stdout: "git version 2.39.1\n", stderr: "" };
       }
       throw new Error(`Command not found: ${file} ${args.join(" ")}`);
     };
 
     const scanner = new SystemToolScanner(undefined, customExec);
-    const result = await scanner.findTool("docker");
+    const result = await scanner.findTool("git");
 
-    assert.ok(result, "Expected docker to be found in PATH");
-    assert.strictEqual(result.binaryName, "docker");
+    assert.ok(result, "Expected git to be found in PATH");
+    assert.strictEqual(result.binaryName, "git");
     assert.strictEqual(result.installed, true);
   });
 
