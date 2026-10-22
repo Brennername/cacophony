@@ -1,9 +1,10 @@
-import { Injectable, signal, computed } from '@angular/core';
 import type {
   OllamaInstalledModel,
   OllamaPullProgressEvent,
-  ModelManagementConfig
+  ModelManagementConfig,
+  ModelTuningProfile,
 } from '@cacophony/shared-types';
+import { Injectable, signal, computed } from '@angular/core';
 
 /**
  * ModelFleetService
@@ -82,8 +83,9 @@ export class ModelFleetService {
         const data = (await res.json()) as ModelManagementConfig;
         this.config.set(data);
       }
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(`Failed to fetch config: ${msg}`);
     }
   }
 
@@ -217,16 +219,18 @@ export class ModelFleetService {
               this.pullingModelName.set(null);
             }
           }
-        } catch {
-          // ignore
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.error.set(`Failed to parse SSE event: ${msg}`);
         }
       });
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(`Failed to set up SSE listener: ${msg}`);
     }
   }
 
-  public readonly profiles = signal<readonly import('@cacophony/shared-types').ModelTuningProfile[]>([]);
+  public readonly profiles = signal<readonly ModelTuningProfile[]>([]);
 
   /**
    * Fetches active model tuning profiles from GET /api/models/profiles.
@@ -238,15 +242,16 @@ export class ModelFleetService {
         const data = await res.json();
         this.profiles.set(data);
       }
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(`Failed to fetch profiles: ${msg}`);
     }
   }
 
   /**
    * Updates an existing profile via PUT /api/models/profiles/:id.
    */
-  public async saveProfile(profile: import('@cacophony/shared-types').ModelTuningProfile): Promise<void> {
+  public async saveProfile(profile: ModelTuningProfile): Promise<void> {
     try {
       const res = await fetch(`/api/models/profiles/${encodeURIComponent(profile.id)}`, {
         method: 'PUT',
@@ -256,8 +261,9 @@ export class ModelFleetService {
       if (res.ok) {
         await this.fetchProfiles();
       }
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(`Failed to save profile: ${msg}`);
     }
   }
 
@@ -274,8 +280,31 @@ export class ModelFleetService {
       if (res.ok) {
         await this.fetchProfiles();
       }
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(`Failed to auto-tune profiles: ${msg}`);
     }
   }
+}
+
+interface TelemetryPollingOptions {
+  interval: number;
+}
+
+interface StatusUpdatePayload {
+  status: string;
+  percent?: number;
+  error?: string;
+}
+
+interface PullModelRequest {
+  model: string;
+}
+
+interface DeleteModelRequest {
+  modelId: string;
+}
+
+interface BenchmarkModelRequest {
+  modelId: string;
 }

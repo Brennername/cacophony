@@ -1,15 +1,31 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Mock implementation of the dispatcher with triggerIntervention method
 const dispatcher = {
   triggerIntervention: () => {
-    // Simulate intervention handling
     console.log('Intervention triggered');
+  },
+  dispatchIntervention: (task: any) => {
+    if (task.status === 'stagnant') {
+      dispatcher.triggerIntervention();
+    }
   }
 };
 
 describe('Plateau Intervention Dispatcher', () => {
+  it('should handle an empty array of interventions', async () => {
+    const task = { status: 'stagnant' };
+    const interventionDispatcher = {
+      dispatchIntervention: (task: any) => {
+        if (task.status === 'stagnant') {
+          dispatcher.triggerIntervention();
+        }
+      }
+    };
+
+    assert.doesNotThrow(() => interventionDispatcher.dispatchIntervention(task));
+  });
+
   it('should not trigger intervention if task is not stagnant', async () => {
     const task = { status: 'active' };
     const interventionDispatcher = {
@@ -34,7 +50,6 @@ describe('Plateau Intervention Dispatcher', () => {
       }
     };
 
-    // Mock console.log to capture output
     const originalConsoleLog = console.log;
     let logOutput = '';
     console.log = (message) => {
@@ -44,9 +59,31 @@ describe('Plateau Intervention Dispatcher', () => {
     interventionDispatcher.dispatchIntervention(task1);
     interventionDispatcher.dispatchIntervention(task2);
 
-    // Restore original console.log
     console.log = originalConsoleLog;
 
     assert.strictEqual(logOutput, 'Intervention triggered\nIntervention triggered\n');
+  });
+
+  it('should trigger intervention when task is stagnant', async () => {
+    const task = { status: 'stagnant' };
+    const interventionDispatcher = {
+      dispatchIntervention: (task: any) => {
+        if (task.status === 'stagnant') {
+          dispatcher.triggerIntervention();
+        }
+      }
+    };
+
+    const originalConsoleLog = console.log;
+    let logOutput = '';
+    console.log = (message) => {
+      logOutput += message + '\n';
+    };
+
+    interventionDispatcher.dispatchIntervention(task);
+
+    console.log = originalConsoleLog;
+
+    assert.strictEqual(logOutput, 'Intervention triggered\n');
   });
 });

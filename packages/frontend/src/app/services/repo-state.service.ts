@@ -50,7 +50,7 @@ export class RepoStateService {
             this.fetchRepoSymbols();
           }
         } catch {
-          // Ignore parse errors
+
         }
       };
 
@@ -59,7 +59,7 @@ export class RepoStateService {
         setTimeout(() => this.startEventListening(), 5000);
       };
     } catch {
-      // Graceful fallback
+
     }
   }
 

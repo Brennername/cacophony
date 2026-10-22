@@ -1,23 +1,31 @@
-import { Component, input, output, model } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type ExecutionSafetyMode = 'plan' | 'build' | 'auto';
 
-/**
- * Responsive segmented control for toggling between Plan, Build, and Auto execution safety modes.
- */
 @Component({
   selector: 'app-execution-mode-selector',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './execution-mode-selector.component.html',
-  styleUrl: './execution-mode-selector.component.css',
+  styleUrls: ['./execution-mode-selector.component.css'],
 })
 export class ExecutionModeSelectorComponent {
-  public readonly selectedMode = model<ExecutionSafetyMode>('build');
-  public readonly modeChanged = output<ExecutionSafetyMode>();
+  /**
+   * The currently selected execution mode. Defaults to 'build'.
+   */
+  selectedMode = signal<ExecutionSafetyMode>('build');
 
-  public selectMode(mode: ExecutionSafetyMode): void {
+  /**
+   * Emits the new selected execution mode when it changes.
+   */
+  modeChanged = output<ExecutionSafetyMode>();
+
+  /**
+   * Selects a new execution mode and emits an event with the new mode.
+   * @param mode The new execution mode to select.
+   */
+  selectMode(mode: ExecutionSafetyMode): void {
     this.selectedMode.set(mode);
     this.modeChanged.emit(mode);
   }

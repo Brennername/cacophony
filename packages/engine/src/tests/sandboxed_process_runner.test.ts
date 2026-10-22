@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 
 export interface SandboxedProcessOptions {
-  readonly cwd?: string;
+  readonly cwd: string;
   readonly timeoutMs?: number | undefined;
   readonly maxBufferBytes?: number | undefined; // default 256 * 1024 (256KB)
   readonly env?: NodeJS.ProcessEnv | undefined;
@@ -47,9 +47,9 @@ export class SandboxedProcessRunner {
 
       const child = spawn(command, {
         shell: true,
-        cwd: options.cwd ?? process.cwd(), // Default to current working directory if not provided
+        cwd: options.cwd,
         env: options.env ?? process.env,
-        detached: false, // Changed from true to false for synchronous execution
+        detached: true, // Changed from false to true for asynchronous execution
       });
 
       let timeoutTimer: NodeJS.Timeout | null = null;

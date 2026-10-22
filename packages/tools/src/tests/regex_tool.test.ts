@@ -38,7 +38,7 @@ export class RegexTool implements ICacophonyTool<RegexToolParams> {
       const regex = new RegExp(params.pattern, flags);
 
       if (params.replacement === undefined) {
-        // Extract capture groups and return them in the output
+
         const matches = [...originalContent.matchAll(regex)];
         if (matches.length === 0) {
           return {
@@ -49,12 +49,7 @@ export class RegexTool implements ICacophonyTool<RegexToolParams> {
         }
 
         const matchSummaries = matches.slice(0, 50).map((m, idx) => {
-          // Extract capture groups from the match object
-          const captureGroups = Object.entries(m)
-            .filter(([key, _value]) => key !== 'index' && key !== 'input' && key !== 'groups')
-            .map(([key, value]) => `Group ${key}: "${value}"`);
-
-          return `Match #${idx + 1}: "${m[0]}" at offset ${m.index}\n${captureGroups.join('\n')}`;
+          return `Match #${idx + 1}: "${m[0]}" at offset ${m.index}`;
         });
 
         let summary = `Found ${matches.length} matches in ${params.path}:\n\n` + matchSummaries.join("\n");
@@ -78,12 +73,7 @@ export class RegexTool implements ICacophonyTool<RegexToolParams> {
         };
       }
 
-      let updatedContent = originalContent;
-      if (params.replacement) {
-        // Replace the content using the replacement string, which can contain capture groups
-        updatedContent = originalContent.replace(regex, params.replacement);
-      }
-
+      const updatedContent = originalContent.replace(regex, params.replacement);
 
       if (params.dryRun) {
         return {
