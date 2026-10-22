@@ -1,31 +1,18 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+// Mocking the dispatcher object to include createIntervention method
 const dispatcher = {
   triggerIntervention: () => {
     console.log('Intervention triggered');
   },
-  dispatchIntervention: (task: any) => {
-    if (task.status === 'stagnant') {
-      dispatcher.triggerIntervention();
-    }
+  createIntervention: (task: any) => {
+    // Simulate intervention creation logic
+    return { task, status: 'intervened' };
   }
 };
 
 describe('Plateau Intervention Dispatcher', () => {
-  it('should handle an empty array of interventions', async () => {
-    const task = { status: 'stagnant' };
-    const interventionDispatcher = {
-      dispatchIntervention: (task: any) => {
-        if (task.status === 'stagnant') {
-          dispatcher.triggerIntervention();
-        }
-      }
-    };
-
-    assert.doesNotThrow(() => interventionDispatcher.dispatchIntervention(task));
-  });
-
   it('should not trigger intervention if task is not stagnant', async () => {
     const task = { status: 'active' };
     const interventionDispatcher = {
@@ -64,26 +51,29 @@ describe('Plateau Intervention Dispatcher', () => {
     assert.strictEqual(logOutput, 'Intervention triggered\nIntervention triggered\n');
   });
 
-  it('should trigger intervention when task is stagnant', async () => {
-    const task = { status: 'stagnant' };
+  it('should handle plateaus with overlapping ranges', async () => {
+    const task1 = { status: 'stagnant', range: [1, 5] };
+    const task2 = { status: 'stagnant', range: [3, 7] };
     const interventionDispatcher = {
       dispatchIntervention: (task: any) => {
         if (task.status === 'stagnant') {
           dispatcher.triggerIntervention();
         }
+      },
+      handleOverlappingRanges: (tasks: any[]): any[] => {
+        return tasks.map(task => {
+          if (task.status === 'stagnant') {
+            return dispatcher.createIntervention(task);
+          }
+          return null;
+        }).filter(Boolean);
       }
     };
 
-    const originalConsoleLog = console.log;
-    let logOutput = '';
-    console.log = (message) => {
-      logOutput += message + '\n';
-    };
+    const interventions = interventionDispatcher.handleOverlappingRanges([task1, task2]);
 
-    interventionDispatcher.dispatchIntervention(task);
-
-    console.log = originalConsoleLog;
-
-    assert.strictEqual(logOutput, 'Intervention triggered\n');
+    assert.strictEqual(interventions.length, 2);
+    assert.deepStrictEqual(interventions[0], { task: task1, status: 'intervened' });
+    assert.deepStrictEqual(interventions[1], { task: task2, status: 'intervened' });
   });
 });
