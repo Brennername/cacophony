@@ -102,6 +102,19 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [x] T107.2: Implement `findTool(binaryName)` on `SystemToolScanner` for dynamic binary resolution and replace duplicate file content in `packages/engine/src/tests/system_tool_scanner.test.ts` with comprehensive unit tests. [Files: packages/engine/src/hardware/SystemToolScanner.ts, packages/engine/src/tests/system_tool_scanner.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/system_tool_scanner.test.js]
 - [x] T107.3: Expand `TargetedChunk` typing contracts with `oldEndLine` and `newEndLine`, add `build(...)` convenience alias method to `FocusedDiffBuilder`, and implement full unit test suite covering single/multi-line changes, whitespace, special characters, and empty/identical inputs. [Files: packages/engine/src/context/FocusedDiffBuilder.ts, packages/engine/src/tests/focused_diff_builder.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/focused_diff_builder.test.js]
 - [x] T107.4: Rebuild packages and container image with `./bin/rebuild-all.sh`, push to GitHub and Gitea remotes, and deploy release to Heroku. [Files: bin/rebuild-all.sh] [Test: ./bin/rebuild-all.sh]
+
+## Phase 108: Task Viewport Real Estate Optimization, Expandable Embedded Windows, Gitea PR Discussion Threads & Asynchronous Multi-Model Review Gating
+
+- [ ] T108.1: Task Header Real Estate Compression & Compact Typography: Slim down `.badge-row` (priority, status, role), shrink the task headline font size while maintaining bold/bright contrast, and compress `TaskDetailModalComponent` header, notification banner, and metadata grid vertical footprints for mobile-first density. [Files: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskDetailModalComponent]
+- [ ] T108.2: Embedded Scrollable Region Full Expansion & Corner Shrink Controls: Default embedded log, terminal, diff, prompt, cognitive trace, and diagnostic code boxes to expand fully to eliminate nested scroll-trapping, and introduce corner toggle controls allowing user-initiated shrinking to constrained scrollable windows. [Files: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskDetailModalComponent]
+- [ ] T108.3: Dynamic Tab Overflow Detection & Conditional `<` / `>` Navigation Arrows: Enhance horizontal tab scrolling bar in `TaskDetailModalComponent` to dynamically calculate scroll bounds on mobile and desktop viewports, displaying arrow buttons strictly when content can scroll in that direction. [Files: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskDetailModalComponent]
+- [ ] T108.4: Database Schema Migration & Repository for Gitea PR Discussion Threads & Model Comments: Create migration `021_pr_discussion_threads` and implement `PrDiscussionRepository` for storing PR review threads, multi-model advisory comments, domain tags (Security, Auth, UX/UI, Playwright E2E, Architecture), and thread resolution status. [Files: packages/db/src/migrations/021_pr_discussion_threads.ts, packages/db/src/migrations/MigrationRegistry.ts, packages/db/src/repositories/PrDiscussionRepository.ts, packages/db/src/index.ts, packages/db/src/tests/pr_discussion_repository.test.ts] [Test: node --test packages/db/dist/tests/pr_discussion_repository.test.js]
+- [ ] T108.5: Gitea Platform Provider Deep Thread Discussion & Issue Comments API: Extend `IGitPlatformProvider`, `GiteaPlatformProvider`, and `GiteaApiClient` with typed methods for fetching PR review threads and posting review comments, and expose REST endpoints `/api/tasks/:id/pr/threads` and `/api/tasks/:id/pr/threads/comments`. [Files: packages/shared-types/src/gitea.ts, packages/engine/src/gitea/IGitPlatformProvider.ts, packages/engine/src/gitea/GiteaPlatformProvider.ts, packages/engine/src/gitea/GiteaApiClient.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/tests/gitea_pr_threads.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/gitea_pr_threads.test.js]
+- [ ] T108.6: Domain Specialist Advisory Model Evaluator: Implement `DomainAdvisoryEvaluator` to dispatch domain-specific checks (Security, Authentication, UX/UI, Code Quality) to models, generating structured advice and inline/issue review comments directly on Gitea PR threads. [Files: packages/engine/src/inference/DomainAdvisoryEvaluator.ts, packages/engine/src/inference/MultiModelReviewCoordinator.ts, packages/engine/src/tests/domain_advisory_evaluator.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/domain_advisory_evaluator.test.js]
+- [ ] T108.7: Resource-Paced Asynchronous PR Merge Gating & Final Synthesis Loop: Implement `PrMergeGateCoordinator` in `AutonomousWorkerPipeline` to hold PRs from merge while continuing other tasks; queue heavy evaluations (e.g. Playwright E2E) behind all other tests within host memory/CPU limits; once domain reviews check in, trigger a final model synthesis round incorporating PR thread feedback before merge. [Files: packages/engine/src/scheduler/PrMergeGateCoordinator.ts, packages/engine/src/scheduler/AutonomousWorkerPipeline.ts, packages/engine/src/tests/pr_merge_gate_coordinator.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/pr_merge_gate_coordinator.test.js]
+- [ ] T108.8: Interactive PR Discussion Threads & Multi-Model Advisory View in Frontend: Display live Gitea PR discussion threads with domain tags, reviewer badges, line-level code comments, and advisory recommendations in `TaskDetailModalComponent` PR Reviews tab. [Files: packages/frontend/src/app/services/task-api.service.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskDetailModalComponent]
+- [ ] T108.9: Monorepo Build, Container Synchronization & Verification: Execute `./bin/rebuild-all.sh`, compile all packages, update Docker container image, and verify healthy operational status on `/api/status`. [Files: bin/rebuild-all.sh] [Test: ./bin/rebuild-all.sh]
+
 - [ ] T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown snippet formatting, and auto-scroll to bottom. [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts, packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs supervised mode switching and indicator badges. [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts, packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.20: Write unit tests verifying `GanttTransportComponent` stage span bar scaling, zoom level adjustments, and hover tooltip positioning. [Files: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.ts, packages/frontend/src/app/components/gantt-transport/gantt-transport.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
@@ -440,6 +453,204 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task regr-mvg3or7z-q82h.2.2 Rehabilitation [2026-10-22T22:23:30.962Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement (`regr-mvg3or7z-q82h.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg3or7z-q82h.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvg3or7z-q82h.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task taskcade-t102.12.11.3.1 Rehabilitation [2026-10-22T19:58:45.826Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf (`taskcade-t102.12.11.3.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.11.3.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [ ] `taskcade-t102.12.11.3.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+
+
+### Task taskcade-t102.14.9.3 Rehabilitation [2026-10-22T19:50:30.540Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte (`taskcade-t102.14.9.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.9.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `taskcade-t102.14.9.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvg9n3dy-cbef.2 Rehabilitation [2026-10-22T18:50:16.912Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit (`regr-mvg9n3dy-cbef.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg9n3dy-cbef.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [ ] `regr-mvg9n3dy-cbef.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+
+
+### Task regr-mvjm9z9d-vb5j Rehabilitation [2026-10-22T18:27:02.263Z]
+- **Parent Task**: [TDD Regression] subfolder routing (`regr-mvjm9z9d-vb5j`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvjm9z9d-vb5j.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [ ] `regr-mvjm9z9d-vb5j.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task regr-mvg9gvu4-tyjt.2 Rehabilitation [2026-10-22T17:37:05.301Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. (`regr-mvg9gvu4-tyjt.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg9gvu4-tyjt.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvg9gvu4-tyjt.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.2 Rehabilitation [2026-10-22T17:06:10.956Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg9gvu8-bbfd.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvg9gvu8-bbfd.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhduh5l-q5un Rehabilitation [2026-10-22T16:29:48.887Z]
+- **Parent Task**: [TDD Regression] should block dangerous commands (`regr-mvhduh5l-q5un`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvhduh5l-q5un.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvhduh5l-q5un.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhde30g-bd2k Rehabilitation [2026-10-22T15:54:47.229Z]
+- **Parent Task**: [TDD Regression] should block the "sudo" command (`regr-mvhde30g-bd2k`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvhde30g-bd2k.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvhde30g-bd2k.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.1 Rehabilitation [2026-10-22T15:27:13.572Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg9gvu8-bbfd.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvg9gvu8-bbfd.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvjcffnt-7ce3 Rehabilitation [2026-10-22T15:08:28.636Z]
+- **Parent Task**: [TDD Regression] should handle multi-line valid input (`regr-mvjcffnt-7ce3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvjcffnt-7ce3.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle multi-line valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [ ] `regr-mvjcffnt-7ce3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multi-line valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
+### Task regr-mvhde306-gg36 Rehabilitation [2026-10-22T14:43:25.554Z]
+- **Parent Task**: [TDD Regression] should block the "git clean -f" command (`regr-mvhde306-gg36`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvhde306-gg36.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [ ] `regr-mvhde306-gg36.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task taskcade-t102.12.11.3.2 Rehabilitation [2026-10-22T14:37:38.952Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf (`taskcade-t102.12.11.3.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.11.3.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [ ] `taskcade-t102.12.11.3.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+
+
+### Task taskcade-t102.6.8.3 Rehabilitation [2026-10-22T14:17:32.435Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement gua (`taskcade-t102.6.8.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.8.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement gua [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [ ] `taskcade-t102.6.8.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement gua [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task taskcade-t102.8.5.3 Rehabilitation [2026-10-22T14:05:23.018Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b (`taskcade-t102.8.5.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.8.5.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [ ] `taskcade-t102.8.5.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
+### Task taskcade-t102.16.6.3 Rehabilitation [2026-10-22T13:41:55.182Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, (`taskcade-t102.16.6.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.16.6.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [ ] `taskcade-t102.16.6.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task taskcade-t102.16.6.2 Rehabilitation [2026-10-22T13:29:23.842Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, (`taskcade-t102.16.6.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.16.6.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [ ] `taskcade-t102.16.6.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
+
+
+### Task taskcade-t102.1.19.3 Rehabilitation [2026-10-22T13:10:46.440Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv (`taskcade-t102.1.19.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.1.19.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: test_engineer] [Files: all]
+  - [ ] `taskcade-t102.1.19.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs superv [Role: test_engineer] [Files: all]
+
+
+### Task regr-mvh7rgpj-xs6w Rehabilitation [2026-10-22T12:43:20.160Z]
+- **Parent Task**: [TDD Regression] should discover curl when in PATH (`regr-mvh7rgpj-xs6w`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvh7rgpj-xs6w.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should discover curl when in PATH [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts]
+  - [ ] `regr-mvh7rgpj-xs6w.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should discover curl when in PATH [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts]
+
+
+### Task taskcade-t102.16.6.1 Rehabilitation [2026-10-22T12:42:43.909Z]
+- **Parent Task**: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, (`taskcade-t102.16.6.1`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.16.6.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [ ] `taskcade-t102.16.6.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
+
+
+### Task taskcade-t102.2.6.2 Rehabilitation [2026-10-22T12:01:49.989Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq (`taskcade-t102.2.6.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.2.6.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: type_specialist] [Files: packages/engine/src/telemetry/CpuFallbackProvider.ts]
+  - [ ] `taskcade-t102.2.6.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.2.6: Write unit tests verifying `CpuFallbackProvider` proc/cpuinfo parsing, core freq [Role: implementer] [Files: packages/engine/src/telemetry/CpuFallbackProvider.ts]
+
+
+### Task taskcade-t102.3.2.3 Rehabilitation [2026-10-22T11:41:53.311Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na (`taskcade-t102.3.2.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.2.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na [Role: test_engineer] [Files: packages/engine/src/tests/git_checkpoint_manager.test.ts]
+  - [ ] `taskcade-t102.3.2.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na [Role: test_engineer] [Files: packages/engine/src/tests/git_checkpoint_manager.test.ts]
+
 
 ### Task regr-mvh7jejh-0xef Rehabilitation [2026-10-22T09:23:14.267Z]
 - **Parent Task**: [TDD Regression] should handle missing binaries in system PATH (`regr-mvh7jejh-0xef`)
