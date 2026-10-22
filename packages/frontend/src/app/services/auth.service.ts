@@ -69,7 +69,7 @@ export class AuthService {
         this.activeProvider.set(this.authConfig.activeProvider || 'authentik');
       }
     } catch {
-      // Fallback to defaults if backend offline
+      // Handle error
     }
     return this.authConfig;
   }
