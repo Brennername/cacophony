@@ -77,6 +77,7 @@ export interface AutonomousWorkerPipelineOptions {
   readonly modelHealthRepository?: ModelHealthRepository | undefined;
   readonly diagnosticPreFlightChecker?: DiagnosticPreFlightChecker | undefined;
   readonly vramPrefetchCoordinator?: VramPrefetchCoordinator | undefined;
+  readonly telemetryProvider?: import("../telemetry/IHardwareTelemetryProvider.js").IHardwareTelemetryProvider | undefined;
 }
 
 
@@ -121,6 +122,7 @@ export class AutonomousWorkerPipeline {
   private readonly modelHealthRepo?: ModelHealthRepository | undefined;
   private readonly diagnosticPreFlightChecker: DiagnosticPreFlightChecker;
   private readonly vramPrefetchCoordinator?: VramPrefetchCoordinator | undefined;
+  private readonly telemetryProvider?: import("../telemetry/IHardwareTelemetryProvider.js").IHardwareTelemetryProvider | undefined;
   private readonly issueSynthesizer?: AutomatedIssueSynthesizer | undefined;
   private readonly multiModelReviewCoordinator?: MultiModelReviewCoordinator | undefined;
   private debugTaskPipeline: boolean;
@@ -222,6 +224,7 @@ export class AutonomousWorkerPipeline {
     this.monorepoBuildGate =
       options.monorepoBuildGate ??
       new MonorepoBuildGate({ sandboxedRunner: this.sandboxedRunner });
+    this.telemetryProvider = options.telemetryProvider;
     this.defaultPipeline = options.defaultPipeline ?? {
       id: "pipeline_autonomous_standard",
       name: "Standard Autonomous Code Pipeline",
@@ -243,6 +246,52 @@ export class AutonomousWorkerPipeline {
         },
       ],
     };
+  }
+
+  /**
+   * Samples CPU load average and hardware APU thermal conditions, introducing intentional
+   * cooldown delay if the APU is heat-soaked or system memory/CPU is experiencing contention.
+   */
+  private async enforceSystemPacing(taskId: string, reason: string): Promise<void> {
+    const os = await import("node:os");
+    const cpus = os.cpus().length || 1;
+    const loadAvg1m = os.loadavg()[0] ?? 0;
+    const normalizedLoad = loadAvg1m / cpus;
+
+    let shouldCoolOff = false;
+    let coolOffReason = "";
+    let coolOffMs = 0;
+
+    // Detect CPU contention exceeding thread capacity
+    if (normalizedLoad > 1.25) {
+      shouldCoolOff = true;
+      coolOffReason = `CPU 1m load average elevated (${loadAvg1m.toFixed(2)} across ${cpus} cores, ${(normalizedLoad * 100).toFixed(0)}% saturation)`;
+      coolOffMs = 4000;
+    }
+
+    // Detect thermal elevated conditions
+    if (this.telemetryProvider) {
+      try {
+        const metrics = await this.telemetryProvider.sample();
+        if (metrics.edgeTempCelsius >= 85) {
+          shouldCoolOff = true;
+          coolOffReason = `Hardware APU temperature elevated (${metrics.edgeTempCelsius}C >= 85C)`;
+          coolOffMs = Math.max(coolOffMs, 6000);
+        }
+      } catch {}
+    }
+
+    if (shouldCoolOff && coolOffMs > 0) {
+      if (this.streamTapManager) {
+        this.streamTapManager.emitSubStageLog({
+          taskId,
+          channel: "test_output",
+          content: `[System Governor] ${coolOffReason}. Pausing ${coolOffMs}ms for APU thermal/CPU cooldown before ${reason}...\n`,
+          timestamp: Date.now(),
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, coolOffMs));
+    }
   }
 
   /**
@@ -635,6 +684,10 @@ export class AutonomousWorkerPipeline {
         }
       }, 1000);
 
+      if (this.streamTapManager) {
+        await this.streamTapManager.waitIfSuspended(taskId);
+      }
+
       try {
         parseResult = await this.parser.executeWithSelfHealing(
           this.provider,
@@ -643,6 +696,9 @@ export class AutonomousWorkerPipeline {
             messages: [{ role: "user", content: inferencePrompt }],
             temperature: task.metadataHints?.temperature ?? 0.1,
             maxTokens: task.metadataHints?.maxTokens ?? requestedMaxTokens,
+            contextTokens:
+              task.metadataHints?.contextTokens ??
+              task.metadataHints?.contextBudget,
           },
           (chunk) => {
 
@@ -1176,6 +1232,9 @@ export class AutonomousWorkerPipeline {
                 ],
                 temperature: task.metadataHints?.temperature ?? 0.1,
                 maxTokens: task.metadataHints?.maxTokens ?? requestedMaxTokens,
+                contextTokens:
+                  task.metadataHints?.contextTokens ??
+                  task.metadataHints?.contextBudget,
               },
             );
 
@@ -1377,6 +1436,17 @@ export class AutonomousWorkerPipeline {
           !testPassed &&
           testRemediationAttempts < maxRemediationAttempts
         ) {
+          if (this.streamTapManager) {
+            await this.streamTapManager.waitIfSuspended(taskId);
+          }
+
+          if (testRemediationAttempts > 0) {
+            // Cooldown pause between remediation attempts to allow CPU and memory to settle
+            await new Promise((resolve) => setTimeout(resolve, 2500));
+          }
+
+          await this.enforceSystemPacing(taskId, "test execution");
+
           if (this.streamTapManager) {
             this.streamTapManager.emitSubStageLog({
               taskId,
@@ -1606,6 +1676,9 @@ export class AutonomousWorkerPipeline {
                 ],
                 temperature: task.metadataHints?.temperature ?? 0.1,
                 maxTokens: task.metadataHints?.maxTokens ?? requestedMaxTokens,
+                contextTokens:
+                  task.metadataHints?.contextTokens ??
+                  task.metadataHints?.contextBudget,
               },
             );
 

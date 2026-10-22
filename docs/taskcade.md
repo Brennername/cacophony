@@ -87,6 +87,14 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [x] T105.2: Strictly bind `TaskDetailModalComponent` dialog to screen viewport bounds and introduce a side-scrolling defined tab bar with `<` and `>` arrow navigation buttons and touch swiping. [Files: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css, packages/frontend/src/app/components/task-inspector/task-inspector.component.css, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskDetailModalComponent]
 - [x] T105.3: Calibrate `MockInferenceStreamProvider` to rate-limit mock token generation to average 11.0 tok/s with realistic ±5.5 tok/s random burst oscillations while keeping real mode unthrottled. [Files: packages/engine/src/inference/MockInferenceStreamProvider.ts, packages/engine/src/daemon/CacophonyDaemon.ts, packages/engine/src/tests/mock_inference_stream.test.ts] [Test: node --test packages/engine/dist/tests/mock_inference_stream.test.js]
 - [x] T105.4: Rebuild packages and Docker container with `./bin/rebuild-all.sh`, push to GitHub and Gitea remotes, and manually deploy to Heroku. [Files: bin/rebuild-all.sh] [Test: ./bin/rebuild-all.sh]
+
+## Phase 106: Surgical Context Window Controls, APU Hardware Memory Tuning, Single Test Concurrency & System Cooldown Pacing
+
+- [x] T106.1: Add `contextTokens` to `InferenceRequest` and `TaskMetadataHints` for granular task/request context sizing while defaulting `OllamaProvider.resolveModelOptions` to 4096 tokens on 16GB APU systems. [Files: packages/shared-types/src/model.ts, packages/shared-types/src/task.ts, packages/engine/src/inference/OllamaProvider.ts, packages/engine/src/tests/model_tuning.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/model_tuning.test.js]
+- [x] T106.2: Enforce single test concurrency (`--test-concurrency=1`) across QueueGroomer, package.json test scripts, and SandboxedProcessRunner to eliminate CPU thrashing and host memory exhaustion into ZRAM. [Files: packages/engine/src/scheduler/QueueGroomer.ts, packages/engine/src/testing/SandboxedProcessRunner.ts, packages/engine/package.json, packages/db/package.json, packages/tools/package.json, packages/frontend/test-runner.cjs, packages/engine/src/tests/test_command_scoping.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/test_command_scoping.test.js]
+- [x] T106.3: Implement proactive resident model eviction in `TaskScheduler.tick()` when candidate tasks fail co-residency headroom checks against active model but fit standalone within physical VRAM. [Files: packages/engine/src/scheduler/TaskScheduler.ts, packages/engine/src/tests/scheduler_model_unload.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/scheduler_model_unload.test.js]
+- [x] T106.4: Integrate CPU load average and APU thermal cooldown pacing (`enforceSystemPacing`) and task suspension wait states into `AutonomousWorkerPipeline` before test execution and code generation rounds. [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts, packages/engine/src/daemon/CacophonyDaemon.ts] [Test: npm test --workspace=@cacophony/engine]
+- [x] T106.5: Expose dynamic scheduler pause state in `/api/status`, and provide REST control endpoints `/api/scheduler/pause`, `/api/scheduler/resume`, `/api/tasks/:id/pause`, and `/api/tasks/:id/resume`. [Files: packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/scheduler/TaskScheduler.ts, packages/engine/src/__tests__/DaemonCli.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/__tests__/DaemonCli.test.js]
 - [ ] T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown snippet formatting, and auto-scroll to bottom. [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts, packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs supervised mode switching and indicator badges. [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts, packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.20: Write unit tests verifying `GanttTransportComponent` stage span bar scaling, zoom level adjustments, and hover tooltip positioning. [Files: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.ts, packages/frontend/src/app/components/gantt-transport/gantt-transport.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
@@ -425,6 +433,266 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task regr-mvgwsywr-xkn2 Rehabilitation [2026-10-22T01:59:11.700Z]
+- **Parent Task**: [TDD Regression] should handle a change with only whitespace (`regr-mvgwsywr-xkn2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvgwsywr-xkn2.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with only whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [ ] `regr-mvgwsywr-xkn2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with only whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsywc-lewt Rehabilitation [2026-10-22T01:29:46.012Z]
+- **Parent Task**: [TDD Regression] should handle a change with mixed case (`regr-mvgwsywc-lewt`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvgwsywc-lewt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with mixed case [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [ ] `regr-mvgwsywc-lewt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with mixed case [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task taskcade-t102.13.4 Rehabilitation [2026-10-21T23:48:41.555Z]
+- **Parent Task**: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign (`taskcade-t102.13.4`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.4.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign [Role: type_specialist] [Files: packages/frontend/src/app/services/auth.service.ts]
+  - [ ] `taskcade-t102.13.4.2`: [Rehab 2/3] Core Implementation Unit: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign [Role: implementer] [Files: packages/frontend/src/app/services/auth.service.ts]
+  - [ ] `taskcade-t102.13.4.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Sign [Role: test_engineer] [Files: all]
+
+
+### Task regr-mvgwsyxo-afao Rehabilitation [2026-10-21T23:12:51.403Z]
+- **Parent Task**: [TDD Regression] should handle a change at the end of the file (`regr-mvgwsyxo-afao`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvgwsyxo-afao.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change at the end of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [ ] `regr-mvgwsyxo-afao.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change at the end of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task taskcade-t102.13.6 Rehabilitation [2026-10-21T22:34:31.828Z]
+- **Parent Task**: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig (`taskcade-t102.13.6`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.13.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig [Role: type_specialist] [Files: packages/frontend/src/app/services/reactive-signal.service.ts]
+  - [ ] `taskcade-t102.13.6.2`: [Rehab 2/3] Core Implementation Unit: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig [Role: implementer] [Files: packages/frontend/src/app/services/reactive-signal.service.ts]
+  - [ ] `taskcade-t102.13.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Sig [Role: test_engineer] [Files: all]
+
+
+### Task taskcade-t102.6.9 Rehabilitation [2026-10-21T22:13:14.376Z]
+- **Parent Task**: T102.6.9: Write unit tests verifying `RulePipelineEngine` sequential rule execution, chang (`taskcade-t102.6.9`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.9.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.6.9: Write unit tests verifying `RulePipelineEngine` sequential rule execution, chang [Role: type_specialist] [Files: packages/engine/src/rules/RulePipelineEngine.ts]
+  - [ ] `taskcade-t102.6.9.2`: [Rehab 2/3] Core Implementation Unit: T102.6.9: Write unit tests verifying `RulePipelineEngine` sequential rule execution, chang [Role: implementer] [Files: packages/engine/src/rules/RulePipelineEngine.ts]
+  - [ ] `taskcade-t102.6.9.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.6.9: Write unit tests verifying `RulePipelineEngine` sequential rule execution, chang [Role: test_engineer] [Files: packages/engine/src/tests/rule_pipeline_engine.test.ts]
+
+
+### Task regr-mvgta6nh-akkg Rehabilitation [2026-10-21T21:31:42.490Z]
+- **Parent Task**: [TDD Regression] should return a unified install command for missing packages (`regr-mvgta6nh-akkg`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvgta6nh-akkg.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should return a unified install command for missing packages [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `regr-mvgta6nh-akkg.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should return a unified install command for missing packages [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+
+
+### Task regr-mvgta6mw-zlvv Rehabilitation [2026-10-21T20:17:35.791Z]
+- **Parent Task**: [TDD Regression] should correctly identify installed tools (`regr-mvgta6mw-zlvv`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvgta6mw-zlvv.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should correctly identify installed tools [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `regr-mvgta6mw-zlvv.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correctly identify installed tools [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+
+
+### Task taskcade-t102.6.8.2 Rehabilitation [2026-10-21T19:35:36.537Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement gua (`taskcade-t102.6.8.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.6.8.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement gua [Role: type_specialist] [Files: packages/engine/src/rules/catalog/LooseRootFileGuardRule.ts]
+  - [ ] `taskcade-t102.6.8.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement gua [Role: implementer] [Files: packages/engine/src/rules/catalog/LooseRootFileGuardRule.ts]
+
+
+### Task taskcade-t102.10.1.2 Rehabilitation [2026-10-21T19:04:24.138Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi (`taskcade-t102.10.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.10.1.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: type_specialist] [Files: packages/engine/src/lsp/LspDiagnosticIngestor.ts]
+  - [ ] `taskcade-t102.10.1.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: implementer] [Files: packages/engine/src/lsp/LspDiagnosticIngestor.ts]
+
+
+### Task regr-mvg3or7v-fx9z.1 Rehabilitation [2026-10-21T17:23:59.116Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer (`regr-mvg3or7v-fx9z.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg3or7v-fx9z.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvg3or7v-fx9z.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task regr-mvg3or7v-fx9z.2 Rehabilitation [2026-10-21T16:34:17.654Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer (`regr-mvg3or7v-fx9z.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg3or7v-fx9z.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvg3or7v-fx9z.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task taskcade-t102.16.4 Rehabilitation [2026-10-21T15:19:12.143Z]
+- **Parent Task**: T102.16.4: Write unit tests verifying `WorkspaceIsolationManager` ephemeral worktree creati (`taskcade-t102.16.4`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.16.4.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.16.4: Write unit tests verifying `WorkspaceIsolationManager` ephemeral worktree creati [Role: type_specialist] [Files: packages/engine/src/isolation/WorkspaceIsolationManager.ts]
+  - [ ] `taskcade-t102.16.4.2`: [Rehab 2/3] Core Implementation Unit: T102.16.4: Write unit tests verifying `WorkspaceIsolationManager` ephemeral worktree creati [Role: implementer] [Files: packages/engine/src/isolation/WorkspaceIsolationManager.ts]
+  - [ ] `taskcade-t102.16.4.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.16.4: Write unit tests verifying `WorkspaceIsolationManager` ephemeral worktree creati [Role: test_engineer] [Files: packages/engine/src/tests/workspace_isolation_manager.test.ts]
+
+
+### Task regr-mvgnzl3p-147r Rehabilitation [2026-10-21T15:12:01.184Z]
+- **Parent Task**: [TDD Regression] should handle methods with return values (`regr-mvgnzl3p-147r`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvgnzl3p-147r.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle methods with return values [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvgnzl3p-147r.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle methods with return values [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task regr-mvg3or7z-q82h.2 Rehabilitation [2026-10-21T14:38:26.359Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement (`regr-mvg3or7z-q82h.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg3or7z-q82h.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvg3or7z-q82h.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task regr-mvglnxjg-vuhc Rehabilitation [2026-10-21T13:38:24.135Z]
+- **Parent Task**: [TDD Regression] should correctly identify missing tools (`regr-mvglnxjg-vuhc`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvglnxjg-vuhc.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should correctly identify missing tools [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `regr-mvglnxjg-vuhc.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correctly identify missing tools [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+
+
+### Task regr-mvglnxjd-1wbx Rehabilitation [2026-10-21T12:24:17.619Z]
+- **Parent Task**: [TDD Regression] SystemToolScanner (`regr-mvglnxjd-1wbx`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvglnxjd-1wbx.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] SystemToolScanner [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `regr-mvglnxjd-1wbx.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] SystemToolScanner [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+
+
+### Task regr-mvglnxj9-3ojo Rehabilitation [2026-10-21T12:10:17.447Z]
+- **Parent Task**: [TDD Regression] scan method (`regr-mvglnxj9-3ojo`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvglnxj9-3ojo.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] scan method [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `regr-mvglnxj9-3ojo.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] scan method [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+
+
+### Task regr-mvg3or7z-q82h.1 Rehabilitation [2026-10-21T11:45:16.251Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement (`regr-mvg3or7z-q82h.1`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg3or7z-q82h.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [ ] `regr-mvg3or7z-q82h.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+
+
+### Task taskcade-t102.14.1 Rehabilitation [2026-10-21T10:32:35.340Z]
+- **Parent Task**: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment (`taskcade-t102.14.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment [Role: type_specialist] [Files: packages/engine/src/context/HashStubGenerator.ts]
+  - [ ] `taskcade-t102.14.1.2`: [Rehab 2/3] Core Implementation Unit: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment [Role: implementer] [Files: packages/engine/src/context/HashStubGenerator.ts]
+  - [ ] `taskcade-t102.14.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.14.1: Write unit tests verifying `HashStubGenerator` method body hashing, stub comment [Role: test_engineer] [Files: packages/engine/src/tests/hash_stub_generator.test.ts]
+
+
+### Task regr-mvglnxj2-ty9m Rehabilitation [2026-10-21T09:58:01.916Z]
+- **Parent Task**: [TDD Regression] checkTool method (`regr-mvglnxj2-ty9m`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvglnxj2-ty9m.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] checkTool method [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `regr-mvglnxj2-ty9m.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] checkTool method [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+
+
+### Task regr-mvglnxiz-yqtp Rehabilitation [2026-10-21T08:55:54.886Z]
+- **Parent Task**: [TDD Regression] should return correct tool status when not installed (`regr-mvglnxiz-yqtp`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvglnxiz-yqtp.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should return correct tool status when not installed [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+  - [ ] `regr-mvglnxiz-yqtp.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should return correct tool status when not installed [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts packages/engine/src/hardware/SystemToolScanner.ts]
+
+
+### Task taskcade-t102.14.9.2 Rehabilitation [2026-10-21T07:30:38.468Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte (`taskcade-t102.14.9.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.9.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte [Role: type_specialist] [Files: packages/engine/src/refactoring/SlotFillPromptBuilder.ts]
+  - [ ] `taskcade-t102.14.9.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte [Role: implementer] [Files: packages/engine/src/refactoring/SlotFillPromptBuilder.ts]
+
+
+### Task taskcade-t102.10.1 Rehabilitation [2026-10-21T05:40:32.339Z]
+- **Parent Task**: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi (`taskcade-t102.10.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.10.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: type_specialist] [Files: packages/engine/src/lsp/LspDiagnosticIngestor.ts]
+  - [ ] `taskcade-t102.10.1.2`: [Rehab 2/3] Core Implementation Unit: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: implementer] [Files: packages/engine/src/lsp/LspDiagnosticIngestor.ts]
+  - [ ] `taskcade-t102.10.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.10.1: Write unit tests verifying `LspDiagnosticIngestor` LSP publishDiagnostics notifi [Role: test_engineer] [Files: packages/engine/src/tests/lsp_diagnostic_ingestor.test.ts]
+
+
+### Task taskcade-t102.5.3 Rehabilitation [2026-10-21T05:22:52.140Z]
+- **Parent Task**: T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording (`taskcade-t102.5.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.5.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording [Role: type_specialist] [Files: packages/engine/src/bandit/BanditTaskScheduler.ts]
+  - [ ] `taskcade-t102.5.3.2`: [Rehab 2/3] Core Implementation Unit: T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording [Role: implementer] [Files: packages/engine/src/bandit/BanditTaskScheduler.ts]
+  - [ ] `taskcade-t102.5.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task taskcade-t102.12.11.3 Rehabilitation [2026-10-21T03:54:06.829Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf (`taskcade-t102.12.11.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.11.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [ ] `taskcade-t102.12.11.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+
+
+### Task regr-mvg9n3dy-cbef Rehabilitation [2026-10-21T03:23:42.414Z]
+- **Parent Task**: [TDD Regression] should correlate failure with a culprit commit (`regr-mvg9n3dy-cbef`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg9n3dy-cbef.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [ ] `regr-mvg9n3dy-cbef.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+
+
+### Task taskcade-t102.14.9 Rehabilitation [2026-10-21T02:49:09.395Z]
+- **Parent Task**: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte (`taskcade-t102.14.9`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.14.9.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte [Role: type_specialist] [Files: packages/engine/src/refactoring/SlotFillPromptBuilder.ts]
+  - [ ] `taskcade-t102.14.9.2`: [Rehab 2/3] Core Implementation Unit: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte [Role: implementer] [Files: packages/engine/src/refactoring/SlotFillPromptBuilder.ts]
+  - [ ] `taskcade-t102.14.9.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.14.9: Write unit tests verifying `SlotFillPromptBuilder` slot token replacement, conte [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
 
 ### Task taskcade-t102.8.5 Rehabilitation [2026-10-21T01:39:08.749Z]
 - **Parent Task**: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b (`taskcade-t102.8.5`)

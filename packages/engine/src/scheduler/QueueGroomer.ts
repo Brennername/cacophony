@@ -180,13 +180,13 @@ export class QueueGroomer {
           /^packages\/[^/]+\/src\//.test(candidateTest) &&
           /\.(?:ts|tsx)$/.test(candidateTest)
         ) {
-          testCommand = `node --test ${testDist}`;
+          testCommand = `node --test --test-concurrency=1 ${testDist}`;
           modified = true;
           groomNotes.push(
             `Mapped TypeScript test '${candidateTest}' to its compiled JavaScript output: ${testCommand}`,
           );
         } else if (/\.(?:js|mjs|cjs)$/.test(candidateTest)) {
-          testCommand = `node --test ${candidateTest}`;
+          testCommand = `node --test --test-concurrency=1 ${candidateTest}`;
           modified = true;
           groomNotes.push(
             `Scoped test command to compiled test output: ${testCommand}`,
@@ -203,7 +203,7 @@ export class QueueGroomer {
             `Scoped package test command to workspace '${packageName}': ${testCommand}`,
           );
         } else {
-          testCommand = `node --test ${testDist}`;
+          testCommand = `node --test --test-concurrency=1 ${testDist}`;
           modified = true;
           groomNotes.push(
             `Target test suite '${candidateTest}' scoped to compiled test file: ${testCommand}`,
@@ -222,7 +222,7 @@ export class QueueGroomer {
             : null;
         if (closestTest) {
           const compiledClosest = closestTest.replace(/\.ts$/, ".js");
-          testCommand = `node --test packages/engine/dist/tests/${compiledClosest}`;
+          testCommand = `node --test --test-concurrency=1 packages/engine/dist/tests/${compiledClosest}`;
           modified = true;
           groomNotes.push(
             `Requested test '${candidateTest}' is missing; selected the unique closest existing engine test '${compiledClosest}'.`,
@@ -501,7 +501,7 @@ export class QueueGroomer {
           const testDist = firstFile
             .replace("/src/", "/dist/")
             .replace(/\.(?:ts|tsx)$/, ".js");
-          return `node --test ${testDist}`;
+          return `node --test --test-concurrency=1 ${testDist}`;
         }
 
         if (pkgName === "engine" || pkgName === "db" || pkgName === "tools") {
@@ -517,12 +517,12 @@ export class QueueGroomer {
               `packages/${pkgName}/src/tests/${candidateName}.test.ts`,
             );
             if (fs.existsSync(testSrcPath)) {
-              return `node --test packages/${pkgName}/dist/tests/${candidateName}.test.js`;
+              return `node --test --test-concurrency=1 packages/${pkgName}/dist/tests/${candidateName}.test.js`;
             }
           }
 
           // Target specific unit test file rather than invoking the entire engine test suite
-          return `node --test packages/${pkgName}/dist/tests/${snakeName}.test.js`;
+          return `node --test --test-concurrency=1 packages/${pkgName}/dist/tests/${snakeName}.test.js`;
         }
 
         if (pkgName === "frontend") {

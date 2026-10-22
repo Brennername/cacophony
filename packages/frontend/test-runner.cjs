@@ -24,6 +24,10 @@ if (isForeignTarget) {
 const res = spawnSync('ng', ['test', '--watch=false'], {
   stdio: 'inherit',
   shell: true,
+  env: {
+    ...process.env,
+    NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --max-old-space-size=2048`.trim(),
+  },
 });
 
 process.exit(res.status ?? 0);

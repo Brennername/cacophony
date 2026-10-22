@@ -665,12 +665,40 @@ export class CacophonyHttpServer {
       const pending = await taskRepo.listPending();
       const status = {
         arena: "ONLINE",
-        schedulerPaused: false,
+        schedulerPaused: this.daemon.getScheduler()?.getPaused() ?? false,
         pendingTasksCount: pending.length,
         timestamp: new Date().toISOString(),
       };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(status));
+      return;
+    }
+
+    // 2a.1 REST API: Scheduler Pause
+    if (url.pathname === "/api/scheduler/pause" && req.method === "POST") {
+      this.daemon.getScheduler()?.pause();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: true,
+          message: "Task scheduler paused",
+          schedulerPaused: true,
+        }),
+      );
+      return;
+    }
+
+    // 2a.2 REST API: Scheduler Resume
+    if (url.pathname === "/api/scheduler/resume" && req.method === "POST") {
+      this.daemon.getScheduler()?.resume();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: true,
+          message: "Task scheduler resumed",
+          schedulerPaused: false,
+        }),
+      );
       return;
     }
 
@@ -1460,6 +1488,50 @@ export class CacophonyHttpServer {
           taskId,
           requeued: requeuedCount > 0,
           requeuedCount,
+        }),
+      );
+      return;
+    }
+
+    // 4a4b. REST API: POST /api/tasks/:id/pause (or suspend) - Temporarily pause/suspend active task execution
+    const taskPauseMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/(?:pause|suspend)$/,
+    );
+    if (taskPauseMatch && req.method === "POST") {
+      const taskId = decodeURIComponent(taskPauseMatch[1]!);
+      const streamTap = this.daemon.getStreamTapManager();
+      const suspended = streamTap ? streamTap.suspend(taskId) : false;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: suspended,
+          taskId,
+          suspended,
+          message: suspended
+            ? `Task ${taskId} execution paused`
+            : `Could not pause task ${taskId}`,
+        }),
+      );
+      return;
+    }
+
+    // 4a4c. REST API: POST /api/tasks/:id/resume - Resume paused task execution
+    const taskResumeMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/resume$/,
+    );
+    if (taskResumeMatch && req.method === "POST") {
+      const taskId = decodeURIComponent(taskResumeMatch[1]!);
+      const streamTap = this.daemon.getStreamTapManager();
+      const resumed = streamTap ? streamTap.resume(taskId) : false;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: resumed,
+          taskId,
+          resumed,
+          message: resumed
+            ? `Task ${taskId} execution resumed`
+            : `Task ${taskId} was not paused`,
         }),
       );
       return;

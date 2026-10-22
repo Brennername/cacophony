@@ -83,6 +83,7 @@ export const TaskMetadataHintsSchema = z.object({
   temperature: z.number().optional(),
   maxTokens: z.number().optional(),
   contextBudget: z.number().optional(),
+  contextTokens: z.number().optional(),
   timeoutMs: z.number().optional(),
   ruleBypassFlags: z.array(z.string()).optional(),
   stack: z.string().optional(),

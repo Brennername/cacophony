@@ -431,6 +431,13 @@ export class TaskScheduler implements IModelPredictor {
   }
 
   /**
+   * Returns whether scheduling is currently paused.
+   */
+  public getPaused(): boolean {
+    return this.isPaused;
+  }
+
+  /**
    * Puts scheduler in drain mode: finishes all pending tasks and then cleanly stops.
    */
   public drain(): void {
@@ -1123,7 +1130,70 @@ export class TaskScheduler implements IModelPredictor {
       }
 
       if (!targetTask || !selectedModel) {
-        return null;
+        // If all candidate tasks were deferred due to VRAM constraints while a disparate model
+        // is resident in VRAM, proactively evict the resident model if the top candidate fits standalone (T68.4.2)
+        if (
+          activeVramModel &&
+          activeVramModel !== "None" &&
+          this.ollamaProvider &&
+          sorted.length > 0
+        ) {
+          const topCandidate = sorted[0]!;
+          const candidateModel = await this.selectCandidateModel(
+            topCandidate,
+            activeVramModel,
+          );
+
+          if (candidateModel !== activeVramModel) {
+            let totalVramMb = 0;
+            if (typeof this.telemetryProvider.getVramMetrics === "function") {
+              try {
+                const metrics = await this.telemetryProvider.getVramMetrics();
+                totalVramMb = Math.floor(metrics.totalBytes / (1024 * 1024));
+              } catch {}
+            }
+            if (totalVramMb === 0) {
+              try {
+                const sample = await this.telemetryProvider.sample();
+                totalVramMb = Math.floor(sample.vramTotalBytes / (1024 * 1024));
+              } catch {}
+            }
+
+            const requiredMb = this.vramCatalog.estimateTotalVramMb(
+              candidateModel,
+              4096,
+            );
+            const safetyMarginMb = 1024;
+
+            if (totalVramMb >= requiredMb + safetyMarginMb) {
+              this.logger.info(
+                `All candidate tasks deferred due to co-residency VRAM constraint with loaded model '${activeVramModel}'. Proactively unloading to accommodate '${candidateModel}' (${requiredMb} MB required, ${totalVramMb} MB total VRAM).`,
+                {
+                  activeVramModel,
+                  candidateModel,
+                  requiredMb,
+                  totalVramMb,
+                },
+              );
+
+              await this.prepareModelExecution(candidateModel, activeVramModel);
+              this.cachedLoadedModels = null;
+
+              const recheck = await this.evaluateDispatchEligibility(
+                topCandidate,
+                candidateModel,
+              );
+              if (recheck.allowed) {
+                targetTask = topCandidate;
+                selectedModel = candidateModel;
+              }
+            }
+          }
+        }
+
+        if (!targetTask || !selectedModel) {
+          return null;
+        }
       }
 
       // 3b. Pre-dispatch safeguard: ensure targetTask was not completed in taskcade.md or history

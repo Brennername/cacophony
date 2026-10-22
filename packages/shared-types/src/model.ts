@@ -74,6 +74,8 @@ export interface InferenceRequest {
   readonly stopSequences?: readonly string[];
   readonly stream?: boolean;
   readonly signal?: AbortSignal;
+  readonly contextTokens?: number | undefined;
+  readonly numCtx?: number | undefined;
 }
 
 /**

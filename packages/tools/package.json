@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "node --test dist/tests/*.test.js"
+    "test": "node --test --test-concurrency=1 dist/tests/*.test.js"
   },
   "dependencies": {
     "@cacophony/shared-types": "*",

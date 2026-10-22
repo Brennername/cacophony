@@ -43,7 +43,7 @@ describe("QueueGroomer Test Command Scoping Regression Tests", () => {
     const groomed = groomer.groom(task);
     assert.equal(
       groomed.scopedTestCommand,
-      "node --test packages/engine/dist/tests/sensors_parser.test.js",
+      "node --test --test-concurrency=1 packages/engine/dist/tests/sensors_parser.test.js",
       "Compiled test paths must run directly with node --test rather than running the full workspace suite",
     );
   });
@@ -58,7 +58,7 @@ describe("QueueGroomer Test Command Scoping Regression Tests", () => {
     const groomed = groomer.groom(task);
     assert.equal(
       groomed.scopedTestCommand,
-      "node --test packages/engine/dist/tests/sensors_parser.test.js",
+      "node --test --test-concurrency=1 packages/engine/dist/tests/sensors_parser.test.js",
       "TypeScript test file paths must map directly to compiled dist/*.test.js",
     );
   });
@@ -73,7 +73,7 @@ describe("QueueGroomer Test Command Scoping Regression Tests", () => {
     const groomed = groomer.groom(task);
     assert.equal(
       groomed.scopedTestCommand,
-      "node --test packages/engine/dist/tests/sensors_parser.test.js",
+      "node --test --test-concurrency=1 packages/engine/dist/tests/sensors_parser.test.js",
       "Focus files that are test files must resolve directly to node --test for that specific suite",
     );
   });
@@ -88,7 +88,7 @@ describe("QueueGroomer Test Command Scoping Regression Tests", () => {
     const groomed = groomer.groom(task);
     assert.equal(
       groomed.scopedTestCommand,
-      "node --test packages/engine/dist/tests/sensors_parser.test.js",
+      "node --test --test-concurrency=1 packages/engine/dist/tests/sensors_parser.test.js",
       "Source files with matching snake_case test files must resolve directly to that specific test",
     );
   });

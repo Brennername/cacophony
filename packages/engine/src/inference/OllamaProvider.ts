@@ -134,6 +134,7 @@ export class OllamaProvider implements IInferenceProvider {
     role?: string,
     requestedTemperature?: number,
     requestedMaxTokens?: number,
+    requestedContextTokens?: number,
   ): Promise<{
     temperature: number;
     num_predict: number;
@@ -149,11 +150,15 @@ export class OllamaProvider implements IInferenceProvider {
       } catch {}
     }
 
+    const defaultNumCtx = process.env["OLLAMA_NUM_CTX"]
+      ? Number(process.env["OLLAMA_NUM_CTX"])
+      : 4096;
+
     if (activeProfile && activeProfile.isActive) {
       return {
         temperature: requestedTemperature ?? activeProfile.temperature,
         num_predict: requestedMaxTokens ?? activeProfile.numPredict,
-        num_ctx: activeProfile.numCtx,
+        num_ctx: requestedContextTokens ?? activeProfile.numCtx,
         top_k: activeProfile.topK,
         top_p: activeProfile.topP,
         repeat_penalty: activeProfile.repeatPenalty,
@@ -167,7 +172,7 @@ export class OllamaProvider implements IInferenceProvider {
         (process.env["OLLAMA_NUM_PREDICT"]
           ? Number(process.env["OLLAMA_NUM_PREDICT"])
           : 4096),
-      num_ctx: Number(process.env["OLLAMA_NUM_CTX"] || 16384),
+      num_ctx: requestedContextTokens ?? defaultNumCtx,
     };
   }
 
@@ -181,6 +186,7 @@ export class OllamaProvider implements IInferenceProvider {
       undefined,
       request.temperature,
       request.maxTokens,
+      request.contextTokens ?? request.numCtx,
     );
 
     const body = {
@@ -261,6 +267,7 @@ export class OllamaProvider implements IInferenceProvider {
       undefined,
       request.temperature,
       request.maxTokens,
+      request.contextTokens ?? request.numCtx,
     );
 
     const body = {

@@ -426,6 +426,7 @@ export class CacophonyDaemon {
         banditScheduler: this.banditScheduler,
         modelHealthRepository: this.healthRepo,
         vramPrefetchCoordinator: this.vramPrefetchCoordinator,
+        telemetryProvider,
         autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
         repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
         repoName: process.env.GIT_REPO_NAME || "cacophony",

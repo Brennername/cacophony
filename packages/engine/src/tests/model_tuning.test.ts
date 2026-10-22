@@ -11,9 +11,18 @@ test("Model Profile Dynamic Tuning & OllamaProvider Resolution (T79.1)", async (
       const provider = new OllamaProvider();
       const options = await provider.resolveModelOptions("qwen2.5-coder:7b");
 
-      assert.strictEqual(options.num_ctx, 16384);
+      assert.strictEqual(options.num_ctx, 4096);
       assert.strictEqual(options.num_predict, 4096);
       assert.strictEqual(options.temperature, 0.2);
+
+      const customOptions = await provider.resolveModelOptions(
+        "qwen2.5-coder:7b",
+        undefined,
+        undefined,
+        undefined,
+        16384,
+      );
+      assert.strictEqual(customOptions.num_ctx, 16384);
     },
   );
 
