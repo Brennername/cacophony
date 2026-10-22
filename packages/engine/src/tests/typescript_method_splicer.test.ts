@@ -41,8 +41,6 @@ describe('TypeScriptMethodSplicer', () => {
     const splicer = new TypeScriptMethodSplicer();
     const result = await splicer.splice(originalCode, 'oldMethod', newMethod);
 
-    // The original assertion was incorrect and assumed comments would be added during replacement.
-    // This is not the intended behavior of the method splicer.  The test has been updated to remove this assertion.
     assert(result.includes('New Method'));
     assert(!result.includes('Old Method'));
   });
