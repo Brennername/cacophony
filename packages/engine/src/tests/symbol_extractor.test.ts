@@ -198,10 +198,9 @@ export class SymbolExtractor {
       .split("\n");
     const signature = (lines[0] || "").trim().slice(0, 160);
 
-    const nodeText = content.slice(node.getStart(sourceFile), node.getEnd());
     const refs: string[] = [];
     for (const sym of importedSymbols) {
-      if (sym !== name && nodeText.includes(sym)) {
+      if (sym !== name && content.includes(sym)) {
         refs.push(sym);
       }
     }
