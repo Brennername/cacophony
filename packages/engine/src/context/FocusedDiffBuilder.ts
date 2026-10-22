@@ -7,6 +7,8 @@ export interface TargetedChunk {
   readonly newLineCount: number;
   readonly oldLines: readonly string[];
   readonly newLines: readonly string[];
+  readonly oldEndLine?: number;
+  readonly newEndLine?: number;
 }
 
 export class FocusedDiffBuilder {
@@ -79,6 +81,8 @@ export class FocusedDiffBuilder {
         newLineCount: chunkNewLines.length,
         oldLines: chunkOldLines,
         newLines: chunkNewLines,
+        oldEndLine: changeOrigStart + chunkOldLines.length,
+        newEndLine: changeModStart + chunkNewLines.length,
       });
 
       origIdx = diffOrigEnd;
@@ -88,6 +92,14 @@ export class FocusedDiffBuilder {
     return chunks;
   }
 
+  public build(
+    originalContent: string,
+    modifiedContent: string,
+    filePath = "file.txt",
+  ): string {
+    return this.formatUnifiedDiff(filePath, originalContent, modifiedContent);
+  }
+
   public formatUnifiedDiff(
     filePath: string,
     originalContent: string,
@@ -95,6 +107,10 @@ export class FocusedDiffBuilder {
   ): string {
     const origLines = originalContent ? originalContent.split("\n") : [];
     const modLines = modifiedContent ? modifiedContent.split("\n") : [];
+
+    if (originalContent === modifiedContent) {
+      return "";
+    }
 
     const header = `--- a/${filePath}\n+++ b/${filePath}\n`;
 

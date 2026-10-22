@@ -95,6 +95,13 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [x] T106.3: Implement proactive resident model eviction in `TaskScheduler.tick()` when candidate tasks fail co-residency headroom checks against active model but fit standalone within physical VRAM. [Files: packages/engine/src/scheduler/TaskScheduler.ts, packages/engine/src/tests/scheduler_model_unload.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/scheduler_model_unload.test.js]
 - [x] T106.4: Integrate CPU load average and APU thermal cooldown pacing (`enforceSystemPacing`) and task suspension wait states into `AutonomousWorkerPipeline` before test execution and code generation rounds. [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts, packages/engine/src/daemon/CacophonyDaemon.ts] [Test: npm test --workspace=@cacophony/engine]
 - [x] T106.5: Expose dynamic scheduler pause state in `/api/status`, and provide REST control endpoints `/api/scheduler/pause`, `/api/scheduler/resume`, `/api/tasks/:id/pause`, and `/api/tasks/:id/resume`. [Files: packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/scheduler/TaskScheduler.ts, packages/engine/src/__tests__/DaemonCli.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/__tests__/DaemonCli.test.js]
+
+## Phase 107: Regression Rectification: Scheduler Concurrency Assertion Alignment, SystemToolScanner Path Diagnostics & FocusedDiffBuilder Test Suite
+
+- [x] T107.1: Align `packages/engine/src/__tests__/Scheduler.test.ts` test expectations with Phase 106 single-concurrency scoped test commands (`--test-concurrency=1`). [Files: packages/engine/src/__tests__/Scheduler.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/__tests__/Scheduler.test.js]
+- [x] T107.2: Implement `findTool(binaryName)` on `SystemToolScanner` for dynamic binary resolution and replace duplicate file content in `packages/engine/src/tests/system_tool_scanner.test.ts` with comprehensive unit tests. [Files: packages/engine/src/hardware/SystemToolScanner.ts, packages/engine/src/tests/system_tool_scanner.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/system_tool_scanner.test.js]
+- [x] T107.3: Expand `TargetedChunk` typing contracts with `oldEndLine` and `newEndLine`, add `build(...)` convenience alias method to `FocusedDiffBuilder`, and implement full unit test suite covering single/multi-line changes, whitespace, special characters, and empty/identical inputs. [Files: packages/engine/src/context/FocusedDiffBuilder.ts, packages/engine/src/tests/focused_diff_builder.test.ts] [Test: node --test --test-concurrency=1 packages/engine/dist/tests/focused_diff_builder.test.js]
+- [x] T107.4: Rebuild packages and container image with `./bin/rebuild-all.sh`, push to GitHub and Gitea remotes, and deploy release to Heroku. [Files: bin/rebuild-all.sh] [Test: ./bin/rebuild-all.sh]
 - [ ] T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown snippet formatting, and auto-scroll to bottom. [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts, packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs supervised mode switching and indicator badges. [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts, packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.20: Write unit tests verifying `GanttTransportComponent` stage span bar scaling, zoom level adjustments, and hover tooltip positioning. [Files: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.ts, packages/frontend/src/app/components/gantt-transport/gantt-transport.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
@@ -108,7 +115,7 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.2.8: Write unit tests verifying `NvidiaSmiParser` XML/CSV query output parsing, VRAM allocation extraction, and temperature reading. [Files: packages/engine/src/telemetry/NvidiaSmiParser.ts, packages/engine/src/tests/nvidia_smi_parser.test.ts] [Test: node --test packages/engine/dist/tests/nvidia_smi_parser.test.js]
 - [ ] T102.2.9: Write unit tests verifying `PrometheusMetricsExporter` metric name formatting, label escaping, and counter/gauge incrementing. [Files: packages/engine/src/telemetry/PrometheusMetricsExporter.ts, packages/engine/src/tests/prometheus_metrics_exporter.test.ts] [Test: node --test packages/engine/dist/tests/prometheus_metrics_exporter.test.js]
 - [ ] T102.2.10: Write unit tests verifying `TelemetryCorrelationService` rolling window buffer management, correlation coefficient calculations, and anomaly flagging. [Files: packages/engine/src/telemetry/TelemetryCorrelationService.ts, packages/engine/src/tests/telemetry_correlation_service.test.ts] [Test: node --test packages/engine/dist/tests/telemetry_correlation_service.test.js]
-- [ ] T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, curl, and docker in system PATH. [Files: packages/engine/src/hardware/SystemToolScanner.ts, packages/engine/src/tests/system_tool_scanner.test.ts] [Test: node --test packages/engine/dist/tests/system_tool_scanner.test.js]
+- [x] T102.2.11: Write unit tests verifying `SystemToolScanner` binary discovery for git, ollama, curl, and docker in system PATH. [Files: packages/engine/src/hardware/SystemToolScanner.ts, packages/engine/src/tests/system_tool_scanner.test.ts] [Test: node --test packages/engine/dist/tests/system_tool_scanner.test.js]
 - [ ] T102.2.12: Write unit tests verifying `GpuDeviceManager` multi-device enumeration, device selection by free VRAM, and health state query. [Files: packages/engine/src/hardware/GpuDeviceManager.ts, packages/engine/src/tests/gpu_device_manager.test.ts] [Test: node --test packages/engine/dist/tests/gpu_device_manager.test.js]
 - [ ] T102.2.13: Write unit tests verifying `ComputeHardwareProfile` profile serialization, capacity rating, and memory headroom validation. [Files: packages/engine/src/hardware/ComputeHardwareProfile.ts, packages/engine/src/tests/compute_hardware_profile.test.ts] [Test: node --test packages/engine/dist/tests/compute_hardware_profile.test.js]
 - [ ] T102.2.14: Write unit tests verifying `HardwareDiscoveryEngine` APU vs discrete GPU classification and telemetry capability reporting. [Files: packages/engine/src/hardware/HardwareDiscoveryEngine.ts, packages/engine/src/tests/hardware_discovery_engine.test.ts] [Test: node --test packages/engine/dist/tests/hardware_discovery_engine.test.js]
@@ -434,13 +441,121 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvh7jejh-0xef Rehabilitation [2026-10-22T09:23:14.267Z]
+- **Parent Task**: [TDD Regression] should handle missing binaries in system PATH (`regr-mvh7jejh-0xef`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvh7jejh-0xef.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing binaries in system PATH [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts]
+  - [x] `regr-mvh7jejh-0xef.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing binaries in system PATH [Role: test_engineer] [Files: packages/engine/src/tests/system_tool_scanner.test.ts]
+
+
+### Task taskcade-t102.12.8.2 Rehabilitation [2026-10-22T08:42:13.340Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, l (`taskcade-t102.12.8.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.12.8.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, l [Role: type_specialist] [Files: packages/tools/src/implementations/GrepSearchTool.ts]
+  - [ ] `taskcade-t102.12.8.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, l [Role: implementer] [Files: packages/tools/src/implementations/GrepSearchTool.ts]
+
+
+### Task regr-mvg7wsy5-8y40.1 Rehabilitation [2026-10-22T07:57:29.147Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFileSymbols (`regr-mvg7wsy5-8y40.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvg7wsy5-8y40.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFileSymbols [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+  - [ ] `regr-mvg7wsy5-8y40.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFileSymbols [Role: test_engineer] [Files: packages/engine/src/tests/symbol_extractor.test.ts packages/engine/src/repomap/SymbolExtractor.ts]
+
+
+### Task regr-mvgwsyy2-q6a6 Rehabilitation [2026-10-22T06:42:11.193Z]
+- **Parent Task**: [TDD Regression] FocusedDiffBuilder (`regr-mvgwsyy2-q6a6`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyy2-q6a6.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] FocusedDiffBuilder [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyy2-q6a6.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] FocusedDiffBuilder [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyxz-haz9 Rehabilitation [2026-10-22T06:28:10.052Z]
+- **Parent Task**: [TDD Regression] should handle a change at the beginning of the file (`regr-mvgwsyxz-haz9`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyxz-haz9.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change at the beginning of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyxz-haz9.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change at the beginning of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyxr-c412 Rehabilitation [2026-10-22T05:55:20.225Z]
+- **Parent Task**: [TDD Regression] should handle a change with special characters (`regr-mvgwsyxr-c412`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyxr-c412.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with special characters [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyxr-c412.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with special characters [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyxk-h5u0 Rehabilitation [2026-10-22T05:27:17.316Z]
+- **Parent Task**: [TDD Regression] should handle empty input (`regr-mvgwsyxk-h5u0`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyxk-h5u0.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle empty input [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyxk-h5u0.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle empty input [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyxd-4uzy Rehabilitation [2026-10-22T05:08:13.379Z]
+- **Parent Task**: [TDD Regression] should handle a single line change (`regr-mvgwsyxd-4uzy`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyxd-4uzy.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a single line change [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyxd-4uzy.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a single line change [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyxa-1vsl Rehabilitation [2026-10-22T04:30:57.178Z]
+- **Parent Task**: [TDD Regression] should handle multiple changes (`regr-mvgwsyxa-1vsl`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyxa-1vsl.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle multiple changes [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyxa-1vsl.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multiple changes [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyx2-1czt Rehabilitation [2026-10-22T04:09:52.922Z]
+- **Parent Task**: [TDD Regression] should handle a change with whitespace (`regr-mvgwsyx2-1czt`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyx2-1czt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyx2-1czt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyw3-pivw Rehabilitation [2026-10-22T03:53:03.883Z]
+- **Parent Task**: [TDD Regression] should handle a change with multiple lines (`regr-mvgwsyw3-pivw`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyw3-pivw.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with multiple lines [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyw3-pivw.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with multiple lines [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
+### Task regr-mvgwsyx6-iqp0 Rehabilitation [2026-10-22T03:41:07.220Z]
+- **Parent Task**: [TDD Regression] should generate a valid hunk for a simple change (`regr-mvgwsyx6-iqp0`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvgwsyx6-iqp0.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should generate a valid hunk for a simple change [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyx6-iqp0.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should generate a valid hunk for a simple change [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+
+
 ### Task regr-mvgwsywr-xkn2 Rehabilitation [2026-10-22T01:59:11.700Z]
 - **Parent Task**: [TDD Regression] should handle a change with only whitespace (`regr-mvgwsywr-xkn2`)
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvgwsywr-xkn2.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with only whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
-  - [ ] `regr-mvgwsywr-xkn2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with only whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsywr-xkn2.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with only whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsywr-xkn2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with only whitespace [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
 
 
 ### Task regr-mvgwsywc-lewt Rehabilitation [2026-10-22T01:29:46.012Z]
@@ -448,8 +563,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvgwsywc-lewt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with mixed case [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
-  - [ ] `regr-mvgwsywc-lewt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with mixed case [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsywc-lewt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change with mixed case [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsywc-lewt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change with mixed case [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
 
 
 ### Task taskcade-t102.13.4 Rehabilitation [2026-10-21T23:48:41.555Z]
@@ -467,8 +582,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvgwsyxo-afao.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change at the end of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
-  - [ ] `regr-mvgwsyxo-afao.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change at the end of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyxo-afao.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle a change at the end of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
+  - [x] `regr-mvgwsyxo-afao.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle a change at the end of the file [Role: test_engineer] [Files: packages/engine/src/tests/focused_diff_builder.test.ts]
 
 
 ### Task taskcade-t102.13.6 Rehabilitation [2026-10-21T22:34:31.828Z]

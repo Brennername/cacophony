@@ -201,7 +201,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test packages/db/dist/tests/index.test.js",
+        "node --test --test-concurrency=1 packages/db/dist/tests/index.test.js",
       );
       assert.ok(groomed.enrichedPrompt.includes("[ARCHITECTURAL DIRECTIVES]"));
     });
@@ -296,7 +296,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       );
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test packages/engine/dist/tests/gitea_integration.test.js",
+        "node --test --test-concurrency=1 packages/engine/dist/tests/gitea_integration.test.js",
       );
       assert.ok(
         groomed.enrichedPrompt.includes(
@@ -333,7 +333,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test packages/engine/dist/tests/non_existent_future.test.js",
+        "node --test --test-concurrency=1 packages/engine/dist/tests/non_existent_future.test.js",
       );
       assert.deepEqual(groomed.preflightIssues, []);
     });
@@ -396,7 +396,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test packages/engine/dist/tests/non_existent_doc.test.js",
+        "node --test --test-concurrency=1 packages/engine/dist/tests/non_existent_doc.test.js",
       );
     });
 
@@ -448,7 +448,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test packages/engine/dist/tests/queue_groomer.test.js",
+        "node --test --test-concurrency=1 packages/engine/dist/tests/queue_groomer.test.js",
       );
     });
   });

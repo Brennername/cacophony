@@ -278,4 +278,32 @@ export class SystemToolScanner {
       };
     }
   }
+
+  public async findTool(
+    binaryName: string,
+  ): Promise<ToolRequirement | undefined> {
+    if (!binaryName || typeof binaryName !== "string") {
+      return undefined;
+    }
+    const trimmed = binaryName.trim();
+    if (!trimmed || !/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+      throw new Error(`Invalid binary name: ${binaryName}`);
+    }
+    const existing = this.toolDefs.find((t) => t.binaryName === trimmed);
+    const def: ToolDefinition = existing ?? {
+      binaryName: trimmed,
+      packageName: trimmed,
+      category: "system_inspect",
+      description: `Discovered binary ${trimmed}`,
+      enabledFeatures: [`${trimmed} executable presence`],
+      disabledFeaturesIfMissing: [`${trimmed} is not installed on system PATH`],
+      versionArgs: "--version",
+    };
+    const req = await this.checkTool(def);
+    return req.installed ? req : undefined;
+  }
+
+  public getToolDefinitions(): readonly ToolDefinition[] {
+    return this.toolDefs;
+  }
 }
