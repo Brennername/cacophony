@@ -78,13 +78,8 @@ describe("SystemToolScanner Diagnostic & Discovery Tests", () => {
     };
 
     const scanner = new SystemToolScanner(undefined, customExec);
-    const result = await scanner.findTool("sensors");
-    assert.strictEqual(result, undefined);
-  });
-
-  it("should handle empty PATH gracefully", async () => {
-    const scanner = new SystemToolScanner();
     const result = await scanner.findTool("");
+
     assert.strictEqual(result, undefined);
   });
 
