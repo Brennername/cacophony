@@ -226,57 +226,56 @@ export class SystemToolScanner {
   }
 
   public async checkTool(def: ToolDefinition): Promise<ToolRequirement> {
-  const binaryName = def.binaryName;
-  if (!/^[a-zA-Z0-9_-]+$/.test(binaryName)) {
-    throw new Error(`Invalid binary name: ${binaryName}`);
-  }
-  const versionArgs = def.versionArgs
-    ? def.versionArgs.trim().split(/\s+/).filter(Boolean)
-    : [];
-  for (const arg of versionArgs) {
-    if (!/^--?[a-zA-Z0-9_-]+$/.test(arg)) {
-      throw new Error(`Invalid version argument: ${arg}`);
+    const binaryName = def.binaryName;
+    if (!/^[a-zA-Z0-9_-]+$/.test(binaryName)) {
+      throw new Error(`Invalid binary name: ${binaryName}`);
     }
-  }
-
-  try {
-    await this.execFn("which", [binaryName]);
-    let version: string | undefined;
-
-    if (versionArgs.length > 0) {
-      try {
-        const { stdout } = await this.execFn(binaryName, versionArgs);
-        version = def.parseVersion
-          ? def.parseVersion(stdout)
-          : stdout.trim().split("\n")[0];
-      } catch {
-        version = "installed";
+    const versionArgs = def.versionArgs
+      ? def.versionArgs.trim().split(/\s+/).filter(Boolean)
+      : [];
+    for (const arg of versionArgs) {
+      if (!/^--?[a-zA-Z0-9_-]+$/.test(arg)) {
+        throw new Error(`Invalid version argument: ${arg}`);
       }
     }
 
-    return {
-      binaryName: def.binaryName,
-      packageName: def.packageName,
-      category: def.category,
-      installed: true,
-      version: version ?? "installed",
-      description: def.description,
-      enabledFeatures: def.enabledFeatures,
-      disabledFeaturesIfMissing: def.disabledFeaturesIfMissing,
-      installCommand: `sudo apt install -y ${def.packageName}`,
-    };
-  } catch (error) {
-    console.error(`Error checking tool ${binaryName}:`, error);
-    return {
-      binaryName: def.binaryName,
-      packageName: def.packageName,
-      category: def.category,
-      installed: false,
-      description: def.description,
-      enabledFeatures: def.enabledFeatures,
-      disabledFeaturesIfMissing: def.disabledFeaturesIfMissing,
-      installCommand: `sudo apt install -y ${def.packageName}`,
-    };
+    try {
+      await this.execFn("which", [binaryName]);
+      let version: string | undefined;
+
+      if (versionArgs.length > 0) {
+        try {
+          const { stdout } = await this.execFn(binaryName, versionArgs);
+          version = def.parseVersion
+            ? def.parseVersion(stdout)
+            : stdout.trim().split("\n")[0];
+        } catch {
+          version = "installed";
+        }
+      }
+
+      return {
+        binaryName: def.binaryName,
+        packageName: def.packageName,
+        category: def.category,
+        installed: true,
+        version: version ?? "installed",
+        description: def.description,
+        enabledFeatures: def.enabledFeatures,
+        disabledFeaturesIfMissing: def.disabledFeaturesIfMissing,
+        installCommand: `sudo apt install -y ${def.packageName}`,
+      };
+    } catch {
+      return {
+        binaryName: def.binaryName,
+        packageName: def.packageName,
+        category: def.category,
+        installed: false,
+        description: def.description,
+        enabledFeatures: def.enabledFeatures,
+        disabledFeaturesIfMissing: def.disabledFeaturesIfMissing,
+        installCommand: `sudo apt install -y ${def.packageName}`,
+      };
+    }
   }
-}
 }
