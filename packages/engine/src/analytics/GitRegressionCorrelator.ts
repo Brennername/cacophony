@@ -54,6 +54,9 @@ export class GitRegressionCorrelator {
   /**
    * Retrieves recent commit history from local git repository.
    */
+  /**
+   * Retrieves recent commit history from local git repository.
+   */
   public getRecentCommits(limit: number = 20): GitCommitRecord[] {
     try {
       const safeLimit = Math.max(
@@ -82,11 +85,15 @@ export class GitRegressionCorrelator {
           subject,
         };
       });
-    } catch {
+    } catch (error) { // Catch all errors during git execution
+      console.warn("Error getting recent commits:", error);
       return [];
     }
   }
 
+  /**
+   * Identifies which files were modified in a given commit hash.
+   */
   /**
    * Identifies which files were modified in a given commit hash.
    */
@@ -110,11 +117,15 @@ export class GitRegressionCorrelator {
         .split("\n")
         .map((f) => f.trim())
         .filter((f) => f.length > 0);
-    } catch {
+    } catch (error) { // Catch all errors during git execution
+      console.warn("Error getting commit files:", error);
       return [];
     }
   }
 
+  /**
+   * Maps a failed task record back to the most probable culprit commit.
+   */
   /**
    * Maps a failed task record back to the most probable culprit commit.
    */
@@ -139,7 +150,6 @@ export class GitRegressionCorrelator {
       ? failedTask.focusFiles.split(",").map((f) => f.trim())
       : [];
 
-    // Find commits before or closely matching the failure event
     for (const commit of commits) {
       const commitFiles = this.getCommitFiles(commit.hash);
       const overlappingFiles = taskFocusFiles.filter((tf) =>
@@ -156,7 +166,6 @@ export class GitRegressionCorrelator {
       }
     }
 
-    // Temporal fallback: the most recent commit immediately preceding failure
     const candidate =
       commits.find((c) => c.timestamp <= taskTime) ?? commits[0];
     if (candidate) {
