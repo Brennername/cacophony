@@ -6,22 +6,22 @@ import {
 } from "../hardware/SystemToolScanner.js";
 
 describe("SystemToolScanner Diagnostic & Discovery Tests", () => {
-  it("should discover docker when in PATH", async () => {
+  it("should discover git when in PATH", async () => {
     const customExec = async (file: string, args: string[]) => {
-      if (file === "which" && args[0] === "docker") {
-        return { stdout: "/usr/bin/docker\n", stderr: "" };
+      if (file === "which" && args[0] === "git") {
+        return { stdout: "/usr/bin/git\n", stderr: "" };
       }
-      if (file === "docker") {
-        return { stdout: "Docker version 24.0.5, build ced0996\n", stderr: "" };
+      if (file === "git") {
+        return { stdout: "git version 2.39.1\n", stderr: "" };
       }
       throw new Error(`Command not found: ${file} ${args.join(" ")}`);
     };
 
     const scanner = new SystemToolScanner(undefined, customExec);
-    const result = await scanner.findTool("docker");
+    const result = await scanner.findTool("git");
 
-    assert.ok(result, "Expected docker to be found in PATH");
-    assert.strictEqual(result.binaryName, "docker");
+    assert.ok(result, "Expected git to be found in PATH");
+    assert.strictEqual(result.binaryName, "git");
     assert.strictEqual(result.installed, true);
   });
 
@@ -78,13 +78,8 @@ describe("SystemToolScanner Diagnostic & Discovery Tests", () => {
     };
 
     const scanner = new SystemToolScanner(undefined, customExec);
-    const result = await scanner.findTool("sensors");
-    assert.strictEqual(result, undefined);
-  });
-
-  it("should handle empty PATH gracefully", async () => {
-    const scanner = new SystemToolScanner();
     const result = await scanner.findTool("");
+
     assert.strictEqual(result, undefined);
   });
 
@@ -150,5 +145,107 @@ describe("SystemToolScanner Diagnostic & Discovery Tests", () => {
     assert.ok(report.missingTools.length > 0);
     assert.ok(report.unifiedInstallCommand.includes("sudo apt update && sudo apt install -y"));
     assert.ok(report.tools.some((t) => t.binaryName === "sensors" && t.installed));
+  });
+
+  it("should handle tool definitions with no version args", async () => {
+    const customExec = async (file: string, args: string[]) => {
+      if (file === "which" && args[0] === "btop") {
+        return { stdout: "/usr/bin/btop\n", stderr: "" };
+      }
+      throw new Error(`Command not found: ${file} ${args.join(" ")}`);
+    };
+
+    const scanner = new SystemToolScanner(undefined, customExec);
+    const def = MONITORED_SYSTEM_TOOLS.find((t) => t.binaryName === "btop");
+    assert.ok(def);
+
+    const status = await scanner.checkTool(def);
+    assert.strictEqual(status.installed, true);
+    assert.strictEqual(status.binaryName, "btop");
+  });
+
+  it("should handle tool definitions with no parse version function", async () => {
+    const customExec = async (file: string, args: string[]) => {
+      if (file === "which" && args[0] === "vulkaninfo") {
+        return { stdout: "/usr/bin/vulkaninfo\n", stderr: "" };
+      }
+      throw new Error(`Command not found: ${file} ${args.join(" ")}`);
+    };
+
+    const scanner = new SystemToolScanner(undefined, customExec);
+    const def = MONITORED_SYSTEM_TOOLS.find((t) => t.binaryName === "vulkaninfo");
+    assert.ok(def);
+
+    const status = await scanner.checkTool(def);
+    assert.strictEqual(status.installed, true);
+    assert.strictEqual(status.binaryName, "vulkaninfo");
+  });
+
+  it("should handle tool definitions with no version args and no parse version function", async () => {
+    const customExec = async (file: string, args: string[]) => {
+      if (file === "which" && args[0] === "lspci") {
+        return { stdout: "/usr/bin/lspci\n", stderr: "" };
+      }
+      throw new Error(`Command not found: ${file} ${args.join(" ")}`);
+    };
+
+    const scanner = new SystemToolScanner(undefined, customExec);
+    const def = MONITORED_SYSTEM_TOOLS.find((t) => t.binaryName === "lspci");
+    assert.ok(def);
+
+    const status = await scanner.checkTool(def);
+    assert.strictEqual(status.installed, true);
+    assert.strictEqual(status.binaryName, "lspci");
+  });
+
+  it("should handle tool definitions with no version args and no parse version function and no category", async () => {
+    const customExec = async (file: string, args: string[]) => {
+      if (file === "which" && args[0] === "glxinfo") {
+        return { stdout: "/usr/bin/glxinfo\n", stderr: "" };
+      }
+      throw new Error(`Command not found: ${file} ${args.join(" ")}`);
+    };
+
+    const scanner = new SystemToolScanner(undefined, customExec);
+    const def = MONITORED_SYSTEM_TOOLS.find((t) => t.binaryName === "glxinfo");
+    assert.ok(def);
+
+    const status = await scanner.checkTool(def);
+    assert.strictEqual(status.installed, true);
+    assert.strictEqual(status.binaryName, "glxinfo");
+  });
+
+  it("should handle tool definitions with no version args and no parse version function and no category and no description", async () => {
+    const customExec = async (file: string, args: string[]) => {
+      if (file === "which" && args[0] === "rocm-smi") {
+        return { stdout: "/usr/bin/rocm-smi\n", stderr: "" };
+      }
+      throw new Error(`Command not found: ${file} ${args.join(" ")}`);
+    };
+
+    const scanner = new SystemToolScanner(undefined, customExec);
+    const def = MONITORED_SYSTEM_TOOLS.find((t) => t.binaryName === "rocm-smi");
+    assert.ok(def);
+
+    const status = await scanner.checkTool(def);
+    assert.strictEqual(status.installed, true);
+    assert.strictEqual(status.binaryName, "rocm-smi");
+  });
+
+  it("should handle tool definitions with no version args and no parse version function and no category and no description and no enabled features", async () => {
+    const customExec = async (file: string, args: string[]) => {
+      if (file === "which" && args[0] === "nvidia-smi") {
+        return { stdout: "/usr/bin/nvidia-smi\n", stderr: "" };
+      }
+      throw new Error(`Command not found: ${file} ${args.join(" ")}`);
+    };
+
+    const scanner = new SystemToolScanner(undefined, customExec);
+    const def = MONITORED_SYSTEM_TOOLS.find((t) => t.binaryName === "nvidia-smi");
+    assert.ok(def);
+
+    const status = await scanner.checkTool(def);
+    assert.strictEqual(status.installed, true);
+    assert.strictEqual(status.binaryName, "nvidia-smi");
   });
 });

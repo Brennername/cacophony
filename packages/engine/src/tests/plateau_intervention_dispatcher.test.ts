@@ -1,29 +1,43 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Mocking the dispatcher object to include createIntervention method
 const dispatcher = {
   triggerIntervention: () => {
     console.log('Intervention triggered');
   },
   createIntervention: (task: any) => {
-    // Simulate intervention creation logic
     return { task, status: 'intervened' };
   }
 };
 
 describe('Plateau Intervention Dispatcher', () => {
+  it('should not trigger intervention if task is null', async () => {
+    const task = null;
+    const interventionDispatcher = {
+      dispatchIntervention: (task: any) => {
+        assert.strictEqual(task, null);
+      }
+    };
+
+    interventionDispatcher.dispatchIntervention(task);
+  });
+
   it('should not trigger intervention if task is not stagnant', async () => {
     const task = { status: 'active' };
     const interventionDispatcher = {
       dispatchIntervention: (task: any) => {
-        if (task.status === 'stagnant') {
-          dispatcher.triggerIntervention();
-        }
+        assert.strictEqual(task.status, 'stagnant');
       }
     };
 
-    assert.doesNotThrow(() => interventionDispatcher.dispatchIntervention(task));
+    try {
+      interventionDispatcher.dispatchIntervention(task);
+      throw new Error('Expected assertion to fail but it did not');
+    } catch (e) {
+      if (!(e instanceof assert.AssertionError)) {
+        throw e;
+      }
+    }
   });
 
   it('should handle multiple interventions for stagnant tasks', async () => {

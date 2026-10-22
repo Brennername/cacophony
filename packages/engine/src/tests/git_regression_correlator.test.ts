@@ -39,4 +39,19 @@ describe('GitRegressionCorrelator', () => {
     const files = await correlator.getCommitFiles(commitHash);
     assert.deepStrictEqual(files, expectedFiles);
   });
+
+  it('should handle no matching commit files', async () => {
+    const commitHash = 'nonexistent';
+    const expectedFiles: string[] = [];
+
+    correlator['runGit'] = (args: readonly string[]): string => {
+      if (args.includes(commitHash)) {
+        return ''; // Simulate no files found
+      }
+      throw new Error('Unexpected git command');
+    };
+
+    const files = await correlator.getCommitFiles(commitHash);
+    assert.deepStrictEqual(files, expectedFiles);
+  });
 });
