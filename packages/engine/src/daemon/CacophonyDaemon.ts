@@ -218,11 +218,21 @@ export class CacophonyDaemon {
       await import("../scheduler/ModelBenchmarkRunner.js");
 
     this.modelManager = new OllamaModelManager();
+    const defaultProtectedModels = [
+      process.env.DEFAULT_IMPLEMENTER_MODEL,
+      process.env.DEFAULT_REVIEWER_MODEL,
+      process.env.DEFAULT_ARCHITECT_MODEL,
+      process.env.DEFAULT_DOC_MODEL,
+      process.env.FRONTIER_REVIEWER_MODEL,
+    ]
+      .filter(Boolean)
+      .join(",");
     this.tenancyGuard = new ModelTenancyGuard({
       managedModelsEnabled: process.env["MANAGED_MODELS_ENABLED"] !== "false",
       protectedModels: (
         process.env["PROTECTED_MODELS"] ||
-        "deepseek-coder-v2:16b,qwen2.5-coder:14b,deepseek-r1:8b,qwen2.5-coder:7b-instruct-q4_K_M,gemma3:4b-it-qat"
+        defaultProtectedModels ||
+        "qwen2.5-coder:7b,deepseek-r1:8b"
       )
         .split(",")
         .map((s) => s.trim())
@@ -444,7 +454,7 @@ export class CacophonyDaemon {
         domainAdvisoryEvaluator: this.domainAdvisoryEvaluator,
         prMergeGateCoordinator: this.prMergeGateCoordinator,
         autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
-        repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
+        repoOwner: process.env.GIT_REPO_OWNER || "Cacophony",
         repoName: process.env.GIT_REPO_NAME || "cacophony",
         gitRemote: process.env.GIT_REMOTE || "gitea",
       });

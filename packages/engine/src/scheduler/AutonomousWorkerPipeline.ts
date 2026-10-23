@@ -478,8 +478,17 @@ export class AutonomousWorkerPipeline {
       const planningStart = Date.now();
       await this.recordAndEmitStage(taskId, "planning", "RUNNING");
 
+      const stripPunctuationBounds = (str: string): string => {
+        let s = str.trim();
+        const punct = new Set(['"', "'", "`", ",", ";", ":"]);
+        let start = 0;
+        while (start < s.length && punct.has(s[start]!)) start++;
+        let end = s.length;
+        while (end > start && punct.has(s[end - 1]!)) end--;
+        return s.slice(start, end).trim();
+      };
       const focusFiles = groomed.focusFiles
-        .map((f) => f.replace(/^["'`,;:]+|["'`,;:]+$/g, "").trim())
+        .map(stripPunctuationBounds)
         .filter(Boolean);
       const targetRel = focusFiles[0];
       let pkgName = "";

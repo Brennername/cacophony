@@ -3,6 +3,7 @@ import type {
   GitCommitRecord,
 } from "./IncidentBundleRecorder.js";
 import type { OllamaProvider } from "../inference/OllamaProvider.js";
+import { extractJsonObjectString } from "../utils/json_utils.js";
 
 export interface SuspectCommit {
   readonly hash: string;
@@ -84,9 +85,9 @@ Output valid JSON matching this schema:
           temperature: 0.1,
         });
 
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
+        const jsonStr = extractJsonObjectString(response.content);
+        if (jsonStr) {
+          const parsed = JSON.parse(jsonStr);
           const suspectCommits = this.matchSuspectCommits(
             parsed.suspectCommitHashes || [],
             bundle.gitCommits,

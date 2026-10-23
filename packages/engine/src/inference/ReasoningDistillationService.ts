@@ -1,4 +1,5 @@
 import type { IInferenceProvider } from "./IInferenceProvider.js";
+import { extractJsonObjectString } from "../utils/json_utils.js";
 
 export interface ModelOpinionRecord {
   readonly summary: string;
@@ -68,9 +69,9 @@ ${trimmed.slice(0, 4000)}
           temperature: 0.0,
         });
 
-        const jsonMatch = res.content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
+        const jsonStr = extractJsonObjectString(res.content);
+        if (jsonStr) {
+          const parsed = JSON.parse(jsonStr);
           return {
             summary: String(
               parsed.summary ||

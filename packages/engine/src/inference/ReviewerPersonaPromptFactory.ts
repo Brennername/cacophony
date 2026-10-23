@@ -3,6 +3,7 @@ import {
   PersonaReviewResult,
   PersonaFinding,
 } from "@cacophony/shared-types";
+import { extractJsonObjectString } from "../utils/json_utils.js";
 
 export interface ReviewPromptContext {
   readonly taskId: string;
@@ -135,9 +136,9 @@ Analyze the changes thoroughly and output the machine-parseable JSON verdict.`;
     persona: ReviewDomainPersona,
   ): PersonaReviewResult {
     try {
-      const jsonMatch = rawOutput.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      const jsonStr = extractJsonObjectString(rawOutput);
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
         const verdict =
           parsed.verdict === "APPROVE" ? "APPROVE" : "REQUEST_CHANGES";
         const findings: PersonaFinding[] = Array.isArray(parsed.findings)

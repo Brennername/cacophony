@@ -175,7 +175,9 @@ export class HistoryMetricsService {
             failureReason: t.failureReason || undefined,
             prNumber: t.prUrl ? (parseInt(t.prUrl.match(/\/pulls\/(\d+)/)?.[1] || '0', 10) || 0) : 0,
             prUrl: t.prUrl || '',
-            commitDiffUrl: t.commitHash ? `/NeXeN/cacophony/commit/${t.commitHash}` : '',
+            commitDiffUrl: t.commitHash
+              ? (t.prUrl ? t.prUrl.replace(/\/pulls?\/\d+.*$/, '') + `/commit/${t.commitHash}` : `/commit/${t.commitHash}`)
+              : '',
             timestamp: t.completedAt || 'Recently',
           };
         });

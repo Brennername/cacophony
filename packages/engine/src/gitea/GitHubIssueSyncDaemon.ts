@@ -45,7 +45,7 @@ export class GitHubIssueSyncDaemon {
     options?: GitHubIssueSyncDaemonOptions,
   ) {
     this.repoOwner =
-      options?.repoOwner || process.env.GITHUB_REPO_OWNER || "NeXeN";
+      options?.repoOwner || process.env.GITHUB_REPO_OWNER || process.env.GIT_REPO_OWNER || "Cacophony";
     this.repoName =
       options?.repoName || process.env.GITHUB_REPO_NAME || "cacophony";
     this.githubToken = options?.githubToken || process.env.GITHUB_TOKEN || "";

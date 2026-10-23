@@ -10,7 +10,10 @@ import * as path from "node:path";
  */
 export function resolveSafePath(workspaceRoot: string, relativeOrAbsolutePath: string): string {
   const normalizedRoot = path.resolve(workspaceRoot);
-  const cleanPath = relativeOrAbsolutePath.trim().replace(/[,;:]+$/, "");
+  let cleanPath = relativeOrAbsolutePath.trim();
+  while (cleanPath.length > 0 && (cleanPath.endsWith(",") || cleanPath.endsWith(";") || cleanPath.endsWith(":"))) {
+    cleanPath = cleanPath.slice(0, -1);
+  }
   const resolved = path.isAbsolute(cleanPath)
     ? path.resolve(cleanPath)
     : path.resolve(normalizedRoot, cleanPath);

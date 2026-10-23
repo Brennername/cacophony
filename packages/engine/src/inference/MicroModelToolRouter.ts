@@ -1,4 +1,5 @@
 import { IModelInferenceCaller } from "./MultiModelConsensusCoordinator.js";
+import { extractJsonObjectString } from "../utils/json_utils.js";
 
 export type TaskGenerationStrategy =
   "MONOLITHIC_FILE_GENERATION" | "HASH_STUB_SPLICING";
@@ -120,9 +121,9 @@ Existing Methods: ${context.existingMethodCount ?? "unknown"}`;
     reasoning: string;
   } {
     try {
-      const match = output.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
+      const jsonStr = extractJsonObjectString(output);
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
         if (
           parsed.strategy === "HASH_STUB_SPLICING" ||
           parsed.strategy === "MONOLITHIC_FILE_GENERATION"

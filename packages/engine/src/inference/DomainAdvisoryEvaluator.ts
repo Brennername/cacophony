@@ -52,7 +52,7 @@ export class DomainAdvisoryEvaluator {
   constructor(options: DomainAdvisoryEvaluatorOptions) {
     this.discussionRepo = options.discussionRepo;
     this.gitPlatformProvider = options.gitPlatformProvider;
-    this.repoOwner = options.repoOwner || "NeXeN";
+    this.repoOwner = options.repoOwner || process.env.GIT_REPO_OWNER || "Cacophony";
     this.repoName = options.repoName || "cacophony";
   }
 

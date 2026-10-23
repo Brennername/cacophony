@@ -137,7 +137,7 @@ Returns structured automated PR review verdict, SOLID compliance score, and auto
 ```json
 {
   "taskId": "task-101",
-  "prUrl": "http://localhost:19634/NeXeN/cacophony/pulls/12",
+  "prUrl": "http://localhost:19634/Cacophony/cacophony/pulls/12",
   "targetBranch": "main",
   "verdict": "APPROVED",
   "solidComplianceScore": 98,

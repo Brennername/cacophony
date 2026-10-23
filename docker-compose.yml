@@ -26,7 +26,7 @@ services:
       - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
       - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
       - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
-      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-Cacophony}
       - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
       - GIT_REMOTE=${GIT_REMOTE:-gitea}
       - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
@@ -87,7 +87,7 @@ services:
       - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
       - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
       - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
-      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-Cacophony}
       - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
       - GIT_REMOTE=${GIT_REMOTE:-gitea}
       - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
@@ -151,7 +151,7 @@ services:
       - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
       - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
       - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
-      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-Cacophony}
       - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
       - GIT_REMOTE=${GIT_REMOTE:-gitea}
       - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}
@@ -205,7 +205,7 @@ services:
       - GITEA_PUBLIC_URL=${GITEA_PUBLIC_URL:-http://localhost:19634}
       - GITEA_API_TOKEN=${GITEA_API_TOKEN:-}
       - CI_FAILURE_WEBHOOK_TOKEN=${CI_FAILURE_WEBHOOK_TOKEN:-}
-      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-NeXeN}
+      - GIT_REPO_OWNER=${GIT_REPO_OWNER:-Cacophony}
       - GIT_REPO_NAME=${GIT_REPO_NAME:-cacophony}
       - GIT_REMOTE=${GIT_REMOTE:-gitea}
       - GITEA_OAUTH_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID:-cacophony-dashboard}

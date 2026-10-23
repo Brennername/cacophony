@@ -1,5 +1,6 @@
 import type { ReviewVerdict, ReviewComment } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
+import { extractJsonObjectString } from "../utils/json_utils.js";
 
 export interface ReviewEvaluationResult {
   readonly verdict: ReviewVerdict;
@@ -459,9 +460,9 @@ export class FrontierReviewer {
     model: string,
   ): CriticPassResult | null {
     try {
-      const match = rawText.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
+      const jsonStr = extractJsonObjectString(rawText);
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
         const verdict: ReviewVerdict = [
           "APPROVE",
           "REQUEST_CHANGES",
@@ -599,9 +600,9 @@ export class FrontierReviewer {
     fallbackDiff: string,
   ): ReviewEvaluationResult {
     try {
-      const match = rawText.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
+      const jsonStr = extractJsonObjectString(rawText);
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
         const verdict: ReviewVerdict = [
           "APPROVE",
           "REQUEST_CHANGES",

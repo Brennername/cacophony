@@ -1,5 +1,6 @@
 import type { ReviewVerdict, ReviewComment } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
+import { extractJsonObjectString } from "../utils/json_utils.js";
 
 export type SpecializedReviewRole =
   | "security_reviewer"
@@ -350,9 +351,9 @@ export class MultiModelReviewCoordinator {
     content: string,
   ): Omit<RoleReviewResult, "durationMs" | "retryCount"> {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      const jsonStr = extractJsonObjectString(content);
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
         const verdict: ReviewVerdict =
           parsed.verdict === "REQUEST_CHANGES" ? "REQUEST_CHANGES" : "APPROVE";
         const score = typeof parsed.score === "number" ? Math.min(100, Math.max(0, parsed.score)) : 85;

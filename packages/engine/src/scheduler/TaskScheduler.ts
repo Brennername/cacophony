@@ -234,8 +234,9 @@ export class TaskScheduler implements IModelPredictor {
       return this.perModelTimeoutMs[model]!;
     }
 
-    // Dynamic heuristic based on parameter size
-    const paramMatch = normalized.match(/(\d+(?:\.\d+)?)\s*([bm])/i);
+    // Dynamic heuristic based on parameter size with length bounding and word boundaries to prevent ReDoS
+    const safeModel = normalized.length > 80 ? normalized.slice(0, 80) : normalized;
+    const paramMatch = /(?:^|[:\-_/\s])(\d+(?:\.\d+)?)\s*([bm])(?=[^a-z0-9]|$)/i.exec(safeModel);
     if (paramMatch && paramMatch[1] && paramMatch[2]) {
       const val = parseFloat(paramMatch[1]);
       const unit = paramMatch[2].toLowerCase();
