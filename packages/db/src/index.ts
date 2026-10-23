@@ -20,6 +20,7 @@ export * from "./repositories/UserSessionRepository.js";
 export * from "./repositories/TaskTelemetryCorrelationRepository.js";
 export * from "./repositories/ModelProfileRepository.js";
 export * from "./repositories/PrReviewRepository.js";
+export * from "./repositories/PrDiscussionRepository.js";
 export * from "./repositories/ReviewReportRepository.js";
 export * from "./services/DatabaseMaintenanceService.js";
 export * from "./services/DatabaseBackupService.js";

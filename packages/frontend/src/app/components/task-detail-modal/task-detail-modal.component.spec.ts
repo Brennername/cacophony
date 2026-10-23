@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { TaskDetailModalComponent } from './task-detail-modal.component';
 import { ArenaStateStore } from '../../services/arena-state.store';
+import { TaskApiService } from '../../services/task-api.service';
 
 describe('TaskDetailModalComponent', () => {
   it('should render TaskDetailModalComponent with tab navigation and copy actions', () => {
@@ -391,5 +392,165 @@ describe('TaskDetailModalComponent', () => {
 
     // Test window resize handler triggers checkTabScroll
     comp.onWindowResize();
+  });
+
+  it('T108.1: renders compact header typography and retry button without touch-target', () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    store.selectedTask.set({
+      id: 'task-compact-header-test',
+      title: 'Very Long Complex Architectural Specification Headline That Sprawls',
+      status: 'PENDING',
+      priority: 'P0',
+      role: 'architect',
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const retryBtn = compiled.querySelector('.retry-task-header-btn');
+    expect(retryBtn).toBeTruthy();
+    expect(retryBtn?.classList.contains('touch-target')).toBe(false);
+
+    const titleEl = compiled.querySelector('.header-titles h3');
+    expect(titleEl).toBeTruthy();
+    expect(titleEl?.textContent).toContain('Very Long Complex Architectural Specification');
+  });
+
+  it('T108.2: defaults embedded boxes to expanded and toggles shrunk state on demand', () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    store.selectedTask.set({
+      id: 'task-shrink-test',
+      title: 'Shrink Controls Test',
+      status: 'COMPLETED',
+      priority: 'P1',
+      role: 'implementer',
+      prompt: 'Detailed system directive',
+      logSnippet: '+ const x = 1;\n- const x = 0;',
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    // Default: not shrunk
+    expect(comp.isBoxShrunk('prompt')).toBe(false);
+    expect(comp.isBoxShrunk('diff')).toBe(false);
+    expect(comp.isBoxShrunk('stream')).toBe(false);
+
+    // Toggle prompt shrink
+    comp.toggleBoxShrink('prompt');
+    expect(comp.isBoxShrunk('prompt')).toBe(true);
+    expect(comp.isBoxShrunk('diff')).toBe(false);
+
+    // Toggle prompt back to expanded
+    comp.toggleBoxShrink('prompt');
+    expect(comp.isBoxShrunk('prompt')).toBe(false);
+
+    // Toggle multiple boxes
+    comp.toggleBoxShrink('diff');
+    comp.toggleBoxShrink('stream');
+    expect(comp.isBoxShrunk('diff')).toBe(true);
+    expect(comp.isBoxShrunk('stream')).toBe(true);
+  });
+
+  it('T108.8: renders PR discussion threads with domain tags and allows posting comments', async () => {
+    TestBed.configureTestingModule({
+      imports: [TaskDetailModalComponent],
+    });
+
+    const store = TestBed.inject(ArenaStateStore);
+    const apiService = TestBed.inject(TaskApiService);
+    apiService.getPrDiscussionThreads = async () => [];
+
+    store.selectedTask.set({
+      id: 'task-pr-thread-test',
+      title: 'PR Discussion Test',
+      status: 'COMPLETED',
+      priority: 'P0',
+      role: 'reviewer',
+      prUrl: 'http://localhost:19634/NeXeN/cacophony/pulls/108',
+    });
+
+    const fixture = TestBed.createComponent(TaskDetailModalComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    comp.activeTab.set('reviews');
+    comp.loadingReview.set(false);
+    comp.loadingPrThreads.set(false);
+    fixture.detectChanges();
+
+    // Populate mock threads
+    comp.prThreads.set([
+      {
+        threadId: 'thread_sec_1',
+        filePath: 'packages/engine/src/auth.ts',
+        lineNumber: 42,
+        isResolved: false,
+        comments: [
+          {
+            id: 1,
+            taskId: 'task-pr-thread-test',
+            prIndex: 108,
+            threadId: 'thread_sec_1',
+            authorName: 'SecurityAdvisor',
+            authorRole: 'model:security',
+            domainTag: 'Security',
+            filePath: 'packages/engine/src/auth.ts',
+            lineNumber: 42,
+            bodyContent: 'Validate CSRF tokens on mutating API routes.',
+            isResolved: false,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const domainTagEl = compiled.querySelector('.thread-domain-tag');
+    expect(domainTagEl).toBeTruthy();
+    expect(domainTagEl?.textContent?.trim()).toBe('Security');
+
+    const commentBodyEl = compiled.querySelector('.comment-bubble-text');
+    expect(commentBodyEl?.textContent).toContain('Validate CSRF tokens');
+
+    // Test comment submission input
+    comp.newCommentText.set('Reviewed and confirmed CSRF guard implementation.');
+    comp.selectedDomainTag.set('Security');
+
+    let capturedPayload: any = null;
+    apiService.addPrDiscussionComment = async (_taskId: string, payload: any) => {
+      capturedPayload = payload;
+      return {
+        id: 2,
+        taskId: 'task-pr-thread-test',
+        prIndex: 108,
+        threadId: payload.threadId,
+        authorName: payload.authorName,
+        authorRole: payload.authorRole,
+        domainTag: payload.domainTag,
+        filePath: null,
+        lineNumber: null,
+        bodyContent: payload.bodyContent,
+        isResolved: false,
+        createdAt: new Date().toISOString(),
+      };
+    };
+
+    await comp.submitPrComment('task-pr-thread-test', 'thread_sec_1');
+    expect(capturedPayload).toBeTruthy();
+    expect(capturedPayload.bodyContent).toBe('Reviewed and confirmed CSRF guard implementation.');
+    expect(capturedPayload.domainTag).toBe('Security');
+    expect(comp.newCommentText()).toBe('');
   });
 });

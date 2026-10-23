@@ -144,6 +144,35 @@ export interface IGitPlatformProvider {
   ): Promise<{ readonly id: number; readonly status: string }>;
 
   /**
+   * Lists reviews submitted on a pull request.
+   */
+  listPullRequestReviews?(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<Array<{
+    readonly id: number;
+    readonly authorName: string;
+    readonly state: string;
+    readonly body: string;
+    readonly submittedAt: string;
+  }>>;
+
+  /**
+   * Lists discussion comments on a pull request / issue.
+   */
+  listPullRequestComments?(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<Array<{
+    readonly id: number;
+    readonly authorName: string;
+    readonly body: string;
+    readonly createdAt: string;
+  }>>;
+
+  /**
    * Merges an approved pull request.
    */
   mergePullRequest(

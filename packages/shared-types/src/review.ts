@@ -64,6 +64,49 @@ export interface PrReviewRecord {
 }
 
 /**
+ * Domain category for specialized reviewer personas and advisory evaluation.
+ */
+export const AdvisoryDomainTagSchema = z.enum([
+  "Security",
+  "Authentication",
+  "UX/UI",
+  "Playwright E2E",
+  "Architecture",
+  "General",
+]);
+export type AdvisoryDomainTag = z.infer<typeof AdvisoryDomainTagSchema>;
+
+/**
+ * Individual comment within a PR discussion thread.
+ */
+export interface PrDiscussionComment {
+  readonly id: number;
+  readonly taskId: string;
+  readonly prIndex: number;
+  readonly threadId?: string | null | undefined;
+  readonly authorName: string;
+  readonly authorRole: string;
+  readonly domainTag: AdvisoryDomainTag;
+  readonly filePath?: string | null | undefined;
+  readonly lineNumber?: number | null | undefined;
+  readonly bodyContent: string;
+  readonly isResolved: boolean;
+  readonly createdAt: string;
+  readonly updatedAt?: string | null | undefined;
+}
+
+/**
+ * Grouped discussion thread spanning line-level reviews or general issue comments.
+ */
+export interface PrDiscussionThread {
+  readonly threadId: string;
+  readonly filePath?: string | null | undefined;
+  readonly lineNumber?: number | null | undefined;
+  readonly isResolved: boolean;
+  readonly comments: readonly PrDiscussionComment[];
+}
+
+/**
  * Finding severity classification for independent PR assessment.
  */
 export const FindingSeveritySchema = z.enum([

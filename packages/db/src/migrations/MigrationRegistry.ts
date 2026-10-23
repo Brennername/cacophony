@@ -19,6 +19,7 @@ import { migration017 } from "./017_remediation_telemetry.js";
 import { migration018 } from "./018_task_history_indexes.js";
 import { migration019 } from "./019_task_metadata_hints.js";
 import { migration020 } from "./020_reduction_logs.js";
+import { migration021 } from "./021_pr_discussion_threads.js";
 
 export class MigrationRegistry {
   private static readonly migrations: Migration[] = [
@@ -42,6 +43,7 @@ export class MigrationRegistry {
     migration018,
     migration019,
     migration020,
+    migration021,
   ];
 
 

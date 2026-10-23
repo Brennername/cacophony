@@ -47,6 +47,8 @@ import { MultiModelReviewCoordinator } from "../inference/MultiModelReviewCoordi
 import { SchematicCodeGenerator } from "../generators/SchematicCodeGenerator.js";
 import { SchematicTemplates } from "../generators/SchematicTemplates.js";
 import { SlotFillPromptBuilder } from "../inference/SlotFillPromptBuilder.js";
+import type { DomainAdvisoryEvaluator } from "../inference/DomainAdvisoryEvaluator.js";
+import type { PrMergeGateCoordinator } from "./PrMergeGateCoordinator.js";
 
 export interface AutonomousWorkerPipelineOptions {
   readonly workspaceRoot: string;
@@ -78,6 +80,8 @@ export interface AutonomousWorkerPipelineOptions {
   readonly diagnosticPreFlightChecker?: DiagnosticPreFlightChecker | undefined;
   readonly vramPrefetchCoordinator?: VramPrefetchCoordinator | undefined;
   readonly telemetryProvider?: import("../telemetry/IHardwareTelemetryProvider.js").IHardwareTelemetryProvider | undefined;
+  readonly domainAdvisoryEvaluator?: DomainAdvisoryEvaluator | undefined;
+  readonly prMergeGateCoordinator?: PrMergeGateCoordinator | undefined;
 }
 
 
@@ -125,6 +129,8 @@ export class AutonomousWorkerPipeline {
   private readonly telemetryProvider?: import("../telemetry/IHardwareTelemetryProvider.js").IHardwareTelemetryProvider | undefined;
   private readonly issueSynthesizer?: AutomatedIssueSynthesizer | undefined;
   private readonly multiModelReviewCoordinator?: MultiModelReviewCoordinator | undefined;
+  private readonly domainAdvisoryEvaluator?: DomainAdvisoryEvaluator | undefined;
+  private readonly prMergeGateCoordinator?: PrMergeGateCoordinator | undefined;
   private debugTaskPipeline: boolean;
 
   private maxRetainedDiagnostics: number = 100;
@@ -225,6 +231,8 @@ export class AutonomousWorkerPipeline {
       options.monorepoBuildGate ??
       new MonorepoBuildGate({ sandboxedRunner: this.sandboxedRunner });
     this.telemetryProvider = options.telemetryProvider;
+    this.domainAdvisoryEvaluator = options.domainAdvisoryEvaluator;
+    this.prMergeGateCoordinator = options.prMergeGateCoordinator;
     this.defaultPipeline = options.defaultPipeline ?? {
       id: "pipeline_autonomous_standard",
       name: "Standard Autonomous Code Pipeline",
@@ -246,6 +254,20 @@ export class AutonomousWorkerPipeline {
         },
       ],
     };
+  }
+
+  /**
+   * Retrieves the PR merge gate coordinator if configured.
+   */
+  public getPrMergeGateCoordinator(): PrMergeGateCoordinator | undefined {
+    return this.prMergeGateCoordinator;
+  }
+
+  /**
+   * Retrieves the domain advisory evaluator if configured.
+   */
+  public getDomainAdvisoryEvaluator(): DomainAdvisoryEvaluator | undefined {
+    return this.domainAdvisoryEvaluator;
   }
 
   /**
@@ -2305,8 +2327,44 @@ export class AutonomousWorkerPipeline {
                 });
               }
 
-              // If autoMerge is enabled, merge PR
-              if (this.autoMerge) {
+              // T108.6 & T108.7: Domain specialist advisory evaluation and asynchronous merge gating
+              if (this.domainAdvisoryEvaluator && pr) {
+                try {
+                  const domainResults = await this.domainAdvisoryEvaluator.evaluateAndPublishAdvice({
+                    taskId,
+                    prIndex: pr.number,
+                    taskTitle: groomed.task.title,
+                    prompt: groomed.task.prompt,
+                    diff: generatedDiff || "",
+                    focusFiles: groomed.task.focusFiles || undefined,
+                    targetBranch: groomed.task.targetBranch || "main",
+                  });
+
+                  if (this.prMergeGateCoordinator) {
+                    this.prMergeGateCoordinator.holdPr(taskId, pr.number);
+                    for (const result of domainResults) {
+                      this.prMergeGateCoordinator.recordCheckIn(taskId, {
+                        domain: result.domainTag,
+                        authorName: result.authorName,
+                        status: "APPROVED",
+                        feedbackNotes: result.bodyContent,
+                      });
+                    }
+                  }
+                } catch (domainEvalErr) {
+                  console.warn(
+                    `[AutonomousWorkerPipeline] Domain advisory evaluation failed for task ${taskId}:`,
+                    domainEvalErr,
+                  );
+                }
+              }
+
+              const isMergeAllowed =
+                !this.prMergeGateCoordinator ||
+                this.prMergeGateCoordinator.isMergeApproved(taskId);
+
+              // If autoMerge is enabled and PR is approved for merge, merge PR
+              if (this.autoMerge && isMergeAllowed) {
                 try {
                   const merged = await this.gitPlatformProvider.mergePullRequest(
                     this.repoOwner,
@@ -2358,6 +2416,11 @@ export class AutonomousWorkerPipeline {
                     prMerged = true;
                   }
                 }
+              } else if (this.prMergeGateCoordinator && !isMergeAllowed) {
+                console.log(
+                  `[AutonomousWorkerPipeline] Task ${taskId} PR #${pr.number} held by PrMergeGateCoordinator pending async review synthesis.`,
+                );
+                prMerged = false;
               }
             }
           }

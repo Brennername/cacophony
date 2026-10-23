@@ -11,6 +11,7 @@ import {
   ModelRegistryRepository,
   UserSessionRepository,
   ModelProfileRepository,
+  PrDiscussionRepository,
 } from "@cacophony/db";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
@@ -26,6 +27,8 @@ import { DaemonIPCServer } from "./DaemonIPC.js";
 import { CacophonyHttpServer } from "./CacophonyHttpServer.js";
 import { StructuredLogger } from "../telemetry/StructuredLogger.js";
 import type { AutonomousWorkerPipeline } from "../scheduler/AutonomousWorkerPipeline.js";
+import { DomainAdvisoryEvaluator } from "../inference/DomainAdvisoryEvaluator.js";
+import { PrMergeGateCoordinator } from "../scheduler/PrMergeGateCoordinator.js";
 import * as path from "node:path";
 
 export interface DaemonConfig {
@@ -60,6 +63,9 @@ export class CacophonyDaemon {
   private stackProfileRepo!: StackProfileRepository;
   private userSessionRepo!: UserSessionRepository;
   private modelProfileRepo!: ModelProfileRepository;
+  private prDiscussionRepo!: PrDiscussionRepository;
+  private prMergeGateCoordinator?: PrMergeGateCoordinator | undefined;
+  private domainAdvisoryEvaluator?: DomainAdvisoryEvaluator | undefined;
   private telemetryPoller!: TelemetryPoller;
   private readonly logger = new StructuredLogger("CacophonyDaemon");
   private scheduler!: TaskScheduler;
@@ -157,6 +163,7 @@ export class CacophonyDaemon {
     this.stackProfileRepo = new StackProfileRepository(this.driver);
     this.userSessionRepo = new UserSessionRepository(this.driver);
     this.modelProfileRepo = new ModelProfileRepository(this.driver);
+    this.prDiscussionRepo = new PrDiscussionRepository(this.driver);
     new ModelRegistryRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
@@ -411,6 +418,13 @@ export class CacophonyDaemon {
 
     let realWorker: AutonomousWorkerPipeline | undefined;
     if (!isDemoMode) {
+      this.domainAdvisoryEvaluator = new DomainAdvisoryEvaluator({
+        discussionRepo: this.prDiscussionRepo,
+      });
+      this.prMergeGateCoordinator = new PrMergeGateCoordinator({
+        discussionRepo: this.prDiscussionRepo,
+      });
+
       realWorker = new AutonomousWorkerPipeline({
         workspaceRoot: process.cwd(),
         ollamaProvider: primaryInferenceProvider as any,
@@ -427,6 +441,8 @@ export class CacophonyDaemon {
         modelHealthRepository: this.healthRepo,
         vramPrefetchCoordinator: this.vramPrefetchCoordinator,
         telemetryProvider,
+        domainAdvisoryEvaluator: this.domainAdvisoryEvaluator,
+        prMergeGateCoordinator: this.prMergeGateCoordinator,
         autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
         repoOwner: process.env.GIT_REPO_OWNER || "NeXeN",
         repoName: process.env.GIT_REPO_NAME || "cacophony",
@@ -798,6 +814,18 @@ export class CacophonyDaemon {
 
   public getModelProfileRepository(): ModelProfileRepository {
     return this.modelProfileRepo;
+  }
+
+  public getPrDiscussionRepository(): PrDiscussionRepository {
+    return this.prDiscussionRepo;
+  }
+
+  public getPrMergeGateCoordinator(): PrMergeGateCoordinator | undefined {
+    return this.prMergeGateCoordinator;
+  }
+
+  public getDomainAdvisoryEvaluator(): DomainAdvisoryEvaluator | undefined {
+    return this.domainAdvisoryEvaluator;
   }
 
   public getConfig(): DaemonConfig {

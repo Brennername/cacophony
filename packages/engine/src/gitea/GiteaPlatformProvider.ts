@@ -161,6 +161,46 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
     };
   }
 
+  public async listPullRequestReviews(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<Array<{
+    readonly id: number;
+    readonly authorName: string;
+    readonly state: string;
+    readonly body: string;
+    readonly submittedAt: string;
+  }>> {
+    const reviews = await this.client.listPullRequestReviews(owner, repo, prNumber);
+    return reviews.map((r) => ({
+      id: r.id,
+      authorName: r.user.login,
+      state: r.state,
+      body: r.body,
+      submittedAt: r.submitted_at,
+    }));
+  }
+
+  public async listPullRequestComments(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<Array<{
+    readonly id: number;
+    readonly authorName: string;
+    readonly body: string;
+    readonly createdAt: string;
+  }>> {
+    const comments = await this.client.listIssueComments(owner, repo, prNumber);
+    return comments.map((c) => ({
+      id: c.id,
+      authorName: c.user.login,
+      body: c.body,
+      createdAt: c.created_at,
+    }));
+  }
+
   public async mergePullRequest(
     owner: string,
     repo: string,

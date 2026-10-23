@@ -23,7 +23,7 @@
             <span class="badge role">{{ task.role }}</span>
             @if (task.status !== 'RUNNING') {
               <button
-                class="retry-task-header-btn touch-target"
+                class="retry-task-header-btn"
                 [disabled]="isRetrying()"
                 (click)="retryTask(task.id)"
                 aria-label="Retry task execution"
@@ -213,13 +213,23 @@
           <div class="section-block">
             <div class="header-with-action">
               <h4 class="section-title">Architectural Directive / Prompt</h4>
-              @if (task.prompt) {
-                <button class="copy-action-btn" (click)="copyText(task.prompt, 'Prompt copied!')">
-                  Copy Prompt
+              <div class="action-btn-group">
+                <button
+                  type="button"
+                  class="shrink-toggle-btn"
+                  (click)="toggleBoxShrink('prompt')"
+                  [attr.aria-label]="isBoxShrunk('prompt') ? 'Expand prompt window' : 'Shrink prompt window'"
+                >
+                  {{ isBoxShrunk('prompt') ? 'Expand' : 'Shrink' }}
                 </button>
-              }
+                @if (task.prompt) {
+                  <button class="copy-action-btn" (click)="copyText(task.prompt, 'Prompt copied!')">
+                    Copy Prompt
+                  </button>
+                }
+              </div>
             </div>
-            <div class="prompt-box">
+            <div class="prompt-box" [class.shrunk]="isBoxShrunk('prompt')">
               <pre class="prompt-text">{{
                 task.prompt || 'No extended prompt directive supplied.'
               }}</pre>
@@ -248,9 +258,19 @@
                       @if (isLogReduced(st.logOutput)) {
                         <span class="reduced-pill" title="Raw log reduced to statistical histogram">Reduced</span>
                       }
+                      @if (st.logOutput) {
+                        <button
+                          type="button"
+                          class="shrink-toggle-btn stage-shrink-btn"
+                          (click)="toggleBoxShrink('stage-' + st.id)"
+                          [attr.aria-label]="isBoxShrunk('stage-' + st.id) ? 'Expand stage log' : 'Shrink stage log'"
+                        >
+                          {{ isBoxShrunk('stage-' + st.id) ? 'Expand' : 'Shrink' }}
+                        </button>
+                      }
                     </div>
                     @if (st.logOutput) {
-                      <pre class="stage-log"><code [innerHTML]="renderAnsi(st.logOutput)"></code></pre>
+                      <pre class="stage-log" [class.shrunk]="isBoxShrunk('stage-' + st.id)"><code [innerHTML]="renderAnsi(st.logOutput)"></code></pre>
                     }
                   </div>
                 }
@@ -266,14 +286,24 @@
           <div class="section-block">
             <div class="header-with-action">
               <h4 class="section-title">Applied Code Modifications</h4>
-              <button
-                class="copy-action-btn"
-                (click)="copyText(task.logSnippet || '', 'Diffs copied!')"
-              >
-                Copy Diffs
-              </button>
+              <div class="action-btn-group">
+                <button
+                  type="button"
+                  class="shrink-toggle-btn"
+                  (click)="toggleBoxShrink('diff')"
+                  [attr.aria-label]="isBoxShrunk('diff') ? 'Expand diffs window' : 'Shrink diffs window'"
+                >
+                  {{ isBoxShrunk('diff') ? 'Expand' : 'Shrink' }}
+                </button>
+                <button
+                  class="copy-action-btn"
+                  (click)="copyText(task.logSnippet || '', 'Diffs copied!')"
+                >
+                  Copy Diffs
+                </button>
+              </div>
             </div>
-            <div class="diff-box">
+            <div class="diff-box" [class.shrunk]="isBoxShrunk('diff')">
               <pre
                 class="diff-content font-mono"
               ><code [innerHTML]="renderAnsi(task.logSnippet || '// No code diffs currently recorded for this task.')"></code></pre>
@@ -286,12 +316,22 @@
           <div class="section-block">
             <div class="header-with-action">
               <h4 class="section-title">Live Terminal & Inference Output Stream</h4>
-              <button
-                class="copy-action-btn"
-                (click)="copyText(getStreamContent(task), 'Terminal log copied!')"
-              >
-                Copy Logs
-              </button>
+              <div class="action-btn-group">
+                <button
+                  type="button"
+                  class="shrink-toggle-btn"
+                  (click)="toggleBoxShrink('stream')"
+                  [attr.aria-label]="isBoxShrunk('stream') ? 'Expand stream window' : 'Shrink stream window'"
+                >
+                  {{ isBoxShrunk('stream') ? 'Expand' : 'Shrink' }}
+                </button>
+                <button
+                  class="copy-action-btn"
+                  (click)="copyText(getStreamContent(task), 'Terminal log copied!')"
+                >
+                  Copy Logs
+                </button>
+              </div>
             </div>
             <div class="full-terminal-box">
               <div class="terminal-bar">
@@ -300,7 +340,7 @@
                 <span class="dot green"></span>
                 <span class="terminal-title font-mono">{{ task.id }} (LLM Token Stream)</span>
               </div>
-              <pre class="full-terminal-content"><code [innerHTML]="renderAnsi(getStreamContent(task))"></code></pre>
+              <pre class="full-terminal-content" [class.shrunk]="isBoxShrunk('stream')"><code [innerHTML]="renderAnsi(getStreamContent(task))"></code></pre>
             </div>
           </div>
         }
@@ -316,14 +356,24 @@
                     <span class="opinion-tag">LIVE STREAMING COGNITIVE TRACE</span>
                     <span class="confidence-badge font-mono">LIVE IN VRAM</span>
                   </div>
-                  <button
-                    class="copy-action-btn"
-                    (click)="copyText(liveThoughts, 'Cognitive trace copied!')"
-                  >
-                    Copy Thoughts
-                  </button>
+                  <div class="action-btn-group">
+                    <button
+                      type="button"
+                      class="shrink-toggle-btn"
+                      (click)="toggleBoxShrink('thoughts-live')"
+                      [attr.aria-label]="isBoxShrunk('thoughts-live') ? 'Expand thoughts window' : 'Shrink thoughts window'"
+                    >
+                      {{ isBoxShrunk('thoughts-live') ? 'Expand' : 'Shrink' }}
+                    </button>
+                    <button
+                      class="copy-action-btn"
+                      (click)="copyText(liveThoughts, 'Cognitive trace copied!')"
+                    >
+                      Copy Thoughts
+                    </button>
+                  </div>
                 </div>
-                <div class="thoughts-terminal-box">
+                <div class="thoughts-terminal-box" [class.shrunk]="isBoxShrunk('thoughts-live')">
                   <pre class="thoughts-content font-mono"><code [innerHTML]="renderAnsi(liveThoughts)"></code></pre>
                 </div>
               </div>
@@ -367,16 +417,26 @@
               <div class="cognitive-trace-container">
                 <div class="header-with-action">
                   <h4 class="section-title">Raw &lt;think&gt; Cognitive Trace</h4>
-                  @if (op.reasoningTranscript) {
+                  <div class="action-btn-group">
                     <button
-                      class="copy-action-btn"
-                      (click)="copyText(op.reasoningTranscript, 'Cognitive trace copied!')"
+                      type="button"
+                      class="shrink-toggle-btn"
+                      (click)="toggleBoxShrink('thoughts')"
+                      [attr.aria-label]="isBoxShrunk('thoughts') ? 'Expand thoughts window' : 'Shrink thoughts window'"
                     >
-                      Copy Thoughts
+                      {{ isBoxShrunk('thoughts') ? 'Expand' : 'Shrink' }}
                     </button>
-                  }
+                    @if (op.reasoningTranscript) {
+                      <button
+                        class="copy-action-btn"
+                        (click)="copyText(op.reasoningTranscript, 'Cognitive trace copied!')"
+                      >
+                        Copy Thoughts
+                      </button>
+                    }
+                  </div>
                 </div>
-                <div class="thoughts-terminal-box">
+                <div class="thoughts-terminal-box" [class.shrunk]="isBoxShrunk('thoughts')">
                   <pre
                     class="thoughts-content font-mono"
                   ><code [innerHTML]="renderAnsi(op.reasoningTranscript || '// No internal reasoning emitted for this model.')"></code></pre>
@@ -437,11 +497,97 @@
               <div class="empty-tab-state">
                 Fetching automated PR review and SOLID compliance evaluation...
               </div>
-            } @else {
+            }
+
+            <!-- Deep Multi-Model Advisory PR Discussion Threads (T108.8) -->
+            @if (loadingPrThreads()) {
+              <div class="empty-tab-state">Loading Gitea PR discussion threads...</div>
+            } @else if (prThreads().length > 0) {
+              <div class="pr-threads-section">
+                <h4 class="section-title">
+                  Multi-Model Advisory Discussions ({{ prThreads().length }})
+                </h4>
+                <div class="threads-list">
+                  @for (th of prThreads(); track th.threadId) {
+                    <div class="thread-item" [ngClass]="(th.comments[0]?.domainTag || 'general').toLowerCase()">
+                      <div class="thread-item-header">
+                        <div class="thread-meta-left">
+                          <span class="thread-domain-tag font-mono" [ngClass]="(th.comments[0]?.domainTag || 'general').toLowerCase()">
+                            {{ th.comments[0]?.domainTag || 'General' }}
+                          </span>
+                          <span class="thread-author-name">{{ th.comments[0]?.authorName }}</span>
+                          <span class="thread-author-role font-mono">{{ th.comments[0]?.authorRole }}</span>
+                        </div>
+                        <div class="thread-meta-right">
+                          <span class="thread-status-badge font-mono" [class.resolved]="th.isResolved">
+                            {{ th.isResolved ? 'Resolved' : 'Open' }}
+                          </span>
+                        </div>
+                      </div>
+                      @if (th.filePath) {
+                        <div class="thread-file-anchor font-mono">
+                          {{ th.filePath }}@if (th.lineNumber) {:{{ th.lineNumber }}}
+                        </div>
+                      }
+                      <div class="thread-comments-body">
+                        @for (c of th.comments; track c.id) {
+                          <div class="comment-bubble">
+                            <div class="comment-bubble-header">
+                              <span class="comment-bubble-author">{{ c.authorName }} ({{ c.authorRole }})</span>
+                              <span class="comment-bubble-time font-mono">{{ formatModalTimestamp(c.createdAt) }}</span>
+                            </div>
+                            <p class="comment-bubble-text" [innerHTML]="renderAnsi(c.bodyContent)"></p>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            } @else if (!prReviewData() && !loadingReview()) {
               <div class="empty-tab-state">
-                No automated Pull Request review recorded for this task.
+                No automated Pull Request reviews or advisory threads recorded for this task.
               </div>
             }
+
+            <!-- Interactive Comment / Advisory Input Card (T108.8) -->
+            <div class="pr-comment-input-card">
+              <div class="input-header-row">
+                <span class="input-title">Post Advisory Feedback / Review Comment</span>
+                <div class="domain-tag-selector">
+                  <label for="domain-select" class="domain-label">Domain:</label>
+                  <select
+                    id="domain-select"
+                    class="domain-select font-mono"
+                    [value]="selectedDomainTag()"
+                    (change)="selectedDomainTag.set($any($event.target).value)"
+                  >
+                    <option value="Security">Security</option>
+                    <option value="Authentication">Authentication</option>
+                    <option value="UX/UI">UX/UI</option>
+                    <option value="Playwright E2E">Playwright E2E</option>
+                    <option value="Architecture">Architecture</option>
+                  </select>
+                </div>
+              </div>
+              <textarea
+                class="pr-comment-textarea"
+                placeholder="Enter architectural advice, security observation, or review feedback..."
+                rows="3"
+                [value]="newCommentText()"
+                (input)="newCommentText.set($any($event.target).value)"
+              ></textarea>
+              <div class="input-actions-row">
+                <button
+                  type="button"
+                  class="btn btn-primary submit-comment-btn"
+                  [disabled]="!newCommentText().trim() || isSubmittingComment()"
+                  (click)="submitPrComment(task.id)"
+                >
+                  {{ isSubmittingComment() ? 'Posting...' : 'Post Comment' }}
+                </button>
+              </div>
+            </div>
           </div>
         }
 
@@ -450,14 +596,24 @@
           <div class="section-block">
             <div class="header-with-action">
               <h4 class="section-title">Automated Test Execution Stderr</h4>
-              <button
-                class="copy-action-btn"
-                (click)="copyText(extractTestStderr(task), 'Stderr copied!')"
-              >
-                Copy Stderr
-              </button>
+              <div class="action-btn-group">
+                <button
+                  type="button"
+                  class="shrink-toggle-btn"
+                  (click)="toggleBoxShrink('stderr')"
+                  [attr.aria-label]="isBoxShrunk('stderr') ? 'Expand stderr window' : 'Shrink stderr window'"
+                >
+                  {{ isBoxShrunk('stderr') ? 'Expand' : 'Shrink' }}
+                </button>
+                <button
+                  class="copy-action-btn"
+                  (click)="copyText(extractTestStderr(task), 'Stderr copied!')"
+                >
+                  Copy Stderr
+                </button>
+              </div>
             </div>
-            <div class="stderr-box">
+            <div class="stderr-box" [class.shrunk]="isBoxShrunk('stderr')">
               <pre class="stderr-content font-mono"><code [innerHTML]="renderAnsi(extractTestStderr(task))"></code></pre>
             </div>
           </div>
@@ -513,48 +669,78 @@
                 <div class="diag-section">
                   <div class="header-with-action">
                     <h4 class="section-title">Pre-Scrubbed LLM Generation</h4>
-                    @if (diag.preScrubbedOutput) {
+                    <div class="action-btn-group">
                       <button
-                        class="copy-action-btn"
-                        (click)="copyText(diag.preScrubbedOutput, 'Pre-scrubbed output copied!')"
+                        type="button"
+                        class="shrink-toggle-btn"
+                        (click)="toggleBoxShrink('diag-pre-scrubbed')"
+                        [attr.aria-label]="isBoxShrunk('diag-pre-scrubbed') ? 'Expand pre-scrubbed window' : 'Shrink pre-scrubbed window'"
                       >
-                        Copy
+                        {{ isBoxShrunk('diag-pre-scrubbed') ? 'Expand' : 'Shrink' }}
                       </button>
-                    }
+                      @if (diag.preScrubbedOutput) {
+                        <button
+                          class="copy-action-btn"
+                          (click)="copyText(diag.preScrubbedOutput, 'Pre-scrubbed output copied!')"
+                        >
+                          Copy
+                        </button>
+                      }
+                    </div>
                   </div>
-                  <pre class="code-box font-mono" [innerHTML]="renderAnsi(diag.preScrubbedOutput || '// No pre-scrubbed raw LLM generation available.')"></pre>
+                  <pre class="code-box font-mono" [class.shrunk]="isBoxShrunk('diag-pre-scrubbed')" [innerHTML]="renderAnsi(diag.preScrubbedOutput || '// No pre-scrubbed raw LLM generation available.')"></pre>
                 </div>
 
                 <!-- Scrubber Diffs -->
                 <div class="diag-section">
                   <div class="header-with-action">
                     <h4 class="section-title">Scrubber Diff / Transformation</h4>
-                    @if (diag.scrubberDiff) {
+                    <div class="action-btn-group">
                       <button
-                        class="copy-action-btn"
-                        (click)="copyText(diag.scrubberDiff, 'Scrubber diff copied!')"
+                        type="button"
+                        class="shrink-toggle-btn"
+                        (click)="toggleBoxShrink('diag-scrubber-diff')"
+                        [attr.aria-label]="isBoxShrunk('diag-scrubber-diff') ? 'Expand scrubber diff window' : 'Shrink scrubber diff window'"
                       >
-                        Copy
+                        {{ isBoxShrunk('diag-scrubber-diff') ? 'Expand' : 'Shrink' }}
                       </button>
-                    }
+                      @if (diag.scrubberDiff) {
+                        <button
+                          class="copy-action-btn"
+                          (click)="copyText(diag.scrubberDiff, 'Scrubber diff copied!')"
+                        >
+                          Copy
+                        </button>
+                      }
+                    </div>
                   </div>
-                  <pre class="code-box diff-box font-mono" [innerHTML]="renderAnsi(diag.scrubberDiff || '// No scrubber diff alterations recorded.')"></pre>
+                  <pre class="code-box diff-box font-mono" [class.shrunk]="isBoxShrunk('diag-scrubber-diff')" [innerHTML]="renderAnsi(diag.scrubberDiff || '// No scrubber diff alterations recorded.')"></pre>
                 </div>
 
                 <!-- Test Runner Stderr -->
                 <div class="diag-section">
                   <div class="header-with-action">
                     <h4 class="section-title">Test Runner Stderr</h4>
-                    @if (diag.stderr) {
+                    <div class="action-btn-group">
                       <button
-                        class="copy-action-btn"
-                        (click)="copyText(diag.stderr, 'Test stderr copied!')"
+                        type="button"
+                        class="shrink-toggle-btn"
+                        (click)="toggleBoxShrink('diag-stderr')"
+                        [attr.aria-label]="isBoxShrunk('diag-stderr') ? 'Expand stderr window' : 'Shrink stderr window'"
                       >
-                        Copy
+                        {{ isBoxShrunk('diag-stderr') ? 'Expand' : 'Shrink' }}
                       </button>
-                    }
+                      @if (diag.stderr) {
+                        <button
+                          class="copy-action-btn"
+                          (click)="copyText(diag.stderr, 'Test stderr copied!')"
+                        >
+                          Copy
+                        </button>
+                      }
+                    </div>
                   </div>
-                  <pre class="code-box stderr-box font-mono" [innerHTML]="renderAnsi(diag.stderr || '// No runner stderr captured.')"></pre>
+                  <pre class="code-box stderr-box font-mono" [class.shrunk]="isBoxShrunk('diag-stderr')" [innerHTML]="renderAnsi(diag.stderr || '// No runner stderr captured.')"></pre>
                 </div>
               </div>
             } @else {

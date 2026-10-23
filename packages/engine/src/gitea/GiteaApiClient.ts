@@ -16,6 +16,8 @@ import type {
   GiteaPackage,
   CreateCommitStatusRequest,
   GiteaCommitStatus,
+  GiteaPullReview,
+  GiteaReviewComment,
 } from "./giteaTypes.js";
 import { GiteaPermissionGuard } from "./GiteaPermissionGuard.js";
 
@@ -275,6 +277,49 @@ export class GiteaApiClient {
         method: "POST",
         body: JSON.stringify(review),
       },
+    );
+  }
+
+  /**
+   * Retrieves all reviews submitted for a Pull Request.
+   */
+  public async listPullRequestReviews(
+    owner: string,
+    repo: string,
+    prNumber: number,
+  ): Promise<GiteaPullReview[]> {
+    this.guard?.assertScope("repository", "read");
+    return this.request<GiteaPullReview[]>(
+      `/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/reviews`,
+    );
+  }
+
+  /**
+   * Retrieves inline line-level comments for a specific PR review.
+   */
+  public async listPullRequestReviewComments(
+    owner: string,
+    repo: string,
+    prNumber: number,
+    reviewId: number,
+  ): Promise<GiteaReviewComment[]> {
+    this.guard?.assertScope("repository", "read");
+    return this.request<GiteaReviewComment[]>(
+      `/api/v1/repos/${owner}/${repo}/pulls/${prNumber}/reviews/${reviewId}/comments`,
+    );
+  }
+
+  /**
+   * Lists discussion comments on an issue or Pull Request.
+   */
+  public async listIssueComments(
+    owner: string,
+    repo: string,
+    issueNumber: number,
+  ): Promise<GiteaComment[]> {
+    this.guard?.assertScope("issue", "read");
+    return this.request<GiteaComment[]>(
+      `/api/v1/repos/${owner}/${repo}/issues/${issueNumber}/comments`,
     );
   }
 

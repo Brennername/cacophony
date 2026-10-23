@@ -1,7 +1,10 @@
-import { Component, inject, signal, HostListener, effect, AfterViewInit } from '@angular/core';
+import { Component, inject, signal, HostListener, effect, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ArenaStateStore } from '../../services/arena-state.store';
+import { TaskApiService } from '../../services/task-api.service';
 import { ansiToHtml } from '../../utils/ansi-to-html';
+import type { PrDiscussionThread, AdvisoryDomainTag } from '@cacophony/shared-types';
 
 export type TaskModalTab =
   | 'overview'
@@ -64,12 +67,13 @@ export interface PrReviewData {
 @Component({
   selector: 'app-task-detail-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './task-detail-modal.component.html',
   styleUrl: './task-detail-modal.component.css',
 })
-export class TaskDetailModalComponent implements AfterViewInit {
+export class TaskDetailModalComponent implements AfterViewInit, OnDestroy {
   public readonly store = inject(ArenaStateStore);
+  public readonly taskApiService = inject(TaskApiService);
   public readonly liveStreamBuffer = this.store.liveStreamBuffer;
   public readonly activeTab = signal<TaskModalTab>('overview');
   public readonly copiedMessage = signal<string | null>(null);
@@ -77,8 +81,12 @@ export class TaskDetailModalComponent implements AfterViewInit {
   // Tab horizontal scroll state (arrows < and > visibility)
   public readonly canScrollTabsLeft = signal<boolean>(false);
   public readonly canScrollTabsRight = signal<boolean>(false);
+  private tabResizeObserver: ResizeObserver | null = null;
   private touchStartX = 0;
   private touchScrollLeft = 0;
+
+  // Embedded window shrink toggles (T108.2)
+  public readonly shrunkBoxes = signal<ReadonlySet<string>>(new Set());
 
   // User-defined static custom dimensions to prevent dynamic tab jumps
   public readonly customWidth = signal<number | null>(null);
@@ -91,9 +99,14 @@ export class TaskDetailModalComponent implements AfterViewInit {
   // Task-specific stream buffer fetched from backend
   public readonly taskStreamBuffer = signal<string | null>(null);
 
-  // PR Review state
+  // PR Review state and deep threaded discussions (T108.8)
   public readonly prReviewData = signal<PrReviewData | null>(null);
   public readonly loadingReview = signal<boolean>(false);
+  public readonly prThreads = signal<PrDiscussionThread[]>([]);
+  public readonly loadingPrThreads = signal<boolean>(false);
+  public readonly newCommentText = signal<string>('');
+  public readonly selectedDomainTag = signal<AdvisoryDomainTag>('Security');
+  public readonly isSubmittingComment = signal<boolean>(false);
 
   // Post-mortem diagnostic state (T70.4.2)
   public readonly diagnosticData = signal<TaskDiagnosticData | null>(null);
@@ -124,6 +137,7 @@ export class TaskDetailModalComponent implements AfterViewInit {
         this.opinionData.set(null);
         this.prReviewData.set(null);
         this.diagnosticData.set(null);
+        this.prThreads.set([]);
         return;
       }
 
@@ -136,6 +150,7 @@ export class TaskDetailModalComponent implements AfterViewInit {
 
       void this.fetchOpinion(task.id);
       void this.fetchPrReview(task.id);
+      void this.fetchPrThreads(task.id);
       void this.fetchDiagnostics(task.id);
 
       // Recalculate tab scrolling after rendering
@@ -145,10 +160,24 @@ export class TaskDetailModalComponent implements AfterViewInit {
 
   public ngAfterViewInit(): void {
     setTimeout(() => this.checkTabScroll(), 100);
+    if (typeof ResizeObserver !== 'undefined' && typeof document !== 'undefined') {
+      const el = document.querySelector('.tab-bar');
+      if (el) {
+        this.tabResizeObserver = new ResizeObserver(() => this.checkTabScroll());
+        this.tabResizeObserver.observe(el);
+      }
+    }
+  }
+
+  public ngOnDestroy(): void {
+    if (this.tabResizeObserver) {
+      this.tabResizeObserver.disconnect();
+      this.tabResizeObserver = null;
+    }
   }
 
   /**
-   * Recalculates horizontal scroll bounds on the tab bar to toggle < and > arrows.
+   * Recalculates horizontal scroll bounds on the tab bar to toggle < and > arrows (T108.3).
    */
   public checkTabScroll(): void {
     if (typeof document === 'undefined') return;
@@ -158,10 +187,33 @@ export class TaskDetailModalComponent implements AfterViewInit {
       this.canScrollTabsRight.set(false);
       return;
     }
+    const hasOverflow = el.scrollWidth > el.clientWidth + 2;
+    if (!hasOverflow) {
+      this.canScrollTabsLeft.set(false);
+      this.canScrollTabsRight.set(false);
+      return;
+    }
     const canLeft = el.scrollLeft > 2;
     const canRight = el.scrollLeft < (el.scrollWidth - el.clientWidth - 2);
     this.canScrollTabsLeft.set(canLeft);
     this.canScrollTabsRight.set(canRight);
+  }
+
+  /**
+   * Toggles whether an embedded window is shrunk to a constrained scrollable box (T108.2).
+   */
+  public isBoxShrunk(boxId: string): boolean {
+    return this.shrunkBoxes().has(boxId);
+  }
+
+  public toggleBoxShrink(boxId: string): void {
+    const next = new Set(this.shrunkBoxes());
+    if (next.has(boxId)) {
+      next.delete(boxId);
+    } else {
+      next.add(boxId);
+    }
+    this.shrunkBoxes.set(next);
   }
 
   /**
@@ -278,6 +330,45 @@ export class TaskDetailModalComponent implements AfterViewInit {
       this.prReviewData.set(null);
     } finally {
       this.loadingReview.set(false);
+    }
+  }
+
+  /**
+   * Fetches Gitea PR discussion threads for this task (T108.8).
+   */
+  public async fetchPrThreads(taskId: string): Promise<void> {
+    this.loadingPrThreads.set(true);
+    try {
+      const threads = await this.taskApiService.getPrDiscussionThreads(taskId);
+      this.prThreads.set(threads);
+    } catch {
+      this.prThreads.set([]);
+    } finally {
+      this.loadingPrThreads.set(false);
+    }
+  }
+
+  /**
+   * Submits a discussion comment or advisory remark on a PR thread (T108.8).
+   */
+  public async submitPrComment(taskId: string, threadId?: string): Promise<void> {
+    const text = this.newCommentText().trim();
+    if (!text || this.isSubmittingComment()) return;
+    this.isSubmittingComment.set(true);
+    try {
+      const comment = await this.taskApiService.addPrDiscussionComment(taskId, {
+        threadId: threadId ?? `thread_${Date.now()}`,
+        bodyContent: text,
+        domainTag: this.selectedDomainTag(),
+        authorName: 'User',
+        authorRole: 'human:developer',
+      });
+      if (comment) {
+        this.newCommentText.set('');
+        await this.fetchPrThreads(taskId);
+      }
+    } finally {
+      this.isSubmittingComment.set(false);
     }
   }
 

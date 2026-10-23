@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import type { PrDiscussionThread, PrDiscussionComment, AdvisoryDomainTag } from '@cacophony/shared-types';
 
 export interface ToastNotification {
   message: string;
@@ -269,6 +270,62 @@ export class TaskApiService {
       this.error.set(msg);
       this.toastService.showToast(`Failed to rerun process: ${msg}`, 'error');
       return false;
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * Fetches Gitea PR discussion threads for a task (T108.8).
+   */
+  public async getPrDiscussionThreads(taskId: string): Promise<PrDiscussionThread[]> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/pr/threads`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch PR threads`);
+      return (await res.json()) as PrDiscussionThread[];
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      return [];
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * Submits a discussion comment or advisory feedback on a PR thread (T108.8).
+   */
+  public async addPrDiscussionComment(
+    taskId: string,
+    payload: {
+      threadId?: string;
+      bodyContent: string;
+      domainTag?: AdvisoryDomainTag;
+      authorName?: string;
+      authorRole?: string;
+      filePath?: string | null;
+      lineNumber?: number | null;
+    }
+  ): Promise<PrDiscussionComment | null> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/pr/threads/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to post PR comment`);
+      const comment = (await res.json()) as PrDiscussionComment;
+      this.toastService.showToast('PR discussion comment posted', 'success');
+      return comment;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      this.toastService.showToast(`Failed to post PR comment: ${msg}`, 'error');
+      return null;
     } finally {
       this.loading.set(false);
     }

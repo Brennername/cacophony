@@ -1475,6 +1475,94 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4a3b. REST API: GET /api/tasks/:id/pr/threads - Retrieve Gitea PR discussion threads and model reviews (T108.5)
+    const prThreadsMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/pr\/threads$/,
+    );
+    if (prThreadsMatch && req.method === "GET") {
+      const taskId = prThreadsMatch[1]!;
+      const taskRepo = this.daemon.getTaskRepository();
+      const task = await taskRepo.getById(taskId);
+      if (!task) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: `Task '${taskId}' not found` }));
+        return;
+      }
+
+      const prMatch = task.prUrl ? task.prUrl.match(/\/pulls\/(\d+)/) : null;
+      const prIndex = prMatch ? parseInt(prMatch[1]!, 10) : 0;
+
+      const discussionRepo = this.daemon.getPrDiscussionRepository();
+      const threads = await discussionRepo.getThreadsByTaskId(taskId);
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          taskId,
+          prIndex,
+          prUrl: task.prUrl,
+          targetBranch: task.targetBranch,
+          threads,
+        }),
+      );
+      return;
+    }
+
+    // 4a3c. REST API: POST /api/tasks/:id/pr/threads/comments - Post model or user comment to PR thread (T108.5)
+    const prCommentPostMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/pr\/threads\/comments$/,
+    );
+    if (prCommentPostMatch && req.method === "POST") {
+      const taskId = prCommentPostMatch[1]!;
+      const taskRepo = this.daemon.getTaskRepository();
+      const task = await taskRepo.getById(taskId);
+      if (!task) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: `Task '${taskId}' not found` }));
+        return;
+      }
+
+      const prMatch = task.prUrl ? task.prUrl.match(/\/pulls\/(\d+)/) : null;
+      const prIndex = prMatch ? parseInt(prMatch[1]!, 10) : 0;
+
+      let bodyData = "";
+      req.on("data", (chunk) => {
+        bodyData += chunk;
+      });
+
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(bodyData || "{}");
+          if (!payload.body) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required 'body' field" }));
+            return;
+          }
+
+          const discussionRepo = this.daemon.getPrDiscussionRepository();
+          const comment = await discussionRepo.recordComment({
+            taskId,
+            prIndex,
+            threadId: payload.threadId,
+            authorName: payload.authorName || "ModelAdvisoryBot",
+            authorRole: payload.authorRole || "model:advisory",
+            domainTag: payload.domainTag || "General",
+            filePath: payload.filePath,
+            lineNumber: payload.lineNumber,
+            bodyContent: payload.body,
+            isResolved: false,
+          });
+
+          res.writeHead(201, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, comment }));
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err.message || "Failed to post PR comment" }));
+        }
+      });
+      return;
+    }
+
     // 4a4. REST API: POST /api/tasks/:id/retry - Immediately Retry and Requeue Failed Task (T70.4.2)
     const taskRetryMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/retry$/);
     if (taskRetryMatch && req.method === "POST") {

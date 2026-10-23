@@ -72,6 +72,27 @@ export interface SubmitReviewRequest {
   readonly comments?: readonly CreateReviewCommentRequest[] | undefined;
 }
 
+export interface GiteaPullReview {
+  readonly id: number;
+  readonly user: GiteaUser;
+  readonly state: "APPROVED" | "REQUEST_CHANGES" | "COMMENT" | "PENDING";
+  readonly body: string;
+  readonly html_url: string;
+  readonly submitted_at: string;
+  readonly comments_count?: number;
+}
+
+export interface GiteaReviewComment {
+  readonly id: number;
+  readonly pull_request_review_id: number;
+  readonly user: GiteaUser;
+  readonly body: string;
+  readonly path: string;
+  readonly line: number;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
 export interface MergePullRequestRequest {
   readonly Do:
     "merge" | "rebase" | "rebase-merge" | "squash" | "manually-merged";
