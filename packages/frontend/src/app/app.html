@@ -1,26 +1,27 @@
 <div class="app-layout">
   <!-- Top Navigation Header -->
-  <header class="top-nav">
+  <header class="top-nav-header">
     <div class="brand-group">
-      <!-- Mobile Hamburger Toggle -->
+      <!-- Hamburger Toggle for Mobile / Tablet Viewports -->
       <button
-        class="mobile-menu-btn"
+        class="mobile-drawer-toggle"
         (click)="toggleMobileDrawer()"
-        aria-label="Toggle navigation drawer"
+        aria-label="Open mobile navigation menu"
+        aria-expanded="false"
       >
         <span class="hamburger-bar"></span>
         <span class="hamburger-bar"></span>
         <span class="hamburger-bar"></span>
       </button>
 
-      <a routerLink="/dashboard" class="brand-link">
+      <a routerLink="/" class="brand-link">
         <span class="brand-logo">CACOPHONY</span>
         <span class="arena-tag">Local Model Arena</span>
       </a>
     </div>
 
     <!-- Desktop Navigation Links -->
-    <nav class="desktop-nav" aria-label="Desktop primary navigation">
+    <nav class="main-nav" aria-label="Main Navigation">
       <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
       <a routerLink="/queue" routerLinkActive="active" class="nav-link">Queue</a>
       <a routerLink="/history" routerLinkActive="active" class="nav-link">History</a>
@@ -33,6 +34,10 @@
           <span class="nav-badge pulse" aria-label="Running tests count">{{ activeRunningTestsCount() }}</span>
         }
       </a>
+      <a routerLink="/issues" routerLinkActive="active" class="nav-link">Issues</a>
+      @if (authService.hasRole('ADMIN')) {
+        <a routerLink="/admin/hitl-gateway" routerLinkActive="active" class="nav-link admin-nav-link">HITL Gateway</a>
+      }
       <a routerLink="/fleet" routerLinkActive="active" class="nav-link">Fleet</a>
       <a routerLink="/settings" routerLinkActive="active" class="nav-link">Settings</a>
     </nav>
@@ -41,8 +46,9 @@
     <div class="controls-group">
       @if (authService.session().isAuthenticated) {
         <span class="user-pill">{{ authService.session().username }}</span>
+        <button class="btn btn-outline nav-auth-btn" (click)="authService.logout()">Sign Out</button>
       } @else {
-        <button class="btn btn-outline nav-auth-btn" (click)="authService.login()">Sign In</button>
+        <button class="btn btn-outline nav-auth-btn" (click)="openLoginModal()">Sign In</button>
       }
 
       <button class="btn btn-outline decompose-btn" (click)="openFrontierModal()">Decompose</button>
@@ -119,6 +125,24 @@
           <span class="nav-badge pulse" aria-label="Running tests count">{{ activeRunningTestsCount() }}</span>
         }
       </a>
+      <a
+        routerLink="/issues"
+        routerLinkActive="active"
+        (click)="closeDrawer()"
+        class="drawer-link"
+      >
+        Contributor Issues
+      </a>
+      @if (authService.hasRole('ADMIN')) {
+        <a
+          routerLink="/admin/hitl-gateway"
+          routerLinkActive="active"
+          (click)="closeDrawer()"
+          class="drawer-link admin-drawer-link"
+        >
+          HITL Admin Gateway
+        </a>
+      }
       <a routerLink="/fleet" routerLinkActive="active" (click)="closeDrawer()" class="drawer-link">
         Fleet Accelerators
       </a>
@@ -133,6 +157,15 @@
     </nav>
 
     <div class="drawer-footer">
+      @if (authService.session().isAuthenticated) {
+        <button class="btn btn-outline w-full mb-2" (click)="authService.logout(); closeDrawer()">
+          Sign Out ({{ authService.session().username }})
+        </button>
+      } @else {
+        <button class="btn btn-outline w-full mb-2" (click)="openLoginModal(); closeDrawer()">
+          Sign In
+        </button>
+      }
       <button class="btn btn-primary w-full" (click)="openFrontierModal(); closeDrawer()">
         Decompose Feature
       </button>
@@ -164,8 +197,8 @@
     <a routerLink="/history" routerLinkActive="active" class="bottom-tab">
       <span class="tab-label">History</span>
     </a>
-    <a routerLink="/models" routerLinkActive="active" class="bottom-tab">
-      <span class="tab-label">Models</span>
+    <a routerLink="/issues" routerLinkActive="active" class="bottom-tab">
+      <span class="tab-label">Issues</span>
     </a>
     <button class="bottom-tab more-tab" (click)="toggleMobileDrawer()">
       <span class="tab-label">More</span>
@@ -177,4 +210,7 @@
 
   <!-- Deep Task Drill-Down Dialog -->
   <app-task-detail-modal />
+
+  <!-- Administrator & SSO Authentication Modal -->
+  <app-login-modal #loginModal />
 </div>

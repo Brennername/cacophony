@@ -1,0 +1,132 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="close()" role="presentation"></div>
+  <div
+    class="modal-dialog login-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="login-modal-title"
+  >
+    <header class="modal-header">
+      <div class="title-group">
+        <h2 id="login-modal-title" class="modal-title">Sign In to Cacophony</h2>
+        <p class="modal-subtitle">Authenticate to access admin gateways and queue orchestration</p>
+      </div>
+      <button
+        type="button"
+        class="btn-close"
+        (click)="close()"
+        aria-label="Close dialog"
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="modal-tabs" role="tablist">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'credentials'"
+        (click)="setTab('credentials')"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'credentials'"
+      >
+        Admin Credentials
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'oauth'"
+        (click)="setTab('oauth')"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'oauth'"
+      >
+        OAuth Providers
+      </button>
+    </div>
+
+    <div class="modal-body">
+      @if (errorMessage()) {
+        <div class="error-banner" role="alert">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      @if (activeTab() === 'credentials') {
+        <form (ngSubmit)="submitPasswordLogin()" class="login-form">
+          <div class="form-group">
+            <label for="login-username">Admin Username</label>
+            <input
+              id="login-username"
+              type="text"
+              name="username"
+              class="form-input"
+              [(ngModel)]="username"
+              autocomplete="username"
+              placeholder="e.g. NeXeN"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Admin Password</label>
+            <input
+              id="login-password"
+              type="password"
+              name="password"
+              class="form-input"
+              [(ngModel)]="password"
+              autocomplete="current-password"
+              placeholder="Enter administrator password from .env"
+              required
+            />
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn-submit"
+              [disabled]="isLoading() || !password()"
+            >
+              @if (isLoading()) {
+                <span class="btn-spinner"></span>
+                <span>Authenticating...</span>
+              } @else {
+                <span>Sign In as Admin</span>
+              }
+            </button>
+          </div>
+        </form>
+      } @else {
+        <div class="oauth-section">
+          <p class="oauth-intro">
+            Select a configured identity provider to authenticate your session:
+          </p>
+
+          <div class="oauth-buttons">
+            <button
+              type="button"
+              class="oauth-btn gitea-btn"
+              (click)="loginWithGitea()"
+            >
+              <span class="provider-name">Sign In with Local Gitea</span>
+              <span class="provider-meta">Local internal developer account</span>
+            </button>
+
+            <button
+              type="button"
+              class="oauth-btn github-btn"
+              (click)="loginWithGitHub()"
+            >
+              <span class="provider-name">Sign In with GitHub</span>
+              <span class="provider-meta">Free contributor authentication</span>
+            </button>
+          </div>
+
+          <div class="oauth-footer-notice">
+            <span>External GitHub contributors are granted contributor scope. Internal Gitea administrators inherit superadmin privileges.</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,4 +1,18 @@
-<div class="cacophony-card auth-card">
-  <h2>Verifying Gitea SSO Session...</h2>
-  <p class="subtext">Exchanging authorization code for secure session JWT.</p>
+<div class="auth-callback-container">
+  <div class="cacophony-card auth-card">
+    @if (!errorMessage()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <h2>{{ statusMessage() }}</h2>
+        <p class="subtext">Establishing cryptographic session with backend...</p>
+      </div>
+    } @else {
+      <div class="error-state">
+        <div class="error-badge">Authentication Error</div>
+        <h2>Unable to Sign In</h2>
+        <p class="error-detail">{{ errorMessage() }}</p>
+        <button type="button" class="btn-primary" (click)="retryLogin()">Return to Dashboard</button>
+      </div>
+    }
+  </div>
 </div>

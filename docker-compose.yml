@@ -39,6 +39,15 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SSO_PROVIDER=${SSO_PROVIDER:-gitea}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-NeXeN}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
+      - FIRST_USER=${FIRST_USER:-NeXeN}
+      - FIRST_PASS=${FIRST_PASS:-}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
+      - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI:-}
     volumes:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw

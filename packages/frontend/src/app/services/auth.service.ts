@@ -5,28 +5,34 @@ export interface UserSessionState {
   username?: string;
   email?: string;
   roles?: string[];
+  role?: string;
   provider?: string;
   token?: string;
+  avatarUrl?: string;
 }
 
 export interface DynamicAuthConfig {
   activeProvider: string;
-  authentik: {
+  giteaPublicUrl: string;
+  clientId: string;
+  redirectUri: string;
+  providers?: Array<{ id: string; name: string; enabled: boolean; authUrl?: string }>;
+  gitea?: { enabled: boolean; authUrl: string };
+  github?: { enabled: boolean; authUrl: string; clientId?: string };
+  authentik?: {
     issuerUrl: string;
     clientId: string;
     redirectUri: string;
   };
-  authelia: {
+  authelia?: {
     portalUrl: string;
     forwardAuthEnabled: boolean;
   };
-  giteaPublicUrl: string;
-  clientId: string;
-  redirectUri: string;
 }
 
 /**
- * Service managing client-side SSO session state across Authentik, Authelia, and Gitea.
+ * Service managing client-side SSO and administrative session state
+ * across Gitea, GitHub, and local password authentication.
  */
 @Injectable({
   providedIn: 'root',
@@ -38,22 +44,17 @@ export class AuthService {
     isAuthenticated: false,
   });
 
-  public readonly activeProvider = signal<string>('authentik');
+  public readonly activeProvider = signal<string>('gitea');
 
   private authConfig: DynamicAuthConfig = {
-    activeProvider: 'authentik',
-    authentik: {
-      issuerUrl: 'http://localhost:9000/application/o/cacophony/',
-      clientId: 'cacophony-client',
-      redirectUri: 'http://localhost:24072/auth/callback',
-    },
-    authelia: {
-      portalUrl: 'http://localhost:9091/',
-      forwardAuthEnabled: true,
-    },
+    activeProvider: 'gitea',
     giteaPublicUrl: 'http://localhost:19634',
-    clientId: 'cacophony-dashboard',
+    clientId: '19e1f52a-a382-4998-87d1-5b3ab028c747',
     redirectUri: 'http://localhost:24072/auth/callback',
+    gitea: {
+      enabled: true,
+      authUrl: 'http://localhost:19634/login/oauth/authorize?client_id=19e1f52a-a382-4998-87d1-5b3ab028c747&redirect_uri=http%3A%2F%2Flocalhost%3A24072%2Fauth%2Fcallback&response_type=code',
+    },
   };
 
   constructor() {
@@ -66,65 +67,155 @@ export class AuthService {
       const res = await fetch('/api/config/auth');
       if (res.ok) {
         this.authConfig = await res.json();
-        this.activeProvider.set(this.authConfig.activeProvider || 'authentik');
+        this.activeProvider.set(this.authConfig.activeProvider || 'gitea');
       }
     } catch {
-      // Handle error
+      // Fallback to default Gitea configuration
     }
     return this.authConfig;
   }
 
+  public async loginWithPassword(username: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        return { success: false, error: errData.error || 'Authentication failed' };
+      }
+
+      const data = await res.json();
+      this.handleCallbackToken(
+        data.token,
+        data.user.username,
+        data.user.email,
+        data.user.roles || ['ADMIN', 'OPERATOR'],
+        data.user.provider || 'local',
+        data.user.role || 'ADMIN',
+      );
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network error during login' };
+    }
+  }
+
+  public async exchangeOAuthCode(
+    code: string,
+    provider: string = 'gitea',
+    redirectUri?: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch('/api/auth/oauth/exchange', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, provider, redirectUri }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        return { success: false, error: errData.error || 'OAuth token exchange failed' };
+      }
+
+      const data = await res.json();
+      this.handleCallbackToken(
+        data.token,
+        data.user.username,
+        data.user.email,
+        data.user.roles || ['OPERATOR'],
+        data.user.provider || provider,
+        data.user.role,
+        data.user.avatarUrl,
+      );
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network error during OAuth exchange' };
+    }
+  }
+
   public async login(): Promise<void> {
     const config = await this.loadAuthConfig();
-    const provider = config.activeProvider || 'authentik';
+    const provider = config.activeProvider || 'gitea';
 
-    if (provider === 'authentik') {
+    if (provider === 'github') {
+      this.loginWithGitHub();
+    } else if (provider === 'gitea') {
+      this.loginWithGitea();
+    } else if (provider === 'authentik' && config.authentik) {
       const issuer = config.authentik.issuerUrl.replace(/\/+$/, '');
       const clientId = config.authentik.clientId;
       const redirectUri = encodeURIComponent(config.authentik.redirectUri);
       const state = Math.random().toString(36).substring(2);
       window.location.href = `${issuer}/authorize/?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid+profile+email+groups&state=${state}`;
-    } else if (provider === 'authelia') {
-      const portal = config.authelia.portalUrl.replace(/\/+$/, '');
-      window.location.href = `${portal}/?rd=${encodeURIComponent('/auth/callback')}`;
-    } else if (provider === 'local') {
-      this.handleCallbackToken('local-emergency-bypass-token', 'cacophony_admin', 'admin@cacophony.local', ['ADMIN', 'OPERATOR'], 'local');
     } else {
-      await this.loginWithGitea();
+      this.loginWithGitea();
     }
   }
 
-  public async loginWithGitea(): Promise<void> {
-    await this.loadAuthConfig();
-    const publicUrl = this.authConfig.giteaPublicUrl;
-    const clientId = this.authConfig.clientId;
-    const redirectUri = encodeURIComponent(this.authConfig.redirectUri);
+  public loginWithGitea(): void {
+    if (this.authConfig.gitea?.authUrl) {
+      window.location.href = this.authConfig.gitea.authUrl;
+      return;
+    }
+    const publicUrl = this.authConfig.giteaPublicUrl || 'http://localhost:19634';
+    const clientId = this.authConfig.clientId || '19e1f52a-a382-4998-87d1-5b3ab028c747';
+    const redirectUri = encodeURIComponent(this.authConfig.redirectUri || 'http://localhost:24072/auth/callback');
     const state = Math.random().toString(36).substring(2);
-
     window.location.href = `${publicUrl}/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}`;
   }
 
-  public handleCallbackToken(token: string, username: string, email: string, roles: string[] = ['OPERATOR'], provider: string = 'authentik'): void {
+  public loginWithGitHub(): void {
+    if (this.authConfig.github?.authUrl) {
+      window.location.href = this.authConfig.github.authUrl;
+      return;
+    }
+    const clientId = this.authConfig.github?.clientId || '';
+    const redirectUri = encodeURIComponent(this.authConfig.redirectUri || 'http://localhost:24072/auth/callback');
+    const state = Math.random().toString(36).substring(2);
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=read%3Auser+user%3Aemail&state=${state}`;
+  }
+
+  public handleCallbackToken(
+    token: string,
+    username: string,
+    email: string,
+    roles: string[] = ['OPERATOR'],
+    provider: string = 'gitea',
+    role?: string,
+    avatarUrl?: string,
+  ): void {
     localStorage.setItem(this.TOKEN_KEY, token);
+    const resolvedRole = role || (roles.includes('ADMIN') ? 'ADMIN' : 'OPERATOR');
     this.session.set({
       isAuthenticated: true,
       username,
       email,
       roles,
+      role: resolvedRole,
       provider,
       token,
+      avatarUrl,
     });
+  }
+
+  public getToken(): string | undefined {
+    return this.session().token || localStorage.getItem(this.TOKEN_KEY) || undefined;
   }
 
   public hasRole(role: string): boolean {
     const roles = this.session().roles || [];
-    return roles.includes(role);
+    const primaryRole = this.session().role;
+    return roles.includes(role) || primaryRole === role;
   }
 
   public isAuthorized(requiredRole: 'ADMIN' | 'OPERATOR'): boolean {
     const roles = this.session().roles || [];
-    if (roles.includes('ADMIN')) return true;
-    return roles.includes(requiredRole);
+    const primaryRole = this.session().role;
+    if (roles.includes('ADMIN') || primaryRole === 'ADMIN') return true;
+    return roles.includes(requiredRole) || primaryRole === requiredRole;
   }
 
   public logout(): void {
@@ -134,15 +225,37 @@ export class AuthService {
     });
   }
 
-  private restoreSession(): void {
+  private async restoreSession(): Promise<void> {
     const token = localStorage.getItem(this.TOKEN_KEY);
-    if (token) {
-      this.session.set({
-        isAuthenticated: true,
-        username: 'alice_developer',
-        email: 'alice@example.com',
-        token,
-      });
+    if (!token) {
+      return;
     }
+
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          const u = data.user;
+          this.session.set({
+            isAuthenticated: true,
+            username: u.username,
+            email: u.email,
+            roles: u.roles || [u.role || 'OPERATOR'],
+            role: u.role || 'OPERATOR',
+            provider: u.provider,
+            token,
+          });
+          return;
+        }
+      }
+    } catch {
+      // If validation endpoint fails, retain token tentatively for offline dev
+    }
+
+    // If verification was explicitly rejected
+    this.logout();
   }
 }

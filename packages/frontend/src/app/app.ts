@@ -9,6 +9,7 @@ import { TaskDetailModalComponent } from './components/task-detail-modal/task-de
 import { SessionTabsComponent } from './components/session-tabs/session-tabs.component';
 import { ExecutionModeSelectorComponent } from './components/execution-mode-selector/execution-mode-selector.component';
 import { TelemetryBarComponent } from './components/telemetry-bar/telemetry-bar.component';
+import { LoginModalComponent } from './components/login-modal/login-modal.component';
 
 /**
  * Root Application Component:
@@ -29,6 +30,7 @@ import { TelemetryBarComponent } from './components/telemetry-bar/telemetry-bar.
     SessionTabsComponent,
     ExecutionModeSelectorComponent,
     TelemetryBarComponent,
+    LoginModalComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -43,6 +45,7 @@ export class AppComponent {
   });
 
   public readonly frontierModal = viewChild(FrontierModalComponent);
+  public readonly loginModal = viewChild(LoginModalComponent);
   drawerOpen = signal(false);
 
   toggleMobileDrawer() {
@@ -57,8 +60,11 @@ export class AppComponent {
     this.frontierModal()?.open();
   }
 
+  public openLoginModal(): void {
+    this.loginModal()?.open();
+  }
+
   onTasksCommitted(tasks: DecomposedTaskPreview[]): void {
-    // Implement logic to update the tasks and display a notification or update UI
     console.log('Tasks committed:', tasks);
   }
 }

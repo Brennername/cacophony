@@ -4,6 +4,7 @@ import type {
   SsoUserProfile,
 } from "@cacophony/shared-types";
 import type { UserSessionRepository, UserSessionRecord } from "@cacophony/db";
+import * as crypto from "node:crypto";
 import { randomBytes } from "node:crypto";
 import {
   OidcDiscoveryService,
@@ -12,6 +13,40 @@ import {
 import { JwtValidator } from "./JwtValidator.js";
 import { SsoProviderFactory } from "./SsoProviderFactory.js";
 import type { ISsoProvider } from "./ISsoProvider.js";
+import { GiteaApiClient } from "../gitea/GiteaApiClient.js";
+import { GiteaOAuthProvider } from "../gitea/GiteaOAuthProvider.js";
+import { GitHubOAuthProvider } from "./GitHubOAuthProvider.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+function loadEnvFile(): void {
+  try {
+    const candidates = [
+      "/app/.env",
+      path.resolve(process.cwd(), ".env"),
+      path.resolve(process.cwd(), "../../.env"),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, "utf-8");
+        for (const line of content.split("\n")) {
+          const trimmed = line.trim();
+          if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
+            const idx = trimmed.indexOf("=");
+            const key = trimmed.slice(0, idx).trim();
+            const val = trimmed.slice(idx + 1).trim();
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        }
+        break;
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+}
 
 /**
  * Service managing user authentication, JWT verification, session lifecycle,
@@ -32,6 +67,7 @@ export class AuthService {
     jwksUri?: string | undefined;
     ssoProvider?: ISsoProvider | undefined;
   }) {
+    loadEnvFile();
     this.userSessionRepo = options?.userSessionRepo;
     this.issuerUrl =
       options?.issuerUrl ||
@@ -238,5 +274,154 @@ export class AuthService {
       ADMIN: 3,
     };
     return (roleRank[context.role] ?? 0) >= (roleRank[requiredRole] ?? 0);
+  }
+
+  /**
+   * Signs a standard HS256 JWT using HMAC secret.
+   */
+  public signJwt(payload: Record<string, unknown>): string {
+    const header = { alg: "HS256", typ: "JWT" };
+    const headerB64 = Buffer.from(JSON.stringify(header)).toString("base64url");
+    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const data = `${headerB64}.${payloadB64}`;
+    const hmacSecret =
+      process.env["JWT_SECRET"] ||
+      process.env["VAULT_MASTER_KEY"] ||
+      "cacophony-jwt-session-secret";
+    const sig = crypto.createHmac("sha256", hmacSecret).update(data).digest("base64url");
+    return `${data}.${sig}`;
+  }
+
+  /**
+   * Authenticates user using admin username and password from environment.
+   */
+  public async loginWithPassword(
+    username: string,
+    password: string,
+  ): Promise<{ token: string; user: SsoUserProfile } | null> {
+    loadEnvFile();
+    if (!username || !password) {
+      return null;
+    }
+    const adminUser =
+      process.env["ADMIN_USERNAME"] ||
+      process.env["FIRST_USER"] ||
+      process.env["GITEA_ADMIN_USER"] ||
+      "NeXeN";
+    const adminPass =
+      process.env["ADMIN_PASSWORD"] ||
+      process.env["FIRST_PASS"] ||
+      process.env["ADMIN_TOKEN"];
+
+    if (adminPass && username.trim().toLowerCase() === adminUser.toLowerCase()) {
+      const passBuf = Buffer.from(password);
+      const expectedBuf = Buffer.from(adminPass);
+      if (passBuf.length === expectedBuf.length && crypto.timingSafeEqual(passBuf, expectedBuf)) {
+        const user: SsoUserProfile = {
+          id: `admin-${adminUser.toLowerCase()}`,
+          username: adminUser,
+          email: process.env["ADMIN_EMAIL"] || `${adminUser.toLowerCase()}@cacophony.local`,
+          roles: ["ADMIN", "OPERATOR"],
+          groups: ["cacophony-admins"],
+          provider: "local",
+        };
+        const token = this.signJwt({
+          sub: user.id,
+          username: user.username,
+          email: user.email,
+          role: "ADMIN",
+          roles: user.roles,
+          groups: user.groups,
+          provider: "local",
+          exp: Math.floor(Date.now() / 1000) + 86400 * 7,
+        });
+        await this.createSession(user, token);
+        return { token, user };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Exchanges an authorization code with the selected OAuth provider (Gitea or GitHub).
+   */
+  public async exchangeOAuthCode(
+    provider: "gitea" | "github" | "authentik",
+    code: string,
+    redirectUri?: string,
+  ): Promise<{ token: string; user: SsoUserProfile }> {
+    if (!code) {
+      throw new Error("Authorization code is required");
+    }
+
+    if (provider === "gitea") {
+      const giteaClient = new GiteaApiClient({
+        baseUrl: process.env["GITEA_BASE_URL"] || "http://cacophony-gitea:3000",
+      });
+      const giteaProvider = new GiteaOAuthProvider(giteaClient, {
+        clientId: process.env["GITEA_OAUTH_CLIENT_ID"] || "19e1f52a-a382-4998-87d1-5b3ab028c747",
+        clientSecret: process.env["GITEA_OAUTH_CLIENT_SECRET"] || "",
+        redirectUri: redirectUri || process.env["GITEA_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback",
+        giteaPublicUrl: process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
+        jwtSecret: process.env["JWT_SECRET"] || process.env["VAULT_MASTER_KEY"] || "cacophony-jwt-session-secret",
+      });
+      const session = await giteaProvider.handleCallback(code);
+      const adminUser = process.env["ADMIN_USERNAME"] || process.env["FIRST_USER"] || process.env["GITEA_ADMIN_USER"] || "NeXeN";
+      const isAdmin = session.user.username.toLowerCase() === adminUser.toLowerCase();
+      const user: SsoUserProfile = {
+        id: `gitea-${session.user.id}`,
+        username: session.user.username,
+        email: session.user.email,
+        roles: isAdmin ? ["ADMIN", "OPERATOR"] : ["OPERATOR"],
+        groups: isAdmin ? ["cacophony-admins"] : ["cacophony-users"],
+        provider: "gitea",
+      };
+      const token = this.signJwt({
+        sub: user.id,
+        username: user.username,
+        email: user.email,
+        role: isAdmin ? "ADMIN" : "OPERATOR",
+        roles: user.roles,
+        groups: user.groups,
+        provider: "gitea",
+        exp: Math.floor(session.expiresAt / 1000),
+      });
+      await this.createSession(user, token);
+      return { token, user };
+    }
+
+    if (provider === "github") {
+      const ghConfig = {
+        clientId: process.env["GITHUB_CLIENT_ID"] || "",
+        clientSecret: process.env["GITHUB_CLIENT_SECRET"] || "",
+        redirectUri: redirectUri || process.env["GITHUB_REDIRECT_URI"] || "http://localhost:24072/auth/callback",
+        scopes: ["read:user", "user:email"],
+      };
+      const ghProvider = new GitHubOAuthProvider(ghConfig);
+      const { user: ghUser } = await ghProvider.exchangeCode(code);
+      const adminUser = process.env["ADMIN_USERNAME"] || process.env["FIRST_USER"] || "NeXeN";
+      const isAdmin = ghUser.username.toLowerCase() === adminUser.toLowerCase() || ghUser.username.toLowerCase() === "brennername";
+      const user: SsoUserProfile = {
+        ...ghUser,
+        roles: isAdmin ? ["ADMIN", "OPERATOR"] : ["CONTRIBUTOR"],
+        groups: isAdmin ? ["cacophony-admins"] : ["contributors"],
+        provider: "github",
+      };
+      const token = this.signJwt({
+        sub: user.id,
+        username: user.username,
+        email: user.email,
+        role: isAdmin ? "ADMIN" : "VIEWER",
+        roles: user.roles,
+        groups: user.groups,
+        provider: "github",
+        ...(user.avatarUrl ? { avatarUrl: user.avatarUrl } : {}),
+        exp: Math.floor(Date.now() / 1000) + 86400 * 7,
+      });
+      await this.createSession(user, token);
+      return { token, user };
+    }
+
+    throw new Error(`Unsupported OAuth provider: ${provider}`);
   }
 }

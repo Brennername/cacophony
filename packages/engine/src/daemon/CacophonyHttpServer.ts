@@ -705,13 +705,59 @@ export class CacophonyHttpServer {
 
     // 2b. REST API: Dynamic Multi-Provider Auth Configuration for Frontend
     if (url.pathname === "/api/config/auth" && req.method === "GET") {
-      const activeProvider = process.env["SSO_PROVIDER"] || "authentik";
+      const activeProvider = process.env["SSO_PROVIDER"] || "gitea";
+      const giteaPublicUrl =
+        process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634";
+      const giteaClientId =
+        process.env["GITEA_OAUTH_CLIENT_ID"] || "19e1f52a-a382-4998-87d1-5b3ab028c747";
+      const giteaRedirectUri =
+        process.env["GITEA_OAUTH_REDIRECT_URI"] || "http://localhost:24072/auth/callback";
+      const giteaAuthUrl = `${giteaPublicUrl.replace(/\/+$/, "")}/login/oauth/authorize?client_id=${giteaClientId}&redirect_uri=${encodeURIComponent(giteaRedirectUri)}&response_type=code`;
+
+      const ghClientId = process.env["GITHUB_CLIENT_ID"] || "";
+      const ghRedirectUri =
+        process.env["GITHUB_REDIRECT_URI"] || "http://localhost:24072/auth/callback";
+      const ghAuthUrl = ghClientId
+        ? `https://github.com/login/oauth/authorize?client_id=${ghClientId}&redirect_uri=${encodeURIComponent(ghRedirectUri)}&scope=read%3Auser+user%3Aemail`
+        : "";
+
       const authConfig = {
         activeProvider,
+        giteaPublicUrl,
+        clientId: giteaClientId,
+        redirectUri: giteaRedirectUri,
+        providers: [
+          {
+            id: "local",
+            name: "Admin Credentials",
+            enabled: true,
+          },
+          {
+            id: "gitea",
+            name: "Gitea OAuth",
+            enabled: true,
+            authUrl: giteaAuthUrl,
+          },
+          {
+            id: "github",
+            name: "GitHub OAuth",
+            enabled: Boolean(ghClientId),
+            authUrl: ghAuthUrl,
+          },
+        ],
+        gitea: {
+          enabled: true,
+          authUrl: giteaAuthUrl,
+        },
+        github: {
+          enabled: Boolean(ghClientId),
+          authUrl: ghAuthUrl,
+          clientId: ghClientId,
+        },
         authentik: {
           issuerUrl:
             process.env["AUTHENTIK_ISSUER_URL"] ||
-            "http://localhost:9000/application/o/cacophony/",
+            "http://localhost:29000/application/o/cacophony/",
           clientId:
             process.env["AUTHENTIK_OAUTH_CLIENT_ID"] || "cacophony-client",
           redirectUri:
@@ -724,15 +770,123 @@ export class CacophonyHttpServer {
           forwardAuthEnabled:
             process.env["AUTHELIA_FORWARD_AUTH_ENABLED"] !== "false",
         },
-        giteaPublicUrl:
-          process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634",
-        clientId: process.env["GITEA_OAUTH_CLIENT_ID"] || "cacophony-dashboard",
-        redirectUri:
-          process.env["GITEA_OAUTH_REDIRECT_URI"] ||
-          "http://localhost:24072/auth/callback",
       };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(authConfig));
+      return;
+    }
+
+    // 2b-1. REST API: Password Login (Admin / Local)
+    if (url.pathname === "/api/auth/login" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const result = await this.authService.loginWithPassword(
+            String(payload.username || ""),
+            String(payload.password || ""),
+          );
+          if (!result) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid username or password" }));
+            return;
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } catch (err: any) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err.message || "Bad login request" }));
+        }
+      });
+      return;
+    }
+
+    // 2b-2. REST API: OAuth Token Exchange (Gitea / GitHub)
+    if (url.pathname === "/api/auth/oauth/exchange" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const result = await this.authService.exchangeOAuthCode(
+            payload.provider || "gitea",
+            String(payload.code || ""),
+            payload.redirectUri,
+          );
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(result));
+        } catch (err: any) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: err.message || "Failed to exchange OAuth code",
+            }),
+          );
+        }
+      });
+      return;
+    }
+
+    // 2b-3. REST API: Current User Context (/api/auth/me)
+    if (url.pathname === "/api/auth/me" && req.method === "GET") {
+      const authHeader = req.headers["authorization"] || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+      if (!token) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ authenticated: false, error: "Missing token" }));
+        return;
+      }
+
+      const adminSecret = process.env.ADMIN_TOKEN || process.env.ADMIN_PASSWORD;
+      if (adminSecret && token === adminSecret) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            authenticated: true,
+            user: {
+              id: "admin-nexen",
+              username: process.env["ADMIN_USERNAME"] || "NeXeN",
+              email: process.env["ADMIN_EMAIL"] || "nexen@cacophony.local",
+              role: "ADMIN",
+              roles: ["ADMIN", "OPERATOR"],
+              provider: "local",
+            },
+          }),
+        );
+        return;
+      }
+
+      const ctx = await this.authService.authenticateToken(token);
+      if (!ctx) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            authenticated: false,
+            error: "Invalid or expired token",
+          }),
+        );
+        return;
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          authenticated: true,
+          user: {
+            id: ctx.userId,
+            username: ctx.username,
+            email: ctx.email,
+            role: ctx.role,
+            roles: [ctx.role, ...(ctx.groups || [])],
+            provider: ctx.provider,
+          },
+        }),
+      );
       return;
     }
 
