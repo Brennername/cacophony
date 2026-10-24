@@ -43,4 +43,36 @@ describe("DiagnosticPreFlightChecker Input Robustness Tests (T-S4.4)", () => {
     assert.equal(result.isValid, false);
     assert.ok(result.rawErrorSummary?.includes("TS"));
   });
+
+  it("should handle multi-line invalid input", () => {
+    const multiLineBroken = `
+      export class SampleService {
+        private value: number = ;
+        public brokenMethod(): void {
+          if (
+        }
+      }
+    `;
+    const result = checker.checkSyntax(multiLineBroken);
+
+    assert.equal(result.isValid, false);
+    assert.ok(result.diagnostics.length >= 1);
+    assert.ok(result.rawErrorSummary?.includes("TS"));
+  });
+
+  describe("Task Validation & Structural Health", () => {
+    it("should return false for an invalid task", () => {
+      assert.equal(checker.validateTask(null), false);
+      assert.equal(checker.validateTask(undefined), false);
+      assert.equal(checker.validateTask("not-an-object"), false);
+      assert.equal(checker.validateTask({}), false);
+      assert.equal(checker.validateTask({ id: "" }), false);
+      assert.equal(checker.validateTask({ id: "   " }), false);
+    });
+
+    it("should return true for a valid task with non-empty identifier", () => {
+      assert.equal(checker.validateTask({ id: "task-101", title: "Valid task" }), true);
+    });
+  });
 });
+

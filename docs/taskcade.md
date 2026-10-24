@@ -461,13 +461,185 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvko092b-f9eb Rehabilitation [2026-10-24T01:16:32.792Z]
+- **Parent Task**: [TDD Regression] should calculate correct contrast ratio for foreground and background colors (`regr-mvko092b-f9eb`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvko092b-f9eb.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should calculate correct contrast ratio for foreground and background colors [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvko092b-f9eb.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should calculate correct contrast ratio for foreground and background colors [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvjl7cv0-lrrg.1 Rehabilitation [2026-10-24T01:16:01.900Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TuiTheme Color Palette Definition (`regr-mvjl7cv0-lrrg.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvjl7cv0-lrrg.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cv0-lrrg.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvjl7cv0-lrrg.2 Rehabilitation [2026-10-24T01:15:41.921Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TuiTheme Color Palette Definition (`regr-mvjl7cv0-lrrg.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvjl7cv0-lrrg.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cv0-lrrg.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkmzx7m-vz2z Rehabilitation [2026-10-24T01:15:01.856Z]
+- **Parent Task**: [TDD Regression] should define a default color palette (`regr-mvkmzx7m-vz2z`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkmzx7m-vz2z.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should define a default color palette [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkmzx7m-vz2z.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should define a default color palette [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkmzx7i-huwz Rehabilitation [2026-10-24T01:14:31.707Z]
+- **Parent Task**: [TDD Regression] should handle missing colors in the override palette gracefully (`regr-mvkmzx7i-huwz`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkmzx7i-huwz.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing colors in the override palette gracefully [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkmzx7i-huwz.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing colors in the override palette gracefully [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkmzx7e-2qfv Rehabilitation [2026-10-24T01:14:00.373Z]
+- **Parent Task**: [TDD Regression] should not throw an error if the override palette is empty (`regr-mvkmzx7e-2qfv`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkmzx7e-2qfv.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should not throw an error if the override palette is empty [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkmzx7e-2qfv.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should not throw an error if the override palette is empty [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkmzx7a-mqu4 Rehabilitation [2026-10-24T01:13:29.728Z]
+- **Parent Task**: [TDD Regression] should allow overriding the default color palette (`regr-mvkmzx7a-mqu4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkmzx7a-mqu4.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should allow overriding the default color palette [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkmzx7a-mqu4.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should allow overriding the default color palette [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvjl7cuw-6adl.2 Rehabilitation [2026-10-24T01:12:59.400Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should calculate contrast ratios correctly (`regr-mvjl7cuw-6adl.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvjl7cuw-6adl.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cuw-6adl.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvjl7cuw-6adl.1 Rehabilitation [2026-10-24T01:12:29.545Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should calculate contrast ratios correctly (`regr-mvjl7cuw-6adl.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvjl7cuw-6adl.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cuw-6adl.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkmqmo9-r44a Rehabilitation [2026-10-24T01:11:59.652Z]
+- **Parent Task**: [TDD Regression] ThemeService (`regr-mvkmqmo9-r44a`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkmqmo9-r44a.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] ThemeService [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkmqmo9-r44a.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] ThemeService [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkmkr86-xgul Rehabilitation [2026-10-24T01:11:29.618Z]
+- **Parent Task**: [TDD Regression] should handle invalid color inputs gracefully (`regr-mvkmkr86-xgul`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkmkr86-xgul.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle invalid color inputs gracefully [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkmkr86-xgul.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle invalid color inputs gracefully [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkmkr81-rj8h Rehabilitation [2026-10-24T01:11:00.047Z]
+- **Parent Task**: [TDD Regression] TuiThemeService (`regr-mvkmkr81-rj8h`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkmkr81-rj8h.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TuiThemeService [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkmkr81-rj8h.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TuiThemeService [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvkm08tk-9t83 Rehabilitation [2026-10-24T01:10:30.028Z]
+- **Parent Task**: [TDD Regression] should handle invalid theme switch requests gracefully (`regr-mvkm08tk-9t83`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkm08tk-9t83.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle invalid theme switch requests gracefully [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvkm08tk-9t83.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle invalid theme switch requests gracefully [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+
+
+### Task regr-mvjcffnp-frqn.1 Rehabilitation [2026-10-24T01:10:00.164Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] DiagnosticPreFlightChecker (`regr-mvjcffnp-frqn.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvjcffnp-frqn.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] DiagnosticPreFlightChecker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjcffnp-frqn.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] DiagnosticPreFlightChecker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
+### Task regr-mvkkz4pd-fabr Rehabilitation [2026-10-24T01:09:30.350Z]
+- **Parent Task**: [TDD Regression] should return false for an invalid task (`regr-mvkkz4pd-fabr`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkkz4pd-fabr.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should return false for an invalid task [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvkkz4pd-fabr.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should return false for an invalid task [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
+### Task regr-mvkk9g32-8hwb Rehabilitation [2026-10-24T01:09:00.093Z]
+- **Parent Task**: [TDD Regression] should handle invalid input gracefully (`regr-mvkk9g32-8hwb`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkk9g32-8hwb.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle invalid input gracefully [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvkk9g32-8hwb.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle invalid input gracefully [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
+### Task regr-mvkk9g2y-75qk Rehabilitation [2026-10-24T01:08:24.347Z]
+- **Parent Task**: [TDD Regression] Diagnostic Pre-Flight Checker (`regr-mvkk9g2y-75qk`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkk9g2y-75qk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] Diagnostic Pre-Flight Checker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvkk9g2y-75qk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] Diagnostic Pre-Flight Checker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
+### Task regr-mvkjojxf-tag5 Rehabilitation [2026-10-24T01:07:44.186Z]
+- **Parent Task**: [TDD Regression] should not throw an error with valid input (`regr-mvkjojxf-tag5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkjojxf-tag5.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should not throw an error with valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvkjojxf-tag5.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should not throw an error with valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
+### Task regr-mvjcffne-cqkb.2 Rehabilitation [2026-10-24T01:07:13.829Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multi-line invalid input (`regr-mvjcffne-cqkb.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvjcffne-cqkb.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multi-line invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjcffne-cqkb.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multi-line invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
 ### Task regr-mvkj9fzm-hsgj Rehabilitation [2026-10-24T00:39:39.092Z]
 - **Parent Task**: [TDD Regression] should handle valid input (`regr-mvkj9fzm-hsgj`)
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvkj9fzm-hsgj.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
-  - [ ] `regr-mvkj9fzm-hsgj.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvkj9fzm-hsgj.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvkj9fzm-hsgj.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
 
 
 ### Task regr-mvir6w91-8i42.1 Rehabilitation [2026-10-24T00:28:40.414Z]
@@ -493,8 +665,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvi907l6-y7fk.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvi907l6-y7fk.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvi907l6-y7fk.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvi907l6-y7fk.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task taskcade-t102.13.7.2 Rehabilitation [2026-10-23T19:15:48.632Z]
@@ -889,8 +1061,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.8.5.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
-  - [ ] `taskcade-t102.8.5.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `taskcade-t102.8.5.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `taskcade-t102.8.5.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.8.5: Write unit tests verifying `DiagnosticPreFlightChecker` syntax check execution b [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
 
 
 ### Task taskcade-t102.16.6.3 Rehabilitation [2026-10-22T13:41:55.182Z]
@@ -898,8 +1070,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.16.6.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
-  - [ ] `taskcade-t102.16.6.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `taskcade-t102.16.6.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `taskcade-t102.16.6.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
 
 
 ### Task taskcade-t102.16.6.2 Rehabilitation [2026-10-22T13:29:23.842Z]
@@ -907,8 +1079,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.16.6.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
-  - [ ] `taskcade-t102.16.6.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [x] `taskcade-t102.16.6.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [x] `taskcade-t102.16.6.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
 
 
 ### Task taskcade-t102.1.19.3 Rehabilitation [2026-10-22T13:10:46.440Z]
@@ -934,8 +1106,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.16.6.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
-  - [ ] `taskcade-t102.16.6.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [x] `taskcade-t102.16.6.1.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [x] `taskcade-t102.16.6.1.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
 
 
 ### Task taskcade-t102.2.6.2 Rehabilitation [2026-10-22T12:01:49.989Z]
@@ -1692,9 +1864,9 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.16.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
-  - [ ] `taskcade-t102.16.6.2`: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
-  - [ ] `taskcade-t102.16.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `taskcade-t102.16.6.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: type_specialist] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [x] `taskcade-t102.16.6.2`: [Rehab 2/3] Core Implementation Unit: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: implementer] [Files: packages/engine/src/tui/TuiTheme.ts]
+  - [x] `taskcade-t102.16.6.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.16.6: Write unit tests verifying `TuiTheme` color palette definition, contrast ratios, [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
 
 
 ### Task taskcade-t102.2.12 Rehabilitation [2026-10-20T03:21:55.891Z]

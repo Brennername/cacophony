@@ -26,11 +26,20 @@ export interface DiagnosticPreFlightResult {
  */
 export class DiagnosticPreFlightChecker {
   /**
-   * Validates code syntax in-memory and returns structured diagnostics.
-   *
-   * @param code The TypeScript/JavaScript source code to inspect.
-   * @param fileName Optional virtual filename for error location reporting.
+   * Validates whether a candidate task object contains required structural fields.
+   * Returns false without throwing if the input is null, non-object, or lacks an identifier.
    */
+  public validateTask(task: unknown): boolean {
+    if (!task || typeof task !== "object") {
+      return false;
+    }
+    const candidate = task as Record<string, unknown>;
+    if (typeof candidate.id !== "string" || candidate.id.trim().length === 0) {
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Validates code syntax in-memory and returns structured diagnostics.
    *
