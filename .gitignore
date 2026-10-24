@@ -56,3 +56,7 @@ bin/temp/
 *taskcade_shadow*
 docs/taskcade_shadow.md
 
+# Wiki local staging and synchronization tools (external to main repo)
+docs/wiki/
+bin/sync-wiki.sh
+

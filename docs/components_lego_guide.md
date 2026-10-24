@@ -229,5 +229,3 @@ export interface UserProfile {
   </div>
 </div>
 ```
-
-* - No AI were harmed in the drafting of this document.
