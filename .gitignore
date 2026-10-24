@@ -52,3 +52,7 @@ Thumbs.db
 # Temporary maintenance and operational scripts
 bin/temp/
 
+# Shadow taskcade for human-in-the-loop and offline orchestration
+*taskcade_shadow*
+docs/taskcade_shadow.md
+
