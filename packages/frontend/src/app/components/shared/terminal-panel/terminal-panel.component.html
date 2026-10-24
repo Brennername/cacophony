@@ -1,0 +1,58 @@
+<section class="terminal-panel" aria-label="Terminal Console">
+  <header class="terminal-header">
+    <div class="terminal-title-group">
+      <div class="terminal-traffic-lights" aria-hidden="true">
+        <span class="light red"></span>
+        <span class="light yellow"></span>
+        <span class="light green"></span>
+      </div>
+      <h3 class="terminal-title">{{ title() }}</h3>
+    </div>
+
+    <div class="terminal-actions">
+      @if (tokensPerSec() > 0) {
+        <span class="throughput-badge">{{ tokensPerSec().toFixed(1) }} tok/s</span>
+      }
+
+      <button
+        type="button"
+        class="terminal-action-btn"
+        [class.active]="autoScroll()"
+        [attr.aria-pressed]="autoScroll()"
+        (click)="toggleAutoScroll()"
+        title="Toggle auto-scroll lock"
+      >
+        Auto-Scroll: {{ autoScroll() ? 'ON' : 'OFF' }}
+      </button>
+
+      <button
+        type="button"
+        class="terminal-action-btn"
+        (click)="copyContent()"
+        title="Copy terminal contents"
+      >
+        {{ copyFeedback() ? 'Copied' : 'Copy' }}
+      </button>
+
+      <button
+        type="button"
+        class="terminal-action-btn"
+        (click)="clearContent()"
+        title="Clear terminal buffer"
+      >
+        Clear
+      </button>
+    </div>
+  </header>
+
+  <div
+    class="terminal-body"
+    #terminalBody
+    (scroll)="handleScroll()"
+    tabindex="0"
+    role="region"
+    aria-label="Terminal log contents"
+  >
+    <pre class="terminal-pre"><code [innerHTML]="parsedHtml()"></code></pre>
+  </div>
+</section>

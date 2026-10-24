@@ -11,3 +11,4 @@ export * from "./AutonomousWorkerPipeline.js";
 export * from "./MockAutonomousWorkerPipeline.js";
 export * from "./HardwareHyperparameterAutoSizer.js";
 export * from "./TaskRehabilitationService.js";
+export * from "./TaskComplexityEstimator.js";

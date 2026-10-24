@@ -1,0 +1,436 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.issues-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.issues-view-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .issues-view-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main, #f1f5f9);
+  margin: 0;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 4px 0 0 0;
+}
+
+.submit-issue-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  background: var(--accent-surface, #6366f1);
+  color: #ffffff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.submit-issue-btn:hover {
+  background: var(--accent-hover, #4f46e5);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+}
+
+/* Mandatory HITL Notice Banner */
+.hitl-notice-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid var(--accent-glow, #6366f1);
+  border-radius: 10px;
+}
+
+@media (min-width: 768px) {
+  .hitl-notice-banner {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+}
+
+.notice-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--accent-surface, #6366f1);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.notice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.875rem;
+  color: var(--text-main, #f1f5f9);
+}
+
+.notice-content span {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.8125rem;
+}
+
+/* Metrics Deck */
+.issues-metrics-deck {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .issues-metrics-deck {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Tickets Grid */
+.tickets-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tickets-loading-indicator,
+.tickets-empty-state {
+  padding: 32px;
+  text-align: center;
+  background: var(--bg-surface, #1e1e24);
+  border: 1px solid var(--border-color, #2d2d38);
+  border-radius: 8px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.tickets-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 768px) {
+  .tickets-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ticket-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-surface, #1e1e24);
+  border: 1px solid var(--border-color, #2d2d38);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.ticket-card:hover {
+  border-color: var(--accent-glow, #6366f1);
+}
+
+.ticket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ticket-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ticket-github-number {
+  font-weight: 700;
+  color: var(--accent-glow, #6366f1);
+  font-size: 0.875rem;
+}
+
+.ticket-status-pill {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.status-active {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.status-pending {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.status-rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.status-default {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+.ticket-priority-pill {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #334155;
+  color: #cbd5e1;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.ticket-date {
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.ticket-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main, #f1f5f9);
+}
+
+.ticket-author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.author-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ticket-focus-files {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.focus-label {
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.file-pill {
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #0f172a;
+  color: #93c5fd;
+  border: 1px solid #1e293b;
+}
+
+.ticket-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #2d2d38);
+}
+
+.view-github-link,
+.view-pr-link {
+  font-size: 0.8125rem;
+  color: var(--accent-glow, #6366f1);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.view-github-link:hover,
+.view-pr-link:hover {
+  text-decoration: underline;
+}
+
+.add-feedback-btn {
+  margin-left: auto;
+  min-height: 36px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 6px;
+  color: var(--text-main, #f1f5f9);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-feedback-btn:hover {
+  border-color: var(--accent-glow, #6366f1);
+  background: var(--hover-surface, rgba(255, 255, 255, 0.05));
+}
+
+/* Modal Overlay & Card */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg-surface, #1e1e24);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color, #2d2d38);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--text-main, #f1f5f9);
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.5;
+}
+
+.input-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main, #f1f5f9);
+}
+
+.feedback-textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  border: 1px solid var(--border-color, #334155);
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+
+.feedback-textarea:focus {
+  outline: none;
+  border-color: var(--accent-glow, #6366f1);
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color, #2d2d38);
+}
+
+.btn-cancel {
+  min-height: 40px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 6px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.btn-submit {
+  min-height: 40px;
+  padding: 0 16px;
+  background: var(--accent-surface, #6366f1);
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

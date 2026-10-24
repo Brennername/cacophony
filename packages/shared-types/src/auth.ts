@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * SSO Provider types supported by Cacophony.
  */
-export const SsoProviderTypeSchema = z.enum(["authentik", "authelia", "gitea", "local"]);
+export const SsoProviderTypeSchema = z.enum(["authentik", "authelia", "gitea", "github", "local"]);
 export type SsoProviderType = z.infer<typeof SsoProviderTypeSchema>;
 
 /**
@@ -35,6 +35,17 @@ export const AutheliaConfigSchema = z.object({
 export type AutheliaConfig = z.infer<typeof AutheliaConfigSchema>;
 
 /**
+ * GitHub OAuth provider configuration schema.
+ */
+export const GitHubOAuthConfigSchema = z.object({
+  clientId: z.string().default(""),
+  clientSecret: z.string().default(""),
+  redirectUri: z.string().url().default("http://localhost:24072/auth/github/callback"),
+  scopes: z.array(z.string()).default(["read:user", "user:email"])
+});
+export type GitHubOAuthConfig = z.infer<typeof GitHubOAuthConfigSchema>;
+
+/**
  * Unified SSO Authentication Configuration Schema.
  */
 export const AuthConfigSchema = z.object({
@@ -43,6 +54,7 @@ export const AuthConfigSchema = z.object({
   jwtSecret: z.string().default("cacophony-jwt-secret-session-key"),
   authentik: AuthentikConfigSchema.default({}),
   authelia: AutheliaConfigSchema.default({}),
+  github: GitHubOAuthConfigSchema.default({}),
   giteaPublicUrl: z.string().url().default("http://localhost:19634"),
   allowLocalEmergencyBypass: z.boolean().default(true)
 });
@@ -98,6 +110,7 @@ export interface SsoUserProfile {
   readonly groups: readonly string[];
   readonly roles: readonly string[];
   readonly provider: SsoProviderType;
+  readonly avatarUrl?: string;
 }
 
 /**

@@ -10,6 +10,7 @@ import { TaskScheduler } from "../scheduler/TaskScheduler.js";
 import {
   TaskMetadataHintsSchema,
   type TaskMetadataHints,
+  type TaskRecord,
 } from "@cacophony/shared-types";
 import { DatabaseBackupService } from "@cacophony/db";
 import { StructuredLogger } from "../telemetry/StructuredLogger.js";
@@ -3545,6 +3546,223 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4z1. REST API: GET /api/hitl/tickets - List HITL contributor tickets
+    if (url.pathname === "/api/hitl/tickets" && req.method === "GET") {
+      const isAdmin = await this.resolveAdminContext(req);
+      if (!isAdmin) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Forbidden: Admin role required for HITL gateway" }));
+        return;
+      }
+
+      const hitlRepo = this.daemon.getHitlTicketRepository();
+      const status = (url.searchParams.get("status") as any) || undefined;
+      const author = url.searchParams.get("author") || undefined;
+      const limit = Number(url.searchParams.get("limit")) || 100;
+      const offset = Number(url.searchParams.get("offset")) || 0;
+
+      const tickets = await hitlRepo.listTickets({ status, author, limit, offset });
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, count: tickets.length, tickets }));
+      return;
+    }
+
+    // 4z2. REST API: POST /api/hitl/sync - Trigger GitHub issues poll and ingestion
+    if (url.pathname === "/api/hitl/sync" && req.method === "POST") {
+      const isAdmin = await this.resolveAdminContext(req);
+      if (!isAdmin) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Forbidden: Admin role required for manual sync" }));
+        return;
+      }
+
+      const ingestion = this.daemon.getHitlIssueIngestionService();
+      if (!ingestion) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "HITL ingestion service is not initialized" }));
+        return;
+      }
+
+      const ingestedCount = await ingestion.fetchAndIngest();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, ingestedCount }));
+      return;
+    }
+
+    // 4z3. REST API: POST /api/hitl/tickets/:id/approve - Approve ticket and enqueue to arena
+    const hitlApproveMatch = url.pathname.match(/^\/api\/hitl\/tickets\/([^/]+)\/approve$/);
+    if (hitlApproveMatch && req.method === "POST") {
+      const isAdmin = await this.resolveAdminContext(req);
+      if (!isAdmin) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Forbidden: Admin role required for ticket approval" }));
+        return;
+      }
+
+      const ticketId = hitlApproveMatch[1]!;
+      const hitlRepo = this.daemon.getHitlTicketRepository();
+      const ticket = await hitlRepo.getById(ticketId);
+      if (!ticket) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "HITL ticket not found" }));
+        return;
+      }
+
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk;
+      });
+      req.on("end", async () => {
+        try {
+          const payload = body ? JSON.parse(body) : {};
+          const taskRepo = this.daemon.getTaskRepository();
+          const priority = payload.priority || ticket.priority || "P1";
+          const finalPrompt = payload.sanitizedPrompt || ticket.sanitizedPrompt || ticket.rawBody;
+          const taskId = `task-hitl-${ticket.githubIssueNumber}-${Date.now().toString(36)}`;
+
+          const taskRecord: TaskRecord = {
+            id: taskId,
+            title: `[HITL #${ticket.githubIssueNumber}]: ${ticket.title}`,
+            prompt: finalPrompt,
+            role: "implementer",
+            status: "PENDING",
+            priority,
+            modelAssigned: null,
+            testCommand: payload.testCommand || "npm test",
+            focusFiles: payload.focusFiles || null,
+            targetBranch: ticket.targetBranch || "main",
+            prUrl: null,
+            failureCount: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            completedAt: null,
+          };
+
+          await taskRepo.createIfNotExists(taskRecord);
+          await hitlRepo.updateStatus(ticket.id, "ENQUEUED", {
+            approvedBy: "admin",
+            approvedAt: new Date().toISOString(),
+            associatedTaskId: taskId,
+            sanitizedPrompt: finalPrompt,
+          });
+
+          const updatedTicket = await hitlRepo.getById(ticket.id);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, ticket: updatedTicket, task: taskRecord }));
+        } catch (err: unknown) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to approve ticket", details: String(err) }));
+        }
+      });
+      return;
+    }
+
+    // 4z4. REST API: POST /api/hitl/tickets/:id/reject - Reject ticket
+    const hitlRejectMatch = url.pathname.match(/^\/api\/hitl\/tickets\/([^/]+)\/reject$/);
+    if (hitlRejectMatch && req.method === "POST") {
+      const isAdmin = await this.resolveAdminContext(req);
+      if (!isAdmin) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Forbidden: Admin role required for ticket rejection" }));
+        return;
+      }
+
+      const ticketId = hitlRejectMatch[1]!;
+      const hitlRepo = this.daemon.getHitlTicketRepository();
+      const ticket = await hitlRepo.getById(ticketId);
+      if (!ticket) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "HITL ticket not found" }));
+        return;
+      }
+
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk;
+      });
+      req.on("end", async () => {
+        try {
+          const payload = body ? JSON.parse(body) : {};
+          const reason = payload.reason || "Rejected by administrator review.";
+          await hitlRepo.updateStatus(ticket.id, "REJECTED", {
+            rejectionReason: reason,
+          });
+          const updatedTicket = await hitlRepo.getById(ticket.id);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, ticket: updatedTicket }));
+        } catch (err: unknown) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to reject ticket", details: String(err) }));
+        }
+      });
+      return;
+    }
+
+    // 4z5. REST API: POST /api/hitl/tickets/:id/feedback - Contributor feedback attachment
+    const hitlFeedbackMatch = url.pathname.match(/^\/api\/hitl\/tickets\/([^/]+)\/feedback$/);
+    if (hitlFeedbackMatch && req.method === "POST") {
+      const ticketId = hitlFeedbackMatch[1]!;
+      const hitlRepo = this.daemon.getHitlTicketRepository();
+      const ticket = await hitlRepo.getById(ticketId);
+      if (!ticket) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "HITL ticket not found" }));
+        return;
+      }
+
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk;
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body);
+          if (!payload.content || typeof payload.content !== "string") {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Feedback content is required" }));
+            return;
+          }
+
+          const feedback = {
+            id: `fb-${Date.now().toString(36)}`,
+            author: payload.author || "contributor",
+            content: payload.content,
+            createdAt: new Date().toISOString(),
+            status: "PENDING_APPROVAL" as const,
+          };
+
+          await hitlRepo.addFeedback(ticket.id, feedback);
+          res.writeHead(201, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, feedback }));
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid feedback payload" }));
+        }
+      });
+      return;
+    }
+
+    // 4z6. REST API: GET /api/hitl/tickets/:id - Get individual ticket
+    const hitlTicketMatch = url.pathname.match(/^\/api\/hitl\/tickets\/([^/]+)$/);
+    if (hitlTicketMatch && req.method === "GET") {
+      const ticketId = hitlTicketMatch[1]!;
+      const hitlRepo = this.daemon.getHitlTicketRepository();
+      let ticket = await hitlRepo.getById(ticketId);
+      if (!ticket && /^\d+$/.test(ticketId)) {
+        ticket = await hitlRepo.getByGithubIssueNumber(Number(ticketId));
+      }
+
+      if (!ticket) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "HITL ticket not found" }));
+        return;
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, ticket }));
+      return;
+    }
+
     // 5. Static Angular Frontend Serving
     if (this.config.frontendDistPath) {
       await this.serveStaticFrontend(url.pathname, res);
@@ -3686,5 +3904,24 @@ export class CacophonyHttpServer {
         this.sseClients.delete(client);
       }
     }
+  }
+
+  /**
+   * Helper verifying whether an incoming HTTP request carries valid ADMIN credentials.
+   */
+  private async resolveAdminContext(req: http.IncomingMessage): Promise<boolean> {
+    const authHeader = req.headers["authorization"] || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!token) {
+      return false;
+    }
+
+    const adminSecret = process.env.ADMIN_TOKEN || process.env.ADMIN_PASSWORD;
+    if (adminSecret && token === adminSecret) {
+      return true;
+    }
+
+    const authCtx = await this.authService.authenticateToken(token);
+    return Boolean(authCtx && this.authService.isAuthorized(authCtx, "ADMIN"));
   }
 }

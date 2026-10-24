@@ -1,0 +1,176 @@
+<div class="issues-view-container">
+  <header class="issues-view-header">
+    <div class="header-titles">
+      <h1 class="page-title">Contributor Portal & Issue Tracker</h1>
+      <p class="page-subtitle">Track community issue lifecycle, HITL review states, and arena test automation.</p>
+    </div>
+
+    <div class="header-actions">
+      <a
+        href="https://github.com/Brennername/cacophony/issues/new?template=bug_report.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="submit-issue-btn"
+      >
+        Submit New Issue
+      </a>
+    </div>
+  </header>
+
+  <!-- Mandatory Contributor Notice Card -->
+  <aside class="hitl-notice-banner" role="status">
+    <div class="notice-badge">NOTICE</div>
+    <div class="notice-content">
+      <strong>We will begin working on your issue after HITL review</strong>
+      <span>All public GitHub issues are queued through our Human-In-The-Loop gateway to ensure instruction safety before entering autonomous agent test loops.</span>
+    </div>
+  </aside>
+
+  <!-- Metrics Overview Deck -->
+  <section class="issues-metrics-deck" aria-label="Issue Statistics">
+    <app-metric-card
+      title="HITL Review Pending"
+      [value]="pendingCount()"
+      status="warning"
+      subtitle="Awaiting admin sanitization"
+    />
+    <app-metric-card
+      title="Active Arena Tasks"
+      [value]="enqueuedCount()"
+      status="info"
+      subtitle="In model execution loops"
+    />
+    <app-metric-card
+      title="Completed & Merged"
+      [value]="completedCount()"
+      status="nominal"
+      subtitle="Resolved community issues"
+    />
+  </section>
+
+  <!-- Tabs Filtering -->
+  <app-scrollable-tabs
+    [tabs]="filterTabs"
+    [activeTabId]="activeTab()"
+    (tabSelected)="onTabChange($event)"
+  />
+
+  <!-- Tickets List -->
+  <main class="tickets-list-section">
+    @if (issuesService.loading()) {
+      <div class="tickets-loading-indicator">Loading contributor tickets...</div>
+    } @else if (filteredTickets().length === 0) {
+      <div class="tickets-empty-state">
+        <p>No issues found for the selected category.</p>
+      </div>
+    } @else {
+      <div class="tickets-grid">
+        @for (ticket of filteredTickets(); track ticket.id) {
+          <article class="ticket-card">
+            <header class="ticket-header">
+              <div class="ticket-meta-left">
+                <span class="ticket-github-number">#{{ ticket.githubIssueNumber }}</span>
+                <span class="ticket-status-pill" [ngClass]="getStatusBadgeClass(ticket.status)">
+                  {{ ticket.status }}
+                </span>
+                <span class="ticket-priority-pill">{{ ticket.priority }}</span>
+              </div>
+              <div class="ticket-meta-right">
+                <span class="ticket-date">{{ ticket.createdAt | date:'short' }}</span>
+              </div>
+            </header>
+
+            <h3 class="ticket-title">{{ ticket.title }}</h3>
+
+            <div class="ticket-author-info">
+              @if (ticket.authorAvatarUrl) {
+                <img [src]="ticket.authorAvatarUrl" [alt]="ticket.author" class="author-avatar" />
+              }
+              <span class="author-login">Reported by @{{ ticket.author }}</span>
+            </div>
+
+            @if (ticket.focusFiles && ticket.focusFiles.length > 0) {
+              <div class="ticket-focus-files">
+                <span class="focus-label">Focus Files:</span>
+                @for (file of ticket.focusFiles; track file) {
+                  <code class="file-pill">{{ file }}</code>
+                }
+              </div>
+            }
+
+            <div class="ticket-actions">
+              <a
+                [href]="'https://github.com/Brennername/cacophony/issues/' + ticket.githubIssueNumber"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="view-github-link"
+              >
+                View on GitHub
+              </a>
+
+              @if (ticket.prNumber) {
+                <a
+                  [href]="'https://github.com/Brennername/cacophony/pull/' + ticket.prNumber"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="view-pr-link"
+                >
+                  PR #{{ ticket.prNumber }}
+                </a>
+              }
+
+              <button
+                type="button"
+                class="add-feedback-btn"
+                (click)="openFeedbackModal(ticket)"
+              >
+                Provide Clarification
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Feedback / Refinement Modal -->
+  @if (feedbackModalOpen()) {
+    <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+      <div class="modal-card">
+        <header class="modal-header">
+          <h2 id="feedbackModalTitle">Provide Issue Clarification</h2>
+          <button type="button" class="modal-close-btn" (click)="closeFeedbackModal()">&times;</button>
+        </header>
+
+        <div class="modal-body">
+          <p class="modal-description">
+            Submit reproduction notes, error traces, or test clarifications for Issue #{{ selectedTicket()?.githubIssueNumber }}.
+            Clarification comments will undergo HITL review before being appended to the arena worker.
+          </p>
+
+          <label for="feedbackTextarea" class="input-label">Reproduction Details / Clarification</label>
+          <textarea
+            id="feedbackTextarea"
+            class="feedback-textarea"
+            rows="6"
+            placeholder="Describe reproducible steps, terminal output, or expected behaviors..."
+            [ngModel]="feedbackContent()"
+            (ngModelChange)="feedbackContent.set($event)"
+          ></textarea>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-cancel" (click)="closeFeedbackModal()">Cancel</button>
+          <button
+            type="button"
+            class="btn-submit"
+            [disabled]="!feedbackContent().trim()"
+            (click)="submitFeedback()"
+          >
+            Submit for HITL Review
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

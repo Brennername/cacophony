@@ -11,3 +11,5 @@ export * from './queue-view/queue-view.component';
 export * from './repomap-view/repomap-view.component';
 export * from './settings-view/settings-view.component';
 export * from './testing-view/testing-view.component';
+export * from './issues-view/issues-view.component';
+export * from './admin-hitl-view/admin-hitl-view.component';

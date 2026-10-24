@@ -12,7 +12,9 @@ import {
   UserSessionRepository,
   ModelProfileRepository,
   PrDiscussionRepository,
+  HitlTicketRepository,
 } from "@cacophony/db";
+import { HitlIssueIngestionService } from "../gitea/HitlIssueIngestionService.js";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
 import { QueueGroomer } from "../scheduler/QueueGroomer.js";
@@ -64,6 +66,8 @@ export class CacophonyDaemon {
   private userSessionRepo!: UserSessionRepository;
   private modelProfileRepo!: ModelProfileRepository;
   private prDiscussionRepo!: PrDiscussionRepository;
+  private hitlTicketRepo!: HitlTicketRepository;
+  private hitlIngestionService?: HitlIssueIngestionService | undefined;
   private prMergeGateCoordinator?: PrMergeGateCoordinator | undefined;
   private domainAdvisoryEvaluator?: DomainAdvisoryEvaluator | undefined;
   private telemetryPoller!: TelemetryPoller;
@@ -164,6 +168,8 @@ export class CacophonyDaemon {
     this.userSessionRepo = new UserSessionRepository(this.driver);
     this.modelProfileRepo = new ModelProfileRepository(this.driver);
     this.prDiscussionRepo = new PrDiscussionRepository(this.driver);
+    this.hitlTicketRepo = new HitlTicketRepository(this.driver);
+    this.hitlIngestionService = new HitlIssueIngestionService(this.hitlTicketRepo);
     new ModelRegistryRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
@@ -828,6 +834,14 @@ export class CacophonyDaemon {
 
   public getPrDiscussionRepository(): PrDiscussionRepository {
     return this.prDiscussionRepo;
+  }
+
+  public getHitlTicketRepository(): HitlTicketRepository {
+    return this.hitlTicketRepo;
+  }
+
+  public getHitlIssueIngestionService(): HitlIssueIngestionService | undefined {
+    return this.hitlIngestionService;
   }
 
   public getPrMergeGateCoordinator(): PrMergeGateCoordinator | undefined {

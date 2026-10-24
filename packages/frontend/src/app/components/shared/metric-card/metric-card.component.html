@@ -1,0 +1,38 @@
+<article class="metric-card" [attr.data-status]="status()">
+  <header class="metric-card-header">
+    <h3 class="metric-card-title">{{ title() }}</h3>
+    <span class="status-indicator" [attr.data-status]="status()">
+      {{ status() | uppercase }}
+    </span>
+  </header>
+
+  <div class="metric-card-body">
+    <div class="metric-value-container">
+      <span class="metric-value">{{ value() }}</span>
+      @if (unit()) {
+        <span class="metric-unit">{{ unit() }}</span>
+      }
+    </div>
+
+    @if (sparklinePoints()) {
+      <div class="metric-sparkline-wrapper" aria-hidden="true">
+        <svg viewBox="0 0 100 30" class="sparkline-svg">
+          <polyline
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            [attr.points]="sparklinePoints()"
+          />
+        </svg>
+      </div>
+    }
+  </div>
+
+  @if (subtitle()) {
+    <footer class="metric-card-footer">
+      <span class="metric-subtitle">{{ subtitle() }}</span>
+    </footer>
+  }
+</article>

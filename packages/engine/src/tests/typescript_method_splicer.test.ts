@@ -168,4 +168,44 @@ describe('TypeScriptMethodSplicer', () => {
     assert(!result.includes('Old Method'));
     assert(result.includes(';'));
   });
+
+  it('should support multi-statement control flow with nested try/catch/finally and switch', async () => {
+    const originalCode = `
+      class WorkerProcessor {
+        public async executeStep(stepId: string): Promise<boolean> {
+          return true;
+        }
+      }
+    `;
+
+    const complexBody = `
+      try {
+        switch (stepId) {
+          case 'init':
+            console.log('Initializing');
+            break;
+          case 'process':
+            const items = [1, 2, 3].map((n) => n * 2).filter((n) => n > 2);
+            console.log('Processed', items);
+            break;
+          default:
+            throw new Error('Unknown step');
+        }
+        return true;
+      } catch (err: unknown) {
+        console.error('Failure in step', err);
+        return false;
+      } finally {
+        console.log('Cleanup completed');
+      }
+    `;
+
+    const splicer = new TypeScriptMethodSplicer();
+    const result = await splicer.splice(originalCode, 'executeStep', complexBody);
+
+    assert.ok(result.includes('switch (stepId)'));
+    assert.ok(result.includes('finally {'));
+    assert.ok(result.includes('const items = [1, 2, 3]'));
+  });
 });
+

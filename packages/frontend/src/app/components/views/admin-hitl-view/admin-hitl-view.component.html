@@ -1,0 +1,237 @@
+<div class="admin-hitl-container">
+  <header class="admin-hitl-header">
+    <div class="header-titles">
+      <h1 class="page-title">Admin Human-In-The-Loop (HITL) Gateway</h1>
+      <p class="page-subtitle">Security audit, prompt slipstream inspection, and autonomous arena queue dispatch.</p>
+    </div>
+
+    <div class="header-actions">
+      @if (syncMessage()) {
+        <span class="sync-status-text">{{ syncMessage() }}</span>
+      }
+      <button
+        type="button"
+        class="sync-btn"
+        (click)="syncWithGitHub()"
+      >
+        Sync GitHub Issues
+      </button>
+    </div>
+  </header>
+
+  <!-- Metric Deck -->
+  <section class="admin-metrics-deck" aria-label="HITL Queue Statistics">
+    <app-metric-card
+      title="Pending HITL Queue"
+      [value]="pendingCount()"
+      status="warning"
+      subtitle="Awaiting administrative signoff"
+    />
+    <app-metric-card
+      title="Security Risk Flags"
+      [value]="highRiskCount()"
+      [status]="highRiskCount() > 0 ? 'critical' : 'nominal'"
+      subtitle="Slipstream / injection threats"
+    />
+    <app-metric-card
+      title="Ingestion Rate"
+      [value]="'Zero Cost'"
+      status="nominal"
+      subtitle="Standard public GitHub API"
+    />
+  </section>
+
+  <!-- Filter Tabs -->
+  <app-scrollable-tabs
+    [tabs]="filterTabs"
+    [activeTabId]="activeTab()"
+    (tabSelected)="onTabChange($event)"
+  />
+
+  <!-- Main Split Layout (Tickets List + Inspection Panel) -->
+  <div class="hitl-workspace-layout">
+    <!-- Left: Ticket Selector List -->
+    <aside class="hitl-sidebar-list" aria-label="Available tickets list">
+      @if (filteredTickets().length === 0) {
+        <div class="empty-list-notice">No tickets in this category.</div>
+      } @else {
+        <div class="ticket-nav-list" role="listbox">
+          @for (ticket of filteredTickets(); track ticket.id) {
+            <button
+              type="button"
+              role="option"
+              class="ticket-nav-item"
+              [class.active]="ticket.id === selectedTicket()?.id"
+              [attr.aria-selected]="ticket.id === selectedTicket()?.id"
+              (click)="selectTicket(ticket)"
+            >
+              <div class="ticket-nav-top">
+                <span class="ticket-num">#{{ ticket.githubIssueNumber }}</span>
+                <span
+                  class="risk-tag"
+                  [attr.data-risk]="getRiskStatus(ticket.riskScore)"
+                >
+                  Risk: {{ ((ticket.riskScore || 0) * 100).toFixed(0) }}%
+                </span>
+              </div>
+              <div class="ticket-nav-title">{{ ticket.title }}</div>
+              <div class="ticket-nav-author">@{{ ticket.author }}</div>
+            </button>
+          }
+        </div>
+      }
+    </aside>
+
+    <!-- Right: Ticket Security Inspection and Enqueue Form -->
+    <main class="hitl-inspection-panel" aria-label="Ticket Inspection and Dispatch">
+      @if (selectedTicket(); as ticket) {
+        <article class="inspection-card">
+          <header class="inspection-header">
+            <div class="inspection-title-group">
+              <span class="issue-badge">GitHub #{{ ticket.githubIssueNumber }}</span>
+              <h2 class="inspection-title">{{ ticket.title }}</h2>
+            </div>
+            <div class="inspection-header-right">
+              <span class="status-pill" [attr.data-status]="ticket.status">{{ ticket.status }}</span>
+            </div>
+          </header>
+
+          <!-- Security Analysis Box -->
+          <section class="security-analysis-box" [attr.data-risk]="getRiskStatus(ticket.riskScore)">
+            <div class="security-box-header">
+              <span class="security-box-title">Prompt Slipstream Security Analysis</span>
+              <span class="risk-score-badge">
+                Risk Score: {{ ((ticket.riskScore || 0) * 100).toFixed(1) }}%
+              </span>
+            </div>
+
+            @if (ticket.flags && ticket.flags.length > 0) {
+              <div class="security-flags-list">
+                <span class="flags-label">Detected Risk Patterns:</span>
+                @for (flag of ticket.flags; track flag) {
+                  <span class="risk-flag-pill">{{ flag }}</span>
+                }
+              </div>
+            } @else {
+              <div class="security-clean-notice">
+                No prompt injection patterns or destructive commands detected.
+              </div>
+            }
+          </section>
+
+          <!-- Raw Untrusted Body vs Sanitized Prompt Editor -->
+          <div class="inspection-body-grid">
+            <div class="body-column raw-column">
+              <label class="field-label">Raw Contributor Input (Untrusted Data)</label>
+              <div class="raw-body-display">{{ ticket.rawBody }}</div>
+            </div>
+
+            <div class="body-column sanitized-column">
+              <div class="sanitized-header">
+                <label for="promptInput" class="field-label">Sanitized Arena Prompt (Agent Directive)</label>
+                <div class="priority-selector">
+                  <label for="prioritySelect" class="priority-label">Priority:</label>
+                  <select
+                    id="prioritySelect"
+                    class="priority-select"
+                    [ngModel]="editedPriority()"
+                    (ngModelChange)="editedPriority.set($event)"
+                  >
+                    <option value="P1">P1 (High)</option>
+                    <option value="P2">P2 (Medium)</option>
+                    <option value="P3">P3 (Low)</option>
+                  </select>
+                </div>
+              </div>
+
+              <textarea
+                id="promptInput"
+                class="prompt-textarea"
+                rows="10"
+                [ngModel]="editedPrompt()"
+                (ngModelChange)="editedPrompt.set($event)"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Metadata & Focus Files -->
+          <div class="metadata-footer-row">
+            <div class="metadata-item">
+              <span class="meta-label">Author:</span>
+              <span class="meta-val">@{{ ticket.author }}</span>
+            </div>
+            @if (ticket.suggestedTestCommand) {
+              <div class="metadata-item">
+                <span class="meta-label">Sanitized Test Command:</span>
+                <code>{{ ticket.suggestedTestCommand }}</code>
+              </div>
+            }
+          </div>
+
+          <!-- Action Buttons -->
+          <footer class="inspection-actions-footer">
+            <button
+              type="button"
+              class="btn-reject"
+              (click)="openRejectModal()"
+            >
+              Reject Submission
+            </button>
+
+            <button
+              type="button"
+              class="btn-approve"
+              [disabled]="ticket.status === 'ENQUEUED'"
+              (click)="approveTicket()"
+            >
+              {{ ticket.status === 'ENQUEUED' ? 'Already Enqueued' : 'Approve and Enqueue to Arena' }}
+            </button>
+          </footer>
+        </article>
+      } @else {
+        <div class="no-selection-prompt">
+          <p>Select a ticket from the left queue to review security analysis and dispatch to the arena.</p>
+        </div>
+      }
+    </main>
+  </div>
+
+  <!-- Rejection Modal -->
+  @if (isRejectModalOpen()) {
+    <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rejectModalTitle">
+      <div class="modal-card">
+        <header class="modal-header">
+          <h2 id="rejectModalTitle">Reject Contributor Submission</h2>
+          <button type="button" class="modal-close-btn" (click)="closeRejectModal()">&times;</button>
+        </header>
+
+        <div class="modal-body">
+          <p class="modal-description">
+            Specify the administrative reason for rejecting Issue #{{ selectedTicket()?.githubIssueNumber }}.
+          </p>
+
+          <label for="rejectReasonInput" class="input-label">Administrative Rejection Reason</label>
+          <input
+            id="rejectReasonInput"
+            type="text"
+            class="reason-input"
+            [ngModel]="rejectionReason()"
+            (ngModelChange)="rejectionReason.set($event)"
+          />
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-cancel" (click)="closeRejectModal()">Cancel</button>
+          <button
+            type="button"
+            class="btn-confirm-reject"
+            [disabled]="!rejectionReason().trim()"
+            (click)="confirmReject()"
+          >
+            Confirm Rejection
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

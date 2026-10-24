@@ -1,0 +1,162 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.terminal-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-terminal, #0f172a);
+  border: 1px solid var(--border-color, #1e293b);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-terminal-header, #1e293b);
+  border-bottom: 1px solid var(--border-color, #334155);
+}
+
+.terminal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.terminal-traffic-lights {
+  display: flex;
+  gap: 6px;
+}
+
+.light {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.light.red {
+  background: #ef4444;
+}
+
+.light.yellow {
+  background: #f59e0b;
+}
+
+.light.green {
+  background: #10b981;
+}
+
+.terminal-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main, #f1f5f9);
+  letter-spacing: 0.02em;
+}
+
+.terminal-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.throughput-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.terminal-action-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  background: var(--bg-surface, #334155);
+  border: 1px solid var(--border-color, #475569);
+  border-radius: 4px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.terminal-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main, #f1f5f9);
+}
+
+.terminal-action-btn.active {
+  background: var(--accent-surface, #6366f1);
+  color: #ffffff;
+  border-color: #6366f1;
+}
+
+.terminal-body {
+  padding: 12px;
+  height: 320px;
+  overflow-y: auto;
+  overflow-x: auto;
+  line-height: 1.5;
+  outline: none;
+}
+
+.terminal-pre {
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #e2e8f0;
+}
+
+/* ANSI Span Colors */
+::ng-deep .term-bold {
+  font-weight: 700;
+}
+
+::ng-deep .term-red {
+  color: #f87171;
+}
+
+::ng-deep .term-green {
+  color: #4ade80;
+}
+
+::ng-deep .term-yellow {
+  color: #fbbf24;
+}
+
+::ng-deep .term-blue {
+  color: #60a5fa;
+}
+
+::ng-deep .term-magenta {
+  color: #f472b6;
+}
+
+::ng-deep .term-cyan {
+  color: #38bdf8;
+}
+
+::ng-deep .term-muted {
+  color: #64748b;
+}
+
+@media (min-width: 768px) {
+  .terminal-body {
+    height: 420px;
+  }
+}

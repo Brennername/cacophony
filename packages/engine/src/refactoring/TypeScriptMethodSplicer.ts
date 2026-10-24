@@ -139,7 +139,12 @@ export class TypeScriptMethodSplicer {
     }
 
     // Syntax validation probe
-    const probeContent = `class __SyntaxProbe {\n  ${validation.methodHead} {\n${cleanedBody}\n  }\n}`;
+    const methodHead = validation.methodHead || `${methodName}()`;
+    const probeHead = cleanedBody.includes("await ") && !methodHead.includes("async")
+      ? `async ${methodHead}`
+      : methodHead;
+
+    const probeContent = `class __SyntaxProbe {\n  ${probeHead} {\n${cleanedBody}\n  }\n}`;
     const probe = ts.createSourceFile(
       "probe.ts",
       probeContent,
@@ -156,7 +161,18 @@ export class TypeScriptMethodSplicer {
       throw new Error(`Replacement method body for '${className}.${methodName}' has TypeScript syntax errors: ${msg}`);
     }
 
-    const replacement = `{\n${cleanedBody}\n  }`;
+    // Determine surrounding method and class indentation depth
+    const lineStart = source.lastIndexOf("\n", validation.bodyStart) + 1;
+    const methodIndent = source.slice(lineStart, validation.bodyStart).match(/^\s*/)?.[0] || "  ";
+    const bodyIndent = methodIndent + "  ";
+
+    // Indent each line of the cleaned body to align with method body depth
+    const lines = cleanedBody.split("\n");
+    const formattedBody = lines
+      .map((line) => (line.trim().length > 0 ? `${bodyIndent}${line.trimStart()}` : ""))
+      .join("\n");
+
+    const replacement = `{\n${formattedBody}\n${methodIndent}}`;
     return source.slice(0, validation.bodyStart) + replacement + source.slice(validation.bodyEnd);
   }
 

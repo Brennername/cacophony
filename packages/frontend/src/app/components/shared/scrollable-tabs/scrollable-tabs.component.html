@@ -1,0 +1,62 @@
+<nav class="scrollable-tabs-nav" aria-label="Tab navigation">
+  <button
+    type="button"
+    class="tab-nav-arrow tab-nav-prev"
+    aria-label="Scroll tabs left"
+    (click)="scrollTabs(-160)"
+  >
+    &lsaquo;
+  </button>
+
+  <div class="tabs-scroll-container" #scrollContainer role="tablist">
+    @for (tab of tabs(); track tab.id) {
+      <button
+        type="button"
+        role="tab"
+        class="tab-item"
+        [class.active]="tab.id === activeTabId()"
+        [attr.aria-selected]="tab.id === activeTabId()"
+        [attr.id]="'tab-' + tab.id"
+        (click)="selectTab(tab.id)"
+      >
+        @if (tab.icon) {
+          <span class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+        }
+        <span class="tab-label">{{ tab.label }}</span>
+        @if (tab.badge !== undefined && tab.badge !== null) {
+          <span class="tab-badge">{{ tab.badge }}</span>
+        }
+        @if (tab.closable) {
+          <button
+            type="button"
+            class="tab-close-btn"
+            aria-label="Close tab"
+            (click)="closeTab($event, tab.id)"
+          >
+            &times;
+          </button>
+        }
+      </button>
+    }
+  </div>
+
+  <button
+    type="button"
+    class="tab-nav-arrow tab-nav-next"
+    aria-label="Scroll tabs right"
+    (click)="scrollTabs(160)"
+  >
+    &rsaquo;
+  </button>
+
+  @if (allowAdd()) {
+    <button
+      type="button"
+      class="tab-add-btn"
+      aria-label="Add new tab"
+      (click)="addTab()"
+    >
+      +
+    </button>
+  }
+</nav>

@@ -11,7 +11,10 @@ import {
   FleetViewComponent,
   FleetTopologyViewComponent,
   TestingViewComponent,
+  IssuesViewComponent,
+  AdminHitlViewComponent,
 } from './components/views';
+import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -58,6 +61,15 @@ export const routes: Routes = [
   {
     path: 'settings',
     component: SettingsViewComponent,
+  },
+  {
+    path: 'issues',
+    component: IssuesViewComponent,
+  },
+  {
+    path: 'admin/hitl-gateway',
+    component: AdminHitlViewComponent,
+    canActivate: [adminGuard],
   },
   {
     path: 'auth/callback',

@@ -5,6 +5,7 @@ import { GiteaSsoAdapter } from "./GiteaSsoAdapter.js";
 import { LocalBypassSsoProvider } from "./LocalBypassSsoProvider.js";
 import { GiteaOAuthProvider } from "../gitea/GiteaOAuthProvider.js";
 import { GiteaApiClient } from "../gitea/GiteaApiClient.js";
+import { GitHubOAuthProvider } from "./GitHubOAuthProvider.js";
 import type { AuthConfig, SsoProviderType } from "@cacophony/shared-types";
 
 /**
@@ -89,6 +90,25 @@ export class SsoProviderFactory {
           jwtSecret,
         });
         return new GiteaSsoAdapter(giteaProvider);
+      }
+
+      case "github": {
+        const ghConfig = {
+          clientId:
+            config?.github?.clientId ||
+            process.env["GITHUB_CLIENT_ID"] ||
+            "",
+          clientSecret:
+            config?.github?.clientSecret ||
+            process.env["GITHUB_CLIENT_SECRET"] ||
+            "",
+          redirectUri:
+            config?.github?.redirectUri ||
+            process.env["GITHUB_REDIRECT_URI"] ||
+            "http://localhost:24072/auth/github/callback",
+          scopes: config?.github?.scopes || ["read:user", "user:email"],
+        };
+        return new GitHubOAuthProvider(ghConfig);
       }
 
       case "local":

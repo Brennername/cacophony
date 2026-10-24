@@ -41,7 +41,7 @@ export class DiagnosticPreFlightChecker {
     code: string,
     fileName = "virtual_preflight.ts",
   ): DiagnosticPreFlightResult {
-    if (!code || code.trim().length === 0) {
+    if (!code || typeof code !== "string" || code.trim().length === 0) {
       return {
         isValid: false,
         diagnostics: [
@@ -57,92 +57,114 @@ export class DiagnosticPreFlightChecker {
       };
     }
 
-    const diagnostics: PreFlightDiagnostic[] = [];
+    try {
+      // Strip ANSI escape sequences that might leak into code strings
+      let sanitizedCode = code.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
 
-    const sourceFile = ts.createSourceFile(
-      fileName,
-      code,
-      ts.ScriptTarget.Latest,
-      true,
-      ts.ScriptKind.TS,
-    );
+      // Strip enclosing markdown code block fences if present
+      const trimmed = sanitizedCode.trim();
+      if (trimmed.startsWith("```")) {
+        sanitizedCode = trimmed
+          .replace(/^```[a-zA-Z0-9_-]*\r?\n/, "")
+          .replace(/\r?\n```$/, "");
+      }
 
-    const parseDiags =
-      (sourceFile as unknown as { parseDiagnostics?: readonly ts.Diagnostic[] })
-        .parseDiagnostics ?? [];
+      const diagnostics: PreFlightDiagnostic[] = [];
 
-    for (const diag of parseDiags) {
-      const pos =
-        diag.file && diag.start !== undefined
-          ? diag.file.getLineAndCharacterOfPosition(diag.start)
-          : { line: 0, character: 0 };
+      const sourceFile = ts.createSourceFile(
+        fileName,
+        sanitizedCode,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TS,
+      );
 
-      const message =
-        typeof diag.messageText === "string"
-          ? diag.messageText
-          : diag.messageText.messageText;
+      const parseDiags =
+        (sourceFile as unknown as { parseDiagnostics?: readonly ts.Diagnostic[] })
+          .parseDiagnostics ?? [];
 
-      diagnostics.push({
-        line: pos.line + 1,
-        character: pos.character + 1,
-        message,
-        code: diag.code,
-        category: this.mapCategory(diag.category),
-      });
-    }
-
-    const transpileResult = ts.transpileModule(code, {
-      fileName,
-      reportDiagnostics: true,
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2022,
-        module: ts.ModuleKind.ESNext,
-        isolatedModules: true,
-      },
-    });
-
-    if (transpileResult.diagnostics) {
-      for (const diag of transpileResult.diagnostics) {
+      for (const diag of parseDiags) {
         const pos =
           diag.file && diag.start !== undefined
             ? diag.file.getLineAndCharacterOfPosition(diag.start)
             : { line: 0, character: 0 };
 
-        const message =
-          typeof diag.messageText === "string"
-            ? diag.messageText
-            : diag.messageText.messageText;
+        const message = ts.flattenDiagnosticMessageText(diag.messageText, "\n");
 
-        const exists = diagnostics.some(
-          (d) => d.line === pos.line + 1 && d.code === diag.code,
-        );
-        if (!exists) {
-          diagnostics.push({
-            line: pos.line + 1,
-            character: pos.character + 1,
-            message,
-            code: diag.code,
-            category: this.mapCategory(diag.category),
-          });
+        diagnostics.push({
+          line: pos.line + 1,
+          character: pos.character + 1,
+          message,
+          code: diag.code,
+          category: this.mapCategory(diag.category),
+        });
+      }
+
+      const transpileResult = ts.transpileModule(sanitizedCode, {
+        fileName,
+        reportDiagnostics: true,
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2022,
+          module: ts.ModuleKind.ESNext,
+          isolatedModules: true,
+        },
+      });
+
+      if (transpileResult.diagnostics) {
+        for (const diag of transpileResult.diagnostics) {
+          const pos =
+            diag.file && diag.start !== undefined
+              ? diag.file.getLineAndCharacterOfPosition(diag.start)
+              : { line: 0, character: 0 };
+
+          const message = ts.flattenDiagnosticMessageText(diag.messageText, "\n");
+
+          const exists = diagnostics.some(
+            (d) => d.line === pos.line + 1 && d.code === diag.code,
+          );
+          if (!exists) {
+            diagnostics.push({
+              line: pos.line + 1,
+              character: pos.character + 1,
+              message,
+              code: diag.code,
+              category: this.mapCategory(diag.category),
+            });
+          }
         }
       }
+
+      const errorDiagnostics = diagnostics.filter((d) => d.category === "error");
+      const isValid = errorDiagnostics.length === 0;
+
+      let rawErrorSummary: string | undefined;
+      if (!isValid) {
+        rawErrorSummary = errorDiagnostics
+          .map((d) => `Line ${d.line}:${d.character} [TS${d.code}] ${d.message}`)
+          .join("; ");
+      }
+
+      return {
+        isValid,
+        diagnostics,
+        rawErrorSummary,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        isValid: false,
+        diagnostics: [
+          {
+            line: 1,
+            character: 1,
+            message: `Diagnostic parser exception: ${msg}`,
+            code: 9999,
+            category: "error",
+          },
+        ],
+        rawErrorSummary: `Diagnostic parser exception: ${msg}`,
+      };
     }
-
-    const errorDiagnostics = diagnostics.filter((d) => d.category === "error");
-    const isValid = errorDiagnostics.length === 0;
-
-    let rawErrorSummary: string | undefined;
-    if (!isValid) {
-      rawErrorSummary = errorDiagnostics
-        .map((d) => `Line ${d.line}:${d.character} [TS${d.code}] ${d.message}`)
-        .join("; ");
-    }
-
-    return {
-      isValid,
-      diagnostics,
-      rawErrorSummary,
-    };
   }
 
   private mapCategory(

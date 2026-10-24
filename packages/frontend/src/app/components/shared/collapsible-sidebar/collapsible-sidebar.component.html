@@ -1,0 +1,116 @@
+<button
+  type="button"
+  class="mobile-drawer-trigger"
+  aria-label="Toggle mobile menu"
+  (click)="toggleMobileDrawer()"
+>
+  <span class="hamburger-bar"></span>
+  <span class="hamburger-bar"></span>
+  <span class="hamburger-bar"></span>
+</button>
+
+@if (mobileDrawerOpen()) {
+  <div
+    class="sidebar-backdrop"
+    aria-hidden="true"
+    (click)="closeMobileDrawer()"
+  ></div>
+}
+
+<aside
+  class="collapsible-sidebar"
+  [class.collapsed]="collapsed()"
+  [class.mobile-open]="mobileDrawerOpen()"
+  aria-label="Application navigation"
+>
+  <div class="sidebar-header">
+    <div class="sidebar-brand">
+      <span class="brand-badge">CC</span>
+      @if (!collapsed()) {
+        <span class="brand-text">Cacophony</span>
+      }
+    </div>
+    <button
+      type="button"
+      class="sidebar-toggle-btn"
+      [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      (click)="toggleCollapse()"
+    >
+      @if (collapsed()) {
+        &rsaquo;
+      } @else {
+        &lsaquo;
+      }
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    @for (group of menuGroups(); track group.id) {
+      <div class="menu-group">
+        @if (group.title && !collapsed()) {
+          <div class="menu-group-title">{{ group.title }}</div>
+        }
+        <ul class="menu-list">
+          @for (item of group.items; track item.id) {
+            <li class="menu-list-item">
+              @if (item.route) {
+                <a
+                  [routerLink]="item.route"
+                  routerLinkActive="active"
+                  class="menu-link"
+                  [class.disabled]="item.disabled"
+                  [attr.title]="collapsed() ? item.label : null"
+                  (click)="selectItem(item)"
+                >
+                  <span class="menu-icon">{{ item.icon }}</span>
+                  @if (!collapsed()) {
+                    <span class="menu-label">{{ item.label }}</span>
+                  }
+                  @if (item.badge !== undefined && item.badge !== null && !collapsed()) {
+                    <span class="menu-badge">{{ item.badge }}</span>
+                  }
+                </a>
+              } @else {
+                <button
+                  type="button"
+                  class="menu-link"
+                  [class.disabled]="item.disabled"
+                  [attr.title]="collapsed() ? item.label : null"
+                  (click)="selectItem(item)"
+                >
+                  <span class="menu-icon">{{ item.icon }}</span>
+                  @if (!collapsed()) {
+                    <span class="menu-label">{{ item.label }}</span>
+                  }
+                  @if (item.badge !== undefined && item.badge !== null && !collapsed()) {
+                    <span class="menu-badge">{{ item.badge }}</span>
+                  }
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </nav>
+
+  @if (userProfile(); as user) {
+    <div class="sidebar-footer">
+      <div class="user-profile-widget" [attr.title]="user.username">
+        @if (user.avatarUrl) {
+          <img [src]="user.avatarUrl" [alt]="user.username" class="user-avatar" />
+        } @else {
+          <div class="user-avatar-fallback">{{ user.username.substring(0, 2).toUpperCase() }}</div>
+        }
+        @if (!collapsed()) {
+          <div class="user-info">
+            <div class="user-name">{{ user.username }}</div>
+            @if (user.role) {
+              <div class="user-role">{{ user.role }}</div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</aside>
