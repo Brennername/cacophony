@@ -202,7 +202,7 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.12.8: Write unit tests verifying `GrepSearchTool` ripgrep execution, glob filtering, line number inclusion, and match capping. [Files: packages/tools/src/implementations/GrepSearchTool.ts, packages/tools/src/tests/grep_search_tool.test.ts] [Test: node --test packages/tools/dist/tests/grep_search_tool.test.js]
 - [ ] T102.12.9: Write unit tests verifying `RunCommandTool` command execution, timeout termination, exit code capture, and output truncation. [Files: packages/tools/src/implementations/RunCommandTool.ts, packages/tools/src/tests/run_command_tool.test.ts] [Test: node --test packages/tools/dist/tests/run_command_tool.test.js]
 - [ ] T102.12.10: Write unit tests verifying `RegexTool` regular expression compilation, multiline matches, capture group extraction, and safety timeouts. [Files: packages/tools/src/implementations/RegexTool.ts, packages/tools/src/tests/regex_tool.test.ts] [Test: node --test packages/tools/dist/tests/regex_tool.test.js]
-- [ ] T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf, mkfs, dd), path traversal prevention, and shell injection escaping. [Files: packages/tools/src/security/ExecutionGuard.ts, packages/tools/src/tests/execution_guard.test.ts] [Test: node --test packages/tools/dist/tests/execution_guard.test.js]
+- [x] T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf, mkfs, dd), path traversal prevention, and shell injection escaping. [Files: packages/tools/src/security/ExecutionGuard.ts, packages/tools/src/tests/execution_guard.test.ts] [Test: node --test packages/tools/dist/tests/execution_guard.test.js]
 - [ ] T102.12.12: Write unit tests verifying `ToolRegistry` dynamic tool registration, schema validation, tool execution dispatch, and unknown tool error handling. [Files: packages/tools/src/ToolRegistry.ts, packages/tools/src/tests/tool_registry.test.ts] [Test: node --test packages/tools/dist/tests/tool_registry.test.js]
 - [ ] T102.13.1: Write unit tests verifying `TaskApiService` task list fetching, task cancellation dispatch, manual task enqueue, and error mapping. [Files: packages/frontend/src/app/services/task-api.service.ts, packages/frontend/src/app/services/task-api.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.13.2: Write unit tests verifying `RepoStateService` branch listing, diff fetching, file tree navigation, and active commit tracking. [Files: packages/frontend/src/app/services/repo-state.service.ts, packages/frontend/src/app/services/repo-state.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
@@ -461,6 +461,159 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvg9gvu4-tyjt.2.2.1 Rehabilitation [2026-10-24T11:21:54.688Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. (`regr-mvg9gvu4-tyjt.2.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu4-tyjt.2.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.2.1.2 Rehabilitation [2026-10-24T11:08:52.356Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.2.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.2.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.2.1.1 Rehabilitation [2026-10-24T10:32:54.289Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.2.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.2.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.2.2.1 Rehabilitation [2026-10-24T10:22:10.718Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.2.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.2.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.2.2.2 Rehabilitation [2026-10-24T10:04:23.343Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.2.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.2.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhduh5l-q5un.2.2 Rehabilitation [2026-10-24T09:34:44.366Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands (`regr-mvhduh5l-q5un.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvhduh5l-q5un.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhduh5l-q5un.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhduh5l-q5un.2.1 Rehabilitation [2026-10-24T09:15:24.069Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands (`regr-mvhduh5l-q5un.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvhduh5l-q5un.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhduh5l-q5un.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhde30g-bd2k.2.2 Rehabilitation [2026-10-24T09:04:29.440Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command (`regr-mvhde30g-bd2k.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvhde30g-bd2k.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde30g-bd2k.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhde30g-bd2k.2.1 Rehabilitation [2026-10-24T08:40:57.286Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command (`regr-mvhde30g-bd2k.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvhde30g-bd2k.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde30g-bd2k.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.1.1.1 Rehabilitation [2026-10-24T08:11:09.503Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.1.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.1.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.1.1.2 Rehabilitation [2026-10-24T07:53:21.137Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.1.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.1.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.1.2.2 Rehabilitation [2026-10-24T07:23:40.663Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.1.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.1.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvg9gvu8-bbfd.1.2.1 Rehabilitation [2026-10-24T07:07:08.001Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention (`regr-mvg9gvu8-bbfd.1.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvg9gvu8-bbfd.1.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhde306-gg36.2.2 Rehabilitation [2026-10-24T05:28:40.608Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command (`regr-mvhde306-gg36.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvhde306-gg36.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhde306-gg36.2.1 Rehabilitation [2026-10-24T04:59:15.037Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command (`regr-mvhde306-gg36.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvhde306-gg36.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvhde306-gg36.1.2 Rehabilitation [2026-10-24T04:39:19.181Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command (`regr-mvhde306-gg36.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvhde306-gg36.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+
+
+### Task regr-mvkotynh-vdvc Rehabilitation [2026-10-24T02:55:51.046Z]
+- **Parent Task**: [TDD Regression] should handle files with only comments gracefully (`regr-mvkotynh-vdvc`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvkotynh-vdvc.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle files with only comments gracefully [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvkotynh-vdvc.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle files with only comments gracefully [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+
+
 ### Task regr-mvko092b-f9eb Rehabilitation [2026-10-24T01:16:32.792Z]
 - **Parent Task**: [TDD Regression] should calculate correct contrast ratio for foreground and background colors (`regr-mvko092b-f9eb`)
 - **Failure Count**: 3
@@ -647,8 +800,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvir6w91-8i42.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
-  - [ ] `regr-mvir6w91-8i42.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
+  - [x] `regr-mvir6w91-8i42.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
+  - [x] `regr-mvir6w91-8i42.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
 
 
 ### Task regr-mvir6w91-8i42.2 Rehabilitation [2026-10-24T00:08:52.088Z]
@@ -656,8 +809,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvir6w91-8i42.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
-  - [ ] `regr-mvir6w91-8i42.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
+  - [x] `regr-mvir6w91-8i42.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
+  - [x] `regr-mvir6w91-8i42.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
 
 
 ### Task regr-mvi907l6-y7fk.2 Rehabilitation [2026-10-23T20:49:38.348Z]
@@ -701,8 +854,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9n3dy-cbef.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
-  - [ ] `regr-mvg9n3dy-cbef.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
 
 
 ### Task regr-mvjm9z9d-vb5j.2 Rehabilitation [2026-10-23T17:11:26.958Z]
@@ -710,8 +863,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjm9z9d-vb5j.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
-  - [ ] `regr-mvjm9z9d-vb5j.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvjm9z9d-vb5j.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvjm9z9d-vb5j.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
 
 
 ### Task regr-mvg9n3dy-cbef.2.2 Rehabilitation [2026-10-23T16:08:46.966Z]
@@ -719,8 +872,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9n3dy-cbef.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
-  - [ ] `regr-mvg9n3dy-cbef.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
 
 
 ### Task regr-mvg9gvu4-tyjt.2.1 Rehabilitation [2026-10-23T15:26:52.743Z]
@@ -728,8 +881,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu4-tyjt.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu4-tyjt.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu4-tyjt.2.2 Rehabilitation [2026-10-23T15:13:24.585Z]
@@ -737,8 +890,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu4-tyjt.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu4-tyjt.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu8-bbfd.2.1 Rehabilitation [2026-10-23T14:47:10.044Z]
@@ -746,8 +899,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu8-bbfd.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu8-bbfd.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu8-bbfd.2.2 Rehabilitation [2026-10-23T14:39:35.934Z]
@@ -755,8 +908,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu8-bbfd.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu8-bbfd.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvhduh5l-q5un.2 Rehabilitation [2026-10-23T13:44:48.705Z]
@@ -764,8 +917,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvhduh5l-q5un.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvhduh5l-q5un.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhduh5l-q5un.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhduh5l-q5un.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvhde30g-bd2k.2 Rehabilitation [2026-10-23T13:23:35.941Z]
@@ -773,8 +926,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvhde30g-bd2k.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvhde30g-bd2k.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde30g-bd2k.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde30g-bd2k.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu8-bbfd.1.1 Rehabilitation [2026-10-23T12:47:29.365Z]
@@ -782,8 +935,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu8-bbfd.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu8-bbfd.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu8-bbfd.1.2 Rehabilitation [2026-10-23T12:35:08.462Z]
@@ -791,8 +944,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu8-bbfd.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu8-bbfd.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvjo5b74-8kz4 Rehabilitation [2026-10-23T11:53:38.188Z]
@@ -800,8 +953,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjo5b74-8kz4.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle single-line valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
-  - [ ] `regr-mvjo5b74-8kz4.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle single-line valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjo5b74-8kz4.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle single-line valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjo5b74-8kz4.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle single-line valid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
 
 
 ### Task taskcade-t102.2.12.2 Rehabilitation [2026-10-23T11:32:23.591Z]
@@ -818,8 +971,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjo5b6u-ipjw.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
-  - [ ] `regr-mvjo5b6u-ipjw.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjo5b6u-ipjw.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjo5b6u-ipjw.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
 
 
 ### Task regr-mvhde306-gg36.2 Rehabilitation [2026-10-23T10:40:54.173Z]
@@ -827,8 +980,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvhde306-gg36.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvhde306-gg36.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvhde306-gg36.1 Rehabilitation [2026-10-23T10:20:21.174Z]
@@ -836,8 +989,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvhde306-gg36.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvhde306-gg36.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvjl9p97-kulk Rehabilitation [2026-10-23T08:03:52.145Z]
@@ -845,8 +998,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjl9p97-kulk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] packages/engine/dist/tests/tui_theme.test.js [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
-  - [ ] `regr-mvjl9p97-kulk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] packages/engine/dist/tests/tui_theme.test.js [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl9p97-kulk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] packages/engine/dist/tests/tui_theme.test.js [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl9p97-kulk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] packages/engine/dist/tests/tui_theme.test.js [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
 
 
 ### Task regr-mvjl7cv0-lrrg Rehabilitation [2026-10-23T07:39:55.860Z]
@@ -854,8 +1007,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjl7cv0-lrrg.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
-  - [ ] `regr-mvjl7cv0-lrrg.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cv0-lrrg.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cv0-lrrg.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TuiTheme Color Palette Definition [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
 
 
 ### Task regr-mvjl7cuw-6adl Rehabilitation [2026-10-23T07:11:35.997Z]
@@ -863,8 +1016,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjl7cuw-6adl.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
-  - [ ] `regr-mvjl7cuw-6adl.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cuw-6adl.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
+  - [x] `regr-mvjl7cuw-6adl.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should calculate contrast ratios correctly [Role: test_engineer] [Files: packages/engine/src/tests/tui_theme.test.ts]
 
 
 ### Task regr-mvjcffnp-frqn Rehabilitation [2026-10-23T06:23:11.617Z]
@@ -872,8 +1025,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjcffnp-frqn.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] DiagnosticPreFlightChecker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
-  - [ ] `regr-mvjcffnp-frqn.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] DiagnosticPreFlightChecker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjcffnp-frqn.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] DiagnosticPreFlightChecker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjcffnp-frqn.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] DiagnosticPreFlightChecker [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
 
 
 ### Task regr-mvjcffne-cqkb Rehabilitation [2026-10-23T05:40:49.100Z]
@@ -881,8 +1034,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjcffne-cqkb.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle multi-line invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
-  - [ ] `regr-mvjcffne-cqkb.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multi-line invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjcffne-cqkb.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle multi-line invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
+  - [x] `regr-mvjcffne-cqkb.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multi-line invalid input [Role: test_engineer] [Files: packages/engine/src/tests/diagnostic_pre_flight_checker.test.ts]
 
 
 ### Task regr-mvir6w91-8i42 Rehabilitation [2026-10-23T04:48:35.710Z]
@@ -890,8 +1043,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvir6w91-8i42.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
-  - [ ] `regr-mvir6w91-8i42.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
+  - [x] `regr-mvir6w91-8i42.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
+  - [x] `regr-mvir6w91-8i42.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] [22m[49m [30m[43m frontend [49m[39m src/app/services/auth.service.spec.ts[2m [ src/ [Role: test_engineer] [Files: packages/frontend/src/app/services/auth.service.spec.ts packages/frontend/src/app/services/auth.service.ts]
 
 
 ### Task regr-mvg3or7v-fx9z.2.2 Rehabilitation [2026-10-23T02:57:14.115Z]
@@ -899,8 +1052,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7v-fx9z.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7v-fx9z.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task regr-mvg3or7v-fx9z.2.1 Rehabilitation [2026-10-23T02:21:57.872Z]
@@ -908,8 +1061,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7v-fx9z.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7v-fx9z.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task regr-mvi907l1-ioi1 Rehabilitation [2026-10-23T00:09:31.068Z]
@@ -917,8 +1070,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvi907l1-ioi1.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle replacing a method with an empty body [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvi907l1-ioi1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle replacing a method with an empty body [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvi907l1-ioi1.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle replacing a method with an empty body [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvi907l1-ioi1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle replacing a method with an empty body [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task regr-mvi907l6-y7fk Rehabilitation [2026-10-22T23:43:37.339Z]
@@ -926,8 +1079,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 420000ms for model 'gemma3:4b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvi907l6-y7fk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvi907l6-y7fk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvi907l6-y7fk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvi907l6-y7fk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle methods with complex logic [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task regr-mvg3or7z-q82h.2.2 Rehabilitation [2026-10-22T22:23:30.962Z]
@@ -935,8 +1088,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7z-q82h.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7z-q82h.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task taskcade-t102.12.11.3.1 Rehabilitation [2026-10-22T19:58:45.826Z]
@@ -944,8 +1097,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.12.11.3.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
-  - [ ] `taskcade-t102.12.11.3.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [x] `taskcade-t102.12.11.3.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [x] `taskcade-t102.12.11.3.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
 
 
 ### Task taskcade-t102.14.9.3 Rehabilitation [2026-10-22T19:50:30.540Z]
@@ -962,8 +1115,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9n3dy-cbef.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
-  - [ ] `regr-mvg9n3dy-cbef.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
 
 
 ### Task regr-mvjm9z9d-vb5j Rehabilitation [2026-10-22T18:27:02.263Z]
@@ -971,8 +1124,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvjm9z9d-vb5j.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
-  - [ ] `regr-mvjm9z9d-vb5j.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvjm9z9d-vb5j.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvjm9z9d-vb5j.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] subfolder routing [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
 
 
 ### Task regr-mvg9gvu4-tyjt.2 Rehabilitation [2026-10-22T17:37:05.301Z]
@@ -980,8 +1133,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu4-tyjt.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu4-tyjt.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu8-bbfd.2 Rehabilitation [2026-10-22T17:06:10.956Z]
@@ -989,8 +1142,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu8-bbfd.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu8-bbfd.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvhduh5l-q5un Rehabilitation [2026-10-22T16:29:48.887Z]
@@ -998,8 +1151,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvhduh5l-q5un.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvhduh5l-q5un.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhduh5l-q5un.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhduh5l-q5un.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block dangerous commands [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvhde30g-bd2k Rehabilitation [2026-10-22T15:54:47.229Z]
@@ -1007,8 +1160,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvhde30g-bd2k.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvhde30g-bd2k.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde30g-bd2k.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde30g-bd2k.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "sudo" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu8-bbfd.1 Rehabilitation [2026-10-22T15:27:13.572Z]
@@ -1016,8 +1169,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu8-bbfd.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu8-bbfd.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvjcffnt-7ce3 Rehabilitation [2026-10-22T15:08:28.636Z]
@@ -1034,8 +1187,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvhde306-gg36.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvhde306-gg36.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvhde306-gg36.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should block the "git clean -f" command [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task taskcade-t102.12.11.3.2 Rehabilitation [2026-10-22T14:37:38.952Z]
@@ -1043,8 +1196,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.12.11.3.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
-  - [ ] `taskcade-t102.12.11.3.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [x] `taskcade-t102.12.11.3.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [x] `taskcade-t102.12.11.3.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
 
 
 ### Task taskcade-t102.6.8.3 Rehabilitation [2026-10-22T14:17:32.435Z]
@@ -1334,8 +1487,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7v-fx9z.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7v-fx9z.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task regr-mvg3or7v-fx9z.2 Rehabilitation [2026-10-21T16:34:17.654Z]
@@ -1343,8 +1496,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7v-fx9z.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7v-fx9z.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task taskcade-t102.16.4 Rehabilitation [2026-10-21T15:19:12.143Z]
@@ -1371,8 +1524,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7z-q82h.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7z-q82h.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task regr-mvglnxjg-vuhc Rehabilitation [2026-10-21T13:38:24.135Z]
@@ -1407,8 +1560,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7z-q82h.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7z-q82h.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task taskcade-t102.14.1 Rehabilitation [2026-10-21T10:32:35.340Z]
@@ -1473,8 +1626,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.12.11.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
-  - [ ] `taskcade-t102.12.11.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [x] `taskcade-t102.12.11.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [x] `taskcade-t102.12.11.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
 
 
 ### Task regr-mvg9n3dy-cbef Rehabilitation [2026-10-21T03:23:42.414Z]
@@ -1482,8 +1635,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9n3dy-cbef.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
-  - [ ] `regr-mvg9n3dy-cbef.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
+  - [x] `regr-mvg9n3dy-cbef.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should correlate failure with a culprit commit [Role: test_engineer] [Files: packages/engine/src/tests/git_regression_correlator.test.ts packages/engine/src/analytics/GitRegressionCorrelator.ts]
 
 
 ### Task taskcade-t102.14.9 Rehabilitation [2026-10-21T02:49:09.395Z]
@@ -1511,8 +1664,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu4-tyjt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu4-tyjt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu4-tyjt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task regr-mvg9gvu8-bbfd Rehabilitation [2026-10-21T00:39:45.970Z]
@@ -1520,8 +1673,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg9gvu8-bbfd.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `regr-mvg9gvu8-bbfd.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `regr-mvg9gvu8-bbfd.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] path traversal prevention [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts packages/tools/src/security/ExecutionGuard.ts]
 
 
 ### Task taskcade-t102.6.1 Rehabilitation [2026-10-20T23:39:49.030Z]
@@ -1661,8 +1814,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7z-q82h.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7z-q82h.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7z-q82h.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should retain comments during method replacement [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task regr-mvfvieet-z2ef Rehabilitation [2026-10-20T15:32:17.603Z]
@@ -1728,8 +1881,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'gemma3:12b-it-qat'
 - **Decomposed Subtasks**:
-  - [ ] `regr-mvg3or7v-fx9z.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
-  - [ ] `regr-mvg3or7v-fx9z.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
+  - [x] `regr-mvg3or7v-fx9z.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] TypeScriptMethodSplicer [Role: test_engineer] [Files: packages/engine/src/tests/typescript_method_splicer.test.ts packages/engine/src/refactoring/TypeScriptMethodSplicer.ts]
 
 
 ### Task taskcade-t102.13.10 Rehabilitation [2026-10-20T10:13:43.496Z]
@@ -1814,9 +1967,9 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.12.11.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: type_specialist] [Files: packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `taskcade-t102.12.11.2`: [Rehab 2/3] Core Implementation Unit: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: implementer] [Files: packages/tools/src/security/ExecutionGuard.ts]
-  - [ ] `taskcade-t102.12.11.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
+  - [x] `taskcade-t102.12.11.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: type_specialist] [Files: packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `taskcade-t102.12.11.2`: [Rehab 2/3] Core Implementation Unit: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: implementer] [Files: packages/tools/src/security/ExecutionGuard.ts]
+  - [x] `taskcade-t102.12.11.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.12.11: Write unit tests verifying `ExecutionGuard` destructive command blocking (rm -rf [Role: test_engineer] [Files: packages/tools/src/tests/execution_guard.test.ts]
 
 
 ### Task taskcade-t102.15.3 Rehabilitation [2026-10-20T05:11:22.137Z]

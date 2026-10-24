@@ -42,6 +42,20 @@ export class DiagnosticPreFlightChecker {
 
   /**
    * Validates code syntax in-memory and returns structured diagnostics.
+   * Alias for checkSyntax for backward compatibility with TDD test runners.
+   *
+   * @param code The TypeScript/JavaScript source code to inspect.
+   * @param fileName Optional virtual filename for error location reporting.
+   */
+  public executeSyntaxCheck(
+    code: string,
+    fileName = "virtual_preflight.ts",
+  ): DiagnosticPreFlightResult {
+    return this.checkSyntax(code, fileName);
+  }
+
+  /**
+   * Validates code syntax in-memory and returns structured diagnostics.
    *
    * @param code The TypeScript/JavaScript source code to inspect.
    * @param fileName Optional virtual filename for error location reporting.

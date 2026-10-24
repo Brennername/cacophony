@@ -60,6 +60,53 @@ describe("DiagnosticPreFlightChecker Input Robustness Tests (T-S4.4)", () => {
     assert.ok(result.rawErrorSummary?.includes("TS"));
   });
 
+  describe("Comment-Only Files and Alias Invocations (regr-mvkotynh-vdvc)", () => {
+    it("should handle files with only comments gracefully", () => {
+      const commentOnlySingleLine = "// This file contains only a single-line comment";
+      const result = checker.checkSyntax(commentOnlySingleLine);
+
+      assert.equal(result.isValid, true);
+      assert.equal(result.diagnostics.length, 0);
+      assert.equal(result.rawErrorSummary, undefined);
+    });
+
+    it("should handle files with multiple block and line comments gracefully", () => {
+      const multilineComments = `
+        // File header comment
+        /*
+         * Multi-line block comment
+         * with explanatory notes
+         */
+        /** JSDoc style documentation without code */
+      `;
+      const result = checker.checkSyntax(multilineComments);
+
+      assert.equal(result.isValid, true);
+      assert.equal(result.diagnostics.length, 0);
+      assert.equal(result.rawErrorSummary, undefined);
+    });
+
+    it("should support executeSyntaxCheck as an alias method for checkSyntax", () => {
+      const code = "export const answer = 42;";
+      const result = checker.executeSyntaxCheck(code);
+
+      assert.equal(result.isValid, true);
+      assert.equal(result.diagnostics.length, 0);
+
+      const commentResult = checker.executeSyntaxCheck("// comments via executeSyntaxCheck");
+      assert.equal(commentResult.isValid, true);
+      assert.equal(commentResult.diagnostics.length, 0);
+    });
+
+    it("should handle comment-only code wrapped in markdown fences via executeSyntaxCheck", () => {
+      const fencedComments = "```typescript\n// Just a comment inside markdown\n/* another block */\n```";
+      const result = checker.executeSyntaxCheck(fencedComments);
+
+      assert.equal(result.isValid, true);
+      assert.equal(result.diagnostics.length, 0);
+    });
+  });
+
   describe("Task Validation & Structural Health", () => {
     it("should return false for an invalid task", () => {
       assert.equal(checker.validateTask(null), false);
