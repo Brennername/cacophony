@@ -151,7 +151,7 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.4.4: Write unit tests verifying `RollingWindowAnalyticsService` moving window statistics, percentile latency calculation, and throughput aggregation. [Files: packages/engine/src/analytics/RollingWindowAnalyticsService.ts, packages/engine/src/tests/rolling_window_analytics.test.ts] [Test: node --test packages/engine/dist/tests/rolling_window_analytics.test.js]
 - [ ] T102.5.1: Write unit tests verifying `EpsilonGreedyPolicy` exploration vs exploitation decision split, random choice distribution, and decaying epsilon. [Files: packages/engine/src/bandit/EpsilonGreedyPolicy.ts, packages/engine/src/tests/epsilon_greedy_policy.test.ts] [Test: node --test packages/engine/dist/tests/epsilon_greedy_policy.test.js]
 - [ ] T102.5.2: Write unit tests verifying `ThompsonSamplingPolicy` beta distribution sampling, alpha/beta score updates, and model selection. [Files: packages/engine/src/bandit/ThompsonSamplingPolicy.ts, packages/engine/src/tests/thompson_sampling_policy.test.ts] [Test: node --test packages/engine/dist/tests/thompson_sampling_policy.test.js]
-- [ ] T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording, and model performance convergence. [Files: packages/engine/src/bandit/BanditTaskScheduler.ts, packages/engine/src/tests/bandit_task_scheduler.test.ts] [Test: node --test packages/engine/dist/tests/bandit_task_scheduler.test.js]
+- [x] T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording, and model performance convergence. [Files: packages/engine/src/bandit/BanditTaskScheduler.ts, packages/engine/src/tests/bandit_task_scheduler.test.ts] [Test: node --test packages/engine/dist/tests/bandit_task_scheduler.test.js]
 - [ ] T102.6.1: Write unit tests verifying `AstSignatureAlignRule` method signature comparison, parameter count alignment, and missing return type warnings. [Files: packages/engine/src/rules/catalog/AstSignatureAlignRule.ts, packages/engine/src/tests/ast_signature_align_rule.test.ts] [Test: node --test packages/engine/dist/tests/ast_signature_align_rule.test.js]
 - [ ] T102.6.2: Write unit tests verifying `FilePlacementAndNamingConventionRule` PascalCase component naming, kebab-case file paths, and placement validation. [Files: packages/engine/src/rules/catalog/FilePlacementAndNamingConventionRule.ts, packages/engine/src/tests/file_placement_rule.test.ts] [Test: node --test packages/engine/dist/tests/file_placement_rule.test.js]
 - [ ] T102.6.3: Write unit tests verifying `BannedImportScrubberRule` forbidden package detection (jest, mocha, chai, lodash) and replacement recommendations. [Files: packages/engine/src/rules/catalog/BannedImportScrubberRule.ts, packages/engine/src/tests/banned_import_scrubber_rule.test.ts] [Test: node --test packages/engine/dist/tests/banned_import_scrubber_rule.test.js]
@@ -159,10 +159,10 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.6.5: Write unit tests verifying `EnforceEsmJsExtensionRule` relative import statement inspection and automated `.js` extension injection. [Files: packages/engine/src/rules/catalog/EnforceEsmJsExtensionRule.ts, packages/engine/src/tests/enforce_esm_js_extension_rule.test.ts] [Test: node --test packages/engine/dist/tests/enforce_esm_js_extension_rule.test.js]
 - [ ] T102.6.6: Write unit tests verifying `StripEmojisRule` Unicode emoji detection across code, comments, string literals, and template files. [Files: packages/engine/src/rules/catalog/StripEmojisRule.ts, packages/engine/src/tests/strip_emojis_rule.test.ts] [Test: node --test packages/engine/dist/tests/strip_emojis_rule.test.js]
 - [ ] T102.6.7: Write unit tests verifying `WhitespaceAndEolNormalizerRule` mixed CRLF/LF normalization, trailing whitespace stripping, and final newline enforcement. [Files: packages/engine/src/rules/catalog/WhitespaceAndEolNormalizerRule.ts, packages/engine/src/tests/whitespace_normalizer_rule.test.ts] [Test: node --test packages/engine/dist/tests/whitespace_normalizer_rule.test.js]
-- [ ] T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement guard, rejection of unauthorized root files, and subfolder routing. [Files: packages/engine/src/rules/catalog/LooseRootFileGuardRule.ts, packages/engine/src/tests/loose_root_file_guard_rule.test.ts] [Test: node --test packages/engine/dist/tests/loose_root_file_guard_rule.test.js]
+- [x] T102.6.8: Write unit tests verifying `LooseRootFileGuardRule` root directory placement guard, rejection of unauthorized root files, and subfolder routing. [Files: packages/engine/src/rules/catalog/LooseRootFileGuardRule.ts, packages/engine/src/tests/loose_root_file_guard_rule.test.ts] [Test: node --test packages/engine/dist/tests/loose_root_file_guard_rule.test.js]
 - [ ] T102.6.9: Write unit tests verifying `RulePipelineEngine` sequential rule execution, change set accumulation, and short-circuit on fatal violation. [Files: packages/engine/src/rules/RulePipelineEngine.ts, packages/engine/src/tests/rule_pipeline_engine.test.ts] [Test: node --test packages/engine/dist/tests/rule_pipeline_engine.test.js]
 - [ ] T102.7.1: Write unit tests verifying `AuthentikOAuthProvider` authorization URL construction, state parameter verification, and token exchange. [Files: packages/engine/src/auth/AuthentikOAuthProvider.ts, packages/engine/src/tests/authentik_oauth_provider.test.ts] [Test: node --test packages/engine/dist/tests/authentik_oauth_provider.test.js]
-- [ ] T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction (`Remote-User`, `Remote-Groups`), and user profile construction. [Files: packages/engine/src/auth/AutheliaSsoProvider.ts, packages/engine/src/tests/authelia_sso_provider.test.ts] [Test: node --test packages/engine/dist/tests/authelia_sso_provider.test.js]
+- [x] T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction (`Remote-User`, `Remote-Groups`), and user profile construction. [Files: packages/engine/src/auth/AutheliaSsoProvider.ts, packages/engine/src/tests/authelia_sso_provider.test.ts] [Test: node --test packages/engine/dist/tests/authelia_sso_provider.test.js]
 - [ ] T102.7.3: Write unit tests verifying `LocalBypassSsoProvider` mock user injection, demo credentials validation, and role assignment. [Files: packages/engine/src/auth/LocalBypassSsoProvider.ts, packages/engine/src/tests/local_bypass_sso_provider.test.ts] [Test: node --test packages/engine/dist/tests/local_bypass_sso_provider.test.js]
 - [ ] T102.7.4: Write unit tests verifying `OidcDiscoveryService` well-known configuration endpoint fetch, jwks_uri extraction, and cache expiration. [Files: packages/engine/src/auth/OidcDiscoveryService.ts, packages/engine/src/tests/oidc_discovery_service.test.ts] [Test: node --test packages/engine/dist/tests/oidc_discovery_service.test.js]
 - [ ] T102.7.5: Write unit tests verifying `SsoProviderFactory` provider selection based on SSO_PROVIDER environment variable. [Files: packages/engine/src/auth/SsoProviderFactory.ts, packages/engine/src/tests/sso_provider_factory.test.ts] [Test: node --test packages/engine/dist/tests/sso_provider_factory.test.js]
@@ -460,6 +460,339 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task regr-mvmjosl6-g7rh.2 Rehabilitation [2026-10-25T02:08:12.098Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where no interventions are needed (`regr-mvmjosl6-g7rh.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosl6-g7rh.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where no interventions are needed [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosl6-g7rh.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where no interventions are needed [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjosl2-48kf.2 Rehabilitation [2026-10-25T02:07:58.298Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should monitor model performance and trigger interventions if necessary (`regr-mvmjosl2-48kf.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosl2-48kf.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should monitor model performance and trigger interventions if necessary [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosl2-48kf.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should monitor model performance and trigger interventions if necessary [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjosl2-48kf.1 Rehabilitation [2026-10-25T01:59:49.868Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should monitor model performance and trigger interventions if necessary (`regr-mvmjosl2-48kf.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosl2-48kf.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should monitor model performance and trigger interventions if necessary [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosl2-48kf.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should monitor model performance and trigger interventions if necessary [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskw-gbbd.2 Rehabilitation [2026-10-25T01:39:08.067Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] reward recording (`regr-mvmjoskw-gbbd.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskw-gbbd.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskw-gbbd.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskw-gbbd.1 Rehabilitation [2026-10-25T01:32:55.139Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] reward recording (`regr-mvmjoskw-gbbd.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskw-gbbd.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskw-gbbd.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskt-0mis.1 Rehabilitation [2026-10-25T01:19:38.649Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] BanditTaskScheduler (`regr-mvmjoskt-0mis.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskt-0mis.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] BanditTaskScheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskt-0mis.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] BanditTaskScheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskt-0mis.2 Rehabilitation [2026-10-25T01:14:22.804Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] BanditTaskScheduler (`regr-mvmjoskt-0mis.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskt-0mis.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] BanditTaskScheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskt-0mis.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] BanditTaskScheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskq-kj4i.2 Rehabilitation [2026-10-25T00:36:14.311Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should record a reward for a successful arm selection (`regr-mvmjoskq-kj4i.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskq-kj4i.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should record a reward for a successful arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskq-kj4i.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should record a reward for a successful arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskq-kj4i.1 Rehabilitation [2026-10-25T00:32:22.235Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should record a reward for a successful arm selection (`regr-mvmjoskq-kj4i.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskq-kj4i.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should record a reward for a successful arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskq-kj4i.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should record a reward for a successful arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmo4kru-nr4w Rehabilitation [2026-10-25T00:20:23.414Z]
+- **Parent Task**: [TDD Regression] packages/engine/dist/tests/bandit_task_scheduler.test.js (`regr-mvmo4kru-nr4w`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmo4kru-nr4w.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] packages/engine/dist/tests/bandit_task_scheduler.test.js [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmo4kru-nr4w.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] packages/engine/dist/tests/bandit_task_scheduler.test.js [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskm-wukt.1 Rehabilitation [2026-10-25T00:13:51.249Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] arm selection (`regr-mvmjoskm-wukt.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskm-wukt.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskm-wukt.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskm-wukt.2 Rehabilitation [2026-10-25T00:01:56.554Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] arm selection (`regr-mvmjoskm-wukt.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskm-wukt.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskm-wukt.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmnco20-irbk Rehabilitation [2026-10-24T23:54:08.533Z]
+- **Parent Task**: [TDD Regression] should handle no historical data gracefully (`regr-mvmnco20-irbk`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmnco20-irbk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle no historical data gracefully [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmnco20-irbk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle no historical data gracefully [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmnco1x-g9eb Rehabilitation [2026-10-24T23:43:00.195Z]
+- **Parent Task**: [TDD Regression] Bandit Task Scheduler (`regr-mvmnco1x-g9eb`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmnco1x-g9eb.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] Bandit Task Scheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmnco1x-g9eb.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] Bandit Task Scheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmnco1s-dlaw Rehabilitation [2026-10-24T23:38:51.575Z]
+- **Parent Task**: [TDD Regression] should select the best arm based on historical data (`regr-mvmnco1s-dlaw`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmnco1s-dlaw.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should select the best arm based on historical data [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmnco1s-dlaw.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should select the best arm based on historical data [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjosh1-cbcl.2 Rehabilitation [2026-10-24T23:20:27.414Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where the arm is not recognized (`regr-mvmjosh1-cbcl.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosh1-cbcl.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where the arm is not recognized [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosh1-cbcl.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where the arm is not recognized [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task taskcade-t102.7.2.2 Rehabilitation [2026-10-24T21:57:15.939Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  (`taskcade-t102.7.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t102.7.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  [Role: type_specialist] [Files: packages/engine/src/auth/AutheliaSsoProvider.ts]
+  - [x] `taskcade-t102.7.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.7.2: Write unit tests verifying `AutheliaSsoProvider` forward auth header extraction  [Role: implementer] [Files: packages/engine/src/auth/AutheliaSsoProvider.ts]
+
+
+### Task regr-mvmjw19f-dfhb Rehabilitation [2026-10-24T21:44:17.248Z]
+- **Parent Task**: [TDD Regression] should handle edge cases where the task ID does not exist (`regr-mvmjw19f-dfhb`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjw19f-dfhb.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle edge cases where the task ID does not exist [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjw19f-dfhb.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where the task ID does not exist [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjw194-yazn Rehabilitation [2026-10-24T21:11:36.917Z]
+- **Parent Task**: [TDD Regression] should track and report model performance convergence (`regr-mvmjw194-yazn`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjw194-yazn.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should track and report model performance convergence [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjw194-yazn.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should track and report model performance convergence [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjw190-fa5o Rehabilitation [2026-10-24T20:49:39.036Z]
+- **Parent Task**: [TDD Regression] should handle edge cases where convergence criteria are not met (`regr-mvmjw190-fa5o`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjw190-fa5o.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle edge cases where convergence criteria are not met [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjw190-fa5o.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where convergence criteria are not met [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoslf-40jl Rehabilitation [2026-10-24T20:00:29.363Z]
+- **Parent Task**: [TDD Regression] should select an arm based on the current state (`regr-mvmjoslf-40jl`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoslf-40jl.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should select an arm based on the current state [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoslf-40jl.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should select an arm based on the current state [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjosl9-22oc Rehabilitation [2026-10-24T19:21:15.279Z]
+- **Parent Task**: [TDD Regression] model performance convergence (`regr-mvmjosl9-22oc`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosl9-22oc.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] model performance convergence [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosl9-22oc.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] model performance convergence [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjosl6-g7rh Rehabilitation [2026-10-24T19:06:20.380Z]
+- **Parent Task**: [TDD Regression] should handle edge cases where no interventions are needed (`regr-mvmjosl6-g7rh`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosl6-g7rh.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle edge cases where no interventions are needed [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosl6-g7rh.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where no interventions are needed [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjosl2-48kf Rehabilitation [2026-10-24T18:42:46.957Z]
+- **Parent Task**: [TDD Regression] should monitor model performance and trigger interventions if necessary (`regr-mvmjosl2-48kf`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosl2-48kf.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should monitor model performance and trigger interventions if necessary [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosl2-48kf.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should monitor model performance and trigger interventions if necessary [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskw-gbbd Rehabilitation [2026-10-24T18:05:13.113Z]
+- **Parent Task**: [TDD Regression] reward recording (`regr-mvmjoskw-gbbd`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskw-gbbd.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskw-gbbd.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskt-0mis Rehabilitation [2026-10-24T17:42:36.745Z]
+- **Parent Task**: [TDD Regression] BanditTaskScheduler (`regr-mvmjoskt-0mis`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskt-0mis.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] BanditTaskScheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskt-0mis.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] BanditTaskScheduler [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskq-kj4i Rehabilitation [2026-10-24T17:26:36.352Z]
+- **Parent Task**: [TDD Regression] should record a reward for a successful arm selection (`regr-mvmjoskq-kj4i`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskq-kj4i.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should record a reward for a successful arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskq-kj4i.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should record a reward for a successful arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjoskm-wukt Rehabilitation [2026-10-24T17:04:30.350Z]
+- **Parent Task**: [TDD Regression] arm selection (`regr-mvmjoskm-wukt`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjoskm-wukt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjoskm-wukt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] arm selection [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmjosh1-cbcl Rehabilitation [2026-10-24T16:54:24.154Z]
+- **Parent Task**: [TDD Regression] should handle edge cases where the arm is not recognized (`regr-mvmjosh1-cbcl`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmjosh1-cbcl.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle edge cases where the arm is not recognized [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmjosh1-cbcl.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where the arm is not recognized [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmfspck-elp0.1.2 Rehabilitation [2026-10-24T16:30:08.567Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files with different unauthorized paths (`regr-mvmfspck-elp0.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmfspck-elp0.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files with different unauthorized paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvmfspck-elp0.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files with different unauthorized paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task taskcade-t102.5.3.3 Rehabilitation [2026-10-24T15:28:38.337Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording (`taskcade-t102.5.3.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t102.5.3.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `taskcade-t102.5.3.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.5.3: Write unit tests verifying `BanditTaskScheduler` arm selection, reward recording [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
+
+### Task regr-mvmfspck-elp0.1 Rehabilitation [2026-10-24T15:10:43.770Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files with different unauthorized paths (`regr-mvmfspck-elp0.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmfspck-elp0.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files with different unauthorized paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvmfspck-elp0.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files with different unauthorized paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task regr-mvmfspck-elp0 Rehabilitation [2026-10-24T14:03:51.691Z]
+- **Parent Task**: [TDD Regression] should reject files with different unauthorized paths (`regr-mvmfspck-elp0`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmfspck-elp0.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files with different unauthorized paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvmfspck-elp0.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files with different unauthorized paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task regr-mvl7uxyt-9van.2.2 Rehabilitation [2026-10-24T13:57:09.459Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths (`regr-mvl7uxyt-9van.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvl7uxyt-9van.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvl7uxyt-9van.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task regr-mvl7uxyt-9van.2.1 Rehabilitation [2026-10-24T13:39:04.455Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths (`regr-mvl7uxyt-9van.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvl7uxyt-9van.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvl7uxyt-9van.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task regr-mvl7uxyt-9van.2 Rehabilitation [2026-10-24T13:27:13.438Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths (`regr-mvl7uxyt-9van.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvl7uxyt-9van.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvl7uxyt-9van.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
+
+### Task regr-mvl7uxyt-9van Rehabilitation [2026-10-24T11:40:28.781Z]
+- **Parent Task**: [TDD Regression] should reject files in unauthorized subfolders with different paths (`regr-mvl7uxyt-9van`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvl7uxyt-9van.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+  - [x] `regr-mvl7uxyt-9van.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should reject files in unauthorized subfolders with different paths [Role: test_engineer] [Files: packages/engine/src/tests/loose_root_file_guard_rule.test.ts]
+
 
 ### Task regr-mvg9gvu4-tyjt.2.2.1 Rehabilitation [2026-10-24T11:21:54.688Z]
 - **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] blocks path traversal with .. (`regr-mvg9gvu4-tyjt.2.2.1`)

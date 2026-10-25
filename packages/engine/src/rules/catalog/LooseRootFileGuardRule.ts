@@ -37,43 +37,72 @@ export class LooseRootFileGuardRule extends BaseRepairRule {
     "cacophony.json",
   ]);
 
+  /**
+   * Validates a file path against root confinement and unauthorized subfolder rules.
+   * Returns false if the file is in an unauthorized path/subfolder or is an unauthorized loose root file.
+   */
+  public validate(
+    filePath: string,
+    options?: { allowedRootFiles?: string[]; unauthorizedSegments?: string[] },
+  ): boolean {
+    if (!filePath || typeof filePath !== "string") {
+      return false;
+    }
+    const normalized = filePath.replace(/\\/g, "/");
+    const segments = options?.unauthorizedSegments ?? ["unauthorized"];
+
+    for (const segment of segments) {
+      if (
+        normalized.includes(`/${segment}/`) ||
+        normalized.startsWith(`${segment}/`) ||
+        normalized.endsWith(`/${segment}`) ||
+        normalized === segment
+      ) {
+        return false;
+      }
+    }
+
+    if (!normalized.includes("/")) {
+      const allowed = options?.allowedRootFiles
+        ? new Set([...this.allowedRootFiles, ...options.allowedRootFiles])
+        : this.allowedRootFiles;
+      return allowed.has(normalized);
+    }
+
+    return true;
+  }
+
   public async evaluate(
     context: RuleEvaluationContext,
     severity: RuleSeverity,
-    options?: { allowedRootFiles?: string[] },
+    options?: { allowedRootFiles?: string[]; unauthorizedSegments?: string[] },
   ): Promise<RuleExecutionResult> {
     const start = performance.now();
     const diagnostics: RuleDiagnostic[] = [];
     const mutations: FileMutation[] = [];
     let passed = true;
 
-    const allowed = options?.allowedRootFiles
-      ? new Set([...this.allowedRootFiles, ...options.allowedRootFiles])
-      : this.allowedRootFiles;
-
     for (const filePath of context.modifiedFiles) {
       const relPath = path.isAbsolute(filePath)
         ? path.relative(context.projectRoot, filePath)
         : filePath;
 
-      if (!relPath.includes(path.sep) && !relPath.includes("/")) {
-        if (!allowed.has(relPath)) {
-          if (severity === "hard_rejection") {
-            passed = false;
-            diagnostics.push({
-              ruleId: this.id,
-              severity,
-              message: `Disallowed loose file created in project root: ${relPath}`,
-              filePath,
-            });
-          } else if (severity === "soft_warning") {
-            diagnostics.push({
-              ruleId: this.id,
-              severity,
-              message: `Warning: File placed directly in project root instead of package: ${relPath}`,
-              filePath,
-            });
-          }
+      if (!this.validate(relPath, options)) {
+        if (severity === "hard_rejection") {
+          passed = false;
+          diagnostics.push({
+            ruleId: this.id,
+            severity,
+            message: `Disallowed or unauthorized file path rejected: ${relPath}`,
+            filePath,
+          });
+        } else if (severity === "soft_warning") {
+          diagnostics.push({
+            ruleId: this.id,
+            severity,
+            message: `Warning: Unauthorized or loose file placement: ${relPath}`,
+            filePath,
+          });
         }
       }
     }
