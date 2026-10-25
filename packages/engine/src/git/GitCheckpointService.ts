@@ -120,4 +120,61 @@ export class GitCheckpointService {
       return "Diff unavailable.";
     }
   }
+
+  /**
+   * Evaluates whether an automated checkpoint interval has elapsed.
+   */
+  public isIntervalElapsed(
+    lastCheckpointTimestamp: string | number,
+    intervalMs: number = 300000,
+  ): boolean {
+    const lastTime =
+      typeof lastCheckpointTimestamp === "number"
+        ? lastCheckpointTimestamp
+        : new Date(lastCheckpointTimestamp).getTime();
+
+    if (isNaN(lastTime)) {
+      return true;
+    }
+
+    return Date.now() - lastTime >= intervalMs;
+  }
+
+  /**
+   * Evaluates if a commit hash matches the previous checkpoint to avoid redundant records.
+   */
+  public shouldDeduplicate(
+    commitHash: string,
+    lastCommitHash?: string | null,
+  ): boolean {
+    if (!commitHash || !lastCommitHash) {
+      return false;
+    }
+    return commitHash.trim().toLowerCase() === lastCommitHash.trim().toLowerCase();
+  }
+
+  /**
+   * Prunes oldest checkpoints exceeding max retention count and age limit.
+   * Returns the pruned list of surviving checkpoints.
+   */
+  public pruneCheckpoints(
+    checkpoints: readonly GitCheckpointRecord[],
+    maxRetention: number = 20,
+    maxAgeMs?: number,
+  ): readonly GitCheckpointRecord[] {
+    const now = Date.now();
+    let survivors = [...checkpoints].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+
+    if (maxAgeMs !== undefined && maxAgeMs > 0) {
+      survivors = survivors.filter((c) => {
+        const time = new Date(c.created_at).getTime();
+        return isNaN(time) || now - time <= maxAgeMs;
+      });
+    }
+
+    return survivors.slice(0, Math.max(1, maxRetention));
+  }
 }
+

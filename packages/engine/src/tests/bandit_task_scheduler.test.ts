@@ -133,6 +133,16 @@ describe("BanditTaskScheduler Test Suite", () => {
       assert.ok(status.rationale.includes("convergence achieved"));
     });
 
+    it("should converge when convergence criteria are met", () => {
+      const scheduler = new BanditTaskScheduler();
+      scheduler.registerArm("promoted-model:7b", "coder", 30, 2); // 30 trials, 94% win rate
+
+      const status = scheduler.getConvergenceStatus("coder", { minTrials: 10 });
+      assert.equal(status.isConverged, true);
+      assert.ok(status.meanWinRate >= 0.9);
+      assert.ok(status.totalTrials >= 10);
+    });
+
     it("should handle edge cases where convergence criteria are not met", () => {
       const scheduler = new BanditTaskScheduler();
       // Only 2 trials total - well below minTrials requirement

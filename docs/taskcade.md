@@ -144,7 +144,7 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.3.3: Write unit tests verifying `GitPlatformProviderFactory` provider selection based on environment configuration (Gitea vs GitHub). [Files: packages/engine/src/gitea/GitPlatformProviderFactory.ts, packages/engine/src/tests/git_platform_provider_factory.test.ts] [Test: node --test packages/engine/dist/tests/git_platform_provider_factory.test.js]
 - [ ] T102.3.4: Write unit tests verifying `ReleaseBundlerService` changelog aggregation, semantic version bumping, and release note formatting. [Files: packages/engine/src/gitea/ReleaseBundlerService.ts, packages/engine/src/tests/release_bundler_service.test.ts] [Test: node --test packages/engine/dist/tests/release_bundler_service.test.js]
 - [ ] T102.3.5: Write unit tests verifying `GitUndoManager` single-commit revert generation, dirty tree guard checks, and rollback safety. [Files: packages/engine/src/git/GitUndoManager.ts, packages/engine/src/tests/git_undo_manager.test.ts] [Test: node --test packages/engine/dist/tests/git_undo_manager.test.js]
-- [ ] T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals, hash deduplication, and retention pruning. [Files: packages/engine/src/git/GitCheckpointService.ts, packages/engine/src/tests/git_checkpoint_service.test.ts] [Test: node --test packages/engine/dist/tests/git_checkpoint_service.test.js]
+- [x] T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals, hash deduplication, and retention pruning. [Files: packages/engine/src/git/GitCheckpointService.ts, packages/engine/src/tests/git_checkpoint_service.test.ts] [Test: node --test packages/engine/dist/tests/git_checkpoint_service.test.js]
 - [ ] T102.4.1: Write unit tests verifying `FailureClassifier` error string pattern matching, category tagging (syntax, type, test, timeout), and priority scoring. [Files: packages/engine/src/analytics/FailureClassifier.ts, packages/engine/src/tests/failure_classifier.test.ts] [Test: node --test packages/engine/dist/tests/failure_classifier.test.js]
 - [ ] T102.4.2: Write unit tests verifying `IncidentBundleRecorder` error context capture, stack trace truncation, and incident JSON serialization. [Files: packages/engine/src/analytics/IncidentBundleRecorder.ts, packages/engine/src/tests/incident_bundle_recorder.test.ts] [Test: node --test packages/engine/dist/tests/incident_bundle_recorder.test.js]
 - [ ] T102.4.3: Write unit tests verifying `GitRegressionCorrelator` commit blame mapping, diff change set correlation, and offending commit detection. [Files: packages/engine/src/analytics/GitRegressionCorrelator.ts, packages/engine/src/tests/git_regression_correlator.test.ts] [Test: node --test packages/engine/dist/tests/git_regression_correlator.test.js]
@@ -166,7 +166,7 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.7.3: Write unit tests verifying `LocalBypassSsoProvider` mock user injection, demo credentials validation, and role assignment. [Files: packages/engine/src/auth/LocalBypassSsoProvider.ts, packages/engine/src/tests/local_bypass_sso_provider.test.ts] [Test: node --test packages/engine/dist/tests/local_bypass_sso_provider.test.js]
 - [ ] T102.7.4: Write unit tests verifying `OidcDiscoveryService` well-known configuration endpoint fetch, jwks_uri extraction, and cache expiration. [Files: packages/engine/src/auth/OidcDiscoveryService.ts, packages/engine/src/tests/oidc_discovery_service.test.ts] [Test: node --test packages/engine/dist/tests/oidc_discovery_service.test.js]
 - [ ] T102.7.5: Write unit tests verifying `SsoProviderFactory` provider selection based on SSO_PROVIDER environment variable. [Files: packages/engine/src/auth/SsoProviderFactory.ts, packages/engine/src/tests/sso_provider_factory.test.ts] [Test: node --test packages/engine/dist/tests/sso_provider_factory.test.js]
-- [ ] T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extraction, test duration parsing, and failure reason isolation. [Files: packages/engine/src/testing/StructuredTestOutputParser.ts, packages/engine/src/tests/structured_test_output_parser.test.ts] [Test: node --test packages/engine/dist/tests/structured_test_output_parser.test.js]
+- [x] T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extraction, test duration parsing, and failure reason isolation. [Files: packages/engine/src/testing/StructuredTestOutputParser.ts, packages/engine/src/tests/structured_test_output_parser.test.ts] [Test: node --test packages/engine/dist/tests/structured_test_output_parser.test.js]
 - [ ] T102.8.2: Write unit tests verifying `TestFailureTriager` classification of syntax vs assertion vs timeout failures and suggested remediation strategies. [Files: packages/engine/src/testing/TestFailureTriager.ts, packages/engine/src/tests/test_failure_triager.test.ts] [Test: node --test packages/engine/dist/tests/test_failure_triager.test.js]
 - [ ] T102.8.3: Write unit tests verifying `SandboxedProcessRunner` timeout termination, memory usage capping, and exit code propagation. [Files: packages/engine/src/testing/SandboxedProcessRunner.ts, packages/engine/src/tests/sandboxed_process_runner.test.ts] [Test: node --test packages/engine/dist/tests/sandboxed_process_runner.test.js]
 - [ ] T102.8.4: Write unit tests verifying `BackgroundTestWorkerPool` worker allocation, queue concurrency limits, and idle worker recycling. [Files: packages/engine/src/testing/BackgroundTestWorkerPool.ts, packages/engine/src/tests/background_test_worker_pool.test.ts] [Test: node --test packages/engine/dist/tests/background_test_worker_pool.test.js]
@@ -232,7 +232,7 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.15.6: Write unit tests verifying `MethodEditAdapter` diff application, boundary validation, and error reporting on target not found. [Files: packages/engine/src/refactoring/MethodEditAdapter.ts, packages/engine/src/tests/method_edit_adapter.test.ts] [Test: node --test packages/engine/dist/tests/method_edit_adapter.test.js]
 - [ ] T102.15.7: Write unit tests verifying `HashStubMethodSplicer` hash comparison, change detection, and stub replacement. [Files: packages/engine/src/context/HashStubMethodSplicer.ts, packages/engine/src/tests/hash_stub_method_splicer.test.ts] [Test: node --test packages/engine/dist/tests/hash_stub_method_splicer.test.js]
 - [ ] T102.15.8: Write unit tests verifying `ContextManager` multi-source context assembly, priority ordering, and cache eviction. [Files: packages/engine/src/context/ContextManager.ts, packages/engine/src/tests/context_manager.test.ts] [Test: node --test packages/engine/dist/tests/context_manager.test.js]
-- [ ] T102.16.1: Write unit tests verifying `FleetMasterCoordinator` remote worker heartbeat tracking, task dispatch distribution, and timeout failover. [Files: packages/engine/src/fleet/FleetMasterCoordinator.ts, packages/engine/src/tests/fleet_master_coordinator.test.ts] [Test: node --test packages/engine/dist/tests/fleet_master_coordinator.test.js]
+- [x] T102.16.1: Write unit tests verifying `FleetMasterCoordinator` remote worker heartbeat tracking, task dispatch distribution, and timeout failover. [Files: packages/engine/src/fleet/FleetMasterCoordinator.ts, packages/engine/src/tests/fleet_master_coordinator.test.ts] [Test: node --test packages/engine/dist/tests/fleet_master_coordinator.test.js]
 - [ ] T102.16.2: Write unit tests verifying `FleetWebSocketClient` connection lifecycle, handshake message exchange, and heartbeat transmission. [Files: packages/engine/src/fleet/FleetWebSocketClient.ts, packages/engine/src/tests/fleet_websocket_client.test.ts] [Test: node --test packages/engine/dist/tests/fleet_websocket_client.test.js]
 - [ ] T102.16.3: Write unit tests verifying `FleetHealthMonitor` unhealthy node detection, eviction triggers, and recovery state notifications. [Files: packages/engine/src/fleet/FleetHealthMonitor.ts, packages/engine/src/tests/fleet_health_monitor.test.ts] [Test: node --test packages/engine/dist/tests/fleet_health_monitor.test.js]
 - [ ] T102.16.4: Write unit tests verifying `WorkspaceIsolationManager` ephemeral worktree creation, clean teardown, and git lock protection. [Files: packages/engine/src/isolation/WorkspaceIsolationManager.ts, packages/engine/src/tests/workspace_isolation_manager.test.ts] [Test: node --test packages/engine/dist/tests/workspace_isolation_manager.test.js]
@@ -460,6 +460,287 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task regr-mvncyu0q-ti75.2.2 Rehabilitation [2026-10-25T12:16:49.834Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0q-ti75.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0q-ti75.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0q-ti75.2.1 Rehabilitation [2026-10-25T11:55:36.008Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0q-ti75.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0q-ti75.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0m-it11.1.1 Rehabilitation [2026-10-25T11:49:10.518Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser (`regr-mvncyu0m-it11.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0m-it11.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0m-it11.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0m-it11.1.2 Rehabilitation [2026-10-25T11:35:57.903Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser (`regr-mvncyu0m-it11.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0m-it11.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0m-it11.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0m-it11.2.2 Rehabilitation [2026-10-25T11:14:40.809Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser (`regr-mvncyu0m-it11.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0m-it11.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0m-it11.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0m-it11.2.1 Rehabilitation [2026-10-25T11:00:13.210Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser (`regr-mvncyu0m-it11.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0m-it11.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0m-it11.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0j-jsqx.2.2 Rehabilitation [2026-10-25T10:49:36.580Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully (`regr-mvncyu0j-jsqx.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0j-jsqx.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0j-jsqx.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0j-jsqx.2.1 Rehabilitation [2026-10-25T10:37:29.863Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully (`regr-mvncyu0j-jsqx.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0j-jsqx.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0j-jsqx.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0j-jsqx.1.2 Rehabilitation [2026-10-25T10:06:38.194Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully (`regr-mvncyu0j-jsqx.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0j-jsqx.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0j-jsqx.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0j-jsqx.1.1 Rehabilitation [2026-10-25T09:54:23.769Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully (`regr-mvncyu0j-jsqx.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0j-jsqx.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0j-jsqx.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0g-0gph.2.2 Rehabilitation [2026-10-25T09:25:54.929Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers (`regr-mvncyu0g-0gph.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0g-0gph.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0g-0gph.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0g-0gph.2.1 Rehabilitation [2026-10-25T09:11:51.879Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers (`regr-mvncyu0g-0gph.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0g-0gph.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0g-0gph.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvng121c-prhw Rehabilitation [2026-10-25T08:54:17.976Z]
+- **Parent Task**: [TDD Regression] should handle multiple failing tests with different file paths (`regr-mvng121c-prhw`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvng121c-prhw.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle multiple failing tests with different file paths [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvng121c-prhw.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multiple failing tests with different file paths [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0g-0gph.1.1 Rehabilitation [2026-10-25T08:37:28.698Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers (`regr-mvncyu0g-0gph.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0g-0gph.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0g-0gph.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0g-0gph.1.2 Rehabilitation [2026-10-25T08:26:15.594Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers (`regr-mvncyu0g-0gph.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0g-0gph.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0g-0gph.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0q-ti75.1 Rehabilitation [2026-10-25T08:14:19.593Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0q-ti75.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0q-ti75.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0q-ti75.2 Rehabilitation [2026-10-25T08:01:58.667Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0q-ti75.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0q-ti75.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0m-it11.1 Rehabilitation [2026-10-25T07:16:36.915Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser (`regr-mvncyu0m-it11.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0m-it11.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0m-it11.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0m-it11.2 Rehabilitation [2026-10-25T07:16:25.468Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser (`regr-mvncyu0m-it11.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0m-it11.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0m-it11.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0j-jsqx.2 Rehabilitation [2026-10-25T07:01:39.496Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully (`regr-mvncyu0j-jsqx.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0j-jsqx.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0j-jsqx.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0j-jsqx.1 Rehabilitation [2026-10-25T07:01:26.045Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully (`regr-mvncyu0j-jsqx.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0j-jsqx.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0j-jsqx.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0g-0gph.2 Rehabilitation [2026-10-25T06:31:05.329Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers (`regr-mvncyu0g-0gph.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0g-0gph.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0g-0gph.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0g-0gph.1 Rehabilitation [2026-10-25T06:16:41.805Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers (`regr-mvncyu0g-0gph.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0g-0gph.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0g-0gph.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0q-ti75 Rehabilitation [2026-10-25T06:07:52.323Z]
+- **Parent Task**: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0q-ti75.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0q-ti75.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0m-it11 Rehabilitation [2026-10-25T05:34:33.547Z]
+- **Parent Task**: [TDD Regression] StructuredTestOutputParser (`regr-mvncyu0m-it11`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0m-it11.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0m-it11.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0j-jsqx Rehabilitation [2026-10-25T05:28:14.179Z]
+- **Parent Task**: [TDD Regression] should handle missing file paths and line numbers gracefully (`regr-mvncyu0j-jsqx`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0j-jsqx.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0j-jsqx.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvncyu0g-0gph Rehabilitation [2026-10-25T05:17:22.084Z]
+- **Parent Task**: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers (`regr-mvncyu0g-0gph`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0g-0gph.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0g-0gph.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with correct file paths, assertions, and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task taskcade-t102.8.1 Rehabilitation [2026-10-25T05:06:59.629Z]
+- **Parent Task**: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac (`taskcade-t102.8.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t102.8.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac [Role: type_specialist] [Files: packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `taskcade-t102.8.1.2`: [Rehab 2/3] Core Implementation Unit: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac [Role: implementer] [Files: packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `taskcade-t102.8.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.8.1: Write unit tests verifying `StructuredTestOutputParser` pass/fail counter extrac [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts]
+
+
+### Task taskcade-t102.16.1 Rehabilitation [2026-10-25T04:53:15.254Z]
+- **Parent Task**: T102.16.1: Write unit tests verifying `FleetMasterCoordinator` remote worker heartbeat trac (`taskcade-t102.16.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t102.16.1.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.16.1: Write unit tests verifying `FleetMasterCoordinator` remote worker heartbeat trac [Role: type_specialist] [Files: packages/engine/src/fleet/FleetMasterCoordinator.ts]
+  - [x] `taskcade-t102.16.1.2`: [Rehab 2/3] Core Implementation Unit: T102.16.1: Write unit tests verifying `FleetMasterCoordinator` remote worker heartbeat trac [Role: implementer] [Files: packages/engine/src/fleet/FleetMasterCoordinator.ts]
+  - [x] `taskcade-t102.16.1.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.16.1: Write unit tests verifying `FleetMasterCoordinator` remote worker heartbeat trac [Role: test_engineer] [Files: packages/engine/src/tests/fleet_master_coordinator.test.ts]
+
+
+### Task taskcade-t102.3.6.2 Rehabilitation [2026-10-25T04:28:49.095Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals (`taskcade-t102.3.6.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t102.3.6.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals [Role: type_specialist] [Files: packages/engine/src/git/GitCheckpointService.ts]
+  - [x] `taskcade-t102.3.6.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals [Role: implementer] [Files: packages/engine/src/git/GitCheckpointService.ts]
+
+
+### Task regr-mvmumfvl-lr3u Rehabilitation [2026-10-25T02:14:35.070Z]
+- **Parent Task**: [TDD Regression] should converge when convergence criteria are met (`regr-mvmumfvl-lr3u`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `regr-mvmumfvl-lr3u.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should converge when convergence criteria are met [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+  - [x] `regr-mvmumfvl-lr3u.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should converge when convergence criteria are met [Role: test_engineer] [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts]
+
 
 ### Task regr-mvmjosl6-g7rh.2 Rehabilitation [2026-10-25T02:08:12.098Z]
 - **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases where no interventions are needed (`regr-mvmjosl6-g7rh.2`)

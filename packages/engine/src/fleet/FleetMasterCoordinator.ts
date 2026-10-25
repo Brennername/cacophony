@@ -118,6 +118,30 @@ export class FleetMasterCoordinator {
   }
 
   /**
+   * Explicitly evicts a node from the cluster.
+   */
+  public evictNode(nodeId: string): boolean {
+    return this.nodes.delete(nodeId);
+  }
+
+  /**
+   * Prunes nodes that have not reported a heartbeat within the timeout period.
+   * Returns the count of evicted stale nodes.
+   */
+  public pruneStaleNodes(timeoutMs: number = 30000): number {
+    const now = Date.now();
+    let evictedCount = 0;
+    for (const [nodeId, node] of this.nodes.entries()) {
+      const lastHeartbeatTime = new Date(node.lastHeartbeat).getTime();
+      if (now - lastHeartbeatTime > timeoutMs) {
+        this.nodes.delete(nodeId);
+        evictedCount++;
+      }
+    }
+    return evictedCount;
+  }
+
+  /**
    * Retrieves benchmark profile for GPU type.
    */
   public getHardwareProfile(
