@@ -125,7 +125,7 @@ export class TypeScriptMethodSplicer {
     }
 
     let cleanedBody = newBody
-      .replace(/^```(?:typescript|ts)?\s*/i, "")
+      .replace(/^```[a-zA-Z0-9_-]*\r?\n?/i, "")
       .replace(/```\s*$/i, "")
       .trim();
 

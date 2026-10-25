@@ -256,13 +256,10 @@ export class SchematicCodeGenerator {
         ) {
           // Normalize implementation: ensure it has braces
           let cleanImpl = impl.trim();
-          if (
-            cleanImpl.startsWith("```typescript") ||
-            cleanImpl.startsWith("```ts")
-          ) {
+          if (cleanImpl.startsWith("```")) {
             cleanImpl = cleanImpl
-              .replace(/^```(?:typescript|ts)?\s*/, "")
-              .replace(/```\s*$/, "")
+              .replace(/^```[a-zA-Z0-9_-]*\r?\n?/i, "")
+              .replace(/```\s*$/i, "")
               .trim();
           }
           if (!cleanImpl.startsWith("{")) {

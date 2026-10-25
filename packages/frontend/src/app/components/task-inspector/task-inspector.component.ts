@@ -359,14 +359,19 @@ export class TaskInspectorComponent {
 
         const status = (s.stageStatus as 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILURE') || 'PENDING';
 
+        const isDuplicateId = Boolean(s.id && stages.filter((other) => other.id === s.id).length > 1);
+        const uniqueKey = s.id
+          ? (isDuplicateId ? `stage-${s.id}-${attempt}` : `stage-${s.id}`)
+          : `stage-${s.stageName}-${idx}`;
+
         return {
-          id: s.id ? `stage-${s.id}` : `stage-${s.stageName}-${idx}`,
+          id: uniqueKey,
           stageName: s.stageName,
           label: `${info.label}${attemptSuffix}`,
           status,
           durationMs: s.durationMs ?? null,
           logContent,
-          channelKey: s.id ? `stage-${s.id}` : `stage-${s.stageName}-${idx}`,
+          channelKey: uniqueKey,
           badgeClass: `badge-${status.toLowerCase()}`,
           themeClass: info.themeClass,
         };

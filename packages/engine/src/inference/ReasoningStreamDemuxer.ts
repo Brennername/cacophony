@@ -21,8 +21,8 @@ export class ReasoningStreamDemuxer {
   private accumulatedReasoning = "";
   private accumulatedCode = "";
 
-  private static readonly OPEN_TAG = "<think>";
-  private static readonly CLOSE_TAG = "</think>";
+  private static readonly OPEN_TAGS = ["<think>", "<thought>"] as const;
+  private static readonly CLOSE_TAGS = ["</think>", "</thought>"] as const;
 
   /**
    * Feeds the next token/delta from the LLM stream and yields parsed chunks.
@@ -37,64 +37,64 @@ export class ReasoningStreamDemuxer {
 
     while (this.pendingBuffer.length > 0) {
       if (!this.inThinkBlock) {
-        // Look for <think> opening tag or orphan </think> closing tag
-        const openIdx = this.pendingBuffer.indexOf(
-          ReasoningStreamDemuxer.OPEN_TAG,
+        // Look for opening tag (<think>, <thought>) or orphan closing tag (</think>, </thought>)
+        const openMatch = this.findEarliestTag(
+          this.pendingBuffer,
+          ReasoningStreamDemuxer.OPEN_TAGS,
         );
-        const orphanCloseIdx = this.pendingBuffer.indexOf(
-          ReasoningStreamDemuxer.CLOSE_TAG,
+        const orphanCloseMatch = this.findEarliestTag(
+          this.pendingBuffer,
+          ReasoningStreamDemuxer.CLOSE_TAGS,
         );
 
-        if (openIdx !== -1) {
-          // If an orphan </think> appears before <think>, discard the orphan tag
-          if (orphanCloseIdx !== -1 && orphanCloseIdx < openIdx) {
-            const codePart = this.pendingBuffer.slice(0, orphanCloseIdx);
+        if (openMatch !== null) {
+          // If an orphan closing tag appears before the opening tag, discard the orphan tag
+          if (orphanCloseMatch !== null && orphanCloseMatch.index < openMatch.index) {
+            const codePart = this.pendingBuffer.slice(0, orphanCloseMatch.index);
             if (codePart.length > 0) {
               this.accumulatedCode += codePart;
               chunks.push({ type: "code", content: codePart });
             }
             this.pendingBuffer = this.pendingBuffer.slice(
-              orphanCloseIdx + ReasoningStreamDemuxer.CLOSE_TAG.length,
+              orphanCloseMatch.index + orphanCloseMatch.tag.length,
             );
             continue;
           }
 
           // Emit any code preceding the open tag
-          if (openIdx > 0) {
-            const codePart = this.pendingBuffer.slice(0, openIdx);
+          if (openMatch.index > 0) {
+            const codePart = this.pendingBuffer.slice(0, openMatch.index);
             this.accumulatedCode += codePart;
             chunks.push({ type: "code", content: codePart });
           }
 
-          // Advance past <think>
+          // Advance past opening tag
           this.pendingBuffer = this.pendingBuffer.slice(
-            openIdx + ReasoningStreamDemuxer.OPEN_TAG.length,
+            openMatch.index + openMatch.tag.length,
           );
           this.inThinkBlock = true;
-        } else if (orphanCloseIdx !== -1) {
-          // Orphan </think> without an opening <think> tag: emit code before it and discard orphan tag
-          const codePart = this.pendingBuffer.slice(0, orphanCloseIdx);
+        } else if (orphanCloseMatch !== null) {
+          // Orphan closing tag without an opening tag: emit code before it and discard orphan tag
+          const codePart = this.pendingBuffer.slice(0, orphanCloseMatch.index);
           if (codePart.length > 0) {
             this.accumulatedCode += codePart;
             chunks.push({ type: "code", content: codePart });
           }
           this.pendingBuffer = this.pendingBuffer.slice(
-            orphanCloseIdx + ReasoningStreamDemuxer.CLOSE_TAG.length,
+            orphanCloseMatch.index + orphanCloseMatch.tag.length,
           );
         } else {
-          // Check if buffer ends with a prefix of <think> or </think>
-          const prefixMatch = this.getPotentialTagPrefix(
+          // Check if buffer ends with a prefix of opening or closing tags
+          const openPrefix = this.getPotentialTagPrefix(
             this.pendingBuffer,
-            ReasoningStreamDemuxer.OPEN_TAG,
+            ReasoningStreamDemuxer.OPEN_TAGS,
           );
-          const closePrefixMatch = this.getPotentialTagPrefix(
+          const closePrefix = this.getPotentialTagPrefix(
             this.pendingBuffer,
-            ReasoningStreamDemuxer.CLOSE_TAG,
+            ReasoningStreamDemuxer.CLOSE_TAGS,
           );
           const longerPrefix =
-            prefixMatch.length >= closePrefixMatch.length
-              ? prefixMatch
-              : closePrefixMatch;
+            openPrefix.length >= closePrefix.length ? openPrefix : closePrefix;
 
           if (longerPrefix.length > 0) {
             const emitLen = this.pendingBuffer.length - longerPrefix.length;
@@ -113,37 +113,38 @@ export class ReasoningStreamDemuxer {
           this.pendingBuffer = "";
         }
       } else {
-        // Look for </think> closing tag
-        const closeIdx = this.pendingBuffer.indexOf(
-          ReasoningStreamDemuxer.CLOSE_TAG,
+        // Look for closing tag
+        const closeMatch = this.findEarliestTag(
+          this.pendingBuffer,
+          ReasoningStreamDemuxer.CLOSE_TAGS,
         );
 
-        if (closeIdx !== -1) {
-          // Emit reasoning content up to </think>
-          if (closeIdx > 0) {
-            const thinkPart = this.pendingBuffer.slice(0, closeIdx);
+        if (closeMatch !== null) {
+          // Emit reasoning content up to closing tag
+          if (closeMatch.index > 0) {
+            const thinkPart = this.pendingBuffer.slice(0, closeMatch.index);
             this.accumulatedReasoning += thinkPart;
             chunks.push({ type: "reasoning", content: thinkPart });
           }
 
-          // Advance past </think>
+          // Advance past closing tag
           this.pendingBuffer = this.pendingBuffer.slice(
-            closeIdx + ReasoningStreamDemuxer.CLOSE_TAG.length,
+            closeMatch.index + closeMatch.tag.length,
           );
           this.inThinkBlock = false;
         } else {
-          // Check if buffer ends with a prefix of </think>
-          const prefixMatch = this.getPotentialTagPrefix(
+          // Check if buffer ends with a prefix of closing tag
+          const closePrefix = this.getPotentialTagPrefix(
             this.pendingBuffer,
-            ReasoningStreamDemuxer.CLOSE_TAG,
+            ReasoningStreamDemuxer.CLOSE_TAGS,
           );
-          if (prefixMatch.length > 0) {
-            const emitLen = this.pendingBuffer.length - prefixMatch.length;
+          if (closePrefix.length > 0) {
+            const emitLen = this.pendingBuffer.length - closePrefix.length;
             if (emitLen > 0) {
               const thinkPart = this.pendingBuffer.slice(0, emitLen);
               this.accumulatedReasoning += thinkPart;
               chunks.push({ type: "reasoning", content: thinkPart });
-              this.pendingBuffer = prefixMatch;
+              this.pendingBuffer = closePrefix;
             }
             break; // Wait for next token
           }
@@ -209,16 +210,44 @@ export class ReasoningStreamDemuxer {
   }
 
   /**
-   * Helper detecting if str ends with a non-empty prefix of targetTag.
+   * Finds the earliest occurring tag case-insensitively from a list of candidate tags.
    */
-  private getPotentialTagPrefix(str: string, targetTag: string): string {
-    const maxPrefixLen = Math.min(str.length, targetTag.length - 1);
-    for (let len = maxPrefixLen; len > 0; len--) {
-      const suffix = str.slice(-len);
-      if (targetTag.startsWith(suffix)) {
-        return suffix;
+  private findEarliestTag(
+    str: string,
+    tags: readonly string[],
+  ): { index: number; tag: string } | null {
+    const lower = str.toLowerCase();
+    let bestIndex = -1;
+    let bestTag = "";
+    for (const tag of tags) {
+      const idx = lower.indexOf(tag);
+      if (idx !== -1 && (bestIndex === -1 || idx < bestIndex)) {
+        bestIndex = idx;
+        bestTag = tag;
       }
     }
-    return "";
+    return bestIndex !== -1 ? { index: bestIndex, tag: bestTag } : null;
+  }
+
+  /**
+   * Helper detecting if str ends with a non-empty prefix of any candidate tags.
+   */
+  private getPotentialTagPrefix(
+    str: string,
+    targetTags: readonly string[],
+  ): string {
+    const lower = str.toLowerCase();
+    let longest = "";
+    for (const targetTag of targetTags) {
+      const maxPrefixLen = Math.min(str.length, targetTag.length - 1);
+      for (let len = maxPrefixLen; len > longest.length; len--) {
+        const suffix = lower.slice(-len);
+        if (targetTag.startsWith(suffix)) {
+          longest = str.slice(-len);
+          break;
+        }
+      }
+    }
+    return longest;
   }
 }

@@ -123,6 +123,15 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [x] T109.4: Monorepo Build, Container Synchronization, Verification & Clean Push (No Heroku Deploy): Execute `./bin/rebuild-all.sh`, compile all packages, update Docker container image, verify healthy operational status on `/api/status`, and push cleanly to origin and gitea remotes without deploying to Heroku. [Files: bin/rebuild-all.sh] [Test: ./bin/rebuild-all.sh]
 - [x] T109.5: Automated Dependabot PR Review and Convergence Pipeline: Implement `processDependabotPullRequests` in `GitHubSecurityAndIssueBridge`, wire periodic synchronization and REST endpoint `POST /api/dependabot/sync` in `CacophonyDaemon` and `CacophonyHttpServer`, migrate `packages/shared-types`, `packages/tools`, and `packages/engine` to Zod 4 compatibility, upgrade `fast-uri` to 3.1.9, `undici` to 7.30.1, and `zod` to 4.6.7 with zero npm audit vulnerabilities, and review and approve Dependabot PRs #3, #4, and #5. [Files: packages/engine/src/gitea/GitHubSecurityAndIssueBridge.ts, packages/engine/src/daemon/CacophonyDaemon.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, package.json, packages/shared-types/src/config.ts, packages/shared-types/src/auth.ts, packages/shared-types/src/task.ts, packages/shared-types/src/rules.ts, packages/shared-types/src/optimization.ts, packages/shared-types/src/hardware.ts, packages/tools/src/ICacophonyTool.ts, packages/tools/src/mcp/McpClientManager.ts, packages/engine/src/inference/ContractSynthesizer.ts, packages/engine/src/tests/github_security_and_issue_bridge.test.ts] [Test: npm run build && npm test && ./bin/codeql-scan.sh]
 
+## Phase 110: Stream Isolation, Multi-Attempt Inspector Fidelity, Reasoning Demuxer Boundary Flushing & Markdown Fence Splicer Hardening
+
+- [x] T110.1: Isolate deterministic test execution output from generative LLM token streams in `TestingViewComponent`, routing `substage_log` (channel: `test_output`) directly to the test terminal buffer while filtering generative token events. [Files: packages/frontend/src/app/components/views/testing-view/testing-view.component.ts, packages/frontend/src/app/components/views/testing-view/testing-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TestingViewComponent]
+- [x] T110.2: Resolve multi-attempt generation stage collisions and mirror bug in `ArenaStateStore` and `TaskInspectorComponent`, allocating unique attempt IDs, resetting live stream buffers on new attempt execution, and disambiguating stage tab channel keys and tracking identifiers. [Files: packages/frontend/src/app/services/arena-state.store.ts, packages/frontend/src/app/components/task-inspector/task-inspector.component.ts, packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskInspectorComponent]
+- [x] T110.3: Persist full generation and remediation code blocks (`parseResult.rawOutput` / `finalCode`) to stage records in `AutonomousWorkerPipeline`, ensuring historical generation tabs render historical code rather than brief status summaries or fallback stream buffers. [Files: packages/engine/src/scheduler/AutonomousWorkerPipeline.ts] [Test: npm run build --workspace=@cacophony/engine]
+- [x] T110.4: Eliminate fencepost and dropped boundary characters in `ReasoningStreamDemuxer` and `StreamTapManager` via case-insensitive tag matching (`<think>`, `<thought>`), multi-tag prefix buffering, demuxer buffer flushing on stage completion, and demuxer reset between attempts. [Files: packages/engine/src/inference/ReasoningStreamDemuxer.ts, packages/engine/src/inference/StreamTapManager.ts, packages/engine/src/tests/reasoning_stream_demuxer.test.ts] [Test: node --test packages/engine/dist/tests/reasoning_stream_demuxer.test.js]
+- [x] T110.5: Harden regex patterns in `TypeScriptMethodSplicer`, `MethodEditAdapter`, and `SchematicCodeGenerator` to be language-tag agnostic (`/^```[a-zA-Z0-9_-]*\r?\n?/i`), preventing non-ts fences (e.g. tsx, js) from stripping backticks while leaving leading characters in generated code bodies. [Files: packages/engine/src/refactoring/TypeScriptMethodSplicer.ts, packages/engine/src/refactoring/MethodEditAdapter.ts, packages/engine/src/generators/SchematicCodeGenerator.ts] [Test: npm run build --workspace=@cacophony/engine]
+
+
 - [ ] T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown snippet formatting, and auto-scroll to bottom. [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts, packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs supervised mode switching and indicator badges. [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts, packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.1.20: Write unit tests verifying `GanttTransportComponent` stage span bar scaling, zoom level adjustments, and hover tooltip positioning. [Files: packages/frontend/src/app/components/gantt-transport/gantt-transport.component.ts, packages/frontend/src/app/components/gantt-transport/gantt-transport.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
@@ -488,6 +497,133 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task regr-mvnss5vu-06xn Rehabilitation [2026-10-25T20:40:08.159Z]
+- **Parent Task**: [TDD Regression] should handle stderr with assertions without file paths (`regr-mvnss5vu-06xn`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Culprit Commit**: `1babb088f0d3d6bbf2be8fe5abf4bcb01e25e683`
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnss5vu-06xn.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with assertions without file paths [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnss5vu-06xn.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions without file paths [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnss5vn-bsna Rehabilitation [2026-10-25T20:12:52.838Z]
+- **Parent Task**: [TDD Regression] should handle stderr with assertions with mixed formats (`regr-mvnss5vn-bsna`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnss5vn-bsna.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with assertions with mixed formats [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnss5vn-bsna.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions with mixed formats [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnrerlt-lfna Rehabilitation [2026-10-25T19:56:58.141Z]
+- **Parent Task**: [TDD Regression] should handle malformed stderr gracefully (`regr-mvnrerlt-lfna`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnrerlt-lfna.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle malformed stderr gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnrerlt-lfna.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle malformed stderr gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnqypf9-4ose Rehabilitation [2026-10-25T19:35:05.524Z]
+- **Parent Task**: [TDD Regression] should handle stderr output with mixed valid and invalid line numbers (`regr-mvnqypf9-4ose`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnqypf9-4ose.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr output with mixed valid and invalid line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnqypf9-4ose.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr output with mixed valid and invalid line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnqmd27-ulr7 Rehabilitation [2026-10-25T19:16:19.102Z]
+- **Parent Task**: [TDD Regression] should handle stderr with mixed case and spaces (`regr-mvnqmd27-ulr7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnqmd27-ulr7.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with mixed case and spaces [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnqmd27-ulr7.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with mixed case and spaces [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnq51v9-hhl0 Rehabilitation [2026-10-25T18:51:05.117Z]
+- **Parent Task**: [TDD Regression] should handle input with missing file paths (`regr-mvnq51v9-hhl0`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnq51v9-hhl0.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle input with missing file paths [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnq51v9-hhl0.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle input with missing file paths [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnq51v6-6yuk Rehabilitation [2026-10-25T18:21:14.680Z]
+- **Parent Task**: [TDD Regression] should handle input with duplicate test failures (`regr-mvnq51v6-6yuk`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnq51v6-6yuk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle input with duplicate test failures [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnq51v6-6yuk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle input with duplicate test failures [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnq51v2-gjp0 Rehabilitation [2026-10-25T18:04:52.229Z]
+- **Parent Task**: [TDD Regression] should extract failing tests with valid input (`regr-mvnq51v2-gjp0`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnq51v2-gjp0.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract failing tests with valid input [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnq51v2-gjp0.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract failing tests with valid input [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnq51uz-cudr Rehabilitation [2026-10-25T17:50:23.742Z]
+- **Parent Task**: [TDD Regression] should handle input with missing line numbers (`regr-mvnq51uz-cudr`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnq51uz-cudr.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle input with missing line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnq51uz-cudr.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle input with missing line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnpa24k-6qyc Rehabilitation [2026-10-25T17:15:29.586Z]
+- **Parent Task**: [TDD Regression] should handle completely missing information gracefully (`regr-mvnpa24k-6qyc`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnpa24k-6qyc.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle completely missing information gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnpa24k-6qyc.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle completely missing information gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnpa24e-2cbd Rehabilitation [2026-10-25T16:27:26.299Z]
+- **Parent Task**: [TDD Regression] should handle valid input correctly (`regr-mvnpa24e-2cbd`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnpa24e-2cbd.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle valid input correctly [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnpa24e-2cbd.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle valid input correctly [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvno41n1-cang Rehabilitation [2026-10-25T16:04:48.647Z]
+- **Parent Task**: [TDD Regression] should handle multiple failing tests with missing file paths and line numbers gracefully (`regr-mvno41n1-cang`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvno41n1-cang.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle multiple failing tests with missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvno41n1-cang.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multiple failing tests with missing file paths and line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvno41my-zl93 Rehabilitation [2026-10-25T15:28:53.774Z]
+- **Parent Task**: [TDD Regression] should handle failing tests with mixed valid and invalid file paths and line numbers (`regr-mvno41my-zl93`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvno41my-zl93.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with mixed valid and invalid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvno41my-zl93.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle failing tests with mixed valid and invalid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvno41mv-epa7 Rehabilitation [2026-10-25T15:13:05.727Z]
+- **Parent Task**: [TDD Regression] should handle failing tests with valid file paths and line numbers (`regr-mvno41mv-epa7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvno41mv-epa7.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvno41mv-epa7.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle failing tests with valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
 
 ### Task regr-mvno41ms-r2d9 Rehabilitation [2026-10-25T14:44:18.226Z]
 - **Parent Task**: [TDD Regression] should handle failing tests with multiple valid file paths and line numbers (`regr-mvno41ms-r2d9`)

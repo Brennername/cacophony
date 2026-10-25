@@ -605,27 +605,25 @@ export class ArenaStateStore {
                       });
                     }
 
-                    const genIdx = existingStages.findIndex((s) => s.stageName === 'generation');
-                    if (genIdx >= 0) {
-                      existingStages[genIdx] = {
-                        ...existingStages[genIdx]!,
-                        stageStatus: 'RUNNING'
-                      };
-                    } else {
+                    const runningGenIdx = existingStages.findIndex(
+                      (s) => s.stageName === 'generation' && s.stageStatus === 'RUNNING'
+                    );
+                    if (runningGenIdx < 0) {
+                      const prevAttempts = existingStages.filter((s) => s.stageName === 'generation').length;
                       existingStages.push({
-                        id: `${taskId}-generation`,
+                        id: `${taskId}-generation-${prevAttempts + 1}`,
                         stageName: 'generation',
                         stageStatus: 'RUNNING',
                         startedAt: new Date().toISOString(),
                         completedAt: null,
-                        durationMs: null
+                        durationMs: null,
                       });
                     }
 
                     return {
                       ...t,
                       currentStage: 'generation',
-                      stages: existingStages
+                      stages: existingStages,
                     };
                   }
                   return t;
@@ -674,27 +672,77 @@ export class ArenaStateStore {
             const stageStatus = data.stageStatus;
             const durationMs = data.durationMs ?? null;
 
+            if (stageName === 'generation' && stageStatus === 'RUNNING') {
+              this.liveStreamBuffer.set('');
+              this.liveReasoningBuffer.set('');
+              this.liveCodeBuffer.set('');
+              this.runTokenCount = 0;
+              this.runStartTimestamp = null;
+              this.runTokenVelocity.set(0);
+            }
+
             this.tasks.update((currentTasks) =>
               currentTasks.map((t) => {
                 if (t.id !== taskId) return t;
                 const existingStages = t.stages ? [...t.stages] : [];
-                const stageIndex = existingStages.findIndex((s) => s.stageName === stageName);
-                if (stageIndex >= 0) {
-                  existingStages[stageIndex] = {
-                    ...existingStages[stageIndex]!,
-                    stageStatus,
-                    durationMs: durationMs ?? existingStages[stageIndex]!.durationMs,
-                    completedAt: stageStatus === 'SUCCESS' || stageStatus === 'FAILURE' ? new Date().toISOString() : null,
-                  };
+
+                if (stageStatus === 'RUNNING') {
+                  const runningIdx = existingStages.findIndex(
+                    (s) => s.stageName === stageName && s.stageStatus === 'RUNNING'
+                  );
+                  if (runningIdx >= 0) {
+                    existingStages[runningIdx] = {
+                      ...existingStages[runningIdx]!,
+                      stageStatus: 'RUNNING',
+                      durationMs: durationMs ?? existingStages[runningIdx]!.durationMs,
+                    };
+                  } else {
+                    const prevAttempts = existingStages.filter((s) => s.stageName === stageName).length;
+                    existingStages.push({
+                      id: `${taskId}-${stageName}-${prevAttempts + 1}`,
+                      stageName,
+                      stageStatus: 'RUNNING',
+                      startedAt: new Date().toISOString(),
+                      completedAt: null,
+                      durationMs,
+                    });
+                  }
                 } else {
-                  existingStages.push({
-                    id: `${taskId}-${stageName}`,
-                    stageName,
-                    stageStatus,
-                    startedAt: new Date().toISOString(),
-                    completedAt: stageStatus === 'SUCCESS' || stageStatus === 'FAILURE' ? new Date().toISOString() : null,
-                    durationMs,
-                  });
+                  // SUCCESS or FAILURE: update last running stage, or last matching stage
+                  let targetIdx = -1;
+                  for (let i = existingStages.length - 1; i >= 0; i--) {
+                    if (existingStages[i]!.stageName === stageName && existingStages[i]!.stageStatus === 'RUNNING') {
+                      targetIdx = i;
+                      break;
+                    }
+                  }
+                  if (targetIdx === -1) {
+                    for (let i = existingStages.length - 1; i >= 0; i--) {
+                      if (existingStages[i]!.stageName === stageName) {
+                        targetIdx = i;
+                        break;
+                      }
+                    }
+                  }
+
+                  if (targetIdx >= 0) {
+                    existingStages[targetIdx] = {
+                      ...existingStages[targetIdx]!,
+                      stageStatus,
+                      durationMs: durationMs ?? existingStages[targetIdx]!.durationMs,
+                      completedAt: new Date().toISOString(),
+                    };
+                  } else {
+                    const prevAttempts = existingStages.filter((s) => s.stageName === stageName).length;
+                    existingStages.push({
+                      id: `${taskId}-${stageName}-${prevAttempts + 1}`,
+                      stageName,
+                      stageStatus,
+                      startedAt: new Date().toISOString(),
+                      completedAt: new Date().toISOString(),
+                      durationMs,
+                    });
+                  }
                 }
 
                 return {

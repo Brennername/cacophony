@@ -669,6 +669,10 @@ export class AutonomousWorkerPipeline {
       }
 
       // STAGE 2: Generation with Self-Healing Parser and Live Token Emission
+      if (this.streamTapManager) {
+        this.streamTapManager.resetDemuxer(taskId);
+        this.streamTapManager.clearBuffer(taskId);
+      }
       const generationStart = Date.now();
       await this.recordAndEmitStage(taskId, "generation", "RUNNING");
 
@@ -849,16 +853,23 @@ export class AutonomousWorkerPipeline {
       generationDuration = Date.now() - generationStart;
       measuredTps = finalTps;
 
+      if (this.streamTapManager) {
+        this.streamTapManager.flush(taskId);
+      }
+
       if (!finalCode) {
         console.error(
           `[AutonomousWorkerPipeline] No code block extracted for task '${groomed.enrichedPrompt.slice(0, 40)}'`,
         );
+        const failedOutput = parseResult.rawOutput
+          ? `Self-healing parser failed to extract valid code block.\n\nRaw output:\n${parseResult.rawOutput}`
+          : "Self-healing parser failed to extract valid code block";
         await this.recordAndEmitStage(
           taskId,
           "generation",
           "FAILURE",
           generationDuration,
-          "Self-healing parser failed to extract valid code block",
+          failedOutput,
         );
         if (this.worktreeManager && worktree) {
           await this.worktreeManager.cleanWorktree(taskId, worktree.branchName);
@@ -866,14 +877,20 @@ export class AutonomousWorkerPipeline {
         return { success: false, tokensPerSec: measuredTps };
       }
 
+      const rawGeneratedOutput = parseResult.rawOutput || finalCode || "";
+      const stageSummary = handoffOpinionSummary
+        ? `Generated code block via cognitive handoff [${selectedModel} -> ${this.implementerModel}] (${finalTps} tok/s)`
+        : `Generated code block in ${finalAttempts} attempts (${finalTps} tok/s)`;
+      const fullLogOutput = rawGeneratedOutput
+        ? `${stageSummary}\n\n${rawGeneratedOutput}`
+        : stageSummary;
+
       await this.recordAndEmitStage(
         taskId,
         "generation",
         "SUCCESS",
         generationDuration,
-        handoffOpinionSummary
-          ? `Generated code block via cognitive handoff [${selectedModel} -> ${this.implementerModel}] (${finalTps} tok/s)`
-          : `Generated code block in ${finalAttempts} attempts (${finalTps} tok/s)`,
+        fullLogOutput,
         finalPromptTokens,
         finalCompletionTokens,
         reasoningTranscript || null,
@@ -1860,12 +1877,16 @@ export class AutonomousWorkerPipeline {
                 }
               }
 
+              const remSummary = `Automated remediation attempt ${testRemediationAttempts} applied fix`;
+              const remLog = repairedParsed.rawOutput || repairedParsed.code
+                ? `${remSummary}\n\n${repairedParsed.rawOutput || repairedParsed.code}`
+                : remSummary;
               await this.recordAndEmitStage(
                 taskId,
                 "remediation",
                 "SUCCESS",
                 Date.now() - remediationStart,
-                `Automated remediation attempt ${testRemediationAttempts} applied fix`,
+                remLog,
               );
             } else {
               throw new Error("Remediation produced no code block");

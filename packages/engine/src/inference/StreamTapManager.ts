@@ -1,6 +1,9 @@
 import { EventEmitter } from "node:events";
 import type { StageName, StageStatus } from "@cacophony/shared-types";
-import { ReasoningStreamDemuxer } from "./ReasoningStreamDemuxer.js";
+import {
+  ReasoningStreamDemuxer,
+  type DemuxChunk,
+} from "./ReasoningStreamDemuxer.js";
 
 export interface StreamTokenEvent {
   readonly taskId: string;
@@ -205,6 +208,46 @@ export class StreamTapManager {
     this.taskDemuxers.delete(target);
     this.bufferTimestamps.delete(target);
     this.activityTimestamps.delete(target);
+  }
+
+  /**
+   * Flushes the demuxer for a task and broadcasts any remaining chunks
+   * to reasoning or code tap subscribers.
+   */
+  public flush(taskId?: string): DemuxChunk[] {
+    const target = taskId || this.activeTaskId;
+    if (!target) return [];
+    const demuxer = this.taskDemuxers.get(target);
+    if (!demuxer) return [];
+
+    const now = Date.now();
+    const chunks = demuxer.flush();
+    for (const chunk of chunks) {
+      const eventName =
+        chunk.type === "reasoning" ? "reasoning_chunk" : "code_chunk";
+      const demuxedEvent: DemuxedTokenEvent = {
+        taskId: target,
+        chunk: chunk.content,
+        content: chunk.content,
+        type: chunk.type,
+        timestamp: now,
+      };
+      this.emitter.emit(eventName, demuxedEvent);
+      this.emitter.emit(`${eventName}:${target}`, demuxedEvent);
+    }
+    return chunks;
+  }
+
+  /**
+   * Resets demuxer internal tag state for a task before starting a new generation attempt.
+   */
+  public resetDemuxer(taskId?: string): void {
+    const target = taskId || this.activeTaskId;
+    if (!target) return;
+    const demuxer = this.taskDemuxers.get(target);
+    if (demuxer) {
+      demuxer.reset();
+    }
   }
 
   /**

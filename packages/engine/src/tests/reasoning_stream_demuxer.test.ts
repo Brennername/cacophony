@@ -128,4 +128,36 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
       false,
     );
   });
+
+  it("should recognize case-insensitive <Think> and <thought> tags", () => {
+    const demuxer = new ReasoningStreamDemuxer();
+    demuxer.feed("<Think>Cognitive step 1</Think>export const val = 42;");
+    demuxer.flush();
+
+    assert.strictEqual(demuxer.getAccumulatedReasoning(), "Cognitive step 1");
+    assert.strictEqual(demuxer.getAccumulatedCode(), "export const val = 42;");
+
+    const thoughtDemuxer = new ReasoningStreamDemuxer();
+    thoughtDemuxer.feed("<thought>Deep contemplation</thought>const x = 10;");
+    thoughtDemuxer.flush();
+
+    assert.strictEqual(thoughtDemuxer.getAccumulatedReasoning(), "Deep contemplation");
+    assert.strictEqual(thoughtDemuxer.getAccumulatedCode(), "const x = 10;");
+  });
+
+  it("should flush remaining pending buffer on stream close via StreamTapManager", () => {
+    const tap = new StreamTapManager();
+    const taskId = "task-flush-test";
+    const codeChunks: string[] = [];
+    tap.tapCode((e) => {
+      codeChunks.push(e.chunk);
+    }, taskId);
+
+    // Feed token ending with '<' (prefix of <think>)
+    tap.emitToken(taskId, "const isSmaller = a <");
+    // Flush should emit the held '<'
+    tap.flush(taskId);
+
+    assert.strictEqual(codeChunks.join(""), "const isSmaller = a <");
+  });
 });

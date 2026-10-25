@@ -129,8 +129,8 @@ export class TestingViewComponent implements OnInit, OnDestroy {
   });
 
   public ngOnInit(): void {
-    // Seed initial output from live buffer if active
-    const buffer = typeof this.store.liveStreamBuffer === 'function' ? this.store.liveStreamBuffer() : '';
+    // Seed initial output from deterministic test runner buffer if active
+    const buffer = typeof this.store.testOutputBuffer === 'function' ? this.store.testOutputBuffer() : '';
     if (buffer) {
       const initialLines = buffer.split('\n').filter((l) => l.trim().length > 0);
       if (initialLines.length > 0) {
@@ -171,7 +171,8 @@ export class TestingViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Connects to live SSE stream listening for 'test_output' and 'token' events (T59.3.1).
+   * Connects to live SSE stream listening for deterministic 'test_output' and 'substage_log' events (T59.3.1).
+   * Generative token streams are strictly isolated from the test terminal.
    */
   public connectTestStream(): void {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
@@ -186,10 +187,15 @@ export class TestingViewComponent implements OnInit, OnDestroy {
           const payload = JSON.parse(event.data);
           if (payload.type === 'test_output' && payload.output) {
             this.appendOutputLine(payload.output);
-          } else if (payload.type === 'token' && payload.token) {
-            // Echo token streams when test execution is active
-            if (this.isActiveTestRunning()) {
-              this.appendOutputChunk(payload.token);
+          } else if (
+            payload.type === 'substage_log' &&
+            payload.channel === 'test_output' &&
+            payload.content
+          ) {
+            // Append deterministic test runner lines
+            const lines = payload.content.split('\n');
+            for (const line of lines) {
+              this.appendOutputLine(line);
             }
           }
         } catch {

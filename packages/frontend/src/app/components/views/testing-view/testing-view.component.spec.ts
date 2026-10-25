@@ -58,6 +58,7 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
       createdAt: new Date().toISOString(),
     });
     const mockLiveStreamSignal = signal('');
+    const mockTestOutputSignal = signal('');
 
     await TestBed.configureTestingModule({
       imports: [TestingViewComponent],
@@ -68,6 +69,7 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
             processes: mockProcessesSignal,
             activeTask: mockActiveTaskSignal,
             liveStreamBuffer: mockLiveStreamSignal,
+            testOutputBuffer: mockTestOutputSignal,
           },
         },
         {
@@ -249,6 +251,19 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
 
     await component.copyProcLogs(proc);
     expect(writeTextSpy).toHaveBeenCalledWith('Test run output 100% passed');
+  });
+
+  it('should append deterministic substage_log test output and not generative tokens', () => {
+    component.appendOutputLine('Test Suite Passed: 5/5');
+    expect(component.testOutput()).toContain('Test Suite Passed: 5/5');
+
+    // Simulate multi-line substage_log payload
+    const logChunk = 'PASS src/app.spec.ts\nTests: 2 passed, 2 total';
+    for (const line of logChunk.split('\n')) {
+      component.appendOutputLine(line);
+    }
+    expect(component.testOutput()).toContain('PASS src/app.spec.ts');
+    expect(component.testOutput()).toContain('Tests: 2 passed, 2 total');
   });
 });
 
