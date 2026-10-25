@@ -24,7 +24,8 @@ export class PromptSlipstreamGuard {
   ];
 
   private static readonly SUSPICIOUS_SCRIPT_PATTERNS: readonly RegExp[] = [
-    /<script[\s\S]*?>[\s\S]*?<\/script>/i,
+    /<script\b[^>]*>[\s\S]*?<\/script\s*[^>]*>/i,
+    /<script\b[^>]*>/i,
     /javascript\s*:/i,
     /curl\s+-[sS]*[kK]*\s+http/i,
     /wget\s+http/i,

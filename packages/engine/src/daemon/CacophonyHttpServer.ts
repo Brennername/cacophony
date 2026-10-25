@@ -14,6 +14,7 @@ import {
 } from "@cacophony/shared-types";
 import { DatabaseBackupService } from "@cacophony/db";
 import { StructuredLogger } from "../telemetry/StructuredLogger.js";
+import { normalizeGiteaUrl } from "../gitea/giteaUrlHelper.js";
 
 
 export interface UnifiedServerConfig {
@@ -43,6 +44,19 @@ export class CacophonyHttpServer {
   private untapEpochListener: (() => void) | null = null;
   private readonly authService: AuthService;
   private readonly rateLimiter: RateLimiter;
+
+  /**
+   * Sanitizes task records before sending to client, ensuring PR URLs are browser-accessible.
+   */
+  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(task: T): T;
+  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(task: T | null | undefined): T | null;
+  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(task: T | null | undefined): T | null {
+    if (!task) return null;
+    return {
+      ...task,
+      prUrl: normalizeGiteaUrl(task.prUrl),
+    };
+  }
   private readonly logger = new StructuredLogger("CacophonyHttpServer");
 
   constructor(daemon: CacophonyDaemon, config: UnifiedServerConfig = {}) {
@@ -785,9 +799,10 @@ export class CacophonyHttpServer {
       req.on("end", async () => {
         try {
           const payload = JSON.parse(body || "{}");
-          const result = await this.authService.loginWithPassword(
+          const candidateSecret = String(payload.password || payload.secret || "");
+          const result = await this.authService.loginWithCredentials(
             String(payload.username || ""),
-            String(payload.password || ""),
+            candidateSecret,
           );
           if (!result) {
             res.writeHead(401, { "Content-Type": "application/json" });
@@ -960,12 +975,12 @@ export class CacophonyHttpServer {
           status: statusParam,
         });
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(tasks));
+        res.end(JSON.stringify(tasks.map((t) => this.sanitizeTaskForClient(t))));
         return;
       }
       const pending = await taskRepo.listPending();
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(pending));
+      res.end(JSON.stringify(pending.map((t) => this.sanitizeTaskForClient(t))));
       return;
     }
 
@@ -1334,18 +1349,25 @@ export class CacophonyHttpServer {
 
         if (matchingPr) {
           const prHtmlUrl =
-            matchingPr.html_url ||
+            normalizeGiteaUrl(matchingPr.html_url) ||
             `${process.env.GITEA_PUBLIC_URL || "http://localhost:19634"}/${repoOwner}/${repoName}/pulls/${matchingPr.number}`;
           await taskRepo.updatePr(
             task.id,
             matchingPr.base?.ref || "main",
             prHtmlUrl,
           );
+          const stageRepo = this.daemon.getStageRepository();
+          if (stageRepo) {
+            await stageRepo.recordReconciliationStage(
+              task.id,
+              `Task reconciled from merged Gitea PR #${matchingPr.number} (${prHtmlUrl})`,
+            );
+          }
           await taskRepo.updateStatus(
             task.id,
             "COMPLETED",
-            task.durationMs || 1000,
-            task.tokensPerSec || 5.0,
+            task.durationMs || 0,
+            task.tokensPerSec || 0,
           );
           reconciledPrCount++;
           continue;
@@ -1372,11 +1394,21 @@ export class CacophonyHttpServer {
         }
 
         if (isCompleted) {
+          const stageRepo = this.daemon.getStageRepository();
+          if (stageRepo) {
+            const existingStages = await stageRepo.getStagesForTask(task.id);
+            if (existingStages.length === 0) {
+              await stageRepo.recordReconciliationStage(
+                task.id,
+                "Task pre-verified and marked completed in docs/taskcade.md; reconciled without local pipeline execution.",
+              );
+            }
+          }
           await taskRepo.updateStatus(
             task.id,
             "COMPLETED",
-            task.durationMs || 1000,
-            task.tokensPerSec || 6.0,
+            task.durationMs || 0,
+            task.tokensPerSec || 0,
           );
           reconciledPrCount++;
           continue;
@@ -1418,11 +1450,21 @@ export class CacophonyHttpServer {
           completedTaskIds.has(shortId) ||
           (taskCode && completedTaskIds.has(taskCode))
         ) {
+          const stageRepo = this.daemon.getStageRepository();
+          if (stageRepo) {
+            const existingStages = await stageRepo.getStagesForTask(task.id);
+            if (existingStages.length === 0) {
+              await stageRepo.recordReconciliationStage(
+                task.id,
+                "Task pre-verified and marked completed in docs/taskcade.md; reconciled without local pipeline execution.",
+              );
+            }
+          }
           await taskRepo.updateStatus(
             task.id,
             "COMPLETED",
-            task.durationMs || 1000,
-            task.tokensPerSec || 6.0,
+            task.durationMs || 0,
+            task.tokensPerSec || 0,
           );
           reconciledPrCount++;
         }
@@ -1464,7 +1506,7 @@ export class CacophonyHttpServer {
       const stageRepo = this.daemon.getStageRepository();
       const stages = await stageRepo.getStagesForTask(taskId);
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ...task, stages }));
+      res.end(JSON.stringify(this.sanitizeTaskForClient({ ...task, stages })));
       return;
     }
     if (taskDetailMatch && req.method === "PATCH") {
@@ -1497,7 +1539,7 @@ export class CacophonyHttpServer {
           }
           const updated = await taskRepo.getById(taskId);
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true, task: updated }));
+          res.end(JSON.stringify({ success: true, task: this.sanitizeTaskForClient(updated) }));
         } catch (err: unknown) {
           this.logger.error("Failed to update task", {
             error: err instanceof Error ? err.message : String(err),
@@ -3804,8 +3846,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, ticket: updatedTicket, task: taskRecord }));
         } catch (err: unknown) {
+          this.logger.error("Failed to approve ticket", { error: err });
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to approve ticket", details: String(err) }));
+          res.end(JSON.stringify({ error: "Failed to approve ticket" }));
         }
       });
       return;
@@ -3845,8 +3888,9 @@ export class CacophonyHttpServer {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, ticket: updatedTicket }));
         } catch (err: unknown) {
+          this.logger.error("Failed to reject ticket", { error: err });
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to reject ticket", details: String(err) }));
+          res.end(JSON.stringify({ error: "Failed to reject ticket" }));
         }
       });
       return;

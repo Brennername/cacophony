@@ -455,11 +455,74 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Phase 99: Commit-to-Task Attribution, Deterministic Task Rehabilitation & Resilient Failure Requeue Pipeline
 
-_Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#archived-phase-99-commit-to-task-attribution-deterministic-task-rehabilitation--resilient-failure-requeue-pipeline)_
+---
+
+## Phase 104: Local Pre-Push CodeQL Tooling & GitHub Code Scanning Remediation
+
+- [x] T104.1: Remediate GitHub CodeQL code scanning alerts across the repository:
+  - [x] T104.1.1: Fix polynomial regular expression and bad tag filter in `packages/engine/src/security/PromptSlipstreamGuard.ts` (Alert 124).
+  - [x] T104.1.2: Eliminate internal stack trace exposures across error boundaries in `packages/engine/src/daemon/CacophonyHttpServer.ts` (Alerts 125, 126).
+  - [x] T104.1.3: Replace weak single-iteration SHA-256 password hashing with `crypto.scryptSync` and HMAC token validation in `packages/engine/src/auth/AuthService.ts` (Alerts 127-130).
+  - [x] T104.1.4: Refactor trailing and leading slash normalization to safe linear while-slice algorithms in `TaskRepository.ts`, `giteaUrlHelper.ts`, and `url-normalizer.ts` to prevent Polynomial ReDoS.
+- [x] T104.2: Build local pre-push CodeQL static analysis tooling:
+  - [x] T104.2.1: Implement executable CLI script `bin/codeql-scan.sh` with automatic database caching, configuration parsing, and multi-threaded evaluation.
+  - [x] T104.2.2: Author `.codeqlignore` and `.github/codeql/codeql-config.yml` to filter out ephemeral worktrees, build caches, and node_modules.
+  - [x] T104.2.3: Provide automated `.git/hooks/pre-push` installation via `bin/install-git-hooks.sh` and npm scripts (`npm run codeql`).
+
+---
+
+## Phase 105: Gitea URL Normalization & Reconciled Task Stage Integrity
+
+- [x] T105.1: Eliminate unreachable internal docker alias URLs (`cacophony-gitea:3000` / `cacophony-gitea://`) across the system:
+  - [x] T105.1.1: Implement `normalizeGiteaUrl()` utility with unit tests in `packages/engine/src/gitea/giteaUrlHelper.ts`.
+  - [x] T105.1.2: Implement frontend `sanitizeGiteaUrl()` utility with unit tests in `packages/frontend/src/app/utils/url-normalizer.ts`.
+  - [x] T105.1.3: Enforce URL sanitization on daemon HTTP API responses and closed-loop PR handlers.
+  - [x] T105.1.4: Add database startup migration `normalizeGiteaUrls()` in `TaskRepository.ts` to convert legacy database records to public browser endpoints (`http://localhost:19634`).
+- [x] T105.2: Fix 0-stage "Passed" tasks and inaccurate execution metrics:
+  - [x] T105.2.1: Add `reconciliation` stage type to `StageNameSchema` in `@cacophony/shared-types`.
+  - [x] T105.2.2: Implement `recordReconciliationStage()` in `StageRepository.ts` to record verified pre-completed tasks with authentic explanations.
+  - [x] T105.2.3: Implement `backfillReconciledTaskStages()` in `TaskRepository.ts` to convert legacy 0-stage tasks from fake 1000ms / 6 tok/s to zeroed inference metrics and explicit reconciliation records.
+  - [x] T105.2.4: Update frontend `TaskDetailModalComponent` with a dedicated Reconciled badge, informational banner, and stage visualization.
 
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task taskcade-t102.3.2.2 Rehabilitation [2026-10-25T14:29:49.063Z]
+- **Parent Task**: [Rehab 2/3] Core Implementation Unit: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na (`taskcade-t102.3.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.2.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na [Role: type_specialist] [Files: packages/engine/src/gitea/GitCheckpointManager.ts]
+  - [ ] `taskcade-t102.3.2.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.3.2: Write unit tests verifying `GitCheckpointManager` tree snapshot creation, tag na [Role: implementer] [Files: packages/engine/src/gitea/GitCheckpointManager.ts]
+
+
+### Task regr-mvnn9rxm-ipma Rehabilitation [2026-10-25T14:10:18.014Z]
+- **Parent Task**: [TDD Regression] should handle non-numeric line numbers gracefully (`regr-mvnn9rxm-ipma`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnn9rxm-ipma.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle non-numeric line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnn9rxm-ipma.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle non-numeric line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnk65ce-hcqd Rehabilitation [2026-10-25T13:47:01.629Z]
+- **Parent Task**: [TDD Regression] should handle stderr with non-numeric line numbers (`regr-mvnk65ce-hcqd`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnk65ce-hcqd.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with non-numeric line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnk65ce-hcqd.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with non-numeric line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnk65cb-r3mq Rehabilitation [2026-10-25T13:17:07.482Z]
+- **Parent Task**: [TDD Regression] should handle stderr with multiple matches on the same line (`regr-mvnk65cb-r3mq`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnk65cb-r3mq.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with multiple matches on the same line [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnk65cb-r3mq.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with multiple matches on the same line [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
 
 ### Task regr-mvncyu0q-ti75.1.1 Rehabilitation [2026-10-25T12:52:36.531Z]
 - **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75.1.1`)

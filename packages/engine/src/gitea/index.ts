@@ -29,3 +29,4 @@ export * from "./PrFixTaskCoordinator.js";
 export * from "./HumanResonantPrGenerator.js";
 export * from "./AutomatedIssueSynthesizer.js";
 export * from "./GitHubSecurityAndIssueBridge.js";
+export * from "./giteaUrlHelper.js";

@@ -287,6 +287,13 @@
   color: var(--text-primary);
 }
 
+.badge.reconciled {
+  background: var(--surface-sunken, rgba(99, 102, 241, 0.15));
+  border: 1px solid var(--color-brand, #6366f1);
+  color: var(--color-brand, #6366f1);
+  letter-spacing: 0.05em;
+}
+
 .header-titles h3 {
   font-size: 0.9375rem;
   font-weight: 700;
@@ -913,6 +920,31 @@
   text-align: center;
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+
+.empty-tab-state.reconciled-explanation {
+  background: var(--surface-sunken, rgba(0, 0, 0, 0.03));
+  border: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: var(--radius-md, 6px);
+  margin: 1rem 0;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.reconciled-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-brand, #6366f1);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.empty-tab-state.reconciled-explanation p {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin: 0;
 }
 
 /* Retry Action Buttons */

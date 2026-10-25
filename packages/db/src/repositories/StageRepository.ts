@@ -88,6 +88,24 @@ export class StageRepository {
     );
   }
 
+  /**
+   * Records an explicit reconciliation stage for tasks that were completed
+   * externally or verified via taskcade rather than local pipeline execution.
+   */
+  public async recordReconciliationStage(
+    taskId: string,
+    logOutput: string,
+    timestamp?: string,
+  ): Promise<void> {
+    const at = timestamp || new Date().toISOString();
+    await this.driver.execute(
+      `INSERT INTO task_stages (
+        task_id, stage_name, stage_status, started_at, completed_at, log_output, tokens_sent, tokens_received, duration_ms
+      ) VALUES ($1, 'reconciliation', 'SUCCESS', $2, $3, $4, 0, 0, 0)`,
+      [taskId, at, at, logOutput],
+    );
+  }
+
   public async getStagesForTask(
     taskId: string,
   ): Promise<readonly TaskStageRecord[]> {

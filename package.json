@@ -24,7 +24,9 @@
     "stop": "bin/cacophony stop",
     "dev": "npm run --workspace=@cacophony/engine dev",
     "tui": "bin/cacophony tui",
-    "rebuild": "./bin/rebuild-all.sh"
+    "rebuild": "./bin/rebuild-all.sh",
+    "codeql": "./bin/codeql-scan.sh",
+    "scan:codeql": "./bin/codeql-scan.sh"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

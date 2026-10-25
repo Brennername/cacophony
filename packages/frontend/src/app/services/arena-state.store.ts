@@ -1,4 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { sanitizeGiteaUrl } from '../utils/url-normalizer';
 
 export interface TelemetryMetrics {
   gpuBusyPercent: number;
@@ -323,7 +324,7 @@ export class ArenaStateStore {
           modelAssigned: t.modelAssigned,
           testCommand: t.testCommand,
           focusFiles: t.focusFiles,
-          prUrl: t.prUrl,
+          prUrl: sanitizeGiteaUrl(t.prUrl),
           createdAt: t.createdAt,
           updatedAt: t.updatedAt,
           completedAt: t.completedAt,

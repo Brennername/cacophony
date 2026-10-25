@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArenaStateStore } from '../../services/arena-state.store';
 import { TaskApiService } from '../../services/task-api.service';
+import { sanitizeGiteaUrl } from '../../utils/url-normalizer';
 import { ansiToHtml } from '../../utils/ansi-to-html';
 import type { PrDiscussionThread, AdvisoryDomainTag } from '@cacophony/shared-types';
 
@@ -370,6 +371,25 @@ export class TaskDetailModalComponent implements AfterViewInit, OnDestroy {
     } finally {
       this.isSubmittingComment.set(false);
     }
+  }
+
+  public sanitizePrUrl(url: string | null | undefined): string {
+    return sanitizeGiteaUrl(url);
+  }
+
+  public isReconciledTask(task: any): boolean {
+    if (!task) return false;
+    if (task.stages?.some((s: any) => s.stageName === 'reconciliation')) {
+      return true;
+    }
+    if (task.status === 'COMPLETED' && (!task.stages || task.stages.length === 0)) {
+      return true;
+    }
+    const snippet = task.logSnippet || '';
+    if (snippet.includes('reconciled') || snippet.includes('Reconciled')) {
+      return true;
+    }
+    return false;
   }
 
   public formatPrLinkText(url: string): string {

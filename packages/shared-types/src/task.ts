@@ -38,7 +38,8 @@ export const StageNameSchema = z.enum([
   "deterministic_scrub",
   "test_execution",
   "remediation",
-  "pr_review"
+  "pr_review",
+  "reconciliation"
 ]);
 export type StageName = z.infer<typeof StageNameSchema>;
 

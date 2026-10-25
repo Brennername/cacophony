@@ -1,0 +1,19 @@
+# GitHub CodeQL Code Scanning Configuration
+# https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+
+paths:
+  - packages
+  - bin
+
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/coverage/**'
+  - 'workspaces/**'
+  - '**/workspaces/**'
+  - 'data/**'
+  - '**/data/**'
+  - '.trash/**'
+  - '**/.trash/**'
+  - '.cache/**'
+  - '**/.cache/**'

@@ -25,6 +25,7 @@ import type {
   WorktreeDescriptor,
 } from "../gitea/GitWorktreeManager.js";
 import type { IGitPlatformProvider } from "../gitea/IGitPlatformProvider.js";
+import { normalizeGiteaUrl } from "../gitea/giteaUrlHelper.js";
 import {
   FrontierReviewer,
   type ReviewEvaluationResult,
@@ -2247,7 +2248,7 @@ export class AutonomousWorkerPipeline {
                 await this.taskRepo.updatePr(
                   taskId,
                   worktree.branchName,
-                  pr.htmlUrl,
+                  normalizeGiteaUrl(pr.htmlUrl) || pr.htmlUrl,
                 );
               }
 

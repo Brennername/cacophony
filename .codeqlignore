@@ -1,0 +1,14 @@
+# Ignore ephemeral worktrees, database files, and build outputs in CodeQL analysis
+workspaces/
+**/workspaces/
+data/
+**/data/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+**/coverage/
+.trash/
+**/.trash/
+.cache/
+**/.cache/

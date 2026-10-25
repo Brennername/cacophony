@@ -19,7 +19,7 @@ describe("AuthGateway Integration Tests", () => {
 
   it("should authenticate admin user with valid password and sign valid JWT", async () => {
     const authService = new AuthService();
-    const result = await authService.loginWithPassword("NeXeN", "cacophony-admin-secret-2026");
+    const result = await authService.loginWithCredentials("NeXeN", "cacophony-admin-secret-2026");
 
     assert.ok(result, "Expected login result to be non-null");
     assert.strictEqual(result.user.username, "NeXeN");
@@ -36,19 +36,19 @@ describe("AuthGateway Integration Tests", () => {
 
   it("should reject login with incorrect password", async () => {
     const authService = new AuthService();
-    const result = await authService.loginWithPassword("NeXeN", "wrong-password");
+    const result = await authService.loginWithCredentials("NeXeN", "wrong-password");
     assert.strictEqual(result, null);
   });
 
   it("should reject login with unknown username", async () => {
     const authService = new AuthService();
-    const result = await authService.loginWithPassword("unknown_user", "cacophony-admin-secret-2026");
+    const result = await authService.loginWithCredentials("unknown_user", "cacophony-admin-secret-2026");
     assert.strictEqual(result, null);
   });
 
   it("should reject empty username or password", async () => {
     const authService = new AuthService();
-    assert.strictEqual(await authService.loginWithPassword("", "cacophony-admin-secret-2026"), null);
-    assert.strictEqual(await authService.loginWithPassword("NeXeN", ""), null);
+    assert.strictEqual(await authService.loginWithCredentials("", "cacophony-admin-secret-2026"), null);
+    assert.strictEqual(await authService.loginWithCredentials("NeXeN", ""), null);
   });
 });

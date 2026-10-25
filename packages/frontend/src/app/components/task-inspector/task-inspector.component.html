@@ -108,7 +108,7 @@
           </div>
         }
         @if (task.prUrl) {
-          <a class="lineage-pr-link font-mono" [href]="task.prUrl" target="_blank" rel="noopener">
+          <a class="lineage-pr-link font-mono" [href]="sanitizePrUrl(task.prUrl)" target="_blank" rel="noopener">
             View PR
           </a>
         }

@@ -5,6 +5,7 @@ import { StageProgressBarComponent, type StageStepInfo } from '../stage-progress
 import { GanttTransportComponent, type GanttSpan } from '../gantt-transport/gantt-transport.component';
 import { TaskApiService } from '../../services/task-api.service';
 import { ansiToHtml } from '../../utils/ansi-to-html';
+import { sanitizeGiteaUrl } from '../../utils/url-normalizer';
 
 export interface StageTabEntry {
   readonly id: string;
@@ -30,6 +31,7 @@ export interface StageTabEntry {
   styleUrl: './task-inspector.component.css',
 })
 export class TaskInspectorComponent {
+  public readonly sanitizePrUrl = sanitizeGiteaUrl;
   private readonly store = inject(ArenaStateStore);
   private readonly taskApiService = inject(TaskApiService);
 

@@ -1,4 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { sanitizeGiteaUrl } from '../utils/url-normalizer';
 
 export interface HistoryItem {
   id: string;
@@ -174,9 +175,9 @@ export class HistoryMetricsService {
             failureCount: t.failureCount || 0,
             failureReason: t.failureReason || undefined,
             prNumber: t.prUrl ? (parseInt(t.prUrl.match(/\/pulls\/(\d+)/)?.[1] || '0', 10) || 0) : 0,
-            prUrl: t.prUrl || '',
+            prUrl: sanitizeGiteaUrl(t.prUrl) || '',
             commitDiffUrl: t.commitHash
-              ? (t.prUrl ? t.prUrl.replace(/\/pulls?\/\d+.*$/, '') + `/commit/${t.commitHash}` : `/commit/${t.commitHash}`)
+              ? (t.prUrl ? sanitizeGiteaUrl(t.prUrl).replace(/\/pulls?\/\d+.*$/, '') + `/commit/${t.commitHash}` : `/commit/${t.commitHash}`)
               : '',
             timestamp: t.completedAt || 'Recently',
           };

@@ -8,6 +8,7 @@ import type { GiteaApiClient } from "./GiteaApiClient.js";
 import type { AutomatedPrWorkflow } from "./AutomatedPrWorkflow.js";
 import type { AutomatedPrReviewLoop } from "./AutomatedPrReviewLoop.js";
 import type { WorktreeDescriptor } from "./GitWorktreeManager.js";
+import { normalizeGiteaUrl } from "./giteaUrlHelper.js";
 
 export interface ClosedLoopPrCycleOptions {
   readonly owner: string;
@@ -178,7 +179,7 @@ export class ClosedLoopPrCoordinator {
         testCommand: options.task.testCommand,
         focusFiles: options.task.focusFiles,
         targetBranch: options.worktree.branchName,
-        prUrl: pubResult.pullRequest.html_url,
+        prUrl: normalizeGiteaUrl(pubResult.pullRequest.html_url),
         failureCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

@@ -115,6 +115,7 @@ export interface GiteaIssue {
   readonly state: "open" | "closed";
   readonly labels?: readonly { readonly id: number; readonly name: string }[];
   readonly assignee?: GiteaUser | null;
+  readonly html_url?: string;
   readonly created_at: string;
   readonly updated_at: string;
 }

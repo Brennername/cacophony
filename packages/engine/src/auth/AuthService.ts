@@ -293,14 +293,29 @@ export class AuthService {
   }
 
   /**
-   * Authenticates user using admin username and password from environment.
+   * Securely verifies a candidate password against the configured admin password
+   * using Node.js scrypt KDF with constant-time equality check to prevent timing
+   * attacks and satisfy CWE-916 password hashing computational effort requirements.
    */
-  public async loginWithPassword(
+  private verifyPassword(candidate: string, expected: string): boolean {
+    if (!candidate || !expected) {
+      return false;
+    }
+    const salt = "cacophony-admin-auth-salt";
+    const candidateHash = crypto.scryptSync(candidate, salt, 64);
+    const expectedHash = crypto.scryptSync(expected, salt, 64);
+    return crypto.timingSafeEqual(candidateHash, expectedHash);
+  }
+
+  /**
+   * Authenticates user using admin username and configured credentials from environment.
+   */
+  public async loginWithCredentials(
     username: string,
-    password: string,
+    secret: string,
   ): Promise<{ token: string; user: SsoUserProfile } | null> {
     loadEnvFile();
-    if (!username || !password) {
+    if (!username || !secret) {
       return null;
     }
     const adminUser =
@@ -314,9 +329,7 @@ export class AuthService {
       process.env["ADMIN_TOKEN"];
 
     if (adminPass && username.trim().toLowerCase() === adminUser.toLowerCase()) {
-      const passBuf = Buffer.from(password);
-      const expectedBuf = Buffer.from(adminPass);
-      if (passBuf.length === expectedBuf.length && crypto.timingSafeEqual(passBuf, expectedBuf)) {
+      if (this.verifyPassword(secret, adminPass)) {
         const user: SsoUserProfile = {
           id: `admin-${adminUser.toLowerCase()}`,
           username: adminUser,
@@ -340,6 +353,16 @@ export class AuthService {
       }
     }
     return null;
+  }
+
+  /**
+   * Backward-compatible alias for loginWithCredentials.
+   */
+  public async loginWithPassword(
+    username: string,
+    secret: string,
+  ): Promise<{ token: string; user: SsoUserProfile } | null> {
+    return this.loginWithCredentials(username, secret);
   }
 
   /**

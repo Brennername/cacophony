@@ -493,6 +493,37 @@ export class CacophonyDaemon {
       }
     }
 
+    // Perform database URL normalization and stage reconciliation backfill on startup
+    if (this.taskRepo) {
+      try {
+        const publicGiteaUrl =
+          process.env["GITEA_PUBLIC_URL"] || "http://localhost:19634";
+        const normalizedUrlsCount =
+          await this.taskRepo.normalizeGiteaUrls(publicGiteaUrl);
+        if (normalizedUrlsCount > 0) {
+          this.logger.info(
+            `Normalized ${normalizedUrlsCount} internal docker Gitea PR URLs to ${publicGiteaUrl}`,
+            { count: normalizedUrlsCount },
+          );
+        }
+
+        if (this.stageRepo) {
+          const backfilledStagesCount =
+            await this.taskRepo.backfillReconciledTaskStages(this.stageRepo);
+          if (backfilledStagesCount > 0) {
+            this.logger.info(
+              `Backfilled reconciliation stages for ${backfilledStagesCount} completed tasks with 0 stages`,
+              { count: backfilledStagesCount },
+            );
+          }
+        }
+      } catch (err: unknown) {
+        this.logger.warn("Non-fatal startup database reconciliation error:", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
     if (this.config.startScheduler !== false) {
       this.scheduler.start(this.config.pollIntervalMs || 2000);
     }

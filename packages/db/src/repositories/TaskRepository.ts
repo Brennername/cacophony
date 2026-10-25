@@ -7,6 +7,7 @@ import type {
   RehabStatus,
   TaskMetadataHints,
 } from "@cacophony/shared-types";
+import type { StageRepository } from "./StageRepository.js";
 
 interface TaskRow {
   readonly id: string;
@@ -400,6 +401,81 @@ export class TaskRepository {
       [new Date().toISOString(), cutoff],
     );
     return res.rowsAffected ?? (res as any)?.affectedRows ?? 0;
+  }
+
+  /**
+   * Normalizes internal docker container aliases in task PR URLs to the public host endpoint.
+   */
+  public async normalizeGiteaUrls(publicBaseUrl: string): Promise<number> {
+    let base = publicBaseUrl;
+    while (base.endsWith("/")) {
+      base = base.slice(0, -1);
+    }
+    const res1 = await this.driver.execute(
+      "UPDATE tasks SET pr_url = REPLACE(pr_url, 'http://cacophony-gitea:3000', $1) WHERE pr_url LIKE '%cacophony-gitea:3000%'",
+      [base],
+    );
+    const res2 = await this.driver.execute(
+      "UPDATE tasks SET pr_url = REPLACE(pr_url, 'https://cacophony-gitea:3000', $1) WHERE pr_url LIKE '%cacophony-gitea:3000%'",
+      [base],
+    );
+    const res3 = await this.driver.execute(
+      "UPDATE tasks SET pr_url = REPLACE(pr_url, 'cacophony-gitea://', $1) WHERE pr_url LIKE '%cacophony-gitea://%'",
+      [`${base}/`],
+    );
+    const res4 = await this.driver.execute(
+      "UPDATE tasks SET pr_url = REPLACE(pr_url, 'http://cacophony-gitea', $1) WHERE pr_url LIKE '%cacophony-gitea%'",
+      [base],
+    );
+    return (
+      (res1.rowsAffected ?? 0) +
+      (res2.rowsAffected ?? 0) +
+      (res3.rowsAffected ?? 0) +
+      (res4.rowsAffected ?? 0)
+    );
+  }
+
+  /**
+   * Identifies historical tasks that were marked COMPLETED without executing any pipeline stages
+   * (e.g. from taskcade.md reconciliation), records an authentic reconciliation stage for each,
+   * resets synthetic placeholder metrics (1000ms / 6 tok/s) to 0, and updates logSnippet.
+   */
+  public async backfillReconciledTaskStages(stageRepo: StageRepository): Promise<number> {
+    const orphanTasks = await this.driver.query<{
+      id: string;
+      completed_at: string | null;
+      log_snippet: string | null;
+    }>(
+      `SELECT t.id, t.completed_at, t.log_snippet
+       FROM tasks t
+       LEFT JOIN task_stages s ON t.id = s.task_id
+       WHERE t.status = 'COMPLETED'
+       GROUP BY t.id, t.completed_at, t.log_snippet
+       HAVING COUNT(s.id) = 0`,
+    );
+
+    let count = 0;
+    for (const task of orphanTasks) {
+      const logOutput =
+        task.log_snippet ||
+        "Task verified and reconciled from docs/taskcade.md (pre-completed verification); no local inference stages required.";
+      await stageRepo.recordReconciliationStage(
+        task.id,
+        logOutput,
+        task.completed_at || new Date().toISOString(),
+      );
+
+      await this.driver.execute(
+        `UPDATE tasks
+         SET duration_ms = CASE WHEN duration_ms = 1000 THEN 0 ELSE duration_ms END,
+             tokens_per_sec = CASE WHEN tokens_per_sec = 6 THEN 0 ELSE tokens_per_sec END,
+             log_snippet = COALESCE(log_snippet, $1)
+         WHERE id = $2`,
+        [logOutput, task.id],
+      );
+      count++;
+    }
+    return count;
   }
 
   public async getRollingSuccessStats(sampleSize = 100): Promise<{

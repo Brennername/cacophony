@@ -11,6 +11,7 @@ import type {
   MergeGitPullRequestOptions,
 } from "./IGitPlatformProvider.js";
 import { GiteaApiClient } from "./GiteaApiClient.js";
+import { normalizeGiteaUrl } from "./giteaUrlHelper.js";
 
 export class GiteaPlatformProvider implements IGitPlatformProvider {
   public readonly providerType = "gitea" as const;
@@ -58,7 +59,7 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
         merged: pr.merged,
         headRef: pr.head.ref,
         baseRef: pr.base.ref,
-        htmlUrl: pr.html_url,
+        htmlUrl: normalizeGiteaUrl(pr.html_url) || pr.html_url,
         diffUrl: pr.diff_url,
       };
     } catch (err: unknown) {
@@ -82,7 +83,7 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
             merged: existing.merged,
             headRef: existing.head?.ref ?? options.head,
             baseRef: existing.base?.ref ?? (options.base || "main"),
-            htmlUrl: existing.html_url,
+            htmlUrl: normalizeGiteaUrl(existing.html_url) || existing.html_url,
             diffUrl: existing.diff_url,
           };
         }
@@ -106,7 +107,7 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       merged: pr.merged,
       headRef: pr.head?.ref ?? "",
       baseRef: pr.base?.ref ?? "main",
-      htmlUrl: pr.html_url,
+      htmlUrl: normalizeGiteaUrl(pr.html_url) || pr.html_url,
       diffUrl: pr.diff_url,
     };
   }
@@ -126,7 +127,7 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       merged: pr.merged,
       headRef: pr.head?.ref ?? "",
       baseRef: pr.base?.ref ?? "main",
-      htmlUrl: pr.html_url,
+      htmlUrl: normalizeGiteaUrl(pr.html_url) || pr.html_url,
       diffUrl: pr.diff_url,
     }));
   }
@@ -231,7 +232,10 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       body: issue.body,
       state: issue.state,
       labels: issue.labels?.map((l) => l.name) ?? [],
-      htmlUrl: `${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`,
+      htmlUrl:
+        normalizeGiteaUrl(issue.html_url) ||
+        normalizeGiteaUrl(`${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`) ||
+        "",
       createdAt: issue.created_at,
       updatedAt: issue.updated_at,
     };
@@ -250,7 +254,10 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       body: issue.body,
       state: issue.state,
       labels: issue.labels?.map((l) => l.name) ?? [],
-      htmlUrl: `${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`,
+      htmlUrl:
+        normalizeGiteaUrl(issue.html_url) ||
+        normalizeGiteaUrl(`${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`) ||
+        "",
       createdAt: issue.created_at,
       updatedAt: issue.updated_at,
     }));
@@ -269,7 +276,10 @@ export class GiteaPlatformProvider implements IGitPlatformProvider {
       body: issue.body,
       state: issue.state,
       labels: issue.labels?.map((l) => l.name) ?? [],
-      htmlUrl: `${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`,
+      htmlUrl:
+        normalizeGiteaUrl(issue.html_url) ||
+        normalizeGiteaUrl(`${(this.client as any).baseUrl || ""}/${owner}/${repo}/issues/${issue.number}`) ||
+        "",
       createdAt: issue.created_at,
       updatedAt: issue.updated_at,
     };

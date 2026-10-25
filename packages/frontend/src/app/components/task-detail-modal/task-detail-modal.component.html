@@ -20,6 +20,11 @@
             <span class="badge status" [ngClass]="task.status.toLowerCase()">{{
               task.status
             }}</span>
+            @if (isReconciledTask(task)) {
+              <span class="badge reconciled" title="Task verified and reconciled from docs/taskcade.md or merged PR">
+                RECONCILED
+              </span>
+            }
             <span class="badge role">{{ task.role }}</span>
             @if (task.status !== 'RUNNING') {
               <button
@@ -50,7 +55,7 @@
                 task.targetBranch || prReviewData()?.targetBranch || 'main'
               }}</span>
               @if (task.prUrl || prReviewData()?.prUrl; as url) {
-                <a [href]="url" target="_blank" rel="noopener" class="pr-banner-link font-mono">
+                <a [href]="sanitizePrUrl(url)" target="_blank" rel="noopener" class="pr-banner-link font-mono">
                   {{ formatPrLinkText(url) }}
                 </a>
               }
@@ -200,7 +205,7 @@
             <div class="meta-item">
               <span class="meta-label">Pull Request</span>
               @if (task.prUrl) {
-                <a [href]="task.prUrl" target="_blank" rel="noopener" class="pr-link"
+                <a [href]="sanitizePrUrl(task.prUrl)" target="_blank" rel="noopener" class="pr-link"
                   >View in Gitea</a
                 >
               } @else {
@@ -276,7 +281,17 @@
                 }
               </div>
             } @else {
-              <div class="empty-tab-state">No execution stages recorded yet.</div>
+              @if (isReconciledTask(task)) {
+                <div class="empty-tab-state reconciled-explanation">
+                  <div class="reconciled-header font-mono">TASK RECONCILED FROM TASKCADE</div>
+                  <p>
+                    This task was verified as completed in <code>docs/taskcade.md</code> or previously merged into the codebase.
+                    No local model pipeline stages were required.
+                  </p>
+                </div>
+              } @else {
+                <div class="empty-tab-state">No execution stages recorded yet.</div>
+              }
             }
           </div>
         }

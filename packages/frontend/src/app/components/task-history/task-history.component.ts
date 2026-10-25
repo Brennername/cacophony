@@ -2,6 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
 import { ArenaStateStore } from '../../services/arena-state.store';
+import { sanitizeGiteaUrl } from '../../utils/url-normalizer';
 
 /**
  * Task History and Metrics component:
@@ -16,6 +17,7 @@ import { ArenaStateStore } from '../../services/arena-state.store';
   styleUrl: './task-history.component.css',
 })
 export class TaskHistoryComponent {
+  public readonly sanitizePrUrl = sanitizeGiteaUrl;
   private readonly metricsService = inject(HistoryMetricsService);
   private readonly store = inject(ArenaStateStore);
   public readonly historyItems = this.metricsService.historyItems;
