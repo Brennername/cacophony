@@ -151,4 +151,17 @@ describe('AuthService (regr-mvir6w91-8i42)', () => {
     expect(service.session().username).toBe('oauthUser');
     expect(service.session().provider).toBe('gitea');
   });
+
+  it('should detect when GitHub OAuth is configured or unconfigured', () => {
+    expect(service.isGitHubConfigured()).toBe(false);
+  });
+
+  it('should not redirect if loginWithGitHub is called when unconfigured', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    service.loginWithGitHub();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('GitHub OAuth is not configured'),
+    );
+    warnSpy.mockRestore();
+  });
 });

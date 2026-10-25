@@ -136,12 +136,28 @@ export class AuthService {
     }
   }
 
+  public isGitHubConfigured(): boolean {
+    return Boolean(
+      this.authConfig.github?.enabled ||
+        this.authConfig.github?.clientId ||
+        this.authConfig.github?.authUrl,
+    );
+  }
+
+  public getAuthConfig(): DynamicAuthConfig {
+    return this.authConfig;
+  }
+
   public async login(): Promise<void> {
     const config = await this.loadAuthConfig();
     const provider = config.activeProvider || 'gitea';
 
     if (provider === 'github') {
-      this.loginWithGitHub();
+      if (this.isGitHubConfigured()) {
+        this.loginWithGitHub();
+      } else {
+        this.loginWithGitea();
+      }
     } else if (provider === 'gitea') {
       this.loginWithGitea();
     } else if (provider === 'authentik' && config.authentik) {
@@ -163,7 +179,7 @@ export class AuthService {
     const publicUrl = this.authConfig.giteaPublicUrl || 'http://localhost:19634';
     const clientId = this.authConfig.clientId || '19e1f52a-a382-4998-87d1-5b3ab028c747';
     const redirectUri = encodeURIComponent(this.authConfig.redirectUri || 'http://localhost:24072/auth/callback');
-    const state = Math.random().toString(36).substring(2);
+    const state = 'gitea_' + Math.random().toString(36).substring(2);
     window.location.href = `${publicUrl}/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}`;
   }
 
@@ -172,9 +188,13 @@ export class AuthService {
       window.location.href = this.authConfig.github.authUrl;
       return;
     }
-    const clientId = this.authConfig.github?.clientId || '';
+    const clientId = this.authConfig.github?.clientId;
+    if (!clientId || !clientId.trim()) {
+      console.warn('GitHub OAuth is not configured: GITHUB_CLIENT_ID is missing.');
+      return;
+    }
     const redirectUri = encodeURIComponent(this.authConfig.redirectUri || 'http://localhost:24072/auth/callback');
-    const state = Math.random().toString(36).substring(2);
+    const state = 'gh_' + Math.random().toString(36).substring(2);
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=read%3Auser+user%3Aemail&state=${state}`;
   }
 

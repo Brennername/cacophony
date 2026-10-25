@@ -25,6 +25,34 @@ describe("GitHubOAuthProvider & Bootstrap Unit Tests", () => {
     assert.ok(authUrl.includes("scope=read%3Auser+user%3Aemail"));
   });
 
+  it("should reject authorization URL generation when clientId is missing or blank", () => {
+    const unconfiguredProvider = new GitHubOAuthProvider({
+      clientId: "",
+      clientSecret: "",
+      redirectUri: "http://localhost:24072/auth/callback",
+      scopes: ["read:user", "user:email"],
+    });
+
+    assert.throws(
+      () => unconfiguredProvider.getAuthorizationUrl("test-state"),
+      /GitHub OAuth is not configured: clientId is missing/,
+    );
+  });
+
+  it("should reject code exchange when clientSecret is missing", async () => {
+    const missingSecretProvider = new GitHubOAuthProvider({
+      clientId: "some-client-id",
+      clientSecret: "",
+      redirectUri: "http://localhost:24072/auth/callback",
+      scopes: ["read:user"],
+    });
+
+    await assert.rejects(
+      async () => missingSecretProvider.exchangeCode("mock-code"),
+      /GitHub OAuth credentials missing/,
+    );
+  });
+
   it("should verify admin bootstrap succeeds when admin credentials exist in env", async () => {
     const driver = new SQLiteDriver(":memory:");
     await driver.connect();

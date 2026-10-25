@@ -115,10 +115,17 @@
             <button
               type="button"
               class="oauth-btn github-btn"
+              [class.unconfigured]="!isGitHubConfigured()"
               (click)="loginWithGitHub()"
             >
               <span class="provider-name">Sign In with GitHub</span>
-              <span class="provider-meta">Free contributor authentication</span>
+              <span class="provider-meta">
+                @if (isGitHubConfigured()) {
+                  Free contributor authentication
+                } @else {
+                  Requires GITHUB_CLIENT_ID in .env
+                }
+              </span>
             </button>
           </div>
 

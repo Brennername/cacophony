@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -26,6 +26,11 @@ export class LoginModalComponent {
   public readonly isLoading = signal(false);
   public readonly errorMessage = signal<string | null>(null);
   public readonly authConfig = signal<DynamicAuthConfig | null>(null);
+
+  public readonly isGitHubConfigured = computed(() => {
+    const config = this.authConfig();
+    return Boolean(config?.github?.enabled || config?.github?.clientId || config?.github?.authUrl);
+  });
 
   public async open(): Promise<void> {
     this.isOpen.set(true);
@@ -79,6 +84,12 @@ export class LoginModalComponent {
   }
 
   public loginWithGitHub(): void {
+    if (this.authConfig() && !this.isGitHubConfigured()) {
+      this.errorMessage.set(
+        'GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env, or sign in using Admin Credentials.',
+      );
+      return;
+    }
     this.auth.loginWithGitHub();
   }
 }

@@ -461,6 +461,15 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvncyu0q-ti75.1.1 Rehabilitation [2026-10-25T12:52:36.531Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75.1.1`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [x] `regr-mvncyu0q-ti75.1.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [x] `regr-mvncyu0q-ti75.1.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractFailingTests [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
 ### Task regr-mvncyu0q-ti75.2.2 Rehabilitation [2026-10-25T12:16:49.834Z]
 - **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractFailingTests (`regr-mvncyu0q-ti75.2.2`)
 - **Failure Count**: 3

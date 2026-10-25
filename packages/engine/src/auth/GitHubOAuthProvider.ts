@@ -21,8 +21,14 @@ export class GitHubOAuthProvider implements ISsoProvider {
 
   /**
    * Generates authorization URL for redirecting users to GitHub OAuth authorization.
+   * Throws an error if clientId is missing or unconfigured to prevent broken 404 redirects.
    */
   public getAuthorizationUrl(state: string): string {
+    if (!this.config.clientId || !this.config.clientId.trim()) {
+      throw new Error(
+        "GitHub OAuth is not configured: clientId is missing. Configure GITHUB_CLIENT_ID in .env",
+      );
+    }
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
@@ -35,10 +41,16 @@ export class GitHubOAuthProvider implements ISsoProvider {
 
   /**
    * Exchanges an authorization code for GitHub access token and user profile.
+   * Verifies required credentials prior to making the network token request.
    */
   public async exchangeCode(
     code: string,
   ): Promise<{ readonly accessToken: string; readonly user: SsoUserProfile }> {
+    if (!this.config.clientId || !this.config.clientSecret) {
+      throw new Error(
+        "GitHub OAuth credentials missing: both clientId and clientSecret are required for code exchange",
+      );
+    }
     const tokenUrl = "https://github.com/login/oauth/access_token";
     const response = await fetch(tokenUrl, {
       method: "POST",

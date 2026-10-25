@@ -1,5 +1,4 @@
-# Cacophony Reusable UI Component Guide ("Lego Instructions")
-
+# Cacophony Reusable UI Component Guide
 This guide documents the standardized, mobile-first Angular standalone components in Cacophony. Autonomous models and human contributors should snap these components together like Lego bricks rather than writing ad-hoc layouts or inline styles.
 
 ---

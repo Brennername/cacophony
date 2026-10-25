@@ -110,4 +110,27 @@ describe('LoginModalComponent', () => {
     component.loginWithGitHub();
     expect(mockAuthService.loginWithGitHub).toHaveBeenCalled();
   });
+
+  it('should display error message when triggering GitHub login if GitHub OAuth is not configured', async () => {
+    mockAuthService.loadAuthConfig.mockResolvedValueOnce({
+      activeProvider: 'gitea',
+      github: { enabled: false, authUrl: '', clientId: '' },
+    });
+    await component.open();
+    component.loginWithGitHub();
+
+    expect(component.errorMessage()).toContain('GitHub OAuth is not configured');
+    expect(mockAuthService.loginWithGitHub).not.toHaveBeenCalled();
+  });
+
+  it('should trigger GitHub login when GitHub OAuth is configured', async () => {
+    mockAuthService.loadAuthConfig.mockResolvedValueOnce({
+      activeProvider: 'gitea',
+      github: { enabled: true, authUrl: 'https://github.com/login/oauth/authorize?client_id=123', clientId: '123' },
+    });
+    await component.open();
+    component.loginWithGitHub();
+
+    expect(mockAuthService.loginWithGitHub).toHaveBeenCalled();
+  });
 });

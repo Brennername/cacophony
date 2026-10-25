@@ -216,6 +216,11 @@
   border-color: var(--border-strong);
 }
 
+.oauth-btn.unconfigured {
+  opacity: 0.85;
+  border-style: dashed;
+}
+
 .provider-name {
   font-size: 0.92rem;
   font-weight: 600;
