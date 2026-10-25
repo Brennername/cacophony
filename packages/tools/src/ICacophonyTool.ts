@@ -17,6 +17,6 @@ export interface ToolExecutionContext {
  */
 export interface ICacophonyTool<TParams = unknown> {
   readonly definition: ToolDefinition;
-  readonly schema: z.ZodType<TParams, z.ZodTypeDef, any>;
+  readonly schema: z.ZodType<TParams, any, any>;
   execute(params: TParams, context: ToolExecutionContext): Promise<ToolResult>;
 }

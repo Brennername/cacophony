@@ -78,7 +78,7 @@ export class ContractSynthesizer {
           zodType = "z.string().datetime()";
           break;
         case "json":
-          zodType = "z.record(z.unknown())";
+          zodType = "z.record(z.string(), z.unknown())";
           break;
         default:
           zodType = "z.unknown()";

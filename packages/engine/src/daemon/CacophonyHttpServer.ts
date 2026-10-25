@@ -3785,6 +3785,68 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4z2b. REST API: POST /api/dependabot/sync - Trigger Dependabot alert & PR processing
+    if (url.pathname === "/api/dependabot/sync" && req.method === "POST") {
+      const isAdmin = await this.resolveAdminContext(req);
+      if (!isAdmin) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Forbidden: Admin role required for dependabot sync" }));
+        return;
+      }
+
+      const bridge = this.daemon.getGitHubSecurityBridge();
+      if (!bridge) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "GitHub security bridge is not initialized" }));
+        return;
+      }
+
+      const githubOwner =
+        process.env.GITHUB_REPO_OWNER ||
+        process.env.GIT_REPO_OWNER ||
+        "Brennername";
+      const githubRepo = process.env.GITHUB_REPO_NAME || "cacophony";
+      const giteaOwner = process.env.GIT_REPO_OWNER || "NeXeN";
+      const giteaRepo = process.env.GIT_REPO_NAME || "cacophony";
+
+      try {
+        const alertsResult = await bridge.syncDependabotAlerts({
+          githubOwner,
+          githubRepo,
+          giteaOwner,
+          giteaRepo,
+        });
+        const prsResult = await bridge.processDependabotPullRequests({
+          githubOwner,
+          githubRepo,
+          giteaOwner,
+          giteaRepo,
+          autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
+        });
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            alerts: alertsResult,
+            prs: prsResult,
+          }),
+        );
+      } catch (err: unknown) {
+        this.logger.error("Failed to synchronize Dependabot alerts and pull requests", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "Failed to synchronize Dependabot alerts and pull requests",
+          }),
+        );
+        return;
+      }
+      return;
+    }
+
     // 4z3. REST API: POST /api/hitl/tickets/:id/approve - Approve ticket and enqueue to arena
     const hitlApproveMatch = url.pathname.match(/^\/api\/hitl\/tickets\/([^/]+)\/approve$/);
     if (hitlApproveMatch && req.method === "POST") {

@@ -30,6 +30,29 @@ export interface ExternalSyncResult {
   readonly enqueuedTaskIds: readonly string[];
 }
 
+export interface DependabotPrProcessResult {
+  readonly prNumber: number;
+  readonly title: string;
+  readonly headRef: string;
+  readonly reviewed: boolean;
+  readonly verdict: "APPROVED" | "REQUEST_CHANGES" | "COMMENT";
+  readonly merged: boolean;
+  readonly notes: string;
+}
+
+export interface DependabotPrBatchResult {
+  readonly totalDiscovered: number;
+  readonly processed: readonly DependabotPrProcessResult[];
+}
+
+export interface ProcessDependabotPullRequestsOptions {
+  readonly githubOwner: string;
+  readonly githubRepo: string;
+  readonly giteaOwner: string;
+  readonly giteaRepo: string;
+  readonly autoMerge?: boolean;
+}
+
 export interface PromotionVerificationOptions {
   readonly githubOwner: string;
   readonly githubRepo: string;
@@ -381,6 +404,131 @@ export class GitHubSecurityAndIssueBridge {
       prsIngested,
       createdGiteaIssues,
       enqueuedTaskIds,
+    };
+  }
+
+  /**
+   * Discovers, reviews, and processes open Dependabot pull requests.
+   * Performs reasoning model evaluation, submits code review verdicts,
+   * mirrors tracking tasks to local Gitea, and optionally squash-merges approved updates.
+   */
+  public async processDependabotPullRequests(
+    options: ProcessDependabotPullRequestsOptions,
+  ): Promise<DependabotPrBatchResult> {
+    if (typeof this.githubProvider.listPullRequests !== "function") {
+      return { totalDiscovered: 0, processed: [] };
+    }
+
+    const openPrs = await this.githubProvider.listPullRequests(
+      options.githubOwner,
+      options.githubRepo,
+      "open",
+    );
+
+    const dependabotPrs = openPrs.filter((pr) => {
+      const head = pr.headRef.toLowerCase();
+      const title = pr.title.toLowerCase();
+      const body = (pr.body || "").toLowerCase();
+      return (
+        head.includes("dependabot") ||
+        title.startsWith("chore(deps") ||
+        title.startsWith("bump ") ||
+        body.includes("dependabot")
+      );
+    });
+
+    const processedResults: DependabotPrProcessResult[] = [];
+
+    for (const pr of dependabotPrs) {
+      let diff = "";
+      try {
+        if (typeof this.githubProvider.getPullRequestDiff === "function") {
+          diff = await this.githubProvider.getPullRequestDiff(
+            options.githubOwner,
+            options.githubRepo,
+            pr.number,
+          );
+        }
+      } catch {
+        // Non-fatal if diff fetch fails
+      }
+
+      const reviewNotes = await this.evaluateExternalPr(pr, diff);
+      const isApproved =
+        !reviewNotes.toUpperCase().includes("REQUEST_CHANGES") &&
+        (reviewNotes.toUpperCase().includes("APPROVE") ||
+          !reviewNotes.toUpperCase().includes("REJECT"));
+
+      const verdict: "APPROVED" | "REQUEST_CHANGES" | "COMMENT" = isApproved
+        ? "APPROVED"
+        : reviewNotes.toUpperCase().includes("REQUEST_CHANGES")
+          ? "REQUEST_CHANGES"
+          : "COMMENT";
+
+      let reviewed = false;
+      if (typeof this.githubProvider.submitReview === "function") {
+        try {
+          const reviewComment = [
+            `## Cacophony Automated Dependabot Review`,
+            reviewNotes,
+            ``,
+            `> Evaluated by reasoning model: **${this.reasoningModel}**`,
+          ].join("\n");
+
+          await this.githubProvider.submitReview(
+            options.githubOwner,
+            options.githubRepo,
+            pr.number,
+            {
+              event: verdict,
+              body: reviewComment,
+            },
+          );
+          reviewed = true;
+        } catch (err) {
+          console.warn(
+            `[GitHubSecurityAndIssueBridge] Failed to submit review for Dependabot PR #${pr.number}:`,
+            err,
+          );
+        }
+      }
+
+      let merged = false;
+      if (verdict === "APPROVED" && options.autoMerge !== false) {
+        if (typeof this.githubProvider.mergePullRequest === "function") {
+          try {
+            merged = await this.githubProvider.mergePullRequest(
+              options.githubOwner,
+              options.githubRepo,
+              pr.number,
+              {
+                mergeMethod: "squash",
+                title: `${pr.title} (verified by Cacophony)`,
+              },
+            );
+          } catch (err) {
+            console.warn(
+              `[GitHubSecurityAndIssueBridge] Failed to merge Dependabot PR #${pr.number}:`,
+              err,
+            );
+          }
+        }
+      }
+
+      processedResults.push({
+        prNumber: pr.number,
+        title: pr.title,
+        headRef: pr.headRef,
+        reviewed,
+        verdict,
+        merged,
+        notes: reviewNotes,
+      });
+    }
+
+    return {
+      totalDiscovered: dependabotPrs.length,
+      processed: processedResults,
     };
   }
 

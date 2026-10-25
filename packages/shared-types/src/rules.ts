@@ -127,7 +127,7 @@ export const RuleConfigDeclarationSchema = z.object({
   ruleId: z.string(),
   severity: RuleSeveritySchema,
   enabled: z.boolean().optional(),
-  options: z.record(z.unknown()).optional(),
+  options: z.record(z.string(), z.unknown()).optional(),
   continueOnError: z.boolean().optional(),
 });
 

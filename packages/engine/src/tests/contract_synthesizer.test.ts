@@ -33,7 +33,7 @@ test("ContractSynthesizer Suite (T81.3)", async (t) => {
     const zodCode = synthesizer.synthesizeZodSchema(userModel);
     assert.ok(zodCode.includes("export const UserSessionSchema = z.object({"));
     assert.ok(zodCode.includes("id: z.string()"));
-    assert.ok(zodCode.includes("metadata: z.record(z.unknown()).optional()"));
+    assert.ok(zodCode.includes("metadata: z.record(z.string(), z.unknown()).optional()"));
   });
 
   await t.test(

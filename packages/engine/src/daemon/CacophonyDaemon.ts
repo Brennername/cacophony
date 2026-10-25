@@ -108,6 +108,10 @@ export class CacophonyDaemon {
   private autoTuneTimer: NodeJS.Timeout | null = null;
   private planningTimer: NodeJS.Timeout | null = null;
   private pruningTimer: NodeJS.Timeout | null = null;
+  private dependabotSyncTimer: NodeJS.Timeout | null = null;
+  private githubSecurityBridge?:
+    | import("../gitea/GitHubSecurityAndIssueBridge.js").GitHubSecurityAndIssueBridge
+    | undefined;
   private startTime = 0;
   private isRunning = false;
 
@@ -737,6 +741,91 @@ export class CacophonyDaemon {
       }
     }, 3600_000);
 
+    // Initialize GitHub Security & Dependabot Bridge for automated security PR review and ingestion
+    try {
+      const { GitHubSecurityAndIssueBridge } = await import(
+        "../gitea/GitHubSecurityAndIssueBridge.js"
+      );
+      const { GiteaPlatformProvider } = await import(
+        "../gitea/GiteaPlatformProvider.js"
+      );
+      const { GiteaApiClient } = await import(
+        "../gitea/GiteaApiClient.js"
+      );
+      const { GitHubPlatformProvider } = await import(
+        "../gitea/GitHubPlatformProvider.js"
+      );
+
+      const giteaUrl =
+        process.env.GITEA_URL ||
+        process.env.GITEA_INTERNAL_URL ||
+        "http://localhost:19634";
+      const giteaToken = process.env.GITEA_TOKEN || "";
+      const githubToken = process.env.GITHUB_TOKEN || "";
+      const githubOwner =
+        process.env.GITHUB_REPO_OWNER ||
+        process.env.GIT_REPO_OWNER ||
+        "Brennername";
+      const githubRepo = process.env.GITHUB_REPO_NAME || "cacophony";
+      const giteaOwner = process.env.GIT_REPO_OWNER || "NeXeN";
+      const giteaRepo = process.env.GIT_REPO_NAME || "cacophony";
+
+      const giteaClient = new GiteaApiClient({
+        baseUrl: giteaUrl,
+        apiToken: giteaToken,
+      });
+      const giteaProvider = new GiteaPlatformProvider(giteaClient);
+      const githubProvider = new GitHubPlatformProvider({
+        token: githubToken,
+      });
+
+      this.githubSecurityBridge = new GitHubSecurityAndIssueBridge({
+        githubProvider,
+        giteaProvider,
+        taskRepo: this.taskRepo,
+        inferenceProvider: (this.fallbackRouter ??
+          primaryInferenceProvider) as any,
+        defaultReasoningModel:
+          process.env.REASONING_MODEL || "deepseek-r1:8b",
+      });
+
+      const syncIntervalMs =
+        Number(process.env.DEPENDABOT_SYNC_INTERVAL_MS) || 600_000;
+      this.dependabotSyncTimer = setInterval(async () => {
+        if (this.isRunning && this.githubSecurityBridge) {
+          try {
+            await this.githubSecurityBridge.syncDependabotAlerts({
+              githubOwner,
+              githubRepo,
+              giteaOwner,
+              giteaRepo,
+            });
+            await this.githubSecurityBridge.processDependabotPullRequests({
+              githubOwner,
+              githubRepo,
+              giteaOwner,
+              giteaRepo,
+              autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
+            });
+          } catch (err: unknown) {
+            this.logger.warn(
+              "Non-fatal background Dependabot PR/alert processing error:",
+              {
+                error: err instanceof Error ? err.message : String(err),
+              },
+            );
+          }
+        }
+      }, syncIntervalMs);
+    } catch (err: unknown) {
+      this.logger.warn(
+        "Non-fatal error initializing GitHubSecurityAndIssueBridge:",
+        {
+          error: err instanceof Error ? err.message : String(err),
+        },
+      );
+    }
+
     // 5. IPC Server for CLI and Container Control
     this.ipcServer = new DaemonIPCServer({
       socketPath: this.config.socketPath,
@@ -798,6 +887,10 @@ export class CacophonyDaemon {
     if (this.pruningTimer) {
       clearInterval(this.pruningTimer);
       this.pruningTimer = null;
+    }
+    if (this.dependabotSyncTimer) {
+      clearInterval(this.dependabotSyncTimer);
+      this.dependabotSyncTimer = null;
     }
     if (this.scheduler) {
       this.scheduler.stop();
@@ -873,6 +966,12 @@ export class CacophonyDaemon {
 
   public getHitlIssueIngestionService(): HitlIssueIngestionService | undefined {
     return this.hitlIngestionService;
+  }
+
+  public getGitHubSecurityBridge():
+    | import("../gitea/GitHubSecurityAndIssueBridge.js").GitHubSecurityAndIssueBridge
+    | undefined {
+    return this.githubSecurityBridge;
   }
 
   public getPrMergeGateCoordinator(): PrMergeGateCoordinator | undefined {

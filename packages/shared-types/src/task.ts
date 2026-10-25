@@ -88,8 +88,8 @@ export const TaskMetadataHintsSchema = z.object({
   timeoutMs: z.number().optional(),
   ruleBypassFlags: z.array(z.string()).optional(),
   stack: z.string().optional(),
-  executionGuardrails: z.record(z.any()).optional(),
-  customDirectives: z.record(z.string()).optional(),
+  executionGuardrails: z.record(z.string(), z.any()).optional(),
+  customDirectives: z.record(z.string(), z.string()).optional(),
   lineage: WorkItemLineageSchema.optional(),
 });
 export type TaskMetadataHints = z.infer<typeof TaskMetadataHintsSchema>;
@@ -120,7 +120,7 @@ export const TaskRecordSchema = z.object({
   tokensPerSec: z.number().optional(),
   currentStage: StageNameSchema.optional(),
   stageState: z.enum(["PENDING", "RUNNING", "COMPLETED", "FAILED"]).optional(),
-  stageArtifacts: z.record(z.any()).optional(),
+  stageArtifacts: z.record(z.string(), z.any()).optional(),
   commitHash: z.string().nullable().optional(),
   baseCommitHash: z.string().nullable().optional(),
   failureReason: z.string().nullable().optional(),

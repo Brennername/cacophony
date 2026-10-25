@@ -110,7 +110,7 @@ export const WhiteboxOverrideConfigSchema = z.object({
   systemdOverrideContent: z.string(),
   modprobePath: z.string().optional(),
   modprobeContent: z.string().optional(),
-  environmentVars: z.record(z.string()),
+  environmentVars: z.record(z.string(), z.string()),
 });
 
 /**

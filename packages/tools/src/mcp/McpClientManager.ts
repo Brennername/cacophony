@@ -205,9 +205,9 @@ export class McpClientManager {
         definition: {
           name: namespacedName,
           description: `[MCP: ${serverName}] ${tool.description}`,
-          parameterSchema: z.record(z.unknown())
+          parameterSchema: z.record(z.string(), z.unknown())
         },
-        schema: z.record(z.unknown()),
+        schema: z.record(z.string(), z.unknown()),
         async execute(params: Record<string, unknown>, _context: ToolExecutionContext): Promise<ToolResult> {
           const startTime = Date.now();
           try {

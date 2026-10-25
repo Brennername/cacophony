@@ -10,6 +10,7 @@ import type {
   CreateGitIssueOptions,
   CloseGitIssueOptions,
   MergeGitPullRequestOptions,
+  SubmitGitReviewOptions,
 } from "../gitea/IGitPlatformProvider.js";
 import type { IInferenceProvider } from "../inference/IInferenceProvider.js";
 import { GitHubSecurityAndIssueBridge } from "../gitea/GitHubSecurityAndIssueBridge.js";
@@ -32,6 +33,8 @@ describe("T103.4: GitHubSecurityAndIssueBridge Unit Tests", () => {
       opts?: MergeGitPullRequestOptions | undefined;
     }> = [];
     const comments: Array<{ owner: string; repo: string; number: number; body: string }> = [];
+
+    const reviews: Array<{ owner: string; repo: string; prNumber: number; opts: SubmitGitReviewOptions }> = [];
 
     const provider: Partial<IGitPlatformProvider> = {
       async listDependabotAlerts(): Promise<DependabotSecurityAlert[]> {
@@ -71,6 +74,15 @@ describe("T103.4: GitHubSecurityAndIssueBridge Unit Tests", () => {
       ): Promise<void> {
         closedIssues.push({ owner, repo, issueNumber, opts: options });
       },
+      async submitReview(
+        owner: string,
+        repo: string,
+        prNumber: number,
+        options: SubmitGitReviewOptions,
+      ): Promise<{ id: number; status: string }> {
+        reviews.push({ owner, repo, prNumber, opts: options });
+        return { id: reviews.length, status: options.event };
+      },
       async mergePullRequest(
         owner: string,
         repo: string,
@@ -101,6 +113,7 @@ describe("T103.4: GitHubSecurityAndIssueBridge Unit Tests", () => {
       closedIssues,
       mergedPrs,
       comments,
+      reviews,
     };
   }
 
@@ -341,5 +354,51 @@ describe("T103.4: GitHubSecurityAndIssueBridge Unit Tests", () => {
     assert.strictEqual(gh.comments.length, 1);
     assert.strictEqual(gh.comments[0]?.number, 56);
     assert.strictEqual(gitea.closedIssues.length, 1);
+  });
+
+  it("should process Dependabot pull requests: review with reasoning model and merge approved updates", async () => {
+    const gh = createMockPlatform("github");
+    const gitea = createMockPlatform("gitea");
+    const { repo } = createMockTaskRepo();
+    const inferenceProvider = createMockInferenceProvider();
+
+    // Push Dependabot PR
+    gh.prs.push({
+      id: 101,
+      number: 5,
+      title: "chore(deps-dev): bump fast-uri from 3.1.8 to 3.1.9",
+      body: "Bumps fast-uri from 3.1.8 to 3.1.9. Fixes CVE-2026-110306.",
+      headRef: "dependabot/npm_and_yarn/fast-uri-3.1.9",
+      baseRef: "master",
+      state: "open",
+      merged: false,
+      htmlUrl: "https://github.com/cacophony/core/pull/5",
+    });
+
+    const bridge = new GitHubSecurityAndIssueBridge({
+      githubProvider: gh.provider,
+      giteaProvider: gitea.provider,
+      taskRepo: repo,
+      inferenceProvider,
+      defaultReasoningModel: "deepseek-r1:8b",
+    });
+
+    const result = await bridge.processDependabotPullRequests({
+      githubOwner: "cacophony",
+      githubRepo: "core",
+      giteaOwner: "cacophony",
+      giteaRepo: "core",
+      autoMerge: true,
+    });
+
+    assert.strictEqual(result.totalDiscovered, 1);
+    assert.strictEqual(result.processed.length, 1);
+    const item = result.processed[0]!;
+    assert.strictEqual(item.prNumber, 5);
+    assert.strictEqual(item.reviewed, true);
+    assert.strictEqual(item.verdict, "APPROVED");
+    assert.strictEqual(item.merged, true);
+    assert.strictEqual(gh.mergedPrs.length, 1);
+    assert.strictEqual(gh.mergedPrs[0]?.prNumber, 5);
   });
 });

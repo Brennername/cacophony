@@ -42,7 +42,7 @@ export const HistoricalArenaStatsSchema = z.object({
   totalCompleted: z.number(),
   totalFailed: z.number(),
   totalProcessed: z.number(),
-  failureReasons: z.record(z.number()),
+  failureReasons: z.record(z.string(), z.number()),
   lastUpdated: z.string(),
   formatVersion: z.string().optional(),
 });

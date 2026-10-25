@@ -52,9 +52,27 @@ export const AuthConfigSchema = z.object({
   activeProvider: SsoProviderTypeSchema.default("authentik"),
   sessionTtlSeconds: z.number().int().positive().default(86400),
   jwtSecret: z.string().default("cacophony-jwt-secret-session-key"),
-  authentik: AuthentikConfigSchema.default({}),
-  authelia: AutheliaConfigSchema.default({}),
-  github: GitHubOAuthConfigSchema.default({}),
+  authentik: AuthentikConfigSchema.default({
+    issuerUrl: "http://localhost:9000/application/o/cacophony/",
+    clientId: "cacophony-client",
+    clientSecret: "",
+    redirectUri: "http://localhost:24072/auth/callback",
+    scopes: ["openid", "profile", "email", "groups"]
+  }),
+  authelia: AutheliaConfigSchema.default({
+    portalUrl: "http://localhost:9091/",
+    forwardAuthEnabled: true,
+    headerRemoteUser: "Remote-User",
+    headerRemoteEmail: "Remote-Email",
+    headerRemoteGroups: "Remote-Groups",
+    headerRemoteName: "Remote-Name"
+  }),
+  github: GitHubOAuthConfigSchema.default({
+    clientId: "",
+    clientSecret: "",
+    redirectUri: "http://localhost:24072/auth/github/callback",
+    scopes: ["read:user", "user:email"]
+  }),
   giteaPublicUrl: z.string().url().default("http://localhost:19634"),
   allowLocalEmergencyBypass: z.boolean().default(true)
 });
