@@ -202,6 +202,9 @@ export class TaskScheduler implements IModelPredictor {
       "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
       "qwen2.5-coder:14b-4k": "qwen2.5-coder:14b",
       "deepseek-coder-v2:16b-4k": "deepseek-coder-v2:16b",
+      "phi-4": "phi4",
+      "phi-4:14b": "phi4",
+      "phi4:14b": "phi4",
     };
 
     if (aliasMap[trimmed]) {
