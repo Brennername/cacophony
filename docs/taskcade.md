@@ -498,6 +498,182 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvno41mv-epa7.2 Rehabilitation [2026-10-26T01:56:10.354Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle failing tests with valid file paths and line numbers (`regr-mvno41mv-epa7.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvno41mv-epa7.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle failing tests with valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvno41mv-epa7.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle failing tests with valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvno41mv-epa7.1 Rehabilitation [2026-10-26T01:37:40.676Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with valid file paths and line numbers (`regr-mvno41mv-epa7.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvno41mv-epa7.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvno41mv-epa7.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvno41ms-r2d9.1 Rehabilitation [2026-10-26T01:23:03.698Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with multiple valid file paths and line numbers (`regr-mvno41ms-r2d9.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvno41ms-r2d9.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with multiple valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvno41ms-r2d9.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle failing tests with multiple valid file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnn9rxm-ipma.2 Rehabilitation [2026-10-26T00:52:31.903Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle non-numeric line numbers gracefully (`regr-mvnn9rxm-ipma.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnn9rxm-ipma.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle non-numeric line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnn9rxm-ipma.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle non-numeric line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnk65ce-hcqd.2 Rehabilitation [2026-10-26T00:14:04.515Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with non-numeric line numbers (`regr-mvnk65ce-hcqd.2`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnk65ce-hcqd.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with non-numeric line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnk65ce-hcqd.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with non-numeric line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnvi0nc-u79n Rehabilitation [2026-10-25T23:59:34.361Z]
+- **Parent Task**: [TDD Regression] should handle stderr with non-numeric line numbers gracefully (`regr-mvnvi0nc-u79n`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnvi0nc-u79n.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with non-numeric line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnvi0nc-u79n.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with non-numeric line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnk65cb-r3mq.1 Rehabilitation [2026-10-25T23:45:10.916Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with multiple matches on the same line (`regr-mvnk65cb-r3mq.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnk65cb-r3mq.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with multiple matches on the same line [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnk65cb-r3mq.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with multiple matches on the same line [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task taskcade-t102.3.6.3 Rehabilitation [2026-10-25T23:31:29.545Z]
+- **Parent Task**: [Rehab 3/3] Unit Test & Validation Suite: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals (`taskcade-t102.3.6.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t102.3.6.3.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 3/3] Unit Test & Validation Suite: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals [Role: test_engineer] [Files: packages/engine/src/tests/git_checkpoint_service.test.ts]
+  - [ ] `taskcade-t102.3.6.3.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 3/3] Unit Test & Validation Suite: T102.3.6: Write unit tests verifying `GitCheckpointService` automated checkpoint intervals [Role: test_engineer] [Files: packages/engine/src/tests/git_checkpoint_service.test.ts]
+
+
+### Task regr-mvnu4q85-welh Rehabilitation [2026-10-25T23:11:27.669Z]
+- **Parent Task**: [TDD Regression] extractCounters (`regr-mvnu4q85-welh`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q85-welh.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractCounters [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q85-welh.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractCounters [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q81-viim Rehabilitation [2026-10-25T23:11:16.464Z]
+- **Parent Task**: [TDD Regression] should parse duration_ms from Node.js test runner (`regr-mvnu4q81-viim`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Culprit Commit**: `a7894bfa9f322fe0ff196748e470893a2d53978c`
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q81-viim.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should parse duration_ms from Node.js test runner [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q81-viim.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should parse duration_ms from Node.js test runner [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q7s-zu0k Rehabilitation [2026-10-25T22:46:20.835Z]
+- **Parent Task**: [TDD Regression] should strip ANSI escape sequences before extracting stack locations (`regr-mvnu4q7s-zu0k`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Culprit Commit**: `27923592f397ce946c0c5afc813437a21f22592f`
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q7s-zu0k.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should strip ANSI escape sequences before extracting stack locations [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q7s-zu0k.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should strip ANSI escape sequences before extracting stack locations [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q7n-dtsn Rehabilitation [2026-10-25T22:25:06.288Z]
+- **Parent Task**: [TDD Regression] should isolate failure reasons and deduplicate messages (`regr-mvnu4q7n-dtsn`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q7n-dtsn.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should isolate failure reasons and deduplicate messages [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q7n-dtsn.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should isolate failure reasons and deduplicate messages [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q7d-csms Rehabilitation [2026-10-25T22:07:00.938Z]
+- **Parent Task**: [TDD Regression] should extract pass/fail counters from Node.js test runner output (`regr-mvnu4q7d-csms`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q7d-csms.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract pass/fail counters from Node.js test runner output [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q7d-csms.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract pass/fail counters from Node.js test runner output [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q78-6crg Rehabilitation [2026-10-25T22:06:36.481Z]
+- **Parent Task**: [TDD Regression] should handle empty output when extracting counters (`regr-mvnu4q78-6crg`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Culprit Commit**: `a91872760139f2256df3d2b244f30ae52c3c56bd`
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q78-6crg.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle empty output when extracting counters [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q78-6crg.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle empty output when extracting counters [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q73-mb1c Rehabilitation [2026-10-25T21:45:01.471Z]
+- **Parent Task**: [TDD Regression] should parse seconds duration and convert to milliseconds for Vitest / Jest (`regr-mvnu4q73-mb1c`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Culprit Commit**: `620b050fc9b4e1368eacbecbc26bfb344f524ddb`
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q73-mb1c.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should parse seconds duration and convert to milliseconds for Vitest / Jest [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q73-mb1c.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should parse seconds duration and convert to milliseconds for Vitest / Jest [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q6x-k5va Rehabilitation [2026-10-25T21:37:41.689Z]
+- **Parent Task**: [TDD Regression] should parse inline millisecond timings (`regr-mvnu4q6x-k5va`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q6x-k5va.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should parse inline millisecond timings [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q6x-k5va.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should parse inline millisecond timings [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q6q-7412 Rehabilitation [2026-10-25T21:30:03.488Z]
+- **Parent Task**: [TDD Regression] should extract pass/fail counters from Jest and Vitest output format (`regr-mvnu4q6q-7412`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Culprit Commit**: `1b89afdf6c08791beef50b218f333212e25e4ccb`
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q6q-7412.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should extract pass/fail counters from Jest and Vitest output format [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q6q-7412.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract pass/fail counters from Jest and Vitest output format [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q6j-uky0 Rehabilitation [2026-10-25T21:08:41.082Z]
+- **Parent Task**: [TDD Regression] StructuredTestOutputParser Test Suite (`regr-mvnu4q6j-uky0`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q6j-uky0.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] StructuredTestOutputParser Test Suite [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q6j-uky0.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser Test Suite [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnss5vy-93eg Rehabilitation [2026-10-25T20:54:33.076Z]
+- **Parent Task**: [TDD Regression] should handle stderr with assertions without line numbers (`regr-mvnss5vy-93eg`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 840000ms for model 'qwen2.5-coder:14b'
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnss5vy-93eg.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with assertions without line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnss5vy-93eg.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions without line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
 ### Task regr-mvnss5vu-06xn Rehabilitation [2026-10-25T20:40:08.159Z]
 - **Parent Task**: [TDD Regression] should handle stderr with assertions without file paths (`regr-mvnss5vu-06xn`)
 - **Failure Count**: 3
