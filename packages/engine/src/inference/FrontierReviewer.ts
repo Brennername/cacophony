@@ -207,7 +207,8 @@ export class FrontierReviewer {
     const semanticModel =
       options?.semanticModel ||
       process.env.FRONTIER_SEMANTIC_MODEL ||
-      "deepseek-r1:8b";
+      process.env.DEFAULT_REASONING_MODEL ||
+      "deepseek-coder-v2:16b";
     const qualityModel =
       options?.qualityModel || options?.executiveModel || this.defaultModel;
 

@@ -91,7 +91,8 @@ export class MultiModelReviewCoordinator {
     this.defaultModel =
       options.defaultModel ||
       process.env.DEFAULT_REVIEWER_MODEL ||
-      "deepseek-r1:8b";
+      process.env.DEFAULT_REASONING_MODEL ||
+      "deepseek-coder-v2:16b";
     this.fallbackModel =
       options.fallbackModel ||
       process.env.FALLBACK_REVIEWER_MODEL ||

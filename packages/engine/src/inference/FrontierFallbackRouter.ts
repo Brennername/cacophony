@@ -31,7 +31,8 @@ export class FrontierFallbackRouter implements IInferenceProvider {
   private readonly localFallbackModel: string;
 
   constructor(
-    localFallbackModel = "deepseek-r1:8b",
+    localFallbackModel = process.env["DEFAULT_REASONING_MODEL"] ||
+      "deepseek-coder-v2:16b",
     quotaTracker?: TokenQuotaTracker,
   ) {
     this.localFallbackModel = localFallbackModel;

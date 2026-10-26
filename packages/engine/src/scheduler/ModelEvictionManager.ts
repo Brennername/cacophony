@@ -42,6 +42,10 @@ export class ModelEvictionManager {
     this.modelManager = manager;
   }
 
+  public getModelManager(): OllamaModelManager | undefined {
+    return this.modelManager;
+  }
+
   public getEvictionThreshold(): number {
     return this.evictionThreshold;
   }
@@ -158,7 +162,7 @@ export class ModelEvictionManager {
 
     await this.healthRepo.updateStatus(modelId, "EJECTED");
 
-    if (this.modelManager) {
+    if (this.modelManager && this.tenancyGuard?.getConfig().autoEvictionEnabled) {
       try {
         await this.modelManager.deleteModel(modelId);
       } catch (err: unknown) {
@@ -169,7 +173,6 @@ export class ModelEvictionManager {
         };
       }
     }
-
     const timer = setTimeout(
       () => {
         delete this.cooldownTimer[modelId];

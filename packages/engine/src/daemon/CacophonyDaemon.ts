@@ -242,13 +242,13 @@ export class CacophonyDaemon {
       protectedModels: (
         process.env["PROTECTED_MODELS"] ||
         defaultProtectedModels ||
-        "qwen2.5-coder:7b,deepseek-r1:8b"
+        "*"
       )
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
       maxDiskStorageGb: Number(process.env["MAX_DISK_STORAGE_GB"] || 50),
-      autoEvictionEnabled: process.env["AUTO_EVICTION_ENABLED"] !== "false",
+      autoEvictionEnabled: process.env["AUTO_EVICTION_ENABLED"] === "true",
       minimumSuccessRateThreshold: Number(
         process.env["MIN_SUCCESS_RATE_THRESHOLD"] || 0.4,
       ),

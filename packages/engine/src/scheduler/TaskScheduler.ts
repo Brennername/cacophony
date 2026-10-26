@@ -802,80 +802,96 @@ export class TaskScheduler implements IModelPredictor {
       ? TaskScheduler.normalizeModelName(task.modelAssigned)
       : null;
 
-
     const role = task.role as AgentRole;
+
+    // Discover dynamically installed models from host Ollama instance (/api/tags)
+    let installedModels: readonly string[] = [];
+    try {
+      installedModels = await this.probe.getInstalledModels();
+    } catch {
+      installedModels = [];
+    }
+
+    // Configurable candidate pool from environment (comma-delimited), falling back to installed non-utility models
+    const configuredCandidatesEnv = process.env["CANDIDATE_MODELS"];
+    const configuredCandidates = configuredCandidatesEnv
+      ? configuredCandidatesEnv
+          .split(",")
+          .map((m) => TaskScheduler.normalizeModelName(m.trim()))
+          .filter((m) => m.length > 0)
+      : [];
+
+    const defaultImplementer =
+      process.env["DEFAULT_IMPLEMENTER_MODEL"] || "deepseek-coder-v2:16b";
+    const defaultReviewer =
+      process.env["DEFAULT_REVIEWER_MODEL"] || "qwen2.5-coder:7b-instruct-q4_K_M";
+
+    // Build the dynamic installed pool, excluding ultra-light utility models (e.g. smollm) for code generation
+    const codingInstalledModels = installedModels.filter(
+      (m) => !m.toLowerCase().includes("smollm") && m !== "qwen2.5-coder:3b",
+    );
+
+    const basePool =
+      configuredCandidates.length > 0
+        ? configuredCandidates
+        : codingInstalledModels.length > 0
+          ? codingInstalledModels
+          : [
+              defaultImplementer,
+              defaultReviewer,
+              ...this.vramCatalog
+                .getAllProfiles()
+                .map((p) => p.modelId)
+                .filter((m) => m !== "qwen2.5-coder:3b"),
+            ];
+
     let candidateList: string[];
 
     if (normalizedAssigned) {
       if (
-        normalizedAssigned.includes("r1") &&
-        role !== "architect" &&
-        role !== "reviewer"
-      ) {
-        candidateList = [
-          "gemma3:12b-it-qat",
-          "qwen2.5-coder:7b-instruct-q4_K_M",
-          "gemma3:4b-it-qat",
-          "qwen2.5-coder:14b",
-        ];
-      } else if (
-        normalizedAssigned === "qwen2.5-coder:3b" &&
-        role !== "architect" &&
-        role !== "reviewer"
-      ) {
-        candidateList = [
-          "gemma3:12b-it-qat",
-          "qwen2.5-coder:7b-instruct-q4_K_M",
-          "gemma3:4b-it-qat",
-        ];
-      } else if (
         task.failureCount > 0 &&
         role !== "architect" &&
         role !== "reviewer"
       ) {
-        candidateList = [
-          "gemma3:12b-it-qat",
-          "qwen2.5-coder:7b-instruct-q4_K_M",
-          "gemma3:4b-it-qat",
-          "qwen2.5-coder:14b",
-          normalizedAssigned,
-        ].filter((m) => m !== "qwen2.5-coder:3b");
+        // If the explicitly assigned model previously failed, allow fallback to installed candidates
+        candidateList = Array.from(
+          new Set([normalizedAssigned, ...basePool]),
+        );
       } else {
+        // Respect explicit model assignment for targeted tasks, boutiques, and unit test suites
         candidateList = [normalizedAssigned];
       }
     } else if (role === "architect" || role === "reviewer") {
-      candidateList = [
-        "deepseek-r1:8b",
-        "qwen2.5-coder:14b",
-        "gemma3:12b-it-qat",
-        "qwen2.5-coder:7b-instruct-q4_K_M",
-      ];
+      const reviewerEnv = process.env["REVIEWER_CANDIDATE_MODELS"];
+      if (reviewerEnv) {
+        candidateList = reviewerEnv
+          .split(",")
+          .map((m) => TaskScheduler.normalizeModelName(m.trim()))
+          .filter((m) => m.length > 0);
+      } else {
+        candidateList = Array.from(
+          new Set([defaultReviewer, defaultImplementer, ...basePool]),
+        );
+      }
     } else {
-      const catalogModels = this.vramCatalog
-        .getAllProfiles()
-        .map((p) => p.modelId)
-        .filter((m) => m !== "qwen2.5-coder:3b");
-      const defaultCandidates = [
-        "gemma3:12b-it-qat",
-        "qwen2.5-coder:7b-instruct-q4_K_M",
-        "gemma3:4b-it-qat",
-        "qwen2.5-coder:14b",
-        "deepseek-coder-v2:16b",
-      ];
-      const combined = Array.from(new Set([...defaultCandidates, ...catalogModels]));
-      candidateList = normalizedAssigned
-        ? [normalizedAssigned, ...combined.filter((m) => m !== normalizedAssigned)]
-        : combined;
+      candidateList = Array.from(basePool);
     }
 
     try {
       const sample = await this.telemetryProvider.sample();
       // Only throttle heavy models if hardware temperature reaches the Critical Red zone (>= 95C)
-      if (sample.edgeTempCelsius >= (this.governor ? this.governor.redMax : 95) && !normalizedAssigned) {
-        candidateList = [
-          "qwen2.5-coder:7b-instruct-q4_K_M",
-          "gemma3:4b-it-qat",
-        ];
+      if (
+        sample.edgeTempCelsius >=
+          (this.governor ? this.governor.redMax : 95) &&
+        !normalizedAssigned
+      ) {
+        const smallerCandidates = candidateList.filter((m) => {
+          const timeout = this.resolveModelTimeout(m);
+          return timeout <= 600_000;
+        });
+        if (smallerCandidates.length > 0) {
+          candidateList = smallerCandidates;
+        }
       }
     } catch {
       // ignore
@@ -883,13 +899,12 @@ export class TaskScheduler implements IModelPredictor {
 
     if (role !== "architect" && role !== "reviewer") {
       candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
-      if (candidateList.length === 0) {
-        candidateList = normalizedAssigned ? [normalizedAssigned] : [
-          "gemma3:12b-it-qat",
-          "qwen2.5-coder:7b-instruct-q4_K_M",
-          "gemma3:4b-it-qat",
-        ];
-      }
+    }
+
+    if (candidateList.length === 0) {
+      candidateList = normalizedAssigned
+        ? [normalizedAssigned]
+        : [defaultImplementer];
     }
 
     return this.evictionManager.selectModel(
@@ -925,14 +940,13 @@ export class TaskScheduler implements IModelPredictor {
         currentTask.role !== "architect"
       ) {
         try {
+          const defaultReviewer =
+            process.env["DEFAULT_REVIEWER_MODEL"] || "qwen2.5-coder:7b-instruct-q4_K_M";
+          const defaultImplementer =
+            process.env["DEFAULT_IMPLEMENTER_MODEL"] || "deepseek-coder-v2:16b";
           const reviewerCandidate = await this.evictionManager.selectModel(
             "reviewer" as AgentRole,
-            [
-              "deepseek-r1:8b",
-              "qwen2.5-coder:14b",
-              "qwen2.5-coder:7b-instruct-q4_K_M",
-              "qwen2.5-coder:7b",
-            ],
+            [defaultReviewer, defaultImplementer],
             activeVramModel,
           );
           if (reviewerCandidate) {

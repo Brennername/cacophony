@@ -37,20 +37,36 @@ export interface IModelInferenceCaller {
  * capturing distinct persona verdicts (Security, Architecture, DxUx).
  */
 export class MultiModelConsensusCoordinator {
-  public static readonly DEFAULT_CANDIDATES: readonly CandidateReviewerConfig[] =
-    [
+  public static get DEFAULT_CANDIDATES(): readonly CandidateReviewerConfig[] {
+    const archModel =
+      process.env["ARCHITECTURE_AUDITOR_MODEL"] || "qwen2.5-coder:14b";
+    const secModel =
+      process.env["SECURITY_AUDITOR_MODEL"] ||
+      process.env["DEFAULT_REASONING_MODEL"] ||
+      "deepseek-r1:8b";
+    const dxModel =
+      process.env["DX_UX_AUDITOR_MODEL"] ||
+      process.env["DEFAULT_REVIEWER_MODEL"] ||
+      "gemma3:4b-it-qat";
+
+    return [
       {
-        modelId: "qwen2.5-coder:14b",
+        modelId: archModel,
         persona: "ArchitectureAuditor",
         temperature: 0.2,
       },
       {
-        modelId: "deepseek-r1:8b",
+        modelId: secModel,
         persona: "SecurityAuditor",
         temperature: 0.2,
       },
-      { modelId: "gemma3:4b-it-qat", persona: "DxUxAuditor", temperature: 0.3 },
+      {
+        modelId: dxModel,
+        persona: "DxUxAuditor",
+        temperature: 0.3,
+      },
     ];
+  }
 
   private readonly inferenceCaller: IModelInferenceCaller;
   private readonly candidates: readonly CandidateReviewerConfig[];

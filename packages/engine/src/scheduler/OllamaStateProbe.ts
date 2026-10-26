@@ -6,6 +6,7 @@
 export class OllamaStateProbe {
   private readonly baseUrl: string;
   private simulatedModel: string | null = null;
+  private simulatedInstalledModels: readonly string[] | null = null;
 
   constructor(
     baseUrl: string = process.env["OLLAMA_BASE_URL"] ||
@@ -16,6 +17,44 @@ export class OllamaStateProbe {
 
   public setSimulatedModel(model: string | null): void {
     this.simulatedModel = model;
+  }
+
+  public setSimulatedInstalledModels(models: readonly string[] | null): void {
+    this.simulatedInstalledModels = models;
+  }
+
+  /**
+   * Retrieves the list of model identifiers currently installed in Ollama (/api/tags).
+   */
+  public async getInstalledModels(): Promise<readonly string[]> {
+    if (this.simulatedInstalledModels !== null) {
+      return this.simulatedInstalledModels;
+    }
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+      const res = await fetch(`${this.baseUrl}/api/tags`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return [];
+      const data = (await res.json()) as {
+        readonly models?: readonly {
+          readonly name?: string;
+          readonly model?: string;
+        }[];
+      };
+
+      if (!Array.isArray(data.models)) return [];
+
+      return data.models
+        .map((m) => this.normalizeModelName(m.name || m.model || ""))
+        .filter((m) => m.length > 0);
+    } catch {
+      return [];
+    }
   }
 
   /**
