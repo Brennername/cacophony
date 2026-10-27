@@ -25,6 +25,32 @@ if [[ $EUID -ne 0 ]]; then
   fi
 fi
 
+get_cpu_epp() {
+  local sample="/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"
+  if [[ -f "${sample}" ]]; then
+    local cur
+    cur="$(cat "${sample}" 2>/dev/null || echo "unknown")"
+    echo "[ryzen-control] CPU energy performance preference: ${cur}"
+  fi
+}
+
+set_cpu_epp() {
+  local pref="${1:-balance_power}"
+  echo "[ryzen-control] Setting CPU energy performance preference to '${pref}'..."
+  local count=0
+  for epp_file in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
+    if [[ -f "${epp_file}" ]]; then
+      if [[ -n "${SUDO_CMD}" ]]; then
+        echo "${pref}" | ${SUDO_CMD} tee "${epp_file}" >/dev/null
+      else
+        echo "${pref}" > "${epp_file}"
+      fi
+      count=$(( count + 1 ))
+    fi
+  done
+  echo "[ryzen-control] Successfully set EPP to '${pref}' across ${count} CPU cores."
+}
+
 print_usage() {
   cat << 'EOF'
 Usage: ./bin/ryzen-control.sh <command> [arguments]
@@ -35,20 +61,24 @@ Commands:
   table                            Dump full raw SMU power metric table
   
 Profiles (Anti-Throttle & Pacing):
+  sweet-spot, gpu-boost            Sweet Spot: 32W STAPM, 36W Fast, 88C Tctl, VRM GFX 45A, CPU EPP balance_power
   smooth, anti-spike               Flat Pacing: 30W STAPM, 35W Fast, 30W Slow, Max 80C (Recommended for 24/7 arena)
   eco, quiet                       Preset: 18W TDP (STAPM 18W, Fast 22W, Slow 18W, Max 75C)
   balanced                         Preset: 28W TDP (STAPM 28W, Fast 35W, Slow 28W, Max 82C)
   performance                      Preset: 38W TDP (STAPM 38W, Fast 45W, Slow 38W, Max 86C)
   max, aggressive                  Preset: 48W TDP (STAPM 48W, Fast 55W, Slow 48W, Max 90C)
   
-Manual Tuning:
+CPU & Manual Tuning:
+  cpu-epp <preference>             Set CPU energy performance preference (e.g. balance_power, balance_performance)
+  cpu-reset                        Reset CPU energy performance preference to default (balance_performance)
   set-watts <stapm_w> [fast_w]     Set custom power targets in Watts (e.g. set-watts 30 34)
   set-temp <max_celsius>           Set custom thermal cutoff limit in Celsius (e.g. set-temp 80)
   set-flat <watts> [temp_c]        Set exact flat power (Fast = Slow = STAPM) with temp cap
   custom <args...>                 Pass raw arguments directly to ryzenadj
 
 Examples:
-  ./bin/ryzen-control.sh smooth
+  ./bin/ryzen-control.sh sweet-spot
+  ./bin/ryzen-control.sh cpu-epp balance_power
   ./bin/ryzen-control.sh monitor
   ./bin/ryzen-control.sh set-flat 32 80
 EOF
@@ -60,6 +90,7 @@ shift || true
 case "${CMD}" in
   info|status)
     echo "[ryzen-control] Querying AMD APU telemetry..."
+    get_cpu_epp
     ${SUDO_CMD} "${RYZENADJ_BIN}" -i
     ;;
 
@@ -76,6 +107,24 @@ case "${CMD}" in
   table)
     echo "[ryzen-control] Querying full SMU table..."
     ${SUDO_CMD} "${RYZENADJ_BIN}" --dump-table
+    ;;
+
+  sweet-spot|sweetspot|gpu-boost)
+    echo "[ryzen-control] Applying SWEET-SPOT (GPU Priority) Profile..."
+    echo "  Power: 32W sustained, 36W boost, Max Temp: 88C"
+    echo "  VRM Current: 45A sustained GFX, 55A max GFX"
+    echo "  CPU EPP: balance_power (restricts CPU burst to allocate thermal/power headroom to iGPU)"
+    set_cpu_epp "balance_power"
+    ${SUDO_CMD} "${RYZENADJ_BIN}" \
+      --stapm-limit=32000 \
+      --fast-limit=36000 \
+      --slow-limit=32000 \
+      --apu-slow-limit=32000 \
+      --tctl-temp=88 \
+      --vrmgfx-current=45000 \
+      --vrmgfxmax_current=55000 \
+      --max-performance
+    echo "[ryzen-control] Sweet-spot profile applied successfully."
     ;;
 
   smooth|anti-spike)
@@ -180,6 +229,16 @@ case "${CMD}" in
     echo "[ryzen-control] Setting Tctl temperature limit to ${TEMP_C}C..."
     ${SUDO_CMD} "${RYZENADJ_BIN}" --tctl-temp="${TEMP_C}"
     echo "[ryzen-control] Temperature limit applied."
+    ;;
+
+  cpu-epp)
+    PREF="${1:-balance_power}"
+    set_cpu_epp "${PREF}"
+    ;;
+
+  cpu-reset)
+    echo "[ryzen-control] Resetting CPU energy performance preference to balanced default..."
+    set_cpu_epp "balance_performance"
     ;;
 
   custom)
