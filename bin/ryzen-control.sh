@@ -61,7 +61,8 @@ Commands:
   table                            Dump full raw SMU power metric table
   
 Profiles (Anti-Throttle & Pacing):
-  sweet-spot, gpu-boost            Sweet Spot: 32W STAPM, 36W Fast, 88C Tctl, VRM GFX 45A, CPU EPP balance_power
+  goose, goose-clock               Goose: 35W STAPM, 38W Fast, 90C, GFX Clock 1700MHz, CPU EPP balance_power
+  sweet-spot, gpu-boost            Sweet Spot: 32W STAPM, 36W Fast, 88C Tctl, VRM SoC 22A, CPU EPP balance_power
   smooth, anti-spike               Flat Pacing: 30W STAPM, 35W Fast, 30W Slow, Max 80C (Recommended for 24/7 arena)
   eco, quiet                       Preset: 18W TDP (STAPM 18W, Fast 22W, Slow 18W, Max 75C)
   balanced                         Preset: 28W TDP (STAPM 28W, Fast 35W, Slow 28W, Max 82C)
@@ -71,16 +72,17 @@ Profiles (Anti-Throttle & Pacing):
 CPU & Manual Tuning:
   cpu-epp <preference>             Set CPU energy performance preference (e.g. balance_power, balance_performance)
   cpu-reset                        Reset CPU energy performance preference to default (balance_performance)
+  set-gfx <mhz>                    Target specific iGPU clock speed in MHz (e.g. set-gfx 1600)
   set-watts <stapm_w> [fast_w]     Set custom power targets in Watts (e.g. set-watts 30 34)
   set-temp <max_celsius>           Set custom thermal cutoff limit in Celsius (e.g. set-temp 80)
   set-flat <watts> [temp_c]        Set exact flat power (Fast = Slow = STAPM) with temp cap
   custom <args...>                 Pass raw arguments directly to ryzenadj
 
 Examples:
+  ./bin/ryzen-control.sh goose
   ./bin/ryzen-control.sh sweet-spot
-  ./bin/ryzen-control.sh cpu-epp balance_power
+  ./bin/ryzen-control.sh set-gfx 1700
   ./bin/ryzen-control.sh monitor
-  ./bin/ryzen-control.sh set-flat 32 80
 EOF
 }
 
@@ -109,10 +111,34 @@ case "${CMD}" in
     ${SUDO_CMD} "${RYZENADJ_BIN}" --dump-table
     ;;
 
+  goose|goose-clock)
+    echo "[ryzen-control] Applying GOOSE Profile (High GPU MHz with controlled heat)..."
+    echo "  Power: 35W sustained, 38W boost, Max Temp: 90C"
+    echo "  Target GFX Clock: 1700 MHz"
+    echo "  VRM SoC Current: 24A sustained, 30A max"
+    echo "  VRM VDD Current: 70A sustained, 90A max"
+    echo "  CPU EPP: balance_power (keeps CPU cool and routes power to iGPU)"
+    set_cpu_epp "balance_power"
+    ${SUDO_CMD} "${RYZENADJ_BIN}" \
+      --stapm-limit=35000 \
+      --fast-limit=38000 \
+      --slow-limit=35000 \
+      --apu-slow-limit=35000 \
+      --tctl-temp=90 \
+      --vrmsoc-current=24000 \
+      --vrmsocmax-current=30000 \
+      --vrm-current=70000 \
+      --vrmmax-current=90000 \
+      --gfx-clk=1700 \
+      --max-performance
+    echo "[ryzen-control] Goose profile applied successfully."
+    ;;
+
   sweet-spot|sweetspot|gpu-boost)
     echo "[ryzen-control] Applying SWEET-SPOT (GPU Priority) Profile..."
     echo "  Power: 32W sustained, 36W boost, Max Temp: 88C"
-    echo "  VRM Current: 45A sustained GFX, 55A max GFX"
+    echo "  VRM SoC Current: 22A sustained, 28A max"
+    echo "  VRM VDD Current: 65A sustained, 85A max"
     echo "  CPU EPP: balance_power (restricts CPU burst to allocate thermal/power headroom to iGPU)"
     set_cpu_epp "balance_power"
     ${SUDO_CMD} "${RYZENADJ_BIN}" \
@@ -121,8 +147,10 @@ case "${CMD}" in
       --slow-limit=32000 \
       --apu-slow-limit=32000 \
       --tctl-temp=88 \
-      --vrmgfx-current=45000 \
-      --vrmgfxmax_current=55000 \
+      --vrmsoc-current=22000 \
+      --vrmsocmax-current=28000 \
+      --vrm-current=65000 \
+      --vrmmax-current=85000 \
       --max-performance
     echo "[ryzen-control] Sweet-spot profile applied successfully."
     ;;
@@ -239,6 +267,17 @@ case "${CMD}" in
   cpu-reset)
     echo "[ryzen-control] Resetting CPU energy performance preference to balanced default..."
     set_cpu_epp "balance_performance"
+    ;;
+
+  set-gfx)
+    GFX_MHZ="${1:-}"
+    if [[ -z "${GFX_MHZ}" ]]; then
+      echo "Error: Must provide target GPU MHz (e.g. ./bin/ryzen-control.sh set-gfx 1600)" >&2
+      exit 1
+    fi
+    echo "[ryzen-control] Requesting iGPU clock ${GFX_MHZ} MHz..."
+    ${SUDO_CMD} "${RYZENADJ_BIN}" --gfx-clk="${GFX_MHZ}"
+    echo "[ryzen-control] Target GFX clock applied."
     ;;
 
   custom)
