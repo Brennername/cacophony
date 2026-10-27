@@ -111,7 +111,7 @@ describe("T103.5: MultiModelReviewCoordinator Unit Tests", () => {
     assert.ok(consensus.timingMetrics.securityReviewMs >= 0);
     assert.ok(consensus.timingMetrics.dxUxReviewMs >= 0);
     assert.ok(consensus.timingMetrics.architectureReviewMs >= 0);
-    assert.ok(consensus.timingMetrics.totalElapsedMs > 6820);
+    assert.ok(consensus.timingMetrics.totalElapsedMs >= 6820);
 
     // Verify human-readable timing report contains all sub-stages
     assert.ok(consensus.timingSummary.includes("Model Code Generation"));

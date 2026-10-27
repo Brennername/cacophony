@@ -506,6 +506,159 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvph0wrc-dqyt Rehabilitation [2026-10-27T21:23:25.105Z]
+- **Parent Task**: [TDD Regression] should handle output with different character encodings (`regr-mvph0wrc-dqyt`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvph0wrc-dqyt.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle output with different character encodings [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvph0wrc-dqyt.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle output with different character encodings [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q7n-dtsn.2.1 Rehabilitation [2026-10-27T19:01:53.828Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should isolate failure reasons and deduplicate messages (`regr-mvnu4q7n-dtsn.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q7n-dtsn.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should isolate failure reasons and deduplicate messages [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q7n-dtsn.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should isolate failure reasons and deduplicate messages [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvpe8632-8in7 Rehabilitation [2026-10-27T17:43:08.342Z]
+- **Parent Task**: [TDD Regression] should handle different types of failure reasons (`regr-mvpe8632-8in7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvpe8632-8in7.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle different types of failure reasons [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvpe8632-8in7.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle different types of failure reasons [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q7n-dtsn.1.2 Rehabilitation [2026-10-27T16:36:10.886Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should isolate failure reasons and deduplicate messages (`regr-mvnu4q7n-dtsn.1.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q7n-dtsn.1.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should isolate failure reasons and deduplicate messages [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q7n-dtsn.1.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should isolate failure reasons and deduplicate messages [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvpcvr6c-p6vo Rehabilitation [2026-10-27T15:33:15.829Z]
+- **Parent Task**: [TDD Regression] should handle different types of errors (`regr-mvpcvr6c-p6vo`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvpcvr6c-p6vo.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle different types of errors [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvpcvr6c-p6vo.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle different types of errors [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnu4q7d-csms.2.1 Rehabilitation [2026-10-27T13:52:56.572Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract pass/fail counters from Node.js test runner output (`regr-mvnu4q7d-csms.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q7d-csms.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract pass/fail counters from Node.js test runner output [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q7d-csms.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should extract pass/fail counters from Node.js test runner output [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvp9ilxr-wnb5 Rehabilitation [2026-10-27T12:50:57.064Z]
+- **Parent Task**: [TDD Regression] template validation (`regr-mvp9ilxr-wnb5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilxr-wnb5.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] template validation [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilxr-wnb5.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] template validation [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvp9ilxe-3la4 Rehabilitation [2026-10-27T12:17:17.311Z]
+- **Parent Task**: [TDD Regression] should throw on invalid template format (`regr-mvp9ilxe-3la4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilxe-3la4.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should throw on invalid template format [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilxe-3la4.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should throw on invalid template format [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvp9ilxb-et64 Rehabilitation [2026-10-27T12:09:45.854Z]
+- **Parent Task**: [TDD Regression] should handle empty context (`regr-mvp9ilxb-et64`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilxb-et64.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle empty context [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilxb-et64.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle empty context [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvp9ilx7-b3z0 Rehabilitation [2026-10-27T11:59:53.090Z]
+- **Parent Task**: [TDD Regression] should handle negative budget (`regr-mvp9ilx7-b3z0`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilx7-b3z0.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle negative budget [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilx7-b3z0.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle negative budget [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvp9ilx3-gr8r Rehabilitation [2026-10-27T11:51:56.864Z]
+- **Parent Task**: [TDD Regression] should handle nested slot tokens (`regr-mvp9ilx3-gr8r`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilx3-gr8r.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle nested slot tokens [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilx3-gr8r.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle nested slot tokens [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvp9ilwm-hx2k Rehabilitation [2026-10-27T11:30:35.824Z]
+- **Parent Task**: [TDD Regression] SlotFillPromptBuilder (`regr-mvp9ilwm-hx2k`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilwm-hx2k.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] SlotFillPromptBuilder [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilwm-hx2k.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] SlotFillPromptBuilder [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvp9ilvj-tj8r Rehabilitation [2026-10-27T11:14:10.059Z]
+- **Parent Task**: [TDD Regression] should throw on empty template with required slots (`regr-mvp9ilvj-tj8r`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilvj-tj8r.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should throw on empty template with required slots [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilvj-tj8r.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should throw on empty template with required slots [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvp9ilvf-horc Rehabilitation [2026-10-27T11:06:03.318Z]
+- **Parent Task**: [TDD Regression] should not throw on valid template without slots (`regr-mvp9ilvf-horc`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvp9ilvf-horc.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should not throw on valid template without slots [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvp9ilvf-horc.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should not throw on valid template without slots [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvnu4q6j-uky0.2.1 Rehabilitation [2026-10-27T08:42:23.815Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser Test Suite (`regr-mvnu4q6j-uky0.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnu4q6j-uky0.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser Test Suite [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnu4q6j-uky0.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] StructuredTestOutputParser Test Suite [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnss5vy-93eg.2.1 Rehabilitation [2026-10-27T07:15:25.425Z]
+- **Parent Task**: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions without line numbers (`regr-mvnss5vy-93eg.2.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnss5vy-93eg.2.1.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions without line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnss5vy-93eg.2.1.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions without line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvnss5vn-bsna.2.2 Rehabilitation [2026-10-27T06:01:57.892Z]
+- **Parent Task**: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions with mixed formats (`regr-mvnss5vn-bsna.2.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvnss5vn-bsna.2.2.1`: [Rehab 1/2] Test Scaffold & Assertions: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions with mixed formats [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvnss5vn-bsna.2.2.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions with mixed formats [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
 ### Task regr-mvp28akm-31y3 Rehabilitation [2026-10-27T04:43:03.974Z]
 - **Parent Task**: [TDD Regression] handle mixed formats in stderr (`regr-mvp28akm-31y3`)
 - **Failure Count**: 3
