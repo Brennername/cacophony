@@ -61,7 +61,7 @@ Commands:
   table                            Dump full raw SMU power metric table
   
 Profiles (Anti-Throttle & Pacing):
-  goose, goose-clock               Goose: 35W STAPM, 38W Fast, 90C, GFX Clock 1700MHz, CPU EPP balance_power
+  goose, goose-clock               Goose: 35W STAPM, 38W Fast, 90C, VRM SoC 24A, CPU EPP balance_power
   sweet-spot, gpu-boost            Sweet Spot: 32W STAPM, 36W Fast, 88C Tctl, VRM SoC 22A, CPU EPP balance_power
   smooth, anti-spike               Flat Pacing: 30W STAPM, 35W Fast, 30W Slow, Max 80C (Recommended for 24/7 arena)
   eco, quiet                       Preset: 18W TDP (STAPM 18W, Fast 22W, Slow 18W, Max 75C)
@@ -72,7 +72,6 @@ Profiles (Anti-Throttle & Pacing):
 CPU & Manual Tuning:
   cpu-epp <preference>             Set CPU energy performance preference (e.g. balance_power, balance_performance)
   cpu-reset                        Reset CPU energy performance preference to default (balance_performance)
-  set-gfx <mhz>                    Target specific iGPU clock speed in MHz (e.g. set-gfx 1600)
   set-watts <stapm_w> [fast_w]     Set custom power targets in Watts (e.g. set-watts 30 34)
   set-temp <max_celsius>           Set custom thermal cutoff limit in Celsius (e.g. set-temp 80)
   set-flat <watts> [temp_c]        Set exact flat power (Fast = Slow = STAPM) with temp cap
@@ -81,7 +80,6 @@ CPU & Manual Tuning:
 Examples:
   ./bin/ryzen-control.sh goose
   ./bin/ryzen-control.sh sweet-spot
-  ./bin/ryzen-control.sh set-gfx 1700
   ./bin/ryzen-control.sh monitor
 EOF
 }
@@ -114,7 +112,6 @@ case "${CMD}" in
   goose|goose-clock)
     echo "[ryzen-control] Applying GOOSE Profile (High GPU MHz with controlled heat)..."
     echo "  Power: 35W sustained, 38W boost, Max Temp: 90C"
-    echo "  Target GFX Clock: 1700 MHz"
     echo "  VRM SoC Current: 24A sustained, 30A max"
     echo "  VRM VDD Current: 70A sustained, 90A max"
     echo "  CPU EPP: balance_power (keeps CPU cool and routes power to iGPU)"
@@ -129,7 +126,6 @@ case "${CMD}" in
       --vrmsocmax-current=30000 \
       --vrm-current=70000 \
       --vrmmax-current=90000 \
-      --gfx-clk=1700 \
       --max-performance
     echo "[ryzen-control] Goose profile applied successfully."
     ;;
@@ -267,17 +263,6 @@ case "${CMD}" in
   cpu-reset)
     echo "[ryzen-control] Resetting CPU energy performance preference to balanced default..."
     set_cpu_epp "balance_performance"
-    ;;
-
-  set-gfx)
-    GFX_MHZ="${1:-}"
-    if [[ -z "${GFX_MHZ}" ]]; then
-      echo "Error: Must provide target GPU MHz (e.g. ./bin/ryzen-control.sh set-gfx 1600)" >&2
-      exit 1
-    fi
-    echo "[ryzen-control] Requesting iGPU clock ${GFX_MHZ} MHz..."
-    ${SUDO_CMD} "${RYZENADJ_BIN}" --gfx-clk="${GFX_MHZ}"
-    echo "[ryzen-control] Target GFX clock applied."
     ;;
 
   custom)
