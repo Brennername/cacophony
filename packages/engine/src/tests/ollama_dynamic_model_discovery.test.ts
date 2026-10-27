@@ -127,7 +127,7 @@ describe("Dynamic Model Discovery and Safe Eviction Suite", () => {
     } as any;
 
     const selected = await scheduler.selectCandidateModel(missingModelTask, null);
-    assert.equal(selected, "gemma3:12b-it-qat");
+    assert.equal(selected, "deepseek-coder-v2:16b");
     assert.ok(
       capturedCandidates.includes("deepseek-coder-v2:16b"),
       "Fallback candidates must include installed models",

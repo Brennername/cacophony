@@ -21,6 +21,7 @@ import { migration019 } from "./019_task_metadata_hints.js";
 import { migration020 } from "./020_reduction_logs.js";
 import { migration021 } from "./021_pr_discussion_threads.js";
 import { migration022 } from "./022_hitl_tickets.js";
+import { migration023 } from "./023_model_roster_lifecycle.js";
 
 export class MigrationRegistry {
   private static readonly migrations: Migration[] = [
@@ -46,6 +47,7 @@ export class MigrationRegistry {
     migration020,
     migration021,
     migration022,
+    migration023,
   ];
 
 

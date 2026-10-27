@@ -96,6 +96,8 @@ export class TaskScheduler implements IModelPredictor {
 
   private consecutiveBurstFailures = 0;
   private regressionBurstThreshold = 3;
+  private readonly rosterRepo?: import("@cacophony/db").ModelRosterRepository | undefined;
+  private readonly autoDiscoveryService?: import("./ModelAutoDiscoveryService.js").ModelAutoDiscoveryService | undefined;
   private readonly modelHealthRepository?:
     | {
         advanceEpoch(
@@ -141,6 +143,8 @@ export class TaskScheduler implements IModelPredictor {
       advanceEpoch(name: string, reason: string, notes?: string): Promise<any>;
     };
     readonly regressionBurstThreshold?: number;
+    readonly rosterRepo?: import("@cacophony/db").ModelRosterRepository;
+    readonly autoDiscoveryService?: import("./ModelAutoDiscoveryService.js").ModelAutoDiscoveryService;
     readonly onRegressionBurst?: (
       consecutiveFailures: number,
       lastTask: TaskRecord,
@@ -162,6 +166,8 @@ export class TaskScheduler implements IModelPredictor {
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 480_000; // 8 minutes default
     this.noProgressTimeoutMs = options.noProgressTimeoutMs;
     this.modelHealthRepository = options.modelHealthRepository;
+    this.rosterRepo = options.rosterRepo;
+    this.autoDiscoveryService = options.autoDiscoveryService;
     this.regressionBurstThreshold = options.regressionBurstThreshold ?? 3;
     this.onRegressionBurst = options.onRegressionBurst;
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
@@ -815,6 +821,30 @@ export class TaskScheduler implements IModelPredictor {
       installedModels = [];
     }
 
+    const installedSet = new Set<string>(installedModels);
+    const normalizedInstalledSet = new Set<string>(
+      installedModels.map((m) => TaskScheduler.normalizeModelName(m)),
+    );
+    const isModelInstalled = (m: string): boolean =>
+      installedSet.has(m) ||
+      normalizedInstalledSet.has(TaskScheduler.normalizeModelName(m));
+
+    // 1. Query dynamic Roster configuration from database if available
+    let rosterModelsForRole: readonly string[] = [];
+    if (this.rosterRepo) {
+      try {
+        const lifecycleRole =
+          role === "architect"
+            ? "architect"
+            : role === "reviewer"
+              ? "reviewer"
+              : "implementer";
+        rosterModelsForRole = await this.rosterRepo.getModelsForRole(lifecycleRole);
+      } catch {
+        rosterModelsForRole = [];
+      }
+    }
+
     // Configurable candidate pool from environment (comma-delimited), falling back to installed non-utility models
     const configuredCandidatesEnv = process.env["CANDIDATE_MODELS"];
     const configuredCandidates = configuredCandidatesEnv
@@ -834,24 +864,40 @@ export class TaskScheduler implements IModelPredictor {
       (m) => !m.toLowerCase().includes("smollm") && m !== "qwen2.5-coder:3b",
     );
 
+    const installedRosterModels =
+      installedModels.length > 0
+        ? rosterModelsForRole.filter(isModelInstalled)
+        : rosterModelsForRole;
+
     const basePool =
-      configuredCandidates.length > 0
-        ? configuredCandidates
-        : codingInstalledModels.length > 0
-          ? codingInstalledModels
-          : [
-              defaultImplementer,
-              defaultReviewer,
-              ...this.vramCatalog
-                .getAllProfiles()
-                .map((p) => p.modelId)
-                .filter((m) => m !== "qwen2.5-coder:3b"),
-            ];
+      installedRosterModels.length > 0
+        ? installedRosterModels
+        : configuredCandidates.length > 0
+          ? (installedModels.length > 0
+              ? configuredCandidates.filter(isModelInstalled)
+              : configuredCandidates)
+          : codingInstalledModels.length > 0
+            ? codingInstalledModels
+            : [
+                defaultImplementer,
+                defaultReviewer,
+                ...this.vramCatalog
+                  .getAllProfiles()
+                  .map((p) => p.modelId)
+                  .filter((m) => m !== "qwen2.5-coder:3b"),
+              ];
 
     let candidateList: string[];
 
     if (normalizedAssigned) {
-      if (
+      if (installedModels.length > 0 && !isModelInstalled(normalizedAssigned)) {
+        // Strict guard: NEVER attempt to dispatch to a model not installed on disk!
+        this.logger.warn(
+          `Assigned model '${normalizedAssigned}' is not physically installed on disk. Gracefully falling back to active installed pool.`,
+          { assignedModel: normalizedAssigned, installedModels },
+        );
+        candidateList = Array.from(basePool);
+      } else if (
         task.failureCount > 0 &&
         role !== "architect" &&
         role !== "reviewer"
@@ -902,6 +948,18 @@ export class TaskScheduler implements IModelPredictor {
 
     if (role !== "architect" && role !== "reviewer") {
       candidateList = candidateList.filter((m) => m !== "qwen2.5-coder:3b");
+    }
+
+    // Filter candidateList to strictly available installed models if probe detected any
+    if (installedModels.length > 0) {
+      const physicallyAvailable = candidateList.filter(isModelInstalled);
+      if (physicallyAvailable.length > 0) {
+        candidateList = physicallyAvailable;
+      } else if (codingInstalledModels.length > 0) {
+        candidateList = codingInstalledModels;
+      } else {
+        candidateList = [installedModels[0]!];
+      }
     }
 
     if (candidateList.length === 0) {
@@ -1730,6 +1788,16 @@ export class TaskScheduler implements IModelPredictor {
       this.activeAbortController = undefined;
       releaseLock();
     }
+  }
 
+  public getProbe(): OllamaStateProbe {
+    return this.probe;
+  }
+
+  public getAutoDiscoveryService():
+    | import("./ModelAutoDiscoveryService.js").ModelAutoDiscoveryService
+    | undefined {
+    return this.autoDiscoveryService;
   }
 }
+

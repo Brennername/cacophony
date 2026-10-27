@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { TaskRecord } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
+import { OllamaStateProbe } from "../scheduler/OllamaStateProbe.js";
 import type { GroomedTask } from "../scheduler/QueueGroomer.js";
 import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
 
@@ -111,12 +112,15 @@ describe("TaskScheduler Dynamic VRAM Headroom Check (T68.2.3, T68.2.4)", () => {
 
     // Free VRAM = 4000 MB
     const telemetry = createHeadroomTelemetry(4000);
+    const probe = new OllamaStateProbe();
+    probe.setSimulatedInstalledModels(["deepseek-r1:8b", "qwen2.5-coder:3b"]);
 
     const scheduler = new TaskScheduler({
       taskRepo: mockTaskRepo,
       stageRepo: mockStageRepo,
       evictionManager: createMockEvictionManager(),
       telemetryProvider: telemetry,
+      probe,
     });
 
     scheduler.setExecutionHandler(async (groomed: GroomedTask, selectedModel: string) => {

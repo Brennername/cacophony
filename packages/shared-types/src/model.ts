@@ -120,4 +120,51 @@ export interface ModelReviewCapability {
   readonly domainAffinities: Readonly<Record<string, number>>;
 }
 
+/**
+ * Lifecycle tiers for models managed across the arena.
+ */
+export const ModelLifecycleTierSchema = z.enum(["ROSTER", "BULLPEN", "BOUTIQUE", "RETIRED"]);
+export type ModelLifecycleTier = z.infer<typeof ModelLifecycleTierSchema>;
 
+/**
+ * Functional roles assigned to models on the active roster.
+ */
+export const ModelLifecycleRoleSchema = z.enum([
+  "implementer",
+  "reviewer",
+  "architect",
+  "reasoning",
+  "doc",
+  "triage",
+]);
+export type ModelLifecycleRole = z.infer<typeof ModelLifecycleRoleSchema>;
+
+/**
+ * Persistent record of a model's assignment to the active Roster, Bullpen, or Boutique pool.
+ */
+export interface ModelRosterEntry {
+  readonly id: string;
+  readonly modelId: string;
+  readonly tier: ModelLifecycleTier;
+  readonly roles: readonly ModelLifecycleRole[];
+  readonly concurrencyLimit: number;
+  readonly isActive: boolean;
+  readonly isProtected: boolean;
+  readonly evalTaskCount: number;
+  readonly notes?: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/**
+ * Payload for adding, updating, or promoting models within the lifecycle.
+ */
+export interface UpsertModelRosterInput {
+  readonly modelId: string;
+  readonly tier?: ModelLifecycleTier;
+  readonly roles?: readonly ModelLifecycleRole[];
+  readonly concurrencyLimit?: number;
+  readonly isActive?: boolean;
+  readonly isProtected?: boolean;
+  readonly notes?: string | null;
+}

@@ -2363,6 +2363,228 @@ export class CacophonyHttpServer {
       return;
     }
 
+    // 4c0d1. REST API: GET & POST /api/models/roster - Dynamic Active Roster Management
+    if (url.pathname === "/api/models/roster" && req.method === "GET") {
+      const rosterRepo = this.daemon.getModelRosterRepository();
+      if (!rosterRepo) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Model roster repository not available" }));
+        return;
+      }
+      const roster = await rosterRepo.getActiveRoster();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, count: roster.length, roster }));
+      return;
+    }
+
+    if (url.pathname === "/api/models/roster" && req.method === "POST") {
+      const rosterRepo = this.daemon.getModelRosterRepository();
+      if (!rosterRepo) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Model roster repository not available" }));
+        return;
+      }
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          if (!payload.modelId) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter 'modelId'" }));
+            return;
+          }
+          const entry = await rosterRepo.upsert({
+            modelId: payload.modelId,
+            tier: "ROSTER",
+            roles: payload.roles,
+            concurrencyLimit: payload.concurrencyLimit,
+            isActive: payload.isActive !== undefined ? payload.isActive : true,
+            isProtected: payload.isProtected !== undefined ? payload.isProtected : true,
+            notes: payload.notes,
+          });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, entry }));
+        } catch (err) {
+          this.logger.error("Failed to update model roster", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to update model roster" }));
+        }
+      });
+      return;
+    }
+
+    if (url.pathname.startsWith("/api/models/roster/") && req.method === "DELETE") {
+      const modelId = decodeURIComponent(url.pathname.slice("/api/models/roster/".length));
+      const rosterRepo = this.daemon.getModelRosterRepository();
+      if (!rosterRepo) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Model roster repository not available" }));
+        return;
+      }
+      await rosterRepo.delete(modelId);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, removed: modelId }));
+      return;
+    }
+
+    // 4c0d2. REST API: GET & POST /api/models/bullpen - Staged Evaluation Pool
+    if (url.pathname === "/api/models/bullpen" && req.method === "GET") {
+      const rosterRepo = this.daemon.getModelRosterRepository();
+      if (!rosterRepo) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Model roster repository not available" }));
+        return;
+      }
+      const bullpen = await rosterRepo.getActiveBullpen();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, count: bullpen.length, bullpen }));
+      return;
+    }
+
+    if (url.pathname === "/api/models/bullpen" && req.method === "POST") {
+      const rosterRepo = this.daemon.getModelRosterRepository();
+      if (!rosterRepo) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Model roster repository not available" }));
+        return;
+      }
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          if (!payload.modelId) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter 'modelId'" }));
+            return;
+          }
+          const entry = await rosterRepo.upsert({
+            modelId: payload.modelId,
+            tier: "BULLPEN",
+            roles: payload.roles,
+            concurrencyLimit: payload.concurrencyLimit,
+            isActive: payload.isActive !== undefined ? payload.isActive : true,
+            isProtected: payload.isProtected !== undefined ? payload.isProtected : true,
+            notes: payload.notes,
+          });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, entry }));
+        } catch (err) {
+          this.logger.error("Failed to add model to bullpen", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to add model to bullpen" }));
+        }
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/models/bullpen/promote" && req.method === "POST") {
+      const rosterRepo = this.daemon.getModelRosterRepository();
+      if (!rosterRepo) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Model roster repository not available" }));
+        return;
+      }
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          if (!payload.modelId) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter 'modelId'" }));
+            return;
+          }
+          const entry = await rosterRepo.upsert({
+            modelId: payload.modelId,
+            tier: "ROSTER",
+            roles: payload.roles,
+            concurrencyLimit: payload.concurrencyLimit,
+            notes: payload.notes ?? "Promoted from bullpen to active roster",
+          });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, entry }));
+        } catch (err) {
+          this.logger.error("Failed to promote model from bullpen", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to promote model from bullpen" }));
+        }
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/models/bullpen/demote" && req.method === "POST") {
+      const rosterRepo = this.daemon.getModelRosterRepository();
+      if (!rosterRepo) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Model roster repository not available" }));
+        return;
+      }
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          if (!payload.modelId) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter 'modelId'" }));
+            return;
+          }
+          const entry = await rosterRepo.upsert({
+            modelId: payload.modelId,
+            tier: "BULLPEN",
+            notes: payload.notes ?? "Demoted from active roster to bullpen",
+          });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, entry }));
+        } catch (err) {
+          this.logger.error("Failed to demote model to bullpen", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to demote model to bullpen" }));
+        }
+      });
+      return;
+    }
+
+    // 4c0d3. REST API: POST /api/models/discover - Automated Local Model Discovery
+    if (url.pathname === "/api/models/discover" && req.method === "POST") {
+      const autoDiscoveryService = this.daemon.getModelAutoDiscoveryService();
+      if (!autoDiscoveryService) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Auto discovery service not available" }));
+        return;
+      }
+      try {
+        const result = await autoDiscoveryService.reconcile();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, ...result }));
+      } catch (err) {
+        this.logger.error("Failed to reconcile local model auto-discovery", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Failed to reconcile local model auto-discovery" }));
+      }
+      return;
+    }
+
     // 4c0e. REST API: POST /api/models/benchmark - Benchmark Model
     if (url.pathname === "/api/models/benchmark" && req.method === "POST") {
       let body = "";

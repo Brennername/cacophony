@@ -13,6 +13,7 @@ import {
   ModelProfileRepository,
   PrDiscussionRepository,
   HitlTicketRepository,
+  ModelRosterRepository,
 } from "@cacophony/db";
 import { HitlIssueIngestionService } from "../gitea/HitlIssueIngestionService.js";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
@@ -68,6 +69,10 @@ export class CacophonyDaemon {
   private prDiscussionRepo!: PrDiscussionRepository;
   private hitlTicketRepo!: HitlTicketRepository;
   private hitlIngestionService?: HitlIssueIngestionService | undefined;
+  private rosterRepo!: ModelRosterRepository;
+  private autoDiscoveryService?:
+    | import("../scheduler/ModelAutoDiscoveryService.js").ModelAutoDiscoveryService
+    | undefined;
   private prMergeGateCoordinator?: PrMergeGateCoordinator | undefined;
   private domainAdvisoryEvaluator?: DomainAdvisoryEvaluator | undefined;
   private telemetryPoller!: TelemetryPoller;
@@ -175,6 +180,7 @@ export class CacophonyDaemon {
     this.hitlTicketRepo = new HitlTicketRepository(this.driver);
     this.hitlIngestionService = new HitlIssueIngestionService(this.hitlTicketRepo);
     new ModelRegistryRepository(this.driver);
+    this.rosterRepo = new ModelRosterRepository(this.driver);
 
     // 3. Hardware Diagnostics & Telemetry
     const isHeroku = Boolean(
@@ -296,6 +302,7 @@ export class CacophonyDaemon {
       stageRepo: this.stageRepo,
       modelHealthRepository: this.healthRepo,
       regressionBurstThreshold: 3,
+      rosterRepo: this.rosterRepo,
       evictionManager,
       telemetryProvider,
       streamTapManager: this.streamTapManager,
@@ -308,6 +315,22 @@ export class CacophonyDaemon {
         "qwen2.5-coder:7b-instruct-q4_K_M": 1800000,
         "qwen2.5-coder:7b": 1800000,
       },
+    });
+
+    const { ModelAutoDiscoveryService } = await import(
+      "../scheduler/ModelAutoDiscoveryService.js"
+    );
+    this.autoDiscoveryService = new ModelAutoDiscoveryService(
+      this.scheduler.getProbe(),
+      this.rosterRepo,
+      this.modelProfileRepo,
+      this.tenancyGuard,
+    );
+
+    await this.autoDiscoveryService.reconcile().catch((err) => {
+      this.logger.warn("Initial model discovery reconciliation warning", {
+        error: String(err),
+      });
     });
 
     // Wire real or simulated worker pipeline
@@ -962,6 +985,16 @@ export class CacophonyDaemon {
 
   public getHitlTicketRepository(): HitlTicketRepository {
     return this.hitlTicketRepo;
+  }
+
+  public getModelRosterRepository(): ModelRosterRepository {
+    return this.rosterRepo;
+  }
+
+  public getModelAutoDiscoveryService():
+    | import("../scheduler/ModelAutoDiscoveryService.js").ModelAutoDiscoveryService
+    | undefined {
+    return this.autoDiscoveryService;
   }
 
   public getHitlIssueIngestionService(): HitlIssueIngestionService | undefined {
