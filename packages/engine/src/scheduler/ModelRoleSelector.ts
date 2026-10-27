@@ -33,18 +33,28 @@ export class ModelRoleSelector {
       "smollm2:360m",
       "qwen2.5-coder:1.5b",
       "qwen2.5-coder:3b",
+      "gemma3:4b",
     ];
     this.architectModels = config.architectModels ?? [
+      "phi4:latest",
+      "phi4",
+      "deepseek-coder-v2:16b",
       "deepseek-r1:8b",
       "qwen2.5-coder:14b",
       "qwen2.5-coder:7b",
     ];
     this.implementerModels = config.implementerModels ?? [
+      "qwen2.5-coder:7b-instruct-q4_K_M",
       "qwen2.5-coder:7b",
-      "qwen2.5-coder:14b",
+      "deepseek-coder-v2:16b",
+      "gemma3:4b",
       "gemma3:4b-it-qat",
+      "qwen2.5-coder:14b",
     ];
     this.reviewerModels = config.reviewerModels ?? [
+      "phi4:latest",
+      "phi4",
+      "deepseek-coder-v2:16b",
       "deepseek-r1:8b",
       "qwen2.5-coder:14b",
       "qwen2.5-coder:7b",

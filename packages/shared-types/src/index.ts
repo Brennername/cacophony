@@ -6,6 +6,7 @@
 export * from "./task.js";
 export * from "./telemetry.js";
 export * from "./model.js";
+export * from "./models.js";
 export * from "./review.js";
 export * from "./tool.js";
 export * from "./vault.js";

@@ -24,3 +24,4 @@ export * from "./InferenceProviderFactory.js";
 export * from "./VramPrefetchCoordinator.js";
 export * from "./FrontierReviewer.js";
 export * from "./MultiModelReviewCoordinator.js";
+export * from "./TableOfExpertsCoordinator.js";

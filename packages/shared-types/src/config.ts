@@ -20,7 +20,7 @@ export const CacophonySystemConfigSchema = z.object({
   concurrency_limit: z.number().int().positive().default(1),
   default_session_model: z.string().default("qwen2.5-coder:7b"),
   default_context_tokens: z.number().int().positive().default(8192),
-  role_models: z.record(AgentRoleSchema, z.string()),
+  role_models: z.record(AgentRoleSchema, z.string().optional()),
   candidate_models: z.array(z.string()),
   eviction_thresholds: z.object({
     consecutive_failures: z.number().int().min(1).default(3),

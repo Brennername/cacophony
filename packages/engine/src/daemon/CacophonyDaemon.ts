@@ -85,6 +85,9 @@ export class CacophonyDaemon {
     | undefined;
   private modelManager?:
     import("../inference/OllamaModelManager.js").OllamaModelManager | undefined;
+  private boutiqueOrchestrator?:
+    | import("../scheduler/BoutiqueBatchOrchestrator.js").BoutiqueBatchOrchestrator
+    | undefined;
   private tenancyGuard?:
     import("../scheduler/ModelTenancyGuard.js").ModelTenancyGuard | undefined;
   private benchmarkRunner?:
@@ -234,6 +237,14 @@ export class CacophonyDaemon {
       await import("../scheduler/ModelBenchmarkRunner.js");
 
     this.modelManager = new OllamaModelManager();
+    const { BoutiqueBatchOrchestrator } = await import(
+      "../scheduler/BoutiqueBatchOrchestrator.js"
+    );
+    this.boutiqueOrchestrator = new BoutiqueBatchOrchestrator({
+      rosterRepo: this.rosterRepo,
+      maintenanceService: this.maintenanceService,
+      modelClient: this.modelManager,
+    });
     const defaultProtectedModels = [
       process.env.DEFAULT_IMPLEMENTER_MODEL,
       process.env.DEFAULT_REVIEWER_MODEL,
@@ -1040,6 +1051,12 @@ export class CacophonyDaemon {
     | import("../inference/OllamaModelManager.js").OllamaModelManager
     | undefined {
     return this.modelManager;
+  }
+
+  public getBoutiqueOrchestrator():
+    | import("../scheduler/BoutiqueBatchOrchestrator.js").BoutiqueBatchOrchestrator
+    | undefined {
+    return this.boutiqueOrchestrator;
   }
 
   public getTenancyGuard():

@@ -171,7 +171,9 @@ export class TaskScheduler implements IModelPredictor {
     this.regressionBurstThreshold = options.regressionBurstThreshold ?? 3;
     this.onRegressionBurst = options.onRegressionBurst;
     this.perModelTimeoutMs = options.perModelTimeoutMs ?? {
+      "smollm2:135m": 120_000,
       "qwen2.5-coder:3b": 360_000,
+      "gemma3:4b": 420_000,
       "gemma3:4b-it-qat": 420_000,
       "gemma3:12b-it-qat": 780_000,
       "qwen2.5-coder:7b": 600_000,
@@ -179,6 +181,8 @@ export class TaskScheduler implements IModelPredictor {
       "deepseek-r1:8b": 840_000,
       "qwen2.5-coder:14b": 780_000,
       "deepseek-coder-v2:16b": 840_000,
+      "phi4": 840_000,
+      "phi4:latest": 840_000,
     };
 
     this.mutex = new ExecutionMutex();
@@ -199,8 +203,9 @@ export class TaskScheduler implements IModelPredictor {
     const trimmed = rawModel.trim();
     const aliasMap: Record<string, string> = {
       "deepseek-r1:8b-4k": "deepseek-r1:8b",
-      "gemma3:4b-it-qat-4k": "gemma3:4b-it-qat",
-      "gemma3:4b": "gemma3:4b-it-qat",
+      "gemma3:4b-it-qat-4k": "gemma3:4b",
+      "gemma3:4b-it-qat": "gemma3:4b",
+      "gemma3:4b-4k": "gemma3:4b",
       "gemma3:12b-it-qat-4k": "gemma3:12b-it-qat",
       "gemma3:12b": "gemma3:12b-it-qat",
       "qwen2.5-coder:3b-4k": "qwen2.5-coder:3b",
@@ -208,9 +213,10 @@ export class TaskScheduler implements IModelPredictor {
       "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
       "qwen2.5-coder:14b-4k": "qwen2.5-coder:14b",
       "deepseek-coder-v2:16b-4k": "deepseek-coder-v2:16b",
-      "phi-4": "phi4",
-      "phi-4:14b": "phi4",
-      "phi4:14b": "phi4",
+      "phi-4": "phi4:latest",
+      "phi-4:14b": "phi4:latest",
+      "phi4:14b": "phi4:latest",
+      "phi4": "phi4:latest",
     };
 
     if (aliasMap[trimmed]) {

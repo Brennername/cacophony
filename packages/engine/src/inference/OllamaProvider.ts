@@ -62,23 +62,6 @@ export class OllamaProvider implements IInferenceProvider {
     const cached = this.resolvedTagCache.get(requestedModel);
     if (cached) return cached;
 
-    // Static known aliases for local Ollama environments
-    const staticAliases: Record<string, string> = {
-      "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
-      "qwen2.5-coder:latest": "qwen2.5-coder:7b-instruct-q4_K_M",
-      "gemma3:4b": "gemma3:4b-it-qat",
-      "gemma3:4b-it": "gemma3:4b-it-qat",
-      "gemma3:12b": "gemma3:12b-it-qat",
-      "gemma3:12b-it": "gemma3:12b-it-qat",
-      "deepseek-coder-v2:latest": "deepseek-coder-v2:16b",
-      "deepseek-r1:latest": "deepseek-r1:8b",
-    };
-
-    if (staticAliases[requestedModel]) {
-      this.resolvedTagCache.set(requestedModel, staticAliases[requestedModel]!);
-      return staticAliases[requestedModel]!;
-    }
-
     try {
       const now = Date.now();
       if (
@@ -100,11 +83,37 @@ export class OllamaProvider implements IInferenceProvider {
 
       if (this.availableTagsCache && this.availableTagsCache.tags.length > 0) {
         const tags = this.availableTagsCache.tags;
+
+        // 1. Exact match in installed tags
         if (tags.includes(requestedModel)) {
           this.resolvedTagCache.set(requestedModel, requestedModel);
           return requestedModel;
         }
 
+        // 2. Suffix match with :latest
+        const withLatest = requestedModel.includes(":")
+          ? requestedModel
+          : `${requestedModel}:latest`;
+        if (tags.includes(withLatest)) {
+          this.resolvedTagCache.set(requestedModel, withLatest);
+          return withLatest;
+        }
+
+        const withoutLatest = requestedModel.endsWith(":latest")
+          ? requestedModel.replace(/:latest$/, "")
+          : requestedModel;
+        if (tags.includes(withoutLatest)) {
+          this.resolvedTagCache.set(requestedModel, withoutLatest);
+          return withoutLatest;
+        }
+
+        // 3. Fallback for gemma3:4b-it-qat -> gemma3:4b if gemma3:4b is installed
+        if (requestedModel.startsWith("gemma3:4b") && tags.includes("gemma3:4b")) {
+          this.resolvedTagCache.set(requestedModel, "gemma3:4b");
+          return "gemma3:4b";
+        }
+
+        // 4. Prefix match
         const prefixMatch = tags.find(
           (t) =>
             t.startsWith(requestedModel) ||
@@ -118,6 +127,24 @@ export class OllamaProvider implements IInferenceProvider {
       }
     } catch {
       // Fallback silently if tags endpoint is unreachable
+    }
+
+    // Static known aliases for local Ollama environments when tags endpoint is offline or model not in tags
+    const staticAliases: Record<string, string> = {
+      "qwen2.5-coder:7b": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "qwen2.5-coder:latest": "qwen2.5-coder:7b-instruct-q4_K_M",
+      "gemma3:4b-it": "gemma3:4b",
+      "gemma3:4b-it-qat": "gemma3:4b",
+      "gemma3:12b": "gemma3:12b-it-qat",
+      "gemma3:12b-it": "gemma3:12b-it-qat",
+      "deepseek-coder-v2:latest": "deepseek-coder-v2:16b",
+      "deepseek-r1:latest": "deepseek-r1:8b",
+      "phi4": "phi4:latest",
+    };
+
+    if (staticAliases[requestedModel]) {
+      this.resolvedTagCache.set(requestedModel, staticAliases[requestedModel]!);
+      return staticAliases[requestedModel]!;
     }
 
     return requestedModel;

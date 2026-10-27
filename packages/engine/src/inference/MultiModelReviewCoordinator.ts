@@ -1,6 +1,7 @@
 import type { ReviewVerdict, ReviewComment } from "@cacophony/shared-types";
 import type { IInferenceProvider } from "./IInferenceProvider.js";
 import { extractJsonObjectString } from "../utils/json_utils.js";
+import { TableOfExpertsCoordinator, type PandemoniumFeedback } from "./TableOfExpertsCoordinator.js";
 
 export type SpecializedReviewRole =
   | "security_reviewer"
@@ -207,6 +208,33 @@ export class MultiModelReviewCoordinator {
       timingSummary,
       complianceNotes,
     };
+  }
+
+  /**
+   * Evaluates code changes through the decentralized Table of Experts Pandemonium architecture.
+   */
+  public async evaluateWithTableOfExperts(
+    context: MultiModelReviewContext,
+  ): Promise<PandemoniumFeedback> {
+    const tableCoordinator = new TableOfExpertsCoordinator({
+      inferenceProvider: this.inferenceProvider,
+      defaultModel: this.defaultModel,
+      fallbackModel: this.fallbackModel,
+      expertModels: {
+        security: this.roleModels.security_reviewer,
+        dx_ux: this.roleModels.dx_ux_reviewer,
+        architecture: this.roleModels.architecture_reviewer,
+      },
+      timeoutMs: this.roleTimeoutMs,
+    });
+
+    return tableCoordinator.evaluateDiff({
+      taskId: context.taskId,
+      taskTitle: context.taskTitle,
+      diff: context.diff,
+      focusFiles: context.focusFiles,
+      testOutput: context.testOutput,
+    });
   }
 
   /**

@@ -48,13 +48,22 @@ export class CacophonyHttpServer {
   /**
    * Sanitizes task records before sending to client, ensuring PR URLs are browser-accessible.
    */
-  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(task: T): T;
-  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(task: T | null | undefined): T | null;
-  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(task: T | null | undefined): T | null {
+  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(
+    task: T,
+    clientHost?: string,
+  ): T;
+  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(
+    task: T | null | undefined,
+    clientHost?: string,
+  ): T | null;
+  private sanitizeTaskForClient<T extends { prUrl?: string | null }>(
+    task: T | null | undefined,
+    clientHost?: string,
+  ): T | null {
     if (!task) return null;
     return {
       ...task,
-      prUrl: normalizeGiteaUrl(task.prUrl),
+      prUrl: normalizeGiteaUrl(task.prUrl, undefined, clientHost),
     };
   }
   private readonly logger = new StructuredLogger("CacophonyHttpServer");
@@ -975,12 +984,12 @@ export class CacophonyHttpServer {
           status: statusParam,
         });
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(tasks.map((t) => this.sanitizeTaskForClient(t))));
+        res.end(JSON.stringify(tasks.map((t) => this.sanitizeTaskForClient(t, forwardedHost))));
         return;
       }
       const pending = await taskRepo.listPending();
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(pending.map((t) => this.sanitizeTaskForClient(t))));
+      res.end(JSON.stringify(pending.map((t) => this.sanitizeTaskForClient(t, forwardedHost))));
       return;
     }
 
@@ -1506,7 +1515,7 @@ export class CacophonyHttpServer {
       const stageRepo = this.daemon.getStageRepository();
       const stages = await stageRepo.getStagesForTask(taskId);
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(this.sanitizeTaskForClient({ ...task, stages })));
+      res.end(JSON.stringify(this.sanitizeTaskForClient({ ...task, stages }, forwardedHost)));
       return;
     }
     if (taskDetailMatch && req.method === "PATCH") {
@@ -1539,7 +1548,7 @@ export class CacophonyHttpServer {
           }
           const updated = await taskRepo.getById(taskId);
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true, task: this.sanitizeTaskForClient(updated) }));
+          res.end(JSON.stringify({ success: true, task: this.sanitizeTaskForClient(updated, forwardedHost) }));
         } catch (err: unknown) {
           this.logger.error("Failed to update task", {
             error: err instanceof Error ? err.message : String(err),
@@ -4242,6 +4251,115 @@ export class CacophonyHttpServer {
 
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: true, ticket }));
+      return;
+    }
+
+    // 4z7. REST API: POST /api/boutique/enqueue - Enqueue specialized boutique task
+    if (url.pathname === "/api/boutique/enqueue" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk;
+      });
+      req.on("end", async () => {
+        try {
+          const payload = body ? JSON.parse(body) : {};
+          if (!payload.title || !payload.targetModel) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required fields: title, targetModel" }));
+            return;
+          }
+
+          const orchestrator = this.daemon.getBoutiqueOrchestrator();
+          if (!orchestrator) {
+            res.writeHead(503, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "BoutiqueBatchOrchestrator not initialized" }));
+            return;
+          }
+
+          const task = await orchestrator.enqueueTask({
+            id: payload.id,
+            title: payload.title,
+            targetModel: payload.targetModel,
+            payload: payload.payload,
+            milestoneTag: payload.milestoneTag,
+          });
+
+          res.writeHead(201, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, task }));
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Failed to enqueue boutique task";
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+      return;
+    }
+
+    // 4z8. REST API: POST /api/boutique/run-batch - Execute batched boutique tasks
+    if (url.pathname === "/api/boutique/run-batch" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk;
+      });
+      req.on("end", async () => {
+        try {
+          const payload = body ? JSON.parse(body) : {};
+          const targetModel = payload.targetModel || url.searchParams.get("targetModel");
+          const force = payload.force === true || url.searchParams.get("force") === "true";
+
+          if (!targetModel) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter: targetModel" }));
+            return;
+          }
+
+          const orchestrator = this.daemon.getBoutiqueOrchestrator();
+          if (!orchestrator) {
+            res.writeHead(503, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "BoutiqueBatchOrchestrator not initialized" }));
+            return;
+          }
+
+          const result = await orchestrator.executeBatch(targetModel, { force });
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, result }));
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Failed to execute boutique batch";
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+      return;
+    }
+
+    // 4z9. REST API: GET /api/boutique/queue - List queued boutique tasks
+    if (url.pathname === "/api/boutique/queue" && req.method === "GET") {
+      const targetModel = url.searchParams.get("targetModel") || undefined;
+      const orchestrator = this.daemon.getBoutiqueOrchestrator();
+      if (!orchestrator) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "BoutiqueBatchOrchestrator not initialized" }));
+        return;
+      }
+
+      const queue = orchestrator.getPendingQueue(targetModel);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, count: queue.length, queue }));
+      return;
+    }
+
+    // 4z10. REST API: GET /api/boutique/status - Get boutique batch status
+    if (url.pathname === "/api/boutique/status" && req.method === "GET") {
+      const orchestrator = this.daemon.getBoutiqueOrchestrator();
+      if (!orchestrator) {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "BoutiqueBatchOrchestrator not initialized" }));
+        return;
+      }
+
+      const status = orchestrator.getStatus();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, status }));
       return;
     }
 
