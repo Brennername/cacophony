@@ -1,12 +1,30 @@
-import { describe, it, expect } from 'vitest';
-import { sanitizeGiteaUrl } from './url-normalizer';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import {
+  sanitizeGiteaUrl,
+  setFrontendHostDomain,
+  isContainerId,
+} from './url-normalizer';
 
-describe('sanitizeGiteaUrl', () => {
+describe('sanitizeGiteaUrl & url-normalizer', () => {
+  beforeEach(() => {
+    setFrontendHostDomain(null);
+  });
+
+  afterEach(() => {
+    setFrontendHostDomain(null);
+  });
+
   it('should return empty string for null, undefined, or empty inputs', () => {
     expect(sanitizeGiteaUrl(null)).toBe('');
     expect(sanitizeGiteaUrl(undefined)).toBe('');
     expect(sanitizeGiteaUrl('')).toBe('');
     expect(sanitizeGiteaUrl('   ')).toBe('');
+  });
+
+  it('should recognize container ID hashes', () => {
+    expect(isContainerId('ac2c026bbfff')).toBe(true);
+    expect(isContainerId('localhost')).toBe(false);
+    expect(isContainerId('lan-server.local')).toBe(false);
   });
 
   it('should transform internal docker http://cacophony-gitea:3000 URLs to localhost:19634', () => {
@@ -27,7 +45,14 @@ describe('sanitizeGiteaUrl', () => {
     expect(sanitizeGiteaUrl(input)).toBe(expected);
   });
 
-  it('should leave already valid localhost URLs untouched', () => {
+  it('should remap ephemeral container ID hashes to browser host base', () => {
+    setFrontendHostDomain('lan-host.local');
+    const input = 'http://ac2c026bbfff:19634/NeXeN/cacophony/issues/908';
+    const expected = 'http://lan-host.local:19634/NeXeN/cacophony/issues/908';
+    expect(sanitizeGiteaUrl(input)).toBe(expected);
+  });
+
+  it('should leave already valid localhost URLs untouched when host is localhost', () => {
     const input = 'http://localhost:19634/NeXeN/cacophony/pulls/12';
     expect(sanitizeGiteaUrl(input)).toBe(input);
   });

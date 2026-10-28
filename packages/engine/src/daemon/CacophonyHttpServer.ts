@@ -14,7 +14,13 @@ import {
 } from "@cacophony/shared-types";
 import { DatabaseBackupService } from "@cacophony/db";
 import { StructuredLogger } from "../telemetry/StructuredLogger.js";
-import { normalizeGiteaUrl } from "../gitea/giteaUrlHelper.js";
+import {
+  normalizeGiteaUrl,
+  getNetworkAccessSettings,
+  updateNetworkAccessSettings,
+  resolvePrimaryHostDomain,
+  resolvePublicGiteaBase,
+} from "../gitea/giteaUrlHelper.js";
 
 
 export interface UnifiedServerConfig {
@@ -517,8 +523,13 @@ export class CacophonyHttpServer {
 
     // 1b. REST API: Dynamic Network Profile Configuration
     if (url.pathname === "/api/config/network" && req.method === "GET") {
+      const settings = getNetworkAccessSettings();
       const networkConfig = {
         resolvedOrigin: clientOrigin,
+        primaryHostDomain: resolvePrimaryHostDomain(),
+        allowLocalNetwork: settings.allowLocalNetwork,
+        customHostSpecified: settings.customHostSpecified,
+        customHostDomain: settings.customHostDomain,
         forwardedHost,
         forwardedProto,
         isLoopback:
@@ -529,9 +540,58 @@ export class CacophonyHttpServer {
         isLan: /^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(
           forwardedHost,
         ),
+        giteaPublicBase: resolvePublicGiteaBase(undefined, forwardedHost),
       };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(networkConfig));
+      return;
+    }
+
+    if (url.pathname === "/api/config/network" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const updated = updateNetworkAccessSettings({
+            ...(typeof payload.allowLocalNetwork === "boolean"
+              ? { allowLocalNetwork: payload.allowLocalNetwork }
+              : {}),
+            ...(typeof payload.customHostSpecified === "boolean"
+              ? { customHostSpecified: payload.customHostSpecified }
+              : {}),
+            ...(typeof payload.customHostDomain === "string"
+              ? { customHostDomain: payload.customHostDomain }
+              : {}),
+          });
+
+          const publicBase = resolvePublicGiteaBase(undefined, forwardedHost);
+          const normalizedTaskCount = await this.daemon
+            .getTaskRepository()
+            .normalizeGiteaUrls(publicBase);
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              success: true,
+              settings: updated,
+              primaryHostDomain: resolvePrimaryHostDomain(),
+              giteaPublicBase: publicBase,
+              normalizedTaskCount,
+            }),
+          );
+        } catch (err: unknown) {
+          this.logger.error("Failed to update network settings", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({ error: "Failed to update network settings" }),
+          );
+        }
+      });
       return;
     }
 
@@ -1922,7 +1982,11 @@ export class CacophonyHttpServer {
         statusParam ? { status: statusParam } : undefined,
       );
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(allTasks));
+      res.end(
+        JSON.stringify(
+          allTasks.map((t) => this.sanitizeTaskForClient(t, forwardedHost)),
+        ),
+      );
       return;
     }
 

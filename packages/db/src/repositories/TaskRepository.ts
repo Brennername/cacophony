@@ -427,11 +427,43 @@ export class TaskRepository {
       "UPDATE tasks SET pr_url = REPLACE(pr_url, 'http://cacophony-gitea', $1) WHERE pr_url LIKE '%cacophony-gitea%'",
       [base],
     );
+    let regexUpdated = 0;
+    try {
+      const rows = await this.driver.query<{ id: string; pr_url: string }>(
+        "SELECT id, pr_url FROM tasks WHERE pr_url IS NOT NULL",
+      );
+      for (const row of rows) {
+        if (!row.pr_url) continue;
+        const isContainerUrl = /^https?:\/\/[0-9a-f]{12,64}(?::\d+)?\//i.test(row.pr_url);
+        const isLocalhostUrl = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\//i.test(row.pr_url);
+        const isInternalAlias = row.pr_url.includes("cacophony-gitea");
+
+        if (
+          isContainerUrl ||
+          isInternalAlias ||
+          (!base.includes("//localhost") && !base.includes("//127.0.0.1") && isLocalhostUrl)
+        ) {
+          const pathPart = row.pr_url.replace(/^https?:\/\/[^/]+(?:\/|$)/i, "");
+          const newUrl = `${base}/${pathPart}`;
+          if (newUrl !== row.pr_url) {
+            await this.driver.execute(
+              "UPDATE tasks SET pr_url = $1 WHERE id = $2",
+              [newUrl, row.id],
+            );
+            regexUpdated++;
+          }
+        }
+      }
+    } catch {
+      // Ignore if query fails in constrained sandbox
+    }
+
     return (
       (res1.rowsAffected ?? 0) +
       (res2.rowsAffected ?? 0) +
       (res3.rowsAffected ?? 0) +
-      (res4.rowsAffected ?? 0)
+      (res4.rowsAffected ?? 0) +
+      regexUpdated
     );
   }
 

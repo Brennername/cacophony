@@ -48,6 +48,7 @@ services:
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
       - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI:-}
+      - HOST_DOMAIN=${HOST_DOMAIN:-${HOSTNAME:-}}
     volumes:
       - ./conf:/app/conf:ro
       - ./data:/app/data:rw
@@ -56,6 +57,7 @@ services:
       - ./.git:/app/.git:rw
       - ./.env:/app/.env:ro
       - /sys:/host/sys:ro
+      - /etc/hostname:/host/etc/hostname:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

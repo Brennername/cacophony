@@ -67,6 +67,15 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [x] T109.4: Harden `ModelEvictionManager` to prevent physical model deletion (`DELETE /api/delete`) on transient task failures, and add `--no-verify` with `SKIP_CODEQL=1` to Gitea PR git push routines to ensure container promotion succeeds. [Files: packages/engine/src/scheduler/ModelEvictionManager.ts, packages/engine/src/gitea/GitWorktreeManager.ts, packages/engine/src/gitea/GiteaPrClient.ts] [Test: npm run test --workspace=@cacophony/engine]
 - [x] T109.5: Document frontier architectural directives in `docs/taskcade_shadow.md` (Phase S5) detailing Bullpen rotation, Table of Experts specialized roles, and Batched Boutique workflows for NVMe SSD endurance and Ollama pull budget protection. [Files: docs/taskcade_shadow.md]
 
+## Phase 110: Network Ingress Configuration, Container ID Sanitization & Uniform Host Domain Resolution
+
+- [x] T110.1: Implement Docker container ID hash detection (`isContainerId`) to identify and reject ephemeral 12-char and 64-char hex strings in URL normalizers, resolving true host domain instead. [Files: packages/engine/src/gitea/giteaUrlHelper.ts, packages/frontend/src/app/utils/url-normalizer.ts, packages/engine/src/tests/gitea_url_helper.test.ts, packages/frontend/src/app/utils/url-normalizer.spec.ts] [Test: node --test packages/engine/dist/tests/gitea_url_helper.test.js]
+- [x] T110.2: Implement `NetworkAccessSettings` with configurable local LAN/Wi-Fi toggle (`allowLocalNetwork`) and optional custom domain specification (`customHostSpecified`, `customHostDomain`), defaulting to allowing LAN access via host resolution and defaulting custom host to `localhost`. [Files: packages/engine/src/gitea/giteaUrlHelper.ts, packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: node --test packages/engine/dist/tests/gitea_url_helper.test.js]
+- [x] T110.3: Expose `GET /api/config/network` and `POST /api/config/network` endpoints to query and persist network settings dynamically and trigger batch database URL normalization. [Files: packages/engine/src/daemon/CacophonyHttpServer.ts, packages/db/src/repositories/TaskRepository.ts] [Test: npm run test --workspace=@cacophony/engine]
+- [x] T110.4: Update `TaskRepository.normalizeGiteaUrls()` to query all historical task records and remap container ID hashes, internal aliases, and loopback URLs to the resolved host domain base. [Files: packages/db/src/repositories/TaskRepository.ts] [Test: npm run test --workspace=@cacophony/db]
+- [x] T110.5: Build mobile-first network configuration panel in `SettingsViewComponent` with LAN toggle switch, custom host checkbox, and domain text input. [Files: packages/frontend/src/app/components/views/settings-view/settings-view.component.ts, packages/frontend/src/app/components/views/settings-view/settings-view.component.html, packages/frontend/src/app/components/views/settings-view/settings-view.component.css] [Test: npm run test --workspace=@cacophony/frontend]
+- [x] T110.6: Sanitize all task PR links in `GET /api/history` through `sanitizeTaskForClient` ensuring uniform host resolution across mobile and desktop clients. [Files: packages/engine/src/daemon/CacophonyHttpServer.ts] [Test: npm run test --workspace=@cacophony/engine]
+
 ---
 
 ## Phase 102: Comprehensive Unit Test Expansion & Edge-Case Coverage
@@ -520,6 +529,60 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 ---
 
 ## Rehabilitated Taskcade Queue
+
+### Task regr-mvqjruto-b36r Rehabilitation [2026-10-28T02:19:08.707Z]
+- **Parent Task**: [TDD Regression] should handle edge cases for duration extraction (`regr-mvqjruto-b36r`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqjruto-b36r.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle edge cases for duration extraction [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvqjruto-b36r.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle edge cases for duration extraction [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvqj7ehh-9l73 Rehabilitation [2026-10-28T02:18:26.875Z]
+- **Parent Task**: [TDD Regression] extractDuration Edge Cases (`regr-mvqj7ehh-9l73`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqj7ehh-9l73.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] extractDuration Edge Cases [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvqj7ehh-9l73.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] extractDuration Edge Cases [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvqj7eh8-cqop Rehabilitation [2026-10-28T02:17:58.037Z]
+- **Parent Task**: [TDD Regression] should handle durations without the 's' suffix (`regr-mvqj7eh8-cqop`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqj7eh8-cqop.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle durations without the 's' suffix [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvqj7eh8-cqop.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle durations without the 's' suffix [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvqbh6oq-c4bc Rehabilitation [2026-10-28T02:17:06.599Z]
+- **Parent Task**: [TDD Regression] should handle stderr with assertions and line numbers in different formats (`regr-mvqbh6oq-c4bc`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqbh6oq-c4bc.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with assertions and line numbers in different formats [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvqbh6oq-c4bc.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions and line numbers in different formats [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvqbh6om-gw2j Rehabilitation [2026-10-28T02:16:31.512Z]
+- **Parent Task**: [TDD Regression] should handle stderr with assertions without line numbers gracefully (`regr-mvqbh6om-gw2j`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqbh6om-gw2j.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle stderr with assertions without line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvqbh6om-gw2j.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle stderr with assertions without line numbers gracefully [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
+
+### Task regr-mvqbh6oi-pjls Rehabilitation [2026-10-28T02:16:20.554Z]
+- **Parent Task**: [TDD Regression] should handle multiple failing tests with different file paths and line numbers (`regr-mvqbh6oi-pjls`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqbh6oi-pjls.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle multiple failing tests with different file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+  - [ ] `regr-mvqbh6oi-pjls.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle multiple failing tests with different file paths and line numbers [Role: test_engineer] [Files: packages/engine/src/tests/structured_test_output_parser.test.ts packages/engine/src/testing/StructuredTestOutputParser.ts]
+
 
 
 

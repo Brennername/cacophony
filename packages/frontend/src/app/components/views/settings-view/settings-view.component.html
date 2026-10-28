@@ -72,9 +72,88 @@
     <!-- Dynamic Network Profile Card -->
     <div class="cacophony-card full-width">
       <h2>Network & Multi-Device Ingress</h2>
-      <p class="card-desc">Dynamic ingress host resolution and client network profile</p>
+      <p class="card-desc">
+        Configure local Wi-Fi / LAN multi-device access, mDNS hostname broadcast, and custom domain endpoints
+      </p>
 
-      <div class="network-details">
+      <div class="network-controls-box">
+        <!-- Toggle: Allow Local Network / Wi-Fi Access -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">Allow Local Network / Wi-Fi Access</span>
+            <span class="control-sub">
+              Broadcast local LAN domain via local DNS/mDNS so mobile phones and local devices can reach links
+            </span>
+          </div>
+          <label class="switch" id="toggle-lan-access-label">
+            <input
+              type="checkbox"
+              id="toggle-lan-access"
+              [checked]="allowLocalNetwork()"
+              (change)="toggleAllowLocalNetwork()"
+            />
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <!-- Checkbox: Specify Custom Domain / Host -->
+        <div class="control-row">
+          <div class="control-info">
+            <span class="control-title">Specify Custom Domain or Host</span>
+            <span class="control-sub">
+              Override auto-discovered LAN domain with a specific hostname (defaults to localhost when checked)
+            </span>
+          </div>
+          <label class="checkbox-container" id="toggle-custom-host-label">
+            <input
+              type="checkbox"
+              id="toggle-custom-host"
+              [checked]="customHostSpecified()"
+              (change)="toggleCustomHostSpecified()"
+            />
+            <span class="checkmark"></span>
+          </label>
+        </div>
+
+        @if (customHostSpecified()) {
+          <div class="custom-domain-row">
+            <label for="custom-host-input" class="label">Custom Host Domain:</label>
+            <input
+              type="text"
+              id="custom-host-input"
+              class="form-input font-mono"
+              placeholder="localhost"
+              [value]="customHostDomain()"
+              (input)="onCustomHostDomainChange($any($event.target).value)"
+            />
+          </div>
+        }
+
+        <div class="network-save-actions">
+          <button
+            class="btn btn-primary"
+            id="save-network-settings-btn"
+            [disabled]="isSaving()"
+            (click)="saveNetworkSettings()"
+          >
+            {{ isSaving() ? 'Saving & Normalizing Links...' : 'Save Network Settings' }}
+          </button>
+
+          @if (saveSuccessMessage()) {
+            <span class="save-success-badge">{{ saveSuccessMessage() }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="network-details" style="margin-top: 1.25rem;">
+        <div class="network-row">
+          <span class="label">Primary Host Domain:</span>
+          <span class="val font-mono highlight">{{ networkInfo().primaryHostDomain || 'localhost' }}</span>
+        </div>
+        <div class="network-row">
+          <span class="label">Gitea Public Endpoint:</span>
+          <span class="val font-mono">{{ networkInfo().giteaPublicBase || 'http://localhost:19634' }}</span>
+        </div>
         <div class="network-row">
           <span class="label">Client Base Origin:</span>
           <span class="val font-mono">{{ networkInfo().baseUrl }}</span>

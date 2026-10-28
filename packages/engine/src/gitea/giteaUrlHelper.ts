@@ -1,19 +1,72 @@
 import * as os from "node:os";
+import * as fs from "node:fs";
 
 /**
  * Utility helper for normalizing and sanitizing Git/Gitea URLs.
  *
  * Inside containerized environments, internal services communicate using Docker network
  * aliases (e.g. `http://cacophony-gitea:3000`). However, links exposed to client browsers
- * or saved in user-facing task records must resolve to the externally accessible endpoint
- * (e.g. `http://nexen-desktop:19634` or configured host domain).
+ * or saved in user-facing task records must resolve to the externally accessible endpoint.
  *
  * When accessed from mobile devices on a local area network or VPN, `localhost` links fail
  * because `localhost` resolves to the phone itself. This utility dynamically ensures
- * the host machine's domain (e.g. `nexen-desktop`) is used as the primary access endpoint.
+ * the host machine's domain is used as the primary access endpoint while rejecting
+ * ephemeral Docker container ID hashes.
  */
 
+export interface NetworkAccessSettings {
+  readonly allowLocalNetwork: boolean;
+  readonly customHostSpecified: boolean;
+  readonly customHostDomain: string;
+}
+
+let networkAccessSettings: NetworkAccessSettings = {
+  allowLocalNetwork: true,
+  customHostSpecified: false,
+  customHostDomain: "localhost",
+};
+
 let globalHostDomainOverride: string | null = null;
+
+/**
+ * Checks if a given hostname matches an ephemeral Docker container ID hash (12 or 64 hex characters).
+ */
+export function isContainerId(hostname: string | null | undefined): boolean {
+  if (!hostname) return false;
+  const clean = hostname.trim().toLowerCase();
+  return /^[0-9a-f]{12}$/.test(clean) || /^[0-9a-f]{64}$/.test(clean);
+}
+
+/**
+ * Returns the current network access and multi-device ingress settings.
+ */
+export function getNetworkAccessSettings(): NetworkAccessSettings {
+  return { ...networkAccessSettings };
+}
+
+/**
+ * Updates the network access settings and applies corresponding domain overrides.
+ */
+export function updateNetworkAccessSettings(
+  updates: Partial<NetworkAccessSettings>,
+): NetworkAccessSettings {
+  const merged = {
+    ...networkAccessSettings,
+    ...updates,
+  };
+  if (merged.customHostDomain !== undefined) {
+    merged.customHostDomain = merged.customHostDomain.trim() || "localhost";
+  }
+  networkAccessSettings = merged;
+  if (!networkAccessSettings.allowLocalNetwork) {
+    setGlobalHostDomain("localhost");
+  } else if (networkAccessSettings.customHostSpecified) {
+    setGlobalHostDomain(networkAccessSettings.customHostDomain);
+  } else {
+    setGlobalHostDomain(null);
+  }
+  return { ...networkAccessSettings };
+}
 
 /**
  * Sets a runtime global host domain override (e.g. from server configuration, incoming requests, or CLI).
@@ -32,24 +85,64 @@ export function getGlobalHostDomain(): string | null {
 /**
  * Resolves the primary host domain for external client access.
  * Priority order:
- * 1. Runtime global override set via setGlobalHostDomain()
- * 2. Explicit environment variables: HOST_DOMAIN, PUBLIC_HOST, CUSTOM_DOMAIN
- * 3. System hostname from os.hostname() when available and not a loopback
- * 4. Fallback to "localhost"
+ * 1. If local network is disabled, return "localhost"
+ * 2. If custom host is specified in settings, return customHostDomain
+ * 3. Runtime global override set via setGlobalHostDomain() (excluding container IDs)
+ * 4. Explicit environment variables: HOST_DOMAIN, PUBLIC_HOST, CUSTOM_DOMAIN, LAN_HOSTNAME
+ * 5. Host machine /etc/hostname mounted into container (/host/etc/hostname)
+ * 6. Local /etc/hostname when running directly on Linux/Unix host
+ * 7. System hostname from os.hostname() when available, not a loopback, and not a container ID
+ * 8. Active non-internal LAN IPv4 address from network interfaces
+ * 9. Fallback to "localhost"
  */
 export function resolvePrimaryHostDomain(): string {
-  if (globalHostDomainOverride) {
+  if (!networkAccessSettings.allowLocalNetwork) {
+    return "localhost";
+  }
+
+  if (networkAccessSettings.customHostSpecified) {
+    return networkAccessSettings.customHostDomain.trim() || "localhost";
+  }
+
+  if (globalHostDomainOverride && !isContainerId(globalHostDomainOverride)) {
     return globalHostDomainOverride;
   }
 
   const envHost =
     process.env["HOST_DOMAIN"] ||
     process.env["PUBLIC_HOST"] ||
-    process.env["CUSTOM_DOMAIN"];
-  if (envHost && envHost.trim()) {
+    process.env["CUSTOM_DOMAIN"] ||
+    process.env["LAN_HOSTNAME"] ||
+    process.env["HOST_HOSTNAME"];
+  if (envHost && envHost.trim() && !isContainerId(envHost.trim())) {
     return envHost.trim();
   }
 
+  // 1. Check mounted host /etc/hostname inside Docker container
+  try {
+    if (fs.existsSync("/host/etc/hostname")) {
+      const hostFile = fs.readFileSync("/host/etc/hostname", "utf-8").trim();
+      if (hostFile && !isContainerId(hostFile) && hostFile !== "localhost") {
+        return hostFile;
+      }
+    }
+  } catch {
+    // Ignore file system read errors
+  }
+
+  // 2. Check local /etc/hostname when running directly on host
+  try {
+    if (fs.existsSync("/etc/hostname")) {
+      const hostFile = fs.readFileSync("/etc/hostname", "utf-8").trim();
+      if (hostFile && !isContainerId(hostFile) && hostFile !== "localhost") {
+        return hostFile;
+      }
+    }
+  } catch {
+    // Ignore file system read errors
+  }
+
+  // 3. Check os.hostname() if it is not an ephemeral Docker container ID
   try {
     const sysHostname = os.hostname();
     if (
@@ -57,12 +150,37 @@ export function resolvePrimaryHostDomain(): string {
       sysHostname.trim() &&
       sysHostname !== "localhost" &&
       sysHostname !== "127.0.0.1" &&
-      sysHostname !== "::1"
+      sysHostname !== "::1" &&
+      !isContainerId(sysHostname)
     ) {
       return sysHostname.trim();
     }
   } catch {
     // os.hostname may fail in restricted sandboxes
+  }
+
+  // 4. Enumerate local LAN IPv4 network interfaces if running in container without mounted hostname
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      if (
+        name.startsWith("lo") ||
+        name.startsWith("docker") ||
+        name.startsWith("br-") ||
+        name.startsWith("veth")
+      ) {
+        continue;
+      }
+      const list = interfaces[name];
+      if (!list) continue;
+      for (const info of list) {
+        if (info.family === "IPv4" && !info.internal && !info.address.startsWith("127.")) {
+          return info.address;
+        }
+      }
+    }
+  } catch {
+    // Ignore network interface enumeration failures
   }
 
   return "localhost";
@@ -88,10 +206,15 @@ export function resolvePublicGiteaBase(
   const giteaPort = process.env["PORT_GITEA_HTTP"] || "19634";
 
   // If clientHost was passed (e.g. from an HTTP request's Host or X-Forwarded-Host header),
-  // extract host without port and use it:
+  // extract host without port and use it if it is not a Docker container ID:
   if (clientHost && clientHost.trim()) {
     const cleanHost = clientHost.trim().split(":")[0]!;
-    if (cleanHost && cleanHost !== "localhost" && cleanHost !== "127.0.0.1") {
+    if (
+      cleanHost &&
+      cleanHost !== "localhost" &&
+      cleanHost !== "127.0.0.1" &&
+      !isContainerId(cleanHost)
+    ) {
       return `http://${cleanHost}:${giteaPort}`;
     }
   }
@@ -104,12 +227,15 @@ export function resolvePublicGiteaBase(
     while (base.endsWith("/")) {
       base = base.slice(0, -1);
     }
-    // If the configured URL uses localhost/127.0.0.1, and a primary host domain exists
-    // (e.g. nexen-desktop or HOST_DOMAIN), remap it to the primary host domain
-    // so mobile devices on LAN can resolve the link via local DNS:
-    if (primaryDomain !== "localhost" && primaryDomain !== "127.0.0.1") {
+    // If the configured URL uses localhost/127.0.0.1 or a container ID, and a primary host domain exists,
+    // remap it to the primary host domain so mobile devices on LAN can resolve the link via local DNS:
+    if (
+      primaryDomain !== "localhost" &&
+      primaryDomain !== "127.0.0.1" &&
+      !isContainerId(primaryDomain)
+    ) {
       base = base.replace(
-        /^(https?:\/\/)(?:localhost|127\.0\.0\.1)(?::\d+)?/i,
+        /^(https?:\/\/)(?:localhost|127\.0\.0\.1|[0-9a-f]{12,64})(?::\d+)?/i,
         `$1${primaryDomain}:${giteaPort}`,
       );
     }
@@ -121,8 +247,8 @@ export function resolvePublicGiteaBase(
 
 /**
  * Normalizes a raw Gitea URL by replacing any internal Docker container alias,
- * invalid custom protocol scheme, or hardcoded localhost loopback with the primary
- * browser-accessible host domain.
+ * invalid custom protocol scheme, ephemeral container ID hash, or hardcoded localhost loopback
+ * with the primary browser-accessible host domain.
  *
  * @param rawUrl The raw URL string returned from Gitea API or stored in records.
  * @param overridePublicBase Optional override for the public base URL.
@@ -161,7 +287,13 @@ export function normalizeGiteaUrl(
     normalized = `${publicBase}/${cleanPath}`;
   }
 
-  // 2. If publicBase points to a host domain (such as nexen-desktop),
+  // 2. Remap ephemeral Docker container ID hostnames (12 or 64 hex characters) e.g. //ac2c026bbfff:19634
+  normalized = normalized.replace(
+    /^(https?:\/\/)[0-9a-f]{12,64}(?::\d+)?(\/.*)?$/i,
+    (_match, _proto, restPath) => `${publicBase}${restPath || ""}`,
+  );
+
+  // 3. If publicBase points to a host domain,
   //    remap any hardcoded localhost/127.0.0.1 references in Gitea URLs so mobile devices
   //    and local DNS can reach the link when clicked:
   if (
@@ -171,9 +303,7 @@ export function normalizeGiteaUrl(
   ) {
     normalized = normalized.replace(
       /^(https?:\/\/)(?:localhost|127\.0\.0\.1)(?::\d+)?(\/.*)?$/i,
-      (_match, _proto, restPath) => {
-        return `${publicBase}${restPath || ""}`;
-      },
+      (_match, _proto, restPath) => `${publicBase}${restPath || ""}`,
     );
   }
 

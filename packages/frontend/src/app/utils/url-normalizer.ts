@@ -1,11 +1,21 @@
 /**
  * Utility functions for frontend URL normalization and sanitization.
- * Ensures internal container hosts and custom schemes (such as `cacophony-gitea`)
- * or hardcoded `localhost` references are safely remapped to browser-accessible host endpoints
- * using the domain of the host (such as `nexen-desktop`) as primary access for local DNS and mobile clients.
+ * Ensures internal container hosts and custom schemes (such as `cacophony-gitea`),
+ * ephemeral Docker container ID hashes, or hardcoded `localhost` references are safely
+ * remapped to browser-accessible host endpoints using the domain of the host
+ * as primary access for local DNS and mobile clients.
  */
 
 let globalFrontendHostDomainOverride: string | null = null;
+
+/**
+ * Checks if a hostname matches an ephemeral Docker container ID hash (12 or 64 hex characters).
+ */
+export function isContainerId(hostname: string | null | undefined): boolean {
+  if (!hostname) return false;
+  const clean = hostname.trim().toLowerCase();
+  return /^[0-9a-f]{12}$/.test(clean) || /^[0-9a-f]{64}$/.test(clean);
+}
 
 /**
  * Sets a runtime override for the host domain in the frontend.
@@ -18,12 +28,12 @@ export function setFrontendHostDomain(domain: string | null | undefined): void {
  * Resolves the current host domain from the browser environment.
  */
 export function resolveFrontendHostDomain(): string {
-  if (globalFrontendHostDomainOverride) {
+  if (globalFrontendHostDomainOverride && !isContainerId(globalFrontendHostDomainOverride)) {
     return globalFrontendHostDomainOverride;
   }
   if (typeof window !== 'undefined' && window.location && window.location.hostname) {
     const host = window.location.hostname.trim();
-    if (host) {
+    if (host && !isContainerId(host)) {
       return host;
     }
   }
@@ -44,7 +54,7 @@ export function getDefaultFrontendGiteaBase(): string {
 
 /**
  * Sanitizes a Git/Gitea URL to ensure it points to a browser-accessible host.
- * Automatically adapts to the current host domain (e.g. nexen-desktop) when accessed from
+ * Automatically adapts to the current host domain when accessed from
  * mobile devices or local network clients.
  *
  * @param rawUrl The URL returned from the server or task entity.
@@ -84,7 +94,13 @@ export function sanitizeGiteaUrl(
     result = `${base}/${cleanPath}`;
   }
 
-  // 3. If primary host is not localhost/127.0.0.1, dynamically remap hardcoded localhost:19634 links
+  // 3. Remap ephemeral Docker container ID hostnames (12 or 64 hex characters) e.g. //ac2c026bbfff:19634
+  result = result.replace(
+    /^(https?:\/\/)[0-9a-f]{12,64}(?::\d+)?(\/.*)?$/i,
+    (_match, _proto, restPath) => `${base}${restPath || ''}`,
+  );
+
+  // 4. If primary host is not localhost/127.0.0.1, dynamically remap hardcoded localhost:19634 links
   // so mobile devices can access them through local DNS:
   const hostDomain = resolveFrontendHostDomain();
   if (
