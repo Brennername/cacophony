@@ -530,6 +530,15 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvqlvwm1-fhwv Rehabilitation [2026-10-28T02:23:26.769Z]
+- **Parent Task**: [TDD Regression] should replace slot tokens with provided values (`regr-mvqlvwm1-fhwv`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqlvwm1-fhwv.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should replace slot tokens with provided values [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvqlvwm1-fhwv.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should replace slot tokens with provided values [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
 ### Task regr-mvqlvwlw-glqe Rehabilitation [2026-10-28T02:22:48.157Z]
 - **Parent Task**: [TDD Regression] should replace multiple slot tokens with provided values (`regr-mvqlvwlw-glqe`)
 - **Failure Count**: 3

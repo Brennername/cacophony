@@ -48,6 +48,9 @@ Thumbs.db
 
 # Trash folder (deprecated source code preserved locally per project rule)
 .trash/
+.trash
+**/.trash/
+**/.trash
 
 # Temporary maintenance and operational scripts
 bin/temp/
