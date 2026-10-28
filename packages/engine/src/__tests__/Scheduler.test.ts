@@ -201,9 +201,35 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test --test-concurrency=1 packages/db/dist/tests/index.test.js",
+        "npm test --workspace=@cacophony/db --if-present",
       );
       assert.ok(groomed.enrichedPrompt.includes("[ARCHITECTURAL DIRECTIVES]"));
+    });
+
+    test("should scope test command to specific unit test file when matching test exists on disk", () => {
+      const task: TaskRecord = {
+        id: "task-groom-specific",
+        title: "Fix task repo issue",
+        prompt: "Fix query in TaskRepository",
+        role: "implementer",
+        status: "PENDING",
+        priority: "P1",
+        modelAssigned: null,
+        testCommand: "npm test",
+        focusFiles: "packages/db/src/repositories/TaskRepository.ts",
+        targetBranch: null,
+        prUrl: null,
+        failureCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null,
+      };
+
+      const groomed = groomer.groom(task);
+      assert.equal(
+        groomed.scopedTestCommand,
+        "node --test --test-concurrency=1 packages/db/dist/tests/TaskRepository.test.js",
+      );
     });
 
     test("should adapt directives when allowedImports are specified for a feature", () => {
@@ -333,7 +359,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test --test-concurrency=1 packages/engine/dist/tests/non_existent_future.test.js",
+        "npm test --workspace=@cacophony/engine --if-present",
       );
       assert.deepEqual(groomed.preflightIssues, []);
     });
@@ -396,7 +422,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test --test-concurrency=1 packages/engine/dist/tests/non_existent_doc.test.js",
+        "",
       );
     });
 
@@ -448,7 +474,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test --test-concurrency=1 packages/engine/dist/tests/queue_groomer.test.js",
+        "npm test --workspace=@cacophony/engine --if-present",
       );
     });
   });
