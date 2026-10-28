@@ -180,4 +180,138 @@ export class CacophonyHttpServer {
     assert.ok(merged.includes("user === 'root'"));
     assert.ok(merged.includes("token-456"));
   });
+
+  test("should preserve existing test cases when newly generated code only updates one test case", () => {
+    const original = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("OutputParser", () => {
+  describe("extract", () => {
+    it("should extract failing tests", () => {
+      assert.strictEqual(1, 1);
+    });
+
+    it("should handle empty output", () => {
+      assert.strictEqual(0, 0);
+    });
+
+    it("should parse duration", () => {
+      assert.strictEqual(50, 50);
+    });
+  });
 });
+`;
+
+    const generated = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("OutputParser", () => {
+  describe("extract", () => {
+    it("should extract failing tests", () => {
+      assert.strictEqual(1 + 1, 2);
+    });
+  });
+});
+`;
+
+    const merged = IncrementalClassMerger.merge(original, generated);
+    assert.ok(merged.includes("should extract failing tests"));
+    assert.ok(merged.includes("assert.strictEqual(1 + 1, 2);"));
+    assert.ok(merged.includes("should handle empty output"));
+    assert.ok(merged.includes("assert.strictEqual(0, 0);"));
+    assert.ok(merged.includes("should parse duration"));
+    assert.ok(merged.includes("assert.strictEqual(50, 50);"));
+  });
+
+  test("should inject newly added test cases into matching describe block without removing existing tests", () => {
+    const original = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("Suite", () => {
+  describe("groupA", () => {
+    it("test1", () => {
+      assert.ok(true);
+    });
+  });
+});
+`;
+
+    const generated = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("Suite", () => {
+  describe("groupA", () => {
+    it("test2", () => {
+      assert.strictEqual("new", "new");
+    });
+  });
+});
+`;
+
+    const merged = IncrementalClassMerger.merge(original, generated);
+    assert.ok(merged.includes('"test1"'));
+    assert.ok(merged.includes('"test2"'));
+    assert.ok(merged.includes('assert.strictEqual("new", "new");'));
+  });
+
+  test("should prepend new imports while preserving existing imports in test files", () => {
+    const original = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("Suite", () => {
+  it("testA", () => {
+    assert.ok(true);
+  });
+});
+`;
+
+    const generated = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { HelperService } from "../services/HelperService.js";
+
+describe("Suite", () => {
+  it("testA", () => {
+    assert.ok(true);
+  });
+});
+`;
+
+    const merged = IncrementalClassMerger.merge(original, generated);
+    assert.ok(merged.includes('import { HelperService } from "../services/HelperService.js";'));
+    assert.ok(merged.includes('import { describe, it } from "node:test";'));
+    assert.ok(merged.includes('import assert from "node:assert/strict";'));
+    assert.ok(merged.includes('"testA"'));
+  });
+
+  test("should accept full test file when all original tests are preserved", () => {
+    const original = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("FullSuite", () => {
+  it("test1", () => {
+    assert.strictEqual(1, 1);
+  });
+});
+`;
+
+    const generated = `import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("FullSuite", () => {
+  it("test1", () => {
+    assert.strictEqual(1, 1);
+  });
+
+  it("test2", () => {
+    assert.strictEqual(2, 2);
+  });
+});
+`;
+
+    const merged = IncrementalClassMerger.merge(original, generated);
+    assert.ok(merged.includes('"test1"'));
+    assert.ok(merged.includes('"test2"'));
+    assert.ok(merged.includes("assert.strictEqual(2, 2);"));
+  });
+});
+

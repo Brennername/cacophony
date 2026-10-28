@@ -492,7 +492,13 @@ export class AutonomousWorkerPipeline {
       const focusFiles = groomed.focusFiles
         .map(stripPunctuationBounds)
         .filter(Boolean);
-      const targetRel = focusFiles[0];
+      const targetRel = this.selectPrimaryTargetFile(
+        focusFiles,
+        groomed.task.role || "",
+        groomed.task.title || "",
+        groomed.task.prompt || "",
+        groomed.scopedTestCommand,
+      );
       let pkgName = "";
       if (targetRel?.startsWith("packages/frontend"))
         pkgName = "@cacophony/frontend";
@@ -679,7 +685,7 @@ export class AutonomousWorkerPipeline {
 
       let requestedMaxTokens = 4096;
       if (focusFiles.length > 0) {
-        const targetRelFile = focusFiles[0]!;
+        const targetRelFile = targetRel || focusFiles[0]!;
         const targetAbsFile = path.resolve(executionRoot, targetRelFile);
         try {
           const fileStat = await fs.stat(targetAbsFile);
@@ -909,7 +915,7 @@ export class AutonomousWorkerPipeline {
       let generatedDiff = "";
       let currentCode = finalCode;
       if (focusFiles.length > 0) {
-        const targetRelFile = focusFiles[0]!;
+        const targetRelFile = targetRel || focusFiles[0]!;
         targetAbs = path.resolve(executionRoot, targetRelFile);
         if (!originalExistingContent) {
           try {
@@ -2938,5 +2944,77 @@ export class AutonomousWorkerPipeline {
       valid: true,
       mergedCode: merged,
     };
+  }
+
+  /**
+   * Resolves the primary target file to modify or create from the candidate focus files.
+   * When a test engineer or test authoring task is executing, prioritizes test files (.test.ts/.spec.ts).
+   * Otherwise, prioritizes source implementation files.
+   */
+  private selectPrimaryTargetFile(
+    focusFiles: readonly string[],
+    role: string,
+    title: string,
+    prompt: string,
+    testCommand?: string | null,
+  ): string | undefined {
+    if (focusFiles.length === 0) {
+      return undefined;
+    }
+    if (focusFiles.length === 1) {
+      return focusFiles[0];
+    }
+
+    const isTestTask =
+      role === "test_engineer" ||
+      role === "qa" ||
+      /^(t\d+|regr-|test|qa)/i.test(title) ||
+      /\b(unit test|test suite|tests? verifying|test coverage|tdd regression|tdd red-green)\b/i.test(
+        title,
+      ) ||
+      /\b(unit test|test suite|tests? verifying|test coverage|tdd regression|tdd red-green)\b/i.test(
+        prompt,
+      );
+
+    if (isTestTask) {
+      // 1. If testCommand specifies a test file, match against focusFiles
+      if (testCommand) {
+        for (const file of focusFiles) {
+          const baseName = path.basename(file).replace(/\.[^.]+$/, "");
+          if (testCommand.includes(baseName)) {
+            return file;
+          }
+        }
+      }
+      // 2. Select first focus file that is a test file
+      const testFile = focusFiles.find(
+        (f) =>
+          f.endsWith(".test.ts") ||
+          f.endsWith(".spec.ts") ||
+          f.endsWith(".test.js") ||
+          f.endsWith(".spec.js") ||
+          f.includes("/__tests__/") ||
+          f.includes("/tests/"),
+      );
+      if (testFile) {
+        return testFile;
+      }
+    } else {
+      // Non-test task: select first focus file that is NOT a test file
+      const sourceFile = focusFiles.find(
+        (f) =>
+          !f.endsWith(".test.ts") &&
+          !f.endsWith(".spec.ts") &&
+          !f.endsWith(".test.js") &&
+          !f.endsWith(".spec.js") &&
+          !f.includes("/__tests__/") &&
+          !f.includes("/tests/"),
+      );
+      if (sourceFile) {
+        return sourceFile;
+      }
+    }
+
+    return focusFiles[0];
   }
 }
