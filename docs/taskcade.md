@@ -530,6 +530,51 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task regr-mvqlvwlw-glqe Rehabilitation [2026-10-28T02:22:48.157Z]
+- **Parent Task**: [TDD Regression] should replace multiple slot tokens with provided values (`regr-mvqlvwlw-glqe`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqlvwlw-glqe.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should replace multiple slot tokens with provided values [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvqlvwlw-glqe.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should replace multiple slot tokens with provided values [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvqlqisw-np6x Rehabilitation [2026-10-28T02:21:54.884Z]
+- **Parent Task**: [TDD Regression] should allow optional slots to be omitted (`regr-mvqlqisw-np6x`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqlqisw-np6x.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should allow optional slots to be omitted [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvqlqisw-np6x.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should allow optional slots to be omitted [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvqlqist-rwgk Rehabilitation [2026-10-28T02:21:07.650Z]
+- **Parent Task**: [TDD Regression] should handle missing slots gracefully (`regr-mvqlqist-rwgk`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqlqist-rwgk.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should handle missing slots gracefully [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvqlqist-rwgk.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should handle missing slots gracefully [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvqlqisp-xyl7 Rehabilitation [2026-10-28T02:20:13.660Z]
+- **Parent Task**: [TDD Regression] should build a prompt with required slots filled (`regr-mvqlqisp-xyl7`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqlqisp-xyl7.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should build a prompt with required slots filled [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvqlqisp-xyl7.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should build a prompt with required slots filled [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
+### Task regr-mvqkgwpb-uxfq Rehabilitation [2026-10-28T02:19:38.621Z]
+- **Parent Task**: [TDD Regression] should return an empty prompt when budget is zero (`regr-mvqkgwpb-uxfq`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `regr-mvqkgwpb-uxfq.1`: [Rehab 1/2] Test Scaffold & Assertions: [TDD Regression] should return an empty prompt when budget is zero [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+  - [ ] `regr-mvqkgwpb-uxfq.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: [TDD Regression] should return an empty prompt when budget is zero [Role: test_engineer] [Files: packages/engine/src/tests/slot_fill_prompt_builder.test.ts]
+
+
 ### Task regr-mvqjruto-b36r Rehabilitation [2026-10-28T02:19:08.707Z]
 - **Parent Task**: [TDD Regression] should handle edge cases for duration extraction (`regr-mvqjruto-b36r`)
 - **Failure Count**: 3
