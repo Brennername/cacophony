@@ -18,6 +18,7 @@ import type {
 } from "@cacophony/db";
 import { SandboxedProcessRunner } from "../testing/SandboxedProcessRunner.js";
 import fs from "node:fs/promises";
+import syncFs from "node:fs";
 import path from "node:path";
 
 import type {
@@ -1496,17 +1497,47 @@ export class AutonomousWorkerPipeline {
 
           await this.enforceSystemPacing(taskId, "test execution");
 
+          // Pre-test sanity check: verify target test output file exists if scoped to a specific test file
+          let effectiveTestCommand = groomed.scopedTestCommand;
+          if (effectiveTestCommand.startsWith("node ") && effectiveTestCommand.includes("--test")) {
+            const cmdTokens = effectiveTestCommand.split(/\s+/);
+            const distTestToken = cmdTokens.find((token) => /\.(?:test|spec)\.js$/.test(token));
+            if (distTestToken) {
+              const absDistTest = path.resolve(executionRoot, distTestToken);
+              if (!syncFs.existsSync(absDistTest)) {
+                // Attempt compilation if source test file exists
+                const relSrcTest = distTestToken
+                  .replace("/dist/", "/src/")
+                  .replace(/\.js$/, ".ts");
+                const absSrcTest = path.resolve(executionRoot, relSrcTest);
+                if (syncFs.existsSync(absSrcTest) && pkgName) {
+                  await this.sandboxedRunner.run(`npm run build --workspace=${pkgName}`, {
+                    cwd: executionRoot,
+                    timeoutMs: 90000,
+                    maxBufferBytes: 256 * 1024,
+                  });
+                }
+                // If dist file is still missing after build, fall back to package test runner
+                if (!syncFs.existsSync(absDistTest)) {
+                  if (pkgName) {
+                    effectiveTestCommand = `npm test --workspace=${pkgName} --if-present`;
+                  }
+                }
+              }
+            }
+          }
+
           if (this.streamTapManager) {
             this.streamTapManager.emitSubStageLog({
               taskId,
               channel: "test_output",
-              content: `[Test Runner] Executing test suite (attempt ${testRemediationAttempts + 1}/${maxRemediationAttempts}):\n$ ${groomed.scopedTestCommand}\n(Running sandboxed vitest/node runner in ${executionRoot}...)\n`,
+              content: `[Test Runner] Executing test suite (attempt ${testRemediationAttempts + 1}/${maxRemediationAttempts}):\n$ ${effectiveTestCommand}\n(Running sandboxed vitest/node runner in ${executionRoot}...)\n`,
               timestamp: Date.now(),
             });
           }
 
           const runResult = await this.sandboxedRunner.run(
-            groomed.scopedTestCommand,
+            effectiveTestCommand,
             {
               cwd: executionRoot,
               timeoutMs: 180000,

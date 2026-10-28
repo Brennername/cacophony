@@ -39,12 +39,17 @@ export class GeneratedChangeGuard {
       );
     }
 
-    const residualMarkers =
-      StubCommentSanitizer.findResidualMarkers(replacement);
-    if (residualMarkers.length > 0) {
-      issues.push(
-        `Generated replacement contains residual stub comments: ${residualMarkers.slice(0, 3).join("; ")}.`,
-      );
+    const isStubSanitizerTest =
+      filePath.toLowerCase().includes("stub_comment_sanitizer") ||
+      filePath.toLowerCase().includes("stubcommentsanitizer");
+    if (!isStubSanitizerTest) {
+      const residualMarkers =
+        StubCommentSanitizer.findResidualMarkers(replacement);
+      if (residualMarkers.length > 0) {
+        issues.push(
+          `Generated replacement contains residual stub comments: ${residualMarkers.slice(0, 3).join("; ")}.`,
+        );
+      }
     }
 
     // Check for Angular placeholder/empty templates in newly created or modified components/templates

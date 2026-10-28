@@ -174,8 +174,12 @@ export class QueueGroomer {
       });
 
       const isSpecificTestFile = /\.(?:test|spec)\.(?:ts|tsx|js|mjs|cjs)$/.test(candidateTest);
+      const isTestAuthoringTask =
+        task.role === "test_engineer" ||
+        task.title.toLowerCase().includes("unit test") ||
+        task.prompt.toLowerCase().includes("write unit test");
 
-      if (srcExists || isTargetTest || isSpecificTestFile) {
+      if (srcExists || (isTestAuthoringTask && (isTargetTest || isSpecificTestFile))) {
         if (
           /^packages\/[^/]+\/src\//.test(candidateTest) &&
           /\.(?:ts|tsx)$/.test(candidateTest)
@@ -521,8 +525,15 @@ export class QueueGroomer {
             }
           }
 
-          // Target specific unit test file rather than invoking the entire engine test suite
-          return `node --test --test-concurrency=1 packages/${pkgName}/dist/tests/${snakeName}.test.js`;
+          if (pkgName === "engine") {
+            const closestTest = this.findClosestEngineTest(firstFile, "");
+            if (closestTest) {
+              const compiledClosest = closestTest.replace(/\.ts$/, ".js");
+              return `node --test --test-concurrency=1 packages/engine/dist/tests/${compiledClosest}`;
+            }
+          }
+
+          return `npm test --workspace=@cacophony/${pkgName} --if-present`;
         }
 
         if (pkgName === "frontend") {

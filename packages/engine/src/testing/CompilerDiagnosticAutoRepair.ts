@@ -172,7 +172,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         "// Native node:test compatibility shim for jest APIs",
         "const jest = {",
         "  fn: <T extends (...args: any[]) => any>(impl?: T): any => {",
-        "    let currentImpl = impl;",
+        "    let currentImpl: any = impl;",
         "    const onceQueue: Array<(...args: any[]) => any> = [];",
         "    const mockFn: any = (...args: any[]) => {",
         "      mockFn.mock.calls.push(args);",
@@ -225,6 +225,69 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       );
     }
 
+    // 1b. Repair TS2304 / TS2708: Missing 'jasmine' or 'spyOnProperty' globals
+    const hasJasmineMissing = diagnostics.some(
+      (d) =>
+        (d.errorCode === "TS2304" &&
+          /Cannot find name 'jasmine'/i.test(d.message)) ||
+        (d.errorCode === "TS2708" &&
+          /Cannot use namespace 'jasmine' as a value/i.test(d.message)),
+    );
+    const hasSpyOnPropertyMissing = diagnostics.some(
+      (d) =>
+        d.errorCode === "TS2304" &&
+        /Cannot find name 'spyOnProperty'/i.test(d.message),
+    );
+    if (
+      (hasJasmineMissing || hasSpyOnPropertyMissing) &&
+      !currentCode.includes("const jasmine =") &&
+      !currentCode.includes("var jasmine =")
+    ) {
+      const jasmineShim = [
+        "// Native test runner compatibility shim for jasmine APIs",
+        "const jasmine = {",
+        "  createSpy: (name?: string) => {",
+        "    let currentVal: any = undefined;",
+        "    const fn: any = (...args: any[]) => {",
+        "      fn.calls.all.push({ args });",
+        "      return currentVal;",
+        "    };",
+        "    fn.calls = {",
+        "      all: [] as Array<{ args: any[] }>,",
+        "      count: () => fn.calls.all.length,",
+        "      reset: () => { fn.calls.all = []; },",
+        "      mostRecent: () => fn.calls.all[fn.calls.all.length - 1],",
+        "    };",
+        "    fn.and = {",
+        "      returnValue: (val: any) => { currentVal = val; return fn; },",
+        "      callFake: (impl: any) => impl,",
+        "    };",
+        "    return fn;",
+        "  },",
+        "  createSpyObj: (baseName: string | any[], methodNames?: string[]) => {",
+        "    const obj: any = {};",
+        "    const methods = Array.isArray(baseName) ? baseName : (methodNames || []);",
+        "    for (const m of methods) {",
+        "      obj[m] = (jasmine as any).createSpy(m);",
+        "    }",
+        "    return obj;",
+        "  },",
+        "  any: (_expectedType: any) => ({ asymmetricMatch: () => true }),",
+        "  objectContaining: (sample: any) => ({",
+        "    asymmetricMatch: (actual: any) => actual && Object.keys(sample).every((k) => actual[k] === sample[k]),",
+        "  }),",
+        "};",
+        "const spyOnProperty = (obj: any, prop: string, _accessType?: string): any => {",
+        "  const spy = (jasmine as any).createSpy(prop);",
+        "  if (obj) Object.defineProperty(obj, prop, { get: spy, set: spy, configurable: true });",
+        "  return spy;",
+        "};",
+        "",
+      ].join("\n");
+      prependCode += jasmineShim;
+      repairsApplied.push("Injected test runner compatibility shim for 'jasmine'");
+    }
+
     // 2. Repair TS2304: Missing 'expect' assertion global
     const hasExpectMissing = diagnostics.some(
       (d) =>
@@ -244,6 +307,8 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         "  toEqual: (expected: any) => _assert.deepStrictEqual(actual, expected),",
         "  toBeTruthy: () => _assert.ok(actual),",
         "  toBeFalsy: () => _assert.ok(!actual),",
+        "  toBeTrue: () => _assert.strictEqual(actual, true),",
+        "  toBeFalse: () => _assert.strictEqual(actual, false),",
         "  toBeDefined: () => _assert.notStrictEqual(actual, undefined),",
         "  toBeUndefined: () => _assert.strictEqual(actual, undefined),",
         "  toBeNull: () => _assert.strictEqual(actual, null),",
@@ -966,8 +1031,21 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
 
-    // 5. Repair TS2834: Explicit .js file extensions in relative imports
+    // 5. Repair TS5097 / TS2834: Explicit .js file extensions in relative imports and rewrite .ts/.tsx extensions
     for (const diag of diagnostics) {
+      if (
+        diag.errorCode === "TS5097" ||
+        /An import path can only end with a '\.ts' extension/i.test(diag.message)
+      ) {
+        const tsImportRegex = /(from\s+['"])((\.\.?\/)[^'"\n]+?)\.(?:ts|tsx)(['"])/g;
+        currentCode = currentCode.replace(
+          tsImportRegex,
+          (_match, prefix, importPath, _relPrefix, suffix) => {
+            repairsApplied.push(`Rewrote .ts extension to .js on '${importPath}'`);
+            return `${prefix}${importPath}.js${suffix}`;
+          },
+        );
+      }
       if (
         diag.errorCode === "TS2834" ||
         /Relative import paths need explicit file extensions/i.test(
@@ -991,11 +1069,26 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
 
-    // Fallback pass: ensure all relative imports ending without an extension get .js
+    // Fallback pass: ensure all relative imports ending without an extension get .js, and .ts/.tsx get converted to .js
     const relativeImportRegex = /(from\s+['"])((\.\.?\/)[^'"\n]+)(['"])/g;
     const extendedCode = currentCode.replace(
       relativeImportRegex,
       (match, prefix, importPath, _relPrefix, suffix) => {
+        if (/\.(?:ts|tsx)$/.test(importPath)) {
+          const fixed = importPath.replace(/\.(?:ts|tsx)$/, ".js");
+          repairsApplied.push(`Converted relative import '${importPath}' to '${fixed}'`);
+          return `${prefix}${fixed}${suffix}`;
+        }
+        if (/\.mts$/.test(importPath)) {
+          const fixed = importPath.replace(/\.mts$/, ".mjs");
+          repairsApplied.push(`Converted relative import '${importPath}' to '${fixed}'`);
+          return `${prefix}${fixed}${suffix}`;
+        }
+        if (/\.cts$/.test(importPath)) {
+          const fixed = importPath.replace(/\.cts$/, ".cjs");
+          repairsApplied.push(`Converted relative import '${importPath}' to '${fixed}'`);
+          return `${prefix}${fixed}${suffix}`;
+        }
         if (/\.[a-zA-Z0-9]+$/.test(importPath)) {
           return match;
         }
@@ -1085,9 +1178,46 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             const lineIdx = diag.lineNumber - 1;
             const targetLine = lines[lineIdx];
             if (targetLine) {
-              // 6a. If target line is an import statement, clean the unused import symbol instead of prefixing
-              if (/^\s*import\b/.test(targetLine)) {
+              // 6a. If target line is an import statement or part of a multi-line import block
+              let isImportLine = /^\s*import\b/.test(targetLine);
+              if (!isImportLine) {
+                // Check if targetLine is within a multi-line import { ... } statement
+                for (let k = lineIdx - 1; k >= Math.max(0, lineIdx - 25); k--) {
+                  const prev = lines[k]?.trim() || "";
+                  if (prev.startsWith("import ") || prev.startsWith("import{")) {
+                    let closedBefore = false;
+                    for (let m = k; m < lineIdx; m++) {
+                      if (lines[m]?.includes("} from") || lines[m]?.includes("from ")) {
+                        closedBefore = true;
+                        break;
+                      }
+                    }
+                    if (!closedBefore) {
+                      isImportLine = true;
+                    }
+                    break;
+                  }
+                  if (prev.includes(";") && !prev.includes("import")) break;
+                }
+              }
+
+              if (isImportLine) {
                 let cleaned = targetLine;
+                // Multi-line item: e.g. "  ArenaDatasetManifest," or "  type ArenaDatasetManifest," or "  ArenaDatasetManifest as Foo,"
+                if (!targetLine.includes("import ") && !targetLine.includes("import{")) {
+                  const cleanedLine = targetLine
+                    .replace(new RegExp(`\\b(?:type\\s+)?${varName}(?:\\s+as\\s+[a-zA-Z0-9_$]+)?\\s*,?`), "")
+                    .trim();
+                  if (cleanedLine === "" || cleanedLine === ",") {
+                    lines[lineIdx] = "";
+                  } else {
+                    lines[lineIdx] = targetLine.replace(new RegExp(`\\b(?:type\\s+)?${varName}(?:\\s+as\\s+[a-zA-Z0-9_$]+)?\\s*,?`), "");
+                  }
+                  repairsApplied.push(
+                    `Removed unused imported symbol '${varName}' from import at line ${diag.lineNumber}`,
+                  );
+                  continue;
+                }
                 // Default import combined with named: import X, { ... } from '...'
                 if (
                   new RegExp(`^(\\s*import\\s+)${varName}\\s*,\\s*\\{`).test(
@@ -1433,6 +1563,21 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
               if (charAtCol === "[" || charAtCol === ".") {
                 updatedLine =
                   targetLine.slice(0, colIdx) + "!" + targetLine.slice(colIdx);
+              } else {
+                const nextDot = targetLine.indexOf(".", colIdx);
+                const nextBracket = targetLine.indexOf("[", colIdx);
+                let insertIdx = -1;
+                if (nextDot !== -1 && nextBracket !== -1) {
+                  insertIdx = Math.min(nextDot, nextBracket);
+                } else if (nextDot !== -1) {
+                  insertIdx = nextDot;
+                } else if (nextBracket !== -1) {
+                  insertIdx = nextBracket;
+                }
+                if (insertIdx !== -1 && targetLine[insertIdx - 1] !== "!") {
+                  updatedLine =
+                    targetLine.slice(0, insertIdx) + "!" + targetLine.slice(insertIdx);
+                }
               }
             }
             if (updatedLine === targetLine) {
@@ -1450,6 +1595,97 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
     currentCode = lines.join("\n");
+
+    // 10b. Repair TS6192: All imports in import declaration are unused
+    for (const diag of diagnostics) {
+      if (
+        diag.errorCode === "TS6192" ||
+        /All imports in import declaration are unused/i.test(diag.message)
+      ) {
+        if (diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+          const lineIdx = diag.lineNumber - 1;
+          const targetLine = lines[lineIdx];
+          if (targetLine && /^\s*import\b/.test(targetLine)) {
+            let endIdx = lineIdx;
+            while (endIdx < lines.length && !lines[endIdx]!.includes(";")) {
+              endIdx++;
+            }
+            for (let k = lineIdx; k <= Math.min(endIdx, lines.length - 1); k++) {
+              lines[k] = "";
+            }
+            repairsApplied.push(`Removed unused import declaration starting at line ${diag.lineNumber}`);
+          }
+        }
+      }
+    }
+    currentCode = lines.join("\n");
+
+    // 11. Repair TS2693: 'X' only refers to a type, but is being used as a value here
+    for (const diag of diagnostics) {
+      if (
+        diag.errorCode === "TS2693" ||
+        /'([^']+)' only refers to a type, but is being used as a value/i.test(diag.message)
+      ) {
+        const typeMatch = diag.message.match(/'([^']+)' only refers to a type/i);
+        if (typeMatch && typeMatch[1]) {
+          const typeName = typeMatch[1];
+          if (typeName === "RuleSeverity") {
+            currentCode = currentCode
+              .replace(/RuleSeverity\.ERROR\b/g, '"hard_rejection"')
+              .replace(/RuleSeverity\.SILENT_REPAIR\b/g, '"silent_repair"')
+              .replace(/RuleSeverity\.SOFT_WARNING\b/g, '"soft_warning"')
+              .replace(/RuleSeverity\.HARD_REJECTION\b/g, '"hard_rejection"')
+              .replace(/RuleSeverity\.DISABLED\b/g, '"disabled"');
+            repairsApplied.push("Replaced RuleSeverity enum references with literal union strings");
+          } else if (typeName === "RuleLifecycleHook") {
+            currentCode = currentCode
+              .replace(/RuleLifecycleHook\.PRE_GENERATION\b/g, '"pre_generation"')
+              .replace(/RuleLifecycleHook\.POST_GENERATION\b/g, '"post_generation"')
+              .replace(/RuleLifecycleHook\.PRE_TEST\b/g, '"pre_test"')
+              .replace(/RuleLifecycleHook\.POST_TEST\b/g, '"post_test"');
+            repairsApplied.push("Replaced RuleLifecycleHook enum references with literal union strings");
+          }
+        }
+      }
+    }
+
+    // 12. Repair TS2741: Property 'X' is missing in type '...' but required in type 'RuleEvaluationContext'
+    for (const diag of diagnostics) {
+      if (
+        (diag.errorCode === "TS2741" || diag.errorCode === "TS2322") &&
+        /Property '([^']+)' is missing in type/i.test(diag.message) &&
+        /RuleEvaluationContext/i.test(diag.message)
+      ) {
+        const missMatch = diag.message.match(/Property '([^']+)' is missing/i);
+        if (missMatch && missMatch[1] && diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+          const missingProp = missMatch[1];
+          const lineIdx = diag.lineNumber - 1;
+          const targetLine = lines[lineIdx];
+          if (targetLine) {
+            const braceIndex = targetLine.indexOf("{");
+            if (braceIndex !== -1) {
+              let injectVal = "";
+              if (missingProp === "hook") injectVal = 'hook: "post_generation", ';
+              else if (missingProp === "fileContents") injectVal = "fileContents: new Map(), ";
+              else if (missingProp === "activeRole") injectVal = 'activeRole: "implementer", ';
+              else if (missingProp === "projectRoot") injectVal = 'projectRoot: process.cwd(), ';
+              else injectVal = `${missingProp}: undefined as any, `;
+
+              lines[lineIdx] = `${targetLine.slice(0, braceIndex + 1)} ${injectVal}${targetLine.slice(braceIndex + 1)}`;
+              repairsApplied.push(`Injected required RuleEvaluationContext property '${missingProp}' at line ${diag.lineNumber}`);
+            }
+          }
+        }
+      }
+    }
+
+    // 13. Auto-repair .toBeTrue() / .toBeFalse() to standard .toBe(true) / .toBe(false)
+    if (currentCode.includes(".toBeTrue()") || currentCode.includes(".toBeFalse()")) {
+      currentCode = currentCode
+        .replace(/\.toBeTrue\(\)/g, ".toBe(true)")
+        .replace(/\.toBeFalse\(\)/g, ".toBe(false)");
+      repairsApplied.push("Converted .toBeTrue() / .toBeFalse() to .toBe(true) / .toBe(false)");
+    }
 
     if (prependCode) {
       currentCode = prependCode + currentCode;

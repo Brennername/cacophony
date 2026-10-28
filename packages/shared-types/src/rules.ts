@@ -5,6 +5,16 @@ import { z } from "zod";
  */
 export type RuleSeverity = "silent_repair" | "soft_warning" | "hard_rejection" | "disabled";
 
+export const RuleSeverity = {
+  SILENT_REPAIR: "silent_repair" as const,
+  SOFT_WARNING: "soft_warning" as const,
+  HARD_REJECTION: "hard_rejection" as const,
+  DISABLED: "disabled" as const,
+  ERROR: "hard_rejection" as const,
+  WARNING: "soft_warning" as const,
+  INFO: "soft_warning" as const,
+} as const;
+
 export const RuleSeveritySchema = z.enum([
   "silent_repair",
   "soft_warning",
@@ -20,6 +30,13 @@ export type RuleLifecycleHook =
   | "post_generation"
   | "pre_test"
   | "post_test";
+
+export const RuleLifecycleHook = {
+  PRE_GENERATION: "pre_generation" as const,
+  POST_GENERATION: "post_generation" as const,
+  PRE_TEST: "pre_test" as const,
+  POST_TEST: "post_test" as const,
+} as const;
 
 export const RuleLifecycleHookSchema = z.enum([
   "pre_generation",
@@ -79,6 +96,7 @@ export interface RuleEvaluationContext {
   readonly simulate?: boolean;
   readonly environment?: Readonly<Record<string, string>>;
   readonly bypassRules?: readonly string[] | undefined;
+  readonly activeRole?: string | undefined;
 }
 
 

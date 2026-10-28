@@ -55,12 +55,20 @@ export class EnforceEsmJsExtensionRule extends BaseRepairRule {
         importRegex,
         (match, prefix, importPath, _relPrefix, suffix) => {
 
-          if (/\.[a-zA-Z0-9]+$/.test(importPath)) {
+          let fixedPath: string;
+          if (/\.(?:ts|tsx)$/.test(importPath)) {
+            fixedPath = importPath.replace(/\.(?:ts|tsx)$/, ".js");
+          } else if (/\.mts$/.test(importPath)) {
+            fixedPath = importPath.replace(/\.mts$/, ".mjs");
+          } else if (/\.cts$/.test(importPath)) {
+            fixedPath = importPath.replace(/\.cts$/, ".cjs");
+          } else if (!/\.[a-zA-Z0-9]+$/.test(importPath)) {
+            fixedPath = `${importPath}.js`;
+          } else {
             return match;
           }
 
           fileModified = true;
-          const fixedPath = `${importPath}.js`;
 
           if (severity === "hard_rejection") {
             passed = false;

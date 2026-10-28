@@ -1,99 +1,84 @@
-import {
-  RuleSeverity,
-  RuleLifecycleHook,
-  RuleEvaluationContext,
-  RuleExecutionResult,
-  RuleDiagnostic,
-  FileMutation,
-} from "@cacophony/shared-types";
-import { BaseRepairRule } from "../rules/BaseRepairRule.js";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { EnforceEsmJsExtensionRule } from "../rules/catalog/EnforceEsmJsExtensionRule.js";
+import { RuleEvaluationContext } from "@cacophony/shared-types";
 
-export class EnforceEsmJsExtensionRule extends BaseRepairRule {
-  readonly id = "enforce_esm_js";
-  readonly name = "Enforce ESM .js Extensions";
-  readonly description =
-    "Ensures relative import and export specifiers end with explicit .js extension for NodeNext ESM.";
-  readonly defaultSeverity: RuleSeverity = "silent_repair";
-  readonly applicableHooks: readonly RuleLifecycleHook[] = [
-    "post_generation",
-    "pre_test",
-  ];
+describe("EnforceEsmJsExtensionRule Unit Tests", () => {
+  const rule = new EnforceEsmJsExtensionRule();
 
-  public async evaluate(
-    context: RuleEvaluationContext,
-    severity: RuleSeverity,
-    _options?: Record<string, unknown>,
-  ): Promise<RuleExecutionResult> {
-    const start = performance.now();
-    const diagnostics: RuleDiagnostic[] = [];
-    const mutations: FileMutation[] = [];
-    let passed = true;
+  it("appends .js extension to relative imports without extension", async () => {
+    const filePath = "packages/engine/src/foo.ts";
+    const originalContent = 'import { bar } from "./bar";\nexport * from "../baz";';
+    const context: RuleEvaluationContext = {
+      projectRoot: "/app",
+      hook: "post_generation",
+      modifiedFiles: [filePath],
+      fileContents: new Map([[filePath, originalContent]]),
+      activeRole: "implementer",
+    };
 
-    const importRegex = /(from\s+["'])((\.\.?\/)[^"'\n]+)(["'])/g;
-
-    for (const filePath of context.modifiedFiles) {
-      if (
-        !filePath.endsWith(".ts") &&
-        !filePath.endsWith(".js") &&
-        !filePath.endsWith(".tsx")
-      ) {
-        continue;
-      }
-
-      const content = context.fileContents.get(filePath);
-      if (!content) continue;
-
-      let fileModified = false;
-      const updated = content.replace(
-        importRegex,
-        (match, prefix, importPath, _relPrefix, suffix) => {
-
-          if (/\.[a-zA-Z0-9]+$/.test(importPath)) {
-            return match;
-          }
-
-          fileModified = true;
-          const fixedPath = `${importPath}.js`;
-
-          if (severity === "hard_rejection") {
-            passed = false;
-            diagnostics.push({
-              ruleId: this.id,
-              severity,
-              message: `Missing .js extension on relative import '${importPath}' in ${filePath}`,
-              filePath,
-            });
-          } else if (severity === "soft_warning") {
-            diagnostics.push({
-              ruleId: this.id,
-              severity,
-              message: `Warning: Relative import '${importPath}' is missing .js extension in ${filePath}`,
-              filePath,
-            });
-          }
-
-          return `${prefix}${fixedPath}${suffix}`;
-        },
-      );
-
-      if (fileModified && severity === "silent_repair") {
-        mutations.push({
-          filePath,
-          originalContent: content,
-          updatedContent: updated,
-          description:
-            "Appended missing .js extension to relative import specifiers",
-        });
-      }
-    }
-
-    const durationMs = performance.now() - start;
-    return (this as any).createResult(
-      passed,
-      durationMs,
-      diagnostics,
-      mutations,
-      severity,
+    const result = await rule.evaluate(context, "silent_repair");
+    assert.strictEqual(result.passed, true);
+    assert.strictEqual(result.mutations.length, 1);
+    assert.strictEqual(
+      result.mutations[0]!.updatedContent,
+      'import { bar } from "./bar.js";\nexport * from "../baz.js";',
     );
-  }
-}
+  });
+
+  it("rewrites .ts and .tsx extensions in relative imports to .js", async () => {
+    const filePath = "packages/engine/src/foo.ts";
+    const originalContent = 'import { bar } from "./bar.ts";\nimport { Component } from "./comp.tsx";';
+    const context: RuleEvaluationContext = {
+      projectRoot: "/app",
+      hook: "post_generation",
+      modifiedFiles: [filePath],
+      fileContents: new Map([[filePath, originalContent]]),
+      activeRole: "implementer",
+    };
+
+    const result = await rule.evaluate(context, "silent_repair");
+    assert.strictEqual(result.passed, true);
+    assert.strictEqual(result.mutations.length, 1);
+    assert.strictEqual(
+      result.mutations[0]!.updatedContent,
+      'import { bar } from "./bar.js";\nimport { Component } from "./comp.js";',
+    );
+  });
+
+  it("rewrites .mts to .mjs and .cts to .cjs in relative imports", async () => {
+    const filePath = "packages/engine/src/foo.ts";
+    const originalContent = 'import { a } from "./a.mts";\nimport { b } from "./b.cts";';
+    const context: RuleEvaluationContext = {
+      projectRoot: "/app",
+      hook: "post_generation",
+      modifiedFiles: [filePath],
+      fileContents: new Map([[filePath, originalContent]]),
+      activeRole: "implementer",
+    };
+
+    const result = await rule.evaluate(context, "silent_repair");
+    assert.strictEqual(result.passed, true);
+    assert.strictEqual(result.mutations.length, 1);
+    assert.strictEqual(
+      result.mutations[0]!.updatedContent,
+      'import { a } from "./a.mjs";\nimport { b } from "./b.cjs";',
+    );
+  });
+
+  it("preserves already valid .js extensions and package imports", async () => {
+    const filePath = "packages/engine/src/foo.ts";
+    const originalContent = 'import { bar } from "./bar.js";\nimport * as fs from "node:fs";';
+    const context: RuleEvaluationContext = {
+      projectRoot: "/app",
+      hook: "post_generation",
+      modifiedFiles: [filePath],
+      fileContents: new Map([[filePath, originalContent]]),
+      activeRole: "implementer",
+    };
+
+    const result = await rule.evaluate(context, "silent_repair");
+    assert.strictEqual(result.passed, true);
+    assert.strictEqual(result.mutations.length, 0);
+  });
+});

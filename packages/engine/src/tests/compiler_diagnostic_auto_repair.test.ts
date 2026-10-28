@@ -10,10 +10,11 @@ const diagnostic = (
   errorCode: string,
   message: string,
   lineNumber = 1,
+  columnNumber = 1,
 ): CompilerDiagnostic => ({
   filePath: "src/example.ts",
   lineNumber,
-  columnNumber: 1,
+  columnNumber,
   severity: "error",
   message,
   errorCode,
@@ -665,4 +666,89 @@ describe("CompilerDiagnosticAutoRepair", () => {
       ),
     );
   });
+
+  it("repairs TS5097 by converting .ts and .tsx extensions to .js in relative imports", () => {
+    const source = `import { Foo } from "./Foo.ts";\nimport { Bar } from "../bar/Bar.tsx";`;
+    const result = repairer.repair(source, [
+      diagnostic(
+        "TS5097",
+        "An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.",
+        1,
+      ),
+    ]);
+
+    assert.ok(result.repairedCode.includes('from "./Foo.js"'));
+    assert.ok(result.repairedCode.includes('from "../bar/Bar.js"'));
+    assert.ok(!result.repairedCode.includes(".ts\""));
+    assert.ok(!result.repairedCode.includes(".tsx\""));
+  });
+
+  it("repairs TS6192 by removing unused import declarations", () => {
+    const source = `import { Foo, Bar } from "./utils.js";\nexport const x = 10;`;
+    const result = repairer.repair(source, [
+      diagnostic("TS6192", "All imports in import declaration are unused.", 1),
+    ]);
+
+    assert.ok(!result.repairedCode.includes("./utils.js"));
+    assert.ok(result.repairedCode.includes("export const x = 10;"));
+  });
+
+  it("repairs TS6133 by removing unused member from multi-line import block", () => {
+    const source = `import {\n  ArenaDatasetManifest,\n  HistoricalTaskRecord,\n} from "../models.js";\nexport const record: HistoricalTaskRecord = {} as any;`;
+    const result = repairer.repair(source, [
+      diagnostic(
+        "TS6133",
+        "'ArenaDatasetManifest' is declared but its value is never read.",
+        2,
+      ),
+    ]);
+
+    assert.ok(!result.repairedCode.includes("ArenaDatasetManifest"));
+    assert.ok(result.repairedCode.includes("HistoricalTaskRecord"));
+  });
+
+  it("repairs TS2304 / TS2708 by injecting jasmine test runner shim", () => {
+    const source = `const spy = jasmine.createSpy('test');\nspyOnProperty(window, 'location');`;
+    const result = repairer.repair(source, [
+      diagnostic("TS2304", "Cannot find name 'jasmine'."),
+      diagnostic("TS2304", "Cannot find name 'spyOnProperty'."),
+    ]);
+
+    assert.ok(result.repairedCode.includes("const jasmine = {"));
+    assert.ok(result.repairedCode.includes("const spyOnProperty ="));
+  });
+
+  it("repairs TS2693 by replacing RuleSeverity enum accesses with union literal strings", () => {
+    const source = `const s = RuleSeverity.ERROR;\nconst h = RuleLifecycleHook.POST_GENERATION;`;
+    const result = repairer.repair(source, [
+      diagnostic(
+        "TS2693",
+        "'RuleSeverity' only refers to a type, but is being used as a value here.",
+        1,
+      ),
+    ]);
+
+    assert.ok(result.repairedCode.includes('"hard_rejection"'));
+    assert.ok(!result.repairedCode.includes("RuleSeverity.ERROR"));
+  });
+
+  it("repairs TS2532 non-null assertions on property accesses when symbol name is omitted", () => {
+    const source = `const x = result.tokens[0].value;`;
+    const result = repairer.repair(source, [
+      diagnostic("TS2532", "Object is possibly 'undefined'.", 1, 11),
+    ]);
+
+    assert.ok(result.repairedCode.includes("!"));
+  });
+
+  it("converts .toBeTrue() and .toBeFalse() to standard .toBe(true) and .toBe(false)", () => {
+    const source = `expect(result.valid).toBeTrue();\nexpect(result.failed).toBeFalse();`;
+    const result = repairer.repair(source, [
+      diagnostic("TS2339", "Property 'toBeTrue' does not exist on type 'Assertion<any>'."),
+    ]);
+
+    assert.ok(result.repairedCode.includes("expect(result.valid).toBe(true);"));
+    assert.ok(result.repairedCode.includes("expect(result.failed).toBe(false);"));
+  });
 });
+
