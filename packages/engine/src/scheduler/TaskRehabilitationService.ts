@@ -8,6 +8,7 @@ import type {
   AgentRole,
   TaskPriority,
 } from "@cacophony/shared-types";
+import { StructuredLogger } from "../telemetry/StructuredLogger.js";
 
 export interface ITaskRehabilitationServiceOptions {
   readonly taskRepo: TaskRepository;
@@ -27,6 +28,7 @@ export class TaskRehabilitationService {
   private readonly taskRepo: TaskRepository;
   private readonly taskcadePath: string;
   private readonly maxRetries: number;
+  private readonly logger = new StructuredLogger("TaskRehabilitationService");
 
   constructor(options: ITaskRehabilitationServiceOptions) {
     this.taskRepo = options.taskRepo;
@@ -43,6 +45,23 @@ export class TaskRehabilitationService {
   }
 
   /**
+   * Identifies whether a task is already a child subtask derived from a prior rehabilitation.
+   */
+  public isChildSubtask(task: TaskRecord): boolean {
+    if (task.parentTaskId != null && task.parentTaskId.trim().length > 0) {
+      return true;
+    }
+    if (task.title.startsWith("[Rehab")) {
+      return true;
+    }
+    const dotMatches = task.id.match(/\./g);
+    if (dotMatches && dotMatches.length >= 2) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Determines whether a given task has exceeded retry limits and requires rehabilitation.
    */
   public shouldRehabilitate(task: TaskRecord): boolean {
@@ -50,8 +69,7 @@ export class TaskRehabilitationService {
       return false;
     }
     // Limit recursive decomposition depth to prevent exponential subtask explosion
-    const segments = task.id.split(".");
-    if (segments.length >= 5) {
+    if (this.isChildSubtask(task)) {
       return false;
     }
     return true;
@@ -85,6 +103,27 @@ export class TaskRehabilitationService {
           focusFiles: c.focusFiles ?? undefined,
           parentTaskId: failedTask.id,
         })),
+      };
+    }
+
+    // Cap recursive decomposition depth to prevent exponential subtask explosions (e.g. .1.1.1.1)
+    if (this.isChildSubtask(failedTask)) {
+      this.logger.warn(
+        `Task ${failedTask.id} is already a rehabilitated subtask. Quarantining to prevent recursive explosion.`,
+        { taskId: failedTask.id, parentTaskId: failedTask.parentTaskId },
+      );
+      await this.taskRepo.updateRehabStatus(failedTask.id, "DECOMPOSED");
+      await this.taskRepo.updateLogSnippet(
+        failedTask.id,
+        `[TaskRehabilitationService] Maximum rehabilitation depth reached. Quarantining task to prevent queue thrashing: ${failureReason.slice(0, 300)}`,
+      );
+      return {
+        parentTaskId: failedTask.id,
+        failureReason,
+        culpritCommitHash: culpritCommitHash ?? null,
+        rationale:
+          "Maximum rehabilitation depth reached. Quarantined to prevent recursive subtask thrashing.",
+        decomposedTasks: [],
       };
     }
 
@@ -160,6 +199,11 @@ export class TaskRehabilitationService {
     failureReason: string,
     culpritCommitHash?: string | null,
   ): readonly EnqueueTaskDto[] {
+    // If task is already a decomposed child, do not recursively decompose further
+    if (this.isChildSubtask(task)) {
+      return [];
+    }
+
     const rawFocus = task.focusFiles
       ? task.focusFiles
           .split(",")

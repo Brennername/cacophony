@@ -5,6 +5,9 @@ export interface ModelRoleMappingConfig {
   readonly architectModels?: readonly string[] | undefined;
   readonly implementerModels?: readonly string[] | undefined;
   readonly reviewerModels?: readonly string[] | undefined;
+  readonly testEngineerModels?: readonly string[] | undefined;
+  readonly typeSpecialistModels?: readonly string[] | undefined;
+  readonly docWriterModels?: readonly string[] | undefined;
   readonly defaultModel?: string | undefined;
 }
 
@@ -25,15 +28,17 @@ export class ModelRoleSelector {
   private readonly architectModels: readonly string[];
   private readonly implementerModels: readonly string[];
   private readonly reviewerModels: readonly string[];
+  private readonly testEngineerModels: readonly string[];
+  private readonly typeSpecialistModels: readonly string[];
+  private readonly docWriterModels: readonly string[];
   private readonly defaultModel: string;
 
   constructor(config: ModelRoleMappingConfig = {}) {
     this.choreModels = config.choreModels ?? [
       "smollm2:135m",
-      "smollm2:360m",
-      "qwen2.5-coder:1.5b",
-      "qwen2.5-coder:3b",
       "gemma3:4b",
+      "qwen2.5-coder:3b",
+      "qwen2.5-coder:7b-instruct-q4_K_M",
     ];
     this.architectModels = config.architectModels ?? [
       "phi4:latest",
@@ -43,10 +48,27 @@ export class ModelRoleSelector {
       "qwen2.5-coder:14b",
       "qwen2.5-coder:7b",
     ];
+    this.testEngineerModels = config.testEngineerModels ?? [
+      "deepseek-coder-v2:16b",
+      "phi4:latest",
+      "qwen2.5-coder:7b-instruct-q4_K_M",
+      "gemma3:4b",
+    ];
+    this.typeSpecialistModels = config.typeSpecialistModels ?? [
+      "phi4:latest",
+      "phi4",
+      "deepseek-coder-v2:16b",
+      "qwen2.5-coder:7b-instruct-q4_K_M",
+    ];
+    this.docWriterModels = config.docWriterModels ?? [
+      "gemma3:4b",
+      "qwen2.5-coder:7b-instruct-q4_K_M",
+      "smollm2:135m",
+    ];
     this.implementerModels = config.implementerModels ?? [
+      "deepseek-coder-v2:16b",
       "qwen2.5-coder:7b-instruct-q4_K_M",
       "qwen2.5-coder:7b",
-      "deepseek-coder-v2:16b",
       "gemma3:4b",
       "gemma3:4b-it-qat",
       "qwen2.5-coder:14b",
@@ -62,7 +84,7 @@ export class ModelRoleSelector {
     this.defaultModel =
       config.defaultModel ??
       process.env["DEFAULT_IMPLEMENTER_MODEL"] ??
-      "qwen2.5-coder:7b-instruct-q4_K_M";
+      "deepseek-coder-v2:16b";
   }
 
   public selectModelForRole(
@@ -95,29 +117,7 @@ export class ModelRoleSelector {
       candidates = [...availableModels];
     }
 
-    let preferredList: readonly string[];
-    switch (role) {
-      case "chore_runner":
-      case "doc_writer":
-        preferredList = this.choreModels;
-        break;
-      case "architect":
-      case "planner":
-        preferredList = this.architectModels;
-        break;
-      case "reviewer":
-      case "assessor":
-      case "security_auditor":
-        preferredList = this.reviewerModels;
-        break;
-      case "fixer":
-      case "implementer":
-      case "test_engineer":
-      case "type_specialist":
-      default:
-        preferredList = this.implementerModels;
-        break;
-    }
+    const preferredList = this.getPreferredModelsForRole(role);
 
     // Factor in win rate, sample confidence, and consecutive failures (T88.2.4)
     if (options?.modelStats && Object.keys(options.modelStats).length > 0) {
@@ -178,4 +178,40 @@ export class ModelRoleSelector {
   public isMicroTaskRole(role: AgentRole): boolean {
     return role === "chore_runner" || role === "doc_writer";
   }
+
+  public getPreferredModelsForRole(role: AgentRole): readonly string[] {
+    switch (role) {
+      case "chore_runner":
+        return this.choreModels;
+      case "doc_writer":
+        return this.docWriterModels;
+      case "architect":
+      case "planner":
+        return this.architectModels;
+      case "type_specialist":
+        return this.typeSpecialistModels;
+      case "test_engineer":
+      case "fixer":
+        return this.testEngineerModels;
+      case "reviewer":
+      case "assessor":
+      case "security_auditor":
+        return this.reviewerModels;
+      case "implementer":
+      default:
+        return this.implementerModels;
+    }
+  }
+
+  public isPreferredForRole(role: AgentRole, modelId: string): boolean {
+    const preferredList = this.getPreferredModelsForRole(role);
+    return preferredList.some(
+      (pref) =>
+        modelId === pref ||
+        modelId.startsWith(`${pref}:`) ||
+        modelId.startsWith(pref) ||
+        pref.startsWith(modelId),
+    );
+  }
 }
+

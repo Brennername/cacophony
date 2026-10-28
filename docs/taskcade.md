@@ -504,7 +504,24 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ---
 
+## Phase 106: Model Role Specialization & Solvability Rehabilitation Depth Capping
+
+- [x] T106.1: Specialized Model Role Mapping and Candidate Scoring:
+  - [x] T106.1.1: Expand `ModelRoleSelector` to support dedicated role mappings for `test_engineer`, `type_specialist`, and `doc_writer`, configuring high-performance models (`deepseek-coder-v2:16b`, `phi4:latest`, `gemma3:4b`, `smollm2:135m`).
+  - [x] T106.1.2: Implement `getPreferredModelsForRole` and `isPreferredForRole` in `ModelRoleSelector` for explicit role affinity validation.
+  - [x] T106.1.3: Update `ModelEvictionManager.selectModel` with role specialization boosts (2.5x multiplier) while preserving demoted reviewer penalties (0.2x multiplier).
+  - [x] T106.1.4: Update `TaskScheduler` to inject and query `ModelRoleSelector`, defaulting reviewer models to `phi4:latest`.
+- [x] T106.2: Solvability Rehabilitation Explosion Prevention & Quarantining:
+  - [x] T106.2.1: Implement `isChildSubtask` in `TaskRehabilitationService` to detect subtasks by parent link, title prefix, and milestone dot depth.
+  - [x] T106.2.2: Prevent recursive decomposition loops by quarantining child subtasks exceeding retry thresholds instead of endlessly spawning `.1.1.1` sub-branches.
+  - [x] T106.2.3: Author unit tests in `task_rehabilitation.test.ts` verifying quarantine behavior on repeatedly failing child subtasks.
+  - [x] T106.2.4: Advance telemetry epoch (`Epoch 4 - Specialized Model Roles`), reset model health stats, and seed uncompleted taskcade items.
+
+---
+
 ## Rehabilitated Taskcade Queue
+
+
 
 ### Task regr-mvph0wrc-dqyt Rehabilitation [2026-10-27T21:23:25.105Z]
 - **Parent Task**: [TDD Regression] should handle output with different character encodings (`regr-mvph0wrc-dqyt`)

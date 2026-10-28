@@ -223,4 +223,43 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
     assert.equal(plan.decomposedTasks.length, 1);
     assert.equal(plan.decomposedTasks[0]!.title, "Subtask 1");
   });
+
+  it("quarantines child subtasks to prevent recursive decomposition explosion", async () => {
+    let updatedRehabStatus = "";
+    let loggedSnippet = "";
+    const mockRepo: any = {
+      updateRehabStatus: async (_id: string, status: string) => {
+        updatedRehabStatus = status;
+      },
+      updateLogSnippet: async (_id: string, snippet: string) => {
+        loggedSnippet = snippet;
+      },
+      create: async () => {
+        throw new Error("Should not create any child subtasks");
+      },
+    };
+
+    const service = new TaskRehabilitationService({
+      taskRepo: mockRepo,
+      maxRetriesBeforeRehab: 3,
+    });
+
+    const childTask = createMockTask({
+      id: "T99.4.1",
+      title: "[Rehab 1/3] Test Scaffold & Assertions",
+      failureCount: 4,
+    });
+    // Set parentTaskId
+    (childTask as any).parentTaskId = "T99.4";
+
+    assert.equal(service.isChildSubtask(childTask), true);
+    assert.equal(service.shouldRehabilitate(childTask), false);
+    assert.deepEqual(service.decomposeTask(childTask, "Child failure"), []);
+
+    const plan = await service.rehabilitateTask(childTask, "Subtask compilation error");
+    assert.equal(plan.decomposedTasks.length, 0);
+    assert.equal(updatedRehabStatus, "DECOMPOSED");
+    assert(loggedSnippet.includes("Maximum rehabilitation depth reached"));
+  });
 });
+

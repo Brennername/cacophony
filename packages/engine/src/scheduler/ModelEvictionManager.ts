@@ -2,6 +2,7 @@ import type { ModelHealthRepository } from "@cacophony/db";
 import type { AgentRole, ModelStatus } from "@cacophony/shared-types";
 import type { ModelTenancyGuard } from "./ModelTenancyGuard.js";
 import type { OllamaModelManager } from "../inference/OllamaModelManager.js";
+import { ModelRoleSelector } from "./ModelRoleSelector.js";
 
 export interface ModelCandidateWeight {
   readonly modelId: string;
@@ -19,6 +20,7 @@ export class ModelEvictionManager {
   private modelManager: OllamaModelManager | undefined;
   private cooldownTimer: { [modelId: string]: NodeJS.Timeout } = {};
   private readonly modelRoles: Map<string, AgentRole> = new Map();
+  private readonly roleSelector: ModelRoleSelector;
 
   constructor(
     healthRepo: ModelHealthRepository,
@@ -26,12 +28,14 @@ export class ModelEvictionManager {
     explorationRate = 0.25,
     tenancyGuard?: ModelTenancyGuard,
     modelManager?: OllamaModelManager,
+    roleSelector?: ModelRoleSelector,
   ) {
     this.healthRepo = healthRepo;
     this.evictionThreshold = evictionThreshold;
     this.explorationRate = explorationRate;
     this.tenancyGuard = tenancyGuard;
     this.modelManager = modelManager;
+    this.roleSelector = roleSelector ?? new ModelRoleSelector();
   }
 
   public setTenancyGuard(guard: ModelTenancyGuard): void {
@@ -227,11 +231,20 @@ export class ModelEvictionManager {
     const shouldExplore =
       this.explorationRate > 0 && Math.random() < this.explorationRate;
 
+    const preferredModelForRole = this.roleSelector.selectModelForRole(
+      role,
+      candidateModels,
+    );
+
     if (currentlyLoadedModel && !shouldExplore) {
       const activeMatch = profiles.find(
         (p) => p.modelId === currentlyLoadedModel && p.status === "ACTIVE",
       );
-      if (activeMatch) {
+      if (
+        activeMatch &&
+        (activeMatch.consecutiveFailures ?? 0) === 0 &&
+        (!preferredModelForRole || preferredModelForRole === currentlyLoadedModel)
+      ) {
         return activeMatch.modelId;
       }
     }
@@ -250,11 +263,25 @@ export class ModelEvictionManager {
     const weights: ModelCandidateWeight[] = activeCandidates.map((p) => {
       const passRate = (p.totalSuccess + 1) / (p.totalTasks + 2);
       let multiplier = 1.0;
+
       const modelRole = this.getModelRole(p.modelId);
       if (role === "implementer" && modelRole === "reviewer") {
         multiplier = 0.2;
       } else if (role === "reviewer" && modelRole === "reviewer") {
         multiplier = 1.5;
+      }
+
+      // Role specialization boost: boost models specifically tailored for this role
+      if (
+        this.roleSelector.isPreferredForRole(role, p.modelId) &&
+        !(role === "implementer" && modelRole === "reviewer")
+      ) {
+        multiplier *= 2.5;
+      }
+
+      // Penalize consecutive failures to prevent failing loops
+      if (p.consecutiveFailures > 0) {
+        multiplier *= Math.max(0.1, 1 - p.consecutiveFailures * 0.3);
       }
 
       const weight = Math.max(0.01, passRate * multiplier);

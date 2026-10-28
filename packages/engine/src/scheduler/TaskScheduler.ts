@@ -4,6 +4,7 @@ import { ExecutionMutex } from "./ExecutionMutex.js";
 import { OllamaStateProbe } from "./OllamaStateProbe.js";
 import { ModelEvictionManager } from "./ModelEvictionManager.js";
 import { ModelAffinityTaskSorter } from "./ModelAffinityTaskSorter.js";
+import { ModelRoleSelector } from "./ModelRoleSelector.js";
 import { QueueGroomer, type GroomedTask } from "./QueueGroomer.js";
 import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
@@ -114,6 +115,7 @@ export class TaskScheduler implements IModelPredictor {
         reason: string,
       ) => Promise<void>)
     | undefined;
+  private readonly roleSelector: ModelRoleSelector;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
@@ -125,6 +127,7 @@ export class TaskScheduler implements IModelPredictor {
     readonly groomer?: QueueGroomer;
     readonly governor?: ThermalGovernor;
     readonly sorter?: ModelAffinityTaskSorter;
+    readonly roleSelector?: ModelRoleSelector;
     readonly dispatcher?: DistributedTaskDispatcher;
     readonly vramCatalog?: ModelVramCatalog;
     readonly oomGuard?: import("../hardware/OomPredictiveGuard.js").OomPredictiveGuard;
@@ -159,6 +162,7 @@ export class TaskScheduler implements IModelPredictor {
     this.rehabilitationService = options.rehabilitationService;
     this.dispatcher = options.dispatcher;
     this.vramCatalog = options.vramCatalog ?? new ModelVramCatalog();
+    this.roleSelector = options.roleSelector ?? new ModelRoleSelector();
     this.oomGuard = options.oomGuard;
     this.ollamaProvider = options.ollamaProvider;
     this.vramPrefetchCoordinator = options.vramPrefetchCoordinator;
@@ -863,7 +867,7 @@ export class TaskScheduler implements IModelPredictor {
     const defaultImplementer =
       process.env["DEFAULT_IMPLEMENTER_MODEL"] || "deepseek-coder-v2:16b";
     const defaultReviewer =
-      process.env["DEFAULT_REVIEWER_MODEL"] || "qwen2.5-coder:7b-instruct-q4_K_M";
+      process.env["DEFAULT_REVIEWER_MODEL"] || "phi4:latest";
 
     // Build the dynamic installed pool, excluding ultra-light utility models (e.g. smollm) for code generation
     const codingInstalledModels = installedModels.filter(
@@ -972,6 +976,17 @@ export class TaskScheduler implements IModelPredictor {
       candidateList = normalizedAssigned
         ? [normalizedAssigned]
         : [defaultImplementer];
+    } else {
+      const preferred = this.roleSelector.selectModelForRole(
+        task.role as AgentRole,
+        candidateList,
+      );
+      if (preferred && candidateList.includes(preferred)) {
+        candidateList = [
+          preferred,
+          ...candidateList.filter((m) => m !== preferred),
+        ];
+      }
     }
 
     return this.evictionManager.selectModel(
@@ -979,6 +994,10 @@ export class TaskScheduler implements IModelPredictor {
       candidateList,
       activeVramModel,
     );
+  }
+
+  public getRoleSelector(): ModelRoleSelector {
+    return this.roleSelector;
   }
 
   /**
