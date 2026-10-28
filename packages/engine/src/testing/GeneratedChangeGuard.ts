@@ -158,6 +158,15 @@ export class GeneratedChangeGuard {
       true,
     );
 
+    // Guard test suites: reject accidental deletion or stripping of existing test cases
+    this.inspectTestSuiteIntegrity(
+      filePath,
+      originalSource,
+      replacementSource,
+      authorizedRemovals,
+      issues,
+    );
+
     // A full-file response may retain every declaration name while silently
     // replacing sibling implementations. When an AST target is identified by the task,
     // allow body changes only for that target; every other existing class member and
@@ -810,6 +819,64 @@ export class GeneratedChangeGuard {
             `Generated file ${filePath} executes '${callName}(...)' at module root; library modules must encapsulate execution.`,
           );
         }
+      }
+    }
+  }
+
+  private static inspectTestSuiteIntegrity(
+    filePath: string,
+    originalSource: ts.SourceFile,
+    replacementSource: ts.SourceFile,
+    authorizedRemovals: ReadonlySet<string>,
+    issues: string[],
+  ): void {
+    if (
+      !filePath.endsWith(".test.ts") &&
+      !filePath.endsWith(".spec.ts") &&
+      !filePath.endsWith(".test.js") &&
+      !filePath.endsWith(".spec.js") &&
+      !filePath.includes("/__tests__/")
+    ) {
+      return;
+    }
+
+    const extractTestCases = (source: ts.SourceFile): Set<string> => {
+      const tests = new Set<string>();
+      const walk = (node: ts.Node) => {
+        if (
+          ts.isCallExpression(node) &&
+          node.arguments.length >= 2 &&
+          (ts.isStringLiteral(node.arguments[0]!) ||
+            ts.isNoSubstitutionTemplateLiteral(node.arguments[0]!))
+        ) {
+          const callText = node.expression.getText(source);
+          if (
+            callText === "it" ||
+            callText === "test" ||
+            callText.startsWith("it.") ||
+            callText.startsWith("test.")
+          ) {
+            const testName = (node.arguments[0] as ts.StringLiteral).text;
+            tests.add(testName);
+          }
+        }
+        ts.forEachChild(node, walk);
+      };
+      walk(source);
+      return tests;
+    };
+
+    const originalTests = extractTestCases(originalSource);
+    const replacementTests = extractTestCases(replacementSource);
+
+    for (const testName of originalTests) {
+      if (
+        !replacementTests.has(testName) &&
+        !this.isAuthorizedRemoval(testName, authorizedRemovals)
+      ) {
+        issues.push(
+          `Generated replacement removes existing test case: "${testName}" from ${filePath}.`,
+        );
       }
     }
   }

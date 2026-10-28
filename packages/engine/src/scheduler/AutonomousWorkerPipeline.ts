@@ -1551,12 +1551,30 @@ export class AutonomousWorkerPipeline {
             logOutput,
           );
 
-          if (this.issueSynthesizer) {
-            const regressions = this.issueSynthesizer.scanTestFailuresForRegressions(
-              `${runResult.stdout}\n${runResult.stderr}`,
-              groomed.scopedTestCommand,
-            );
-            for (const regression of regressions) {
+          const isRegressionOrSubtask =
+            taskId.startsWith("regr-") ||
+            taskId.startsWith("gap-") ||
+            groomed.task.title.startsWith("[TDD Regression]") ||
+            groomed.task.title.startsWith("[TDD RED-GREEN-REFACTOR]") ||
+            groomed.task.title.startsWith("[Rehab") ||
+            groomed.task.role === "test_engineer" ||
+            Boolean(groomed.task.parentTaskId);
+
+          const isFinalAttempt =
+            testRemediationAttempts + 1 >= maxRemediationAttempts;
+
+          if (
+            this.issueSynthesizer &&
+            !isRegressionOrSubtask &&
+            isFinalAttempt
+          ) {
+            const regressions =
+              this.issueSynthesizer.scanTestFailuresForRegressions(
+                `${runResult.stdout}\n${runResult.stderr}`,
+                groomed.scopedTestCommand,
+              );
+            // Cap at most 2 synthesized regressions per exhausted primary task to prevent queue flooding
+            for (const regression of regressions.slice(0, 2)) {
               void this.issueSynthesizer
                 .submitRegressionIssue({
                   owner: this.repoOwner,
@@ -2374,10 +2392,14 @@ export class AutonomousWorkerPipeline {
                   if (this.prMergeGateCoordinator) {
                     this.prMergeGateCoordinator.holdPr(taskId, pr.number);
                     for (const result of domainResults) {
+                      const hasBlocker =
+                        result.bodyContent.toLowerCase().includes("blocker") ||
+                        result.bodyContent.toLowerCase().includes("critical") ||
+                        result.bodyContent.toLowerCase().includes("request changes");
                       this.prMergeGateCoordinator.recordCheckIn(taskId, {
                         domain: result.domainTag,
                         authorName: result.authorName,
-                        status: "APPROVED",
+                        status: hasBlocker ? "REQUEST_CHANGES" : "APPROVED",
                         feedbackNotes: result.bodyContent,
                       });
                     }

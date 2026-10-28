@@ -391,3 +391,46 @@ export class UserBadgeComponent {}`;
   );
   assert.deepEqual(validIssues, []);
 });
+
+test("GeneratedChangeGuard rejects removal of existing test cases in test files", () => {
+  const originalTestFile = `
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("MathService", () => {
+  it("should add two numbers correctly", () => {
+    assert.equal(1 + 1, 2);
+  });
+
+  it("should subtract two numbers correctly", () => {
+    assert.equal(5 - 3, 2);
+  });
+});
+`;
+
+  // Replacement drops the subtract test case
+  const modifiedTestFile = `
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("MathService", () => {
+  it("should add two numbers correctly", () => {
+    assert.equal(1 + 1, 2);
+  });
+});
+`;
+
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "packages/engine/src/tests/math.test.ts",
+    originalTestFile,
+    modifiedTestFile,
+    "Refactor math service tests",
+  );
+
+  assert.ok(
+    issues.some((i) =>
+      i.includes('removes existing test case: "should subtract two numbers correctly"'),
+    ),
+  );
+});
+

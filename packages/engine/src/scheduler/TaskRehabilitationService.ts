@@ -45,13 +45,21 @@ export class TaskRehabilitationService {
   }
 
   /**
-   * Identifies whether a task is already a child subtask derived from a prior rehabilitation.
+   * Identifies whether a task is already a child subtask derived from a prior rehabilitation
+   * or represents an atomic regression / gap task that cannot be decomposed further.
    */
   public isChildSubtask(task: TaskRecord): boolean {
     if (task.parentTaskId != null && task.parentTaskId.trim().length > 0) {
       return true;
     }
-    if (task.title.startsWith("[Rehab")) {
+    if (
+      task.title.startsWith("[Rehab") ||
+      task.title.startsWith("[TDD Regression]") ||
+      task.title.startsWith("[TDD RED-GREEN-REFACTOR]")
+    ) {
+      return true;
+    }
+    if (task.id.startsWith("regr-") || task.id.startsWith("gap-")) {
       return true;
     }
     const dotMatches = task.id.match(/\./g);
@@ -70,6 +78,15 @@ export class TaskRehabilitationService {
     }
     // Limit recursive decomposition depth to prevent exponential subtask explosion
     if (this.isChildSubtask(task)) {
+      return false;
+    }
+    // Regression tasks and test engineer roles are atomic units that must not be decomposed
+    if (
+      task.id.startsWith("regr-") ||
+      task.role === "test_engineer" ||
+      task.title.startsWith("[TDD Regression]") ||
+      task.title.startsWith("[TDD RED-GREEN-REFACTOR]")
+    ) {
       return false;
     }
     return true;

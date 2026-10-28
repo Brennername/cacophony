@@ -261,11 +261,43 @@ export class AutomatedIssueSynthesizer {
   public async submitRegressionIssue(
     options: SynthesizeRegressionIssueOptions,
   ): Promise<SynthesizedIssueResult> {
+    // Prevent recursive regression synthesis if the source task was already a regression or subtask
+    if (
+      options.taskId &&
+      (options.taskId.startsWith("regr-") ||
+        options.taskId.startsWith("gap-") ||
+        options.taskId.includes("."))
+    ) {
+      return {
+        created: false,
+        reason: "Cannot synthesize recursive regression issue from a regression task or subtask",
+        taskId: options.taskId,
+      };
+    }
+
     const title = `[TDD Regression] ${options.regression.testName.slice(0, 90)}`;
 
     const existing = await this.taskRepo.getByTitle(title);
     if (existing) {
       return { created: false, reason: "Regression task already enqueued", taskId: existing.id };
+    }
+
+    // Circuit breaker: limit active regression backlog to prevent queue starvation
+    if (typeof this.taskRepo.listPending === "function") {
+      try {
+        const pending = await this.taskRepo.listPending();
+        const activeRegressions = pending.filter(
+          (t) => t.id.startsWith("regr-") || t.title.startsWith("[TDD Regression]"),
+        );
+        if (activeRegressions.length >= 5) {
+          return {
+            created: false,
+            reason: "Regression task queue capacity limit reached (max 5 active regressions)",
+          };
+        }
+      } catch {
+        // Non-fatal if listPending is unavailable in unit test mock
+      }
     }
 
     const body = [
