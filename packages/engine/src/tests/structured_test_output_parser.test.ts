@@ -22,7 +22,6 @@ AssertionError [ERR_ASSERTION]: Expected 42 but got 0
     });
 
     it("should handle missing file paths and line numbers gracefully", () => {
-      // Input with no stack trace or malformed lines
       const malformedStderr = `
 Generic error happened without stack trace details
     at <anonymous>
@@ -35,7 +34,6 @@ Generic error happened without stack trace details
       assert.equal(result.assertions.length, 0);
       assert.equal(result.lineNumbers.length, 0);
 
-      // Null, empty, or undefined input
       const emptyResult = parser.extractFailingTests("");
       assert.equal(emptyResult.filePaths.length, 0);
 
@@ -131,7 +129,7 @@ Duration: 8.42s
     });
 
     it("should parse inline millisecond timings", () => {
-      const output = `✔ ExecutionGuard tests passed (14.2ms)`;
+      const output = ` ExecutionGuard tests passed (14.2ms)`;
       const duration = parser.extractDuration(output);
       assert.equal(duration, 14.2);
     });
