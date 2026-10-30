@@ -126,6 +126,60 @@ Duration: 8.42s
       assert.equal(counters.failed, 0);
       assert.equal(counters.skipped, 0);
     });
+
+    it("should handle output with non-numeric values", () => {
+      const invalidOutput = `
+ℹ tests abc
+ℹ suites def
+ℹ pass ghi
+ℹ fail jkl
+ℹ cancelled mno
+ℹ skipped pqr
+ℹ duration_ms stu
+      `;
+
+      const counters = parser.extractCounters(invalidOutput);
+      assert.equal(counters.total, 0);
+      assert.equal(counters.passed, 0);
+      assert.equal(counters.failed, 0);
+      assert.equal(counters.skipped, 0);
+    });
+
+    it("should handle output with mixed case", () => {
+      const mixedCaseOutput = `
+ℹ Tests 25
+ℹ Suites 4
+ℹ Pass 23
+ℹ Fail 2
+ℹ Cancelled 0
+ℹ Skipped 1
+ℹ Duration_ms 512.4
+      `;
+
+      const counters = parser.extractCounters(mixedCaseOutput);
+      assert.equal(counters.total, 25);
+      assert.equal(counters.passed, 23);
+      assert.equal(counters.failed, 2);
+      assert.equal(counters.skipped, 1);
+    });
+
+    it("should handle output with leading/trailing whitespace", () => {
+      const whitespaceOutput = `
+ ℹ tests 25
+ ℹ suites 4
+ ℹ pass 23
+ ℹ fail 2
+ ℹ cancelled 0
+ ℹ skipped 1
+ ℹ duration_ms 512.4 
+      `;
+
+      const counters = parser.extractCounters(whitespaceOutput);
+      assert.equal(counters.total, 25);
+      assert.equal(counters.passed, 23);
+      assert.equal(counters.failed, 2);
+      assert.equal(counters.skipped, 1);
+    });
   });
 
   describe("extractDuration", () => {
@@ -146,6 +200,17 @@ Duration: 8.42s
       const duration = parser.extractDuration(output);
       assert.equal(duration, 14.2);
     });
+
+    it("should handle empty output when extracting duration", () => {
+      const duration = parser.extractDuration("");
+      assert.equal(duration, 0);
+    });
+
+    it("should handle non-numeric values for duration", () => {
+      const invalidOutput = `Duration abc`;
+      const duration = parser.extractDuration(invalidOutput);
+      assert.equal(duration, 0);
+    });
   });
 
   describe("isolateFailureReasons", () => {
@@ -163,6 +228,11 @@ AssertionError [ERR_ASSERTION]: Expected status 200 but got 500
       assert.equal(reasons.length, 2);
       assert.ok(reasons.includes("AssertionError [ERR_ASSERTION]: Expected status 200 but got 500"));
       assert.ok(reasons.includes("TypeError: Cannot read properties of undefined (reading 'token')"));
+    });
+
+    it("should handle empty output when isolating failure reasons", () => {
+      const reasons = parser.isolateFailureReasons("");
+      assert.equal(reasons.length, 0);
     });
   });
 });
