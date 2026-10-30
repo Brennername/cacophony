@@ -33,6 +33,7 @@ import type { AutonomousWorkerPipeline } from "../scheduler/AutonomousWorkerPipe
 import { DomainAdvisoryEvaluator } from "../inference/DomainAdvisoryEvaluator.js";
 import { PrMergeGateCoordinator } from "../scheduler/PrMergeGateCoordinator.js";
 import * as path from "node:path";
+import * as fs from "node:fs";
 
 export interface DaemonConfig {
   readonly dbPath?: string;
@@ -806,10 +807,15 @@ export class CacophonyDaemon {
         "../gitea/GitHubSyncService.js"
       );
 
+      const isInsideDocker = fs.existsSync("/.dockerenv");
+      const defaultGiteaUrl = isInsideDocker
+        ? "http://cacophony-gitea:3000"
+        : "http://localhost:19634";
       const giteaUrl =
         process.env.GITEA_URL ||
         process.env.GITEA_INTERNAL_URL ||
-        "http://localhost:19634";
+        (isInsideDocker ? process.env.GITEA_BASE_URL : undefined) ||
+        defaultGiteaUrl;
       const giteaToken =
         process.env.GITEA_API_TOKEN || process.env.GITEA_TOKEN || "";
       const githubToken = process.env.GITHUB_TOKEN || "";
