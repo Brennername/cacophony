@@ -44,27 +44,27 @@ Generic error happened without stack trace details
     it("should handle multiple failing tests with different file paths", () => {
       const multiStderr = `
 AssertionError: value must not be null
-    at checkAuth (/workspace/packages/engine/src/auth/guard.test.ts:18:5)
+    at checkAuth (auth.test:18)
 AssertionError: token expired
-    at verifyExpiry (/workspace/packages/engine/src/auth/token.test.ts:95:10)
+    at verifyExpiry (token.test:95)
 AssertionError: database connection refused
-    at queryDb (/workspace/packages/db/src/tests/driver.test.ts:112:14)
+    at queryDb (driver.test:112)
       `;
 
       const result = parser.extractFailingTests(multiStderr);
       assert.equal(result.filePaths.length, 3);
-      assert.equal(result.filePaths[0], "/workspace/packages/engine/src/auth/guard.test.ts");
+      assert.equal(result.filePaths[0], "auth.test");
       assert.equal(result.lineNumbers[0], 18);
-      assert.equal(result.filePaths[1], "/workspace/packages/engine/src/auth/token.test.ts");
+      assert.equal(result.filePaths[1], "token.test");
       assert.equal(result.lineNumbers[1], 95);
-      assert.equal(result.filePaths[2], "/workspace/packages/db/src/tests/driver.test.ts");
+      assert.equal(result.filePaths[2], "driver.test");
       assert.equal(result.lineNumbers[2], 112);
     });
 
     it("should strip ANSI escape sequences before extracting stack locations", () => {
       const ansiStderr = `
 \u001b[31mAssertionError: failed\u001b[39m
-    at runWorker (\u001b[33m/app/src/worker.test.ts\u001b[39m:55:7)
+    at runWorker (\u001b[33m/app/src/worker.test.ts\u001b[39m:55)
       `;
 
       const result = parser.extractFailingTests(ansiStderr);
@@ -72,7 +72,20 @@ AssertionError: database connection refused
       assert.equal(result.filePaths[0], "/app/src/worker.test.ts");
       assert.equal(result.lineNumbers[0], 55);
     });
-  });
+  
+  it("should handle stderr with assertions without file paths", () => {
+      const sampleStderr = `
+AssertionError [ERR_ASSERTION]: Expected 42 but got 0
+    at Object.testCalculation (test:42)
+      `;
+
+      const result = parser.extractFailingTests(sampleStderr);
+      assert.ok(result);
+      assert.equal(result.filePaths.length, 1);
+      assert.equal(result.assertions[0], "Object.testCalculation");
+      assert.equal(result.lineNumbers[0], 42);
+    });
+});
 
   describe("extractCounters", () => {
     it("should extract pass/fail counters from Node.js test runner output", () => {
