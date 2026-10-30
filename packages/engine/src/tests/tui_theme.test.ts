@@ -182,17 +182,14 @@ describe("TUI Theme Contrast & Color Palette Calibration Tests (T-S4.3)", () => 
     });
 
     it("should handle missing colors in the override palette gracefully", () => {
-      const service = new TuiThemeService();
-      const partial = service.overridePalette("light", {
-        warn: "\x1b[33m",
-      });
-
-      assert.equal(partial.warn, "\x1b[33m");
-      // Unspecified colors should retain standard light theme values
-      assert.equal(partial.info, TUI_PALETTES.light.info);
-      assert.equal(partial.text, TUI_PALETTES.light.text);
-      assert.equal(partial.danger, TUI_PALETTES.light.danger);
+    const service = new TuiThemeService();
+    const partial = service.overridePalette("light", {
+      warn: "\x1b[33m",
     });
+
+    assert.equal(partial.warn, "\x1b[33m");
+    assert.deepEqual(partial, { ...TUI_PALETTES.light, warn: "\x1b[33m" });
+  });
 
     it("should reset palettes back to system defaults", () => {
       const service = new TuiThemeService();
