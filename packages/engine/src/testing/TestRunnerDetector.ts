@@ -80,8 +80,8 @@ export class TestRunnerDetector {
           confidence: 0.85,
         };
       }
-    } catch {
-      // Ignore errors and continue to other detection methods
+    } catch (error) {
+      console.error(`Error reading package.json: ${error}`);
     }
 
     try {
@@ -91,7 +91,9 @@ export class TestRunnerDetector {
         defaultCommand: "mvn test",
         confidence: 0.95,
       };
-    } catch {}
+    } catch (error) {
+      console.error(`Error checking for pom.xml: ${error}`);
+    }
 
     try {
       await fs.stat(path.resolve(workspaceRoot, "build.gradle"));
@@ -100,7 +102,9 @@ export class TestRunnerDetector {
         defaultCommand: "gradle test",
         confidence: 0.95,
       };
-    } catch {}
+    } catch (error) {
+      console.error(`Error checking for build.gradle: ${error}`);
+    }
 
     try {
       await fs.stat(path.resolve(workspaceRoot, "go.mod"));
@@ -109,7 +113,9 @@ export class TestRunnerDetector {
         defaultCommand: "go test ./...",
         confidence: 0.95,
       };
-    } catch {}
+    } catch (error) {
+      console.error(`Error checking for go.mod: ${error}`);
+    }
 
     try {
       await fs.stat(path.resolve(workspaceRoot, "Cargo.toml"));
@@ -118,7 +124,9 @@ export class TestRunnerDetector {
         defaultCommand: "cargo test",
         confidence: 0.95,
       };
-    } catch {}
+    } catch (error) {
+      console.error(`Error checking for Cargo.toml: ${error}`);
+    }
 
     return {
       framework: "generic",
