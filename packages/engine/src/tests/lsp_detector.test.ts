@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Mocking LspDetector for testing purposes
 class MockLspDetector {
   static discoverLanguageServer(binaryName: string): string | null {
     switch (binaryName) {
