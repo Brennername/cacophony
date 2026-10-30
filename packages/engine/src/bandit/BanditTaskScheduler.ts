@@ -68,6 +68,37 @@ export class BanditTaskScheduler {
     return role ? all.filter((a) => a.role === role) : all;
   }
 
+  /**
+   * Dynamically synchronizes physically installed models as active bandit arms
+   * across specified agent roles.
+   *
+   * @param installedModels - List of model identifiers discovered on the host.
+   * @param roles - The agent roles to map each model to.
+   */
+  public syncInstalledModels(
+    installedModels: readonly string[],
+    roles: readonly string[] = [
+      "implementer",
+      "reviewer",
+      "architect",
+      "test_engineer",
+      "type_specialist",
+    ],
+  ): void {
+    for (const model of installedModels) {
+      const cleanModel = model.trim();
+      if (!cleanModel || cleanModel.toLowerCase().includes("smollm")) {
+        continue;
+      }
+      for (const role of roles) {
+        const armId = `${role}:${cleanModel}`;
+        if (!this.arms.has(armId)) {
+          this.registerArm(cleanModel, role);
+        }
+      }
+    }
+  }
+
   public setPolicy(policy: BanditPolicyType): void {
     this.policy = policy;
   }

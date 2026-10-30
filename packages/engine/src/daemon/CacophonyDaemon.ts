@@ -421,15 +421,37 @@ export class CacophonyDaemon {
       policy: (process.env.BANDIT_POLICY as any) || "epsilon_greedy",
       explorationRate: 0.15,
     });
-    const defaultArms = [
+    const initialInstalledModels = [
+      "phi4:latest",
+      "phi4",
+      "deepseek-coder-v2:16b",
       "qwen2.5-coder:7b-instruct-q4_K_M",
-      "qwen2.5-coder:7b",
-      "deepseek-r1:8b",
+      "gemma3:4b",
     ];
-    for (const armModel of defaultArms) {
-      this.banditScheduler.registerArm(armModel, "implementer");
-      this.banditScheduler.registerArm(armModel, "reviewer");
+    try {
+      if (this.modelManager) {
+        const discovered = await this.modelManager.listInstalledModels([]);
+        if (discovered.length > 0) {
+          for (const m of discovered) {
+            initialInstalledModels.push(m.name);
+          }
+        }
+      }
+    } catch {
+      // Retain static host roster if Ollama client discovery is temporarily offline
     }
+
+    this.banditScheduler.syncInstalledModels(
+      Array.from(new Set(initialInstalledModels)),
+      [
+        "implementer",
+        "reviewer",
+        "architect",
+        "test_engineer",
+        "type_specialist",
+      ],
+    );
+    this.scheduler.setBanditScheduler(this.banditScheduler);
 
     const { FleetMasterCoordinator } =
       await import("../fleet/FleetMasterCoordinator.js");
@@ -769,7 +791,11 @@ export class CacophonyDaemon {
               ).OllamaModelManager();
             const installed = await modelManager.listInstalledModels([]);
             if (installed.length > 0) {
-              await this.autoTuner.autoTuneModels(installed.map((m) => m.name));
+              const installedNames = installed.map((m) => m.name);
+              await this.autoTuner.autoTuneModels(installedNames);
+              if (this.banditScheduler) {
+                this.banditScheduler.syncInstalledModels(installedNames);
+              }
             }
           } catch {
             // ignore transient auto-tune errors

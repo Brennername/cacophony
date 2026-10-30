@@ -163,6 +163,15 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [x] T112.4: Implement ghost model auto-remapping and passing-test regression auto-completion in `QueueGroomer` and `TaskScheduler` to prevent scheduler throttling warnings and compute waste. [Files: packages/engine/src/scheduler/QueueGroomer.ts, packages/engine/src/scheduler/TaskScheduler.ts] [Test: node --test packages/engine/dist/__tests__/Scheduler.test.js]
 - [x] T112.5: Reconcile clean open Gitea PRs into `main`, verify monorepo build and CodeQL security analysis with 0 alerts, update Docker daemon artifacts, and synchronize with GitHub `origin/master`. [Files: docs/taskcade.md] [Test: npm test]
 
+## Phase 113: Dynamic Multi-Armed Bandit Model Fleet Ingestion, phi4 Deployment & Bandit-Driven Task Routing
+
+- [x] T113.1: Dynamically register all physically installed Ollama models (`phi4:latest`, `phi4`, `deepseek-coder-v2:16b`, `gemma3:4b`, `qwen2.5-coder:7b-instruct-q4_K_M`) into `BanditTaskScheduler` across all relevant roles (`implementer`, `reviewer`, `architect`, `test_engineer`, `type_specialist`), removing hardcoded static legacy models. [Files: packages/engine/src/daemon/CacophonyDaemon.ts, packages/engine/src/bandit/BanditTaskScheduler.ts] [Test: node --test packages/engine/dist/tests/bandit_task_scheduler.test.js]
+- [x] T113.2: Wire `BanditTaskScheduler` into `TaskScheduler` (`setBanditScheduler`) and integrate `banditScheduler.selectArm` into `TaskScheduler.selectCandidateModel` for role-based candidate model arbitration and exploration. [Files: packages/engine/src/scheduler/TaskScheduler.ts, packages/engine/src/daemon/CacophonyDaemon.ts] [Test: node --test packages/engine/dist/__tests__/Scheduler.test.js]
+- [x] T113.3: Enable bandit dynamic rerouting for tasks deferred due to VRAM constraints or unpinned assignments, allowing `phi4` and other active models to pick up pending tasks immediately. [Files: packages/engine/src/scheduler/TaskScheduler.ts] [Test: node --test packages/engine/dist/__tests__/Scheduler.test.js]
+- [x] T113.4: Write comprehensive unit tests verifying dynamic installed model arm registration, `phi4` dispatching, and bandit-driven task candidate selection. [Files: packages/engine/src/tests/bandit_task_scheduler.test.ts, packages/engine/src/tests/phi4_bandit_dispatch.test.ts, packages/engine/src/__tests__/Scheduler.test.ts] [Test: npm run build --workspace=@cacophony/engine && node --test packages/engine/dist/tests/phi4_bandit_dispatch.test.js]
+- [x] T113.5: Verify monorepo build, deploy updated engine build to live container, and observe `phi4` executing live arena tasks. [Files: docs/taskcade.md] [Test: npm test]
+
+
 
 
 - [ ] T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown snippet formatting, and auto-scroll to bottom. [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts, packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]

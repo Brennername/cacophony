@@ -116,6 +116,9 @@ export class TaskScheduler implements IModelPredictor {
       ) => Promise<void>)
     | undefined;
   private readonly roleSelector: ModelRoleSelector;
+  private banditScheduler?:
+    | import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler
+    | undefined;
 
   constructor(options: {
     readonly taskRepo: TaskRepository;
@@ -153,11 +156,13 @@ export class TaskScheduler implements IModelPredictor {
       lastTask: TaskRecord,
       reason: string,
     ) => Promise<void>;
+    readonly banditScheduler?: import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler;
   }) {
     this.taskRepo = options.taskRepo;
     this.stageRepo = options.stageRepo;
     this.evictionManager = options.evictionManager;
     this.telemetryProvider = options.telemetryProvider;
+    this.banditScheduler = options.banditScheduler;
     this.streamTapManager = options.streamTapManager;
     this.rehabilitationService = options.rehabilitationService;
     this.dispatcher = options.dispatcher;
@@ -400,6 +405,58 @@ export class TaskScheduler implements IModelPredictor {
    */
   public setExecutionHandler(handler: TaskExecutionHandler): void {
     this.executionHandler = handler;
+  }
+
+  /**
+   * Registers the Multi-Armed Bandit scheduler for dynamic model exploration and routing.
+   */
+  public setBanditScheduler(
+    bandit: import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler,
+  ): void {
+    this.banditScheduler = bandit;
+  }
+
+  /**
+   * Returns registered Multi-Armed Bandit scheduler instance if present.
+   */
+  public getBanditScheduler():
+    | import("../bandit/BanditTaskScheduler.js").BanditTaskScheduler
+    | undefined {
+    return this.banditScheduler;
+  }
+
+  /**
+   * Resolves all eligible physically installed candidate models for a task.
+   */
+  public async getEligibleCandidateModels(task: TaskRecord): Promise<string[]> {
+    let installedModels: readonly string[] = [];
+    try {
+      installedModels = await this.probe.getInstalledModels();
+    } catch {
+      installedModels = [];
+    }
+    const codingModels = installedModels
+      .filter((m) => !m.toLowerCase().includes("smollm") && m !== "qwen2.5-coder:3b")
+      .map((m) => TaskScheduler.normalizeModelName(m));
+
+    const banditArms = this.banditScheduler && task.role
+      ? this.banditScheduler
+          .getArms(task.role as string)
+          .map((a) => TaskScheduler.normalizeModelName(a.modelId))
+      : [];
+
+    const defaultImplementer =
+      process.env["DEFAULT_IMPLEMENTER_MODEL"] || "deepseek-coder-v2:16b";
+    const defaultReviewer =
+      process.env["DEFAULT_REVIEWER_MODEL"] || "phi4:latest";
+
+    const pool = [
+      ...banditArms,
+      ...(codingModels.length > 0
+        ? codingModels
+        : [defaultImplementer, defaultReviewer]),
+    ];
+    return Array.from(new Set(pool));
   }
 
   /**
@@ -831,6 +888,10 @@ export class TaskScheduler implements IModelPredictor {
       installedModels = [];
     }
 
+    if (this.banditScheduler && installedModels.length > 0) {
+      this.banditScheduler.syncInstalledModels(installedModels);
+    }
+
     const installedSet = new Set<string>(installedModels);
     const normalizedInstalledSet = new Set<string>(
       installedModels.map((m) => TaskScheduler.normalizeModelName(m)),
@@ -879,23 +940,38 @@ export class TaskScheduler implements IModelPredictor {
         ? rosterModelsForRole.filter(isModelInstalled)
         : rosterModelsForRole;
 
+    const banditArms = this.banditScheduler
+      ? this.banditScheduler
+          .getArms(task.role as string)
+          .map((a) => TaskScheduler.normalizeModelName(a.modelId))
+          .filter(isModelInstalled)
+      : [];
+
     const basePool =
-      installedRosterModels.length > 0
-        ? installedRosterModels
-        : configuredCandidates.length > 0
-          ? (installedModels.length > 0
-              ? configuredCandidates.filter(isModelInstalled)
-              : configuredCandidates)
-          : codingInstalledModels.length > 0
-            ? codingInstalledModels
-            : [
-                defaultImplementer,
-                defaultReviewer,
-                ...this.vramCatalog
-                  .getAllProfiles()
-                  .map((p) => p.modelId)
-                  .filter((m) => m !== "qwen2.5-coder:3b"),
-              ];
+      banditArms.length > 0
+        ? Array.from(
+            new Set([
+              ...banditArms,
+              ...installedRosterModels,
+              ...codingInstalledModels,
+            ]),
+          )
+        : installedRosterModels.length > 0
+          ? installedRosterModels
+          : configuredCandidates.length > 0
+            ? (installedModels.length > 0
+                ? configuredCandidates.filter(isModelInstalled)
+                : configuredCandidates)
+            : codingInstalledModels.length > 0
+              ? codingInstalledModels
+              : [
+                  defaultImplementer,
+                  defaultReviewer,
+                  ...this.vramCatalog
+                    .getAllProfiles()
+                    .map((p) => p.modelId)
+                    .filter((m) => m !== "qwen2.5-coder:3b"),
+                ];
 
     let candidateList: string[];
 
@@ -929,6 +1005,11 @@ export class TaskScheduler implements IModelPredictor {
         role !== "reviewer"
       ) {
         // If the explicitly assigned model previously failed, allow fallback to installed candidates
+        candidateList = Array.from(
+          new Set([normalizedAssigned, ...basePool]),
+        );
+      } else if (this.banditScheduler && !task.metadataHints?.modelAffinity) {
+        // When multi-armed bandit is active and task is not pinned, allow exploration across base pool
         candidateList = Array.from(
           new Set([normalizedAssigned, ...basePool]),
         );
@@ -1002,6 +1083,33 @@ export class TaskScheduler implements IModelPredictor {
           preferred,
           ...candidateList.filter((m) => m !== preferred),
         ];
+      }
+    }
+
+    if (this.banditScheduler && candidateList.length > 1) {
+      const banditOutcome = this.banditScheduler.selectModel(
+        task.role as string,
+        candidateList,
+      );
+      if (banditOutcome?.selectedModel) {
+        const normalizedChosen = TaskScheduler.normalizeModelName(
+          banditOutcome.selectedModel,
+        );
+        const matched = candidateList.find(
+          (m) =>
+            m === banditOutcome.selectedModel ||
+            TaskScheduler.normalizeModelName(m) === normalizedChosen,
+        );
+        if (matched) {
+          this.logger.debug("Bandit policy selected candidate model", {
+            taskId: task.id,
+            role: task.role,
+            selectedModel: matched,
+            isExploratory: banditOutcome.isExploratory,
+            rationale: banditOutcome.explorationRationale,
+          });
+          return matched;
+        }
       }
     }
 
@@ -1222,14 +1330,42 @@ export class TaskScheduler implements IModelPredictor {
 
       // Evaluate tasks in affinity order, verifying VRAM headroom and system pressure per candidate (T68.2.3, T68.6.2)
       for (const candidateTask of sorted) {
-        const candidateModel = await this.selectCandidateModel(
+        let candidateModel = await this.selectCandidateModel(
           candidateTask,
           activeVramModel,
         );
-        const eligibility = await this.evaluateDispatchEligibility(
+        let eligibility = await this.evaluateDispatchEligibility(
           candidateTask,
           candidateModel,
         );
+
+        // If preferred candidateModel cannot be dispatched due to VRAM / resources,
+        // and task is not pinned via metadataHints, evaluate fallback candidates from the installed pool
+        if (!eligibility.allowed && !candidateTask.metadataHints?.modelAffinity) {
+          const altCandidates = (
+            await this.getEligibleCandidateModels(candidateTask)
+          ).filter((m) => m !== candidateModel);
+          for (const altModel of altCandidates) {
+            const altEligibility = await this.evaluateDispatchEligibility(
+              candidateTask,
+              altModel,
+            );
+            if (altEligibility.allowed) {
+              this.logger.info(
+                `Bandit resource fallback: rerouting task ${candidateTask.id} from constrained model '${candidateModel}' to available candidate '${altModel}'`,
+                {
+                  taskId: candidateTask.id,
+                  originalModel: candidateModel,
+                  selectedModel: altModel,
+                },
+              );
+              candidateModel = altModel;
+              eligibility = altEligibility;
+              break;
+            }
+          }
+        }
+
         if (eligibility.allowed) {
           targetTask = candidateTask;
           selectedModel = candidateModel;
