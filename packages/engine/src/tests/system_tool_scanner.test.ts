@@ -248,4 +248,21 @@ describe("SystemToolScanner Diagnostic & Discovery Tests", () => {
     assert.strictEqual(status.installed, true);
     assert.strictEqual(status.binaryName, "nvidia-smi");
   });
+
+  it("should handle tool definitions with no version args and no parse version function and no category and no description and no enabled features and no disabled features if missing", async () => {
+    const customExec = async (file: string, args: string[]) => {
+      if (file === "which" && args[0] === "nvidia-smi") {
+        return { stdout: "/usr/bin/nvidia-smi\n", stderr: "" };
+      }
+      throw new Error(`Command not found: ${file} ${args.join(" ")}`);
+    };
+
+    const scanner = new SystemToolScanner(undefined, customExec);
+    const def = MONITORED_SYSTEM_TOOLS.find((t) => t.binaryName === "nvidia-smi");
+    assert.ok(def);
+
+    const status = await scanner.checkTool(def);
+    assert.strictEqual(status.installed, true);
+    assert.strictEqual(status.binaryName, "nvidia-smi");
+  });
 });
