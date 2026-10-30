@@ -164,14 +164,14 @@ describe("TUI Theme Contrast & Color Palette Calibration Tests (T-S4.3)", () => 
     });
 
     it("should allow overriding the default color palette", () => {
-      const service = new TuiThemeService();
-      const updated = service.overridePalette("dark", {
-        info: "\x1b[38;2;50;150;250m",
-      });
-
-      assert.equal(updated.info, "\x1b[38;2;50;150;250m");
-      assert.equal(service.getPalette("dark").info, "\x1b[38;2;50;150;250m");
+    const service = new TuiThemeService();
+    const updated = service.overridePalette("dark", {
+      info: "\x1b[38;2;50;150;250m",
     });
+
+    assert.equal(updated.info, "\x1b[38;2;50;150;250m");
+    assert.equal(service.getPalette("dark").info, "\x1b[38;2;50;150;250m");
+  });
 
     it("should not throw an error if the override palette is empty", () => {
       const service = new TuiThemeService();
