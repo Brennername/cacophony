@@ -216,10 +216,12 @@ export class GiteaApiClient {
     owner: string,
     repo: string,
     state: "open" | "closed" | "all" = "open",
+    page = 1,
+    limit = 50,
   ): Promise<GiteaPullRequest[]> {
     this.guard?.assertScope("repository", "read");
     return this.request<GiteaPullRequest[]>(
-      `/api/v1/repos/${owner}/${repo}/pulls?state=${state}`,
+      `/api/v1/repos/${owner}/${repo}/pulls?state=${state}&page=${page}&limit=${limit}`,
     );
   }
 

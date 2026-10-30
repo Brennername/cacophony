@@ -48,6 +48,34 @@ export class QueueGroomer {
   }
 
   /**
+   * Returns resolved repository project root directory.
+   */
+  public getProjectDir(): string {
+    return this.projectDir;
+  }
+
+  /**
+   * Maps uninstalled or missing ghost models to physically installed host model equivalents.
+   */
+  public static remapGhostModel(
+    model: string | null | undefined,
+  ): string | null {
+    if (!model) return null;
+    const trimmed = model.trim();
+    const lower = trimmed.toLowerCase();
+    if (lower.includes("gemma3:12b") || lower.includes("gemma3:12b-it-qat")) {
+      return "gemma3:4b";
+    }
+    if (lower.includes("qwen2.5-coder:14b")) {
+      return "qwen2.5-coder:7b-instruct-q4_K_M";
+    }
+    if (lower === "phi4") {
+      return "phi4:latest";
+    }
+    return trimmed;
+  }
+
+  /**
    * Grooms a task record and returns enriched prompt and scoped execution directives.
    */
   public groom(
@@ -61,6 +89,15 @@ export class QueueGroomer {
     const groomNotes: string[] = [];
     const preflightIssues: string[] = [];
     let modified = false;
+
+    // Remap uninstalled ghost models if assigned
+    const remappedModel = QueueGroomer.remapGhostModel(task.modelAssigned);
+    if (remappedModel && remappedModel !== task.modelAssigned) {
+      modified = true;
+      groomNotes.push(
+        `Auto-remapped ghost model '${task.modelAssigned}' to installed model '${remappedModel}'`,
+      );
+    }
 
     // Resolve stack profile (from options or via auto-detection)
     const activeProfile =
@@ -353,7 +390,7 @@ export class QueueGroomer {
     }
 
     // 3b. Inject Archetype-Specific Directives (Reasoning vs Direct Coder)
-    const modelTag = task.modelAssigned || "";
+    const modelTag = remappedModel || task.modelAssigned || "";
     const archetypeDirective = this.formatPromptForModelArchetype(modelTag);
     if (archetypeDirective) {
       taskDirectives.push(archetypeDirective);
@@ -378,6 +415,7 @@ export class QueueGroomer {
       ...task,
       focusFiles: focusFilesList.join(" "),
       testCommand,
+      ...(remappedModel ? { modelAssigned: remappedModel } : {}),
     };
 
     return {

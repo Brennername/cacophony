@@ -109,7 +109,34 @@ describe("T108.7: PrMergeGateCoordinator Unit Test Suite", () => {
     const state = coordinator.getHeldState("task-timeout");
     assert.ok(state);
     (state as { heldAt: number }).heldAt = Date.now() - 100;
-
     assert.equal(coordinator.isMergeApproved("task-timeout"), true);
   });
+
+  it("should auto-approve merge immediately when requiredDomains is empty", () => {
+    const coordinator = new PrMergeGateCoordinator();
+    const state = coordinator.holdPr("task-empty-domains", 301, []);
+    assert.equal(state.mergeApproved, true);
+    assert.equal(state.synthesisCompleted, true);
+    assert.equal(coordinator.areAllDomainsCheckedIn("task-empty-domains"), true);
+    assert.equal(coordinator.isMergeApproved("task-empty-domains"), true);
+  });
+
+  it("should auto-approve merge when single active domain checks in approved", () => {
+    const coordinator = new PrMergeGateCoordinator();
+    const state = coordinator.holdPr("task-single-domain", 302, ["Security"]);
+    assert.equal(state.mergeApproved, false);
+    assert.equal(coordinator.isMergeApproved("task-single-domain"), false);
+
+    coordinator.recordCheckIn("task-single-domain", {
+      domain: "Security",
+      authorName: "SecurityBot",
+      status: "APPROVED",
+      feedbackNotes: "No security issues detected.",
+    });
+
+    assert.equal(coordinator.areAllDomainsCheckedIn("task-single-domain"), true);
+    assert.equal(coordinator.hasBlockingFeedback("task-single-domain"), false);
+    assert.equal(coordinator.isMergeApproved("task-single-domain"), true);
+  });
 });
+

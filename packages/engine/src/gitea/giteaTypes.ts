@@ -48,6 +48,7 @@ export interface GiteaPullRequest {
   readonly body: string;
   readonly state: "open" | "closed";
   readonly merged: boolean;
+  readonly mergeable?: boolean;
   readonly head: {
     readonly ref: string;
     readonly sha: string;
@@ -98,6 +99,7 @@ export interface MergePullRequestRequest {
     "merge" | "rebase" | "rebase-merge" | "squash" | "manually-merged";
   readonly MergeTitleField?: string | undefined;
   readonly MergeMessageField?: string | undefined;
+  readonly delete_branch_after_merge?: boolean | undefined;
 }
 
 export interface OAuthTokenResponse {

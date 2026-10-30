@@ -120,6 +120,12 @@ export class CacophonyDaemon {
   private githubSecurityBridge?:
     | import("../gitea/GitHubSecurityAndIssueBridge.js").GitHubSecurityAndIssueBridge
     | undefined;
+  private prReconciliationWorker?:
+    | import("../gitea/PrReconciliationWorker.js").PrReconciliationWorker
+    | undefined;
+  private gitHubSyncService?:
+    | import("../gitea/GitHubSyncService.js").GitHubSyncService
+    | undefined;
   private startTime = 0;
   private isRunning = false;
 
@@ -498,7 +504,10 @@ export class CacophonyDaemon {
         domainAdvisoryEvaluator: this.domainAdvisoryEvaluator,
         prMergeGateCoordinator: this.prMergeGateCoordinator,
         autoMerge: process.env.AUTO_MERGE_APPROVED_PRS !== "false",
-        repoOwner: process.env.GIT_REPO_OWNER || "Cacophony",
+        repoOwner:
+          process.env.GIT_REPO_OWNER ||
+          process.env.GITEA_ADMIN_USER ||
+          "NeXeN",
         repoName: process.env.GIT_REPO_NAME || "cacophony",
         gitRemote: process.env.GIT_REMOTE || "gitea",
       });
@@ -790,11 +799,19 @@ export class CacophonyDaemon {
         "../gitea/GitHubPlatformProvider.js"
       );
 
+      const { PrReconciliationWorker } = await import(
+        "../gitea/PrReconciliationWorker.js"
+      );
+      const { GitHubSyncService } = await import(
+        "../gitea/GitHubSyncService.js"
+      );
+
       const giteaUrl =
         process.env.GITEA_URL ||
         process.env.GITEA_INTERNAL_URL ||
         "http://localhost:19634";
-      const giteaToken = process.env.GITEA_TOKEN || "";
+      const giteaToken =
+        process.env.GITEA_API_TOKEN || process.env.GITEA_TOKEN || "";
       const githubToken = process.env.GITHUB_TOKEN || "";
       const githubOwner =
         process.env.GITHUB_REPO_OWNER ||
@@ -822,6 +839,36 @@ export class CacophonyDaemon {
         defaultReasoningModel:
           process.env.REASONING_MODEL || "deepseek-r1:8b",
       });
+
+      // Initialize autonomous PR reconciliation worker
+      const reconciliationIntervalMs =
+        Number(process.env.PR_RECONCILIATION_INTERVAL_MS) || 60_000;
+      const autoMergePrs = process.env.AUTO_MERGE_APPROVED_PRS !== "false";
+
+      this.prReconciliationWorker = new PrReconciliationWorker({
+        giteaClient,
+        owner: giteaOwner,
+        repo: giteaRepo,
+        autoMergeClean: autoMergePrs,
+        intervalMs: reconciliationIntervalMs,
+      });
+      this.prReconciliationWorker.start();
+
+      // Initialize automated GitHub upstream synchronization service
+      const githubSyncIntervalMs =
+        Number(process.env.GITHUB_SYNC_INTERVAL_MS) || 300_000;
+      const enableGithubSync = process.env.ENABLE_GITHUB_SYNC !== "false";
+      if (enableGithubSync) {
+        this.gitHubSyncService = new GitHubSyncService({
+          workspaceDir: process.env.WORKSPACE_ROOT || process.cwd(),
+          sourceRemote: "gitea",
+          sourceBranch: "main",
+          targetRemote: "origin",
+          targetBranch: "master",
+          intervalMs: githubSyncIntervalMs,
+        });
+        this.gitHubSyncService.start();
+      }
 
       const syncIntervalMs =
         Number(process.env.DEPENDABOT_SYNC_INTERVAL_MS) || 600_000;
@@ -853,7 +900,7 @@ export class CacophonyDaemon {
       }, syncIntervalMs);
     } catch (err: unknown) {
       this.logger.warn(
-        "Non-fatal error initializing GitHubSecurityAndIssueBridge:",
+        "Non-fatal error initializing Gitea/GitHub bridge workers:",
         {
           error: err instanceof Error ? err.message : String(err),
         },
@@ -925,6 +972,14 @@ export class CacophonyDaemon {
     if (this.dependabotSyncTimer) {
       clearInterval(this.dependabotSyncTimer);
       this.dependabotSyncTimer = null;
+    }
+    if (this.prReconciliationWorker) {
+      this.prReconciliationWorker.stop();
+      this.prReconciliationWorker = undefined;
+    }
+    if (this.gitHubSyncService) {
+      this.gitHubSyncService.stop();
+      this.gitHubSyncService = undefined;
     }
     if (this.scheduler) {
       this.scheduler.stop();

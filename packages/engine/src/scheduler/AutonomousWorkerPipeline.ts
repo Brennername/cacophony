@@ -215,8 +215,12 @@ export class AutonomousWorkerPipeline {
       "qwen2.5-coder:7b-instruct-q4_K_M";
     this.autoMerge = options.autoMerge ?? true;
     this.repoOwner =
-      options.repoOwner || process.env.GIT_REPO_OWNER || "cacophony";
-    this.repoName = options.repoName || process.env.GIT_REPO_NAME || "core";
+      options.repoOwner ||
+      process.env.GIT_REPO_OWNER ||
+      process.env.GITEA_ADMIN_USER ||
+      "NeXeN";
+    this.repoName =
+      options.repoName || process.env.GIT_REPO_NAME || "cacophony";
     this.gitRemote = options.gitRemote || process.env.GIT_REMOTE || "gitea";
     this.frontierReviewer =
       options.frontierReviewer ??
@@ -2427,7 +2431,8 @@ export class AutonomousWorkerPipeline {
                   });
 
                   if (this.prMergeGateCoordinator) {
-                    this.prMergeGateCoordinator.holdPr(taskId, pr.number);
+                    const activeDomains = domainResults.map((r) => r.domainTag);
+                    this.prMergeGateCoordinator.holdPr(taskId, pr.number, activeDomains);
                     for (const result of domainResults) {
                       const hasBlocker =
                         result.bodyContent.toLowerCase().includes("blocker") ||

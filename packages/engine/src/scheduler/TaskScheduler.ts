@@ -902,11 +902,27 @@ export class TaskScheduler implements IModelPredictor {
     if (normalizedAssigned) {
       if (installedModels.length > 0 && !isModelInstalled(normalizedAssigned)) {
         // Strict guard: NEVER attempt to dispatch to a model not installed on disk!
-        this.logger.warn(
-          `Assigned model '${normalizedAssigned}' is not physically installed on disk. Gracefully falling back to active installed pool.`,
-          { assignedModel: normalizedAssigned, installedModels },
-        );
-        candidateList = Array.from(basePool);
+        const remappedGhost = QueueGroomer.remapGhostModel(normalizedAssigned);
+        if (remappedGhost && isModelInstalled(remappedGhost)) {
+          this.logger.info(
+            `Auto-remapping uninstalled ghost model '${normalizedAssigned}' to physically installed model '${remappedGhost}' for task ${task.id}`,
+            {
+              taskId: task.id,
+              ghostModel: normalizedAssigned,
+              remappedModel: remappedGhost,
+            },
+          );
+          void this.taskRepo
+            .updateModel(task.id, remappedGhost)
+            .catch(() => {});
+          candidateList = [remappedGhost];
+        } else {
+          this.logger.warn(
+            `Assigned model '${normalizedAssigned}' is not physically installed on disk. Gracefully falling back to active installed pool.`,
+            { assignedModel: normalizedAssigned, installedModels },
+          );
+          candidateList = Array.from(basePool);
+        }
       } else if (
         task.failureCount > 0 &&
         role !== "architect" &&
@@ -1336,6 +1352,46 @@ export class TaskScheduler implements IModelPredictor {
 
       // 4. Groom task (resolve focus files, scope test command, inject architectural directives)
       const groomed = this.groomer.groom(targetTask);
+
+      // 4a. Pre-flight regression verification: check if scoped tests already pass 100% on base tree
+      const isRegressionTask =
+        targetTask.id.startsWith("regr-") ||
+        targetTask.title.includes("[TDD Regression]") ||
+        targetTask.title.startsWith("[Rehab");
+
+      if (isRegressionTask && groomed.scopedTestCommand) {
+        try {
+          const { exec } = await import("node:child_process");
+          const { promisify } = await import("node:util");
+          const execAsync = promisify(exec);
+
+          const projectCwd = this.groomer.getProjectDir();
+          const testCheck = await execAsync(groomed.scopedTestCommand, {
+            cwd: projectCwd,
+            timeout: 15_000,
+          }).catch((err) => ({ error: err }));
+
+          if (!("error" in testCheck)) {
+            this.logger.info(
+              `Regression pre-flight: scoped test command '${groomed.scopedTestCommand}' passed 100% on base tree. Auto-completing regression task ${targetTask.id} without compute waste.`,
+              {
+                taskId: targetTask.id,
+                command: groomed.scopedTestCommand,
+              },
+            );
+            await this.taskRepo.updateStatus(
+              targetTask.id,
+              "COMPLETED",
+              500,
+              10.0,
+            );
+            return targetTask;
+          }
+        } catch {
+          // Non-fatal fallback to regular model inference execution
+        }
+      }
+
       if ((groomed.preflightIssues?.length ?? 0) > 0) {
         const message = groomed.preflightIssues!.join(" ");
         const preflightStage = await this.stageRepo.recordStageStart(

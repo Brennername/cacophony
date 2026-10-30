@@ -77,15 +77,19 @@ export class PrMergeGateCoordinator {
     prNumber: number,
     requiredDomains?: readonly AdvisoryDomainTag[],
   ): HeldPrState {
-    const domains = requiredDomains ?? this.defaultRequiredDomains;
+    const domains =
+      requiredDomains !== undefined
+        ? requiredDomains
+        : this.defaultRequiredDomains;
+    const isAutoApproved = domains.length === 0;
     const state: HeldPrState = {
       taskId,
       prNumber,
       requiredDomains: domains,
       checkIns: new Map(),
       heldAt: Date.now(),
-      mergeApproved: false,
-      synthesisCompleted: false,
+      mergeApproved: isAutoApproved,
+      synthesisCompleted: isAutoApproved,
     };
     this.heldPrs.set(taskId, state);
     return state;
@@ -117,6 +121,7 @@ export class PrMergeGateCoordinator {
   public areAllDomainsCheckedIn(taskId: string): boolean {
     const state = this.heldPrs.get(taskId);
     if (!state) return false;
+    if (state.requiredDomains.length === 0) return true;
     return state.requiredDomains.every((domain) => state.checkIns.has(domain));
   }
 
@@ -186,6 +191,13 @@ export class PrMergeGateCoordinator {
     const state = this.heldPrs.get(taskId);
     if (!state) return true; // not held
     if (state.mergeApproved) return true;
+    if (
+      this.areAllDomainsCheckedIn(taskId) &&
+      !this.hasBlockingFeedback(taskId)
+    ) {
+      state.mergeApproved = true;
+      return true;
+    }
     // Timeout fallback: if hold period elapsed, allow merge to prevent deadlocks
     if (Date.now() - state.heldAt > this.holdTimeoutMs) {
       return true;

@@ -1367,7 +1367,10 @@ export class CacophonyHttpServer {
       const giteaUrl =
         process.env.GITEA_BASE_URL || "http://cacophony-gitea:3000";
       const giteaToken = process.env.GITEA_API_TOKEN || "";
-      const repoOwner = process.env.GIT_REPO_OWNER || "Cacophony";
+      const repoOwner =
+        process.env.GIT_REPO_OWNER ||
+        process.env.GITEA_ADMIN_USER ||
+        "NeXeN";
       const repoName = process.env.GIT_REPO_NAME || "cacophony";
 
       let mergedPrs: any[] = [];
