@@ -135,7 +135,7 @@ describe("ExecutionGuard Security Filter and Confinement Suite (T102.12.11)", ()
       ];
 
       for (const targetPath of badPaths) {
-        // Without workspace root
+
         const resultWithoutRoot = guard.validatePath(targetPath);
         assert.strictEqual(
           resultWithoutRoot.isAllowed,
@@ -143,7 +143,6 @@ describe("ExecutionGuard Security Filter and Confinement Suite (T102.12.11)", ()
           `Expected path traversal to be blocked without root: "${targetPath}"`
         );
 
-        // With workspace root
         const resultWithRoot = guard.validatePath(targetPath, mockWorkspace);
         assert.strictEqual(
           resultWithRoot.isAllowed,
@@ -151,7 +150,6 @@ describe("ExecutionGuard Security Filter and Confinement Suite (T102.12.11)", ()
           `Expected path traversal to be blocked with root: "${targetPath}"`
         );
 
-        // Via checkPath alias
         assert.strictEqual(
           guard.checkPath(targetPath, mockWorkspace).isAllowed,
           false
@@ -209,7 +207,7 @@ describe("ExecutionGuard Security Filter and Confinement Suite (T102.12.11)", ()
       ];
 
       for (const targetPath of absolutePaths) {
-        // Without explicit workspace root
+
         const resultWithoutRoot = guard.validatePath(targetPath);
         assert.strictEqual(
           resultWithoutRoot.isAllowed,
@@ -217,7 +215,6 @@ describe("ExecutionGuard Security Filter and Confinement Suite (T102.12.11)", ()
           `Expected absolute path to be blocked without root: "${targetPath}"`
         );
 
-        // With workspace root when path points outside
         const resultWithRoot = guard.validatePath(targetPath, mockWorkspace);
         assert.strictEqual(
           resultWithRoot.isAllowed,
