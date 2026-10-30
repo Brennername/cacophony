@@ -19,9 +19,9 @@ describe("BanditTaskScheduler Test Suite", () => {
 
     it("should select the best arm based on historical data", () => {
       const scheduler = new BanditTaskScheduler({ explorationRate: 0.0 });
-      // Model A: 90% win rate (alpha=10, beta=1)
+
       scheduler.registerArm("model-high-win:7b", "reviewer", 10, 1);
-      // Model B: 30% win rate (alpha=4, beta=9)
+
       scheduler.registerArm("model-low-win:7b", "reviewer", 4, 9);
 
       const outcome = scheduler.selectArm("reviewer");
@@ -32,7 +32,7 @@ describe("BanditTaskScheduler Test Suite", () => {
 
     it("should handle no historical data gracefully", () => {
       const scheduler = new BanditTaskScheduler();
-      // Cold start: no arms pre-registered for the role
+
       const outcome = scheduler.selectArm("unseen-role");
       assert.ok(outcome);
       assert.ok(outcome.selectedModel.length > 0);
@@ -49,7 +49,6 @@ describe("BanditTaskScheduler Test Suite", () => {
       scheduler.registerArm("model-b:7b", "coder", 8, 2);
       scheduler.registerArm("model-c:7b", "coder", 10, 1);
 
-      // Restrict candidates to model-a and model-b only
       const outcome = scheduler.selectArm("coder", ["model-a:7b", "model-b:7b"]);
       assert.equal(outcome.selectedModel, "model-b:7b");
     });
@@ -95,6 +94,7 @@ describe("BanditTaskScheduler Test Suite", () => {
       assert.equal(updated.trialsCount, 1);
       assert.equal(updated.successCount, 0);
       assert.equal(updated.failureCount, 1);
+      assert.equal(updated.totalReward, -1.0);
       assert.equal(updated.alpha, 2);
       assert.equal(updated.beta, 3);
     });
