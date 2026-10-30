@@ -58,7 +58,6 @@ describe('AuthService (regr-mvir6w91-8i42)', () => {
     expect(service.isAuthorized('OPERATOR')).toBe(true);
     expect(service.isAuthorized('ADMIN')).toBe(false);
 
-    // Upgrade to ADMIN
     service.handleCallbackToken(
       'admin-token',
       'superUser',
@@ -70,7 +69,7 @@ describe('AuthService (regr-mvir6w91-8i42)', () => {
 
     expect(service.hasRole('ADMIN')).toBe(true);
     expect(service.isAuthorized('ADMIN')).toBe(true);
-    // ADMIN satisfies OPERATOR access
+
     expect(service.isAuthorized('OPERATOR')).toBe(true);
   });
 
