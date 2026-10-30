@@ -166,7 +166,7 @@ describe("BanditTaskScheduler Test Suite", () => {
   describe("Interventions and Performance Monitoring", () => {
     it("should monitor model performance and trigger interventions if necessary", () => {
       const scheduler = new BanditTaskScheduler({ explorationRate: 0.1 });
-      // Register arms that have accumulated severe failures (all win rates < 20%)
+
       scheduler.registerArm("failing-a:7b", "reviewer", 2, 15);
       scheduler.registerArm("failing-b:7b", "reviewer", 2, 14);
 
