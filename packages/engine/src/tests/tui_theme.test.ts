@@ -150,7 +150,7 @@ describe("TUI Theme Contrast & Color Palette Calibration Tests (T-S4.3)", () => 
     });
 
     it("should handle invalid theme switch requests gracefully", () => {
-      const service = new TuiThemeService("dark");
+      const service = new TuiThemeService();
       const result = service.switchTheme("nonexistent-theme");
       assert.equal(result, false);
       assert.equal(service.getCurrentTheme(), "dark");
