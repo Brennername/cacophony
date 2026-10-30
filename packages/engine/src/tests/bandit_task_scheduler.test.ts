@@ -125,7 +125,6 @@ describe("BanditTaskScheduler Test Suite", () => {
       const dominantArm = scheduler.registerArm("dominant:7b", "architect", 25, 3);
       scheduler.registerArm("lagging:7b", "architect", 5, 20);
 
-      // Dominant arm has high trials (24 trials) and high win rate (89%)
       const status = scheduler.getConvergenceStatus("architect", { minTrials: 10 });
       assert.equal(status.isConverged, true);
       assert.equal(status.bestArmId, dominantArm.armId);
@@ -145,7 +144,7 @@ describe("BanditTaskScheduler Test Suite", () => {
 
     it("should handle edge cases where convergence criteria are not met", () => {
       const scheduler = new BanditTaskScheduler();
-      // Only 2 trials total - well below minTrials requirement
+
       scheduler.registerArm("new-model-a:7b", "architect", 3, 2);
       scheduler.registerArm("new-model-b:7b", "architect", 2, 3);
 
