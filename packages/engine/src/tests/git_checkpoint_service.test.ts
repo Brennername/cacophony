@@ -27,7 +27,6 @@ describe("GitCheckpointService Unit Test Suite (T102.3.6)", () => {
       const pastIso = new Date(Date.now() - 3600000).toISOString();
       assert.equal(service.isIntervalElapsed(pastIso, 60000), true);
 
-      // Invalid date should default to elapsed (allow checkpoint creation)
       assert.equal(service.isIntervalElapsed("not-a-valid-date"), true);
     });
   });
@@ -100,13 +99,12 @@ describe("GitCheckpointService Unit Test Suite (T102.3.6)", () => {
     it("should prune oldest checkpoints exceeding max retention count", () => {
       const survivors = service.pruneCheckpoints(mockCheckpoints, 2);
       assert.equal(survivors.length, 2);
-      // Newest should survive: chk-3, chk-2
+
       assert.equal(survivors[0]?.id, "chk-3");
       assert.equal(survivors[1]?.id, "chk-2");
     });
 
     it("should prune checkpoints older than maxAgeMs", () => {
-      // Retain max 5, but max age 20 seconds (20,000ms)
       const survivors = service.pruneCheckpoints(mockCheckpoints, 5, 20000);
       assert.equal(survivors.length, 1);
       assert.equal(survivors[0]?.id, "chk-3");
