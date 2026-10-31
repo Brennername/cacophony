@@ -1705,27 +1705,89 @@ export class CacophonyHttpServer {
 
       const stageRepo = this.daemon.getStageRepository();
       const stages = await stageRepo.getStagesForTask(taskId);
-      const remediationStage = stages
-        .slice()
-        .reverse()
-        .find((s) => s.stageName === "remediation");
       const prReviewStage = stages
         .slice()
         .reverse()
         .find((s) => s.stageName === "pr_review");
 
-      // Extract verdict and SOLID compliance score from stage logs
-      const logText = remediationStage?.logOutput || "";
+      // Locate stage containing authentic FrontierReviewer or code review critique output
+      const reviewStage = stages
+        .slice()
+        .reverse()
+        .find(
+          (s) =>
+            s.logOutput &&
+            (s.logOutput.includes("FrontierReviewer") ||
+              s.logOutput.includes("SOLID Compliance Score") ||
+              s.logOutput.includes("SOLID Adherence")),
+        );
+
+      if (!reviewStage) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: `No automated code review recorded for task '${taskId}'`,
+          }),
+        );
+        return;
+      }
+
+      const logText = reviewStage.logOutput || "";
       const isApproved =
-        /\bAPPROVE\b|\bAPPROVED\b/i.test(logText) ||
-        logText.includes("passed verification gates") ||
+        /\bVerdict:\s*APPROVE\b/i.test(logText) ||
+        /\bVerdict:\s*APPROVED\b/i.test(logText) ||
         prReviewStage?.stageStatus === "SUCCESS";
       const verdict = isApproved ? "APPROVED" : "CHANGES_REQUESTED";
 
-      let solidScore = 95;
-      const scoreMatch = logText.match(/SOLID score:?\s*(\d+)/i);
+      let solidScore = 100;
+      const scoreMatch =
+        logText.match(/SOLID(?:\s+Compliance)?\s+Score:?\s*(\d+)/i) ||
+        logText.match(/SOLID(?:\s+Adherence)?\s*:?\s*(\d+)/i);
       if (scoreMatch && scoreMatch[1]) {
         solidScore = parseInt(scoreMatch[1], 10);
+      }
+
+      let reviewNotes = logText;
+      const notesMatch = logText.match(
+        /Assessment Notes:\s*([\s\S]*?)(?=\nLine Comments|\nZero inline defects|$)/i,
+      );
+      if (notesMatch && notesMatch[1]) {
+        reviewNotes = notesMatch[1].trim();
+      }
+
+      const parsedComments: Array<{
+        path: string;
+        lineNumber: number;
+        comment: string;
+        severity: "info" | "warning" | "blocker";
+      }> = [];
+      const commentsSection = logText.match(
+        /Line Comments \(\d+\):\s*([\s\S]*?)$/i,
+      );
+      if (commentsSection && commentsSection[1]) {
+        const commentLines = commentsSection[1].split("\n");
+        for (const line of commentLines) {
+          const m = line.match(/^\s*\d+\.\s*\[([^:]+):(\d+)\]\s*(.*)$/);
+          if (m) {
+            parsedComments.push({
+              path: m[1]!,
+              lineNumber: parseInt(m[2]!, 10) || 1,
+              comment: m[3]!,
+              severity: isApproved ? "info" : "warning",
+            });
+          }
+        }
+      }
+
+      if (parsedComments.length === 0) {
+        parsedComments.push({
+          path: task.focusFiles || "workspace",
+          lineNumber: 1,
+          comment:
+            reviewNotes.slice(0, 300) ||
+            "Adherence to architectural guidelines validated.",
+          severity: isApproved ? "info" : "warning",
+        });
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -1736,17 +1798,8 @@ export class CacophonyHttpServer {
           targetBranch: task.targetBranch,
           verdict,
           solidComplianceScore: solidScore,
-          reviewNotes: logText || "Automated review completed.",
-          comments: [
-            {
-              path: task.focusFiles || "workspace",
-              lineNumber: 1,
-              comment:
-                logText.slice(0, 300) ||
-                "Adherence to architectural guidelines validated.",
-              severity: isApproved ? "info" : "warning",
-            },
-          ],
+          reviewNotes,
+          comments: parsedComments,
           merged: prReviewStage?.stageStatus === "SUCCESS",
         }),
       );
