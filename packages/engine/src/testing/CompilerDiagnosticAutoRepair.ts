@@ -202,14 +202,59 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           "import { describe, it, test, expect, beforeEach, afterEach, vi } from 'vitest';\n";
       }
 
-      currentCode = currentCode
-        .replace(/assert\.strictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).toBe($2)")
-        .replace(/assert\.deepStrictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).toEqual($2)")
-        .replace(/assert\.notStrictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).not.toBe($2)")
-        .replace(/assert\.notDeepStrictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).not.toEqual($2)")
-        .replace(/assert\.equal\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).toEqual($2)")
-        .replace(/assert\.ok\(([^)\r\n]+)\)/g, "expect($1).toBeTruthy()")
-        .replace(/assert\(([^)\r\n]+)\)/g, "expect($1).toBeTruthy()");
+      // Line-by-line deterministic string conversion avoiding all regex backtracking
+      const assertMethodMap: Record<string, string> = {
+        "assert.strictEqual": "toBe",
+        "assert.deepStrictEqual": "toEqual",
+        "assert.notStrictEqual": "not.toBe",
+        "assert.notDeepStrictEqual": "not.toEqual",
+        "assert.equal": "toEqual",
+      };
+
+      const transformedLines: string[] = currentCode.split("\n");
+      for (let i = 0; i < transformedLines.length; i++) {
+        let line = transformedLines[i];
+        if (typeof line !== "string") continue;
+        for (const [method, vitestMethod] of Object.entries(assertMethodMap)) {
+          let idx = line.indexOf(method + "(");
+          while (idx !== -1) {
+            const start = idx + method.length + 1;
+            const commaIdx = line.indexOf(",", start);
+            const closeParen = line.indexOf(")", commaIdx);
+            if (commaIdx !== -1 && closeParen !== -1 && commaIdx < closeParen) {
+              const arg1: string = line.substring(start, commaIdx).trim();
+              const arg2: string = line.substring(commaIdx + 1, closeParen).trim();
+              const replacement: string = `expect(${arg1}).${vitestMethod}(${arg2})`;
+              line = line.substring(0, idx) + replacement + line.substring(closeParen + 1);
+              idx = line.indexOf(method + "(", idx + replacement.length);
+            } else {
+              break;
+            }
+          }
+        }
+
+        for (const method of ["assert.ok", "assert"]) {
+          let idx = line.indexOf(method + "(");
+          while (idx !== -1) {
+            if (method === "assert" && line[idx + 6] === ".") {
+              idx = line.indexOf(method + "(", idx + 7);
+              continue;
+            }
+            const start = idx + method.length + 1;
+            const closeParen = line.indexOf(")", start);
+            if (closeParen !== -1) {
+              const arg: string = line.substring(start, closeParen).trim();
+              const replacement: string = `expect(${arg}).toBeTruthy()`;
+              line = line.substring(0, idx) + replacement + line.substring(closeParen + 1);
+              idx = line.indexOf(method + "(", idx + replacement.length);
+            } else {
+              break;
+            }
+          }
+        }
+        transformedLines[i] = line;
+      }
+      currentCode = transformedLines.join("\n");
 
       if (
         (currentCode.includes("assert.") || currentCode.includes("assert(")) &&
