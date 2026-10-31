@@ -157,8 +157,13 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     const isFrontendTest = targetFilePath
       ? targetFilePath.includes("packages/frontend") ||
+        targetFilePath.includes("/frontend/") ||
         targetFilePath.endsWith(".spec.ts")
-      : currentCode.includes("@angular") || currentCode.includes("from 'vitest'");
+      : currentCode.includes("@angular") ||
+        currentCode.includes("from 'vitest'") ||
+        currentCode.includes('from "vitest"') ||
+        currentCode.includes("TestBed") ||
+        currentCode.includes("ComponentFixture");
 
     // 0. Repair TS2591: Cannot find name 'node:test' or 'node:assert/strict' in Angular frontend test
     const hasNodeTestOrAssertMissing = diagnostics.some(
@@ -191,8 +196,19 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       currentCode = currentCode
         .replace(/assert\.strictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toBe($2);")
         .replace(/assert\.deepStrictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toEqual($2);")
+        .replace(/assert\.notStrictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).not.toBe($2);")
+        .replace(/assert\.notDeepStrictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).not.toEqual($2);")
         .replace(/assert\.equal\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toEqual($2);")
-        .replace(/assert\.ok\(([^)]+)\);?/g, "expect($1).toBeTruthy();");
+        .replace(/assert\.ok\(([^)]+)\);?/g, "expect($1).toBeTruthy();")
+        .replace(/assert\(([^)]+)\);?/g, "expect($1).toBeTruthy();");
+
+      if (
+        (currentCode.includes("assert.") || currentCode.includes("assert(")) &&
+        !currentCode.includes("const assert =")
+      ) {
+        prependCode +=
+          "const assert = Object.assign((v: any) => expect(v).toBeTruthy(), { strictEqual: (a: any, b: any) => expect(a).toBe(b), deepStrictEqual: (a: any, b: any) => expect(a).toEqual(b), ok: (a: any) => expect(a).toBeTruthy(), equal: (a: any, b: any) => expect(a).toEqual(b), notStrictEqual: (a: any, b: any) => expect(a).not.toBe(b) });\n";
+      }
 
       repairsApplied.push(
         "Replaced node:test and node:assert with Vitest testing primitives for Angular environment",
@@ -796,6 +812,19 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           ) {
             continue;
           }
+          // Guard: never replace a PascalCase identifier (class, component, type) with a camelCase identifier (local variable)
+          const isPascalToCamel =
+            /^[A-Z]/.test(wrongName) && /^[a-z]/.test(rightName);
+          if (isPascalToCamel) {
+            continue;
+          }
+          // Guard: if message is "Cannot find name", never replace if wrongName starts with uppercase
+          if (
+            diag.message.includes("Cannot find name") &&
+            /^[A-Z]/.test(wrongName)
+          ) {
+            continue;
+          }
           currentCode = this.replaceIdentifierSafely(
             currentCode,
             wrongName,
@@ -808,15 +837,21 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
     }
 
-    // 4c. Repair TS2305: Missing exported member in valid module
+    // 4c. Repair TS2305 / TS2459: Missing exported member in valid module
     for (const diag of diagnostics) {
       if (
         diag.errorCode === "TS2305" ||
-        /has no exported member/i.test(diag.message)
+        diag.errorCode === "TS2459" ||
+        /has no exported member/i.test(diag.message) ||
+        /declares\s+['"][^'"]+['"]\s+locally,\s+but it is not exported/i.test(diag.message)
       ) {
-        const match = diag.message.match(
-          /Module\s+['"]+([^'"]+)['"]+\s+has no exported member(?:\s+named)?\s+['"]+([a-zA-Z0-9_]+)['"]+/i,
-        );
+        const match =
+          diag.message.match(
+            /Module\s+['"]+([^'"]+)['"]+\s+has no exported member(?:\s+named)?\s+['"]+([a-zA-Z0-9_]+)['"]+/i,
+          ) ||
+          diag.message.match(
+            /Module\s+['"]+([^'"]+)['"]+\s+declares\s+['"]+([a-zA-Z0-9_]+)['"]+\s+locally,\s+but it is not exported/i,
+          );
         if (match && match[1] && match[2]) {
           const modPath = match[1].replace(/^["']|["']$/g, "").trim();
           const missingMember = match[2].trim();
@@ -842,11 +877,14 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           });
           if (
             !currentCode.includes(`interface ${missingMember}`) &&
-            !currentCode.includes(`const ${missingMember}:`)
+            !currentCode.includes(`const ${missingMember}:`) &&
+            !currentCode.includes(`type ${missingMember} =`)
           ) {
             const fallbackDecl = [
               `// @ts-ignore`,
               `export interface ${missingMember} { [key: string]: any; }`,
+              `// @ts-ignore`,
+              `export type ${missingMember}Type = any;`,
               `// @ts-ignore`,
               `export const ${missingMember}: any = Object.assign(function(..._args: any[]) { return this; }, { [Symbol.iterator]: function*() {} });`,
               "",
@@ -906,6 +944,72 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             `// @ts-ignore\nconst ${sym}: any = (..._args: any[]) => (_target?: any, _key?: any, _desc?: any) => {};\n` +
             currentCode;
           repairsApplied.push(`Declared fallback decorator '${sym}'`);
+        }
+      }
+    }
+
+    // 4e2. Repair TS2304: Missing Component/Service imports in Angular frontend test specs
+    if (isFrontendTest) {
+      for (const diag of diagnostics) {
+        if (
+          diag.errorCode === "TS2304" ||
+          /Cannot find name/i.test(diag.message)
+        ) {
+          const compMatch = diag.message.match(
+            /Cannot find name '([A-Z][a-zA-Z0-9]*(?:Component|Service|Pipe|Directive|Guard))'/i,
+          );
+          if (compMatch && compMatch[1]) {
+            const sym = compMatch[1];
+            // Skip if already imported
+            const describeIndex = currentCode.indexOf("describe(");
+            const headerSection =
+              describeIndex !== -1
+                ? currentCode.slice(0, describeIndex)
+                : currentCode;
+            if (
+              new RegExp(`import\\s+[^;]*\\b${sym}\\b[^;]*from`).test(
+                headerSection,
+              )
+            ) {
+              continue;
+            }
+
+            let importPathToUse: string | null = null;
+            if (targetFilePath) {
+              const specDir = path.dirname(targetFilePath);
+              const baseFileName = path
+                .basename(targetFilePath)
+                .replace(/\.spec\.ts$/, ".ts");
+              const directCompanion = path.join(specDir, baseFileName);
+
+              const kebab = sym
+                .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+                .toLowerCase();
+              const kebabCompFile = `${kebab}.ts`;
+              const nestedDirCompanion = path.join(
+                specDir,
+                kebab.replace(/-component$/, ""),
+                kebabCompFile,
+              );
+
+              if (fs.existsSync(directCompanion)) {
+                importPathToUse = `./${baseFileName.replace(/\.ts$/, "")}`;
+              } else if (fs.existsSync(path.join(specDir, kebabCompFile))) {
+                importPathToUse = `./${kebab}`;
+              } else if (fs.existsSync(nestedDirCompanion)) {
+                importPathToUse = `./${kebab.replace(/-component$/, "")}/${kebab}`;
+              } else if (baseFileName.includes(".component")) {
+                importPathToUse = `./${baseFileName.replace(/\.ts$/, "")}`;
+              }
+            }
+
+            if (importPathToUse && !currentCode.includes(`import { ${sym} }`)) {
+              prependCode += `import { ${sym} } from '${importPathToUse}';\n`;
+              repairsApplied.push(
+                `Injected missing component import '${sym}' from '${importPathToUse}'`,
+              );
+            }
+          }
         }
       }
     }

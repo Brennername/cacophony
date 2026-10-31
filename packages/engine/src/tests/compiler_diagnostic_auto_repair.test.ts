@@ -783,5 +783,63 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("from 'vitest'"));
     assert.ok(!result.repairedCode.includes("node:test"));
   });
+
+  it("does not replace PascalCase component name with suggested camelCase variable name", () => {
+    const source = `let queueViewComponent: QueueViewComponent;\ndescribe('QueueView', () => {\n  it('creates', () => {\n    TestBed.createComponent(QueueViewComponent);\n  });\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2552",
+          "Cannot find name 'QueueViewComponent'. Did you mean 'queueViewComponent'?",
+          1,
+          25,
+        ),
+      ],
+      "packages/frontend/src/app/components/views/queue-view/queue-view.component.spec.ts",
+    );
+
+    // QueueViewComponent must not be converted to queueViewComponent
+    assert.ok(result.repairedCode.includes("QueueViewComponent"));
+    assert.ok(!result.repairedCode.includes("let queueViewComponent: queueViewComponent;"));
+  });
+
+  it("repairs TS2459 unexported local declarations by declaring fallback interface and callable stub", () => {
+    const source = `import { SymbolGraph, ExtractedSymbol } from '../repomap/SymbolGraph.js';\nconst s: ExtractedSymbol = {} as any;`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2459",
+          "Module '\"../repomap/SymbolGraph.js\"' declares 'ExtractedSymbol' locally, but it is not exported.",
+          1,
+          23,
+        ),
+      ],
+      "packages/engine/src/tests/symbol_graph.test.ts",
+    );
+
+    assert.ok(!result.repairedCode.includes("import { SymbolGraph, ExtractedSymbol }"));
+    assert.ok(result.repairedCode.includes("import { SymbolGraph } from '../repomap/SymbolGraph.js';"));
+    assert.ok(result.repairedCode.includes("export interface ExtractedSymbol"));
+  });
+
+  it("auto-imports missing Angular Component in frontend spec file", () => {
+    const source = `describe('QueueViewComponent', () => {\n  it('renders', () => {\n    const fixture = TestBed.createComponent(QueueViewComponent);\n  });\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2304",
+          "Cannot find name 'QueueViewComponent'.",
+          3,
+          45,
+        ),
+      ],
+      "packages/frontend/src/app/components/views/queue-view/queue-view.component.spec.ts",
+    );
+
+    assert.ok(result.repairedCode.includes("import { QueueViewComponent } from './queue-view.component';"));
+  });
 });
 

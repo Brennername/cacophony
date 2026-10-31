@@ -1,4 +1,5 @@
 import type { ExtractedSymbol } from "./SymbolExtractor.js";
+export type { ExtractedSymbol };
 
 export interface SymbolNode {
   readonly symbol: ExtractedSymbol;
