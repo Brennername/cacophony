@@ -228,7 +228,7 @@ describe("Single-Concurrency Scheduler & Model Governor", () => {
       const groomed = groomer.groom(task);
       assert.equal(
         groomed.scopedTestCommand,
-        "node --test --test-concurrency=1 packages/db/dist/tests/TaskRepository.test.js",
+        "node --test --test-concurrency=1 packages/db/dist/tests/task_repository.test.js",
       );
     });
 
