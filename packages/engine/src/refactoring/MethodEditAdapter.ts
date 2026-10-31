@@ -123,16 +123,6 @@ export class MethodEditAdapter {
       .replace(/```\s*$/i, "")
       .trim();
 
-    // Check if the model generated a method signature wrapper: methodName(...) { ... }
-    const methodRegex = new RegExp(
-      `(?:public|private|protected|async|static|\\s)*\\b${methodName}\\s*\\([^)]*\\)[^{]*\\{([\\s\\S]*)\\}\\s*$`,
-      "m",
-    );
-    const methodMatch = text.match(methodRegex);
-    if (methodMatch && methodMatch[1]) {
-      return methodMatch[1].trim();
-    }
-
     // Check if the model generated a class wrapper: class ... { methodName(...) { ... } }
     if (text.includes("class ") && text.includes(methodName)) {
       const probeSource = ts.createSourceFile("wrapper-probe.ts", text, ts.ScriptTarget.Latest, true);
@@ -157,6 +147,16 @@ export class MethodEditAdapter {
           ? trimmed.slice(1, -1).trim()
           : trimmed;
       }
+    }
+
+    // Check if the model generated a method signature wrapper: methodName(...) { ... }
+    const methodRegex = new RegExp(
+      `(?:public|private|protected|async|static|\\s)*\\b${methodName}\\s*\\([^)]*\\)[^{]*\\{([\\s\\S]*)\\}\\s*$`,
+      "m",
+    );
+    const methodMatch = text.match(methodRegex);
+    if (methodMatch && methodMatch[1]) {
+      return methodMatch[1].trim();
     }
 
     return text;

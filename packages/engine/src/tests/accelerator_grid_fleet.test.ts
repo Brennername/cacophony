@@ -1,10 +1,10 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { GpuDeviceManager } from "../GpuDeviceManager.js";
+import { GpuDeviceManager } from "../hardware/GpuDeviceManager.js";
 import {
   FleetWebSocketClient,
   type FleetMessage,
-} from "../../fleet/FleetWebSocketClient.js";
+} from "../fleet/FleetWebSocketClient.js";
 
 describe("Phase 36: Heterogeneous Multi-Device Accelerator Grid & Remote Fleet Discovery", () => {
   it("T36.1: GpuDeviceManager should enumerate accelerators and identify primary APU", async () => {

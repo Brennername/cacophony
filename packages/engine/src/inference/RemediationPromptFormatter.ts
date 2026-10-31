@@ -97,12 +97,20 @@ export class RemediationPromptFormatter {
    */
   public formatDirectives(targetFilePath?: string): string {
     const target = targetFilePath ? ` for '${targetFilePath}'` : "";
+    const isFrontend = targetFilePath
+      ? targetFilePath.includes("packages/frontend") ||
+        targetFilePath.endsWith(".spec.ts")
+      : false;
+    const testingStandard = isFrontend
+      ? "- Testing Standards: For frontend Angular unit tests (*.spec.ts), use strictly Vitest: import { describe, it, expect, beforeEach, vi } from 'vitest';. NEVER import 'node:test', 'node:assert', 'jest', '@jest/globals', 'chai', or 'mocha'."
+      : "- Testing Standards: If modifying or creating a test file, use strictly 'node:test' and 'node:assert/strict'. NEVER import 'jest', '@jest/globals', 'chai', or 'mocha'.";
+
     return [
       `Provide the COMPLETE, corrected implementation${target}.`,
       "- Do NOT output partial diffs, search/replace blocks, or placeholder comments (e.g. '// ... existing code ...').",
       "- Do NOT include conversational filler, pleasantries, or explanations before or after the code.",
       "- Preserve all existing interfaces, methods, and types in the file. Do NOT truncate or drop existing functionality.",
-      "- Testing Standards: If modifying or creating a test file, use strictly 'node:test' and 'node:assert/strict'. NEVER import 'jest', '@jest/globals', 'chai', or 'mocha'.",
+      testingStandard,
       "- Module Imports: Ensure all imports, types, and dependencies exist and resolve correctly. All internal relative imports must end with '.js'. NEVER import 'vscode' or non-existent external libraries.",
       "- Enclose the entire updated file content in a single standard markdown code block: ```typescript ... ```.",
     ].join("\n");

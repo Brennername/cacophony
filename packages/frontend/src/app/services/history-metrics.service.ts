@@ -169,7 +169,9 @@ export class HistoryMetricsService {
             status: mapStatus(t.status),
             durationMs: storedDuration !== null ? storedDuration : computedDuration,
             tokensPerSec: t.tokensPerSec != null ? Number(t.tokensPerSec) : 0,
-            model: t.modelAssigned || 'Auto',
+            model: t.modelAssigned && t.modelAssigned !== 'Auto'
+              ? t.modelAssigned
+              : (t.status === 'COMPLETED' ? 'Reconciled' : 'Auto'),
             role: t.role || 'implementer',
             priority: t.priority || 'P1',
             failureCount: t.failureCount || 0,

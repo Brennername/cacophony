@@ -3,9 +3,9 @@ import * as assert from "node:assert/strict";
 import {
   OidcDiscoveryService,
   JwksKeyManager,
-} from "../OidcDiscoveryService.js";
-import { JwtValidator } from "../JwtValidator.js";
-import { AuthService } from "../AuthService.js";
+} from "../auth/OidcDiscoveryService.js";
+import { JwtValidator } from "../auth/JwtValidator.js";
+import { AuthService } from "../auth/AuthService.js";
 import { UserSessionRepository } from "@cacophony/db";
 import { PGliteDriver } from "@cacophony/db";
 import { MigrationRunner } from "@cacophony/db";

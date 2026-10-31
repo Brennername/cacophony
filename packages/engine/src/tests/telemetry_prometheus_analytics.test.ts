@@ -4,10 +4,10 @@ import { TelemetryRepository } from "@cacophony/db";
 import { TaskTelemetryCorrelationRepository } from "@cacophony/db";
 import { PGliteDriver } from "@cacophony/db";
 import { MigrationRunner } from "@cacophony/db";
-import { TelemetryPoller } from "../TelemetryPoller.js";
-import { PrometheusMetricsExporter } from "../PrometheusMetricsExporter.js";
-import { TelemetryCorrelationService } from "../TelemetryCorrelationService.js";
-import type { IHardwareTelemetryProvider } from "../IHardwareTelemetryProvider.js";
+import { TelemetryPoller } from "../telemetry/TelemetryPoller.js";
+import { PrometheusMetricsExporter } from "../telemetry/PrometheusMetricsExporter.js";
+import { TelemetryCorrelationService } from "../telemetry/TelemetryCorrelationService.js";
+import type { IHardwareTelemetryProvider } from "../telemetry/IHardwareTelemetryProvider.js";
 import type { GpuMetrics } from "@cacophony/shared-types";
 
 class MockTelemetryProvider implements IHardwareTelemetryProvider {

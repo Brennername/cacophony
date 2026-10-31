@@ -1,11 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { SandboxedProcessRunner } from "../SandboxedProcessRunner.js";
+import { SandboxedProcessRunner } from "../testing/SandboxedProcessRunner.js";
 import {
   FailureClassifier,
   type ClassificationResult,
-} from "../../analytics/FailureClassifier.js";
-import { ClosedLoopTestRemediator } from "../ClosedLoopTestRemediator.js";
+} from "../analytics/FailureClassifier.js";
+import { ClosedLoopTestRemediator } from "../testing/ClosedLoopTestRemediator.js";
 
 describe("Phase 38: Automated Test Runner Guardrails, Process Sandboxing & Failure Taxonomy", () => {
   it("T38.1: SandboxedProcessRunner executes command and captures stdout/stderr with duration", async () => {

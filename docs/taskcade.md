@@ -261,8 +261,8 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T102.13.3: Write unit tests verifying `ModelFleetService` model telemetry polling, status updating, model pull invocation, and latency tracking. [Files: packages/frontend/src/app/services/model-fleet.service.ts, packages/frontend/src/app/services/model-fleet.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.13.4: Write unit tests verifying `AuthService` token storage, authenticated state Signal derivation, login redirection, and logout clearing. [Files: packages/frontend/src/app/services/auth.service.ts, packages/frontend/src/app/services/auth.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.13.5: Write unit tests verifying `HistoryMetricsService` epoch statistics rollup, success rate computation, and filter query parameters. [Files: packages/frontend/src/app/services/history-metrics.service.ts, packages/frontend/src/app/services/history-metrics.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
-- [ ] T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Signal stream updates, and reconnection backoff. [Files: packages/frontend/src/app/services/reactive-signal.service.ts, packages/frontend/src/app/services/reactive-signal.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
-- [ ] T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authenticated users and redirecting unauthenticated users to login. [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts, packages/frontend/src/app/guards/gitea-auth.guard.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
+- [x] T102.13.6: Write unit tests verifying `ReactiveSignalService` WebSocket event handling, Signal stream updates, and reconnection backoff. [Files: packages/frontend/src/app/services/reactive-signal.service.ts, packages/frontend/src/app/services/reactive-signal.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
+- [x] T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authenticated users and redirecting unauthenticated users to login. [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts, packages/frontend/src/app/guards/gitea-auth.guard.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.13.8: Write unit tests verifying `QueueViewComponent` task filtering, bulk task actions, and responsive layout adaptations. [Files: packages/frontend/src/app/components/views/queue-view.component.ts, packages/frontend/src/app/components/views/queue-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.13.9: Write unit tests verifying `ProcessesViewComponent` process table sorting, CPU/memory metric display, and process termination dispatch. [Files: packages/frontend/src/app/components/views/processes-view.component.ts, packages/frontend/src/app/components/views/processes-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [ ] T102.13.10: Write unit tests verifying `RepomapViewComponent` SVG graph rendering, zoom/pan controls, and symbol node search. [Files: packages/frontend/src/app/components/views/repomap-view.component.ts, packages/frontend/src/app/components/views/repomap-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
@@ -2743,8 +2743,8 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.13.7.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: type_specialist] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
-  - [ ] `taskcade-t102.13.7.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: implementer] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [x] `taskcade-t102.13.7.2.1`: [Rehab 1/2] Scaffold & Type Contracts: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: type_specialist] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [x] `taskcade-t102.13.7.2.2`: [Rehab 2/2] Implementation & Test Verification: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: implementer] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
 
 
 ### Task regr-mvjl9p97-kulk.2 Rehabilitation [2026-10-23T19:12:07.902Z]
@@ -4053,9 +4053,9 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t102.13.7.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: type_specialist] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
-  - [ ] `taskcade-t102.13.7.2`: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: implementer] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
-  - [ ] `taskcade-t102.13.7.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: test_engineer] [Files: all]
+  - [x] `taskcade-t102.13.7.1`: [Rehab 1/3] Type Contracts & Interfaces: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: type_specialist] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [x] `taskcade-t102.13.7.2`: [Rehab 2/3] Core Implementation Unit: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: implementer] [Files: packages/frontend/src/app/guards/gitea-auth.guard.ts]
+  - [x] `taskcade-t102.13.7.3`: [Rehab 3/3] Unit Test & Validation Suite: T102.13.7: Write unit tests verifying `GiteaAuthGuard` route activation allowing authentica [Role: test_engineer] [Files: all]
 
 
 ### Task taskcade-t102.3.2 Rehabilitation [2026-10-19T14:39:17.604Z]

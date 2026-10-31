@@ -102,33 +102,67 @@ export class AcceptanceCriteriaEngine {
     const moduleName = options?.moduleName || "TargetService";
 
     if (criterion.targetLayer === "frontend") {
-      const fileName = `${moduleName.toLowerCase()}.component.spec.ts`;
-      const testCode = [
-        "import { ComponentFixture, TestBed } from '@angular/core/testing';",
-        `import { ${moduleName}Component } from './${moduleName.toLowerCase()}.component.js';`,
-        "",
-        `describe('${moduleName}Component', () => {`,
-        `  let component: ${moduleName}Component;`,
-        `  let fixture: ComponentFixture<${moduleName}Component>;`,
-        "",
-        "  beforeEach(async () => {",
-        "    await TestBed.configureTestingModule({",
-        `      imports: [${moduleName}Component]`,
-        "    }).compileComponents();",
-        "",
-        `    fixture = TestBed.createComponent(${moduleName}Component);`,
-        "    component = fixture.componentInstance;",
-        "    fixture.detectChanges();",
-        "  });",
-        "",
-        `  it('should ${criterion.scenario}', () => {`,
-        "    expect(component).toBeTruthy();",
-        "    const rootEl = fixture.nativeElement as HTMLElement;",
-        "    expect(rootEl).not.toBeNull();",
-        "  });",
-        "});",
-        "",
-      ].join("\n");
+      const lower = moduleName.toLowerCase();
+      const isGuard = lower.endsWith("guard");
+      const baseName = lower.replace(/\.(component|guard|service|pipe)$/, "");
+      const fileName = isGuard
+        ? `${baseName}.guard.spec.ts`
+        : `${moduleName.toLowerCase()}.component.spec.ts`;
+
+      const testCode = isGuard
+        ? [
+            "import { describe, it, expect, beforeEach, vi } from 'vitest';",
+            "import { TestBed } from '@angular/core/testing';",
+            "import { Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';",
+            `import { ${moduleName.charAt(0).toLowerCase() + moduleName.slice(1)} } from './${baseName}.guard.js';`,
+            "",
+            `describe('${moduleName}', () => {`,
+            "  let mockRouter: { navigate: ReturnType<typeof vi.fn> };",
+            "  const dummyRoute = {} as ActivatedRouteSnapshot;",
+            "  const dummyState = { url: '/test' } as RouterStateSnapshot;",
+            "",
+            "  beforeEach(() => {",
+            "    mockRouter = { navigate: vi.fn() };",
+            "    TestBed.configureTestingModule({",
+            "      providers: [{ provide: Router, useValue: mockRouter }],",
+            "    });",
+            "  });",
+            "",
+            `  it('should ${criterion.scenario}', () => {`,
+            "    const result = TestBed.runInInjectionContext(() =>",
+            `      ${moduleName.charAt(0).toLowerCase() + moduleName.slice(1)}(dummyRoute, dummyState)`,
+            "    );",
+            "    expect(result).toBeDefined();",
+            "  });",
+            "});",
+            "",
+          ].join("\n")
+        : [
+            "import { ComponentFixture, TestBed } from '@angular/core/testing';",
+            `import { ${moduleName}Component } from './${moduleName.toLowerCase()}.component.js';`,
+            "",
+            `describe('${moduleName}Component', () => {`,
+            `  let component: ${moduleName}Component;`,
+            `  let fixture: ComponentFixture<${moduleName}Component>;`,
+            "",
+            "  beforeEach(async () => {",
+            "    await TestBed.configureTestingModule({",
+            `      imports: [${moduleName}Component]`,
+            "    }).compileComponents();",
+            "",
+            `    fixture = TestBed.createComponent(${moduleName}Component);`,
+            "    component = fixture.componentInstance;",
+            "    fixture.detectChanges();",
+            "  });",
+            "",
+            `  it('should ${criterion.scenario}', () => {`,
+            "    expect(component).toBeTruthy();",
+            "    const rootEl = fixture.nativeElement as HTMLElement;",
+            "    expect(rootEl).not.toBeNull();",
+            "  });",
+            "});",
+            "",
+          ].join("\n");
 
       return {
         fileName,
@@ -169,13 +203,20 @@ export class AcceptanceCriteriaEngine {
   ): "backend" | "frontend" | "database" | "e2e" {
     const cat = requirement.category.toLowerCase();
     const title = requirement.title.toLowerCase();
+    const desc = (requirement.description || "").toLowerCase();
 
     if (
       cat.includes("frontend") ||
       cat.includes("ui") ||
       cat.includes("component") ||
+      cat.includes("guard") ||
       title.includes("component") ||
-      title.includes("modal")
+      title.includes("modal") ||
+      title.includes("guard") ||
+      title.includes("view") ||
+      title.includes("pipe") ||
+      desc.includes("packages/frontend") ||
+      desc.includes("frontend")
     ) {
       return "frontend";
     }

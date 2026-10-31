@@ -134,6 +134,7 @@ export class TypeScriptDiagnosticRepairRule extends BaseRepairRule {
           const autoRepairResult = this.autoRepair.repair(
             repairedContent,
             syntheticDiags,
+            filePath,
           );
           if (autoRepairResult.repairsApplied.length > 0) {
             repairedContent = autoRepairResult.repairedCode;
