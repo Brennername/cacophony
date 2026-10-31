@@ -180,10 +180,19 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         currentCode.includes("from 'node:assert") ||
         currentCode.includes('from "node:assert'))
     ) {
-      currentCode = currentCode
-        .replace(/import\s+[^;]*from\s+['"]node:test['"];?\n?/g, "")
-        .replace(/import\s+[^;]*from\s+['"]node:assert\/strict['"];?\n?/g, "")
-        .replace(/import\s+[^;]*from\s+['"]node:assert['"];?\n?/g, "");
+      const codeLines = currentCode.split("\n");
+      currentCode = codeLines
+        .filter((line) => {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("import")) return true;
+          return !(
+            trimmed.includes("'node:test'") ||
+            trimmed.includes('"node:test"') ||
+            trimmed.includes("'node:assert") ||
+            trimmed.includes('"node:assert')
+          );
+        })
+        .join("\n");
 
       if (
         !currentCode.includes("from 'vitest'") &&
@@ -966,11 +975,11 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
               describeIndex !== -1
                 ? currentCode.slice(0, describeIndex)
                 : currentCode;
-            if (
-              new RegExp(`import\\s+[^;]*\\b${sym}\\b[^;]*from`).test(
-                headerSection,
-              )
-            ) {
+            const alreadyImported = headerSection.split("\n").some((l) => {
+              const trimmed = l.trim();
+              return trimmed.startsWith("import") && trimmed.includes(sym);
+            });
+            if (alreadyImported) {
               continue;
             }
 
