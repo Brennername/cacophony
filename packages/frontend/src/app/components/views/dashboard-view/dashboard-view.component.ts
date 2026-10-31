@@ -37,23 +37,9 @@ export class DashboardViewComponent implements OnInit {
 
   public readonly rollingSuccessRate = this.metricsService.rollingSuccessRate;
 
-  public readonly totalConcluded = computed<number>(() => {
-    return this.metricsService.historyItems().filter(
-      (i) => i.status === 'PASSED' || i.status === 'FAILED' || i.status === 'REMEDIATED'
-    ).length;
-  });
-
-  public readonly totalPassed = computed<number>(() => {
-    return this.metricsService.historyItems().filter(
-      (i) => i.status === 'PASSED' || i.status === 'REMEDIATED'
-    ).length;
-  });
-
-  public readonly totalFailed = computed<number>(() => {
-    return this.metricsService.historyItems().filter(
-      (i) => i.status === 'FAILED'
-    ).length;
-  });
+  public readonly totalConcluded = this.metricsService.totalConcluded;
+  public readonly totalPassed = this.metricsService.totalPassed;
+  public readonly totalFailed = this.metricsService.totalFailed;
 
   public readonly reliabilityStatus = computed<'OPTIMAL' | 'NOMINAL' | 'DEGRADED'>(() => {
     const rate = this.rollingSuccessRate();

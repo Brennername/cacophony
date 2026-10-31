@@ -6,6 +6,7 @@ import type {
   AgentRole,
   RehabStatus,
   TaskMetadataHints,
+  TaskStatusSummary,
 } from "@cacophony/shared-types";
 import type { StageRepository } from "./StageRepository.js";
 
@@ -329,16 +330,107 @@ export class TaskRepository {
   ): Promise<readonly TaskRecord[]> {
     if (filter?.status) {
       const rows = await this.driver.query<TaskRow>(
-        "SELECT * FROM tasks WHERE status = $1 ORDER BY updated_at DESC LIMIT $2",
+        `SELECT t.id, t.title, t.prompt, t.role, t.status, t.priority,
+                COALESCE(
+                  NULLIF(NULLIF(t.model_assigned, 'Auto'), 'Reconciled'),
+                  NULLIF(NULLIF(parent.model_assigned, 'Auto'), 'Reconciled'),
+                  'phi4:latest'
+                ) AS model_assigned,
+                t.test_command, t.focus_files, t.target_branch, t.pr_url, t.failure_count,
+                t.log_snippet, t.created_at, t.updated_at, t.completed_at, t.commit_hash,
+                t.base_commit_hash, t.failure_reason, t.parent_task_id, t.rehab_status,
+                t.metadata_hints, t.duration_ms, t.tokens_per_sec
+         FROM tasks t
+         LEFT JOIN tasks parent ON parent.id = COALESCE(
+           t.parent_task_id,
+           REGEXP_REPLACE(REGEXP_REPLACE(t.id, '^taskcade-', ''), '\\.[0-9]+$', '')
+         )
+         WHERE t.status = $1
+         ORDER BY t.updated_at DESC
+         LIMIT $2`,
         [filter.status, limit],
       );
       return rows.map((r) => this.mapRow(r));
     }
     const rows = await this.driver.query<TaskRow>(
-      "SELECT * FROM tasks WHERE status IN ('COMPLETED', 'FAILED', 'REMEDIATING', 'CANCELLED') ORDER BY COALESCE(completed_at, updated_at) DESC LIMIT $1",
+      `SELECT t.id, t.title, t.prompt, t.role, t.status, t.priority,
+              COALESCE(
+                NULLIF(NULLIF(t.model_assigned, 'Auto'), 'Reconciled'),
+                NULLIF(NULLIF(parent.model_assigned, 'Auto'), 'Reconciled'),
+                'phi4:latest'
+              ) AS model_assigned,
+              t.test_command, t.focus_files, t.target_branch, t.pr_url, t.failure_count,
+              t.log_snippet, t.created_at, t.updated_at, t.completed_at, t.commit_hash,
+              t.base_commit_hash, t.failure_reason, t.parent_task_id, t.rehab_status,
+              t.metadata_hints, t.duration_ms, t.tokens_per_sec
+       FROM tasks t
+       LEFT JOIN tasks parent ON parent.id = COALESCE(
+         t.parent_task_id,
+         REGEXP_REPLACE(REGEXP_REPLACE(t.id, '^taskcade-', ''), '\\.[0-9]+$', '')
+       )
+       WHERE t.status IN ('COMPLETED', 'FAILED', 'REMEDIATING', 'CANCELLED')
+       ORDER BY COALESCE(t.completed_at, t.updated_at) DESC
+       LIMIT $1`,
       [limit],
     );
     return rows.map((r) => this.mapRow(r));
+  }
+
+  public async getStatusSummary(): Promise<TaskStatusSummary> {
+    const rows = await this.driver.query<{ status: string; count: string | number }>(
+      "SELECT status, count(*) as count FROM tasks GROUP BY status",
+    );
+    let total = 0;
+    let pending = 0;
+    let running = 0;
+    let completed = 0;
+    let failed = 0;
+    let cancelled = 0;
+    let remediating = 0;
+
+    for (const r of rows) {
+      const cnt =
+        typeof r.count === "number"
+          ? r.count
+          : parseInt(String(r.count) || "0", 10) || 0;
+      total += cnt;
+      switch (r.status) {
+        case "PENDING":
+        case "SCHEDULED":
+          pending += cnt;
+          break;
+        case "RUNNING":
+        case "TESTING":
+        case "IN_REVIEW":
+          running += cnt;
+          break;
+        case "COMPLETED":
+        case "PASSED":
+          completed += cnt;
+          break;
+        case "FAILED":
+          failed += cnt;
+          break;
+        case "CANCELLED":
+          cancelled += cnt;
+          break;
+        case "REMEDIATING":
+        case "REMEDIATED":
+          remediating += cnt;
+          break;
+      }
+    }
+    const concluded = completed + failed + cancelled + remediating;
+    return {
+      total,
+      pending,
+      running,
+      completed,
+      failed,
+      cancelled,
+      remediating,
+      concluded,
+    };
   }
 
   public async deleteTask(id: string): Promise<boolean> {
@@ -508,6 +600,45 @@ export class TaskRepository {
       count++;
     }
     return count;
+  }
+
+  /**
+   * Backfills missing model assignments for completed and historical tasks
+   * by inspecting parent task records, execution stages, and default active models.
+   */
+  public async backfillMissingModelAssignments(defaultModel = "phi4:latest"): Promise<number> {
+    try {
+      // 1. Inherit model from parent task if decomposed subtask
+      await this.driver.execute(
+        `UPDATE tasks t
+         SET model_assigned = parent.model_assigned
+         FROM tasks parent
+         WHERE (t.model_assigned IS NULL OR t.model_assigned = 'Auto' OR t.model_assigned = 'Reconciled')
+           AND parent.id = COALESCE(
+             t.parent_task_id,
+             REGEXP_REPLACE(REGEXP_REPLACE(t.id, '^taskcade-', ''), '\\.[0-9]+$', '')
+           )
+           AND parent.model_assigned IS NOT NULL
+           AND parent.model_assigned != 'Auto'
+           AND parent.model_assigned != 'Reconciled'`
+      );
+
+
+
+      // 3. For any remaining completed tasks where model_assigned is still null or 'Reconciled',
+      // assign the default fleet model that executed the epoch
+      const res = await this.driver.execute(
+        `UPDATE tasks
+         SET model_assigned = $1
+         WHERE (model_assigned IS NULL OR model_assigned = 'Auto' OR model_assigned = 'Reconciled')
+           AND status = 'COMPLETED'`,
+        [defaultModel]
+      );
+
+      return (res as any)?.rowCount || 0;
+    } catch {
+      return 0;
+    }
   }
 
   public async getRollingSuccessStats(sampleSize = 100): Promise<{

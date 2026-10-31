@@ -243,3 +243,15 @@ export const EnqueueTaskDtoSchema = z.object({
 });
 export type EnqueueTaskDto = z.infer<typeof EnqueueTaskDtoSchema>;
 
+export const TaskStatusSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  pending: z.number().int().nonnegative(),
+  running: z.number().int().nonnegative(),
+  completed: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  cancelled: z.number().int().nonnegative(),
+  remediating: z.number().int().nonnegative(),
+  concluded: z.number().int().nonnegative(),
+});
+export type TaskStatusSummary = z.infer<typeof TaskStatusSummarySchema>;
+

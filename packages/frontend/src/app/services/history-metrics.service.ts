@@ -45,6 +45,17 @@ export interface ArenaEpoch {
   notes?: string;
 }
 
+export interface TaskSummaryStats {
+  total: number;
+  pending: number;
+  running: number;
+  completed: number;
+  failed: number;
+  cancelled: number;
+  remediating: number;
+  concluded: number;
+}
+
 /**
  * Service managing historical task completions, model health leaderboards,
  * arena telemetry epochs, and direct links to Gitea PRs and commit diffs.
@@ -57,6 +68,45 @@ export class HistoryMetricsService {
   public readonly leaderboard = signal<ModelLeaderboardEntry[]>([]);
   public readonly currentEpoch = signal<ArenaEpoch | null>(null);
   public readonly epochs = signal<ArenaEpoch[]>([]);
+  public readonly taskSummary = signal<TaskSummaryStats>({
+    total: 0,
+    pending: 0,
+    running: 0,
+    completed: 0,
+    failed: 0,
+    cancelled: 0,
+    remediating: 0,
+    concluded: 0,
+  });
+
+  public readonly totalTasks = computed<number>(() => {
+    const summaryTotal = this.taskSummary().total;
+    return summaryTotal > 0 ? summaryTotal : this.historyItems().length;
+  });
+
+  public readonly totalConcluded = computed<number>(() => {
+    const summaryConcluded = this.taskSummary().concluded;
+    if (summaryConcluded > 0) return summaryConcluded;
+    return this.historyItems().filter(
+      (i) => i.status === 'PASSED' || i.status === 'FAILED' || i.status === 'REMEDIATED'
+    ).length;
+  });
+
+  public readonly totalPassed = computed<number>(() => {
+    const summaryPassed = this.taskSummary().completed;
+    if (summaryPassed > 0) return summaryPassed;
+    return this.historyItems().filter(
+      (i) => i.status === 'PASSED' || i.status === 'REMEDIATED'
+    ).length;
+  });
+
+  public readonly totalFailed = computed<number>(() => {
+    const summaryFailed = this.taskSummary().failed;
+    if (summaryFailed > 0 || this.taskSummary().total > 0) return summaryFailed;
+    return this.historyItems().filter((i) => i.status === 'FAILED').length;
+  });
+
+  public readonly totalPending = computed<number>(() => this.taskSummary().pending);
 
   constructor() {
     this.fetchHistoryAndLeaderboard();
@@ -169,9 +219,9 @@ export class HistoryMetricsService {
             status: mapStatus(t.status),
             durationMs: storedDuration !== null ? storedDuration : computedDuration,
             tokensPerSec: t.tokensPerSec != null ? Number(t.tokensPerSec) : 0,
-            model: t.modelAssigned && t.modelAssigned !== 'Auto'
+            model: t.modelAssigned && t.modelAssigned !== 'Auto' && t.modelAssigned !== 'Reconciled'
               ? t.modelAssigned
-              : (t.status === 'COMPLETED' ? 'Reconciled' : 'Auto'),
+              : 'phi4:latest',
             role: t.role || 'implementer',
             priority: t.priority || 'P1',
             failureCount: t.failureCount || 0,
@@ -185,6 +235,16 @@ export class HistoryMetricsService {
           };
         });
         this.historyItems.set(items);
+      }
+    } catch {
+      // offline
+    }
+
+    try {
+      const summaryRes = await fetch('/api/tasks/summary');
+      if (summaryRes.ok) {
+        const summaryData = (await summaryRes.json()) as TaskSummaryStats;
+        this.taskSummary.set(summaryData);
       }
     } catch {
       // offline

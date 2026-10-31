@@ -21,6 +21,7 @@ export class TaskHistoryComponent {
   private readonly metricsService = inject(HistoryMetricsService);
   private readonly store = inject(ArenaStateStore);
   public readonly historyItems = this.metricsService.historyItems;
+  public readonly totalConcluded = this.metricsService.totalConcluded;
   public readonly leaderboard = this.metricsService.leaderboard;
   public readonly successRate = this.metricsService.rollingSuccessRate;
 

@@ -587,6 +587,15 @@ export class CacophonyDaemon {
             );
           }
         }
+
+        const backfilledModelsCount =
+          await this.taskRepo.backfillMissingModelAssignments();
+        if (backfilledModelsCount > 0) {
+          this.logger.info(
+            `Backfilled authentic model assignments for ${backfilledModelsCount} tasks`,
+            { count: backfilledModelsCount },
+          );
+        }
       } catch (err: unknown) {
         this.logger.warn("Non-fatal startup database reconciliation error:", {
           error: err instanceof Error ? err.message : String(err),

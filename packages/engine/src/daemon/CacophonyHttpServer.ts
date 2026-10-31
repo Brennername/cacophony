@@ -746,15 +746,29 @@ export class CacophonyHttpServer {
     // 2. REST API: Arena Status
     if (url.pathname === "/api/status" && req.method === "GET") {
       const taskRepo = this.daemon.getTaskRepository();
-      const pending = await taskRepo.listPending();
+      const summary = await taskRepo.getStatusSummary();
       const status = {
         arena: "ONLINE",
         schedulerPaused: this.daemon.getScheduler()?.getPaused() ?? false,
-        pendingTasksCount: pending.length,
+        pendingTasksCount: summary.pending,
+        summary,
         timestamp: new Date().toISOString(),
       };
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(status));
+      return;
+    }
+
+    // 2.1 REST API: Task Status Summary
+    if (
+      (url.pathname === "/api/tasks/summary" ||
+        url.pathname === "/api/history/summary") &&
+      req.method === "GET"
+    ) {
+      const taskRepo = this.daemon.getTaskRepository();
+      const summary = await taskRepo.getStatusSummary();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(summary));
       return;
     }
 
@@ -1352,6 +1366,15 @@ export class CacophonyHttpServer {
         await taskRepo.reclaimStaleRunningTasks(timeoutMinutes);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: true, reclaimedCount }));
+      return;
+    }
+
+    // 4a0d.1 REST API: POST /api/tasks/backfill-models - Backfill authentic model assignments for tasks
+    if (url.pathname === "/api/tasks/backfill-models" && req.method === "POST") {
+      const taskRepo = this.daemon.getTaskRepository();
+      const updatedCount = await taskRepo.backfillMissingModelAssignments();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, updatedCount }));
       return;
     }
 
@@ -2046,6 +2069,15 @@ export class CacophonyHttpServer {
         limitParam,
         statusParam ? { status: statusParam } : undefined,
       );
+      try {
+        const summary = await taskRepo.getStatusSummary();
+        res.setHeader("X-Total-Count", String(summary.concluded));
+        res.setHeader("X-Total-Completed", String(summary.completed));
+        res.setHeader("X-Total-Failed", String(summary.failed));
+        res.setHeader("X-Total-Tasks", String(summary.total));
+      } catch {
+        // non-fatal
+      }
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(
         JSON.stringify(
