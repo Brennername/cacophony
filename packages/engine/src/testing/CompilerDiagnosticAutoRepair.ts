@@ -203,13 +203,13 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       }
 
       currentCode = currentCode
-        .replace(/assert\.strictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toBe($2);")
-        .replace(/assert\.deepStrictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toEqual($2);")
-        .replace(/assert\.notStrictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).not.toBe($2);")
-        .replace(/assert\.notDeepStrictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).not.toEqual($2);")
-        .replace(/assert\.equal\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toEqual($2);")
-        .replace(/assert\.ok\(([^)]+)\);?/g, "expect($1).toBeTruthy();")
-        .replace(/assert\(([^)]+)\);?/g, "expect($1).toBeTruthy();");
+        .replace(/assert\.strictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).toBe($2)")
+        .replace(/assert\.deepStrictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).toEqual($2)")
+        .replace(/assert\.notStrictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).not.toBe($2)")
+        .replace(/assert\.notDeepStrictEqual\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).not.toEqual($2)")
+        .replace(/assert\.equal\(([^,\r\n]+),\s*([^)\r\n]+)\)/g, "expect($1).toEqual($2)")
+        .replace(/assert\.ok\(([^)\r\n]+)\)/g, "expect($1).toBeTruthy()")
+        .replace(/assert\(([^)\r\n]+)\)/g, "expect($1).toBeTruthy()");
 
       if (
         (currentCode.includes("assert.") || currentCode.includes("assert(")) &&
