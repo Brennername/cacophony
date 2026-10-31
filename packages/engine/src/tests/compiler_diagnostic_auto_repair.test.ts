@@ -783,7 +783,6 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("from 'vitest'"));
     assert.ok(!result.repairedCode.includes("node:test"));
   });
-
   it("does not replace PascalCase component name with suggested camelCase variable name", () => {
     const source = `let queueViewComponent: QueueViewComponent;\ndescribe('QueueView', () => {\n  it('creates', () => {\n    TestBed.createComponent(QueueViewComponent);\n  });\n});`;
     const result = repairer.repair(
