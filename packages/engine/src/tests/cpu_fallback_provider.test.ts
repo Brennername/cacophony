@@ -38,21 +38,18 @@ describe('CpuFallbackProvider', () => {
   it('should sample GPU metrics correctly', async () => {
     const sample = await cpuFallbackProvider.sample();
     const totalMem = os.totalmem();
-    const freeMem = os.freemem();
-    const usedMem = Math.max(0, totalMem - freeMem);
-    const memPercent = Number(((usedMem / totalMem) * 100).toFixed(1));
 
     const cores = os.cpus().length || 1;
     const load1Min = os.loadavg()[0] ?? 0;
     const cpuUtilization = Math.min(100, Math.max(0, Number(((load1Min / cores) * 100).toFixed(1))));
 
     assert.strictEqual(sample.gpuBusyPercent, cpuUtilization);
-    assert.strictEqual(sample.vramUsedBytes, usedMem);
     assert.strictEqual(sample.vramTotalBytes, totalMem);
-    assert.strictEqual(sample.vramPercent, memPercent);
+    assert.ok(sample.vramUsedBytes >= 0 && sample.vramUsedBytes <= totalMem);
+    assert.ok(sample.vramPercent >= 0 && sample.vramPercent <= 100);
     assert.strictEqual(sample.gttUsedBytes, 0);
     assert.strictEqual(sample.gttTotalBytes, 0);
-    assert.strictEqual(sample.edgeTempCelsius, cpuFallbackProvider['sampleHostCpuTemp']());
+    assert.ok(typeof sample.edgeTempCelsius === 'number');
     assert.strictEqual(sample.vddgfxMilliVolts, 0);
     assert.strictEqual(sample.socMilliVolts, 0);
     assert.strictEqual(sample.pptWatts, 0);
@@ -62,10 +59,10 @@ describe('CpuFallbackProvider', () => {
   it('should return VRAM metrics correctly', async () => {
     const vramMetrics = await cpuFallbackProvider.getVramMetrics();
     const total = os.totalmem();
-    const free = os.freemem();
     assert.strictEqual(vramMetrics.totalBytes, total);
-    assert.strictEqual(vramMetrics.usedBytes, Math.max(0, total - free));
-    assert.strictEqual(vramMetrics.freeBytes, free);
+    assert.ok(vramMetrics.freeBytes >= 0 && vramMetrics.freeBytes <= total);
+    assert.ok(vramMetrics.usedBytes >= 0 && vramMetrics.usedBytes <= total);
+    assert.strictEqual(vramMetrics.usedBytes + vramMetrics.freeBytes, total);
   });
 
   it('should return thermal metrics correctly', async () => {

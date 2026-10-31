@@ -24,6 +24,12 @@ export interface BackgroundTestWorkerPoolOptions {
   readonly defaultTimeoutMs?: number | undefined;
 }
 
+interface QueuedTestJob {
+  readonly job: TestJobRequest;
+  readonly resolve: (result: TestJobResult) => void;
+  readonly reject: (err: unknown) => void;
+}
+
 /**
  * BackgroundTestWorkerPool
  *
@@ -40,7 +46,7 @@ export class BackgroundTestWorkerPool {
     string,
     { process: ChildProcess; startTime: number; command: string }
   >();
-  private queue: TestJobRequest[] = [];
+  private queue: QueuedTestJob[] = [];
   private isShuttingDown = false;
 
   constructor(options: BackgroundTestWorkerPoolOptions = {}) {
@@ -51,101 +57,105 @@ export class BackgroundTestWorkerPool {
   /**
    * Enqueues a test execution job and returns a Promise that resolves when the job completes.
    */
-  /**
-   * Enqueues a test execution job and returns a Promise that resolves when the job completes.
-   */
   public async runTest(job: TestJobRequest): Promise<TestJobResult> {
     if (this.isShuttingDown) {
       throw new Error("BackgroundTestWorkerPool is shutting down");
     }
 
-    return new Promise<TestJobResult>((resolve) => {
-      const execute = async () => {
-        if (this.activeJobs.size >= this.maxConcurrency) {
-          this.queue.push(job);
-          return;
-        }
+    return new Promise<TestJobResult>((resolve, reject) => {
+      if (this.activeJobs.size >= this.maxConcurrency) {
+        this.queue.push({ job, resolve, reject });
+        return;
+      }
 
-        const startTime = Date.now();
-        const timeoutMs = job.timeoutMs ?? this.defaultTimeoutMs;
+      this.executeJob(job, resolve, reject);
+    });
+  }
 
-        let stdout = "";
-        let stderr = "";
+  /**
+   * Internal executor executing a job via child_process.spawn.
+   */
+  private executeJob(
+    job: TestJobRequest,
+    resolve: (result: TestJobResult) => void,
+    _reject: (err: unknown) => void,
+  ): void {
+    const startTime = Date.now();
+    const timeoutMs = job.timeoutMs ?? this.defaultTimeoutMs;
 
-        const child = spawn("sh", ["-c", job.command], {
-          cwd: job.cwd,
-          env: { ...process.env, NODE_ENV: "test" },
-          stdio: ["ignore", "pipe", "pipe"],
-        });
+    let stdout = "";
+    let stderr = "";
 
-        this.activeJobs.set(job.taskId, {
-          process: child,
-          startTime,
-          command: job.command,
-        });
+    const child = spawn("sh", ["-c", job.command], {
+      cwd: job.cwd,
+      env: { ...process.env, NODE_ENV: "test" },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 
-        const timer = setTimeout(() => {
-          child.kill("SIGKILL");
-        }, timeoutMs);
+    this.activeJobs.set(job.taskId, {
+      process: child,
+      startTime,
+      command: job.command,
+    });
 
-        child.stdout?.on("data", (data: Buffer) => {
-          stdout = (stdout + data.toString()).slice(-64000);
-        });
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+    }, timeoutMs);
 
-        child.stderr?.on("data", (data: Buffer) => {
-          stderr = (stderr + data.toString()).slice(-64000);
-        });
+    child.stdout?.on("data", (data: Buffer) => {
+      stdout = (stdout + data.toString()).slice(-64000);
+    });
 
-        child.on("close", (exitCode: number | null) => {
-          clearTimeout(timer);
-          this.activeJobs.delete(job.taskId);
+    child.stderr?.on("data", (data: Buffer) => {
+      stderr = (stderr + data.toString()).slice(-64000);
+    });
 
-          const durationMs = Date.now() - startTime;
-          const code = exitCode ?? 1;
-          const passed = code === 0;
+    child.on("close", (exitCode: number | null) => {
+      clearTimeout(timer);
+      this.activeJobs.delete(job.taskId);
 
-          const result: TestJobResult = {
-            taskId: job.taskId,
-            command: job.command,
-            exitCode: code,
-            durationMs,
-            stdout,
-            stderr,
-            passed,
-          };
+      const durationMs = Date.now() - startTime;
+      const code = exitCode ?? 1;
+      const passed = code === 0;
 
-          this.emitter.emit("test_completed", result);
-          this.emitter.emit(`test_completed:${job.taskId}`, result);
-          resolve(result);
-
-          this.drainQueue();
-        });
-
-        child.on("error", (err: Error) => {
-          clearTimeout(timer);
-          this.activeJobs.delete(job.taskId);
-          const durationMs = Date.now() - startTime;
-
-          const result: TestJobResult = {
-            taskId: job.taskId,
-            command: job.command,
-            exitCode: 1,
-            durationMs,
-            stdout,
-            stderr,
-            passed: false,
-            error: err.message,
-          };
-
-          this.emitter.emit("test_completed", result);
-          this.emitter.emit(`test_completed:${job.taskId}`, result);
-          resolve(result);
-
-          this.drainQueue();
-        });
+      const result: TestJobResult = {
+        taskId: job.taskId,
+        command: job.command,
+        exitCode: code,
+        durationMs,
+        stdout,
+        stderr,
+        passed,
       };
 
-      void execute();
+      this.emitter.emit("test_completed", result);
+      this.emitter.emit(`test_completed:${job.taskId}`, result);
+      resolve(result);
+
+      this.drainQueue();
+    });
+
+    child.on("error", (err: Error) => {
+      clearTimeout(timer);
+      this.activeJobs.delete(job.taskId);
+      const durationMs = Date.now() - startTime;
+
+      const result: TestJobResult = {
+        taskId: job.taskId,
+        command: job.command,
+        exitCode: 1,
+        durationMs,
+        stdout,
+        stderr,
+        passed: false,
+        error: err.message,
+      };
+
+      this.emitter.emit("test_completed", result);
+      this.emitter.emit(`test_completed:${job.taskId}`, result);
+      resolve(result);
+
+      this.drainQueue();
     });
   }
 
@@ -177,14 +187,19 @@ export class BackgroundTestWorkerPool {
       job.process.kill("SIGKILL");
       this.activeJobs.delete(taskId);
     }
+    const pending = [...this.queue];
     this.queue = [];
+    for (const item of pending) {
+      item.reject(new Error("BackgroundTestWorkerPool is shutting down"));
+    }
   }
 
   private drainQueue(): void {
-    if (this.queue.length > 0 && this.activeJobs.size < this.maxConcurrency) {
+    if (this.isShuttingDown) return;
+    while (this.queue.length > 0 && this.activeJobs.size < this.maxConcurrency) {
       const next = this.queue.shift();
       if (next) {
-        void this.runTest(next);
+        this.executeJob(next.job, next.resolve, next.reject);
       }
     }
   }

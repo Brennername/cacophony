@@ -207,7 +207,7 @@ export class JwtValidator {
     const signature = crypto
       .createHmac("sha256", this.hmacSecret)
       .update(signedData)
-      .digest();
+      .digest("base64url");
     return `${signedData}.${signature}`;
   }
 }

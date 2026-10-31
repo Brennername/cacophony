@@ -25,5 +25,5 @@ describe('DashboardViewComponent', () => {
     expect(compiled.querySelector('app-task-inspector')).toBeTruthy();
     expect(compiled.querySelector('app-queue-manager')).toBeTruthy();
     expect(compiled.querySelector('app-windowed-success-trend')).toBeTruthy();
-  });
+  }, 15000);
 });

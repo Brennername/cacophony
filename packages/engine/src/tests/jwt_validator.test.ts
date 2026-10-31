@@ -1,197 +1,167 @@
-import * as crypto from "node:crypto";
-import type { JwksKeyManager } from "../auth/OidcDiscoveryService.js";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { JwtValidator } from "../auth/JwtValidator.js";
 import type { SsoSessionPayload } from "@cacophony/shared-types";
 
-export interface JwtValidationOptions {
-  readonly expectedIssuer?: string;
-  readonly expectedAudience?: string;
-  readonly clockToleranceSeconds?: number;
-  readonly expectedNonce?: string;
-}
+describe("JwtValidator Unit Test Suite (T102.2.5)", () => {
+  const secret = "test-jwt-secret-key-super-secure-123456789";
+  const validator = new JwtValidator({ hmacSecret: secret });
 
-export interface JwtValidationResult {
-  readonly valid: boolean;
-  readonly payload?: Record<string, unknown>;
-  readonly error?: string;
-}
+  const createBasePayload = (
+    overrides?: Partial<SsoSessionPayload> & Record<string, unknown>,
+  ): SsoSessionPayload => ({
+    sub: "user-123",
+    username: "testuser",
+    email: "test@example.com",
+    roles: ["contributor"],
+    provider: "github",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    ...overrides,
+  });
 
-export class JwtValidator {
-  private readonly jwksKeyManager: JwksKeyManager | undefined;
-  private readonly hmacSecret: string | undefined;
+  it("should successfully sign and validate a valid HS256 session token", async () => {
+    const payload = createBasePayload();
+    const token = validator.signHs256(payload);
 
-  constructor(options?: {
-    jwksKeyManager?: JwksKeyManager | undefined;
-    hmacSecret?: string | undefined;
-  }) {
-    this.jwksKeyManager = options?.jwksKeyManager;
-    this.hmacSecret = options?.hmacSecret;
-  }
+    assert.ok(token);
+    assert.equal(token.split(".").length, 3);
 
-  public async validate(
-    token: string,
-    options?: JwtValidationOptions,
-  ): Promise<JwtValidationResult> {
-    if (!token || typeof token !== "string") {
-      return { valid: false, error: "Empty or invalid token format" };
-    }
+    const result = await validator.validate(token);
+    assert.strictEqual(result.valid, true);
+    assert.ok(result.payload);
+    assert.strictEqual(result.payload.sub, "user-123");
+    assert.strictEqual(result.payload.username, "testuser");
+    assert.deepStrictEqual(result.payload.roles, ["contributor"]);
+  });
 
+  it("should reject token with tampered signature", async () => {
+    const payload = createBasePayload();
+    const token = validator.signHs256(payload);
     const parts = token.split(".");
-    if (parts.length !== 3) {
-      return {
-        valid: false,
-        error: "Invalid JWT structure: expected 3 dot-separated segments",
-      };
-    }
+    const tamperedToken = `${parts[0]}.${parts[1]}.tamperedSignature123`;
 
-    const headerB64 = parts[0];
-    const payloadB64 = parts[1];
-    const signatureB64 = parts[2];
-    if (!headerB64 || !payloadB64 || !signatureB64) {
-      return { valid: false, error: "Invalid JWT structure: segment is empty" };
-    }
+    const result = await validator.validate(tamperedToken);
+    assert.strictEqual(result.valid, false);
+    assert.match(result.error ?? "", /signature/i);
+  });
 
-    let header: { alg?: string; kid?: string; typ?: string };
-    let payload: Record<string, unknown>;
+  it("should reject token when signed with a different secret", async () => {
+    const differentValidator = new JwtValidator({ hmacSecret: "different-secret-999" });
+    const payload = createBasePayload();
+    const token = differentValidator.signHs256(payload);
 
-    try {
-      header = JSON.parse(
-        Buffer.from(headerB64, "base64url").toString("utf-8"),
-      );
-      payload = JSON.parse(
-        Buffer.from(payloadB64, "base64url").toString("utf-8"),
-      );
-    } catch (err: unknown) {
-      return {
-        valid: false,
-        error: "Failed to decode base64url JSON header or payload",
-      };
-    }
+    const result = await validator.validate(token);
+    assert.strictEqual(result.valid, false);
+    assert.match(result.error ?? "", /signature/i);
+  });
 
-    const alg = header.alg;
-    if (!alg) {
-      return { valid: false, error: "Missing alg in token header" };
-    }
+  it("should reject expired token based on exp timestamp claim", async () => {
+    const expiredTimestampSeconds = Math.floor(Date.now() / 1000) - 300;
+    const payload = createBasePayload({
+      exp: expiredTimestampSeconds,
+    });
+    const token = validator.signHs256(payload);
 
-    const signedData = `${headerB64}.${payloadB64}`;
-    const signature = Buffer.from(signatureB64, "base64url");
+    const result = await validator.validate(token);
+    assert.strictEqual(result.valid, false);
+    assert.match(result.error ?? "", /expired/i);
+  });
 
-    let signatureValid = false;
+  it("should respect clock tolerance when validating slightly expired tokens", async () => {
+    const expiredTimestampSeconds = Math.floor(Date.now() / 1000) - 10;
+    const payload = createBasePayload({
+      exp: expiredTimestampSeconds,
+    });
+    const token = validator.signHs256(payload);
 
-    if (alg === "HS256") {
-      if (!this.hmacSecret) {
-        return {
-          valid: false,
-          error: "HS256 token rejected: No HMAC secret configured",
-        };
-      }
-      const expectedSig = crypto
-        .createHmac("sha256", this.hmacSecret)
-        .update(signedData)
-        .digest();
-      signatureValid =
-        signature.length === expectedSig.length &&
-        crypto.timingSafeEqual(signature, expectedSig);
-    } else if (alg === "RS256" || alg === "ES256") {
-      if (!this.jwksKeyManager) {
-        return {
-          valid: false,
-          error: `${alg} verification requires a configured JwksKeyManager`,
-        };
-      }
-      const keyObj = await this.jwksKeyManager.getKey(header.kid);
-      if (!keyObj) {
-        return {
-          valid: false,
-          error: `Public key not found for kid: ${header.kid ?? "default"}`,
-        };
-      }
+    const resultWithTolerance = await validator.validate(token, {
+      clockToleranceSeconds: 30,
+    });
+    assert.strictEqual(resultWithTolerance.valid, true);
 
-      try {
-        const cryptoKey = crypto.createPublicKey({
-          key: keyObj as crypto.JsonWebKey,
-          format: "jwk",
-        });
-        const verifier = crypto.createVerify(
-          alg === "RS256" ? "RSA-SHA256" : "SHA256",
-        );
-        verifier.update(signedData);
-        signatureValid = verifier.verify(cryptoKey, signature);
-      } catch (err: unknown) {
-        return {
-          valid: false,
-          error: `Cryptographic verification error: ${err instanceof Error ? err.message : String(err)}`,
-        };
-      }
-    } else {
-      return { valid: false, error: `Unsupported algorithm: ${alg}` };
-    }
+    const resultWithoutTolerance = await validator.validate(token, {
+      clockToleranceSeconds: 0,
+    });
+    assert.strictEqual(resultWithoutTolerance.valid, false);
+  });
 
-    if (!signatureValid) {
-      return { valid: false, error: "Invalid signature" };
-    }
+  it("should reject token when nbf not-before claim is in the future", async () => {
+    const futureTimestampSeconds = Math.floor(Date.now() / 1000) + 300;
+    const payload = createBasePayload({
+      nbf: futureTimestampSeconds,
+    } as any);
+    const token = validator.signHs256(payload);
 
-    const nowSec = Math.floor(Date.now() / 1000);
-    const clockTolerance = options?.clockToleranceSeconds ?? 60;
+    const result = await validator.validate(token, { clockToleranceSeconds: 0 });
+    assert.strictEqual(result.valid, false);
+    assert.match(result.error ?? "", /not valid before/i);
+  });
 
-    if (typeof payload.exp === "number") {
-      if (nowSec - clockTolerance > payload.exp) {
-        return {
-          valid: false,
-          error: `Token expired at ${payload.exp}, current time is ${nowSec}`,
-        };
-      }
-    }
+  it("should reject malformed tokens with incorrect segment counts or empty segments", async () => {
+    const emptyResult = await validator.validate("");
+    assert.strictEqual(emptyResult.valid, false);
 
-    if (typeof payload.nbf === "number") {
-      if (nowSec + clockTolerance < payload.nbf) {
-        return { valid: false, error: `Token not valid before ${payload.nbf}` };
-      }
-    }
+    const twoPart = await validator.validate("header.payload");
+    assert.strictEqual(twoPart.valid, false);
 
-    if (options?.expectedIssuer && payload.iss !== options.expectedIssuer) {
-      return {
-        valid: false,
-        error: `Issuer mismatch: expected ${options.expectedIssuer}, got ${payload.iss}`,
-      };
-    }
+    const fourPart = await validator.validate("part1.part2.part3.part4");
+    assert.strictEqual(fourPart.valid, false);
 
-    if (options?.expectedAudience) {
-      const aud = payload.aud;
-      const audMatches = Array.isArray(aud)
-        ? aud.includes(options.expectedAudience)
-        : aud === options.expectedAudience;
-      if (!audMatches) {
-        return {
-          valid: false,
-          error: `Audience mismatch: expected ${options.expectedAudience}, got ${payload.aud}`,
-        };
-      }
-    }
+    const emptySegment = await validator.validate("..signature");
+    assert.strictEqual(emptySegment.valid, false);
+  });
 
-    if (options?.expectedNonce && payload.nonce !== options.expectedNonce) {
-      return {
-        valid: false,
-        error: `Nonce mismatch: expected ${options.expectedNonce}, got ${payload.nonce}`,
-      };
-    }
+  it("should reject tokens with invalid JSON in header or payload", async () => {
+    const invalidHeader = Buffer.from("not-valid-json").toString("base64url");
+    const payload = Buffer.from(JSON.stringify({ userId: "1" })).toString("base64url");
+    const signature = "fake-sig";
 
-    return { valid: true, payload };
-  }
+    const result = await validator.validate(`${invalidHeader}.${payload}.${signature}`);
+    assert.strictEqual(result.valid, false);
+    assert.match(result.error ?? "", /decode/i);
+  });
 
-  public signHs256(payload: SsoSessionPayload): string {
-    if (!this.hmacSecret) {
-      throw new Error("Cannot sign HS256 token without hmacSecret configured");
-    }
-    const header = { alg: "HS256", typ: "JWT" };
-    const headerB64 = Buffer.from(JSON.stringify(header)).toString("base64url");
-    const payloadB64 = Buffer.from(JSON.stringify(payload)).toString(
-      "base64url",
-    );
-    const signedData = `${headerB64}.${payloadB64}`;
-    const signature = crypto
-      .createHmac("sha256", this.hmacSecret)
-      .update(signedData)
-      .digest();
-    return `${signedData}.${signature}`;
-  }
-}
+  it("should reject HS256 tokens when validator has no hmacSecret configured", async () => {
+    const unconfiguredValidator = new JwtValidator();
+    const payload = createBasePayload();
+    const token = validator.signHs256(payload);
+
+    const result = await unconfiguredValidator.validate(token);
+    assert.strictEqual(result.valid, false);
+    assert.match(result.error ?? "", /No HMAC secret/i);
+  });
+
+  it("should validate and enforce expectedIssuer, expectedAudience, and expectedNonce", async () => {
+    const payload = createBasePayload({
+      iss: "https://auth.cacophony.local",
+      aud: "cacophony-client",
+      nonce: "nonce-xyz",
+    } as any);
+    const token = validator.signHs256(payload);
+
+    const validResult = await validator.validate(token, {
+      expectedIssuer: "https://auth.cacophony.local",
+      expectedAudience: "cacophony-client",
+      expectedNonce: "nonce-xyz",
+    });
+    assert.strictEqual(validResult.valid, true);
+
+    const badIssuer = await validator.validate(token, {
+      expectedIssuer: "https://wrong.issuer",
+    });
+    assert.strictEqual(badIssuer.valid, false);
+    assert.match(badIssuer.error ?? "", /issuer mismatch/i);
+
+    const badAudience = await validator.validate(token, {
+      expectedAudience: "wrong-audience",
+    });
+    assert.strictEqual(badAudience.valid, false);
+    assert.match(badAudience.error ?? "", /audience mismatch/i);
+
+    const badNonce = await validator.validate(token, {
+      expectedNonce: "wrong-nonce",
+    });
+    assert.strictEqual(badNonce.valid, false);
+    assert.match(badNonce.error ?? "", /nonce mismatch/i);
+  });
+});
