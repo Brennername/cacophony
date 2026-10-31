@@ -1,132 +1,133 @@
-import type {
-  CodeSignatureRecord,
-  CallableSignature,
-  PropertySignature,
-  FunctionParameterSignature,
-} from "@cacophony/shared-types";
+import { test, describe } from "node:test";
+import assert from "node:assert/strict";
+import { GoSignatureHarvester } from "../signature/GoSignatureHarvester.js";
 
-export class GoSignatureHarvester {
-  public harvest(
-    filePath: string,
-    content: string,
-  ): readonly CodeSignatureRecord[] {
-    const records: CodeSignatureRecord[] = [];
-    const lines = content.split("\n");
+describe("GoSignatureHarvester", () => {
+  const harvester = new GoSignatureHarvester();
 
-    const funcRegex =
-      /^\s*func\s+(?:\(([^)]+)\)\s+)?([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^{]*)\{?/;
-    const typeDefRegex =
-      /^\s*type\s+([A-Za-z0-9_]+)\s+(struct|interface)\s*\{?/;
+  describe("Struct Declarations", () => {
+    test("should harvest Go struct definitions with fields and types", () => {
+      const code = `
+        package config
 
-    let currentBlockName = "";
-    let currentBlockKind: "type" | "interface" = "type";
-    let currentBlockFields: PropertySignature[] = [];
-    let currentBlockMethods: CallableSignature[] = [];
-    let inBlock = false;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]?.trim() ?? "";
-
-      const typeMatch = line.match(typeDefRegex);
-      if (typeMatch && typeMatch[1] && typeMatch[2]) {
-        currentBlockName = typeMatch[1];
-        currentBlockKind = typeMatch[2] === "interface" ? "interface" : "type";
-        currentBlockFields = [];
-        currentBlockMethods = [];
-        inBlock = true;
-        continue;
-      }
-
-      if (inBlock && line === "}") {
-        records.push({
-          id: `${filePath}#${currentBlockName}`,
-          filePath,
-          language: "go",
-          identifier: currentBlockName,
-          kind: currentBlockKind,
-          callables: currentBlockMethods,
-          properties: currentBlockFields,
-          rawCompressed: `type ${currentBlockName} ${currentBlockKind === "interface" ? "interface" : "struct"} { ${currentBlockFields.map((f) => `${f.name} ${f.type}`).join("; ")} }`,
-        });
-        inBlock = false;
-        continue;
-      }
-
-      if (inBlock && line && !line.startsWith("//")) {
-        if (currentBlockKind === "type") {
-
-          const parts = line.split(/\s+/);
-          if (parts.length >= 2 && parts[0] && parts[1]) {
-            currentBlockFields.push({
-              name: parts[0],
-              type: parts[1],
-              isOptional: false,
-              isReadonly: false,
-            });
-          }
-        } else if (currentBlockKind === "interface") {
-
-          const ifaceMethodMatch = line.match(
-            /^([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*([^;]*)/,
-          );
-          if (ifaceMethodMatch && ifaceMethodMatch[1]) {
-            currentBlockMethods.push({
-              name: ifaceMethodMatch[1],
-              parameters: this.parseGoParams(ifaceMethodMatch[2] || ""),
-              returnType: ifaceMethodMatch[3]?.trim() || "void",
-              isAsync: false,
-            });
-          }
+        type DatabaseConfig struct {
+          Host string
+          Port int
+          Username string
+          Password string
         }
-        continue;
-      }
+      `;
 
-      const funcMatch = line.match(funcRegex);
-      if (funcMatch && funcMatch[2]) {
-        const receiver = funcMatch[1]?.trim();
-        const funcName = funcMatch[2];
-        const rawParams = funcMatch[3] ?? "";
-        const returnType = funcMatch[4]?.trim() || "void";
-        const params = this.parseGoParams(rawParams);
+      const records = harvester.harvest("pkg/config/database.go", code);
+      assert.equal(records.length, 1);
+      const structRecord = records[0]!;
+      assert.equal(structRecord.id, "pkg/config/database.go#DatabaseConfig");
+      assert.equal(structRecord.identifier, "DatabaseConfig");
+      assert.equal(structRecord.kind, "type");
+      assert.equal(structRecord.language, "go");
+      assert.equal(structRecord.properties.length, 4);
 
-        const callable: CallableSignature = {
-          name: receiver ? `${receiver}.${funcName}` : funcName,
-          parameters: params,
-          returnType,
-          isAsync: false,
-        };
+      const hostProp = structRecord.properties.find((p) => p.name === "Host");
+      assert.ok(hostProp);
+      assert.equal(hostProp.type, "string");
 
-        records.push({
-          id: `${filePath}#${funcName}`,
-          filePath,
-          language: "go",
-          identifier: funcName,
-          kind: "function",
-          callables: [callable],
-          properties: [],
-          rawCompressed: `func ${receiver ? `(${receiver}) ` : ""}${funcName}(${params.map((p) => `${p.name}: ${p.type}`).join(", ")}): ${returnType}`,
-        });
-      }
-    }
+      const portProp = structRecord.properties.find((p) => p.name === "Port");
+      assert.ok(portProp);
+      assert.equal(portProp.type, "int");
 
-    return records;
-  }
+      assert.ok(structRecord.rawCompressed.includes("type DatabaseConfig struct"));
+      assert.ok(structRecord.rawCompressed.includes("Host string"));
+    });
+  });
 
-  private parseGoParams(rawParams: string): FunctionParameterSignature[] {
-    const params: FunctionParameterSignature[] = [];
-    if (!rawParams.trim()) return params;
+  describe("Interface Definitions", () => {
+    test("should harvest Go interface methods with parameters and return types", () => {
+      const code = `
+        package service
 
-    const parts = rawParams.split(",");
-    for (const p of parts) {
-      const tokens = p.trim().split(/\s+/);
-      if (tokens.length >= 2 && tokens[0] && tokens[1]) {
-        params.push({
-          name: tokens[0],
-          type: tokens[1],
-          isOptional: false,
-        });
-      }
-    }
-    return params;
-  }
-}
+        type QueueService interface {
+          Enqueue(jobId string, payload string) error
+          Dequeue() (Job, error)
+          Close()
+        }
+      `;
+
+      const records = harvester.harvest("pkg/service/queue.go", code);
+      assert.equal(records.length, 1);
+      const ifaceRecord = records[0]!;
+      assert.equal(ifaceRecord.identifier, "QueueService");
+      assert.equal(ifaceRecord.kind, "interface");
+      assert.equal(ifaceRecord.callables.length, 3);
+
+      const enqueueMethod = ifaceRecord.callables.find((c) => c.name === "Enqueue");
+      assert.ok(enqueueMethod);
+      assert.equal(enqueueMethod.returnType, "error");
+      assert.equal(enqueueMethod.parameters.length, 2);
+      assert.equal(enqueueMethod.parameters[0]?.name, "jobId");
+      assert.equal(enqueueMethod.parameters[0]?.type, "string");
+      assert.equal(enqueueMethod.parameters[1]?.name, "payload");
+      assert.equal(enqueueMethod.parameters[1]?.type, "string");
+
+      const dequeueMethod = ifaceRecord.callables.find((c) => c.name === "Dequeue");
+      assert.ok(dequeueMethod);
+      assert.equal(dequeueMethod.returnType, "(Job, error)");
+      assert.equal(dequeueMethod.parameters.length, 0);
+
+      const closeMethod = ifaceRecord.callables.find((c) => c.name === "Close");
+      assert.ok(closeMethod);
+      assert.equal(closeMethod.returnType, "void");
+    });
+  });
+
+  describe("Functions and Receiver Methods", () => {
+    test("should harvest standalone package-level functions", () => {
+      const code = `
+        package utils
+
+        func HashPassword(plain string, salt string) string {
+          return plain + salt
+        }
+
+        func GenerateUUID() string {
+          return "uuid"
+        }
+      `;
+
+      const records = harvester.harvest("pkg/utils/crypto.go", code);
+      assert.equal(records.length, 2);
+
+      const hashFn = records.find((r) => r.identifier === "HashPassword");
+      assert.ok(hashFn);
+      assert.equal(hashFn.kind, "function");
+      assert.equal(hashFn.callables.length, 1);
+      assert.equal(hashFn.callables[0]?.name, "HashPassword");
+      assert.equal(hashFn.callables[0]?.returnType, "string");
+      assert.equal(hashFn.callables[0]?.parameters.length, 2);
+      assert.equal(hashFn.callables[0]?.parameters[0]?.name, "plain");
+      assert.equal(hashFn.callables[0]?.parameters[0]?.type, "string");
+      assert.equal(hashFn.callables[0]?.parameters[1]?.name, "salt");
+      assert.equal(hashFn.callables[0]?.parameters[1]?.type, "string");
+    });
+
+    test("should harvest struct receiver methods with receiver notation", () => {
+      const code = `
+        package server
+
+        func (s *HttpServer) Start(port int) error {
+          return nil
+        }
+      `;
+
+      const records = harvester.harvest("pkg/server/http.go", code);
+      assert.equal(records.length, 1);
+      const methodRecord = records[0]!;
+      assert.equal(methodRecord.identifier, "Start");
+      assert.equal(methodRecord.callables.length, 1);
+      assert.equal(methodRecord.callables[0]?.name, "s *HttpServer.Start");
+      assert.equal(methodRecord.callables[0]?.returnType, "error");
+      assert.equal(methodRecord.callables[0]?.parameters.length, 1);
+      assert.equal(methodRecord.callables[0]?.parameters[0]?.name, "port");
+      assert.equal(methodRecord.callables[0]?.parameters[0]?.type, "int");
+    });
+  });
+});

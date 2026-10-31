@@ -1,5 +1,6 @@
 import type { CodeSignatureRecord } from "@cacophony/shared-types";
 import { SignatureHarvester } from "./SignatureHarvester.js";
+import { RustSignatureHarvester } from "./RustSignatureHarvester.js";
 
 /**
  * SignatureStore
@@ -9,18 +10,33 @@ import { SignatureHarvester } from "./SignatureHarvester.js";
  */
 export class SignatureStore {
   private readonly harvester = new SignatureHarvester();
+  private readonly rustHarvester = new RustSignatureHarvester();
   private readonly records = new Map<string, CodeSignatureRecord>();
 
   /**
-   * Indexes signatures from raw file content.
+   * Invalidates and purges all cached signatures associated with a given file path.
    */
+  public invalidateFile(filePath: string): void {
+    const keysToDelete: string[] = [];
+    for (const [key, record] of this.records.entries()) {
+      if (record.filePath === filePath) {
+        keysToDelete.push(key);
+      }
+    }
+    for (const key of keysToDelete) {
+      this.records.delete(key);
+    }
+  }
+
   /**
-   * Indexes signatures from raw file content.
+   * Indexes signatures from raw file content. Invalidates existing signatures for the file first.
    */
   public indexFile(
     filePath: string,
     content: string,
   ): readonly CodeSignatureRecord[] {
+    this.invalidateFile(filePath);
+
     let harvested: readonly CodeSignatureRecord[] = [];
     if (
       filePath.endsWith(".ts") ||
@@ -32,6 +48,8 @@ export class SignatureStore {
       harvested = this.harvester.harvestJava(filePath, content);
     } else if (filePath.endsWith(".go")) {
       harvested = this.harvester.harvestGo(filePath, content);
+    } else if (filePath.endsWith(".rs")) {
+      harvested = this.rustHarvester.harvest(filePath, content);
     }
 
     for (const rec of harvested) {

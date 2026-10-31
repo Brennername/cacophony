@@ -1,4 +1,5 @@
 import ts from "typescript";
+import type { CodeSignatureRecord } from "@cacophony/shared-types";
 import { SignatureStore } from "./SignatureStore.js";
 
 export interface AlignmentCorrection {
@@ -12,6 +13,18 @@ export interface AlignmentResult {
   readonly code: string;
   readonly corrections: readonly AlignmentCorrection[];
   readonly modified: boolean;
+}
+
+export interface SignatureDriftWarning {
+  readonly symbol: string;
+  readonly kind:
+    | "missing_method"
+    | "missing_property"
+    | "parameter_count_mismatch"
+    | "parameter_type_mismatch"
+    | "return_type_mismatch";
+  readonly details: string;
+  readonly severity: "warning" | "error";
 }
 
 /**
@@ -168,5 +181,159 @@ export class SignatureAlignmentScrubber {
       }
     }
     return matrix[b.length]![a.length]!;
+  }
+
+  /**
+   * Compares two CodeSignatureRecord declarations (e.g. across languages or interface vs implementation)
+   * and reports drift warnings.
+   */
+  public compareSignatures(
+    canonical: CodeSignatureRecord,
+    target: CodeSignatureRecord,
+  ): readonly SignatureDriftWarning[] {
+    const warnings: SignatureDriftWarning[] = [];
+
+    // Compare properties
+    for (const canonProp of canonical.properties) {
+      const targetProp = target.properties.find(
+        (p) => this.normalizeIdentifier(p.name) === this.normalizeIdentifier(canonProp.name),
+      );
+      if (!targetProp) {
+        warnings.push({
+          symbol: `${canonical.identifier}.${canonProp.name}`,
+          kind: "missing_property",
+          details: `Canonical property '${canonProp.name}' is missing in target '${target.identifier}'`,
+          severity: canonProp.isOptional ? "warning" : "error",
+        });
+      } else if (!this.areTypesCompatible(canonProp.type, targetProp.type)) {
+        warnings.push({
+          symbol: `${canonical.identifier}.${canonProp.name}`,
+          kind: "parameter_type_mismatch",
+          details: `Property '${canonProp.name}' type mismatch: expected '${canonProp.type}', got '${targetProp.type}'`,
+          severity: "warning",
+        });
+      }
+    }
+
+    // Compare callables / methods
+    for (const canonMethod of canonical.callables) {
+      const targetMethod = target.callables.find(
+        (c) => this.normalizeIdentifier(c.name) === this.normalizeIdentifier(canonMethod.name),
+      );
+      if (!targetMethod) {
+        warnings.push({
+          symbol: `${canonical.identifier}.${canonMethod.name}`,
+          kind: "missing_method",
+          details: `Canonical method '${canonMethod.name}' is missing in target '${target.identifier}'`,
+          severity: "error",
+        });
+        continue;
+      }
+
+      // Check parameter count
+      if (canonMethod.parameters.length !== targetMethod.parameters.length) {
+        warnings.push({
+          symbol: `${canonical.identifier}.${canonMethod.name}`,
+          kind: "parameter_count_mismatch",
+          details: `Method '${canonMethod.name}' parameter count mismatch: expected ${canonMethod.parameters.length}, got ${targetMethod.parameters.length}`,
+          severity: "error",
+        });
+      } else {
+        // Compare parameter types
+        for (let i = 0; i < canonMethod.parameters.length; i++) {
+          const canonP = canonMethod.parameters[i]!;
+          const targetP = targetMethod.parameters[i]!;
+          if (!this.areTypesCompatible(canonP.type, targetP.type)) {
+            warnings.push({
+              symbol: `${canonical.identifier}.${canonMethod.name}`,
+              kind: "parameter_type_mismatch",
+              details: `Parameter ${i + 1} ('${canonP.name}') type mismatch: expected '${canonP.type}', got '${targetP.type}'`,
+              severity: "warning",
+            });
+          }
+        }
+      }
+
+      // Check return type
+      if (!this.areReturnTypesCompatible(canonMethod.returnType, targetMethod.returnType)) {
+        warnings.push({
+          symbol: `${canonical.identifier}.${canonMethod.name}`,
+          kind: "return_type_mismatch",
+          details: `Return type mismatch for '${canonMethod.name}': expected '${canonMethod.returnType}', got '${targetMethod.returnType}'`,
+          severity: "warning",
+        });
+      }
+    }
+
+    return warnings;
+  }
+
+  /**
+   * Compares arrays of CodeSignatureRecords across languages and finds drift.
+   */
+  public findDrift(
+    canonicalRecords: readonly CodeSignatureRecord[],
+    targetRecords: readonly CodeSignatureRecord[],
+  ): readonly SignatureDriftWarning[] {
+    const warnings: SignatureDriftWarning[] = [];
+    const targetMap = new Map<string, CodeSignatureRecord>();
+    for (const r of targetRecords) {
+      targetMap.set(r.identifier.toLowerCase(), r);
+    }
+
+    for (const canon of canonicalRecords) {
+      const matchedTarget = targetMap.get(canon.identifier.toLowerCase());
+      if (!matchedTarget) {
+        warnings.push({
+          symbol: canon.identifier,
+          kind: "missing_method",
+          details: `Canonical symbol '${canon.identifier}' has no corresponding implementation in target records`,
+          severity: "error",
+        });
+      } else {
+        warnings.push(...this.compareSignatures(canon, matchedTarget));
+      }
+    }
+
+    return warnings;
+  }
+
+  private areTypesCompatible(a: string, b: string): boolean {
+    const normA = this.normalizeTypeName(a);
+    const normB = this.normalizeTypeName(b);
+    return normA === normB || normA === "any" || normB === "any";
+  }
+
+  private areReturnTypesCompatible(a: string, b: string): boolean {
+    const normA = this.normalizeTypeName(a);
+    const normB = this.normalizeTypeName(b);
+    if (normA === normB) return true;
+    if ((normA === "void" && normB === "()") || (normA === "()" && normB === "void")) return true;
+    return false;
+  }
+
+  private normalizeTypeName(rawType: string): string {
+    const trimmed = rawType.trim().toLowerCase();
+    if (trimmed === "string" || trimmed === "&str" || trimmed === "java.lang.string") return "string";
+    if (
+      trimmed === "number" ||
+      trimmed === "int" ||
+      trimmed === "i32" ||
+      trimmed === "i64" ||
+      trimmed === "u32" ||
+      trimmed === "u64" ||
+      trimmed === "f64" ||
+      trimmed === "float64" ||
+      trimmed === "integer"
+    ) {
+      return "number";
+    }
+    if (trimmed === "boolean" || trimmed === "bool") return "boolean";
+    if (trimmed === "void" || trimmed === "()") return "void";
+    return trimmed;
+  }
+
+  private normalizeIdentifier(name: string): string {
+    return name.replace(/_/g, "").toLowerCase();
   }
 }
