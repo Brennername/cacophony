@@ -1,11 +1,11 @@
 import { describe, it } from "node:test";
 import * as assert from "node:assert/strict";
-import { AstParameterCorrectionRules } from "../catalog/AstParameterCorrectionRules.js";
-import { GoSignatureHarvester } from "../../signature/GoSignatureHarvester.js";
-import { RustSignatureHarvester } from "../../signature/RustSignatureHarvester.js";
-import { GoAstScrubberRule } from "../../scrubber/rules/GoAstScrubberRule.js";
-import { RustSyntaxScrubberRule } from "../../scrubber/rules/RustSyntaxScrubberRule.js";
-import { QueueGroomer } from "../../scheduler/QueueGroomer.js";
+import { AstParameterCorrectionRules } from "../rules/catalog/AstParameterCorrectionRules.js";
+import { GoSignatureHarvester } from "../signature/GoSignatureHarvester.js";
+import { RustSignatureHarvester } from "../signature/RustSignatureHarvester.js";
+import { GoAstScrubberRule } from "../scrubber/rules/GoAstScrubberRule.js";
+import { RustSyntaxScrubberRule } from "../scrubber/rules/RustSyntaxScrubberRule.js";
+import { QueueGroomer } from "../scheduler/QueueGroomer.js";
 import type { CodeSignatureRecord } from "@cacophony/shared-types";
 
 describe("Phase 37: Multi-Stack Profile Verifiers, AST Inversion Repair & Scrubber Catalog", () => {

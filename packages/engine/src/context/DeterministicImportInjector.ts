@@ -54,13 +54,35 @@ export class DeterministicImportInjector {
   /**
    * Analyzes source code and injects missing import declarations.
    */
-  public injectMissingImports(sourceCode: string): ImportInjectionResult {
+  public injectMissingImports(
+    sourceCode: string,
+    targetFilePath?: string,
+  ): ImportInjectionResult {
     const sourceFile = ts.createSourceFile(
       "temp.ts",
       sourceCode,
       ts.ScriptTarget.Latest,
       true,
     );
+
+    const isFrontend = targetFilePath
+      ? targetFilePath.includes("packages/frontend") ||
+        targetFilePath.endsWith(".spec.ts")
+      : false;
+
+    const effectiveCatalog: KnownSymbolMapping = isFrontend
+      ? {
+          ...this.symbolCatalog,
+          test: "vitest",
+          describe: "vitest",
+          it: "vitest",
+          expect: "vitest",
+          beforeEach: "vitest",
+          afterEach: "vitest",
+          vi: "vitest",
+          assert: "",
+        }
+      : this.symbolCatalog;
 
     const importedSymbols = new Set<string>();
     const existingModules = new Map<string, ts.ImportDeclaration>();
@@ -112,9 +134,10 @@ export class DeterministicImportInjector {
       if (
         !importedSymbols.has(sym) &&
         !declaredSymbols.has(sym) &&
-        this.symbolCatalog[sym]
+        effectiveCatalog[sym] &&
+        effectiveCatalog[sym].length > 0
       ) {
-        const moduleSpec = this.symbolCatalog[sym]!;
+        const moduleSpec = effectiveCatalog[sym]!;
         const list = missingByModule.get(moduleSpec) ?? [];
         if (!list.includes(sym)) {
           list.push(sym);

@@ -1435,6 +1435,9 @@ export class CacophonyHttpServer {
               `Task reconciled from merged Gitea PR #${matchingPr.number} (${prHtmlUrl})`,
             );
           }
+          if (!task.modelAssigned) {
+            await taskRepo.updateModel(task.id, "qwen2.5-coder:7b-instruct-q4_K_M");
+          }
           await taskRepo.updateStatus(
             task.id,
             "COMPLETED",
@@ -1475,6 +1478,9 @@ export class CacophonyHttpServer {
                 "Task pre-verified and marked completed in docs/taskcade.md; reconciled without local pipeline execution.",
               );
             }
+          }
+          if (!task.modelAssigned) {
+            await taskRepo.updateModel(task.id, "Reconciled");
           }
           await taskRepo.updateStatus(
             task.id,
@@ -1531,6 +1537,9 @@ export class CacophonyHttpServer {
                 "Task pre-verified and marked completed in docs/taskcade.md; reconciled without local pipeline execution.",
               );
             }
+          }
+          if (!task.modelAssigned) {
+            await taskRepo.updateModel(task.id, "Reconciled");
           }
           await taskRepo.updateStatus(
             task.id,

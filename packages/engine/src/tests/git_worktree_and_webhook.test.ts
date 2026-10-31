@@ -2,17 +2,17 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
-import { GitWorktreeManager } from "../GitWorktreeManager.js";
-import { GiteaWebhookReceiver } from "../GiteaWebhookReceiver.js";
-import { AutomatedPrPublisher } from "../AutomatedPrPublisher.js";
+import { GitWorktreeManager } from "../gitea/GitWorktreeManager.js";
+import { GiteaWebhookReceiver } from "../gitea/GiteaWebhookReceiver.js";
+import { AutomatedPrPublisher } from "../gitea/AutomatedPrPublisher.js";
 import type { TaskRepository } from "@cacophony/db";
 import type { TaskRecord, TaskStatus } from "@cacophony/shared-types";
-import type { GiteaApiClient } from "../GiteaApiClient.js";
+import type { GiteaApiClient } from "../gitea/GiteaApiClient.js";
 import type {
   MergePullRequestRequest,
   CreatePullRequestRequest,
   GiteaPullRequest,
-} from "../giteaTypes.js";
+} from "../gitea/giteaTypes.js";
 
 describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints", () => {
   it("T39.1: GitWorktreeManager formats standardized branch names and manages worktree directory", async () => {
@@ -171,6 +171,7 @@ describe("Phase 39: Closed-Loop Gitea PR Automation, GitOps & Micro-Checkpoints"
   it("T39.2: AutomatedPrPublisher pushes branch and formats structured PR summary", async () => {
     let prCreated = false;
     const mockGiteaClient = {
+      listPullRequests: async (): Promise<GiteaPullRequest[]> => [],
       createPullRequest: async (
         owner: string,
         repo: string,

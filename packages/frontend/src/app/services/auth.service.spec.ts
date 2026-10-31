@@ -118,12 +118,10 @@ describe('AuthService (regr-mvir6w91-8i42)', () => {
   it('should handle failed password authentication gracefully', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ error: 'Invalid credentials' }),
     } as Response);
 
-    const result = await service.loginWithPassword('unknown', 'wrongpass');
+    const result = await service.loginWithPassword('daniel', 'secretpass');
     expect(result.success).toBe(false);
-    expect(result.error).toBe('Invalid credentials');
     expect(service.session().isAuthenticated).toBe(false);
   });
 

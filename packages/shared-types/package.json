@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -b",
     "test": "tsc -b && node --test dist/tests/*.test.js",
+    "test:coverage": "node --experimental-test-coverage --test dist/tests/*.test.js",
     "clean": "node -e \"process.exit(0)\""
   },
   "dependencies": {

@@ -162,7 +162,7 @@ export class TaskRehabilitationService {
         role: dto.role as AgentRole,
         status: "PENDING",
         priority: (dto.priority as TaskPriority) ?? failedTask.priority,
-        modelAssigned: null,
+        modelAssigned: failedTask.modelAssigned ?? null,
         testCommand: dto.testCommand ?? failedTask.testCommand,
         focusFiles: dto.focusFiles ?? failedTask.focusFiles,
         targetBranch: failedTask.targetBranch,

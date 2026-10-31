@@ -1,16 +1,25 @@
-import { describe, it, before } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs/promises';
+import os from 'node:os';
 
 import { IncidentBundleRecorder } from '../analytics/IncidentBundleRecorder.js';
 import type { RegressionBurstAlert } from '../analytics/FailureClusterDetector.js';
 
 describe('IncidentBundleRecorder', () => {
   let recorder: IncidentBundleRecorder;
-  const storageDir = path.join(__dirname, 'test-data');
+  let storageDir: string;
 
-  before(() => {
+  before(async () => {
+    storageDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cacophony-incident-bundle-test-'));
     recorder = new IncidentBundleRecorder({ storageDir });
+  });
+
+  after(async () => {
+    if (storageDir) {
+      await fs.rm(storageDir, { recursive: true, force: true });
+    }
   });
 
   it('should capture a bundle and save it to disk', async () => {
@@ -30,7 +39,7 @@ describe('IncidentBundleRecorder', () => {
 
     const result = await recorder.captureBundle(alert);
     assert.ok(result.bundlePath.includes('incident-'));
-    assert.strictEqual(result.bundle.bundleId, `incident-${Date.now()}`);
+    assert.ok(result.bundle.bundleId.startsWith('incident-'));
   });
 
   it('should retrieve recent git commits', async () => {

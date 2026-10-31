@@ -155,6 +155,50 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         targetFilePath.includes("/app/")
       : currentCode.includes("@Component");
 
+    const isFrontendTest = targetFilePath
+      ? targetFilePath.includes("packages/frontend") ||
+        targetFilePath.endsWith(".spec.ts")
+      : currentCode.includes("@angular") || currentCode.includes("from 'vitest'");
+
+    // 0. Repair TS2591: Cannot find name 'node:test' or 'node:assert/strict' in Angular frontend test
+    const hasNodeTestOrAssertMissing = diagnostics.some(
+      (d) =>
+        d.errorCode === "TS2591" &&
+        (d.message.includes("node:test") ||
+          d.message.includes("node:assert")),
+    );
+    if (
+      isFrontendTest &&
+      (hasNodeTestOrAssertMissing ||
+        currentCode.includes("from 'node:test'") ||
+        currentCode.includes('from "node:test"') ||
+        currentCode.includes("from 'node:assert") ||
+        currentCode.includes('from "node:assert'))
+    ) {
+      currentCode = currentCode
+        .replace(/import\s+[^;]*from\s+['"]node:test['"];?\n?/g, "")
+        .replace(/import\s+[^;]*from\s+['"]node:assert\/strict['"];?\n?/g, "")
+        .replace(/import\s+[^;]*from\s+['"]node:assert['"];?\n?/g, "");
+
+      if (
+        !currentCode.includes("from 'vitest'") &&
+        !prependCode.includes("from 'vitest'")
+      ) {
+        prependCode +=
+          "import { describe, it, test, expect, beforeEach, afterEach, vi } from 'vitest';\n";
+      }
+
+      currentCode = currentCode
+        .replace(/assert\.strictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toBe($2);")
+        .replace(/assert\.deepStrictEqual\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toEqual($2);")
+        .replace(/assert\.equal\(([^,]+),\s*([^)]+)\);?/g, "expect($1).toEqual($2);")
+        .replace(/assert\.ok\(([^)]+)\);?/g, "expect($1).toBeTruthy();");
+
+      repairsApplied.push(
+        "Replaced node:test and node:assert with Vitest testing primitives for Angular environment",
+      );
+    }
+
     // 1. Repair TS2304 / TS2708: Missing 'jest' test runner global or namespace used as value
     const hasJestMissing = diagnostics.some(
       (d) =>
@@ -168,61 +212,75 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       !currentCode.includes("const jest =") &&
       !currentCode.includes("var jest =")
     ) {
-      const jestShim = [
-        "// Native node:test compatibility shim for jest APIs",
-        "const jest = {",
-        "  fn: <T extends (...args: any[]) => any>(impl?: T): any => {",
-        "    let currentImpl: any = impl;",
-        "    const onceQueue: Array<(...args: any[]) => any> = [];",
-        "    const mockFn: any = (...args: any[]) => {",
-        "      mockFn.mock.calls.push(args);",
-        "      mockFn.called = true;",
-        "      mockFn.calledOnce = mockFn.mock.calls.length === 1;",
-        "      const effectiveImpl = onceQueue.shift() ?? currentImpl;",
-        "      const res = effectiveImpl ? effectiveImpl(...args) : undefined;",
-        "      mockFn.mock.results.push({ type: 'return', value: res });",
-        "      return res;",
-        "    };",
-        "    mockFn.mock = {",
-        "      calls: [] as any[][],",
-        "      results: [] as any[],",
-        "      instances: [] as any[],",
-        "      lastCall: undefined as any,",
-        "      mockClear: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; mockFn.called = false; mockFn.calledOnce = false; },",
-        "      mockReset: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; currentImpl = undefined; onceQueue.length = 0; mockFn.called = false; mockFn.calledOnce = false; }",
-        "    };",
-        "    mockFn.mockReturnValue = (val: any) => { currentImpl = () => val; return mockFn; };",
-        "    mockFn.mockReturnValueOnce = (val: any) => { onceQueue.push(() => val); return mockFn; };",
-        "    mockFn.mockResolvedValue = (val: any) => { currentImpl = async () => val; return mockFn; };",
-        "    mockFn.mockResolvedValueOnce = (val: any) => { onceQueue.push(async () => val); return mockFn; };",
-        "    mockFn.mockImplementation = (fnImpl: any) => { currentImpl = fnImpl; return mockFn; };",
-        "    mockFn.mockImplementationOnce = (fnImpl: any) => { onceQueue.push(fnImpl); return mockFn; };",
-        "    mockFn.mockReset = () => { mockFn.mock.mockReset(); return mockFn; };",
-        "    mockFn.mockClear = () => { mockFn.mock.mockClear(); return mockFn; };",
-        "    mockFn.mockRejectedValue = (err: any) => { currentImpl = async () => { throw err; }; return mockFn; };",
-        "    mockFn.mockRejectedValueOnce = (err: any) => { onceQueue.push(async () => { throw err; }); return mockFn; };",
-        "    mockFn.mockReturnThis = () => { currentImpl = function(this: any) { return this; }; return mockFn; };",
-        "    mockFn.calledOnceWith = (...args: any[]) => mockFn.mock.calls.length === 1 && JSON.stringify(mockFn.mock.calls[0]) === JSON.stringify(args);",
-        "    mockFn.called = false;",
-        "    mockFn.calledOnce = false;",
-        "    return mockFn;",
-        "  },",
-        "  spyOn: (obj: any, method: any): any => {",
-        "    const original = obj ? obj[method] : undefined;",
-        "    const fn = jest.fn(original);",
-        "    if (obj) obj[method] = fn;",
-        "    return fn;",
-        "  },",
-        "  mock: (_path: string, _factory?: any) => {},",
-        "  clearAllMocks: () => {},",
-        "  resetAllMocks: () => {}",
-        "};",
-        "",
-      ].join("\n");
-      prependCode += jestShim;
-      repairsApplied.push(
-        "Injected native node:test compatibility shim for 'jest'",
-      );
+      if (isFrontendTest) {
+        if (
+          !currentCode.includes("from 'vitest'") &&
+          !prependCode.includes("from 'vitest'")
+        ) {
+          prependCode += "import { vi } from 'vitest';\nconst jest = vi;\n";
+        } else {
+          prependCode += "const jest = vi;\n";
+        }
+        repairsApplied.push(
+          "Injected Vitest 'vi' compatibility shim for 'jest'",
+        );
+      } else {
+        const jestShim = [
+          "// Native node:test compatibility shim for jest APIs",
+          "const jest = {",
+          "  fn: <T extends (...args: any[]) => any>(impl?: T): any => {",
+          "    let currentImpl: any = impl;",
+          "    const onceQueue: Array<(...args: any[]) => any> = [];",
+          "    const mockFn: any = (...args: any[]) => {",
+          "      mockFn.mock.calls.push(args);",
+          "      mockFn.called = true;",
+          "      mockFn.calledOnce = mockFn.mock.calls.length === 1;",
+          "      const effectiveImpl = onceQueue.shift() ?? currentImpl;",
+          "      const res = effectiveImpl ? effectiveImpl(...args) : undefined;",
+          "      mockFn.mock.results.push({ type: 'return', value: res });",
+          "      return res;",
+          "    };",
+          "    mockFn.mock = {",
+          "      calls: [] as any[][],",
+          "      results: [] as any[],",
+          "      instances: [] as any[],",
+          "      lastCall: undefined as any,",
+          "      mockClear: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; mockFn.called = false; mockFn.calledOnce = false; },",
+          "      mockReset: () => { mockFn.mock.calls = []; mockFn.mock.results = []; mockFn.mock.instances = []; currentImpl = undefined; onceQueue.length = 0; mockFn.called = false; mockFn.calledOnce = false; }",
+          "    };",
+          "    mockFn.mockReturnValue = (val: any) => { currentImpl = () => val; return mockFn; };",
+          "    mockFn.mockReturnValueOnce = (val: any) => { onceQueue.push(() => val); return mockFn; };",
+          "    mockFn.mockResolvedValue = (val: any) => { currentImpl = async () => val; return mockFn; };",
+          "    mockFn.mockResolvedValueOnce = (val: any) => { onceQueue.push(async () => val); return mockFn; };",
+          "    mockFn.mockImplementation = (fnImpl: any) => { currentImpl = fnImpl; return mockFn; };",
+          "    mockFn.mockImplementationOnce = (fnImpl: any) => { onceQueue.push(fnImpl); return mockFn; };",
+          "    mockFn.mockReset = () => { mockFn.mock.mockReset(); return mockFn; };",
+          "    mockFn.mockClear = () => { mockFn.mock.mockClear(); return mockFn; };",
+          "    mockFn.mockRejectedValue = (err: any) => { currentImpl = async () => { throw err; }; return mockFn; };",
+          "    mockFn.mockRejectedValueOnce = (err: any) => { onceQueue.push(async () => { throw err; }); return mockFn; };",
+          "    mockFn.mockReturnThis = () => { currentImpl = function(this: any) { return this; }; return mockFn; };",
+          "    mockFn.calledOnceWith = (...args: any[]) => mockFn.mock.calls.length === 1 && JSON.stringify(mockFn.mock.calls[0]) === JSON.stringify(args);",
+          "    mockFn.called = false;",
+          "    mockFn.calledOnce = false;",
+          "    return mockFn;",
+          "  },",
+          "  spyOn: (obj: any, method: any): any => {",
+          "    const original = obj ? obj[method] : undefined;",
+          "    const fn = jest.fn(original);",
+          "    if (obj) obj[method] = fn;",
+          "    return fn;",
+          "  },",
+          "  mock: (_path: string, _factory?: any) => {},",
+          "  clearAllMocks: () => {},",
+          "  resetAllMocks: () => {}",
+          "};",
+          "",
+        ].join("\n");
+        prependCode += jestShim;
+        repairsApplied.push(
+          "Injected native node:test compatibility shim for 'jest'",
+        );
+      }
     }
 
     // 1b. Repair TS2304 / TS2708: Missing 'jasmine' or 'spyOnProperty' globals
@@ -299,46 +357,56 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       !currentCode.includes("const expect =") &&
       !currentCode.includes("export const expect =")
     ) {
-      const expectShim = [
-        "// Native node:assert compatibility shim for expect assertions",
-        "import * as _assert from 'node:assert/strict';",
-        "export const expect = (actual: any) => ({",
-        "  toBe: (expected: any) => _assert.strictEqual(actual, expected),",
-        "  toEqual: (expected: any) => _assert.deepStrictEqual(actual, expected),",
-        "  toBeTruthy: () => _assert.ok(actual),",
-        "  toBeFalsy: () => _assert.ok(!actual),",
-        "  toBeTrue: () => _assert.strictEqual(actual, true),",
-        "  toBeFalse: () => _assert.strictEqual(actual, false),",
-        "  toBeDefined: () => _assert.notStrictEqual(actual, undefined),",
-        "  toBeUndefined: () => _assert.strictEqual(actual, undefined),",
-        "  toBeNull: () => _assert.strictEqual(actual, null),",
-        "  toBeGreaterThan: (expected: any) => _assert.ok(actual > expected, `Expected ${actual} > ${expected}`),",
-        "  toBeGreaterThanOrEqual: (expected: any) => _assert.ok(actual >= expected, `Expected ${actual} >= ${expected}`),",
-        "  toBeLessThan: (expected: any) => _assert.ok(actual < expected, `Expected ${actual} < ${expected}`),",
-        "  toBeLessThanOrEqual: (expected: any) => _assert.ok(actual <= expected, `Expected ${actual} <= ${expected}`),",
-        "  toHaveLength: (expected: any) => _assert.strictEqual(actual?.length, expected),",
-        "  toContain: (item: any) => _assert.ok(actual && (actual as any).includes ? (actual as any).includes(item) : false),",
-        "  toThrow: () => _assert.throws(() => { if (typeof actual === 'function') actual(); }),",
-        "  toHaveBeenCalled: () => _assert.ok(actual?.called || actual?.mock?.calls?.length > 0),",
-        "  toHaveBeenCalledTimes: (count: number) => _assert.strictEqual(actual?.mock?.calls?.length, count),",
-        "  toHaveBeenCalledWith: (...args: any[]) => _assert.deepStrictEqual(actual?.mock?.calls?.[actual?.mock?.calls?.length - 1], args),",
-        "  not: {",
-        "    toBe: (expected: any) => _assert.notStrictEqual(actual, expected),",
-        "    toEqual: (expected: any) => _assert.notDeepStrictEqual(actual, expected),",
-        "    toBeTruthy: () => _assert.ok(!actual),",
-        "    toBeFalsy: () => _assert.ok(actual),",
-        "    toBeDefined: () => _assert.strictEqual(actual, undefined),",
-        "    toBeUndefined: () => _assert.notStrictEqual(actual, undefined),",
-        "    toBeNull: () => _assert.notStrictEqual(actual, null),",
-        "    toContain: (item: any) => _assert.ok(!(actual && (actual as any).includes ? (actual as any).includes(item) : false))",
-        "  }",
-        "});",
-        "",
-      ].join("\n");
-      prependCode += expectShim;
-      repairsApplied.push(
-        "Injected native node:assert compatibility shim for 'expect'",
-      );
+      if (isFrontendTest) {
+        if (
+          !currentCode.includes("from 'vitest'") &&
+          !prependCode.includes("from 'vitest'")
+        ) {
+          prependCode += "import { expect } from 'vitest';\n";
+        }
+        repairsApplied.push("Injected Vitest 'expect' import");
+      } else {
+        const expectShim = [
+          "// Native node:assert compatibility shim for expect assertions",
+          "import * as _assert from 'node:assert/strict';",
+          "export const expect = (actual: any) => ({",
+          "  toBe: (expected: any) => _assert.strictEqual(actual, expected),",
+          "  toEqual: (expected: any) => _assert.deepStrictEqual(actual, expected),",
+          "  toBeTruthy: () => _assert.ok(actual),",
+          "  toBeFalsy: () => _assert.ok(!actual),",
+          "  toBeTrue: () => _assert.strictEqual(actual, true),",
+          "  toBeFalse: () => _assert.strictEqual(actual, false),",
+          "  toBeDefined: () => _assert.notStrictEqual(actual, undefined),",
+          "  toBeUndefined: () => _assert.strictEqual(actual, undefined),",
+          "  toBeNull: () => _assert.strictEqual(actual, null),",
+          "  toBeGreaterThan: (expected: any) => _assert.ok(actual > expected, `Expected ${actual} > ${expected}`),",
+          "  toBeGreaterThanOrEqual: (expected: any) => _assert.ok(actual >= expected, `Expected ${actual} >= ${expected}`),",
+          "  toBeLessThan: (expected: any) => _assert.ok(actual < expected, `Expected ${actual} < ${expected}`),",
+          "  toBeLessThanOrEqual: (expected: any) => _assert.ok(actual <= expected, `Expected ${actual} <= ${expected}`),",
+          "  toHaveLength: (expected: any) => _assert.strictEqual(actual?.length, expected),",
+          "  toContain: (item: any) => _assert.ok(actual && (actual as any).includes ? (actual as any).includes(item) : false),",
+          "  toThrow: () => _assert.throws(() => { if (typeof actual === 'function') actual(); }),",
+          "  toHaveBeenCalled: () => _assert.ok(actual?.called || actual?.mock?.calls?.length > 0),",
+          "  toHaveBeenCalledTimes: (count: number) => _assert.strictEqual(actual?.mock?.calls?.length, count),",
+          "  toHaveBeenCalledWith: (...args: any[]) => _assert.deepStrictEqual(actual?.mock?.calls?.[actual?.mock?.calls?.length - 1], args),",
+          "  not: {",
+          "    toBe: (expected: any) => _assert.notStrictEqual(actual, expected),",
+          "    toEqual: (expected: any) => _assert.notDeepStrictEqual(actual, expected),",
+          "    toBeTruthy: () => _assert.ok(!actual),",
+          "    toBeFalsy: () => _assert.ok(actual),",
+          "    toBeDefined: () => _assert.strictEqual(actual, undefined),",
+          "    toBeUndefined: () => _assert.notStrictEqual(actual, undefined),",
+          "    toBeNull: () => _assert.notStrictEqual(actual, null),",
+          "    toContain: (item: any) => _assert.ok(!(actual && (actual as any).includes ? (actual as any).includes(item) : false))",
+          "  }",
+          "});",
+          "",
+        ].join("\n");
+        prependCode += expectShim;
+        repairsApplied.push(
+          "Injected native node:assert compatibility shim for 'expect'",
+        );
+      }
     }
 
     // 2b. Repair TS2304: Missing node:test runner functions and lifecycle hooks
@@ -367,65 +435,124 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     }
 
     if (missingTestFns.length > 0) {
-      if (
-        !currentCode.includes("from 'node:test'") &&
-        !currentCode.includes('from "node:test"') &&
-        !prependCode.includes("from 'node:test'")
-      ) {
-        const standardImports = [
-          "describe",
-          "it",
-          "test",
-          "beforeEach",
-          "afterEach",
-          "before",
-          "after",
-        ];
-        if (missingTestFns.includes("before as beforeAll"))
-          standardImports.push("before as beforeAll");
-        if (missingTestFns.includes("after as afterAll"))
-          standardImports.push("after as afterAll");
-        const hookShim = `import { ${standardImports.join(", ")} } from 'node:test';\n`;
-        prependCode += hookShim;
-        repairsApplied.push(`Injected 'node:test' runner function imports`);
-      } else {
-        const lines = currentCode.split("\n");
-        let repaired = false;
-        const newLines = lines.map((line) => {
-          if (
-            !repaired &&
-            line.trim().startsWith("import") &&
-            (line.includes("'node:test'") || line.includes('"node:test"'))
-          ) {
-            const openBrace = line.indexOf("{");
-            const closeBrace = line.indexOf("}");
-            if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
-              const existing = line
-                .slice(openBrace + 1, closeBrace)
-                .split(",")
-                .map((s: string) => s.trim())
-                .filter(Boolean);
-              for (const fn of missingTestFns) {
-                const baseName = fn.split(" as ")[0]!.trim();
-                if (
-                  !existing.some(
-                    (e: string) => e === fn || e.startsWith(baseName),
-                  )
-                ) {
-                  existing.push(fn);
+      if (isFrontendTest) {
+        if (
+          !currentCode.includes("from 'vitest'") &&
+          !prependCode.includes("from 'vitest'")
+        ) {
+          const standardImports = [
+            "describe",
+            "it",
+            "test",
+            "beforeEach",
+            "afterEach",
+            "expect",
+            "vi",
+          ];
+          const hookShim = `import { ${standardImports.join(", ")} } from 'vitest';\n`;
+          prependCode += hookShim;
+          repairsApplied.push(`Injected 'vitest' runner function imports`);
+        } else {
+          const lines = currentCode.split("\n");
+          let repaired = false;
+          const newLines = lines.map((line) => {
+            if (
+              !repaired &&
+              line.trim().startsWith("import") &&
+              line.includes("'vitest'")
+            ) {
+              const openBrace = line.indexOf("{");
+              const closeBrace = line.indexOf("}");
+              if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
+                const existing = line
+                  .slice(openBrace + 1, closeBrace)
+                  .split(",")
+                  .map((s: string) => s.trim())
+                  .filter(Boolean);
+                for (const fn of missingTestFns) {
+                  const baseName = fn.split(" as ")[0]!.trim();
+                  if (
+                    !existing.some(
+                      (e: string) => e === fn || e.startsWith(baseName),
+                    )
+                  ) {
+                    existing.push(baseName);
+                  }
                 }
+                repaired = true;
+                return `${line.slice(0, openBrace + 1)} ${existing.join(", ")} ${line.slice(closeBrace)}`;
               }
-              repaired = true;
-              return `${line.slice(0, openBrace + 1)} ${existing.join(", ")} ${line.slice(closeBrace)}`;
             }
+            return line;
+          });
+          if (repaired) {
+            currentCode = newLines.join("\n");
+            repairsApplied.push(
+              `Added missing test runner functions to 'vitest' import: ${missingTestFns.join(", ")}`,
+            );
           }
-          return line;
-        });
-        if (repaired) {
-          currentCode = newLines.join("\n");
-          repairsApplied.push(
-            `Added missing test runner functions to 'node:test' import: ${missingTestFns.join(", ")}`,
-          );
+        }
+      } else {
+        if (
+          !currentCode.includes("from 'node:test'") &&
+          !currentCode.includes('from "node:test"') &&
+          !prependCode.includes("from 'node:test'")
+        ) {
+          const standardImports = [
+            "describe",
+            "it",
+            "test",
+            "beforeEach",
+            "afterEach",
+            "before",
+            "after",
+          ];
+          if (missingTestFns.includes("before as beforeAll"))
+            standardImports.push("before as beforeAll");
+          if (missingTestFns.includes("after as afterAll"))
+            standardImports.push("after as afterAll");
+          const hookShim = `import { ${standardImports.join(", ")} } from 'node:test';\n`;
+          prependCode += hookShim;
+          repairsApplied.push(`Injected 'node:test' runner function imports`);
+        } else {
+          const lines = currentCode.split("\n");
+          let repaired = false;
+          const newLines = lines.map((line) => {
+            if (
+              !repaired &&
+              line.trim().startsWith("import") &&
+              (line.includes("'node:test'") || line.includes('"node:test"'))
+            ) {
+              const openBrace = line.indexOf("{");
+              const closeBrace = line.indexOf("}");
+              if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
+                const existing = line
+                  .slice(openBrace + 1, closeBrace)
+                  .split(",")
+                  .map((s: string) => s.trim())
+                  .filter(Boolean);
+                for (const fn of missingTestFns) {
+                  const baseName = fn.split(" as ")[0]!.trim();
+                  if (
+                    !existing.some(
+                      (e: string) => e === fn || e.startsWith(baseName),
+                    )
+                  ) {
+                    existing.push(fn);
+                  }
+                }
+                repaired = true;
+                return `${line.slice(0, openBrace + 1)} ${existing.join(", ")} ${line.slice(closeBrace)}`;
+              }
+            }
+            return line;
+          });
+          if (repaired) {
+            currentCode = newLines.join("\n");
+            repairsApplied.push(
+              `Added missing test runner functions to 'node:test' import: ${missingTestFns.join(", ")}`,
+            );
+          }
         }
       }
     }

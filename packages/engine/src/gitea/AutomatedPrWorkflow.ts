@@ -95,9 +95,12 @@ export class AutomatedPrWorkflow {
       );
 
       // 3. Check for existing open PR for this branch to prevent duplicates
-      const openPrs = await this.giteaClient
-        .listPullRequests(options.owner, options.repo, "open")
-        .catch(() => [] as GiteaPullRequest[]);
+      const openPrs =
+        typeof this.giteaClient?.listPullRequests === "function"
+          ? await this.giteaClient
+              .listPullRequests(options.owner, options.repo, "open")
+              .catch(() => [] as GiteaPullRequest[])
+          : [];
 
       const existingPr = openPrs.find(
         (p) => p.head?.ref === worktree.branchName,

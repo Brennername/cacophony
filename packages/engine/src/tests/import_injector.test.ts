@@ -59,4 +59,11 @@ export class CounterComponent {
       ),
     );
   });
+
+  await t.test("maps test runner symbols to vitest when targetFilePath is a frontend spec file", () => {
+    const code = `describe("Guard", () => {\n  it("allows", () => {\n    expect(true).toBe(true);\n  });\n});\n`;
+    const result = injector.injectMissingImports(code, "packages/frontend/src/app/guards/test.guard.spec.ts");
+    assert.ok(result.updatedCode.includes('from "vitest"'));
+    assert.ok(!result.updatedCode.includes("node:test"));
+  });
 });

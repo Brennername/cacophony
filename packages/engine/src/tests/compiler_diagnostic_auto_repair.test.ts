@@ -750,5 +750,38 @@ describe("CompilerDiagnosticAutoRepair", () => {
     assert.ok(result.repairedCode.includes("expect(result.valid).toBe(true);"));
     assert.ok(result.repairedCode.includes("expect(result.failed).toBe(false);"));
   });
+
+  it("repairs TS2591 missing node:test and node:assert in frontend test files by converting to Vitest primitives", () => {
+    const source = `import { describe, it } from 'node:test';\nimport assert from 'node:assert/strict';\n\ndescribe('test', () => {\n  it('works', () => {\n    assert.strictEqual(1, 1);\n  });\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic("TS2591", "Cannot find name 'node:test'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.", 1, 29),
+        diagnostic("TS2591", "Cannot find name 'node:assert/strict'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.", 2, 19),
+      ],
+      "packages/frontend/src/app/guards/gitea-auth.guard.spec.ts",
+    );
+
+    assert.ok(!result.repairedCode.includes("node:test"));
+    assert.ok(!result.repairedCode.includes("node:assert"));
+    assert.ok(result.repairedCode.includes("from 'vitest'"));
+    assert.ok(result.repairedCode.includes("expect(1).toBe(1);"));
+  });
+
+  it("injects Vitest runner function imports when targetFilePath is a frontend spec file", () => {
+    const source = `describe('MyGuard', () => {\n  it('should activate', () => {\n    expect(true).toBe(true);\n  });\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic("TS2304", "Cannot find name 'describe'."),
+        diagnostic("TS2304", "Cannot find name 'it'."),
+        diagnostic("TS2304", "Cannot find name 'expect'."),
+      ],
+      "packages/frontend/src/app/guards/test.guard.spec.ts",
+    );
+
+    assert.ok(result.repairedCode.includes("from 'vitest'"));
+    assert.ok(!result.repairedCode.includes("node:test"));
+  });
 });
 

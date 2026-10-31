@@ -22,6 +22,7 @@ coverage/
 *.key
 
 # Cacophony persistence & runtime data
+.cacophony/
 data/
 workspaces/
 .arena/

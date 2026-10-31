@@ -80,4 +80,27 @@ test("AcceptanceCriteriaEngine Suite (T81.2)", async (t) => {
       assert.ok(template.testCode.includes("TaskInspectorModalComponent"));
     },
   );
+
+  await t.test(
+    "should generate Angular guard spec template for frontend guard requirement",
+    () => {
+      const criteria = engine.deriveCriteria({
+        id: "req-4",
+        title: "Gitea Auth Guard Route Activation",
+        description: "Validates session authentication for protected routes in packages/frontend",
+        type: "functional",
+        category: "Routing Guard",
+        constraints: [],
+      });
+
+      assert.strictEqual(criteria[0]!.targetLayer, "frontend");
+      const template = engine.generateTestTemplate(criteria[0]!, {
+        moduleName: "GiteaAuthGuard",
+      });
+      assert.strictEqual(template.framework, "angular_spec");
+      assert.strictEqual(template.fileName, "giteaauthguard.guard.spec.ts");
+      assert.ok(template.testCode.includes("from 'vitest'"));
+      assert.ok(template.testCode.includes("TestBed.runInInjectionContext"));
+    },
+  );
 });

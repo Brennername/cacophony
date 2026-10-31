@@ -184,6 +184,20 @@ export class ContextMinimizer {
     // 3. Build compact directory tree map (top 2 levels only)
     const compactFileTree = this.buildCompactTree();
 
+    // Detect whether the current task targets the Angular frontend layer or backend packages
+    const isFrontendTask =
+      focusFiles.some(
+        (f) =>
+          f.includes("packages/frontend") ||
+          f.endsWith(".spec.ts"),
+      ) ||
+      prompt.includes("@cacophony/frontend") ||
+      prompt.includes("packages/frontend");
+
+    const testingStandard = isFrontendTask
+      ? "- Testing Standards: For frontend Angular unit tests (*.spec.ts), use Vitest: import { describe, it, expect, beforeEach, vi } from 'vitest'; and @angular/core/testing. NEVER import or reference 'node:test', 'node:assert', @jest/globals, jest, chai, or mocha."
+      : "- Testing Standards: For tests, use Node.js native test runner: import test, { describe, it } from 'node:test'; import assert from 'node:assert/strict';. NEVER import or reference @jest/globals, jest, chai, mocha, or sinon.";
+
     // 4. Assemble complete prompt payload
     const sections: string[] = [
       "=== TASK OBJECTIVE ===",
@@ -195,7 +209,7 @@ export class ContextMinimizer {
       "=== WORKSPACE MODULE RESOLUTION SCHEMA ===",
       "- Monorepo Packages: @cacophony/shared-types, @cacophony/db, @cacophony/tools, @cacophony/engine, @cacophony/frontend.",
       "- Language Requirement: Strictly TypeScript. Never emit Python, Java, or C++ code.",
-      "- Testing Standards: For tests, use Node.js native test runner: import test, { describe, it } from 'node:test'; import assert from 'node:assert/strict';. NEVER import or reference @jest/globals, jest, chai, mocha, or sinon.",
+      testingStandard,
       "- Frontend Standards: Angular standalone components, signals, inject(). Valid services in packages/frontend/src/app/services: arena-state.store, auth.service, history-metrics.service, model-fleet.service, task-api.service, theme.service. Never invent non-existent service files like 'telemetry.service'.",
       "- Internal Engine Files: Always use valid relative imports ending in .js (e.g. '../gitea/GitWorktreeManager.js', '../scheduler/TaskScheduler.js', '../telemetry/ThermalGovernor.js').",
       "- NEVER invent non-existent package names like '@cacophony/git-worktrees', 'vscode', or '@types/vscode'.",
