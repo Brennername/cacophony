@@ -72,8 +72,8 @@ AssertionError: database connection refused
       assert.equal(result.filePaths[0], "/app/src/worker.test.ts");
       assert.equal(result.lineNumbers[0], 55);
     });
-  
-  it("should handle stderr with assertions without file paths", () => {
+
+    it("should handle stderr with assertions without file paths", () => {
       const sampleStderr = `
 AssertionError [ERR_ASSERTION]: Expected 42 but got 0
     at Object.testCalculation (test:42)
@@ -85,7 +85,20 @@ AssertionError [ERR_ASSERTION]: Expected 42 but got 0
       assert.equal(result.assertions[0], "Object.testCalculation");
       assert.equal(result.lineNumbers[0], 42);
     });
-});
+
+    it("should handle stderr with mixed case and spaces", () => {
+      const sampleStderr = `
+AssertionError [ERR_ASSERTION]: Expected 42 but got 0
+    at Object.testCalculation (TEST:42)
+      `;
+
+      const result = parser.extractFailingTests(sampleStderr);
+      assert.ok(result);
+      assert.equal(result.filePaths.length, 1);
+      assert.equal(result.assertions[0], "Object.testCalculation");
+      assert.equal(result.lineNumbers[0], 42);
+    });
+  });
 
   describe("extractCounters", () => {
     it("should extract pass/fail counters from Node.js test runner output", () => {
@@ -171,7 +184,7 @@ Duration: 8.42s
  ℹ fail 2
  ℹ cancelled 0
  ℹ skipped 1
- ℹ duration_ms 512.4 
+ ℹ duration_ms 512.4
       `;
 
       const counters = parser.extractCounters(whitespaceOutput);
