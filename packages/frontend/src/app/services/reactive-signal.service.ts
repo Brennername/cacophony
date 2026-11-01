@@ -72,6 +72,9 @@ export class ReactiveSignalService {
   /**
    * Connects to a live telemetry server-sent event stream with exponential backoff.
    */
+  /**
+   * Connects to a live telemetry server-sent event stream with exponential backoff.
+   */
   public connectEventStream(streamUrl: string = '/api/events'): void {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
       return;
@@ -92,7 +95,7 @@ export class ReactiveSignalService {
           const parsed = JSON.parse(msg.data) as TelemetryStreamEvent;
           this.handleStreamEvent(parsed);
         } catch {
-          // Ignore unparseable frames to maintain resilient stream processing
+
         }
       };
 
