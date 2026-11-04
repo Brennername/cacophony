@@ -37,7 +37,7 @@ Generic error happened without stack trace details
       const emptyResult = parser.extractFailingTests("");
       assert.equal(emptyResult.filePaths.length, 0);
 
-      const undefinedResult = parser.extractFailingTests(undefined);
+      const undefinedResult = parser.extractFailingTests(undefined as any);
       assert.equal(undefinedResult.filePaths.length, 0);
     });
 
