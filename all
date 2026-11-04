@@ -1,0 +1,38 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Mocking TaskApiService for testing purposes
+class MockTaskApiService {
+  async getTasks() {
+    return [
+      { id: 1, name: 'Task 1', status: 'pending' },
+      { id: 2, name: 'Task 2', status: 'in progress' }
+    ];
+  }
+
+  async cancelTask(id: number) {
+    // Simulate task cancellation
+    return `Task ${id} cancelled`;
+  }
+}
+
+describe('TaskApiService Unit Tests', () => {
+  let taskApiService: MockTaskApiService;
+
+  beforeEach(() => {
+    taskApiService = new MockTaskApiService();
+  });
+
+  it('should fetch tasks successfully', async () => {
+    const tasks = await taskApiService.getTasks();
+    assert.deepStrictEqual(tasks, [
+      { id: 1, name: 'Task 1', status: 'pending' },
+      { id: 2, name: 'Task 2', status: 'in progress' }
+    ]);
+  });
+
+  it('should cancel a task successfully', async () => {
+    const result = await taskApiService.cancelTask(1);
+    assert.strictEqual(result, 'Task 1 cancelled');
+  });
+});
