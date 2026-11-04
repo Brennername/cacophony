@@ -118,6 +118,26 @@ Generic error happened without stack trace details
       const undefinedResult = parser.extractFailingTests(undefined);
       assert.equal(undefinedResult.filePaths.length, 0);
     });
+
+  it("should handle multiple failing tests with missing file paths and line numbers gracefully", () => {
+      const malformedStderr = `
+Generic error happened without stack trace details
+    at <anonymous>
+    at undefined
+      `;
+
+      const result = parser.extractFailingTests(malformedStderr);
+      assert.ok(result);
+      assert.equal(result.filePaths.length, 0);
+      assert.equal(result.assertions.length, 0);
+      assert.equal(result.lineNumbers.length, 0);
+
+      const emptyResult = parser.extractFailingTests("");
+      assert.equal(emptyResult.filePaths.length, 0);
+
+      const undefinedResult = parser.extractFailingTests(undefined);
+      assert.equal(undefinedResult.filePaths.length, 0);
+    });
 });
 
   describe("extractCounters", () => {
