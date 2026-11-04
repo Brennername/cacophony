@@ -592,3 +592,43 @@ export class BanditTaskScheduler {
     return 1 / (1 + Math.exp(-0.07056 * Math.pow(z, 3) - 1.5976 * z));
   }
 }
+
+export namespace bandit {
+  /**
+   * Represents a single arm in a Bandit policy.
+   */
+  export interface BanditArm extends BanditArmRecord {
+    id: string;
+    name: string;
+    policyType: BanditPolicyType;
+    rewardModel: RewardModel;
+    status: "active" | "paused" | "archived";
+    createdTime: Date;
+    updatedTime: Date;
+  }
+
+  /**
+   * Represents a reward model for a Bandit arm.
+   */
+  export interface RewardModel {
+    type: "linear" | "epsilon_gaussian" | "thompson";
+    params: any; // Allow flexible parameters based on the type
+  }
+
+  /**
+   * Represents the outcome of dispatching a request to a Bandit arm.
+   */
+  export interface BanditDispatchOutcomeResult {
+    armId: string;
+    reward: number;
+    feedback: EmpiricalRewardFeedback | null;
+    timestamp: Date;
+  }
+
+  /**
+   * Represents a model promotion record.
+   */
+  export interface ModelPromotion extends ModelPromotionRecord {
+    armId: string;
+  }
+}
