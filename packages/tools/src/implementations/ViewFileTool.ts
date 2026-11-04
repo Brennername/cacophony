@@ -1,5 +1,6 @@
+import * as z from "zod";
 import * as fs from "node:fs/promises";
-import { z } from "zod";
+
 import type { ToolResult, ToolDefinition } from "@cacophony/shared-types";
 import type { ICacophonyTool, ToolExecutionContext } from "../ICacophonyTool.js";
 import { resolveSafePath } from "../utils/pathSecurity.js";
@@ -66,7 +67,6 @@ export class ViewFileTool implements ICacophonyTool<ViewFileParams> {
         end = start;
       }
 
-      // Slice 1-indexed lines
       const selectedLines = allLines.slice(start - 1, end);
       const numberedOutput = selectedLines
         .map((line, index) => `${start + index}: ${line}`)
