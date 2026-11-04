@@ -6,14 +6,12 @@ import type {
   BanditPolicyType,
 } from "@cacophony/shared-types";
 
-// Define strict types for configuration options
 interface IEpsilonGreedyConfig {
   initialEpsilon: number;
   minEpsilon: number;
   decayRate: number;
 }
 
-// Default configuration values
 const DEFAULT_CONFIG: IEpsilonGreedyConfig = {
   initialEpsilon: 0.2,
   minEpsilon: 0.05,
