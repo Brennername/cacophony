@@ -109,6 +109,9 @@ export class CpuFallbackProvider implements IHardwareTelemetryProvider {
   /**
    * Probes Linux sysfs thermal zones or returns 45.0 default if unavailable.
    */
+  /**
+   * Probes Linux sysfs thermal zones or returns 45.0 default if unavailable.
+   */
   private sampleHostCpuTemp(): number {
     try {
       const thermalZonePath = "/sys/class/thermal/thermal_zone0/temp";
@@ -120,7 +123,7 @@ export class CpuFallbackProvider implements IHardwareTelemetryProvider {
         }
       }
     } catch {
-      // Non-Linux or inaccessible sysfs
+
     }
     return 45.0;
   }
