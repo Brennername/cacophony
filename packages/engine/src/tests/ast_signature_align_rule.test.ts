@@ -7,7 +7,7 @@ import { SignatureStore } from "../signature/SignatureStore.js";
 describe("AstSignatureAlignRule Test Suite (T102.6.1)", () => {
   const setupRule = () => {
     const store = new SignatureStore();
-    // Index target definition with signature: calculateScore(points: number, multiplier: number): number
+
     store.indexFile(
       "src/scoring.ts",
       `export function calculateScore(points: number, multiplier: number): number {
@@ -66,7 +66,7 @@ describe("AstSignatureAlignRule Test Suite (T102.6.1)", () => {
   describe("Severity Modes and Signature Enforcement", () => {
     it("should apply silent repair mutations when parameter inversion is detected", async () => {
       const { rule } = setupRule();
-      // Consumer calls with named object or inverted parameters if supported
+
       const files = new Map<string, string>([
         ["src/call.ts", "const total = calculateScore(multiplier = 2, points = 10);"],
       ]);
