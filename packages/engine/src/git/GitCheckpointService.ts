@@ -26,6 +26,9 @@ export class GitCheckpointService {
   /**
    * Captures a pre-edit or post-edit snapshot in git.
    */
+  /**
+   * Captures a pre-edit or post-edit snapshot in git.
+   */
   public async createCheckpoint(
     workspaceRoot: string,
     options: CheckpointCreationOptions = {},
@@ -35,10 +38,8 @@ export class GitCheckpointService {
     const msg =
       options.message ?? `cacophony checkpoint: ${options.taskId ?? "auto"}`;
 
-    // 1. Stage changes safely
     await execFileAsync("git", ["add", "-A"], { cwd: workspaceRoot });
 
-    // 2. Identify files changed
     let filesChanged: string[] = [];
     try {
       const statusOut = await execFileAsync(
@@ -51,7 +52,6 @@ export class GitCheckpointService {
       filesChanged = [];
     }
 
-    // 3. Create a commit or get HEAD hash if nothing changed
     let commitHash = "";
     let parentHash: string | null = null;
 
