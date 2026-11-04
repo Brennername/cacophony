@@ -1,7 +1,7 @@
-import * as fs from "node:fs/promises";
-import { z } from "zod";
-import type { ToolResult, ToolDefinition } from "@cacophony/shared-types";
+import * as z from "zod";
+import { ToolResult, ToolDefinition } from '@cacophony/shared-types';
 import type { ICacophonyTool, ToolExecutionContext } from "../ICacophonyTool.js";
+import * as fs from "node:fs/promises";
 import { resolveSafePath } from "../utils/pathSecurity.js";
 
 export const RegexToolParamsSchema = z.object({
@@ -41,7 +41,6 @@ export class RegexTool implements ICacophonyTool<RegexToolParams> {
       const regex = new RegExp(params.pattern, flags);
 
       if (params.replacement === undefined) {
-        // Search / Match Mode
         const matches = [...originalContent.matchAll(regex)];
         if (matches.length === 0) {
           return {
@@ -67,7 +66,6 @@ export class RegexTool implements ICacophonyTool<RegexToolParams> {
         };
       }
 
-      // Substitution Mode
       const matches = [...originalContent.matchAll(regex)];
       if (matches.length === 0) {
         return {
