@@ -7,7 +7,6 @@ import { ArenaStateStore } from './services/arena-state.store';
 import { FrontierModalComponent, DecomposedTaskPreview } from './components/frontier-modal/frontier-modal.component';
 import { TaskDetailModalComponent } from './components/task-detail-modal/task-detail-modal.component';
 import { SessionTabsComponent } from './components/session-tabs/session-tabs.component';
-import { ExecutionModeSelectorComponent } from './components/execution-mode-selector/execution-mode-selector.component';
 import { TelemetryBarComponent } from './components/telemetry-bar/telemetry-bar.component';
 import { LoginModalComponent } from './components/login-modal/login-modal.component';
 
@@ -28,7 +27,6 @@ import { LoginModalComponent } from './components/login-modal/login-modal.compon
     FrontierModalComponent,
     TaskDetailModalComponent,
     SessionTabsComponent,
-    ExecutionModeSelectorComponent,
     TelemetryBarComponent,
     LoginModalComponent,
   ],
