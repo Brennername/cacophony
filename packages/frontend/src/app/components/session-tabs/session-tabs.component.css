@@ -6,7 +6,7 @@
 }
 
 .solo-plus-btn {
-  display: inline-flex;
+  display: none !important;
   align-items: center;
   justify-content: center;
   width: 30px;
@@ -119,6 +119,7 @@
   color: var(--color-danger, #ef4444);
 }
 .new-tab-btn {
+  display: none !important;
   background: transparent;
   border: 1px dashed var(--border-color, #475569);
   color: var(--text-muted, #94a3b8);

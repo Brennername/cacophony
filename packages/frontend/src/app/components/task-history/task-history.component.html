@@ -28,8 +28,8 @@
     }
   </div>
 
-  <!-- History Table -->
-  <div class="table-container">
+  <!-- Desktop History Table (>= 768px) -->
+  <div class="table-container desktop-history-table">
     <table class="history-table">
       <thead>
         <tr>
@@ -85,6 +85,48 @@
         }
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile High-Density Cards (< 768px) -->
+  <div class="mobile-history-cards">
+    @for (item of paginatedHistoryItems(); track item.id) {
+      <div class="mhc-card clickable" (click)="drillDown(item.id)">
+        <div class="mhc-top-row">
+          <div class="mhc-status-group">
+            <span class="status-badge" [ngClass]="item.status.toLowerCase()">
+              {{ item.status }}
+            </span>
+            <span class="mhc-time font-mono">{{ formatTimestamp(item.timestamp) }}</span>
+          </div>
+          <span class="drill-tag">Details &nearr;</span>
+        </div>
+
+        <div class="mhc-title">{{ item.title }}</div>
+
+        @if (item.failureReason) {
+          <div class="failure-reason">{{ item.failureReason }}</div>
+        }
+
+        <div class="mhc-details-row font-mono">
+          <span class="mhc-model-badge font-mono">{{ item.model || '—' }}</span>
+          <span class="mhc-stat">{{ formatDuration(item.durationMs) }}</span>
+          @if (item.tokensPerSec > 0) {
+            <span class="mhc-stat">{{ formatTks(item.tokensPerSec) }} tok/s</span>
+          }
+          @if (item.prUrl) {
+            <a
+              [href]="sanitizePrUrl(item.prUrl)"
+              target="_blank"
+              rel="noopener"
+              class="gitea-link"
+              (click)="$event.stopPropagation()"
+            >
+              PR #{{ item.prNumber || 'View' }}
+            </a>
+          }
+        </div>
+      </div>
+    }
   </div>
 
   <!-- Pagination Footer -->
