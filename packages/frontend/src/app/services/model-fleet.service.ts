@@ -64,12 +64,17 @@ export class ModelFleetService {
   /**
    * Refreshes the list of installed models from GET /api/models/installed.
    */
+  /**
+   * Refreshes the list of installed models from GET /api/models/installed.
+   */
   public async fetchInstalledModels(): Promise<void> {
     try {
       const res = await fetch('/api/models/installed');
       if (res.ok) {
         const data = (await res.json()) as OllamaInstalledModel[];
         this.installedModels.set(data);
+      } else {
+        throw new Error(`HTTP ${res.status}`);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -80,12 +85,17 @@ export class ModelFleetService {
   /**
    * Fetches active tenancy configuration from GET /api/models/config.
    */
+  /**
+   * Fetches active tenancy configuration from GET /api/models/config.
+   */
   public async fetchConfig(): Promise<void> {
     try {
       const res = await fetch('/api/models/config');
       if (res.ok) {
         const data = (await res.json()) as ModelManagementConfig;
         this.config.set(data);
+      } else {
+        throw new Error(`HTTP ${res.status}`);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -93,6 +103,9 @@ export class ModelFleetService {
     }
   }
 
+  /**
+   * Updates tenancy configuration via PUT /api/models/config.
+   */
   /**
    * Updates tenancy configuration via PUT /api/models/config.
    */
@@ -108,8 +121,9 @@ export class ModelFleetService {
         this.config.set(data.config);
         await this.fetchInstalledModels();
         return true;
+      } else {
+        return false;
       }
-      return false;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       this.error.set(`Failed to update config: ${msg}`);
@@ -239,11 +253,14 @@ export class ModelFleetService {
   /**
    * Fetches active model tuning profiles from GET /api/models/profiles.
    */
+  /**
+   * Fetches active model tuning profiles from GET /api/models/profiles.
+   */
   public async fetchProfiles(): Promise<void> {
     try {
       const res = await fetch('/api/models/profiles');
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as ModelTuningProfile[];
         this.profiles.set(data);
       }
     } catch (err: unknown) {
@@ -293,12 +310,15 @@ export class ModelFleetService {
   /**
    * Fetches the verifiable catalog of curated models from GET /api/models/catalog.
    */
+  /**
+   * Fetches the verifiable catalog of curated models from GET /api/models/catalog.
+   */
   public async fetchCatalog(): Promise<void> {
     try {
       const res = await fetch('/api/models/catalog');
       if (res.ok) {
-        const data = (await res.json()) as { success: boolean; catalog: VerifiableModelEntry[] };
-        this.catalog.set(data.catalog || []);
+        const data = (await res.json()) as readonly VerifiableModelEntry[];
+        this.catalog.set(data);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
