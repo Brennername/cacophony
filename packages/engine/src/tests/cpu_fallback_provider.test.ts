@@ -1,7 +1,7 @@
+import * as os from 'node:os';
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { CpuFallbackProvider } from '../telemetry/CpuFallbackProvider.js';
-import * as os from 'node:os';
 
 describe('CpuFallbackProvider', () => {
   let cpuFallbackProvider: CpuFallbackProvider;
