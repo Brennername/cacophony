@@ -145,7 +145,7 @@ export class LocateFeatureTool implements ICacophonyTool<LocateFeatureParams> {
           }
         }
       } catch {
-        // Skip unreadable files
+
       }
     }
   }
