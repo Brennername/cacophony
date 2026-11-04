@@ -1,0 +1,223 @@
+<div class="view-container">
+  <div class="view-header">
+    <div class="header-main">
+      <h1>Frontier API Key Vault</h1>
+      <p class="subtitle">
+        AES-256-GCM encrypted credential vault, 5-hour rolling burst limiter, and weekly quota governor
+      </p>
+    </div>
+    @if (returnUrl()) {
+      <div class="return-action">
+        <a [routerLink]="returnUrl()" class="btn-return">
+          &larr; Return to {{ returnUrl() === '/models' ? 'Model Catalog' : 'Previous View' }}
+        </a>
+      </div>
+    }
+  </div>
+
+  @if (notice()) {
+    <div class="notice-banner">
+      <div class="notice-content">
+        <span class="notice-title">Action Required:</span>
+        <span class="notice-body">{{ notice() }}</span>
+      </div>
+    </div>
+  }
+
+  <!-- Telemetry & Quota Gauges -->
+  <div class="vault-grid">
+    <div class="telemetry-section">
+      <app-frontier-usage-card
+        [summary]="vaultService.usageSummaries()['GLOBAL'] || null"
+        [limits]="vaultService.limits()"
+        [title]="'Global Frontier Consumption'"
+      ></app-frontier-usage-card>
+    </div>
+
+    <!-- Spending Limits Form -->
+    <div class="cacophony-card limits-card">
+      <div class="card-heading">
+        <h2>Budget Safety Governors</h2>
+        <span class="badge-safe">Auto-Governor Active</span>
+      </div>
+      <p class="card-desc">
+        Configures hard constraints for frontier provider dispatches. At 90% capacity, scheduler routes tasks to local models.
+      </p>
+
+      <form (ngSubmit)="saveLimits()" class="limits-form">
+        <div class="form-row">
+          <label for="weeklyBudget" class="form-label">Weekly Budget Ceiling (USD)</label>
+          <div class="input-prefix-wrapper">
+            <span class="currency-symbol">$</span>
+            <input
+              type="number"
+              id="weeklyBudget"
+              step="1.0"
+              min="1.0"
+              max="500.0"
+              [ngModel]="weeklyCeilingInput()"
+              (ngModelChange)="weeklyCeilingInput.set($event)"
+              name="weeklyBudget"
+              class="form-input font-mono"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label for="burstLimit" class="form-label">5-Hour Rolling Burst Limit (Tokens)</label>
+          <input
+            type="number"
+            id="burstLimit"
+            step="10000"
+            min="10000"
+            max="2000000"
+            [ngModel]="fiveHourTokenLimitInput()"
+            (ngModelChange)="fiveHourTokenLimitInput.set($event)"
+            name="burstLimit"
+            class="form-input font-mono"
+          />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-save-limits" [disabled]="vaultService.loading()">
+            Save Quotas
+          </button>
+          @if (limitsFeedback()) {
+            <span class="feedback-msg">{{ limitsFeedback() }}</span>
+          }
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Provider Credentials Roster -->
+  <div class="cacophony-card providers-section">
+    <div class="card-heading">
+      <h2>Configured Cloud Providers ({{ totalKeysConfigured() }}/{{ supportedProviders.length }})</h2>
+      <span class="security-tag">AES-256-GCM Encrypted</span>
+    </div>
+    <p class="card-desc">
+      Raw keys are never serialized to browser responses. Vault stores only masked previews and PBKDF2 ciphertext.
+    </p>
+
+    <div class="provider-cards-grid">
+      @for (prov of supportedProviders; track prov.id) {
+        @let desc = getKeyDescriptor(prov.id);
+        <div class="provider-credential-card" [class.configured]="!!desc">
+          <div class="prov-card-header">
+            <span class="prov-badge" [ngClass]="'prov-' + prov.id">{{ prov.id }}</span>
+            <span class="prov-status" [class.status-active]="!!desc">
+              {{ desc ? 'Configured' : 'Unset' }}
+            </span>
+          </div>
+
+          <div class="prov-card-body">
+            <h3 class="prov-name">{{ prov.name }}</h3>
+            @if (desc) {
+              <div class="key-preview-box">
+                <span class="preview-label">Masked Key:</span>
+                <span class="preview-key font-mono">{{ desc.maskedPreview }}</span>
+              </div>
+              <div class="key-meta">
+                <span>Updated: {{ desc.updatedAt | date: 'short' }}</span>
+              </div>
+            } @else {
+              <p class="prov-placeholder-text">
+                No active key. Models routed to this provider will pause until credentials are saved.
+              </p>
+            }
+          </div>
+
+          <div class="prov-card-actions">
+            @if (desc) {
+              <button
+                type="button"
+                class="btn-action btn-edit"
+                (click)="selectProviderForEdit(prov.id)"
+              >
+                Update Key
+              </button>
+              <button
+                type="button"
+                class="btn-action btn-revoke"
+                (click)="revokeKey(prov.id)"
+                [disabled]="isSubmitting()"
+              >
+                Revoke
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="btn-action btn-configure"
+                (click)="selectProviderForEdit(prov.id)"
+              >
+                + Configure Key
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Key Entry & Encryption Form -->
+  <div class="cacophony-card key-form-card" id="vault-key-form">
+    <div class="card-heading">
+      <h2>Encrypt & Save API Key</h2>
+    </div>
+    <p class="card-desc">
+      Select provider and paste raw secret key. The engine derives a 256-bit key and commits encrypted ciphertext.
+    </p>
+
+    <form (ngSubmit)="submitKey()" class="key-form">
+      <div class="form-row">
+        <label for="providerSelect" class="form-label">Provider Endpoint</label>
+        <select
+          id="providerSelect"
+          [ngModel]="formProvider()"
+          (ngModelChange)="formProvider.set($event)"
+          name="providerSelect"
+          class="form-select font-mono"
+        >
+          @for (prov of supportedProviders; track prov.id) {
+            <option [value]="prov.id">{{ prov.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="rawKey" class="form-label">Raw API Key</label>
+        <input
+          type="password"
+          id="rawKey"
+          [ngModel]="rawKeyInput()"
+          (ngModelChange)="rawKeyInput.set($event)"
+          name="rawKey"
+          placeholder="Paste API key string..."
+          class="form-input font-mono"
+          autocomplete="off"
+        />
+        <span class="field-hint">
+          Keys are encrypted at rest with AES-256-GCM. Raw plaintext is discarded from process memory immediately.
+        </span>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn-submit-key"
+          [disabled]="isSubmitting() || !rawKeyInput().trim()"
+        >
+          {{ isSubmitting() ? 'Encrypting & Validating...' : 'Encrypt & Save Key' }}
+        </button>
+
+        @if (feedbackSuccess()) {
+          <div class="feedback-banner success">{{ feedbackSuccess() }}</div>
+        }
+        @if (feedbackError()) {
+          <div class="feedback-banner error">{{ feedbackError() }}</div>
+        }
+      </div>
+    </form>
+  </div>
+</div>

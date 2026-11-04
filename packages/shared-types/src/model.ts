@@ -7,6 +7,7 @@ export const InferenceProviderTypeSchema = z.enum([
   "ollama",
   "openai",
   "anthropic",
+  "deepseek",
   "gemini",
   "lmstudio",
   "groq",
@@ -167,4 +168,19 @@ export interface UpsertModelRosterInput {
   readonly isActive?: boolean;
   readonly isProtected?: boolean;
   readonly notes?: string | null;
+}
+
+/**
+ * Curated verifiable model specification entry.
+ */
+export interface VerifiableModelEntry {
+  readonly tag: string;
+  readonly name: string;
+  readonly provider: InferenceProviderType;
+  readonly parameterSize: number;
+  readonly contextWindow: number;
+  readonly recommendedRoles: readonly ModelLifecycleRole[];
+  readonly isFrontier: boolean;
+  readonly isCloudApi: boolean;
+  readonly description: string;
 }

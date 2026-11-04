@@ -1,0 +1,60 @@
+<div class="usage-card">
+  <div class="card-header">
+    <div class="header-left">
+      <span class="provider-badge">{{ summary()?.provider || 'GLOBAL' }}</span>
+      <h3 class="card-title">{{ title() }}</h3>
+    </div>
+    <div class="status-indicator" [ngClass]="getStatusClass(summary()?.weeklyUsagePercent || 0)">
+      <span class="indicator-dot"></span>
+      <span class="indicator-text">
+        {{ (summary()?.weeklyUsagePercent || 0) >= 90 ? 'Rate Constrained' : 'Normal Operation' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="gauges-grid">
+    <!-- 5-Hour Burst Limit Gauge -->
+    <div class="gauge-container">
+      <div class="gauge-label-row">
+        <span class="gauge-name">5-Hour Rolling Burst</span>
+        <span class="gauge-value font-mono">
+          {{ formatTokens(summary()?.fiveHourTokens || 0) }} /
+          {{ formatTokens(summary()?.fiveHourTokenLimit || limits()?.fiveHourTokenLimit || 250000) }}
+        </span>
+      </div>
+      <div class="meter-track">
+        <div
+          class="meter-fill"
+          [ngClass]="getStatusClass(summary()?.fiveHourUsagePercent || 0)"
+          [style.width.%]="summary()?.fiveHourUsagePercent || 0"
+        ></div>
+      </div>
+      <div class="gauge-subtext">
+        <span>{{ summary()?.fiveHourRequests || 0 }} requests in 5h</span>
+        <span class="percent font-mono">{{ (summary()?.fiveHourUsagePercent || 0).toFixed(1) }}%</span>
+      </div>
+    </div>
+
+    <!-- 7-Day Spending Ceiling Gauge -->
+    <div class="gauge-container">
+      <div class="gauge-label-row">
+        <span class="gauge-name">7-Day Expenditure Quota</span>
+        <span class="gauge-value font-mono">
+          {{ formatUsd(summary()?.sevenDayCostUsd || 0) }} /
+          {{ formatUsd(summary()?.weeklyCostLimitUsd || limits()?.weeklyBudgetCeilingUsd || 15.0) }}
+        </span>
+      </div>
+      <div class="meter-track">
+        <div
+          class="meter-fill"
+          [ngClass]="getStatusClass(summary()?.weeklyUsagePercent || 0)"
+          [style.width.%]="summary()?.weeklyUsagePercent || 0"
+        ></div>
+      </div>
+      <div class="gauge-subtext">
+        <span>{{ summary()?.sevenDayRequests || 0 }} requests in 7d</span>
+        <span class="percent font-mono">{{ (summary()?.weeklyUsagePercent || 0).toFixed(1) }}%</span>
+      </div>
+    </div>
+  </div>
+</div>

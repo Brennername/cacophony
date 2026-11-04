@@ -13,6 +13,7 @@ import {
   TestingViewComponent,
   IssuesViewComponent,
   AdminHitlViewComponent,
+  VaultViewComponent,
 } from './components/views';
 import { adminGuard } from './guards/admin.guard';
 
@@ -61,6 +62,10 @@ export const routes: Routes = [
   {
     path: 'settings',
     component: SettingsViewComponent,
+  },
+  {
+    path: 'vault',
+    component: VaultViewComponent,
   },
   {
     path: 'issues',

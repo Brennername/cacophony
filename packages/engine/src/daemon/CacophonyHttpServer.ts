@@ -21,6 +21,10 @@ import {
   resolvePrimaryHostDomain,
   resolvePublicGiteaBase,
 } from "../gitea/giteaUrlHelper.js";
+import { FrontierVaultService } from "../vault/FrontierVaultService.js";
+import { FrontierUsageTracker } from "../vault/FrontierUsageTracker.js";
+import { VerifiableModelCatalog } from "../hardware/VerifiableModelCatalog.js";
+
 
 
 export interface UnifiedServerConfig {
@@ -2918,6 +2922,176 @@ export class CacophonyHttpServer {
           res.end(
             JSON.stringify({ error: "Failed to auto-tune model profiles" }),
           );
+        }
+      });
+      return;
+    }
+
+    // 4c0i. REST API: GET /api/vault/keys - List Configured Frontier API Keys (Masked)
+    if (url.pathname === "/api/vault/keys" && req.method === "GET") {
+      try {
+        const vaultService = FrontierVaultService.getInstance();
+        const keys = await vaultService.listKeys();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, count: keys.length, keys }));
+      } catch (err: unknown) {
+        this.logger.error("Failed to list vault keys", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Failed to list vault credentials" }));
+      }
+      return;
+    }
+
+    // 4c0j. REST API: POST /api/vault/keys - Save Encrypted Frontier API Key
+    if (url.pathname === "/api/vault/keys" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          if (!payload.provider || !payload.rawKey) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameters 'provider' or 'rawKey'" }));
+            return;
+          }
+          const vaultService = FrontierVaultService.getInstance();
+          const descriptor = await vaultService.saveKey(payload.provider, payload.rawKey);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, descriptor }));
+        } catch (err: unknown) {
+          this.logger.error("Failed to save vault key", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err instanceof Error ? err.message : "Failed to save credential" }));
+        }
+      });
+      return;
+    }
+
+    // 4c0k. REST API: DELETE /api/vault/keys/:provider - Revoke Frontier API Key
+    if (url.pathname.startsWith("/api/vault/keys/") && req.method === "DELETE") {
+      const provider = decodeURIComponent(url.pathname.slice("/api/vault/keys/".length)) as any;
+      try {
+        const vaultService = FrontierVaultService.getInstance();
+        const deleted = await vaultService.deleteKey(provider);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, deleted, provider }));
+      } catch (err: unknown) {
+        this.logger.error("Failed to delete vault key", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Failed to delete vault credential" }));
+      }
+      return;
+    }
+
+    // 4c0l. REST API: GET /api/vault/usage - Rolling 5-Hour and 7-Day Usage Telemetry
+    if (url.pathname === "/api/vault/usage" && req.method === "GET") {
+      try {
+        const usageTracker = FrontierUsageTracker.getInstance();
+        const summaries = usageTracker.getSummaries();
+        const limits = usageTracker.getLimits();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, summaries, limits }));
+      } catch (err: unknown) {
+        this.logger.error("Failed to get vault usage summaries", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Failed to query vault usage telemetry" }));
+      }
+      return;
+    }
+
+    // 4c0m. REST API: POST /api/vault/limits - Set 5-Hour and Weekly Spending Limits
+    if (url.pathname === "/api/vault/limits" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const usageTracker = FrontierUsageTracker.getInstance();
+          const updated = usageTracker.setLimits(payload);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, limits: updated }));
+        } catch (err: unknown) {
+          this.logger.error("Failed to update vault limits", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to update vault limits" }));
+        }
+      });
+      return;
+    }
+
+    // 4c0n. REST API: GET /api/models/catalog - Verifiable Model Catalog
+    if (url.pathname === "/api/models/catalog" && req.method === "GET") {
+      const catalog = VerifiableModelCatalog.getAll();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, count: catalog.length, catalog }));
+      return;
+    }
+
+    // 4c0o. REST API: POST /api/roster/profile or /api/models/profile - Add Model Profile without Pull
+    if ((url.pathname === "/api/roster/profile" || url.pathname === "/api/models/profile") && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk: Buffer) => {
+        body += chunk.toString("utf-8");
+      });
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          if (!payload.modelId) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Missing required parameter 'modelId'" }));
+            return;
+          }
+          const rosterRepo = this.daemon.getModelRosterRepository();
+          if (rosterRepo) {
+            await rosterRepo.upsert({
+              modelId: payload.modelId,
+              tier: payload.tier || "ROSTER",
+              roles: payload.roles || ["implementer"],
+              concurrencyLimit: payload.concurrencyLimit || 1,
+              isActive: payload.isActive !== undefined ? payload.isActive : true,
+              isProtected: payload.isProtected !== undefined ? payload.isProtected : false,
+              notes: payload.notes || "Configured via Add Model profile catalog"
+            });
+          }
+          const profileRepo = this.daemon.getModelProfileRepository();
+          if (profileRepo) {
+            const role = (payload.roles && payload.roles[0]) || "implementer";
+            await profileRepo.upsertProfile({
+              id: `prof-${payload.modelId}-${role}`,
+              modelName: payload.modelId,
+              role,
+              numPredict: payload.numPredict || 4096,
+              numCtx: payload.contextWindow || payload.numCtx || 8192,
+              temperature: payload.temperature ?? 0.2,
+              topK: payload.topK ?? 40,
+              topP: payload.topP ?? 0.95,
+              repeatPenalty: payload.repeatPenalty ?? 1.1,
+              autoTuned: false,
+              isActive: payload.isActive !== undefined ? payload.isActive : true,
+            });
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, modelId: payload.modelId }));
+        } catch (err: unknown) {
+          this.logger.error("Failed to add model profile", {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to add model profile" }));
         }
       });
       return;

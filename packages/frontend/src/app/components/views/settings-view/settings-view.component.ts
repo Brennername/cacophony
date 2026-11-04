@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ThemeService, AppTheme } from '../../../services/theme.service';
 import { AuthService } from '../../../services/auth.service';
 import { setFrontendHostDomain } from '../../../utils/url-normalizer';
@@ -25,7 +26,7 @@ export interface NetworkProfileConfig {
 @Component({
   selector: 'app-settings-view',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './settings-view.component.html',
   styleUrl: './settings-view.component.css',
 })

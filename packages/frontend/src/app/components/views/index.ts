@@ -13,3 +13,4 @@ export * from './settings-view/settings-view.component';
 export * from './testing-view/testing-view.component';
 export * from './issues-view/issues-view.component';
 export * from './admin-hitl-view/admin-hitl-view.component';
+export * from './vault-view/vault-view.component';

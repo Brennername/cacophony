@@ -1,4 +1,4 @@
-import { Component, signal, model, output, inject, effect } from '@angular/core';
+import { Component, signal, model, output, inject, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ArenaStateStore } from '../../services/arena-state.store';
 import { HistoryMetricsService } from '../../services/history-metrics.service';
@@ -29,6 +29,8 @@ export class SessionTabsComponent {
     { id: 'tab-1', title: 'Main Session', branch: 'master', activeModel: 'qwen2.5-coder:7b' }
   ]);
   public readonly activeTabId = model<string>('tab-1');
+
+  public readonly isSoloSession = computed(() => this.tabs().length <= 1);
 
   public readonly tabCreated = output<SessionTab>();
   public readonly tabClosed = output<string>();

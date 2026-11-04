@@ -1,0 +1,38 @@
+<div class="collapsible-card" [class.expanded]="isExpanded()">
+  <div
+    class="collapsible-header"
+    (click)="toggle()"
+    role="button"
+    tabindex="0"
+    (keydown.enter)="toggle()"
+    [attr.aria-expanded]="isExpanded()"
+  >
+    <div class="header-left">
+      <span class="chevron" [class.rotated]="isExpanded()">&#9654;</span>
+      <span class="header-title">{{ title() }}</span>
+      @if (badge()) {
+        <span class="header-badge">{{ badge() }}</span>
+      }
+      @if (lineCount() !== undefined) {
+        <span class="line-count-pill">{{ lineCount() }} lines</span>
+      }
+    </div>
+
+    <div class="header-right">
+      <button
+        class="copy-btn"
+        (click)="copyContent($event)"
+        title="Copy raw content"
+        aria-label="Copy raw content"
+      >
+        {{ copied() ? 'Copied' : 'Copy' }}
+      </button>
+    </div>
+  </div>
+
+  @if (isExpanded()) {
+    <div class="collapsible-body">
+      <pre class="content-pre"><code>{{ content() }}</code></pre>
+    </div>
+  }
+</div>

@@ -612,6 +612,24 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t118.4 Rehabilitation [2026-11-02T17:42:06.708Z]
+- **Parent Task**: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me (`taskcade-t118.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t118.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me [Role: type_specialist] [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts]
+  - [ ] `taskcade-t118.4.2`: [Rehab 2/2] Implementation & Test Verification: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me [Role: implementer] [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts]
+
+
+### Task taskcade-t117.3 Rehabilitation [2026-11-02T17:19:17.487Z]
+- **Parent Task**: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass (`taskcade-t117.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t117.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: type_specialist] [Files: packages/engine/src/bandit/BanditRoleGovernor.ts packages/engine/src/bandit/BanditTaskScheduler.ts packages/engine/src/tests/bandit_role_governor.test.ts]
+  - [ ] `taskcade-t117.3.2`: [Rehab 2/2] Implementation & Test Verification: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: implementer] [Files: packages/engine/src/bandit/BanditRoleGovernor.ts packages/engine/src/bandit/BanditTaskScheduler.ts packages/engine/src/tests/bandit_role_governor.test.ts]
+
+
 ### Task regr-mvqlvwm1-fhwv Rehabilitation [2026-10-28T02:23:26.769Z]
 - **Parent Task**: [TDD Regression] should replace slot tokens with provided values (`regr-mvqlvwm1-fhwv`)
 - **Failure Count**: 3

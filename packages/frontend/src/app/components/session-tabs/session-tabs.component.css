@@ -1,10 +1,42 @@
 :host {
-  display: block;
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
-  max-width: 100%;
-  width: 100%;
   box-sizing: border-box;
 }
+
+.solo-plus-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-surface-elevated, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  color: var(--text-primary, #f8fafc);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.solo-plus-btn:hover {
+  background: var(--color-brand, #38bdf8);
+  color: #0f172a;
+  border-color: var(--color-brand, #38bdf8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);
+}
+
+.solo-plus-btn:active {
+  transform: translateY(0);
+}
+
 .tabs-container {
   display: flex;
   align-items: center;

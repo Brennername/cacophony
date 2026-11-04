@@ -76,4 +76,33 @@ describe('ModelsViewComponent - Epoch Management & Leaderboard Suite (T82.5)', (
     comp.onEpochSelected(fakeEvent);
     expect(comp.selectedEpoch()).toBe('all');
   });
+
+  it('should toggle mobile drawer state with toggleMobileDrawer()', () => {
+    const fixture = TestBed.createComponent(ModelsViewComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.mobileDrawerOpen()).toBe(false);
+
+    comp.toggleMobileDrawer();
+    expect(comp.mobileDrawerOpen()).toBe(true);
+
+    comp.toggleMobileDrawer();
+    expect(comp.mobileDrawerOpen()).toBe(false);
+  });
+
+  it('should open and close Add Model modal correctly', () => {
+    const fixture = TestBed.createComponent(ModelsViewComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.showAddModelModal()).toBe(false);
+
+    comp.openAddModelModal();
+    expect(comp.showAddModelModal()).toBe(true);
+    expect(comp.addModelTier()).toBe('ROSTER');
+
+    comp.showAddModelModal.set(false);
+    expect(comp.showAddModelModal()).toBe(false);
+  });
 });

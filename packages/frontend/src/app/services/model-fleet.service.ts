@@ -3,6 +3,7 @@ import type {
   OllamaPullProgressEvent,
   ModelManagementConfig,
   ModelTuningProfile,
+  VerifiableModelEntry,
 } from '@cacophony/shared-types';
 import { Injectable, signal, computed } from '@angular/core';
 
@@ -39,11 +40,14 @@ export class ModelFleetService {
     this.installedModels().find((m) => m.isLoadedInVram) || null
   );
 
+  public readonly catalog = signal<readonly VerifiableModelEntry[]>([]);
+
   constructor() {
     this.setupSseListener();
     void this.fetchInstalledModels();
     void this.fetchConfig();
     void this.fetchProfiles();
+    void this.fetchCatalog();
   }
 
   /**
@@ -283,6 +287,60 @@ export class ModelFleetService {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       this.error.set(`Failed to auto-tune profiles: ${msg}`);
+    }
+  }
+
+  /**
+   * Fetches the verifiable catalog of curated models from GET /api/models/catalog.
+   */
+  public async fetchCatalog(): Promise<void> {
+    try {
+      const res = await fetch('/api/models/catalog');
+      if (res.ok) {
+        const data = (await res.json()) as { success: boolean; catalog: VerifiableModelEntry[] };
+        this.catalog.set(data.catalog || []);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(`Failed to fetch catalog: ${msg}`);
+    }
+  }
+
+  /**
+   * Registers a model profile configuration via POST /api/roster/profile.
+   */
+  public async addModelProfile(payload: {
+    modelId: string;
+    tier?: string;
+    roles?: string[];
+    concurrencyLimit?: number;
+    isActive?: boolean;
+    isProtected?: boolean;
+    notes?: string;
+    contextWindow?: number;
+    temperature?: number;
+  }): Promise<boolean> {
+    this.loading.set(true);
+    try {
+      const res = await fetch('/api/roster/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        await this.fetchProfiles();
+        await this.fetchInstalledModels();
+        return true;
+      }
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      this.error.set(data.error || 'Failed to register model profile');
+      return false;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.error.set(msg);
+      return false;
+    } finally {
+      this.loading.set(false);
     }
   }
 }

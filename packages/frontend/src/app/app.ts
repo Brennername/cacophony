@@ -1,6 +1,6 @@
-import { Component, inject, signal, computed, viewChild } from '@angular/core';
+import { Component, inject, signal, computed, viewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { ThemeService } from './services/theme.service';
 import { AuthService } from './services/auth.service';
 import { ArenaStateStore } from './services/arena-state.store';
@@ -14,8 +14,8 @@ import { LoginModalComponent } from './components/login-modal/login-modal.compon
 /**
  * Root Application Component:
  * Features mobile-first responsive layout, slide-out hamburger navigation drawer,
- * bottom navigation bar for handheld viewports (< 768px), high-density desktop navigation,
- * and routed child outlets.
+ * acrylic squircle floating footer for mobile profiles, desktop retained glassmorphism header,
+ * and unconstrained touch-scroll viewports.
  */
 @Component({
   selector: 'app-root',
@@ -39,6 +39,7 @@ export class AppComponent {
   public readonly themeService = inject(ThemeService);
   public readonly authService = inject(AuthService);
   public readonly store = inject(ArenaStateStore);
+  public readonly router = inject(Router);
 
   public readonly activeRunningTestsCount = computed(() => {
     return this.store.processes().filter((p) => p.status === 'RUNNING').length;
@@ -46,9 +47,19 @@ export class AppComponent {
 
   public readonly frontierModal = viewChild(FrontierModalComponent);
   public readonly loginModal = viewChild(LoginModalComponent);
-  drawerOpen = signal(false);
+  public readonly drawerOpen = signal(false);
+  public readonly isHeaderRetained = signal(false);
 
-  toggleMobileDrawer() {
+  @HostListener('window:scroll')
+  public onWindowScroll(): void {
+    if (typeof window !== 'undefined') {
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const isDesktop = window.innerWidth >= 1024;
+      this.isHeaderRetained.set(isDesktop && scrollY > 20);
+    }
+  }
+
+  public toggleMobileDrawer(): void {
     this.drawerOpen.set(!this.drawerOpen());
   }
 

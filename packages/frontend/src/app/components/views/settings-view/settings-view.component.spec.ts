@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { SettingsViewComponent } from './settings-view.component';
 import { ThemeService } from '../../../services/theme.service';
 import { AuthService } from '../../../services/auth.service';
@@ -8,7 +9,7 @@ describe('SettingsViewComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [SettingsViewComponent],
-      providers: [ThemeService, AuthService],
+      providers: [provideRouter([]), ThemeService, AuthService],
     });
   });
 
