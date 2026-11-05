@@ -41,10 +41,10 @@ describe('Angular Standalone Dashboard Component Tests', () => {
     expect(themeService.currentTheme()).toBe('light');
 
     themeService.toggleTheme();
-    expect(themeService.currentTheme()).toBe('high-contrast');
+    expect(themeService.currentTheme()).toBe('slate');
 
     themeService.toggleTheme();
-    expect(themeService.currentTheme()).toBe('dark');
+    expect(themeService.currentTheme()).toBe('frost');
   });
 
   it('should track and reorder task priorities with ArenaStateStore', () => {

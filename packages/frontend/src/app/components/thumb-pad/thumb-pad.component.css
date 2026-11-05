@@ -1,0 +1,143 @@
+:host {
+  display: block;
+}
+
+@media (min-width: 820px) {
+  :host {
+    display: none !important;
+  }
+}
+
+.thumb-pad-container {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 85;
+  width: auto;
+  max-width: calc(100vw - 20px);
+  pointer-events: auto;
+  user-select: none;
+}
+
+/* Offset Pane of Blur: Shaped as the exact same oval, subtle a few pixels down and to the right */
+.thumb-pad-blur-offset {
+  position: absolute;
+  inset: 0;
+  /* Subtle offset a few pixels down (6px) and right (3px) toward screen edge */
+  transform: translate(3px, 6px);
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Main Foreground Glass Thumb Bar */
+.thumb-pad-bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px;
+  padding-bottom: max(4px, env(safe-area-inset-bottom, 4px));
+  border-radius: 20px;
+  background: var(--bg-surface-elevated, rgba(15, 23, 42, 0.88));
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.16));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+/* Individual Navigation Tab Items */
+.thumb-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  min-width: 38px;
+  padding: 0 8px;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* When selected / expanded */
+.thumb-item.selected {
+  color: var(--text-primary, #ffffff);
+  font-weight: 700;
+}
+
+.thumb-item.expanded {
+  min-width: 64px;
+  padding: 0 12px;
+}
+
+/* Acrylic Squircle Orb Outline Highlight */
+.acrylic-squircle-orb {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.thumb-item.selected .acrylic-squircle-orb {
+  background: var(--color-brand-glow, rgba(56, 189, 248, 0.2));
+  border: 1px solid var(--color-brand, rgba(56, 189, 248, 0.5));
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 3px 12px var(--color-brand-glow, rgba(56, 189, 248, 0.25));
+  backdrop-filter: blur(8px);
+}
+
+/* Typography Inside Tab Item */
+.thumb-item-text {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.item-letter {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.item-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  animation: expandFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes expandFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

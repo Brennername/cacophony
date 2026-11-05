@@ -111,7 +111,8 @@
 }
 
 /* High Contrast Theme (WCAG AAA Stark Contrast) */
-[data-theme="high-contrast"] {
+[data-theme="high-contrast"],
+[data-theme="hi-contrast"] {
   color-scheme: dark;
   --bg-primary: #000000;
   --bg-secondary: #050505;
@@ -129,6 +130,7 @@
   --color-brand: #ffff00;
   --color-brand-glow: transparent;
   --color-accent: #00ffff;
+  --btn-primary-text: #000000;
 
   --status-nominal: #00ff00;
   --status-warm: #ffff00;
@@ -176,6 +178,7 @@
   --color-brand: #3b82f6;
   --color-brand-glow: rgba(59, 130, 246, 0.25);
   --color-accent: #06b6d4;
+  --btn-primary-text: #ffffff;
 
   --status-nominal: #10b981;
   --status-warm: #f59e0b;
@@ -186,7 +189,38 @@
   --scrollbar-track: #000000;
 }
 
-/* Nord Theme (Arctic Frost) */
+/* Slate Theme (Gunmetal & Sky Blue) */
+[data-theme="slate"] {
+  color-scheme: dark;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-surface: #273549;
+  --bg-surface-elevated: #334155;
+  --bg-glass: rgba(15, 23, 42, 0.88);
+
+  --border-subtle: #475569;
+  --border-strong: #64748b;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --color-brand: #38bdf8;
+  --color-brand-glow: rgba(56, 189, 248, 0.3);
+  --color-accent: #0ea5e9;
+  --btn-primary-text: #0f172a;
+
+  --status-nominal: #34d399;
+  --status-warm: #fbbf24;
+  --status-elevated: #fb923c;
+  --status-danger: #f87171;
+
+  --scrollbar-thumb: #475569;
+  --scrollbar-track: #0f172a;
+}
+
+/* Frost Theme (Nord Arctic Frost) */
+[data-theme="frost"],
 [data-theme="nord"] {
   color-scheme: dark;
   --bg-primary: #2e3440;
@@ -205,6 +239,7 @@
   --color-brand: #88c0d0;
   --color-brand-glow: rgba(136, 192, 208, 0.3);
   --color-accent: #81a1c1;
+  --btn-primary-text: #2e3440;
 
   --status-nominal: #a3be8c;
   --status-warm: #ebcb8b;
@@ -215,8 +250,9 @@
   --scrollbar-track: #2e3440;
 }
 
-/* Cyberpunk Charcoal Theme */
-[data-theme="cyberpunk"] {
+/* Cyberpunk Charcoal & Neon Theme */
+[data-theme="cyberpunk"],
+[data-theme="cyber"] {
   color-scheme: dark;
   --bg-primary: #0f1015;
   --bg-secondary: #161822;
@@ -229,11 +265,13 @@
 
   --text-primary: #fcee0a;
   --text-secondary: #00f0ff;
-  --text-muted: #7982a6;
+  --text-muted: #9ba7cb;
 
   --color-brand: #00f0ff;
   --color-brand-glow: rgba(0, 240, 255, 0.4);
   --color-accent: #ff0055;
+  /* Dark bold text on primary buttons for high contrast against cyan and yellow */
+  --btn-primary-text: #050505;
 
   --status-nominal: #00ff66;
   --status-warm: #fcee0a;
@@ -242,6 +280,36 @@
 
   --scrollbar-thumb: #00f0ff;
   --scrollbar-track: #0f1015;
+}
+
+/* Emerald Forest Theme */
+[data-theme="emerald"] {
+  color-scheme: dark;
+  --bg-primary: #041a12;
+  --bg-secondary: #08291d;
+  --bg-surface: #0e3b2b;
+  --bg-surface-elevated: #144e39;
+  --bg-glass: rgba(4, 26, 18, 0.9);
+
+  --border-subtle: #1a5c44;
+  --border-strong: #10b981;
+
+  --text-primary: #ecfdf5;
+  --text-secondary: #a7f3d0;
+  --text-muted: #6ee7b7;
+
+  --color-brand: #10b981;
+  --color-brand-glow: rgba(16, 185, 129, 0.35);
+  --color-accent: #34d399;
+  --btn-primary-text: #041a12;
+
+  --status-nominal: #34d399;
+  --status-warm: #fcd34d;
+  --status-elevated: #f97316;
+  --status-danger: #ef4444;
+
+  --scrollbar-thumb: #10b981;
+  --scrollbar-track: #041a12;
 }
 
 /* Global Reset & Base Layout */
@@ -397,12 +465,84 @@ code, pre, .font-mono {
 
 .btn-primary {
   background-color: var(--color-brand);
-  color: #ffffff;
+  color: var(--btn-primary-text, #ffffff);
 }
 
 .btn-primary:hover {
   filter: brightness(1.1);
   box-shadow: 0 0 12px var(--color-brand-glow);
+}
+
+/* Explicit Contrast Protections for High-Intensity Themes */
+[data-theme="cyberpunk"] .btn-primary,
+[data-theme="cyber"] .btn-primary,
+[data-theme="high-contrast"] .btn-primary,
+[data-theme="hi-contrast"] .btn-primary {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* Theme Slider & Toggle Switch Contrast Hardening */
+.slider {
+  background-color: var(--border-subtle);
+  border: 1px solid var(--border-strong);
+}
+
+.slider:before {
+  background-color: var(--text-primary);
+}
+
+/* In Cyberpunk and High-Contrast: ensure slider thumb has high offset contrast against yellow active track */
+[data-theme="cyberpunk"] .slider:before,
+[data-theme="cyber"] .slider:before {
+  background-color: #0f1015 !important;
+  border: 2px solid #fcee0a !important;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="cyberpunk"] input:checked + .slider,
+[data-theme="cyber"] input:checked + .slider {
+  background-color: #fcee0a !important;
+  border-color: #fcee0a !important;
+}
+
+[data-theme="cyberpunk"] input:checked + .slider:before,
+[data-theme="cyber"] input:checked + .slider:before {
+  background-color: #0f1015 !important;
+  border: 2px solid #00f0ff !important;
+}
+
+[data-theme="high-contrast"] .slider:before,
+[data-theme="hi-contrast"] .slider:before {
+  background-color: #000000 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+[data-theme="high-contrast"] input:checked + .slider,
+[data-theme="hi-contrast"] input:checked + .slider {
+  background-color: #ffff00 !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme="high-contrast"] input:checked + .slider:before,
+[data-theme="hi-contrast"] input:checked + .slider:before {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+/* Range inputs (HTML5 native range sliders) */
+input[type="range"] {
+  accent-color: var(--color-brand);
+}
+
+[data-theme="cyberpunk"] input[type="range"],
+[data-theme="cyber"] input[type="range"] {
+  accent-color: #fcee0a;
+}
+
+[data-theme="high-contrast"] input[type="range"],
+[data-theme="hi-contrast"] input[type="range"] {
+  accent-color: #ffff00;
 }
 
 .btn-outline {

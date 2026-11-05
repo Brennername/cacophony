@@ -9,11 +9,12 @@ import { TaskDetailModalComponent } from './components/task-detail-modal/task-de
 import { SessionTabsComponent } from './components/session-tabs/session-tabs.component';
 import { TelemetryBarComponent } from './components/telemetry-bar/telemetry-bar.component';
 import { LoginModalComponent } from './components/login-modal/login-modal.component';
+import { ThumbPadComponent } from './components/thumb-pad/thumb-pad.component';
 
 /**
  * Root Application Component:
  * Features mobile-first responsive layout, slide-out hamburger navigation drawer,
- * acrylic squircle floating footer for mobile profiles, desktop retained glassmorphism header,
+ * generalized acrylic squircle thumb pad navigation for mobile profiles, desktop retained glassmorphism header,
  * and unconstrained touch-scroll viewports.
  */
 @Component({
@@ -29,6 +30,7 @@ import { LoginModalComponent } from './components/login-modal/login-modal.compon
     SessionTabsComponent,
     TelemetryBarComponent,
     LoginModalComponent,
+    ThumbPadComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

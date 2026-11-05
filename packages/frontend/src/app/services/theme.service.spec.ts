@@ -33,15 +33,39 @@ describe('ThemeService', () => {
     expect(service.currentTheme()).toBe('oled');
   });
 
-  it('should toggle between core themes sequentially', () => {
-    service.setTheme('dark');
-    service.toggleTheme();
-    expect(service.currentTheme()).toBe('light');
+  it('should toggle and cycle through all 8 curated themes sequentially', () => {
+    service.setTheme('oled');
+    expect(service.currentThemeLabel()).toBe('OLED');
 
-    service.toggleTheme();
-    expect(service.currentTheme()).toBe('high-contrast');
-
-    service.toggleTheme();
+    service.cycleTheme();
     expect(service.currentTheme()).toBe('dark');
+    expect(service.currentThemeLabel()).toBe('DARK');
+
+    service.cycleTheme();
+    expect(service.currentTheme()).toBe('light');
+    expect(service.currentThemeLabel()).toBe('LIGHT');
+
+    service.cycleTheme();
+    expect(service.currentTheme()).toBe('slate');
+    expect(service.currentThemeLabel()).toBe('SLATE');
+
+    service.cycleTheme();
+    expect(service.currentTheme()).toBe('frost');
+    expect(service.currentThemeLabel()).toBe('FROST');
+
+    service.cycleTheme();
+    expect(service.currentTheme()).toBe('cyber');
+    expect(service.currentThemeLabel()).toBe('CYBER');
+
+    service.cycleTheme();
+    expect(service.currentTheme()).toBe('hi-contrast');
+    expect(service.currentThemeLabel()).toBe('HI-CONTRAST');
+
+    service.cycleTheme();
+    expect(service.currentTheme()).toBe('emerald');
+    expect(service.currentThemeLabel()).toBe('EMERALD');
+
+    service.cycleTheme();
+    expect(service.currentTheme()).toBe('oled');
   });
 });

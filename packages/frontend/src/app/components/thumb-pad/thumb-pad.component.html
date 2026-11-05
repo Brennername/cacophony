@@ -1,0 +1,30 @@
+<nav class="thumb-pad-container" aria-label="Mobile Thumb Navigation">
+  <!-- Offset Blur Pane: shaped identically to the oval bar, shifted down and right to obscure scrolling background -->
+  <div class="thumb-pad-blur-offset" aria-hidden="true"></div>
+
+  <!-- Foreground Glass Thumb Bar -->
+  <div class="thumb-pad-bar">
+    @for (item of items(); track item.id) {
+      <a
+        [href]="item.route"
+        (click)="onThumb(item, $event)"
+        class="thumb-item"
+        [class.selected]="isSelected(item)"
+        [class.expanded]="isExpanded(item)"
+        [attr.aria-label]="item.ariaLabel"
+      >
+        <!-- Optical Acrylic Squircle Orb Highlight -->
+        <span class="acrylic-squircle-orb"></span>
+
+        <!-- Flexbox Animated Label Container -->
+        <span class="thumb-item-text">
+          @if (isExpanded(item)) {
+            <span class="item-label">{{ item.label }}</span>
+          } @else {
+            <span class="item-letter">{{ item.letter }}</span>
+          }
+        </span>
+      </a>
+    }
+  </div>
+</nav>

@@ -19,6 +19,11 @@
         <span class="arena-tag">Local Model Arena</span>
       </a>
 
+      <!-- System Settings Gear Icon Anchor directly following CACOPHONY title -->
+      <a routerLink="/settings" class="btn btn-icon-round settings-btn" title="System Settings" aria-label="System Settings">
+        <span class="gear-icon">&#9881;</span>
+      </a>
+
       <!-- Solitary Session Plus Button or Multi-Tab Strip -->
       <div class="header-session-anchor">
         <app-session-tabs />
@@ -43,16 +48,12 @@
 
     <!-- Right Side Header Controls -->
     <div class="controls-group">
-      <a routerLink="/settings" class="btn btn-icon-round settings-btn" title="System Settings" aria-label="System Settings">
-        <span class="gear-icon">&#9881;</span>
-      </a>
-
       <button
         class="btn btn-outline theme-toggle"
-        (click)="themeService.toggleTheme()"
+        (click)="themeService.cycleAllThemes()"
         aria-label="Toggle color theme"
       >
-        {{ themeService.currentTheme() | uppercase }}
+        {{ themeService.currentThemeLabel() }}
       </button>
 
       @if (authService.session().isAuthenticated) {
@@ -149,56 +150,8 @@
     <router-outlet></router-outlet>
   </main>
 
-  <!-- Mobile Floating Acrylic Squircle Bottom Navigation (Q, Dash, H, Mods) -->
-  <nav class="mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
-    <a
-      routerLink="/queue"
-      routerLinkActive="active"
-      #qRla="routerLinkActive"
-      class="bottom-tab"
-      [class.selected]="qRla.isActive"
-      aria-label="Queue"
-    >
-      <span class="acrylic-squircle-orb"></span>
-      <span class="tab-label">{{ qRla.isActive ? 'Queue' : 'Q' }}</span>
-    </a>
-
-    <a
-      routerLink="/dashboard"
-      routerLinkActive="active"
-      #dashRla="routerLinkActive"
-      class="bottom-tab center-tab"
-      [class.selected]="dashRla.isActive"
-      aria-label="Dashboard"
-    >
-      <span class="acrylic-squircle-orb"></span>
-      <span class="tab-label">Dash</span>
-    </a>
-
-    <a
-      routerLink="/history"
-      routerLinkActive="active"
-      #hRla="routerLinkActive"
-      class="bottom-tab"
-      [class.selected]="hRla.isActive"
-      aria-label="History"
-    >
-      <span class="acrylic-squircle-orb"></span>
-      <span class="tab-label">{{ hRla.isActive ? 'Hist' : 'H' }}</span>
-    </a>
-
-    <a
-      routerLink="/models"
-      routerLinkActive="active"
-      #mRla="routerLinkActive"
-      class="bottom-tab"
-      [class.selected]="mRla.isActive"
-      aria-label="Models"
-    >
-      <span class="acrylic-squircle-orb"></span>
-      <span class="tab-label">{{ mRla.isActive ? 'Models' : 'Mods' }}</span>
-    </a>
-  </nav>
+  <!-- Generalized Mobile Floating Acrylic Squircle Thumb Pad Navigation -->
+  <app-thumb-pad />
 
   <!-- Frontier Decomposition Modal -->
   <app-frontier-modal #frontierModal (committed)="onTasksCommitted($event)" />
