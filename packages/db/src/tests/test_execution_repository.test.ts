@@ -86,7 +86,7 @@ describe("TestExecutionRepository", () => {
     };
 
     await repo.recordRun(run1);
-    // Slight pause to guarantee sequential created_at timestamp
+
     await new Promise((resolve) => setTimeout(resolve, 15));
     await repo.recordRun(run2);
 
