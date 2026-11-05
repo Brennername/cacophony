@@ -41,6 +41,9 @@ export class GitUndoManager {
   /**
    * Reverts working tree to the latest checkpoint.
    */
+  /**
+   * Reverts working tree to the latest checkpoint.
+   */
   public async undo(
     workspaceRoot: string,
     sessionId?: string,
@@ -58,14 +61,12 @@ export class GitUndoManager {
 
     try {
       if (checkpoint.parent_hash) {
-        // Checkout working tree files from parent hash
         await execFileAsync(
           "git",
           ["checkout", checkpoint.parent_hash, "--", "."],
           { cwd: workspaceRoot },
         );
       } else {
-        // Fallback to reverting commit
         await execFileAsync(
           "git",
           ["revert", "--no-commit", checkpoint.commit_hash],
@@ -133,12 +134,14 @@ export class GitUndoManager {
   /**
    * Redoes the most recently undone checkpoint.
    */
+  /**
+   * Redoes the most recently undone checkpoint.
+   */
   public async redo(
     workspaceRoot: string,
     sessionId?: string,
   ): Promise<RedoResult> {
-    const checkpoint =
-      await this.checkpointRepo.getLatestRevertedCheckpoint(sessionId);
+    const checkpoint = await this.checkpointRepo.getLatestRevertedCheckpoint(sessionId);
     if (!checkpoint) {
       return {
         success: false,
@@ -150,11 +153,7 @@ export class GitUndoManager {
     const files: string[] = JSON.parse(checkpoint.files_changed_json || "[]");
 
     try {
-      await execFileAsync(
-        "git",
-        ["checkout", checkpoint.commit_hash, "--", "."],
-        { cwd: workspaceRoot },
-      );
+      await execFileAsync("git", ["checkout", checkpoint.commit_hash, "--", "."], { cwd: workspaceRoot });
       await this.checkpointRepo.setReverted(checkpoint.id, false);
 
       return {
