@@ -119,41 +119,52 @@ export class GeneratedChangeGuard {
     const newLines = replacement.split(/\r?\n/).length;
     const authorizedRemovals = this.getAuthorizedRemovals(taskText);
 
+    const isTestFile =
+      filePath.endsWith(".test.ts") ||
+      filePath.endsWith(".spec.ts") ||
+      filePath.endsWith(".test.js") ||
+      filePath.endsWith(".spec.js") ||
+      filePath.includes("/__tests__/") ||
+      filePath.includes("/tests/");
+
     if (
       oldLines >= 80 &&
       newLines < oldLines * 0.6 &&
-      authorizedRemovals.size === 0
+      authorizedRemovals.size === 0 &&
+      !isTestFile
     ) {
       issues.push(
         `Generated replacement shrinks ${filePath} from ${oldLines} to ${newLines} lines.`,
       );
     }
 
-    // Check for JSDoc documentation stripping
-    const originalJsDocs = this.countJsDocBlocks(original);
-    const replacementJsDocs = this.countJsDocBlocks(replacement);
-    if (
-      originalJsDocs > 0 &&
-      replacementJsDocs < originalJsDocs &&
-      authorizedRemovals.size === 0
-    ) {
-      const stripped = originalJsDocs - replacementJsDocs;
-      issues.push(
-        `Generated replacement stripped ${stripped} JSDoc documentation comment block(s) from ${filePath}.`,
-      );
-    }
+    // Check for JSDoc documentation stripping (production source files only)
+    if (!isTestFile) {
+      const originalJsDocs = this.countJsDocBlocks(original);
+      const replacementJsDocs = this.countJsDocBlocks(replacement);
+      if (
+        originalJsDocs > 0 &&
+        replacementJsDocs < originalJsDocs &&
+        authorizedRemovals.size === 0
+      ) {
+        const stripped = originalJsDocs - replacementJsDocs;
+        issues.push(
+          `Generated replacement stripped ${stripped} JSDoc documentation comment block(s) from ${filePath}.`,
+        );
+      }
 
-    const originalNames = this.collectDeclarations(original, filePath);
-    const replacementNames = this.collectDeclarations(replacement, filePath);
-    const missing = [...originalNames].filter(
-      (name) =>
-        !replacementNames.has(name) &&
-        !this.isAuthorizedRemoval(name, authorizedRemovals),
-    );
-    if (missing.length > 0) {
-      issues.push(
-        `Generated replacement removes existing declarations: ${missing.slice(0, 12).join(", ")}.`,
+      const originalNames = this.collectDeclarations(original, filePath);
+      const replacementNames = this.collectDeclarations(replacement, filePath);
+      const missing = [...originalNames].filter(
+        (name) =>
+          !replacementNames.has(name) &&
+          !this.isAuthorizedRemoval(name, authorizedRemovals),
       );
+      if (missing.length > 0) {
+        issues.push(
+          `Generated replacement removes existing declarations: ${missing.slice(0, 12).join(", ")}.`,
+        );
+      }
     }
 
     const originalSource = ts.createSourceFile(

@@ -9,4 +9,5 @@ export {
   type IncidentBundle,
   type IncidentBundleRecorderOptions,
 } from "./IncidentBundleRecorder.js";
+export * from "./PlateauInterventionDispatcher.js";
 export * from "./RollingWindowAnalyticsService.js";

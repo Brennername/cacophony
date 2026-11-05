@@ -240,18 +240,38 @@ export class TaskRehabilitationService {
         !f.includes(".test.") && !f.includes(".spec.") && !f.includes("types"),
     );
 
-    // Determine if this is purely a test authoring task with no production implementation files.
-    // Pure test tasks must never decompose into modifying working production code.
-    // Multi-file tasks with implementation files will proceed to the 3-way feature decomposition.
+    const deriveTestFile = (file: string): string => {
+      if (file.includes(".test.") || file.includes(".spec.")) return file;
+      if (file.endsWith(".component.ts")) {
+        return file.replace(/\.component\.ts$/, ".component.spec.ts");
+      }
+      if (file.endsWith(".service.ts")) {
+        return file.replace(/\.service\.ts$/, ".service.spec.ts");
+      }
+      if (file.includes("/packages/engine/src/") && !file.includes("/tests/")) {
+        return file
+          .replace("/packages/engine/src/", "/packages/engine/src/tests/")
+          .replace(/\.([jt]sx?)$/, ".test.$1");
+      }
+      return file.replace(/\.([jt]sx?)$/, ".spec.$1");
+    };
+
+    // Determine if this is a test authoring task.
+    // Test tasks must never decompose into modifying working production code, even if focusFiles points to a component or service.
+    const isTestObjective =
+      task.role === "test_engineer" ||
+      task.title.toLowerCase().includes("unit test") ||
+      task.title.toLowerCase().includes("test suite") ||
+      task.title.toLowerCase().includes("validation suite") ||
+      task.title.toLowerCase().includes("tests verifying") ||
+      task.prompt.toLowerCase().includes("write unit test") ||
+      task.prompt.toLowerCase().includes("unit tests verifying");
+
     const isPureTestTask =
-      (task.role === "test_engineer" ||
-        task.title.toLowerCase().includes("unit test") ||
-        task.title.toLowerCase().includes("test suite") ||
-        task.title.toLowerCase().includes("validation suite") ||
-        task.prompt.toLowerCase().includes("write unit test") ||
-        task.prompt.toLowerCase().includes("unit tests verifying")) &&
+      isTestObjective &&
       (implFiles.length === 0 ||
-        rawFocus.every((f) => f.includes(".test.") || f.includes(".spec.")));
+        rawFocus.every((f) => f.includes(".test.") || f.includes(".spec.")) ||
+        implFiles.length <= 1);
 
     const subtasks: EnqueueTaskDto[] = [];
     const culpritContext = culpritCommitHash
@@ -263,15 +283,18 @@ export class TaskRehabilitationService {
       // Target the test file directly for scaffolding and hardening.
       const targetTestFile =
         rawFocus.find((f) => f.includes(".test.") || f.includes(".spec.")) ??
-        rawFocus[0] ??
-        task.focusFiles;
+        (rawFocus[0] ? deriveTestFile(rawFocus[0]) : (task.focusFiles ? deriveTestFile(task.focusFiles) : "tests/unit.test.ts"));
 
-      const baseTestCommand =
-        task.testCommand && task.testCommand.includes(".test.")
-          ? task.testCommand
-          : targetTestFile
-            ? `node --test ${targetTestFile.replace("/src/", "/dist/").replace(/\.(?:ts|tsx)$/, ".js")}`
-            : "npm test";
+      let baseTestCommand = task.testCommand;
+      if (!baseTestCommand || baseTestCommand === "npm test") {
+        if (targetTestFile.includes("packages/frontend")) {
+          baseTestCommand = "npm test --workspace=@cacophony/frontend";
+        } else if (targetTestFile.includes("packages/engine")) {
+          baseTestCommand = "npm test --workspace=@cacophony/engine";
+        } else {
+          baseTestCommand = "npm test";
+        }
+      }
 
       subtasks.push({
         title: `[Rehab 1/2] Test Scaffold & Assertions: ${task.title}`,

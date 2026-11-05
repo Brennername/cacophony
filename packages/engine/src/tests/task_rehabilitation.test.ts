@@ -95,6 +95,43 @@ describe("TaskRehabilitationService Test Suite (T99.3)", () => {
     assert.equal(subtasks[1]!.title.includes("Implementation"), true);
   });
 
+  it("decomposes a test task targeting a component file into test engineer subtasks on the spec file", () => {
+    const mockRepo: any = {};
+    const service = new TaskRehabilitationService({
+      taskRepo: mockRepo,
+      maxRetriesBeforeRehab: 3,
+    });
+
+    const failedTask = createMockTask({
+      id: "T102.1",
+      title: "Write unit tests verifying `ExecutionModeSelectorComponent`",
+      focusFiles:
+        "packages/frontend/src/app/execution-mode-selector/execution-mode-selector.component.ts",
+    });
+
+    const subtasks = service.decomposeTask(
+      failedTask,
+      "Generated replacement stripped 3 JSDoc documentation comment block(s)",
+    );
+
+    assert.equal(subtasks.length, 2);
+    assert.equal(subtasks[0]!.role, "test_engineer");
+    assert.equal(
+      subtasks[0]!.focusFiles,
+      "packages/frontend/src/app/execution-mode-selector/execution-mode-selector.component.spec.ts",
+    );
+    assert.equal(
+      subtasks[0]!.testCommand,
+      "npm test --workspace=@cacophony/frontend",
+    );
+
+    assert.equal(subtasks[1]!.role, "test_engineer");
+    assert.equal(
+      subtasks[1]!.focusFiles,
+      "packages/frontend/src/app/execution-mode-selector/execution-mode-selector.component.spec.ts",
+    );
+  });
+
   it("evaluates shouldRehabilitate correctly against retry threshold", () => {
     const mockRepo: any = {};
     const service = new TaskRehabilitationService({

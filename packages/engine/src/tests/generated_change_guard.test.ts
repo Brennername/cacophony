@@ -434,3 +434,37 @@ describe("MathService", () => {
   );
 });
 
+test("GeneratedChangeGuard exempts test files from production JSDoc stripping and top-level class declaration checks", () => {
+  const bogusTestFileWithClass = `
+/**
+ * TestRunnerDetector JSDoc comment
+ */
+export class TestRunnerDetector {
+  /** Detects framework */
+  public detect(): string {
+    return "vitest";
+  }
+}
+`;
+
+  const cleanTestSuite = `
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+
+describe("TestRunnerDetector", () => {
+  it("detects vitest", () => {
+    assert.ok(true);
+  });
+});
+`;
+
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "packages/engine/src/tests/test_runner_detector.test.ts",
+    bogusTestFileWithClass,
+    cleanTestSuite,
+    "Write unit tests for TestRunnerDetector",
+  );
+
+  assert.deepEqual(issues, []);
+});
+

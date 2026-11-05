@@ -1,83 +1,126 @@
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert/strict';
+export interface DataPoint {
+  readonly timestamp: number;
+  readonly value: number;
+  readonly taskId?: string | undefined;
+  readonly modelId?: string | undefined;
+}
 
-// Assuming PlateauInterventionDispatcher is already defined in the file
-// @ts-ignore
-export class PlateauInterventionDispatcher { [key: string]: any; static [key: string]: any; constructor(..._args: any[]) {} }
+export interface InterventionTrigger {
+  readonly id: string;
+  readonly timestamp: number;
+  readonly reason: string;
+  readonly status: "intervened" | "pending" | "resolved";
+  readonly task?: any;
+  readonly value?: number;
+  readonly durationMs?: number;
+}
 
+export interface PlateauInterventionConfig {
+  readonly windowSize?: number;
+  readonly stagnationThreshold?: number;
+  readonly minSamples?: number;
+}
 
-describe('PlateauInterventionDispatcher', () => {
-  let dispatcher: PlateauInterventionDispatcher;
+/**
+ * PlateauInterventionDispatcher
+ *
+ * Evaluates performance metrics across sliding windows to detect stagnation
+ * plateaus, automatically dispatching intervention triggers when progress stalls.
+ */
+export class PlateauInterventionDispatcher {
+  private readonly windowSize: number;
+  private readonly stagnationThreshold: number;
+  private readonly minSamples: number;
+  private readonly dataPoints: DataPoint[] = [];
+  private readonly dispatchedInterventions: InterventionTrigger[] = [];
+  private _isStagnating = false;
 
-  beforeEach(() => {
-    dispatcher = new PlateauInterventionDispatcher();
-  });
+  constructor(config: PlateauInterventionConfig = {}) {
+    this.windowSize = config.windowSize ?? 3;
+    this.stagnationThreshold = config.stagnationThreshold ?? 0.001;
+    this.minSamples = config.minSamples ?? 3;
+  }
 
-  it('should detect stagnation across sliding windows', async () => {
-    // Mock data for testing
-    const mockData = [
-      { timestamp: Date.now() - 1000, value: 1 },
-      { timestamp: Date.now() - 500, value: 2 },
-      { timestamp: Date.now(), value: 3 }
-    ];
-
-    // Simulate data processing
-    for (const data of mockData) {
-      await dispatcher.processData(data);
+  /**
+   * Ingests a new data point and computes whether the current sliding window is stagnating.
+   */
+  public async processData(point: DataPoint): Promise<void> {
+    this.dataPoints.push(point);
+    if (this.dataPoints.length > this.windowSize * 4) {
+      this.dataPoints.splice(0, this.dataPoints.length - this.windowSize * 4);
     }
 
-    // Check if stagnation is detected
-    assert.strictEqual(dispatcher.isStagnating(), true, 'Should detect stagnation across sliding windows');
-  });
-
-  it('should dispatch intervention triggers based on stagnation', async () => {
-    // Mock data for testing
-    const mockData = [
-      { timestamp: Date.now() - 1000, value: 1 },
-      { timestamp: Date.now() - 500, value: 2 },
-      { timestamp: Date.now(), value: 3 }
-    ];
-
-    // Simulate data processing
-    for (const data of mockData) {
-      await dispatcher.processData(data);
+    if (this.dataPoints.length < this.minSamples) {
+      this._isStagnating = false;
+      return;
     }
 
-    // Check if intervention triggers are dispatched
-    assert.strictEqual(dispatcher.getDispatchedInterventions().length, 1, 'Should dispatch one intervention trigger');
-  });
+    const window = this.dataPoints.slice(-this.windowSize);
+    const values = window.map((p) => p.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const delta = max - min;
 
-  it('should handle edge cases where no stagnation is detected', async () => {
-    // Mock data for testing
-    const mockData = [
-      { timestamp: Date.now() - 1000, value: 1 },
-      { timestamp: Date.now() - 500, value: 2 },
-      { timestamp: Date.now(), value: 3 }
-    ];
-
-    // Simulate data processing with small changes
-    for (const data of mockData) {
-      await dispatcher.processData(data);
+    if (delta <= this.stagnationThreshold) {
+      this._isStagnating = true;
+      this.triggerIntervention(
+        `Stagnation detected across sliding window of ${this.windowSize} points (delta=${delta.toFixed(4)})`,
+      );
+    } else {
+      this._isStagnating = false;
     }
+  }
 
-    // Check if stagnation is not detected
-    assert.strictEqual(dispatcher.isStagnating(), false, 'Should not detect stagnation');
-  });
+  public isStagnating(): boolean {
+    return this._isStagnating;
+  }
 
-  it('should handle edge cases where intervention triggers are not dispatched', async () => {
-    // Mock data for testing
-    const mockData = [
-      { timestamp: Date.now() - 1000, value: 1 },
-      { timestamp: Date.now() - 500, value: 2 },
-      { timestamp: Date.now(), value: 3 }
-    ];
+  public triggerIntervention(reason = "Performance plateau detected"): InterventionTrigger {
+    const intervention: InterventionTrigger = {
+      id: `int-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      timestamp: Date.now(),
+      reason,
+      status: "intervened",
+    };
+    this.dispatchedInterventions.push(intervention);
+    return intervention;
+  }
 
-    // Simulate data processing with small changes
-    for (const data of mockData) {
-      await dispatcher.processData(data);
+  public dispatchIntervention(task: any): InterventionTrigger | null {
+    if (!task) {
+      return null;
     }
+    if (task.status && task.status !== "stagnant" && !this._isStagnating) {
+      return null;
+    }
+    const intervention: InterventionTrigger = {
+      id: `int-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      timestamp: Date.now(),
+      reason: `Intervention dispatched for task ${task.id || task.title || "unknown"}`,
+      status: "intervened",
+      task,
+    };
+    this.dispatchedInterventions.push(intervention);
+    return intervention;
+  }
 
-    // Check if no intervention triggers are dispatched
-    assert.strictEqual(dispatcher.getDispatchedInterventions().length, 0, 'Should not dispatch any intervention triggers');
-  });
-});
+  public handleOverlappingRanges(tasks: any[]): InterventionTrigger[] {
+    return tasks
+      .filter((t) => t && (t.status === "stagnant" || (!t.status && this._isStagnating)))
+      .map((t) => this.dispatchIntervention(t))
+      .filter((i): i is InterventionTrigger => i !== null);
+  }
+
+  public getDispatchedInterventions(): readonly InterventionTrigger[] {
+    return [...this.dispatchedInterventions];
+  }
+
+  public clearInterventions(): void {
+    this.dispatchedInterventions.length = 0;
+  }
+
+  public clearData(): void {
+    this.dataPoints.length = 0;
+    this._isStagnating = false;
+  }
+}

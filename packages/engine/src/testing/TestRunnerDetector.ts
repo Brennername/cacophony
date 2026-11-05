@@ -80,8 +80,8 @@ export class TestRunnerDetector {
           confidence: 0.85,
         };
       }
-    } catch (error) {
-      console.error(`Error reading package.json: ${error}`);
+    } catch {
+      // Ignore missing or malformed package.json
     }
 
     try {
@@ -91,8 +91,8 @@ export class TestRunnerDetector {
         defaultCommand: "mvn test",
         confidence: 0.95,
       };
-    } catch (error) {
-      console.error(`Error checking for pom.xml: ${error}`);
+    } catch {
+      // Ignore missing pom.xml
     }
 
     try {
@@ -102,8 +102,8 @@ export class TestRunnerDetector {
         defaultCommand: "gradle test",
         confidence: 0.95,
       };
-    } catch (error) {
-      console.error(`Error checking for build.gradle: ${error}`);
+    } catch {
+      // Ignore missing build.gradle
     }
 
     try {
@@ -113,8 +113,8 @@ export class TestRunnerDetector {
         defaultCommand: "go test ./...",
         confidence: 0.95,
       };
-    } catch (error) {
-      console.error(`Error checking for go.mod: ${error}`);
+    } catch {
+      // Ignore missing go.mod
     }
 
     try {
@@ -124,8 +124,8 @@ export class TestRunnerDetector {
         defaultCommand: "cargo test",
         confidence: 0.95,
       };
-    } catch (error) {
-      console.error(`Error checking for Cargo.toml: ${error}`);
+    } catch {
+      // Ignore missing Cargo.toml
     }
 
     return {
