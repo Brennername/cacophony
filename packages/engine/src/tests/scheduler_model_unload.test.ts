@@ -55,7 +55,6 @@ describe("TaskScheduler Model Pre-Execution Unload (T68.4.2)", () => {
       },
     };
 
-    // Free VRAM: 2000 MB (not enough for qwen2.5-coder:7b + deepseek-r1:8b)
     const telemetry = createHeadroomTelemetry(2000);
     const scheduler = new TaskScheduler({
       taskRepo: { listPending: async () => [] } as any,
@@ -89,7 +88,6 @@ describe("TaskScheduler Model Pre-Execution Unload (T68.4.2)", () => {
       ollamaProvider: mockOllama,
     });
 
-    // Both are qwen family
     const result = await scheduler.prepareModelExecution("qwen2.5-coder:3b", "qwen2.5-coder:7b");
     assert.equal(result, false, "Same architecture family should not trigger explicit unload");
     assert.equal(unloadedModel, null, "No model should have been unloaded");
@@ -129,7 +127,7 @@ describe("TaskScheduler Model Pre-Execution Unload (T68.4.2)", () => {
     const mockOllama = {
       unloadModel: async (model: string) => {
         unloadedModel = model;
-        // Unloading frees up VRAM
+
         freeVramMb = 12000;
       },
       waitForModelEviction: async (_model: string) => true,
