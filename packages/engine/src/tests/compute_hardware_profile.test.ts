@@ -33,9 +33,8 @@ describe("ComputeHardwareProfile Test Suite", () => {
         availableVramMb: 4096,
       });
 
-      // Exactly 3584 + 512 = 4096: fits
       assert.strictEqual(gpu.canOffloadModel(3584), true);
-      // 3585 + 512 = 4097 > 4096: does not fit
+
       assert.strictEqual(gpu.canOffloadModel(3585), false);
     });
 
@@ -73,9 +72,8 @@ describe("ComputeHardwareProfile Test Suite", () => {
         availableVramMb: 4096,
       });
 
-      // 3072 + 1024 = 4096: fits
       assert.strictEqual(apu.canOffloadModel(3072), true);
-      // 3073 + 1024 = 4097 > 4096: does not fit
+
       assert.strictEqual(apu.canOffloadModel(3073), false);
     });
 
@@ -132,9 +130,8 @@ describe("ComputeHardwareProfile Test Suite", () => {
       assert.strictEqual(cpu.computeUnits, 16);
       assert.strictEqual(cpu.supportsFlashAttention, false);
 
-      // 6144 + 2048 = 8192: fits
       assert.strictEqual(cpu.canOffloadModel(6144), true);
-      // 6145 + 2048 = 8193 > 8192: does not fit
+
       assert.strictEqual(cpu.canOffloadModel(6145), false);
       assert.match(cpu.getThrottleReason() ?? "", /latency penalty/);
     });
