@@ -43,12 +43,10 @@ describe("GiteaPermissionGuard Test Suite", () => {
     it("should succeed when held access level meets or exceeds requirement", () => {
       const guard = new GiteaPermissionGuard("autonomous_implementer");
 
-      // Required read on write scope succeeds
       assert.doesNotThrow(() => {
         guard.assertScope("repository", "read");
       });
 
-      // Required write on write scope succeeds
       assert.doesNotThrow(() => {
         guard.assertScope("repository", "write");
       });
