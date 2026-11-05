@@ -19,10 +19,16 @@
         <span class="arena-tag">Local Model Arena</span>
       </a>
 
-      <!-- System Settings Gear Icon Anchor directly following CACOPHONY title -->
-      <a routerLink="/settings" class="btn btn-icon-round settings-btn" title="System Settings" aria-label="System Settings">
+      <!-- System Settings Gear Icon Button directly following CACOPHONY title (Toggles Open/Close) -->
+      <button
+        type="button"
+        class="btn btn-icon-round settings-btn"
+        (click)="toggleSettings()"
+        title="Toggle System Settings"
+        aria-label="Toggle System Settings"
+      >
         <span class="gear-icon">&#9881;</span>
-      </a>
+      </button>
 
       <!-- Solitary Session Plus Button or Multi-Tab Strip -->
       <div class="header-session-anchor">

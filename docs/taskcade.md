@@ -4203,3 +4203,12 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 
 _All active taskcade failure rehabilitations completed and verified. Archived in [`docs/taskcade-history.md`](taskcade-history.md)_
+
+### Phase 110: Mobile Navigation, Settings Toggle & Authentic Frontier Reviewer Gate
+- [x] T110.1: CI Runner Synchronization: Regenerate `package-lock.json` lockfile for clean `npm ci` build execution without workspace mismatch errors. [Files: package-lock.json]
+- [x] T110.2: Models View Fleet Toggle Orientation: Reverse fleet close chevron arrow to `<` pointing left toward drawer collapse direction. [Files: packages/frontend/src/app/components/views/models-view/models-view.component.html]
+- [x] T110.3: Thumb Pad Border & Shadow Definition: Add high-contrast outline and deeper multi-stage box shadow to thumb pad across all themes. [Files: packages/frontend/src/app/components/thumb-pad/thumb-pad.component.css]
+- [x] T110.4: Thumb Pad Route Deselection: Collapse thumb pad items to their first letters when visiting non-thumb routes. [Files: packages/frontend/src/app/components/thumb-pad/thumb-pad.component.ts]
+- [x] T110.5: Settings Gear Icon Navigation Toggle: Toggle settings open and return to previous route on click. [Files: packages/frontend/src/app/app.ts, packages/frontend/src/app/app.html]
+- [x] T110.6: Authentic FrontierReviewer Local Review & No-Mock Enforcement: Route review gate to local models when frontier API key is absent, eliminate heuristic mock rejections, ensure successful tasks never show failure boxes, and allow mocks only on Heroku. [Files: packages/engine/src/inference/FrontierReviewer.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-inspector/task-inspector.component.ts]
+

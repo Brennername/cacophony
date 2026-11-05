@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, viewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { ThemeService } from './services/theme.service';
 import { AuthService } from './services/auth.service';
 import { ArenaStateStore } from './services/arena-state.store';
@@ -49,6 +50,36 @@ export class AppComponent {
   public readonly loginModal = viewChild(LoginModalComponent);
   public readonly drawerOpen = signal(false);
   public readonly isHeaderRetained = signal(false);
+
+  /**
+   * Tracks the last visited non-settings route so clicking the gear icon toggles back to it.
+   */
+  public readonly lastNonSettingsUrl = signal<string>('/models');
+
+  constructor() {
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((event) => {
+        const url = event.urlAfterRedirects || event.url;
+        if (!url.startsWith('/settings')) {
+          this.lastNonSettingsUrl.set(url);
+        }
+      });
+  }
+
+  /**
+   * Toggles system settings: if on /settings, returns to last used route; otherwise navigates to /settings.
+   */
+  public toggleSettings(): void {
+    const currentUrl = this.router.url;
+    if (currentUrl.startsWith('/settings')) {
+      const fallback = this.lastNonSettingsUrl() || '/models';
+      void this.router.navigateByUrl(fallback);
+    } else {
+      this.lastNonSettingsUrl.set(currentUrl);
+      void this.router.navigateByUrl('/settings');
+    }
+  }
 
   @HostListener('window:scroll')
   public onWindowScroll(): void {

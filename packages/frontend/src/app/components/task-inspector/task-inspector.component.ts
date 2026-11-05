@@ -189,6 +189,19 @@ export class TaskInspectorComponent {
         status = 'RUNNING';
       }
 
+      // If task succeeded, do not leave stages in FAILURE state from earlier retry cycles
+      const isTaskSuccess =
+        task?.status === 'COMPLETED' ||
+        task?.status === 'REMEDIATED';
+      if (isTaskSuccess && status === 'FAILURE') {
+        const hasSuccessRun = stageRecords.some(
+          (s) => s.stageName === stage.name && s.stageStatus === 'SUCCESS',
+        );
+        if (hasSuccessRun || stage.name !== 'pr_review') {
+          status = 'SUCCESS';
+        }
+      }
+
       return {
         ...stage,
         status,

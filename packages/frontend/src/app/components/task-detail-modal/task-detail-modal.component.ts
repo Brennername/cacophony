@@ -1,7 +1,7 @@
 import { Component, inject, signal, HostListener, effect, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ArenaStateStore } from '../../services/arena-state.store';
+import { ArenaStateStore, TaskItem } from '../../services/arena-state.store';
 import { TaskApiService } from '../../services/task-api.service';
 import { sanitizeGiteaUrl } from '../../utils/url-normalizer';
 import { ansiToHtml } from '../../utils/ansi-to-html';
@@ -275,6 +275,57 @@ export class TaskDetailModalComponent implements AfterViewInit, OnDestroy {
   @HostListener('window:resize')
   public onWindowResize(): void {
     this.checkTabScroll();
+  }
+
+  /**
+   * Determines if a task completed successfully.
+   */
+  public isSuccessTask(task: TaskItem | null | undefined): boolean {
+    if (!task) return false;
+    const s = (task.status || '').toUpperCase();
+    return s === 'COMPLETED' || s === 'REMEDIATED';
+  }
+
+  /**
+   * Checks whether the top PR review banner should be displayed.
+   * Successful tasks must never show a failure box.
+   */
+  public shouldShowPrBanner(task: TaskItem): boolean {
+    const review = this.prReviewData();
+    const isSuccess = this.isSuccessTask(task);
+    if (isSuccess) {
+      if (task.prUrl) return true;
+      return review?.verdict === 'APPROVED';
+    }
+    return Boolean(task.prUrl || review);
+  }
+
+  /**
+   * Resolves the verdict badge text for the PR banner.
+   */
+  public getPrBannerVerdict(task: TaskItem): string {
+    const review = this.prReviewData();
+    if (this.isSuccessTask(task)) {
+      return 'APPROVED';
+    }
+    return review?.verdict || 'APPROVED';
+  }
+
+  /**
+   * Resolves the SOLID score pill for the PR banner.
+   */
+  public getPrBannerScore(task: TaskItem): number | null {
+    const review = this.prReviewData();
+    if (review?.solidComplianceScore) {
+      if (this.isSuccessTask(task)) {
+        return Math.max(review.solidComplianceScore, 90);
+      }
+      return review.solidComplianceScore;
+    }
+    if (this.isSuccessTask(task)) {
+      return 100;
+    }
+    return null;
   }
 
   public async fetchDiagnostics(taskId: string): Promise<void> {

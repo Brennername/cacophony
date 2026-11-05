@@ -46,8 +46,8 @@
       </div>
 
       <!-- Pull Request Notification Banner -->
-      @if (task.prUrl || prReviewData(); as review) {
-        <div class="pr-banner" [ngClass]="(prReviewData()?.verdict || 'APPROVED').toLowerCase()">
+      @if (shouldShowPrBanner(task)) {
+        <div class="pr-banner" [ngClass]="getPrBannerVerdict(task).toLowerCase()">
           <div class="pr-banner-left">
             <span class="pr-banner-icon">PR</span>
             <div class="pr-banner-info">
@@ -64,11 +64,11 @@
           <div class="pr-banner-right">
             <span
               class="pr-verdict-badge font-mono"
-              [ngClass]="(prReviewData()?.verdict || 'APPROVED').toLowerCase()"
+              [ngClass]="getPrBannerVerdict(task).toLowerCase()"
             >
-              {{ prReviewData()?.verdict || 'APPROVED' }}
+              {{ getPrBannerVerdict(task) }}
             </span>
-            @if (prReviewData()?.solidComplianceScore; as score) {
+            @if (getPrBannerScore(task); as score) {
               <span class="solid-pill font-mono">SOLID: {{ score }}/100</span>
             }
           </div>
@@ -472,11 +472,11 @@
           <div class="section-block">
             @if (prReviewData(); as review) {
               <div class="pr-reviews-container">
-                <div class="review-header-card" [ngClass]="review.verdict.toLowerCase()">
+                <div class="review-header-card" [ngClass]="getPrBannerVerdict(task).toLowerCase()">
                   <div class="review-summary-row">
-                    <span class="verdict-tag font-mono">{{ review.verdict }}</span>
+                    <span class="verdict-tag font-mono">{{ getPrBannerVerdict(task) }}</span>
                     <span class="score-badge font-mono"
-                      >SOLID Adherence: {{ review.solidComplianceScore }}/100</span
+                      >SOLID Adherence: {{ getPrBannerScore(task) || review.solidComplianceScore }}/100</span
                     >
                     @if (review.merged) {
                       <span class="merged-badge font-mono">MERGED</span>

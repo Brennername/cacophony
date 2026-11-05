@@ -50,9 +50,7 @@ export class ThumbPadComponent {
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
-        if (this.hasInteracted()) {
-          this.syncActiveItemWithUrl(event.urlAfterRedirects || event.url);
-        }
+        this.syncActiveItemWithUrl(event.urlAfterRedirects || event.url);
       });
   }
 
@@ -71,8 +69,14 @@ export class ThumbPadComponent {
   }
 
   public isSelected(item: ThumbPadItem): boolean {
+    if (!this.hasInteracted() || !this.activeExpandedId()) {
+      return false;
+    }
     const currentUrl = this.router.url;
-    return currentUrl.startsWith(item.route) || (item.route === '/dashboard' && currentUrl === '/');
+    return (
+      (currentUrl.startsWith(item.route) || (item.route === '/dashboard' && currentUrl === '/')) &&
+      this.activeExpandedId() === item.id
+    );
   }
 
   private syncActiveItemWithUrl(url: string): void {
@@ -80,7 +84,12 @@ export class ThumbPadComponent {
       (item) => url.startsWith(item.route) || (item.route === '/dashboard' && (url === '/' || url === ''))
     );
     if (matched) {
-      this.activeExpandedId.set(matched.id);
+      if (this.hasInteracted()) {
+        this.activeExpandedId.set(matched.id);
+      }
+    } else {
+      // Non-thumb-bar route (e.g. /settings, /repomap, /issues): deselect and collapse all items
+      this.activeExpandedId.set(null);
     }
   }
 }
