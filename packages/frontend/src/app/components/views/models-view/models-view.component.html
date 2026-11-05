@@ -188,6 +188,57 @@
         &lt; Fleet Roster
       </button>
 
+      <!-- Fleet Model Performance Leaderboard Card (Migrated from History view) -->
+      <div class="cacophony-card leaderboard-card">
+        <div class="card-heading-row">
+          <div>
+            <h3>Fleet Model Leaderboard</h3>
+            <span class="subtext">Empirical win rates & execution velocity rankings</span>
+          </div>
+          <div class="leaderboard-meta font-mono">
+            <span class="count-badge">{{ sortedLeaderboard().length }} models ranked</span>
+          </div>
+        </div>
+
+        <div class="models-leaderboard-grid">
+          @for (entry of sortedLeaderboard(); track entry.modelId; let idx = $index) {
+            <div
+              class="leader-card-item"
+              [class.active-selection]="selectedModelId() === entry.modelId"
+              (click)="selectModel(entry.modelId)"
+              [title]="'Select ' + entry.modelId + ' to inspect details'"
+              role="button"
+              tabindex="0"
+              (keydown.enter)="selectModel(entry.modelId)"
+            >
+              <div class="leader-card-rank font-mono">#{{ idx + 1 }}</div>
+              <div class="leader-card-main">
+                <div class="leader-model-title">
+                  <span class="dot" [ngClass]="(entry.status || 'healthy').toLowerCase()"></span>
+                  <strong class="leader-model-name">{{ entry.modelId }}</strong>
+                </div>
+                <div class="leader-card-stats font-mono">
+                  <span class="stat-win" [class.high-win]="entry.successRate >= 80" [class.low-win]="entry.successRate < 50">
+                    {{ entry.successRate }}% win
+                  </span>
+                  <span class="stat-sep">&bull;</span>
+                  <span class="stat-velocity">
+                    <span class="fixed-tks">{{ formatTks(entry.avgTokensPerSec) }}</span> tok/s
+                  </span>
+                  @if (entry.totalRuns) {
+                    <span class="stat-sep">&bull;</span>
+                    <span class="stat-runs">{{ entry.totalRuns }} runs</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+          @if (sortedLeaderboard().length === 0) {
+            <div class="empty-leaderboard-note">No historical model performance records for this epoch.</div>
+          }
+        </div>
+      </div>
+
       @if (selectedModelId()) {
         <!-- Model Header & Hardware Specifications -->
         <div class="cacophony-card detail-card">

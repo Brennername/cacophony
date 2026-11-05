@@ -48,60 +48,7 @@
   text-transform: uppercase;
 }
 
-.leaderboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.625rem;
-  min-width: 0;
-  max-width: 100%;
-}
 
-@media (min-width: 640px) {
-  .leaderboard-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.leader-item {
-  padding: 0.625rem 0.75rem;
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.model-name {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.8125rem;
-}
-
-.model-name .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-.model-name .dot.healthy {
-  background: var(--status-nominal);
-}
-.model-name .dot.degraded {
-  background: var(--status-warm);
-}
-.model-name .dot.evicted {
-  background: var(--status-danger);
-}
-
-.leader-item .stats {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  white-space: nowrap;
-}
 
 .fixed-tks {
   display: inline-block;

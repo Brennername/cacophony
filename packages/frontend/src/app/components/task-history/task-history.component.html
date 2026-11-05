@@ -1,31 +1,13 @@
 <div class="cacophony-card history-card">
   <div class="card-header">
     <div>
-      <h2>Task History & Model Leaderboard</h2>
+      <h2>Task History</h2>
       <span class="subtext">Audited runs, failure taxonomy & direct Gitea links</span>
     </div>
     <div class="success-rate-gauge">
       <span class="rate-val">{{ successRate() }}%</span>
       <span class="rate-label">Success Rate</span>
     </div>
-  </div>
-
-  <!-- Model Leaderboard Row -->
-  <div class="leaderboard-grid">
-    @for (entry of leaderboard(); track entry.modelId) {
-      <div class="leader-item">
-        <div class="model-name">
-          <span class="dot" [ngClass]="entry.status.toLowerCase()"></span>
-          <strong>{{ entry.modelId }}</strong>
-        </div>
-        <div class="stats">
-          <span>{{ entry.successRate }}% win</span>
-          <span
-            ><span class="fixed-tks">{{ formatTks(entry.avgTokensPerSec) }}</span> tok/s</span
-          >
-        </div>
-      </div>
-    }
   </div>
 
   <!-- Desktop History Table (>= 768px) -->

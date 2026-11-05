@@ -105,4 +105,44 @@ describe('ModelsViewComponent - Epoch Management & Leaderboard Suite (T82.5)', (
     comp.showAddModelModal.set(false);
     expect(comp.showAddModelModal()).toBe(false);
   });
+
+  it('should render Fleet Model Leaderboard with sorted entries and allow selecting models', () => {
+    metricsService.leaderboard.set([
+      {
+        modelId: 'phi4:latest',
+        successRate: 95,
+        totalRuns: 20,
+        avgTokensPerSec: 32.5,
+        status: 'HEALTHY',
+      },
+      {
+        modelId: 'qwen2.5-coder:7b-instruct-q4_K_M',
+        successRate: 80,
+        totalRuns: 15,
+        avgTokensPerSec: 24.0,
+        status: 'HEALTHY',
+      },
+    ]);
+
+    const fixture = TestBed.createComponent(ModelsViewComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.sortedLeaderboard().length).toBe(2);
+    expect(comp.sortedLeaderboard()[0].modelId).toBe('phi4:latest');
+    expect(comp.sortedLeaderboard()[0].successRate).toBe(95);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const leaderboardCard = compiled.querySelector('.leaderboard-card');
+    expect(leaderboardCard).toBeTruthy();
+
+    const leaderItems = compiled.querySelectorAll('.leader-card-item');
+    expect(leaderItems.length).toBe(2);
+
+    // Clicking a leaderboard item selects that model
+    (leaderItems[0] as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(comp.selectedModelId()).toBe('phi4:latest');
+  });
 });

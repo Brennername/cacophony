@@ -195,6 +195,19 @@ export class ModelsViewComponent implements OnInit {
     return this.metricsService.leaderboard().find((m) => m.modelId === modelId) ?? null;
   });
 
+  /**
+   * Ranked fleet model leaderboard sorted by success rate descending, then token velocity descending.
+   * Migrated from History view to consolidate empirical model rankings into the Models tab.
+   */
+  public readonly sortedLeaderboard = computed<ModelLeaderboardEntry[]>(() => {
+    return [...this.metricsService.leaderboard()].sort((a, b) => {
+      if ((b.successRate || 0) !== (a.successRate || 0)) {
+        return (b.successRate || 0) - (a.successRate || 0);
+      }
+      return (b.avgTokensPerSec || 0) - (a.avgTokensPerSec || 0);
+    });
+  });
+
   public readonly selectedModelTasks = computed<HistoryItem[]>(() => {
     const modelId = this.selectedModelId();
     if (!modelId) return [];
