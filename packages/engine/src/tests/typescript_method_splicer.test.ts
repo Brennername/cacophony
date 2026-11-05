@@ -208,4 +208,3 @@ describe('TypeScriptMethodSplicer', () => {
     assert.ok(result.includes('const items = [1, 2, 3]'));
   });
 });
-
