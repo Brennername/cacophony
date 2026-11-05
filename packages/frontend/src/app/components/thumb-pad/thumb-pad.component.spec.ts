@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ThumbPadComponent, DEFAULT_THUMB_PAD_ITEMS, ThumbPadItem } from './thumb-pad.component';
@@ -19,6 +19,7 @@ describe('ThumbPadComponent', () => {
           { path: 'models', children: [] },
           { path: 'vault', children: [] },
           { path: 'testing', children: [] },
+          { path: 'settings', children: [] },
         ]),
       ],
     }).compileComponents();
@@ -29,39 +30,67 @@ describe('ThumbPadComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should initialize with all items collapsed to single letters on initial visit/refresh', () => {
-    expect(component.hasInteracted()).toBe(false);
+  it('should initialize and actively highlight dashboard when on root or dashboard route', () => {
     expect(component.items().length).toBe(6);
+    const dashItem = component.items().find((i) => i.id === 'dash')!;
+    expect(component.isExpanded(dashItem)).toBe(true);
+    expect(component.isSelected(dashItem)).toBe(true);
 
-    const letters = component.items().map((i) => i.letter);
-    expect(letters).toEqual(['D', 'Q', 'H', 'M', 'V', 'T']);
+    const expandedLabel = fixture.nativeElement.querySelector('.item-label');
+    expect(expandedLabel.textContent.trim()).toBe('Dash');
 
-    // None should be expanded before interaction
+    const letters = fixture.nativeElement.querySelectorAll('.item-letter');
+    expect(letters.length).toBe(5);
+  });
+
+  it('should return to default with no letter selected when navigating to non-thumb route', async () => {
+    await router.navigateByUrl('/settings');
+    fixture.detectChanges();
+
+    expect(component.activeExpandedId()).toBeNull();
     component.items().forEach((item) => {
       expect(component.isExpanded(item)).toBe(false);
+      expect(component.isSelected(item)).toBe(false);
     });
 
     const renderedLetters = fixture.nativeElement.querySelectorAll('.item-letter');
     expect(renderedLetters.length).toBe(6);
+    expect(fixture.nativeElement.querySelector('.item-label')).toBeNull();
   });
 
-  it('should expand item label only after user thumbs a route', async () => {
+  it('should actively highlight and expand route when navigating to a thumb bar route', async () => {
+    await router.navigateByUrl('/queue');
+    fixture.detectChanges();
+
+    const queueItem = component.items().find((i) => i.id === 'queue')!;
+    expect(component.isExpanded(queueItem)).toBe(true);
+    expect(component.isSelected(queueItem)).toBe(true);
+
+    const dashItem = component.items().find((i) => i.id === 'dash')!;
+    expect(component.isExpanded(dashItem)).toBe(false);
+
+    const expandedLabel = fixture.nativeElement.querySelector('.item-label');
+    expect(expandedLabel.textContent.trim()).toBe('Queue');
+
+    await router.navigateByUrl('/history');
+    fixture.detectChanges();
+
+    const historyItem = component.items().find((i) => i.id === 'history')!;
+    expect(component.isExpanded(historyItem)).toBe(true);
+    expect(component.isSelected(historyItem)).toBe(true);
+    expect(fixture.nativeElement.querySelector('.item-label').textContent.trim()).toBe('Hist');
+  });
+
+  it('should scroll to top of page when thumbing an item', async () => {
+    const scrollSpy = vi.spyOn(component, 'scrollToTop');
     const queueItem = component.items().find((i) => i.id === 'queue')!;
     const clickEvent = new MouseEvent('click');
 
     component.onThumb(queueItem, clickEvent);
     fixture.detectChanges();
 
-    expect(component.hasInteracted()).toBe(true);
+    expect(scrollSpy).toHaveBeenCalled();
     expect(component.isExpanded(queueItem)).toBe(true);
-
-    // Other items must remain collapsed as single letters
-    const dashItem = component.items().find((i) => i.id === 'dash')!;
-    expect(component.isExpanded(dashItem)).toBe(false);
-
-    fixture.detectChanges();
-    const expandedLabel = fixture.nativeElement.querySelector('.item-label');
-    expect(expandedLabel.textContent.trim()).toBe('Queue');
   });
 
   it('should support generalized custom route items configuration at will', () => {
@@ -71,6 +100,7 @@ describe('ThumbPadComponent', () => {
     ];
 
     fixture.componentRef.setInput('items', customItems);
+    component.syncActiveItemWithUrl('/settings');
     fixture.detectChanges();
 
     const letters = fixture.nativeElement.querySelectorAll('.item-letter');

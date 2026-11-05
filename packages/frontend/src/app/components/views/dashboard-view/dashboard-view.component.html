@@ -65,8 +65,177 @@
     <app-task-inspector />
   </section>
 
-  <!-- Compact Queue Snapshot (Full Width Below) -->
-  <section class="grid-card-wrapper full-width">
-    <app-queue-manager />
+  <!-- Task Queue Snapshot Section -->
+  <section class="grid-card-wrapper snapshot-wrapper">
+    <div class="cacophony-card snapshot-card">
+      <div class="snapshot-header">
+        <div class="snapshot-title-group">
+          <h2 class="snapshot-title">Task Queue</h2>
+          <span class="subtext">{{ store.pendingCount() }} pending</span>
+        </div>
+        <div class="entries-stepper" aria-label="Queue entries shown control">
+          <span class="stepper-label">Entries Shown: {{ queueShownCount() }}</span>
+          <div class="stepper-buttons">
+            <button
+              type="button"
+              class="stepper-btn"
+              (click)="decrementQueueShown()"
+              [disabled]="queueShownCount() <= 1"
+              aria-label="Decrease queue entries shown"
+              title="Decrease entries shown by 1"
+            >
+              &minus;
+            </button>
+            <button
+              type="button"
+              class="stepper-btn"
+              (click)="incrementQueueShown()"
+              aria-label="Increase queue entries shown"
+              title="Increase entries shown by 1"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="snapshot-content">
+        @if (displayedQueueTasks().length === 0) {
+          <div class="snapshot-empty">
+            <span class="empty-text">No queued tasks</span>
+          </div>
+        } @else {
+          <div class="cardlet-list">
+            @for (task of displayedQueueTasks(); track task.id) {
+              <div
+                class="snapshot-cardlet clickable"
+                (click)="drillDown(task.id)"
+                role="button"
+                tabindex="0"
+                (keydown.enter)="drillDown(task.id)"
+                [attr.aria-label]="'Inspect task ' + task.title"
+              >
+                <div class="cardlet-header-row">
+                  <span class="priority-tag" [ngClass]="task.priority">{{ task.priority }}</span>
+                  <span class="cardlet-title" [title]="task.title">{{ task.title }}</span>
+                  <span class="status-pill" [ngClass]="task.status.toLowerCase()">{{ task.status }}</span>
+                </div>
+                <div class="cardlet-meta-row">
+                  <span class="role-badge">{{ task.role }}</span>
+                  <span class="model-tag font-mono">{{ task.modelAssigned || 'Auto' }}</span>
+                  @if (task.createdAt) {
+                    <span class="time-tag font-mono">{{ formatCreatedTime(task.createdAt) }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="snapshot-footer">
+        <button
+          type="button"
+          class="btn btn-outline all-nav-btn"
+          (click)="goToQueue()"
+          aria-label="Navigate to full Task Queue route"
+          id="dash-queue-all-btn"
+        >
+          All ({{ store.tasks().length }})
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Task History Snapshot Section -->
+  <section class="grid-card-wrapper snapshot-wrapper">
+    <div class="cacophony-card snapshot-card">
+      <div class="snapshot-header">
+        <div class="snapshot-title-group">
+          <h2 class="snapshot-title">Task History</h2>
+          <span class="subtext">{{ totalConcluded() }} concluded</span>
+        </div>
+        <div class="entries-stepper" aria-label="History entries shown control">
+          <span class="stepper-label">Entries Shown: {{ historyShownCount() }}</span>
+          <div class="stepper-buttons">
+            <button
+              type="button"
+              class="stepper-btn"
+              (click)="decrementHistoryShown()"
+              [disabled]="historyShownCount() <= 1"
+              aria-label="Decrease history entries shown"
+              title="Decrease entries shown by 1"
+            >
+              &minus;
+            </button>
+            <button
+              type="button"
+              class="stepper-btn"
+              (click)="incrementHistoryShown()"
+              aria-label="Increase history entries shown"
+              title="Increase entries shown by 1"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="snapshot-content">
+        @if (displayedHistoryItems().length === 0) {
+          <div class="snapshot-empty">
+            <span class="empty-text">No concluded task history</span>
+          </div>
+        } @else {
+          <div class="cardlet-list">
+            @for (item of displayedHistoryItems(); track item.id) {
+              <div
+                class="snapshot-cardlet clickable"
+                (click)="drillDown(item.id)"
+                role="button"
+                tabindex="0"
+                (keydown.enter)="drillDown(item.id)"
+                [attr.aria-label]="'Inspect history item ' + item.title"
+              >
+                <div class="cardlet-header-row">
+                  <span class="status-pill" [ngClass]="item.status.toLowerCase()">{{ item.status }}</span>
+                  <span class="cardlet-title" [title]="item.title">{{ item.title }}</span>
+                  @if (item.prNumber && item.prUrl) {
+                    <a
+                      [href]="sanitizePrUrl(item.prUrl)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="pr-link-pill"
+                      (click)="$event.stopPropagation()"
+                      aria-label="Open Pull Request in Gitea"
+                    >
+                      PR #{{ item.prNumber }}
+                    </a>
+                  }
+                </div>
+                <div class="cardlet-meta-row">
+                  <span class="model-tag font-mono">{{ item.model }}</span>
+                  <span class="metric-tag font-mono">{{ formatDuration(item.durationMs) }}</span>
+                  <span class="metric-tag font-mono">{{ formatTks(item.tokensPerSec) }} t/s</span>
+                  <span class="time-tag font-mono">{{ formatTimestamp(item.timestamp) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="snapshot-footer">
+        <button
+          type="button"
+          class="btn btn-outline all-nav-btn"
+          (click)="goToHistory()"
+          aria-label="Navigate to full Task History route"
+          id="dash-history-all-btn"
+        >
+          All ({{ metricsService.historyItems().length }})
+        </button>
+      </div>
+    </div>
   </section>
 </div>
