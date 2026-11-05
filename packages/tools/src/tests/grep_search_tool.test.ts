@@ -31,7 +31,6 @@ describe("GrepSearchTool", () => {
       "utf-8"
     );
 
-    // Create additional files for testing glob filtering and match capping
     await fs.writeFile(
       path.join(tempDir, "src", "Config.json"),
       '{"key": "value"}\n',
@@ -43,7 +42,6 @@ describe("GrepSearchTool", () => {
       "utf-8"
     );
 
-    // Create a file with multiple matches
     await fs.writeFile(
       path.join(tempDir, "src", "MultipleMatches.txt"),
       "match1\nmatch2\nmatch3\nmatch4\nmatch5\nmatch6\nmatch7\nmatch8\nmatch9\nmatch10\n",
@@ -107,7 +105,6 @@ describe("GrepSearchTool", () => {
     const result = await tool.execute({ path: ".", pattern: "match", isRegex: false, caseInsensitive: true }, context);
     assert.equal(result.success, true);
 
-    // Adjusted assertion to check for a warning message and match count
     if (result.output.includes("[Warning: Results capped at 100 matches.]")) {
       assert.ok(true); // If the warning is present, pass this test
     } else {
