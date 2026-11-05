@@ -27,10 +27,12 @@ export class GpuDeviceManager {
   /**
    * Discovers and enumerates all physical accelerator devices.
    */
+  /**
+   * Discovers and enumerates all physical accelerator devices.
+   */
   public async discoverDevices(): Promise<readonly GpuDeviceDescriptor[]> {
     const rawDevices = this.telemetryProvider.enumerateAllDevices();
     if (rawDevices.length === 0) {
-      // Fallback single device descriptor
       return [
         {
           id: "gpu-0",
@@ -57,7 +59,7 @@ export class GpuDeviceManager {
           }
         }
       } catch {
-        // ignore
+
       }
 
       const isPrimary = index === 0;
