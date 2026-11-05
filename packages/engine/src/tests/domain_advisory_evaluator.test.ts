@@ -92,11 +92,9 @@ describe("T108.6: DomainAdvisoryEvaluator Unit Test Suite", () => {
     assert.ok(results.length >= 1);
     assert.ok(results.some((r) => r.domainTag === "Playwright E2E"));
 
-    // Verify stored in DB
     const stored = await discussionRepo.getCommentsByTaskId("task-adv-100");
     assert.ok(stored.length >= 1);
 
-    // Verify published to mock Gitea provider
     assert.ok(publishedComments.length >= 1);
     assert.ok(publishedComments[0]!.includes("Playwright E2E"));
   });
