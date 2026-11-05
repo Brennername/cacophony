@@ -181,17 +181,14 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
     expect(firstCard.textContent).toContain('npm test -- unit');
     expect(firstCard.textContent).toContain('350ms');
 
-    // Initially actions are not revealed
     expect(firstCard.querySelector('.card-quick-actions.revealed')).toBeNull();
 
-    // Toggle card swipe / click to reveal actions
     component.toggleCardSwipe('proc-1');
     fixture.detectChanges();
 
     const revealedActions = firstCard.querySelector('.card-quick-actions.revealed');
     expect(revealedActions).not.toBeNull();
 
-    // Verify all quick action triggers exist with WCAG compliant buttons
     const stderrBtn = revealedActions?.querySelector('.btn-view-stderr') as HTMLButtonElement;
     const copyBtn = revealedActions?.querySelector('.btn-copy-logs') as HTMLButtonElement;
     const rerunBtn = revealedActions?.querySelector('.btn-rerun') as HTMLButtonElement;
@@ -206,11 +203,9 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
     expect(inspectBtn).toBeTruthy();
     expect(inspectBtn.textContent?.trim()).toBe('Inspect');
 
-    // Verify clicking Re-run appends rerun notification
     rerunBtn.click();
     expect(component.testOutput().some((line) => line.includes('[rerun-triggered]'))).toBe(true);
 
-    // Test swipe gesture simulation
     component.onTouchStart({ touches: [{ clientX: 200 }] } as any, 'proc-2');
     component.onTouchEnd({ changedTouches: [{ clientX: 100 }] } as any, 'proc-2'); // 100px left swipe
     fixture.detectChanges();
@@ -257,7 +252,6 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
     component.appendOutputLine('Test Suite Passed: 5/5');
     expect(component.testOutput()).toContain('Test Suite Passed: 5/5');
 
-    // Simulate multi-line substage_log payload
     const logChunk = 'PASS src/app.spec.ts\nTests: 2 passed, 2 total';
     for (const line of logChunk.split('\n')) {
       component.appendOutputLine(line);
@@ -266,4 +260,3 @@ describe('TestingViewComponent (T59.4, T59.6, T65.1 - T65.6)', () => {
     expect(component.testOutput()).toContain('Tests: 2 passed, 2 total');
   });
 });
-
