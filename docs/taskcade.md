@@ -176,60 +176,60 @@ _See [`docs/taskcade-history.md`](taskcade-history.md) for archived Phases 1 thr
 - [ ] T114.1: Semantic Conflict Classifier & AST Boundary Analyzer: Parse git conflict markers within TypeScript files, parse conflict hunks into AST nodes, and classify conflicts into import collisions, interface property augmentations, or independent method additions. [Files: packages/engine/src/git/SemanticConflictClassifier.ts, packages/engine/src/tests/semantic_conflict_classifier.test.ts] [Test: node --test packages/engine/dist/tests/semantic_conflict_classifier.test.js] [Role: architect]
 - [ ] T114.2: Three-Way AST Method Rebase Engine: Implement AST-level three-way merge resolution for non-overlapping class and interface changes, generating conflict-free merged AST trees and compiling verified code with zero git conflict markers. [Files: packages/engine/src/git/AstThreeWayRebaser.ts, packages/engine/src/tests/ast_three_way_rebaser.test.ts] [Test: node --test packages/engine/dist/tests/ast_three_way_rebaser.test.js] [Role: implementer]
 - [ ] T114.3: Automated Worktree Rebase Worker: Wire automated background rebase worker into `CacophonyDaemon` to inspect open Gitea pull requests against `main`, rebase branches cleanly without dirty working tree leaks, and trigger pre-flight test suites. [Files: packages/engine/src/git/AutoRebaseWorker.ts, packages/engine/src/daemon/CacophonyDaemon.ts, packages/engine/src/tests/auto_rebase_worker.test.ts] [Test: node --test packages/engine/dist/tests/auto_rebase_worker.test.js] [Role: implementer]
-- [ ] T114.4: Rebase Status & Conflict Telemetry in Gitea Provider: Expose mergeability status, rebase logs, and conflict metadata via REST API `GET /api/tasks/:id/pr/rebase-status` and `POST /api/tasks/:id/pr/rebase`. [Files: packages/engine/src/gitea/GiteaPlatformProvider.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/tests/gitea_pr_threads.test.ts] [Test: node --test packages/engine/dist/tests/gitea_pr_threads.test.js] [Role: architect]
-- [ ] T114.5: Frontend PR Rebase & Conflict Status Badge: Render interactive rebase banner in `TaskDetailModalComponent` PR Reviews tab showing fast-forward vs rebase required, with one-click manual rebase trigger and live status feedback. [Files: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskDetailModalComponent] [Role: ui_specialist]
-- [ ] T114.6: Multi-Model Conflict Resolution Advisory Gating: Implement advisory prompt template instructing reviewer models to inspect auto-resolved AST merges for semantic regression risks before allowing squash-merge. [Files: packages/engine/src/inference/DomainAdvisoryEvaluator.ts, packages/engine/src/inference/ReviewerPersonaPromptFactory.ts, packages/engine/src/tests/domain_advisory_evaluator.test.ts] [Test: node --test packages/engine/dist/tests/domain_advisory_evaluator.test.js] [Role: test_engineer]
-- [ ] T114.7: End-to-End Integration Suite for Autonomous Rebase Pipeline: Full integration test simulating diverted branches, concurrent PR creation, AST conflict resolution, and automatic fast-forward promotion to `main`. [Files: packages/engine/src/tests/auto_rebase_pipeline.test.ts] [Test: node --test packages/engine/dist/tests/auto_rebase_pipeline.test.js] [Role: test_engineer]
+- [x] T114.4: Rebase Status & Conflict Telemetry in Gitea Provider: Expose mergeability status, rebase logs, and conflict metadata via REST API `GET /api/tasks/:id/pr/rebase-status` and `POST /api/tasks/:id/pr/rebase`. [Files: packages/engine/src/gitea/GiteaPlatformProvider.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/tests/gitea_pr_threads.test.ts] [Test: node --test packages/engine/dist/tests/gitea_pr_threads.test.js] [Role: architect]
+- [x] T114.5: Frontend PR Rebase & Conflict Status Badge: Render interactive rebase banner in `TaskDetailModalComponent` PR Reviews tab showing fast-forward vs rebase required, with one-click manual rebase trigger and live status feedback. [Files: packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.html, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.ts, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.css, packages/frontend/src/app/components/task-detail-modal/task-detail-modal.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskDetailModalComponent] [Role: ui_specialist]
+- [x] T114.6: Multi-Model Conflict Resolution Advisory Gating: Implement advisory prompt template instructing reviewer models to inspect auto-resolved AST merges for semantic regression risks before allowing squash-merge. [Files: packages/engine/src/inference/DomainAdvisoryEvaluator.ts, packages/engine/src/inference/ReviewerPersonaPromptFactory.ts, packages/engine/src/tests/domain_advisory_evaluator.test.ts] [Test: node --test packages/engine/dist/tests/domain_advisory_evaluator.test.js] [Role: test_engineer]
+- [x] T114.7: End-to-End Integration Suite for Autonomous Rebase Pipeline: Full integration test simulating diverted branches, concurrent PR creation, AST conflict resolution, and automatic fast-forward promotion to `main`. [Files: packages/engine/src/tests/auto_rebase_pipeline.test.ts] [Test: node --test packages/engine/dist/tests/auto_rebase_pipeline.test.js] [Role: test_engineer]
 
 ## Phase 115: Live WebSocket AST Syntax Inspector & Real-Time Token Generation Visualizer
 
-- [ ] T115.1: Real-Time AST Token Stream Protocol & Server Tap: Extend `StreamTapManager` with structured event schema (`ast_node_enter`, `ast_node_exit`, `token_chunk`, `vram_pressure`) streamed over `/ws/stream`. [Files: packages/shared-types/src/stream.ts, packages/engine/src/inference/StreamTapManager.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/tests/stream_tap_manager.test.ts] [Test: node --test packages/engine/dist/tests/stream_tap_manager.test.js] [Role: architect]
+- [x] T115.1: Real-Time AST Token Stream Protocol & Server Tap: Extend `StreamTapManager` with structured event schema (`ast_node_enter`, `ast_node_exit`, `token_chunk`, `vram_pressure`) streamed over `/ws/stream`. [Files: packages/shared-types/src/stream.ts, packages/engine/src/inference/StreamTapManager.ts, packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/tests/stream_tap_manager.test.ts] [Test: node --test packages/engine/dist/tests/stream_tap_manager.test.js] [Role: architect]
 - [ ] T115.2: Live Generation Heatmap & Thermal Velocity Buffer: High-frequency ring buffer computing instant rolling tokens/sec, KV-cache consumption rate, and APU die temperature correlation. [Files: packages/engine/src/telemetry/StreamingTelemetryBuffer.ts, packages/engine/src/tests/streaming_telemetry_buffer.test.ts] [Test: node --test packages/engine/dist/tests/streaming_telemetry_buffer.test.js] [Role: implementer]
-- [ ] T115.3: Interactive AST Visualizer Component: Standalone Angular 20 component rendering zoomable/pannable SVG tree of the active TypeScript AST with syntax highlighting and mobile-friendly pinch/drag gestures. [Files: packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.ts, packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.html, packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.css, packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t AstVisualizerComponent] [Role: ui_specialist]
-- [ ] T115.4: Token Generation Velocity Strip & Thermal Gauge: Compact mobile-first status bar showing real-time token rate, model temperature, and GPU memory utilization with HSL color grading. [Files: packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.ts, packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.html, packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.css, packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TokenVelocityGaugeComponent] [Role: ui_specialist]
-- [ ] T115.5: Integration of AST & Velocity Visualizers into Task Inspector: Embed visualizers into `TaskInspectorComponent` as a dedicated "Live AST" tab with smooth tab switching and zero stream buffer leaks. [Files: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts, packages/frontend/src/app/components/task-inspector/task-inspector.component.html, packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskInspectorComponent] [Role: implementer]
-- [ ] T115.6: WebSocket Reconnection & Replay Buffer in ReactiveSignalService: Enhance `ReactiveSignalService` to replay missed AST events upon temporary network disconnects without DOM flickering. [Files: packages/frontend/src/app/services/reactive-signal.service.ts, packages/frontend/src/app/services/reactive-signal.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t ReactiveSignalService] [Role: test_engineer]
+- [x] T115.3: Interactive AST Visualizer Component: Standalone Angular 20 component rendering zoomable/pannable SVG tree of the active TypeScript AST with syntax highlighting and mobile-friendly pinch/drag gestures. [Files: packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.ts, packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.html, packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.css, packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t AstVisualizerComponent] [Role: ui_specialist]
+- [x] T115.4: Token Generation Velocity Strip & Thermal Gauge: Compact mobile-first status bar showing real-time token rate, model temperature, and GPU memory utilization with HSL color grading. [Files: packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.ts, packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.html, packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.css, packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TokenVelocityGaugeComponent] [Role: ui_specialist]
+- [x] T115.5: Integration of AST & Velocity Visualizers into Task Inspector: Embed visualizers into `TaskInspectorComponent` as a dedicated "Live AST" tab with smooth tab switching and zero stream buffer leaks. [Files: packages/frontend/src/app/components/task-inspector/task-inspector.component.ts, packages/frontend/src/app/components/task-inspector/task-inspector.component.html, packages/frontend/src/app/components/task-inspector/task-inspector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TaskInspectorComponent] [Role: implementer]
+- [x] T115.6: WebSocket Reconnection & Replay Buffer in ReactiveSignalService: Enhance `ReactiveSignalService` to replay missed AST events upon temporary network disconnects without DOM flickering. [Files: packages/frontend/src/app/services/reactive-signal.service.ts, packages/frontend/src/app/services/reactive-signal.service.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t ReactiveSignalService] [Role: test_engineer]
 
 ## Phase 116: Offline Contributor Gateway & Zero-Cost GitHub Issue Autonomous Solver
 
 - [ ] T116.1: Autonomous Reproduction Test Generator: Analyze ingested GitHub issue bodies to generate a standalone failing unit test (`*.repro.test.ts`) isolating the bug before writing fix code. [Files: packages/engine/src/inference/IssueReproductionGenerator.ts, packages/engine/src/tests/issue_reproduction_generator.test.ts] [Test: node --test packages/engine/dist/tests/issue_reproduction_generator.test.js] [Role: architect]
-- [ ] T116.2: Security Quarantine & Prompt Override Hardening: Expand injection scanning to detect multi-line markdown escaping, codeblock impersonation, and hidden instruction payloads in external issues. [Files: packages/engine/src/security/PromptSlipstreamGuard.ts, packages/engine/src/tests/prompt_slipstream_guard.test.ts] [Test: node --test packages/engine/dist/tests/prompt_slipstream_guard.test.js] [Role: type_specialist]
+- [x] T116.2: Security Quarantine & Prompt Override Hardening: Expand injection scanning to detect multi-line markdown escaping, codeblock impersonation, and hidden instruction payloads in external issues. [Files: packages/engine/src/security/PromptSlipstreamGuard.ts, packages/engine/src/tests/prompt_slipstream_guard.test.ts] [Test: node --test packages/engine/dist/tests/prompt_slipstream_guard.test.js] [Role: type_specialist]
 - [ ] T116.3: Contributor Attribution & Issue Resolution Bridge: Format PR descriptions and commit messages with proper GitHub co-authorship tags (`Co-authored-by:`) and `Fixes #` issue links. [Files: packages/engine/src/gitea/ContributorAttributionBridge.ts, packages/engine/src/tests/contributor_attribution_bridge.test.ts] [Test: node --test packages/engine/dist/tests/contributor_attribution_bridge.test.js] [Role: implementer]
-- [ ] T116.4: Admin HITL Review Portal Polish & One-Click Arena Enqueue: Add diff preview, prompt sanitizer findings badge, and mobile-friendly approval/rejection swipe actions to `/admin/hitl-gateway`. [Files: packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.ts, packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.html, packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.css, packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t AdminHitlViewComponent] [Role: ui_specialist]
-- [ ] T116.5: End-to-End Contributor Issue Ingestion & Auto-Resolution Suite: Test suite verifying full pipeline: mock external issue ingestion -> reproduction test generation -> autonomous bug fix -> contributor attribution. [Files: packages/engine/src/tests/contributor_gateway_e2e.test.ts] [Test: node --test packages/engine/dist/tests/contributor_gateway_e2e.test.js] [Role: test_engineer]
+- [x] T116.4: Admin HITL Review Portal Polish & One-Click Arena Enqueue: Add diff preview, prompt sanitizer findings badge, and mobile-friendly approval/rejection swipe actions to `/admin/hitl-gateway`. [Files: packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.ts, packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.html, packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.css, packages/frontend/src/app/components/views/admin-hitl-view/admin-hitl-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t AdminHitlViewComponent] [Role: ui_specialist]
+- [x] T116.5: End-to-End Contributor Issue Ingestion & Auto-Resolution Suite: Test suite verifying full pipeline: mock external issue ingestion -> reproduction test generation -> autonomous bug fix -> contributor attribution. [Files: packages/engine/src/tests/contributor_gateway_e2e.test.ts] [Test: node --test packages/engine/dist/tests/contributor_gateway_e2e.test.js] [Role: test_engineer]
 
 ## Phase 117: Autonomous Model Benchmark Suite & Multi-Armed Bandit ELO Rating Engine
 
 - [ ] T117.1: Dynamic ELO Rating Calculator: Implement chess-style ELO scoring algorithm with dynamic K-factors based on task difficulty (P0 vs P2), stage completion, and duration. [Files: packages/engine/src/bandit/EloRatingCalculator.ts, packages/engine/src/tests/elo_rating_calculator.test.ts] [Test: node --test packages/engine/dist/tests/elo_rating_calculator.test.js] [Role: architect]
-- [ ] T117.2: Database Schema Migration & Model Elo History Repository: Create migration `022_model_elo_history` storing historical match outcomes, rating progressions, and role-specific rating scores. [Files: packages/db/src/migrations/022_model_elo_history.ts, packages/db/src/repositories/ModelEloRepository.ts, packages/db/src/index.ts, packages/db/src/tests/model_elo_repository.test.ts] [Test: node --test packages/db/dist/tests/model_elo_repository.test.js] [Role: implementer]
+- [x] T117.2: Database Schema Migration & Model Elo History Repository: Create migration `022_model_elo_history` storing historical match outcomes, rating progressions, and role-specific rating scores. [Files: packages/db/src/migrations/022_model_elo_history.ts, packages/db/src/repositories/ModelEloRepository.ts, packages/db/src/index.ts, packages/db/src/tests/model_elo_repository.test.ts] [Test: node --test packages/db/dist/tests/model_elo_repository.test.js] [Role: implementer]
 - [ ] T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model assignments (e.g. promoting highest ELO model for `implementer` or `security_auditor`) based on empirical ratings. [Files: packages/engine/src/bandit/BanditRoleGovernor.ts, packages/engine/src/bandit/BanditTaskScheduler.ts, packages/engine/src/tests/bandit_role_governor.test.ts] [Test: node --test packages/engine/dist/tests/bandit_role_governor.test.js] [Role: architect]
-- [ ] T117.4: Model Leaderboard View with ELO Trend Graphs: Interactive leaderboard displaying real-time ELO ratings, win streaks, head-to-head match matrices, and token velocity charts. [Files: packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.ts, packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.html, packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.css, packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t LeaderboardViewComponent] [Role: ui_specialist]
+- [x] T117.4: Model Leaderboard View with ELO Trend Graphs: Interactive leaderboard displaying real-time ELO ratings, win streaks, head-to-head match matrices, and token velocity charts. [Files: packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.ts, packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.html, packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.css, packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t LeaderboardViewComponent] [Role: ui_specialist]
 - [ ] T117.5: REST API Endpoints for Model ELO & Head-to-Head Telemetry: Expose `GET /api/models/elo` and `GET /api/models/head-to-head` with caching and time-range filtering. [Files: packages/engine/src/daemon/CacophonyHttpServer.ts, packages/engine/src/tests/model_elo_endpoints.test.ts] [Test: node --test packages/engine/dist/tests/model_elo_endpoints.test.js] [Role: type_specialist]
-- [ ] T117.6: Validation Suite for ELO Convergence & Anti-Starvation Guards: Comprehensive unit tests proving ELO stability, convergence under synthetic outcomes, and non-starvation of exploration arms. [Files: packages/engine/src/tests/elo_convergence.test.ts] [Test: node --test packages/engine/dist/tests/elo_convergence.test.js] [Role: test_engineer]
+- [x] T117.6: Validation Suite for ELO Convergence & Anti-Starvation Guards: Comprehensive unit tests proving ELO stability, convergence under synthetic outcomes, and non-starvation of exploration arms. [Files: packages/engine/src/tests/elo_convergence.test.ts] [Test: node --test packages/engine/dist/tests/elo_convergence.test.js] [Role: test_engineer]
 
 ## Phase 118: Memory-Mapped KV-Cache Headroom Manager & Dynamic Context Window Autoscaler
 
 - [ ] T118.1: Linux Cgroups & Host Memory Pressure Monitor: Query `/sys/fs/cgroup/memory` and `/proc/meminfo` for active anonymous memory, page cache reclaim, and swap/ZRAM pressure. [Files: packages/engine/src/telemetry/MemoryPressureMonitor.ts, packages/engine/src/tests/memory_pressure_monitor.test.ts] [Test: node --test packages/engine/dist/tests/memory_pressure_monitor.test.js] [Role: architect]
 - [ ] T118.2: Dynamic Context Window Autoscaler: Automatically compute optimal `num_ctx` options per inference call based on available physical memory headroom to prevent Linux OOM-killer invocations. [Files: packages/engine/src/inference/ContextAutoscaler.ts, packages/engine/src/inference/OllamaProvider.ts, packages/engine/src/tests/context_autoscaler.test.ts] [Test: node --test packages/engine/dist/tests/context_autoscaler.test.js] [Role: implementer]
-- [ ] T118.3: Proactive Model Eviction & VRAM Pre-warming Pipeline: Implement idle model eviction daemon in `TaskScheduler` that unloads dormant models from VRAM before scheduling tasks for newly active models. [Files: packages/engine/src/scheduler/TaskScheduler.ts, packages/engine/src/hardware/ModelVramCatalog.ts, packages/engine/src/tests/scheduler_model_unload.test.ts] [Test: node --test packages/engine/dist/tests/scheduler_model_unload.test.js] [Role: architect]
-- [ ] T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering memory pressure tier (Normal, Constrained, Critical) and automatic throttling state. [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts, packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html, packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css, packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t MemoryHeadroomCardComponent] [Role: ui_specialist]
-- [ ] T118.5: Unit Tests for Context Autoscaling Under Memory Fluctuations: Unit tests verifying context token clamp curves (8192 -> 4096 -> 2048) under simulated memory constraints. [Files: packages/engine/src/tests/memory_headroom_safety.test.ts] [Test: node --test packages/engine/dist/tests/memory_headroom_safety.test.js] [Role: test_engineer]
+- [x] T118.3: Proactive Model Eviction & VRAM Pre-warming Pipeline: Implement idle model eviction daemon in `TaskScheduler` that unloads dormant models from VRAM before scheduling tasks for newly active models. [Files: packages/engine/src/scheduler/TaskScheduler.ts, packages/engine/src/hardware/ModelVramCatalog.ts, packages/engine/src/tests/scheduler_model_unload.test.ts] [Test: node --test packages/engine/dist/tests/scheduler_model_unload.test.js] [Role: architect]
+- [x] T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering memory pressure tier (Normal, Constrained, Critical) and automatic throttling state. [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts, packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html, packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css, packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t MemoryHeadroomCardComponent] [Role: ui_specialist]
+- [x] T118.5: Unit Tests for Context Autoscaling Under Memory Fluctuations: Unit tests verifying context token clamp curves (8192 -> 4096 -> 2048) under simulated memory constraints. [Files: packages/engine/src/tests/memory_headroom_safety.test.ts] [Test: node --test packages/engine/dist/tests/memory_headroom_safety.test.js] [Role: test_engineer]
 
 ## Phase 119: Test Flakiness Quarantine & Deterministic Mock Sandboxing
 
 - [ ] T119.1: Flaky Test Detection & Statistical Quarantine Service: Detect tests that flip between passing and failing across identical commit SHAs and tag them with `FLAKY_QUARANTINE`. [Files: packages/engine/src/testing/FlakyTestQuarantineService.ts, packages/engine/src/tests/flaky_test_quarantine.test.ts] [Test: node --test packages/engine/dist/tests/flaky_test_quarantine.test.js] [Role: architect]
-- [ ] T119.2: Database Migration 023 for Test Run Quality & Flakiness Scoring: Schema migration tracking per-test-case pass/fail ratios, retry counts, execution duration variance, and quarantine flags. [Files: packages/db/src/migrations/023_test_flakiness_tracking.ts, packages/db/src/repositories/TestExecutionRepository.ts, packages/db/src/tests/test_execution_repository.test.ts] [Test: node --test packages/db/dist/tests/test_execution_repository.test.js] [Role: implementer]
+- [x] T119.2: Database Migration 023 for Test Run Quality & Flakiness Scoring: Schema migration tracking per-test-case pass/fail ratios, retry counts, execution duration variance, and quarantine flags. [Files: packages/db/src/migrations/023_test_flakiness_tracking.ts, packages/db/src/repositories/TestExecutionRepository.ts, packages/db/src/tests/test_execution_repository.test.ts] [Test: node --test packages/db/dist/tests/test_execution_repository.test.js] [Role: implementer]
 - [ ] T119.3: Sandboxed Mock Environment Isolation: Ensure mock network endpoints and temporary test databases run in ephemeral namespaced contexts to eliminate cross-test interference. [Files: packages/engine/src/testing/MockIsolationSandbox.ts, packages/engine/src/tests/mock_isolation_sandbox.test.ts] [Test: node --test packages/engine/dist/tests/mock_isolation_sandbox.test.js] [Role: architect]
-- [ ] T119.4: Flaky Test Management Panel in Testing View: Add quarantine toggle and stability score column to `/testing` view, allowing developers to inspect flakiness metrics. [Files: packages/frontend/src/app/components/views/testing-view/testing-view.component.ts, packages/frontend/src/app/components/views/testing-view/testing-view.component.html, packages/frontend/src/app/components/views/testing-view/testing-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TestingViewComponent] [Role: ui_specialist]
+- [x] T119.4: Flaky Test Management Panel in Testing View: Add quarantine toggle and stability score column to `/testing` view, allowing developers to inspect flakiness metrics. [Files: packages/frontend/src/app/components/views/testing-view/testing-view.component.ts, packages/frontend/src/app/components/views/testing-view/testing-view.component.html, packages/frontend/src/app/components/views/testing-view/testing-view.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t TestingViewComponent] [Role: ui_specialist]
 - [ ] T119.5: Automated Flaky Test Re-validation & Gradual Promotion: Daemon routine re-running quarantined tests in idle cycles; automatically restores clean status after 10 consecutive clean passes. [Files: packages/engine/src/testing/FlakyTestQuarantineService.ts, packages/engine/src/daemon/CacophonyDaemon.ts, packages/engine/src/tests/flaky_test_promotion.test.ts] [Test: node --test packages/engine/dist/tests/flaky_test_promotion.test.js] [Role: test_engineer]
 
 ## Phase 120: Heterogeneous Hardware Auto-Tuning & Dynamic APU Inference Profiler
 
 - [ ] T120.1: APU & Discrete GPU Unified Benchmark Scanner: Micro-benchmark Ollama models on local hardware to measure real prefill tok/s, eval tok/s, and peak memory draw. [Files: packages/engine/src/hardware/HardwareInferenceProfiler.ts, packages/engine/src/tests/hardware_inference_profiler.test.ts] [Test: node --test packages/engine/dist/tests/hardware_inference_profiler.test.js] [Role: architect]
-- [ ] T120.2: Dynamic Hardware Profile Persister: Store empirical benchmark metrics to local profile cache, automatically selecting the most power-efficient model per role. [Files: packages/engine/src/hardware/ComputeHardwareProfile.ts, packages/engine/src/tests/compute_hardware_profile.test.ts] [Test: node --test packages/engine/dist/tests/compute_hardware_profile.test.js] [Role: implementer]
+- [x] T120.2: Dynamic Hardware Profile Persister: Store empirical benchmark metrics to local profile cache, automatically selecting the most power-efficient model per role. [Files: packages/engine/src/hardware/ComputeHardwareProfile.ts, packages/engine/src/tests/compute_hardware_profile.test.ts] [Test: node --test packages/engine/dist/tests/compute_hardware_profile.test.js] [Role: implementer]
 - [ ] T120.3: Thermal-Aware Throttle Governor: Adaptive cooldown controller that dynamically pauses scheduler ticks when APU die temperature exceeds 82C, resuming at 74C. [Files: packages/engine/src/telemetry/AdaptiveThermalGovernor.ts, packages/engine/src/tests/adaptive_thermal_governor.test.ts] [Test: node --test packages/engine/dist/tests/adaptive_thermal_governor.test.js] [Role: implementer]
-- [ ] T120.4: Frontend Hardware Telemetry Dashboard Gauge: Mobile-first telemetry component showing die temperature, active GPU cores, and throughput efficiency curve. [Files: packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.ts, packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.html, packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.css, packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t HardwareProfilerCardComponent] [Role: ui_specialist]
-- [ ] T120.5: Hardware Governor Safety Verification Suite: Comprehensive tests verifying thermal backoff curves, cooldown wait periods, and governor resume triggers. [Files: packages/engine/src/tests/adaptive_thermal_governor.test.ts] [Test: node --test packages/engine/dist/tests/adaptive_thermal_governor.test.js] [Role: test_engineer]
+- [x] T120.4: Frontend Hardware Telemetry Dashboard Gauge: Mobile-first telemetry component showing die temperature, active GPU cores, and throughput efficiency curve. [Files: packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.ts, packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.html, packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.css, packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend -- -t HardwareProfilerCardComponent] [Role: ui_specialist]
+- [x] T120.5: Hardware Governor Safety Verification Suite: Comprehensive tests verifying thermal backoff curves, cooldown wait periods, and governor resume triggers. [Files: packages/engine/src/tests/adaptive_thermal_governor.test.ts] [Test: node --test packages/engine/dist/tests/adaptive_thermal_governor.test.js] [Role: test_engineer]
 
 - [x] T102.1.18: Write unit tests verifying `ConversationTimelineComponent` role badges, markdown snippet formatting, and auto-scroll to bottom. [Files: packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.ts, packages/frontend/src/app/components/conversation-timeline/conversation-timeline.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
 - [x] T102.1.19: Write unit tests verifying `ExecutionModeSelectorComponent` autonomous vs supervised mode switching and indicator badges. [Files: packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.ts, packages/frontend/src/app/components/execution-mode-selector/execution-mode-selector.component.spec.ts] [Test: npm run test --workspace=@cacophony/frontend]
@@ -612,13 +612,193 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t120.5 Rehabilitation [2026-11-06T03:17:34.200Z]
+- **Parent Task**: T120.5: Hardware Governor Safety Verification Suite: Comprehensive tests verifying therm (`taskcade-t120.5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t120.5.1`: [Rehab 1/2] Test Scaffold & Assertions: T120.5: Hardware Governor Safety Verification Suite: Comprehensive tests verifying therm [Role: test_engineer] [Files: packages/engine/src/tests/adaptive_thermal_governor.test.ts]
+  - [x] `taskcade-t120.5.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: T120.5: Hardware Governor Safety Verification Suite: Comprehensive tests verifying therm [Role: test_engineer] [Files: packages/engine/src/tests/adaptive_thermal_governor.test.ts]
+
+
+### Task taskcade-t120.4 Rehabilitation [2026-11-06T03:05:12.076Z]
+- **Parent Task**: T120.4: Frontend Hardware Telemetry Dashboard Gauge: Mobile-first telemetry component sh (`taskcade-t120.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t120.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T120.4: Frontend Hardware Telemetry Dashboard Gauge: Mobile-first telemetry component sh [Role: type_specialist] [Files: packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.ts packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.html packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.css packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.spec.ts]
+  - [x] `taskcade-t120.4.2`: [Rehab 2/2] Implementation & Test Verification: T120.4: Frontend Hardware Telemetry Dashboard Gauge: Mobile-first telemetry component sh [Role: implementer] [Files: packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.ts packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.html packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.css packages/frontend/src/app/components/shared/hardware-profiler-card/hardware-profiler-card.component.spec.ts]
+
+
+### Task taskcade-t120.3 Rehabilitation [2026-11-06T02:22:45.083Z]
+- **Parent Task**: T120.3: Thermal-Aware Throttle Governor: Adaptive cooldown controller that dynamically p (`taskcade-t120.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t120.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T120.3: Thermal-Aware Throttle Governor: Adaptive cooldown controller that dynamically p [Role: type_specialist] [Files: packages/engine/src/telemetry/AdaptiveThermalGovernor.ts packages/engine/src/tests/adaptive_thermal_governor.test.ts]
+  - [ ] `taskcade-t120.3.2`: [Rehab 2/2] Implementation & Test Verification: T120.3: Thermal-Aware Throttle Governor: Adaptive cooldown controller that dynamically p [Role: implementer] [Files: packages/engine/src/telemetry/AdaptiveThermalGovernor.ts packages/engine/src/tests/adaptive_thermal_governor.test.ts]
+
+
+### Task taskcade-t120.1 Rehabilitation [2026-11-06T01:22:53.213Z]
+- **Parent Task**: T120.1: APU & Discrete GPU Unified Benchmark Scanner: Micro-benchmark Ollama models on l (`taskcade-t120.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t120.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T120.1: APU & Discrete GPU Unified Benchmark Scanner: Micro-benchmark Ollama models on l [Role: type_specialist] [Files: packages/engine/src/hardware/HardwareInferenceProfiler.ts packages/engine/src/tests/hardware_inference_profiler.test.ts]
+  - [ ] `taskcade-t120.1.2`: [Rehab 2/2] Implementation & Test Verification: T120.1: APU & Discrete GPU Unified Benchmark Scanner: Micro-benchmark Ollama models on l [Role: implementer] [Files: packages/engine/src/hardware/HardwareInferenceProfiler.ts packages/engine/src/tests/hardware_inference_profiler.test.ts]
+
+
+### Task taskcade-t119.5 Rehabilitation [2026-11-05T23:58:06.612Z]
+- **Parent Task**: T119.5: Automated Flaky Test Re-validation & Gradual Promotion: Daemon routine re-runnin (`taskcade-t119.5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t119.5.1`: [Rehab 1/2] Test Scaffold & Assertions: T119.5: Automated Flaky Test Re-validation & Gradual Promotion: Daemon routine re-runnin [Role: test_engineer] [Files: packages/engine/src/testing/FlakyTestQuarantineService.ts packages/engine/src/daemon/CacophonyDaemon.ts packages/engine/src/tests/flaky_test_promotion.test.ts]
+  - [ ] `taskcade-t119.5.2`: [Rehab 2/2] Test Hardening & Edge-Case Coverage: T119.5: Automated Flaky Test Re-validation & Gradual Promotion: Daemon routine re-runnin [Role: test_engineer] [Files: packages/engine/src/testing/FlakyTestQuarantineService.ts packages/engine/src/daemon/CacophonyDaemon.ts packages/engine/src/tests/flaky_test_promotion.test.ts]
+
+
+### Task taskcade-t119.3 Rehabilitation [2026-11-05T22:11:31.709Z]
+- **Parent Task**: T119.3: Sandboxed Mock Environment Isolation: Ensure mock network endpoints and temporar (`taskcade-t119.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t119.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T119.3: Sandboxed Mock Environment Isolation: Ensure mock network endpoints and temporar [Role: type_specialist] [Files: packages/engine/src/testing/MockIsolationSandbox.ts packages/engine/src/tests/mock_isolation_sandbox.test.ts]
+  - [ ] `taskcade-t119.3.2`: [Rehab 2/2] Implementation & Test Verification: T119.3: Sandboxed Mock Environment Isolation: Ensure mock network endpoints and temporar [Role: implementer] [Files: packages/engine/src/testing/MockIsolationSandbox.ts packages/engine/src/tests/mock_isolation_sandbox.test.ts]
+
+
+### Task taskcade-t119.1 Rehabilitation [2026-11-05T21:09:38.581Z]
+- **Parent Task**: T119.1: Flaky Test Detection & Statistical Quarantine Service: Detect tests that flip be (`taskcade-t119.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t119.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T119.1: Flaky Test Detection & Statistical Quarantine Service: Detect tests that flip be [Role: type_specialist] [Files: packages/engine/src/testing/FlakyTestQuarantineService.ts packages/engine/src/tests/flaky_test_quarantine.test.ts]
+  - [ ] `taskcade-t119.1.2`: [Rehab 2/2] Implementation & Test Verification: T119.1: Flaky Test Detection & Statistical Quarantine Service: Detect tests that flip be [Role: implementer] [Files: packages/engine/src/testing/FlakyTestQuarantineService.ts packages/engine/src/tests/flaky_test_quarantine.test.ts]
+
+
+### Task taskcade-t118.2 Rehabilitation [2026-11-05T19:28:34.484Z]
+- **Parent Task**: T118.2: Dynamic Context Window Autoscaler: Automatically compute optimal `num_ctx` optio (`taskcade-t118.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t118.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T118.2: Dynamic Context Window Autoscaler: Automatically compute optimal `num_ctx` optio [Role: type_specialist] [Files: packages/engine/src/inference/ContextAutoscaler.ts packages/engine/src/inference/OllamaProvider.ts packages/engine/src/tests/context_autoscaler.test.ts]
+  - [ ] `taskcade-t118.2.2`: [Rehab 2/2] Implementation & Test Verification: T118.2: Dynamic Context Window Autoscaler: Automatically compute optimal `num_ctx` optio [Role: implementer] [Files: packages/engine/src/inference/ContextAutoscaler.ts packages/engine/src/inference/OllamaProvider.ts packages/engine/src/tests/context_autoscaler.test.ts]
+
+
+### Task taskcade-t118.1 Rehabilitation [2026-11-05T17:57:35.907Z]
+- **Parent Task**: T118.1: Linux Cgroups & Host Memory Pressure Monitor: Query `/sys/fs/cgroup/memory` and  (`taskcade-t118.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t118.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T118.1: Linux Cgroups & Host Memory Pressure Monitor: Query `/sys/fs/cgroup/memory` and  [Role: type_specialist] [Files: packages/engine/src/telemetry/MemoryPressureMonitor.ts packages/engine/src/tests/memory_pressure_monitor.test.ts]
+  - [ ] `taskcade-t118.1.2`: [Rehab 2/2] Implementation & Test Verification: T118.1: Linux Cgroups & Host Memory Pressure Monitor: Query `/sys/fs/cgroup/memory` and  [Role: implementer] [Files: packages/engine/src/telemetry/MemoryPressureMonitor.ts packages/engine/src/tests/memory_pressure_monitor.test.ts]
+
+
+### Task taskcade-t117.5 Rehabilitation [2026-11-05T17:12:19.317Z]
+- **Parent Task**: T117.5: REST API Endpoints for Model ELO & Head-to-Head Telemetry: Expose `GET /api/mode (`taskcade-t117.5`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t117.5.1`: [Rehab 1/2] Scaffold & Type Contracts: T117.5: REST API Endpoints for Model ELO & Head-to-Head Telemetry: Expose `GET /api/mode [Role: type_specialist] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts packages/engine/src/tests/model_elo_endpoints.test.ts]
+  - [ ] `taskcade-t117.5.2`: [Rehab 2/2] Implementation & Test Verification: T117.5: REST API Endpoints for Model ELO & Head-to-Head Telemetry: Expose `GET /api/mode [Role: implementer] [Files: packages/engine/src/daemon/CacophonyHttpServer.ts packages/engine/src/tests/model_elo_endpoints.test.ts]
+
+
+### Task taskcade-t117.4 Rehabilitation [2026-11-05T16:49:49.612Z]
+- **Parent Task**: T117.4: Model Leaderboard View with ELO Trend Graphs: Interactive leaderboard displaying (`taskcade-t117.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t117.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T117.4: Model Leaderboard View with ELO Trend Graphs: Interactive leaderboard displaying [Role: type_specialist] [Files: packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.ts packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.html packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.css packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.spec.ts]
+  - [x] `taskcade-t117.4.2`: [Rehab 2/2] Implementation & Test Verification: T117.4: Model Leaderboard View with ELO Trend Graphs: Interactive leaderboard displaying [Role: implementer] [Files: packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.ts packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.html packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.css packages/frontend/src/app/components/views/leaderboard-view/leaderboard-view.component.spec.ts]
+
+
+### Task taskcade-t117.1 Rehabilitation [2026-11-05T15:54:02.064Z]
+- **Parent Task**: T117.1: Dynamic ELO Rating Calculator: Implement chess-style ELO scoring algorithm with  (`taskcade-t117.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t117.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T117.1: Dynamic ELO Rating Calculator: Implement chess-style ELO scoring algorithm with  [Role: type_specialist] [Files: packages/engine/src/bandit/EloRatingCalculator.ts packages/engine/src/tests/elo_rating_calculator.test.ts]
+  - [ ] `taskcade-t117.1.2`: [Rehab 2/2] Implementation & Test Verification: T117.1: Dynamic ELO Rating Calculator: Implement chess-style ELO scoring algorithm with  [Role: implementer] [Files: packages/engine/src/bandit/EloRatingCalculator.ts packages/engine/src/tests/elo_rating_calculator.test.ts]
+
+
+### Task taskcade-t116.3 Rehabilitation [2026-11-05T14:34:32.405Z]
+- **Parent Task**: T116.3: Contributor Attribution & Issue Resolution Bridge: Format PR descriptions and co (`taskcade-t116.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t116.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T116.3: Contributor Attribution & Issue Resolution Bridge: Format PR descriptions and co [Role: type_specialist] [Files: packages/engine/src/gitea/ContributorAttributionBridge.ts packages/engine/src/tests/contributor_attribution_bridge.test.ts]
+  - [ ] `taskcade-t116.3.2`: [Rehab 2/2] Implementation & Test Verification: T116.3: Contributor Attribution & Issue Resolution Bridge: Format PR descriptions and co [Role: implementer] [Files: packages/engine/src/gitea/ContributorAttributionBridge.ts packages/engine/src/tests/contributor_attribution_bridge.test.ts]
+
+
+### Task taskcade-t116.1 Rehabilitation [2026-11-05T13:28:03.579Z]
+- **Parent Task**: T116.1: Autonomous Reproduction Test Generator: Analyze ingested GitHub issue bodies to  (`taskcade-t116.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t116.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T116.1: Autonomous Reproduction Test Generator: Analyze ingested GitHub issue bodies to  [Role: type_specialist] [Files: packages/engine/src/inference/IssueReproductionGenerator.ts packages/engine/src/tests/issue_reproduction_generator.test.ts]
+  - [ ] `taskcade-t116.1.2`: [Rehab 2/2] Implementation & Test Verification: T116.1: Autonomous Reproduction Test Generator: Analyze ingested GitHub issue bodies to  [Role: implementer] [Files: packages/engine/src/inference/IssueReproductionGenerator.ts packages/engine/src/tests/issue_reproduction_generator.test.ts]
+
+
+### Task taskcade-t115.4 Rehabilitation [2026-11-05T12:55:56.835Z]
+- **Parent Task**: T115.4: Token Generation Velocity Strip & Thermal Gauge: Compact mobile-first status bar (`taskcade-t115.4`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t115.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T115.4: Token Generation Velocity Strip & Thermal Gauge: Compact mobile-first status bar [Role: type_specialist] [Files: packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.ts packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.html packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.css packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.spec.ts]
+  - [x] `taskcade-t115.4.2`: [Rehab 2/2] Implementation & Test Verification: T115.4: Token Generation Velocity Strip & Thermal Gauge: Compact mobile-first status bar [Role: implementer] [Files: packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.ts packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.html packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.css packages/frontend/src/app/components/token-velocity-gauge/token-velocity-gauge.component.spec.ts]
+
+
+### Task taskcade-t115.3 Rehabilitation [2026-11-05T12:02:14.827Z]
+- **Parent Task**: T115.3: Interactive AST Visualizer Component: Standalone Angular 20 component rendering  (`taskcade-t115.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t115.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T115.3: Interactive AST Visualizer Component: Standalone Angular 20 component rendering  [Role: type_specialist] [Files: packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.ts packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.html packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.css packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.spec.ts]
+  - [x] `taskcade-t115.3.2`: [Rehab 2/2] Implementation & Test Verification: T115.3: Interactive AST Visualizer Component: Standalone Angular 20 component rendering  [Role: implementer] [Files: packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.ts packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.html packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.css packages/frontend/src/app/components/ast-visualizer/ast-visualizer.component.spec.ts]
+
+
+### Task taskcade-t115.2 Rehabilitation [2026-11-05T11:37:52.097Z]
+- **Parent Task**: T115.2: Live Generation Heatmap & Thermal Velocity Buffer: High-frequency ring buffer co (`taskcade-t115.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t115.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T115.2: Live Generation Heatmap & Thermal Velocity Buffer: High-frequency ring buffer co [Role: type_specialist] [Files: packages/engine/src/telemetry/StreamingTelemetryBuffer.ts packages/engine/src/tests/streaming_telemetry_buffer.test.ts]
+  - [ ] `taskcade-t115.2.2`: [Rehab 2/2] Implementation & Test Verification: T115.2: Live Generation Heatmap & Thermal Velocity Buffer: High-frequency ring buffer co [Role: implementer] [Files: packages/engine/src/telemetry/StreamingTelemetryBuffer.ts packages/engine/src/tests/streaming_telemetry_buffer.test.ts]
+
+
+### Task taskcade-t114.3 Rehabilitation [2026-11-05T08:31:07.536Z]
+- **Parent Task**: T114.3: Automated Worktree Rebase Worker: Wire automated background rebase worker into ` (`taskcade-t114.3`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t114.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T114.3: Automated Worktree Rebase Worker: Wire automated background rebase worker into ` [Role: type_specialist] [Files: packages/engine/src/git/AutoRebaseWorker.ts packages/engine/src/daemon/CacophonyDaemon.ts packages/engine/src/tests/auto_rebase_worker.test.ts]
+  - [ ] `taskcade-t114.3.2`: [Rehab 2/2] Implementation & Test Verification: T114.3: Automated Worktree Rebase Worker: Wire automated background rebase worker into ` [Role: implementer] [Files: packages/engine/src/git/AutoRebaseWorker.ts packages/engine/src/daemon/CacophonyDaemon.ts packages/engine/src/tests/auto_rebase_worker.test.ts]
+
+
+### Task taskcade-t114.2 Rehabilitation [2026-11-05T07:17:16.681Z]
+- **Parent Task**: T114.2: Three-Way AST Method Rebase Engine: Implement AST-level three-way merge resoluti (`taskcade-t114.2`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t114.2.1`: [Rehab 1/2] Scaffold & Type Contracts: T114.2: Three-Way AST Method Rebase Engine: Implement AST-level three-way merge resoluti [Role: type_specialist] [Files: packages/engine/src/git/AstThreeWayRebaser.ts packages/engine/src/tests/ast_three_way_rebaser.test.ts]
+  - [ ] `taskcade-t114.2.2`: [Rehab 2/2] Implementation & Test Verification: T114.2: Three-Way AST Method Rebase Engine: Implement AST-level three-way merge resoluti [Role: implementer] [Files: packages/engine/src/git/AstThreeWayRebaser.ts packages/engine/src/tests/ast_three_way_rebaser.test.ts]
+
+
+### Task taskcade-t114.1 Rehabilitation [2026-11-05T06:29:36.355Z]
+- **Parent Task**: T114.1: Semantic Conflict Classifier & AST Boundary Analyzer: Parse git conflict markers (`taskcade-t114.1`)
+- **Failure Count**: 3
+- **Failure Reason**: Stage failed verification
+- **Decomposed Subtasks**:
+  - [x] `taskcade-t114.1.1`: [Rehab 1/2] Scaffold & Type Contracts: T114.1: Semantic Conflict Classifier & AST Boundary Analyzer: Parse git conflict markers [Role: type_specialist] [Files: packages/engine/src/git/SemanticConflictClassifier.ts packages/engine/src/tests/semantic_conflict_classifier.test.ts]
+  - [ ] `taskcade-t114.1.2`: [Rehab 2/2] Implementation & Test Verification: T114.1: Semantic Conflict Classifier & AST Boundary Analyzer: Parse git conflict markers [Role: implementer] [Files: packages/engine/src/git/SemanticConflictClassifier.ts packages/engine/src/tests/semantic_conflict_classifier.test.ts]
+
+
 ### Task taskcade-t118.4 Rehabilitation [2026-11-02T17:42:06.708Z]
 - **Parent Task**: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me (`taskcade-t118.4`)
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t118.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me [Role: type_specialist] [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts]
-  - [ ] `taskcade-t118.4.2`: [Rehab 2/2] Implementation & Test Verification: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me [Role: implementer] [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts]
+  - [x] `taskcade-t118.4.1`: [Rehab 1/2] Scaffold & Type Contracts: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me [Role: type_specialist] [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts]
+  - [x] `taskcade-t118.4.2`: [Rehab 2/2] Implementation & Test Verification: T118.4: Thermal & Memory Safety Dashboard Card: Mobile-first card component rendering me [Role: implementer] [Files: packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.ts packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.html packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.css packages/frontend/src/app/components/shared/memory-headroom-card/memory-headroom-card.component.spec.ts]
 
 
 ### Task taskcade-t117.3 Rehabilitation [2026-11-02T17:19:17.487Z]
@@ -626,7 +806,7 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 - **Failure Count**: 3
 - **Failure Reason**: Stage failed verification
 - **Decomposed Subtasks**:
-  - [ ] `taskcade-t117.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: type_specialist] [Files: packages/engine/src/bandit/BanditRoleGovernor.ts packages/engine/src/bandit/BanditTaskScheduler.ts packages/engine/src/tests/bandit_role_governor.test.ts]
+  - [x] `taskcade-t117.3.1`: [Rehab 1/2] Scaffold & Type Contracts: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: type_specialist] [Files: packages/engine/src/bandit/BanditRoleGovernor.ts packages/engine/src/bandit/BanditTaskScheduler.ts packages/engine/src/tests/bandit_role_governor.test.ts]
   - [ ] `taskcade-t117.3.2`: [Rehab 2/2] Implementation & Test Verification: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: implementer] [Files: packages/engine/src/bandit/BanditRoleGovernor.ts packages/engine/src/bandit/BanditTaskScheduler.ts packages/engine/src/tests/bandit_role_governor.test.ts]
 
 
