@@ -21,7 +21,7 @@ export class LoginModalComponent {
 
   public readonly isOpen = signal(false);
   public readonly activeTab = signal<'credentials' | 'oauth'>('credentials');
-  public readonly username = signal('NeXeN');
+  public readonly username = signal('');
   public readonly password = signal('');
   public readonly isLoading = signal(false);
   public readonly errorMessage = signal<string | null>(null);
@@ -46,6 +46,7 @@ export class LoginModalComponent {
 
   public close(): void {
     this.isOpen.set(false);
+    this.username.set('');
     this.password.set('');
     this.errorMessage.set(null);
     this.isLoading.set(false);

@@ -47,7 +47,7 @@ export class PrReconciliationWorker {
       options.owner ||
       process.env.GITEA_OWNER ||
       process.env.GITEA_ADMIN_USER ||
-      "NeXeN";
+      "admin";
     this.repo = options.repo || process.env.GITEA_REPO || "cacophony";
     this.autoMergeClean = options.autoMergeClean ?? true;
     this.intervalMs = options.intervalMs ?? 60_000;

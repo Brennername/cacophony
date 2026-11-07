@@ -389,7 +389,7 @@ export class AuthService {
         jwtSecret: process.env["JWT_SECRET"] || process.env["VAULT_MASTER_KEY"] || "cacophony-jwt-session-secret",
       });
       const session = await giteaProvider.handleCallback(code);
-      const adminUser = process.env["ADMIN_USERNAME"] || process.env["FIRST_USER"] || process.env["GITEA_ADMIN_USER"] || "NeXeN";
+      const adminUser = process.env["ADMIN_USERNAME"] || process.env["FIRST_USER"] || process.env["GITEA_ADMIN_USER"] || "admin";
       const isAdmin = session.user.username.toLowerCase() === adminUser.toLowerCase();
       const user: SsoUserProfile = {
         id: `gitea-${session.user.id}`,
@@ -422,7 +422,7 @@ export class AuthService {
       };
       const ghProvider = new GitHubOAuthProvider(ghConfig);
       const { user: ghUser } = await ghProvider.exchangeCode(code);
-      const adminUser = process.env["ADMIN_USERNAME"] || process.env["FIRST_USER"] || "NeXeN";
+      const adminUser = process.env["ADMIN_USERNAME"] || process.env["FIRST_USER"] || "admin";
       const isAdmin = ghUser.username.toLowerCase() === adminUser.toLowerCase() || ghUser.username.toLowerCase() === "brennername";
       const user: SsoUserProfile = {
         ...ghUser,

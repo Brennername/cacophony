@@ -60,13 +60,23 @@ describe('LoginModalComponent', () => {
 
   it('should close and reset modal state', () => {
     component.open();
+    component.username.set('admin');
+    component.password.set('password');
     component.close();
     expect(component.isOpen()).toBe(false);
+    expect(component.username()).toBe('');
     expect(component.password()).toBe('');
   });
 
-  it('should reject submission when password is empty', async () => {
+  it('should reject submission when username or password is empty', async () => {
     component.open();
+    component.username.set('');
+    component.password.set('valid-password');
+    await component.submitPasswordLogin();
+    expect(component.errorMessage()).toBe('Username and password are required.');
+    expect(mockAuthService.loginWithPassword).not.toHaveBeenCalled();
+
+    component.username.set('admin');
     component.password.set('');
     await component.submitPasswordLogin();
     expect(component.errorMessage()).toBe('Username and password are required.');
@@ -75,12 +85,12 @@ describe('LoginModalComponent', () => {
 
   it('should authenticate successfully with valid credentials and navigate to dashboard', async () => {
     component.open();
-    component.username.set('NeXeN');
+    component.username.set('admin');
     component.password.set('valid-password');
 
     await component.submitPasswordLogin();
 
-    expect(mockAuthService.loginWithPassword).toHaveBeenCalledWith('NeXeN', 'valid-password');
+    expect(mockAuthService.loginWithPassword).toHaveBeenCalledWith('admin', 'valid-password');
     expect(component.isOpen()).toBe(false);
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
   });
@@ -92,7 +102,7 @@ describe('LoginModalComponent', () => {
     });
 
     component.open();
-    component.username.set('NeXeN');
+    component.username.set('admin');
     component.password.set('wrong-password');
 
     await component.submitPasswordLogin();

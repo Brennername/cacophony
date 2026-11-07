@@ -36,7 +36,7 @@ export class FirstRunBootstrapService {
       config?.adminUsername ||
       process.env.ADMIN_USERNAME ||
       process.env.FIRST_USER ||
-      "NeXeN";
+      "admin";
     this.adminPassword =
       config?.adminPassword ||
       process.env.ADMIN_PASSWORD ||

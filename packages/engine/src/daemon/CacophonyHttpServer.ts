@@ -951,9 +951,9 @@ export class CacophonyHttpServer {
           JSON.stringify({
             authenticated: true,
             user: {
-              id: "admin-nexen",
-              username: process.env["ADMIN_USERNAME"] || "NeXeN",
-              email: process.env["ADMIN_EMAIL"] || "nexen@cacophony.local",
+              id: "admin-local",
+              username: process.env["ADMIN_USERNAME"] || "admin",
+              email: process.env["ADMIN_EMAIL"] || "admin@cacophony.local",
               role: "ADMIN",
               roles: ["ADMIN", "OPERATOR"],
               provider: "local",

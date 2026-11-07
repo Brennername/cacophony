@@ -61,7 +61,7 @@ export class HitlIssueIngestionService {
 
     const configuredInternals = options?.internalAccounts || [
       process.env.GIT_REPO_OWNER || "Cacophony",
-      process.env.ADMIN_USERNAME || "NeXeN",
+      process.env.ADMIN_USERNAME || "admin",
       "cacophony-bot",
       "dependabot[bot]",
     ];
