@@ -211,12 +211,14 @@ export class StochasticHyperparameterOptimizer {
       hooks: [
         {
           hook: "post_generation",
-          rules: genome.ruleOrdering
-            .filter((r) => genome.ruleEnablement[r] !== false)
-            .map((r) => ({
-              ruleId: r,
-              severity: genome.ruleSeverities[r] || "silent_repair",
-            })),
+          rules: genome.ruleEnablement
+            ? Object.keys(genome.ruleEnablement)
+                .filter((r) => genome.ruleEnablement[r])
+                .map((r) => ({
+                  ruleId: r,
+                  severity: genome.ruleSeverities[r] || "silent_repair",
+                }))
+            : [],
         },
       ],
     };
