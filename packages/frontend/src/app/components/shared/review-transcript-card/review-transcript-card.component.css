@@ -1,0 +1,196 @@
+.transcript-card {
+  background: var(--bg-surface, #161d2f);
+  border: 1px solid var(--border-subtle, #242f4c);
+  border-radius: var(--radius-md, 10px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.transcript-card[data-verdict="COMPLIANT"] {
+  border-left: 4px solid var(--status-nominal, #10b981);
+}
+
+.transcript-card[data-verdict="NON_COMPLIANT"] {
+  border-left: 4px solid var(--status-danger, #ef4444);
+}
+
+.transcript-card[data-verdict="ADVISORY_QUESTION"] {
+  border-left: 4px solid var(--status-warm, #f59e0b);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted, #5e7399);
+}
+
+.model-name {
+  margin: 0;
+  font-size: 1rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary, #f0f4fc);
+}
+
+.badge-cluster {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.verdict-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full, 9999px);
+  text-transform: uppercase;
+  border: 1px solid var(--border-subtle, #242f4c);
+}
+
+.verdict-badge[data-verdict="COMPLIANT"] {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--status-nominal, #10b981);
+  color: var(--status-nominal, #10b981);
+}
+
+.verdict-badge[data-verdict="NON_COMPLIANT"] {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--status-danger, #ef4444);
+  color: var(--status-danger, #ef4444);
+}
+
+.verdict-badge[data-verdict="ADVISORY_QUESTION"] {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--status-warm, #f59e0b);
+  color: var(--status-warm, #f59e0b);
+}
+
+.paused-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid var(--color-accent, #06b6d4);
+  color: var(--color-accent, #06b6d4);
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary, #9ab0d3);
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.notes-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-primary, #f0f4fc);
+  line-height: 1.5;
+  background: var(--bg-primary, #0a0d14);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-subtle, #242f4c);
+}
+
+.items-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.audit-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audit-item {
+  background: var(--bg-primary, #0a0d14);
+  border: 1px solid var(--border-subtle, #242f4c);
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.audit-item.satisfied {
+  border-left: 3px solid var(--status-nominal, #10b981);
+}
+
+.audit-item.failed {
+  border-left: 3px solid var(--status-danger, #ef4444);
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.status-indicator {
+  font-weight: 700;
+  font-size: 0.7rem;
+  color: var(--text-secondary, #9ab0d3);
+}
+
+.item-title {
+  color: var(--text-primary, #f0f4fc);
+  font-weight: 500;
+  flex: 1;
+}
+
+.severity-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--bg-surface-elevated, #1e273f);
+  color: var(--text-muted, #5e7399);
+}
+
+.severity-tag[data-severity="blocker"] {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--status-danger, #ef4444);
+}
+
+.item-feedback {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #9ab0d3);
+  padding-left: 20px;
+}
+
+.cooldown-banner {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px dashed var(--status-warm, #f59e0b);
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: var(--status-warm, #f59e0b);
+  line-height: 1.4;
+}

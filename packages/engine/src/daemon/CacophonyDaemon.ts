@@ -14,7 +14,10 @@ import {
   PrDiscussionRepository,
   HitlTicketRepository,
   ModelRosterRepository,
+  DocCommentCandidateRepository,
+  TaskAdvisoryRepository,
 } from "@cacophony/db";
+import { DocCommentPruningWorker } from "./DocCommentPruningWorker.js";
 import { HitlIssueIngestionService } from "../gitea/HitlIssueIngestionService.js";
 import type { TaskRecord, EnqueueTaskDto } from "@cacophony/shared-types";
 import { TaskScheduler } from "../scheduler/TaskScheduler.js";
@@ -69,6 +72,9 @@ export class CacophonyDaemon {
   private modelProfileRepo!: ModelProfileRepository;
   private prDiscussionRepo!: PrDiscussionRepository;
   private hitlTicketRepo!: HitlTicketRepository;
+  private docCommentCandidateRepo!: DocCommentCandidateRepository;
+  private taskAdvisoryRepo!: TaskAdvisoryRepository;
+  private docCommentPruningWorker?: DocCommentPruningWorker | undefined;
   private hitlIngestionService?: HitlIssueIngestionService | undefined;
   private rosterRepo!: ModelRosterRepository;
   private autoDiscoveryService?:
@@ -106,6 +112,7 @@ export class CacophonyDaemon {
     | undefined;
   private fleetHealthMonitor?:
     import("../fleet/FleetHealthMonitor.js").FleetHealthMonitor | undefined;
+  private primaryInferenceProvider?: any;
   private workerPipeline?:
     | import("../scheduler/AutonomousWorkerPipeline.js").AutonomousWorkerPipeline
     | undefined;
@@ -189,6 +196,10 @@ export class CacophonyDaemon {
     this.prDiscussionRepo = new PrDiscussionRepository(this.driver);
     this.hitlTicketRepo = new HitlTicketRepository(this.driver);
     this.hitlIngestionService = new HitlIssueIngestionService(this.hitlTicketRepo);
+    this.docCommentCandidateRepo = new DocCommentCandidateRepository(this.driver);
+    this.taskAdvisoryRepo = new TaskAdvisoryRepository(this.driver);
+    this.docCommentPruningWorker = new DocCommentPruningWorker(this.docCommentCandidateRepo);
+    this.docCommentPruningWorker.start();
     new ModelRegistryRepository(this.driver);
     this.rosterRepo = new ModelRosterRepository(this.driver);
 
@@ -368,6 +379,7 @@ export class CacophonyDaemon {
       ? new MockInferenceStreamProvider(11.0, 5.5)
       : new OllamaProvider({ profileRepository: this.modelProfileRepo });
 
+    this.primaryInferenceProvider = primaryInferenceProvider;
     this.scheduler.setOllamaProvider(primaryInferenceProvider as any);
 
     this.benchmarkRunner = new ModelBenchmarkRunner(
@@ -1022,6 +1034,10 @@ export class CacophonyDaemon {
       this.gitHubSyncService.stop();
       this.gitHubSyncService = undefined;
     }
+    if (this.docCommentPruningWorker) {
+      this.docCommentPruningWorker.stop();
+      this.docCommentPruningWorker = undefined;
+    }
     if (this.scheduler) {
       this.scheduler.stop();
     }
@@ -1094,6 +1110,18 @@ export class CacophonyDaemon {
     return this.hitlTicketRepo;
   }
 
+  public getDocCommentCandidateRepository(): DocCommentCandidateRepository {
+    return this.docCommentCandidateRepo;
+  }
+
+  public getTaskAdvisoryRepository(): TaskAdvisoryRepository {
+    return this.taskAdvisoryRepo;
+  }
+
+  public getDocCommentPruningWorker(): DocCommentPruningWorker | undefined {
+    return this.docCommentPruningWorker;
+  }
+
   public getModelRosterRepository(): ModelRosterRepository {
     return this.rosterRepo;
   }
@@ -1134,6 +1162,10 @@ export class CacophonyDaemon {
 
   public getHttpServer(): CacophonyHttpServer | undefined {
     return this.httpServer;
+  }
+
+  public getPrimaryInferenceProvider(): any {
+    return this.primaryInferenceProvider;
   }
 
   public getVramPrefetchCoordinator():

@@ -4,6 +4,8 @@ import type {
   PrReviewRecord,
   ReviewVerdict,
   ReviewComment,
+  TaskAdvisoryGuidance,
+  ComplianceReviewResult,
 } from "@cacophony/shared-types";
 
 export interface ReviewLoopOptions {
@@ -13,6 +15,8 @@ export interface ReviewLoopOptions {
   readonly taskId: string;
   readonly reviewerModel: string;
   readonly autoMergeOnApproval?: boolean;
+  readonly advisoryGuidance?: readonly TaskAdvisoryGuidance[] | undefined;
+  readonly advisoryPaused?: boolean | undefined;
 }
 
 export interface ReviewLoopResult {
@@ -20,6 +24,8 @@ export interface ReviewLoopResult {
   readonly record: PrReviewRecord;
   readonly merged: boolean;
   readonly remediationRequired: boolean;
+  readonly complianceResult?: ComplianceReviewResult | undefined;
+  readonly advisoryPaused?: boolean | undefined;
 }
 
 export class ReviewVerdictParser {
@@ -84,7 +90,7 @@ export class AutomatedPrReviewLoop {
       options.prNumber,
     );
 
-    const reviewPrompt = this.buildPrompt(diff);
+    const reviewPrompt = this.buildPrompt(diff, options.advisoryGuidance);
     const response = await this.inferenceProvider.generate({
       model: options.reviewerModel,
       messages: [
@@ -125,7 +131,11 @@ export class AutomatedPrReviewLoop {
 
     let merged = false;
 
-    if (parsed.verdict === "APPROVE" && (options.autoMergeOnApproval ?? true)) {
+    if (
+      parsed.verdict === "APPROVE" &&
+      (options.autoMergeOnApproval ?? true) &&
+      !options.advisoryPaused
+    ) {
       try {
         await this.giteaClient.mergePullRequest(
           options.owner,
@@ -159,13 +169,32 @@ export class AutomatedPrReviewLoop {
       record,
       merged,
       remediationRequired: parsed.verdict === "REQUEST_CHANGES",
+      advisoryPaused: options.advisoryPaused,
     };
   }
 
-  private buildPrompt(diff: string): string {
-    return [
+  private buildPrompt(
+    diff: string,
+    advisoryGuidance?: readonly TaskAdvisoryGuidance[] | undefined,
+  ): string {
+    const sections = [
       "Analyze the following git diff and provide a rigorous code review.",
       "Check for SOLID principles, architectural consistency, type safety, and potential regressions.",
+    ];
+
+    if (advisoryGuidance && advisoryGuidance.length > 0) {
+      sections.push(
+        "",
+        "--- OPERATOR ADVISORY GUIDELINES ---",
+        "Evaluate whether the proposed changes adhere to operator instructions:",
+        ...advisoryGuidance.map(
+          (g, idx) => `[Item ${idx + 1}] (${g.advisoryType}): ${g.commentText}`,
+        ),
+      );
+    }
+
+    sections.push(
+      "",
       "Respond strictly with a JSON object in this format:",
       "{",
       '  "verdict": "APPROVE" | "REQUEST_CHANGES" | "REJECT",',
@@ -177,7 +206,9 @@ export class AutomatedPrReviewLoop {
       "",
       "--- DIFF ---",
       diff.slice(0, 30000),
-    ].join("\n");
+    );
+
+    return sections.join("\n");
   }
 
   private parseReviewResponse(llmText: string): {

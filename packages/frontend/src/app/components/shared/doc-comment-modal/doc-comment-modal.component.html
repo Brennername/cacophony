@@ -1,0 +1,130 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="close()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="header-titles">
+          <span class="badge">AST Function Documentation</span>
+          <h2 class="title">{{ functionIdentifier() }}()</h2>
+          <span class="file-path">{{ filePath() }}</span>
+        </div>
+        <button type="button" class="close-btn" (click)="close()" aria-label="Close modal">
+          &times;
+        </button>
+      </div>
+
+      <!-- Function Signature Display -->
+      @if (functionSignature()) {
+        <div class="signature-box">
+          <code>{{ functionSignature() }}</code>
+        </div>
+      }
+
+      <!-- Prompt Guidance & Reroll Box -->
+      <div class="guidance-section">
+        <label for="guidance-input" class="label">Reroll Guidance & Constraints</label>
+        <div class="guidance-row">
+          <input
+            id="guidance-input"
+            type="text"
+            class="guidance-input"
+            placeholder="e.g. little less fluff, explain the decoupling and why it is necessary"
+            [ngModel]="userGuidance()"
+            (ngModelChange)="userGuidance.set($event)"
+            (keyup.enter)="onReroll()"
+            [disabled]="docService.isGenerating()"
+          />
+          <button
+            type="button"
+            class="reroll-btn"
+            (click)="onReroll()"
+            [disabled]="docService.isGenerating()"
+          >
+            @if (docService.isGenerating()) {
+              Synthesizing...
+            } @else {
+              Reroll
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Candidate Draft Carousel / List -->
+      <div class="candidates-section">
+        <div class="section-header">
+          <span class="label">Candidate Drafts ({{ docService.candidates().length }})</span>
+          @if (docService.selectedCandidate(); as selected) {
+            <span class="status-pill" [attr.data-status]="selected.status">
+              {{ selected.status }}
+            </span>
+          }
+        </div>
+
+        @if (docService.candidates().length === 0 && !docService.isGenerating()) {
+          <div class="empty-state">
+            <p>No comment drafts generated yet. Click "Reroll" to synthesize a JSDoc block using the local model.</p>
+          </div>
+        } @else {
+          <!-- Candidate Selection Pills -->
+          <div class="candidate-pills">
+            @for (candidate of docService.candidates(); track candidate.id; let idx = $index) {
+              <button
+                type="button"
+                class="pill-btn"
+                [class.active]="docService.selectedCandidate()?.id === candidate.id"
+                (click)="onSelectCandidate(candidate)"
+              >
+                Variant #{{ docService.candidates().length - idx }}
+                <span class="pill-tag">{{ candidate.status }}</span>
+              </button>
+            }
+          </div>
+
+          <!-- Active Preview -->
+          @if (docService.selectedCandidate(); as active) {
+            <div class="preview-card">
+              <div class="preview-meta">
+                <span class="model-tag">Model: {{ active.modelId }}</span>
+                @if (active.userGuidance) {
+                  <span class="guidance-tag">Note: "{{ active.userGuidance }}"</span>
+                }
+              </div>
+              <pre class="code-preview"><code>{{ active.candidateText }}</code></pre>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Status or Error Message -->
+      @if (docService.error()) {
+        <div class="alert danger">
+          {{ docService.error() }}
+        </div>
+      }
+      @if (statusMessage()) {
+        <div class="alert success">
+          {{ statusMessage() }}
+        </div>
+      }
+
+      <!-- Modal Actions -->
+      <div class="modal-footer">
+        <button type="button" class="btn secondary" (click)="close()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn primary"
+          (click)="onAcceptAndInject()"
+          [disabled]="!docService.selectedCandidate() || docService.isInjecting()"
+        >
+          @if (docService.isInjecting()) {
+            Injecting into AST...
+          } @else {
+            Accept &amp; Inject
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

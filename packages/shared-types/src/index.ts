@@ -24,4 +24,6 @@ export * from "./diff.js";
 export * from "./diagnostics.js";
 export * from "./analytics.js";
 export * from "./hitl.js";
+export * from "./docComment.js";
+export * from "./advisory.js";
 

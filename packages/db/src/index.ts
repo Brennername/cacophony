@@ -27,6 +27,8 @@ export * from "./repositories/PrReviewRepository.js";
 export * from "./repositories/PrDiscussionRepository.js";
 export * from "./repositories/ReviewReportRepository.js";
 export * from "./repositories/HitlTicketRepository.js";
+export * from "./repositories/DocCommentCandidateRepository.js";
+export * from "./repositories/TaskAdvisoryRepository.js";
 export * from "./services/DatabaseMaintenanceService.js";
 export * from "./services/DatabaseBackupService.js";
 export * from "./services/LogReductionService.js";

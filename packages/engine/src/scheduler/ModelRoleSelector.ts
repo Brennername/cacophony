@@ -176,7 +176,7 @@ export class ModelRoleSelector {
   }
 
   public isMicroTaskRole(role: AgentRole): boolean {
-    return role === "chore_runner" || role === "doc_writer";
+    return role === "chore_runner" || role === "doc_writer" || role === "function_commenter";
   }
 
   public getPreferredModelsForRole(role: AgentRole): readonly string[] {
@@ -184,6 +184,7 @@ export class ModelRoleSelector {
       case "chore_runner":
         return this.choreModels;
       case "doc_writer":
+      case "function_commenter":
         return this.docWriterModels;
       case "architect":
       case "planner":

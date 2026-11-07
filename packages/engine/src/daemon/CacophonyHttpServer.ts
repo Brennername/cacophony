@@ -24,6 +24,9 @@ import {
 import { FrontierVaultService } from "../vault/FrontierVaultService.js";
 import { FrontierUsageTracker } from "../vault/FrontierUsageTracker.js";
 import { VerifiableModelCatalog } from "../hardware/VerifiableModelCatalog.js";
+import { FunctionAstLocator } from "../ast/FunctionAstLocator.js";
+import { DocCommentInjector } from "../ast/DocCommentInjector.js";
+import { FunctionDocSynthesizer } from "../inference/FunctionDocSynthesizer.js";
 
 
 
@@ -1963,6 +1966,330 @@ export class CacophonyHttpServer {
           res.end(JSON.stringify({ error: err.message || "Failed to post PR comment" }));
         }
       });
+      return;
+    }
+
+    // 4a3d. REST API: GET /api/tasks/:id/comments - Retrieve Task Queue Advisory Guidance (T-S13.4)
+    const taskCommentsMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/comments$/,
+    );
+    if (taskCommentsMatch && req.method === "GET") {
+      const taskId = taskCommentsMatch[1]!;
+      try {
+        const advisoryRepo = this.daemon.getTaskAdvisoryRepository();
+        const guidance = await advisoryRepo.getGuidanceForTask(taskId);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(guidance));
+      } catch (err: any) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: err.message || "Failed to retrieve task comments",
+          }),
+        );
+      }
+      return;
+    }
+
+    // 4a3e. REST API: POST /api/tasks/:id/comments - Add Task Queue Advisory Guidance (T-S13.4)
+    if (taskCommentsMatch && req.method === "POST") {
+      const taskId = taskCommentsMatch[1]!;
+      let bodyData = "";
+      req.on("data", (chunk) => {
+        bodyData += chunk;
+      });
+
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(bodyData || "{}");
+          if (!payload.commentText) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({ error: "Missing required 'commentText' field" }),
+            );
+            return;
+          }
+
+          const advisoryRepo = this.daemon.getTaskAdvisoryRepository();
+          const guidance = await advisoryRepo.createGuidance({
+            taskId,
+            author: payload.author || "Operator",
+            commentText: payload.commentText,
+            advisoryType: payload.advisoryType || "INSTRUCTION",
+            requiresComplianceAudit:
+              payload.requiresComplianceAudit !== undefined
+                ? Boolean(payload.requiresComplianceAudit)
+                : true,
+          });
+
+          res.writeHead(201, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, guidance }));
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: err.message || "Failed to record task advisory comment",
+            }),
+          );
+        }
+      });
+      return;
+    }
+
+    // 4a3f. REST API: DELETE /api/tasks/:id/comments/:commentId - Remove Task Advisory Guidance (T-S13.4)
+    const taskCommentDeleteMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/comments\/([^/]+)$/,
+    );
+    if (taskCommentDeleteMatch && req.method === "DELETE") {
+      const commentId = taskCommentDeleteMatch[2]!;
+      try {
+        const advisoryRepo = this.daemon.getTaskAdvisoryRepository();
+        const deleted = await advisoryRepo.deleteGuidance(commentId);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: deleted }));
+      } catch (err: any) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: err.message || "Failed to delete task guidance",
+          }),
+        );
+      }
+      return;
+    }
+
+    // 4a3g. REST API: GET /api/doc-comments/candidates - Retrieve Candidates (T-S13.4)
+    if (
+      url.pathname === "/api/doc-comments/candidates" &&
+      req.method === "GET"
+    ) {
+      const filePath = url.searchParams.get("filePath");
+      const functionIdentifier = url.searchParams.get("functionIdentifier");
+      if (!filePath || !functionIdentifier) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error:
+              "Query parameters 'filePath' and 'functionIdentifier' are required",
+          }),
+        );
+        return;
+      }
+
+      try {
+        const candidateRepo = this.daemon.getDocCommentCandidateRepository();
+        const candidates = await candidateRepo.getCandidatesForFunction(
+          filePath,
+          functionIdentifier,
+        );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(candidates));
+      } catch (err: any) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: err.message || "Failed to retrieve doc comment candidates",
+          }),
+        );
+      }
+      return;
+    }
+
+    // 4a3h. REST API: POST /api/doc-comments/synthesize - Synthesize / Reroll JSDoc Candidate (T-S13.2 / T-S13.4)
+    if (
+      url.pathname === "/api/doc-comments/synthesize" &&
+      req.method === "POST"
+    ) {
+      let bodyData = "";
+      req.on("data", (chunk) => {
+        bodyData += chunk;
+      });
+
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(bodyData || "{}");
+          const {
+            filePath,
+            functionIdentifier,
+            userGuidance,
+            previousCandidate,
+          } = payload;
+          if (!filePath || !functionIdentifier) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: "Missing required 'filePath' or 'functionIdentifier'",
+              }),
+            );
+            return;
+          }
+
+          let code = payload.codeContent as string | undefined;
+          if (!code) {
+            const resolvedPath = path.isAbsolute(filePath)
+              ? filePath
+              : path.resolve(process.cwd(), filePath);
+            code = await fs.readFile(resolvedPath, "utf-8");
+          }
+
+          const locator = new FunctionAstLocator();
+          const boundary = locator.findFunctionByName(
+            code,
+            functionIdentifier,
+            filePath,
+          );
+          if (!boundary) {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: `Function '${functionIdentifier}' not found in ${filePath}`,
+              }),
+            );
+            return;
+          }
+
+          const provider = this.daemon.getPrimaryInferenceProvider();
+          const synthesizer = new FunctionDocSynthesizer(provider);
+          const modelId =
+            payload.modelId ||
+            (provider?.["modelId"] ?? "qwen2.5-coder:7b-instruct-q4_K_M");
+
+          const candidate = await synthesizer.synthesizeDocComment({
+            filePath,
+            functionName: functionIdentifier,
+            sourceContent: code,
+            userGuidance,
+            previousDraft: previousCandidate,
+            preferredModel: modelId,
+          });
+
+          const candidateRepo =
+            this.daemon.getDocCommentCandidateRepository();
+          const persisted = await candidateRepo.createCandidate({
+            functionIdentifier,
+            filePath,
+            candidateText: candidate.candidateText,
+            userGuidance,
+            modelId: candidate.modelId,
+          });
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              success: true,
+              candidate: persisted,
+            }),
+          );
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: err.message || "Failed to synthesize doc comment",
+            }),
+          );
+        }
+      });
+      return;
+    }
+
+    // 4a3i. REST API: POST /api/doc-comments/inject - Non-destructive JSDoc injection (T-S13.1 / T-S13.4)
+    if (url.pathname === "/api/doc-comments/inject" && req.method === "POST") {
+      let bodyData = "";
+      req.on("data", (chunk) => {
+        bodyData += chunk;
+      });
+
+      req.on("end", async () => {
+        try {
+          const payload = JSON.parse(bodyData || "{}");
+          const { filePath, functionIdentifier, commentText, candidateId } =
+            payload;
+          if (!filePath || !functionIdentifier || !commentText) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error:
+                  "Missing required fields: 'filePath', 'functionIdentifier', 'commentText'",
+              }),
+            );
+            return;
+          }
+
+          const resolvedPath = path.isAbsolute(filePath)
+            ? filePath
+            : path.resolve(process.cwd(), filePath);
+          const currentCode = await fs.readFile(resolvedPath, "utf-8");
+
+          const injector = new DocCommentInjector();
+          const result = injector.injectDocComment(
+            currentCode,
+            functionIdentifier,
+            commentText,
+            filePath,
+          );
+
+          if (!result.success) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({
+                error: result.error || "Injection validation failed",
+              }),
+            );
+            return;
+          }
+
+          await fs.writeFile(resolvedPath, result.modifiedContent, "utf-8");
+
+          if (candidateId) {
+            const candidateRepo =
+              this.daemon.getDocCommentCandidateRepository();
+            await candidateRepo.acceptCandidate(candidateId);
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              success: true,
+              injectedAtLine: result.injectedAtLine,
+            }),
+          );
+        } catch (err: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              error: err.message || "Failed to inject doc comment",
+            }),
+          );
+        }
+      });
+      return;
+    }
+
+    // 4a3j. REST API: POST /api/doc-comments/candidates/:id/accept - Accept Candidate (T-S13.3 / T-S13.4)
+    const candidateAcceptMatch = url.pathname.match(
+      /^\/api\/doc-comments\/candidates\/([^/]+)\/accept$/,
+    );
+    if (candidateAcceptMatch && req.method === "POST") {
+      const candidateId = candidateAcceptMatch[1]!;
+      try {
+        const candidateRepo = this.daemon.getDocCommentCandidateRepository();
+        const candidate = await candidateRepo.acceptCandidate(candidateId);
+        if (!candidate) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Candidate not found" }));
+          return;
+        }
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, candidate }));
+      } catch (err: any) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: err.message || "Failed to accept candidate",
+          }),
+        );
+      }
       return;
     }
 

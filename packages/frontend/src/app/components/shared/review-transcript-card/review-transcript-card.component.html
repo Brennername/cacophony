@@ -1,0 +1,57 @@
+<div class="transcript-card" [attr.data-verdict]="reviewResult().verdict">
+  <!-- Card Header -->
+  <div class="card-header">
+    <div class="header-main">
+      <span class="eyebrow">Reviewer Compliance Audit</span>
+      <h3 class="model-name">{{ reviewerModel() }}</h3>
+    </div>
+    <div class="badge-cluster">
+      <span class="verdict-badge" [attr.data-verdict]="reviewResult().verdict">
+        {{ reviewResult().verdict }}
+      </span>
+      @if (reviewResult().isPausedForAdvisory) {
+        <span class="paused-badge">Advisory Paused</span>
+      }
+    </div>
+  </div>
+
+  <!-- Review Reasoning & Summary Notes -->
+  <div class="notes-section">
+    <span class="section-label">Review Evaluation</span>
+    <p class="notes-text">{{ reviewResult().notes }}</p>
+  </div>
+
+  <!-- Advisory Items Compliance Checklist -->
+  @if (reviewResult().advisoryItems.length > 0) {
+    <div class="items-section">
+      <span class="section-label">Audited Guidance Items</span>
+      <div class="audit-items-list">
+        @for (item of reviewResult().advisoryItems; track item.title) {
+          <div class="audit-item" [class.satisfied]="item.satisfied" [class.failed]="!item.satisfied">
+            <div class="item-header">
+              <span class="status-indicator">
+                {{ item.satisfied ? 'PASSED' : 'FLAGGED' }}
+              </span>
+              <span class="item-title">{{ item.title }}</span>
+              @if (item.severity) {
+                <span class="severity-tag" [attr.data-severity]="item.severity">
+                  {{ item.severity }}
+                </span>
+              }
+            </div>
+            @if (item.feedback) {
+              <p class="item-feedback">{{ item.feedback }}</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Cooldown Timestamp Notice -->
+  @if (reviewResult().cooldownEndsAt; as cooldown) {
+    <div class="cooldown-banner">
+      Auto-merge cooldown active until: {{ cooldown | date:'shortTime' }}. Merge will proceed automatically if no operator comments are attached.
+    </div>
+  }
+</div>

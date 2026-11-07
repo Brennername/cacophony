@@ -1,0 +1,104 @@
+@if (isOpen()) {
+  <div class="drawer-backdrop" (click)="close()">
+    <div class="drawer-container" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="drawer-header">
+        <div class="header-titles">
+          <span class="badge">Operator Task Advisory</span>
+          <h2 class="title">{{ taskId() }}</h2>
+          @if (taskTitle()) {
+            <span class="task-title">{{ taskTitle() }}</span>
+          }
+        </div>
+        <button type="button" class="close-btn" (click)="close()" aria-label="Close drawer">
+          &times;
+        </button>
+      </div>
+
+      <!-- Advisory History List -->
+      <div class="drawer-body">
+        <div class="body-header">
+          <span class="section-label">Active Task Guidance ({{ advisoryService.comments().length }})</span>
+        </div>
+
+        @if (advisoryService.comments().length === 0) {
+          <div class="empty-state">
+            <p>No operator instructions attached to this task. Add guidance below to advise the implementation and activate compliance review auditing.</p>
+          </div>
+        } @else {
+          <div class="comments-list">
+            @for (item of advisoryService.comments(); track item.id) {
+              <div class="comment-card" [attr.data-type]="item.advisoryType">
+                <div class="comment-meta">
+                  <span class="type-pill">{{ item.advisoryType }}</span>
+                  <span class="author-tag">{{ item.author }}</span>
+                  <button
+                    type="button"
+                    class="del-btn"
+                    (click)="onDeleteComment(item.id)"
+                    aria-label="Delete instruction"
+                  >
+                    Delete
+                  </button>
+                </div>
+                <p class="comment-text">{{ item.commentText }}</p>
+                @if (item.requiresComplianceAudit) {
+                  <span class="audit-flag">Requires Reviewer Compliance Audit</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Add Guidance Section -->
+      <div class="drawer-footer">
+        <div class="input-form">
+          <label for="advisory-textarea" class="section-label">Attach New Operator Instruction</label>
+          <textarea
+            id="advisory-textarea"
+            class="advisory-input"
+            rows="3"
+            placeholder="e.g. Ensure decoupling between AST locator and injector, with zero emojis."
+            [ngModel]="commentText()"
+            (ngModelChange)="commentText.set($event)"
+          ></textarea>
+
+          <div class="form-controls">
+            <div class="type-selector">
+              <label class="control-label" for="type-select">Type:</label>
+              <select
+                id="type-select"
+                class="select-input"
+                [ngModel]="advisoryType()"
+                (ngModelChange)="advisoryType.set($event)"
+              >
+                <option value="INSTRUCTION">Instruction</option>
+                <option value="CONSTRAINT">Constraint</option>
+                <option value="RECOMMENDATION">Recommendation</option>
+              </select>
+            </div>
+
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="requiresAudit()"
+                (change)="requiresAudit.set($any($event.target).checked)"
+              />
+              Audit Compliance in PR Review
+            </label>
+          </div>
+
+          <button
+            type="button"
+            class="submit-btn"
+            (click)="onSubmitComment()"
+            [disabled]="!commentText().trim()"
+          >
+            Attach Guidance
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
