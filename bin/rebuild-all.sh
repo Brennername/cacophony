@@ -97,6 +97,10 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}\$"; then
     echo "Documentation synchronized to /app/docs/"
   fi
 
+  # Synchronize root package configuration and align working tree with git HEAD
+  docker cp "${REPO_ROOT}/package.json" "${CONTAINER_NAME}:/app/package.json" 2>/dev/null || true
+  docker exec "${CONTAINER_NAME}" git checkout HEAD -- . 2>/dev/null || true
+
   # Synchronize container git main branch to HEAD
   docker exec "${CONTAINER_NAME}" git branch -f main HEAD 2>/dev/null || true
 
