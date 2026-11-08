@@ -291,10 +291,23 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
           prependCode += "import { vi } from 'vitest';\nconst jest = vi;\n";
         } else {
           if (/from\s+['"]vitest['"]/.test(currentCode) && !/\bvi\b/.test(currentCode)) {
-            currentCode = currentCode.replace(
-              /import\s*\{([^}]+)\}\s*from\s*(['"]vitest['"])/,
-              (_m, inner, q) => `import { ${inner.trim()}, vi } from ${q}`,
-            );
+            const splitLines = currentCode.split("\n");
+            let repaired = false;
+            currentCode = splitLines
+              .map((l) => {
+                if (
+                  !repaired &&
+                  l.trim().startsWith("import") &&
+                  l.includes("vitest") &&
+                  l.includes("{") &&
+                  l.includes("}")
+                ) {
+                  repaired = true;
+                  return l.replace("}", ", vi }");
+                }
+                return l;
+              })
+              .join("\n");
           }
           if (!currentCode.includes("const jest =") && !currentCode.includes("var jest =")) {
             prependCode += "const jest = vi;\n";
@@ -458,10 +471,23 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         ) {
           prependCode += "import { expect } from 'vitest';\n";
         } else if (/from\s+['"]vitest['"]/.test(currentCode) && !/\bexpect\b/.test(currentCode)) {
-          currentCode = currentCode.replace(
-            /import\s*\{([^}]+)\}\s*from\s*(['"]vitest['"])/,
-            (_m, inner, q) => `import { ${inner.trim()}, expect } from ${q}`,
-          );
+          const splitLines = currentCode.split("\n");
+          let repaired = false;
+          currentCode = splitLines
+            .map((l) => {
+              if (
+                !repaired &&
+                l.trim().startsWith("import") &&
+                l.includes("vitest") &&
+                l.includes("{") &&
+                l.includes("}")
+              ) {
+                repaired = true;
+                return l.replace("}", ", expect }");
+              }
+              return l;
+            })
+            .join("\n");
         }
         repairsApplied.push("Injected Vitest 'expect' import");
       } else {
@@ -1418,15 +1444,24 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     // Pass 1: Consolidate multiple import lines referencing the exact same module
     const moduleImportIndices = new Map<string, number[]>();
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line) continue;
-      const match = line.match(/^\s*import\s+(?:\{[^}]*\}|[^{;]+)\s+from\s+['"]([^'"]+)['"]/);
-      if (match && match[1]) {
-        const mod = match[1];
-        if (!moduleImportIndices.has(mod)) {
-          moduleImportIndices.set(mod, []);
+      const line = lines[i]?.trim();
+      if (!line || !line.startsWith("import") || !line.includes("from")) continue;
+      const fromIdx = line.lastIndexOf("from");
+      const singleQuote = line.indexOf("'", fromIdx);
+      const doubleQuote = line.indexOf('"', fromIdx);
+      const quoteIdx = singleQuote !== -1 ? singleQuote : doubleQuote;
+      if (quoteIdx !== -1) {
+        const quoteChar = line[quoteIdx]!;
+        const secondQuote = line.indexOf(quoteChar, quoteIdx + 1);
+        if (secondQuote !== -1) {
+          const mod = line.slice(quoteIdx + 1, secondQuote).trim();
+          if (mod) {
+            if (!moduleImportIndices.has(mod)) {
+              moduleImportIndices.set(mod, []);
+            }
+            moduleImportIndices.get(mod)!.push(i);
+          }
         }
-        moduleImportIndices.get(mod)!.push(i);
       }
     }
 
