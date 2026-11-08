@@ -38,13 +38,17 @@ export class GitCheckpointManager {
   ): Promise<string> {
     const ref = `${CHECKPOINT_REF_PREFIX}/${taskId}-${stageName}`;
     try {
+      // Get the current commit hash
       const { stdout: commitHash } = await execAsync("git rev-parse HEAD", {
         cwd: this.repositoryRoot,
       });
       const hash = commitHash.trim();
+
+      // Create a new ref for the checkpoint
       await execAsync(`git update-ref ${ref} ${hash}`, {
         cwd: this.repositoryRoot,
       });
+
       return hash;
     } catch (err) {
       console.warn(
@@ -63,22 +67,37 @@ export class GitCheckpointManager {
       const pattern = taskId
         ? `${CHECKPOINT_REF_PREFIX}/${taskId}-*`
         : `${CHECKPOINT_REF_PREFIX}/*`;
+
+      // Get all refs matching the pattern and their metadata
       const { stdout } = await execAsync(
-        `git for-each-ref --format="%(refname) %(objectname) %(contents:subject)" ${pattern}`,
+        `git for-each-ref --format="%(refname:short) %(objecttype) %(objectname) %(committerdate:iso8601) %(subject)" ${pattern}`,
         { cwd: this.repositoryRoot },
       );
+
+      // Parse the output into CheckpointRecord objects
       const lines = stdout.trim().split("\n").filter(Boolean);
-      return lines.map((line, idx) => {
-        const [, hash = "", ...rest] = line.split(" ");
+      return lines.map(line => {
+        const [ref, type, hash, date, subject] = line.split(" ");
+        if (type !== "commit") return null;
+
+        const taskIdMatch = ref!.match(/\/([^/]+)-[^/]+$/);
+        const stageNameMatch = ref!.match(/\/[^/]+-([^/]+)$/);
+
         return {
-          id: `cp-${idx + 1}`,
+          id: hash,
           hash,
-          message: rest.join(" ") || "Shadow stage checkpoint",
-          createdAt: new Date().toISOString(),
-          filesChanged: 1,
+          message: subject || "",
+          createdAt: date,
+          filesChanged: 0, // Placeholder for actual file change count
+          taskId: taskIdMatch ? taskIdMatch[1] : undefined,
+          stageName: stageNameMatch ? stageNameMatch[1] : undefined,
         };
-      });
-    } catch {
+      }).filter(record => record !== null) as CheckpointRecord[];
+    } catch (err) {
+      console.warn(
+        `[GitCheckpointManager] Failed to list checkpoints (${taskId}):`,
+        err,
+      );
       return [];
     }
   }
@@ -87,9 +106,16 @@ export class GitCheckpointManager {
    * Reverts the working directory to a specific checkpoint ref or commit hash.
    */
   public async revertToCheckpoint(checkpointId: string): Promise<void> {
-    await execAsync(`git checkout ${checkpointId} -- .`, {
-      cwd: this.repositoryRoot,
-    });
+    try {
+      await execAsync(`git checkout ${checkpointId} -- .`, {
+        cwd: this.repositoryRoot,
+      });
+    } catch (err) {
+      console.warn(
+        `[GitCheckpointManager] Failed to revert to checkpoint ${checkpointId}:`,
+        err,
+      );
+    }
   }
 
   /**
@@ -143,8 +169,11 @@ export class GitCheckpointManager {
       await execAsync(`git update-ref -d ${checkpointRef}`, {
         cwd: this.repositoryRoot,
       });
-    } catch {
-      // Ignored
+    } catch (err) {
+      console.warn(
+        `[GitCheckpointManager] Failed to delete ref ${checkpointRef}:`,
+        err,
+      );
     }
   }
 
@@ -192,8 +221,11 @@ export class GitCheckpointManager {
               cwd: this.repositoryRoot,
             });
             prunedCount++;
-          } catch {
-            // Ignored per-ref deletion error
+          } catch (err) {
+            console.warn(
+              `[GitCheckpointManager] Failed to prune ref ${refname}:`,
+              err,
+            );
           }
         }
       }
