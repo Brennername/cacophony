@@ -840,5 +840,58 @@ describe("CompilerDiagnosticAutoRepair", () => {
 
     assert.ok(result.repairedCode.includes("import { QueueViewComponent } from './queue-view.component';"));
   });
+
+  it("repairs TS2304 Cannot find name 'global' by injecting global = globalThis shim in frontend tests", () => {
+    const source = `import { describe, it, vi } from 'vitest';
+describe('Service', () => {
+  it('mocks fetch', () => {
+    vi.spyOn(global, 'fetch');
+  });
+});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2304",
+          "Cannot find name 'global'.",
+          4,
+          14,
+        ),
+      ],
+      "packages/frontend/src/app/services/model-fleet.service.spec.ts",
+    );
+
+    assert.ok(result.repairedCode.includes("const global = globalThis;"));
+    assert.ok(result.repairsApplied.some((r) => r.includes("global = globalThis")));
+  });
+
+  it("consolidates multiple duplicate import statements for the same module", () => {
+    const source = `import { describe, it, expect } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+
+describe('Test', () => {
+  it('runs', () => {
+    expect(true).toBe(true);
+  });
+});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2300",
+          "Duplicate identifier 'describe'.",
+          1,
+          10,
+        ),
+      ],
+      "packages/frontend/src/app/services/task-api.service.spec.ts",
+    );
+
+    const vitestImports = (result.repairedCode.match(/from\s+['"]vitest['"]/g) || []).length;
+    assert.equal(vitestImports, 1, `Expected 1 vitest import, got: ${result.repairedCode}`);
+    assert.ok(result.repairedCode.includes("describe"));
+    assert.ok(result.repairedCode.includes("beforeEach"));
+    assert.ok(result.repairedCode.includes("vi"));
+  });
 });
 

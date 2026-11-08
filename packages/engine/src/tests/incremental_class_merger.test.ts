@@ -313,5 +313,62 @@ describe("FullSuite", () => {
     assert.ok(merged.includes('"test2"'));
     assert.ok(merged.includes("assert.strictEqual(2, 2);"));
   });
+
+  test("should never produce duplicate imports when merging test suites or class files", () => {
+    const original = `import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { TaskApiService } from './task-api.service';
+
+describe('TaskApiService', () => {
+  it('test 1', () => {
+    expect(1).toBe(1);
+  });
+});
+`;
+
+    const generated = `import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { TaskApiService } from './task-api.service';
+
+describe('TaskApiService', () => {
+  it('test 1', () => {
+    expect(1).toBe(1);
+  });
+
+  it('test 2', () => {
+    expect(2).toBe(2);
+  });
+});
+`;
+
+    const merged = IncrementalClassMerger.merge(original, generated);
+    const vitestImportCount = (merged.match(/from\s+['"]vitest['"]/g) || []).length;
+    assert.equal(vitestImportCount, 1, `Expected exactly 1 vitest import, got ${vitestImportCount} in:\n${merged}`);
+    assert.ok(merged.includes("'test 1'"));
+    assert.ok(merged.includes("'test 2'"));
+  });
+
+  test("should merge named imports into existing import statement when new symbol is introduced", () => {
+    const original = `import { A } from './module.js';
+
+export class Service {
+  public doA(): void {}
+}
+`;
+
+    const generated = `import { A, B } from './module.js';
+
+export class Service {
+  public doB(): void {}
+}
+`;
+
+    const merged = IncrementalClassMerger.merge(original, generated);
+    const moduleImportCount = (merged.match(/from\s+['"]\.\/module\.js['"]/g) || []).length;
+    assert.equal(moduleImportCount, 1, `Expected exactly 1 module import, got:\n${merged}`);
+    assert.ok(merged.includes("A, B") || (merged.includes("A") && merged.includes("B")));
+    assert.ok(merged.includes("public doA(): void"));
+    assert.ok(merged.includes("public doB(): void"));
+  });
 });
 

@@ -283,13 +283,22 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       !currentCode.includes("var jest =")
     ) {
       if (isFrontendTest) {
+        currentCode = currentCode.replace(/\bjest\./g, "vi.");
         if (
-          !currentCode.includes("from 'vitest'") &&
-          !prependCode.includes("from 'vitest'")
+          !/from\s+['"]vitest['"]/.test(currentCode) &&
+          !/from\s+['"]vitest['"]/.test(prependCode)
         ) {
           prependCode += "import { vi } from 'vitest';\nconst jest = vi;\n";
         } else {
-          prependCode += "const jest = vi;\n";
+          if (/from\s+['"]vitest['"]/.test(currentCode) && !/\bvi\b/.test(currentCode)) {
+            currentCode = currentCode.replace(
+              /import\s*\{([^}]+)\}\s*from\s*(['"]vitest['"])/,
+              (_m, inner, q) => `import { ${inner.trim()}, vi } from ${q}`,
+            );
+          }
+          if (!currentCode.includes("const jest =") && !currentCode.includes("var jest =")) {
+            prependCode += "const jest = vi;\n";
+          }
         }
         repairsApplied.push(
           "Injected Vitest 'vi' compatibility shim for 'jest'",
@@ -416,6 +425,21 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       repairsApplied.push("Injected test runner compatibility shim for 'jasmine'");
     }
 
+    // 1c. Repair TS2304: Missing 'global' in frontend tests
+    const hasGlobalMissing = diagnostics.some(
+      (d) =>
+        d.errorCode === "TS2304" &&
+        /Cannot find name 'global'/i.test(d.message),
+    );
+    if (hasGlobalMissing && isFrontendTest) {
+      if (!currentCode.includes("const global =") && !currentCode.includes("var global =")) {
+        prependCode += "const global = globalThis;\n";
+        repairsApplied.push(
+          "Injected 'global = globalThis' compatibility shim for frontend test",
+        );
+      }
+    }
+
     // 2. Repair TS2304: Missing 'expect' assertion global
     const hasExpectMissing = diagnostics.some(
       (d) =>
@@ -429,10 +453,15 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     ) {
       if (isFrontendTest) {
         if (
-          !currentCode.includes("from 'vitest'") &&
-          !prependCode.includes("from 'vitest'")
+          !/from\s+['"]vitest['"]/.test(currentCode) &&
+          !/from\s+['"]vitest['"]/.test(prependCode)
         ) {
           prependCode += "import { expect } from 'vitest';\n";
+        } else if (/from\s+['"]vitest['"]/.test(currentCode) && !/\bexpect\b/.test(currentCode)) {
+          currentCode = currentCode.replace(
+            /import\s*\{([^}]+)\}\s*from\s*(['"]vitest['"])/,
+            (_m, inner, q) => `import { ${inner.trim()}, expect } from ${q}`,
+          );
         }
         repairsApplied.push("Injected Vitest 'expect' import");
       } else {
@@ -507,8 +536,8 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     if (missingTestFns.length > 0) {
       if (isFrontendTest) {
         if (
-          !currentCode.includes("from 'vitest'") &&
-          !prependCode.includes("from 'vitest'")
+          !/from\s+['"]vitest['"]/.test(currentCode) &&
+          !/from\s+['"]vitest['"]/.test(prependCode)
         ) {
           const standardImports = [
             "describe",
@@ -529,7 +558,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
             if (
               !repaired &&
               line.trim().startsWith("import") &&
-              line.includes("'vitest'")
+              /['"]vitest['"]/.test(line)
             ) {
               const openBrace = line.indexOf("{");
               const closeBrace = line.indexOf("}");
@@ -1385,6 +1414,72 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
 
     // 5b. Repair TS2300: Duplicate identifier in imports
     let lines = currentCode.split("\n");
+
+    // Pass 1: Consolidate multiple import lines referencing the exact same module
+    const moduleImportIndices = new Map<string, number[]>();
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) continue;
+      const match = line.match(/^\s*import\s+(?:\{[^}]*\}|[^{;]+)\s+from\s+['"]([^'"]+)['"]/);
+      if (match && match[1]) {
+        const mod = match[1];
+        if (!moduleImportIndices.has(mod)) {
+          moduleImportIndices.set(mod, []);
+        }
+        moduleImportIndices.get(mod)!.push(i);
+      }
+    }
+
+    for (const [mod, indices] of moduleImportIndices.entries()) {
+      if (indices.length > 1) {
+        const namedSymbols = new Set<string>();
+        let hasNonNamed = false;
+        for (const idx of indices) {
+          const l = lines[idx]!;
+          const braceMatch = l.match(/\{([^}]+)\}/);
+          if (braceMatch && braceMatch[1]) {
+            const syms = braceMatch[1].split(",").map((s) => s.trim()).filter(Boolean);
+            for (const s of syms) namedSymbols.add(s);
+          } else {
+            hasNonNamed = true;
+          }
+        }
+        if (namedSymbols.size > 0 && !hasNonNamed) {
+          const firstIdx = indices[0]!;
+          lines[firstIdx] = `import { ${Array.from(namedSymbols).join(", ")} } from '${mod}';`;
+          for (let k = 1; k < indices.length; k++) {
+            lines[indices[k]!] = "";
+          }
+          repairsApplied.push(
+            `Consolidated ${indices.length} duplicate import statements for '${mod}'`,
+          );
+        }
+      }
+    }
+
+    // Pass 2: Deduplicate any repeated symbols within single import braces
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line && /^\s*import\b/.test(line) && line.includes("{") && line.includes("}")) {
+        const deduplicated = line.replace(/\{([^}]+)\}/, (_m, inner) => {
+          const parts = inner.split(",").map((p: string) => p.trim()).filter(Boolean);
+          const seen = new Set<string>();
+          const unique: string[] = [];
+          for (const p of parts) {
+            const sym = p.split(/\s+as\s+/)[0]!.trim();
+            if (!seen.has(sym)) {
+              seen.add(sym);
+              unique.push(p);
+            }
+          }
+          return `{ ${unique.join(", ")} }`;
+        });
+        if (deduplicated !== line) {
+          lines[i] = deduplicated;
+        }
+      }
+    }
+
     const seenDuplicateSymbols = new Set<string>();
     for (const diag of diagnostics) {
       if (

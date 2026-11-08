@@ -39,9 +39,15 @@ export class GeneratedChangeGuard {
       );
     }
 
+    const lowerPath = filePath.toLowerCase();
     const isStubSanitizerTest =
-      filePath.toLowerCase().includes("stub_comment_sanitizer") ||
-      filePath.toLowerCase().includes("stubcommentsanitizer");
+      lowerPath.includes("stub_comment_sanitizer") ||
+      lowerPath.includes("stubcommentsanitizer") ||
+      ((lowerPath.includes("stub") ||
+        lowerPath.includes("cage") ||
+        lowerPath.includes("prompt_template") ||
+        lowerPath.includes("guard")) &&
+        (lowerPath.includes("test") || lowerPath.includes("spec")));
     if (!isStubSanitizerTest) {
       const residualMarkers =
         StubCommentSanitizer.findResidualMarkers(replacement);

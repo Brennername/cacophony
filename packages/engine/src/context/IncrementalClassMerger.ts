@@ -185,14 +185,8 @@ export class IncrementalClassMerger {
       // Check if newCode defines new exported declarations (interfaces, types, functions, classes)
       // that can be safely appended to originalCode while preserving all existing implementations
       const newDeclarations: string[] = [];
-      const newImportLines: string[] = [];
       for (const stmt of newSf.statements) {
-        if (ts.isImportDeclaration(stmt)) {
-          const importText = stmt.getText(newSf);
-          if (!originalCode.includes(importText)) {
-            newImportLines.push(importText);
-          }
-        } else {
+        if (!ts.isImportDeclaration(stmt)) {
           newDeclarations.push(stmt.getText(newSf));
         }
       }
@@ -201,10 +195,7 @@ export class IncrementalClassMerger {
         /^\s*export\s+/.test(decl),
       );
       if (origClasses.size > 0 && hasExportedDeclarations) {
-        let merged = originalCode;
-        if (newImportLines.length > 0) {
-          merged = newImportLines.join("\n") + "\n" + merged;
-        }
+        let merged = this.mergeImportsIntoSource(originalCode, origSf, newSf);
         merged =
           merged.trimEnd() + "\n\n" + newDeclarations.join("\n\n") + "\n";
         return merged;
@@ -327,24 +318,6 @@ export class IncrementalClassMerger {
       return newCode;
     }
 
-    // Collect new imports in newCode not present in originalCode
-    const origImportTexts = new Set<string>();
-    for (const stmt of origSf.statements) {
-      if (ts.isImportDeclaration(stmt)) {
-        origImportTexts.add(stmt.getText(origSf).trim().replace(/\s+/g, " "));
-      }
-    }
-
-    const newImportsToAdd: string[] = [];
-    for (const stmt of newSf.statements) {
-      if (ts.isImportDeclaration(stmt)) {
-        const text = stmt.getText(newSf).trim().replace(/\s+/g, " ");
-        if (!origImportTexts.has(text)) {
-          newImportsToAdd.push(stmt.getText(newSf).trim());
-        }
-      }
-    }
-
     // Collect new top-level functions, interfaces, type aliases
     const origTopLevelNames = new Set<string>();
     for (const stmt of origSf.statements) {
@@ -372,10 +345,13 @@ export class IncrementalClassMerger {
       }
     }
 
+    const mergedWithImports = this.mergeImportsIntoSource(originalCode, origSf, newSf);
+    const importsChanged = mergedWithImports !== originalCode;
+
     if (
       newMembersToAppend.length === 0 &&
       membersToReplace.size === 0 &&
-      newImportsToAdd.length === 0 &&
+      !importsChanged &&
       newTopLevelToAdd.length === 0
     ) {
       return originalCode;
@@ -396,10 +372,8 @@ export class IncrementalClassMerger {
       }
     }
 
-    // 2. Prepend new imports
-    if (newImportsToAdd.length > 0) {
-      merged = newImportsToAdd.join("\n") + "\n" + merged;
-    }
+    // 2. Prepend or merge new imports without duplicating modules
+    merged = this.mergeImportsIntoSource(merged, origSf, newSf);
 
     // 3. Append new top-level declarations
     if (newTopLevelToAdd.length > 0) {
@@ -679,11 +653,24 @@ export class IncrementalClassMerger {
       newStruct.tests.length >= origStruct.tests.length &&
       !isStubbed
     ) {
-      const newImports = new Set(newStruct.imports);
+      const newModuleSpecifiers = new Set<string>();
+      for (const stmt of newSf.statements) {
+        if (
+          ts.isImportDeclaration(stmt) &&
+          ts.isStringLiteral(stmt.moduleSpecifier)
+        ) {
+          newModuleSpecifiers.add(stmt.moduleSpecifier.text);
+        }
+      }
       const missingImports: string[] = [];
-      for (const imp of origStruct.imports) {
-        if (!newImports.has(imp) && !newCode.includes(imp)) {
-          missingImports.push(imp);
+      for (const stmt of origSf.statements) {
+        if (
+          ts.isImportDeclaration(stmt) &&
+          ts.isStringLiteral(stmt.moduleSpecifier)
+        ) {
+          if (!newModuleSpecifiers.has(stmt.moduleSpecifier.text)) {
+            missingImports.push(stmt.getText(origSf).trim());
+          }
         }
       }
       if (missingImports.length > 0) {
@@ -812,18 +799,85 @@ export class IncrementalClassMerger {
       }
     }
 
-    // 4. Prepend any new imports not in originalCode
-    const origImportSet = new Set(origStruct.imports);
-    const newImportsToAdd: string[] = [];
-    for (const imp of newStruct.imports) {
-      if (!origImportSet.has(imp) && !merged.includes(imp)) {
-        newImportsToAdd.push(imp);
-      }
-    }
-    if (newImportsToAdd.length > 0) {
-      merged = newImportsToAdd.join("\n") + "\n" + merged;
-    }
+    // 4. Prepend or merge any new imports not in originalCode without duplicating modules
+    const reParsedSf = ts.createSourceFile(
+      "reparsed.ts",
+      merged,
+      ts.ScriptTarget.ES2022,
+      true,
+    );
+    merged = this.mergeImportsIntoSource(merged, reParsedSf, newSf);
 
     return merged;
+  }
+
+  /**
+   * Merges import declarations from new code into an existing source file,
+   * combining imported symbols for shared modules and preventing duplicate import statements.
+   */
+  public static mergeImportsIntoSource(
+    targetSource: string,
+    targetSf: ts.SourceFile,
+    newSf: ts.SourceFile,
+  ): string {
+    const existingImportsByModule = new Map<string, ts.ImportDeclaration>();
+    for (const stmt of targetSf.statements) {
+      if (ts.isImportDeclaration(stmt) && ts.isStringLiteral(stmt.moduleSpecifier)) {
+        existingImportsByModule.set(stmt.moduleSpecifier.text, stmt);
+      }
+    }
+
+    const newImportsToPrepend: string[] = [];
+    let updatedSource = targetSource;
+
+    for (const stmt of newSf.statements) {
+      if (!ts.isImportDeclaration(stmt) || !ts.isStringLiteral(stmt.moduleSpecifier)) {
+        continue;
+      }
+      const mod = stmt.moduleSpecifier.text;
+      const existingStmt = existingImportsByModule.get(mod);
+
+      if (!existingStmt) {
+        newImportsToPrepend.push(stmt.getText(newSf).trim());
+        continue;
+      }
+
+      // If both use named imports, check for missing symbols
+      const existingClause = existingStmt.importClause;
+      const newClause = stmt.importClause;
+      if (
+        existingClause?.namedBindings &&
+        ts.isNamedImports(existingClause.namedBindings) &&
+        newClause?.namedBindings &&
+        ts.isNamedImports(newClause.namedBindings)
+      ) {
+        const existingSymbols = new Set(
+          existingClause.namedBindings.elements.map((el) => el.getText().trim()),
+        );
+        const missingSymbols = newClause.namedBindings.elements
+          .map((el) => el.getText().trim())
+          .filter((sym) => !existingSymbols.has(sym));
+
+        if (missingSymbols.length > 0) {
+          const existingText = existingStmt.getText(targetSf);
+          const braceMatch = existingText.match(/\{([^}]+)\}/);
+          if (braceMatch && typeof braceMatch.index === "number") {
+            const inner = braceMatch[1]!.trim();
+            const newInner = `${inner}, ${missingSymbols.join(", ")}`;
+            const replacementImport = existingText.replace(
+              /\{([^}]+)\}/,
+              `{ ${newInner} }`,
+            );
+            updatedSource = updatedSource.replace(existingText, replacementImport);
+          }
+        }
+      }
+    }
+
+    if (newImportsToPrepend.length > 0) {
+      updatedSource = newImportsToPrepend.join("\n") + "\n" + updatedSource;
+    }
+
+    return updatedSource;
   }
 }

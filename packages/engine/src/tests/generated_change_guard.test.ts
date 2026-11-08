@@ -468,3 +468,24 @@ describe("TestRunnerDetector", () => {
   assert.deepEqual(issues, []);
 });
 
+test("GeneratedChangeGuard permits stub assertions and regexes in stub-related unit test files", () => {
+  const originalTest = "";
+  const replacementTest = `import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('HashStubGenerator suite', () => {
+  const comment = '/* [CACOPHONY_HASH_STUB:1234abcd:process] */';
+  assert.ok(comment.includes('[CACOPHONY_HASH_STUB:'));
+  assert.match(comment, /^\\/\\*\\s*\\[CACOPHONY_HASH_STUB:[a-f0-9]{8}:process\\]\\s*\\*\\/$/);
+});
+`;
+
+  const issues = GeneratedChangeGuard.inspectReplacement(
+    "packages/engine/src/tests/hash_stub_generator.test.ts",
+    originalTest,
+    replacementTest,
+    "Write unit tests verifying HashStubGenerator",
+  );
+
+  assert.deepEqual(issues, []);
+});

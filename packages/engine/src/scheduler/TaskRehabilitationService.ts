@@ -223,7 +223,7 @@ export class TaskRehabilitationService {
 
     const rawFocus = task.focusFiles
       ? task.focusFiles
-          .split(",")
+          .split(/[\s,]+/)
           .map((f) => f.trim())
           .filter((f) => f.length > 0)
       : [];

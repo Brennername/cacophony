@@ -1176,17 +1176,7 @@ export class AutonomousWorkerPipeline {
             targetRel || undefined,
           );
           if (repairResult.repairsApplied.length > 0) {
-            let candidateCode = repairResult.repairedCode;
-            if (
-              !targetedMethodEdit &&
-              originalExistingContent &&
-              originalExistingContent.trim().length > 0
-            ) {
-              candidateCode = IncrementalClassMerger.merge(
-                originalExistingContent,
-                candidateCode,
-              );
-            }
+            const candidateCode = repairResult.repairedCode;
             const integrityIssues = GeneratedChangeGuard.inspectReplacement(
               targetRel!,
               originalExistingContent,
