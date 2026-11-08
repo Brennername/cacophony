@@ -302,8 +302,11 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                   l.includes("{") &&
                   l.includes("}")
                 ) {
-                  repaired = true;
-                  return l.replace("}", ", vi }");
+                  const closeIdx = l.lastIndexOf("}");
+                  if (closeIdx !== -1) {
+                    repaired = true;
+                    return `${l.slice(0, closeIdx)}, vi ${l.slice(closeIdx)}`;
+                  }
                 }
                 return l;
               })
@@ -482,8 +485,11 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
                 l.includes("{") &&
                 l.includes("}")
               ) {
-                repaired = true;
-                return l.replace("}", ", expect }");
+                const closeIdx = l.lastIndexOf("}");
+                if (closeIdx !== -1) {
+                  repaired = true;
+                  return `${l.slice(0, closeIdx)}, expect ${l.slice(closeIdx)}`;
+                }
               }
               return l;
             })
