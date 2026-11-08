@@ -54,7 +54,6 @@ export class RulePipelineEngine {
       file_placement: "file_placement_and_naming",
     };
 
-
     const mapped = aliasMap[ruleId];
     return mapped ? this.rules.get(mapped) : undefined;
   }
@@ -120,7 +119,6 @@ export class RulePipelineEngine {
         continue;
       }
 
-      // Check for rule bypass directives (T72.2.1)
       const ruleIdNorm = ruleDecl.ruleId.toLowerCase();
       const isBypassed =
         bypassSet.has(ruleIdNorm) ||
