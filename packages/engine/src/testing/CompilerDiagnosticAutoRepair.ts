@@ -921,6 +921,48 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         if (typoMatch && typoMatch[1] && typoMatch[2]) {
           const wrongName = typoMatch[1];
           const rightName = typoMatch[2];
+          if (wrongName === "ComponentFixture" || wrongName === "TestBed") {
+            if (
+              !currentCode.includes("@angular/core/testing") &&
+              !prependCode.includes("@angular/core/testing")
+            ) {
+              prependCode +=
+                "import { TestBed, ComponentFixture } from '@angular/core/testing';\n";
+              repairsApplied.push(
+                "Injected '@angular/core/testing' import for ComponentFixture/TestBed",
+              );
+            }
+            const splitLines = currentCode.split("\n");
+            for (let i = 0; i < splitLines.length; i++) {
+              const line = splitLines[i]!;
+              if (
+                line.includes("@angular/core") &&
+                !line.includes("@angular/core/testing") &&
+                line.includes("import") &&
+                line.includes("{") &&
+                line.includes("}")
+              ) {
+                const openIdx = line.indexOf("{");
+                const closeIdx = line.indexOf("}");
+                if (openIdx !== -1 && closeIdx !== -1 && closeIdx > openIdx) {
+                  const members = line.slice(openIdx + 1, closeIdx);
+                  const cleaned = members
+                    .split(",")
+                    .map((m: string) => m.trim())
+                    .filter(
+                      (m: string) =>
+                        m !== "ComponentFixture" && m !== "TestBed",
+                    )
+                    .join(", ");
+                  splitLines[i] = cleaned
+                    ? `${line.slice(0, openIdx + 1)} ${cleaned} ${line.slice(closeIdx)}`
+                    : "";
+                }
+              }
+            }
+            currentCode = splitLines.filter((l) => l.length > 0).join("\n");
+            continue;
+          }
           if (
             wrongName.toLowerCase() === "assert" &&
             rightName.toLowerCase() === "assert"
@@ -1588,6 +1630,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
       if (
         diag.errorCode === "TS6133" ||
         diag.errorCode === "TS6138" ||
+        diag.errorCode === "TS6196" ||
         /is declared but (?:its value is never read|never used)/i.test(
           diag.message,
         )
@@ -2069,6 +2112,7 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         }
       }
     }
+    lines = currentCode.split("\n");
 
     // 12. Repair TS2741: Property 'X' is missing in type '...' but required in type 'RuleEvaluationContext'
     for (const diag of diagnostics) {
@@ -2099,6 +2143,89 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
         }
       }
     }
+
+    // 12b. Repair TS2739 / TS2740 / TS2741 / TS2345 in test files: Missing properties on mock objects/functions
+    for (const diag of diagnostics) {
+      if (
+        diag.errorCode === "TS2739" ||
+        diag.errorCode === "TS2740" ||
+        diag.errorCode === "TS2741" ||
+        (diag.errorCode === "TS2345" && /is missing the following properties/i.test(diag.message)) ||
+        /is missing the following properties from type/i.test(diag.message)
+      ) {
+        if (diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+          const lineIdx = diag.lineNumber - 1;
+          const targetLine = lines[lineIdx];
+          if (!targetLine || targetLine.includes("as any")) continue;
+
+          const trimmed = targetLine.trim();
+          if (trimmed.includes(" = ") && trimmed.endsWith(";")) {
+            lines[lineIdx] = targetLine.replace(/;\s*$/, " as any;");
+            repairsApplied.push(
+              `Cast assignment to 'as any' at line ${diag.lineNumber} for missing property diagnostic ${diag.errorCode}`,
+            );
+            continue;
+          }
+          if (/\.\w+\(.*\);?\s*$/.test(trimmed)) {
+            const updated = targetLine.replace(
+              /^(.*?\.\w+\()(.*)(\);?\s*)$/,
+              (_m, pre, inner, post) => {
+                if (inner.includes("as any")) return targetLine;
+                return `${pre}${inner} as any${post.endsWith(";") ? post : post + ";"}`;
+              },
+            );
+            if (updated !== targetLine) {
+              lines[lineIdx] = updated;
+              repairsApplied.push(
+                `Cast method argument to 'as any' at line ${diag.lineNumber} for missing property diagnostic ${diag.errorCode}`,
+              );
+              continue;
+            }
+          }
+          if (trimmed.includes("{") && trimmed.includes("}")) {
+            lines[lineIdx] = targetLine.replace(/\}(,?)\s*$/, "} as any$1");
+            repairsApplied.push(
+              `Cast object literal to 'as any' at line ${diag.lineNumber} for missing property diagnostic ${diag.errorCode}`,
+            );
+            continue;
+          }
+          if (trimmed.endsWith(";")) {
+            lines[lineIdx] = targetLine.replace(/;\s*$/, " as any;");
+            repairsApplied.push(
+              `Cast line expression to 'as any' at line ${diag.lineNumber} for missing property diagnostic ${diag.errorCode}`,
+            );
+          }
+        }
+      }
+    }
+
+    // 12c. Repair TS2341: Property 'X' is private and only accessible within class 'Y'
+    for (const diag of diagnostics) {
+      if (
+        diag.errorCode === "TS2341" ||
+        /is private and only accessible within class/i.test(diag.message)
+      ) {
+        if (diag.lineNumber > 0 && diag.lineNumber <= lines.length) {
+          const lineIdx = diag.lineNumber - 1;
+          const targetLine = lines[lineIdx];
+          if (!targetLine) continue;
+
+          const propMatch = diag.message.match(/Property '([^']+)' is private/i);
+          if (propMatch && propMatch[1]) {
+            const propName = propMatch[1];
+            const propRegex = new RegExp(`\\b([a-zA-Z0-9_$]+)\\.${propName}\\b`, "g");
+            const updated = targetLine.replace(propRegex, `($1 as any).${propName}`);
+            if (updated !== targetLine) {
+              lines[lineIdx] = updated;
+              repairsApplied.push(
+                `Cast private property access '${propName}' to '(as any).${propName}' at line ${diag.lineNumber}`,
+              );
+            }
+          }
+        }
+      }
+    }
+    currentCode = lines.join("\n");
 
     // 13. Auto-repair .toBeTrue() / .toBeFalse() to standard .toBe(true) / .toBe(false)
     if (currentCode.includes(".toBeTrue()") || currentCode.includes(".toBeFalse()")) {
@@ -2368,6 +2495,15 @@ export function repair${diagnostic.errorCode}(code: string, diagnostic: Compiler
     const fromDir = path.dirname(targetAbs);
     let rel = path.relative(fromDir, found).replace(/\\/g, "/");
     if (!rel.startsWith(".")) rel = "./" + rel;
+    const isFrontend =
+      (targetFilePath &&
+        (targetFilePath.includes("packages/frontend") ||
+          targetFilePath.includes("/frontend/"))) ||
+      found.includes("packages/frontend") ||
+      found.includes("/frontend/");
+    if (isFrontend) {
+      return rel.replace(/\.[jt]sx?$/, "");
+    }
     return rel.replace(/\.ts$/, ".js");
   }
 

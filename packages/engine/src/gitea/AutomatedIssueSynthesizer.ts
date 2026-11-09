@@ -265,7 +265,10 @@ export class AutomatedIssueSynthesizer {
     if (
       options.taskId &&
       (options.taskId.startsWith("regr-") ||
+        options.taskId.startsWith("taskcade-regr-") ||
         options.taskId.startsWith("gap-") ||
+        options.taskId.startsWith("taskcade-gap-") ||
+        options.taskId.includes("regr-") ||
         options.taskId.includes("."))
     ) {
       return {
@@ -287,7 +290,11 @@ export class AutomatedIssueSynthesizer {
       try {
         const pending = await this.taskRepo.listPending();
         const activeRegressions = pending.filter(
-          (t) => t.id.startsWith("regr-") || t.title.startsWith("[TDD Regression]"),
+          (t) =>
+            t.id.startsWith("regr-") ||
+            t.id.startsWith("taskcade-regr-") ||
+            t.id.includes("regr-") ||
+            t.title.startsWith("[TDD Regression]"),
         );
         if (activeRegressions.length >= 5) {
           return {

@@ -1492,6 +1492,10 @@ export class TaskScheduler implements IModelPredictor {
       // 4a. Pre-flight regression verification: check if scoped tests already pass 100% on base tree
       const isRegressionTask =
         targetTask.id.startsWith("regr-") ||
+        targetTask.id.startsWith("taskcade-regr-") ||
+        targetTask.id.includes("regr-") ||
+        targetTask.id.startsWith("gap-") ||
+        targetTask.id.startsWith("taskcade-gap-") ||
         targetTask.title.includes("[TDD Regression]") ||
         targetTask.title.startsWith("[Rehab");
 

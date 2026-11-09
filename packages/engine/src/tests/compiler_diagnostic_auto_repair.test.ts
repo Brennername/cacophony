@@ -893,5 +893,88 @@ describe('Test', () => {
     assert.ok(result.repairedCode.includes("beforeEach"));
     assert.ok(result.repairedCode.includes("vi"));
   });
+
+  it("repairs TS2724 by moving ComponentFixture from @angular/core to @angular/core/testing", () => {
+    const source = `import { Component } from '@angular/core';\nimport { ComponentFixture } from '@angular/core';\n\ndescribe('Comp', () => {\n  let fixture: ComponentFixture<any>;\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2724",
+          "'@angular/core' has no exported member named 'ComponentFixture'. Did you mean 'ComponentRef'?",
+          2,
+        ),
+      ],
+      "packages/frontend/src/app/components/test.component.spec.ts",
+    );
+
+    assert.ok(result.repairedCode.includes("@angular/core/testing"));
+    assert.ok(!result.repairedCode.includes("ComponentRef"));
+    assert.ok(result.repairedCode.includes("ComponentFixture"));
+  });
+
+  it("repairs TS2739/TS2345 missing properties in test files by casting assignment or method arguments to as any", () => {
+    const source = `describe('Service', () => {\n  it('mocks', () => {\n    const mockItems: HistoryItem[] = [{ id: '1', title: 'Task 1' }];\n    service.items.set([{ id: '2' }]);\n    globalThis.EventSource = vi.fn(() => mockSource);\n  });\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2739",
+          "Type '{ id: string; title: string; }' is missing the following properties from type 'HistoryItem': prNumber, prUrl",
+          3,
+        ),
+        diagnostic(
+          "TS2739",
+          "Type '{ id: string; }' is missing the following properties from type 'HistoryItem': prNumber, prUrl",
+          4,
+        ),
+        diagnostic(
+          "TS2739",
+          "Type 'MockInstance' is missing the following properties from type 'EventSource': CONNECTING, OPEN, CLOSED",
+          5,
+        ),
+      ],
+      "packages/frontend/src/app/services/history.service.spec.ts",
+    );
+
+    assert.ok(result.repairedCode.includes("[{ id: '1', title: 'Task 1' }] as any;"));
+    assert.ok(result.repairedCode.includes("service.items.set([{ id: '2' }] as any);"));
+    assert.ok(result.repairedCode.includes("globalThis.EventSource = vi.fn(() => mockSource) as any;"));
+  });
+
+  it("repairs TS2341 private property accesses in test suites with safe cast", () => {
+    const source = `describe('Scheduler', () => {\n  it('accesses private arm state', () => {\n    const arms = scheduler.arms.length;\n    assert.ok(arms);\n  });\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS2341",
+          "Property 'arms' is private and only accessible within class 'BanditTaskScheduler'.",
+          3,
+        ),
+      ],
+      "packages/engine/src/tests/bandit_role_governor.test.ts",
+    );
+
+    assert.ok(result.repairedCode.includes("(scheduler as any).arms.length"));
+  });
+
+  it("repairs TS6196 by removing unused type declarations", () => {
+    const source = `import { EmpiricalRewardFeedback, BanditRoleGovernor } from '../bandit/BanditRoleGovernor.js';\n\ndescribe('Governor', () => {\n  it('works', () => {\n    const gov = new BanditRoleGovernor();\n    assert.ok(gov);\n  });\n});`;
+    const result = repairer.repair(
+      source,
+      [
+        diagnostic(
+          "TS6196",
+          "'EmpiricalRewardFeedback' is declared but never used.",
+          1,
+        ),
+      ],
+      "packages/engine/src/tests/bandit_role_governor.test.ts",
+    );
+
+    assert.ok(!result.repairedCode.includes("EmpiricalRewardFeedback"));
+    assert.ok(result.repairedCode.includes("BanditRoleGovernor"));
+  });
 });
 

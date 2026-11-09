@@ -1584,7 +1584,10 @@ export class AutonomousWorkerPipeline {
 
           const isRegressionOrSubtask =
             taskId.startsWith("regr-") ||
+            taskId.startsWith("taskcade-regr-") ||
+            taskId.includes("regr-") ||
             taskId.startsWith("gap-") ||
+            taskId.startsWith("taskcade-gap-") ||
             groomed.task.title.startsWith("[TDD Regression]") ||
             groomed.task.title.startsWith("[TDD RED-GREEN-REFACTOR]") ||
             groomed.task.title.startsWith("[Rehab") ||
@@ -1836,7 +1839,7 @@ export class AutonomousWorkerPipeline {
                       // Preserve candidateCode if merger fails
                     }
                   }
-                } else {
+                } else if (!targetRel?.includes(".test.") && !targetRel?.includes(".spec.")) {
                   candidateCode = IncrementalClassMerger.merge(
                     originalExistingContent,
                     candidateCode,
@@ -2956,20 +2959,46 @@ export class AutonomousWorkerPipeline {
     if (focusFiles.length === 0) {
       return undefined;
     }
-    if (focusFiles.length === 1) {
-      return focusFiles[0];
-    }
-
     const isTestTask =
       role === "test_engineer" ||
       role === "qa" ||
-      /^(t\d+|regr-|test|qa)/i.test(title) ||
+      /^(t\d+|taskcade-t\d+|regr-|taskcade-regr-|test|qa)/i.test(title) ||
       /\b(unit test|test suite|tests? verifying|test coverage|tdd regression|tdd red-green)\b/i.test(
         title,
       ) ||
       /\b(unit test|test suite|tests? verifying|test coverage|tdd regression|tdd red-green)\b/i.test(
         prompt,
       );
+
+    if (focusFiles.length === 1) {
+      const single = focusFiles[0]!;
+      if (isTestTask) {
+        const isAlreadyTest =
+          single.endsWith(".test.ts") ||
+          single.endsWith(".spec.ts") ||
+          single.endsWith(".test.js") ||
+          single.endsWith(".spec.js") ||
+          single.includes("/__tests__/") ||
+          single.includes("/tests/");
+        if (isAlreadyTest) {
+          return single;
+        }
+        if (testCommand) {
+          const tokens = testCommand.split(/\s+/);
+          for (const token of tokens) {
+            const cleanToken = token.replace(/['"]/g, "");
+            if (
+              (cleanToken.includes(".test.") || cleanToken.includes(".spec.")) &&
+              (cleanToken.endsWith(".ts") || cleanToken.endsWith(".js"))
+            ) {
+              return cleanToken.replace(/\/dist\//, "/src/").replace(/\.js$/, ".ts");
+            }
+          }
+        }
+        return AutonomousWorkerPipeline.deriveTestFilePath(single);
+      }
+      return single;
+    }
 
     if (isTestTask) {
       // 1. If testCommand specifies a test file, match against focusFiles
@@ -3011,5 +3040,34 @@ export class AutonomousWorkerPipeline {
     }
 
     return focusFiles[0];
+  }
+
+  /**
+   * Derives matching unit test file path from an implementation file path.
+   */
+  public static deriveTestFilePath(file: string): string {
+    if (
+      file.includes(".test.") ||
+      file.includes(".spec.") ||
+      file.includes("/tests/") ||
+      file.includes("/__tests__/")
+    ) {
+      return file;
+    }
+    if (file.endsWith(".component.ts")) {
+      return file.replace(/\.component\.ts$/, ".component.spec.ts");
+    }
+    if (file.endsWith(".service.ts")) {
+      return file.replace(/\.service\.ts$/, ".service.spec.ts");
+    }
+    if (file.includes("/packages/engine/src/") && !file.includes("/tests/")) {
+      const base = path.basename(file).replace(/\.([jt]sx?)$/, ".test.$1");
+      return path.join("packages/engine/src/tests", base);
+    }
+    if (file.includes("/packages/tools/src/") && !file.includes("/tests/")) {
+      const base = path.basename(file).replace(/\.([jt]sx?)$/, ".test.$1");
+      return path.join("packages/tools/src/tests", base);
+    }
+    return file.replace(/\.([jt]sx?)$/, ".test.$1");
   }
 }

@@ -59,7 +59,12 @@ export class TaskRehabilitationService {
     ) {
       return true;
     }
-    if (task.id.startsWith("regr-") || task.id.startsWith("gap-")) {
+    if (
+      task.id.startsWith("regr-") ||
+      task.id.startsWith("taskcade-regr-") ||
+      task.id.startsWith("gap-") ||
+      task.id.startsWith("taskcade-gap-")
+    ) {
       return true;
     }
     const dotMatches = task.id.match(/\./g);
@@ -83,6 +88,9 @@ export class TaskRehabilitationService {
     // Regression tasks and test engineer roles are atomic units that must not be decomposed
     if (
       task.id.startsWith("regr-") ||
+      task.id.startsWith("taskcade-regr-") ||
+      task.id.startsWith("gap-") ||
+      task.id.startsWith("taskcade-gap-") ||
       task.role === "test_engineer" ||
       task.title.startsWith("[TDD Regression]") ||
       task.title.startsWith("[TDD RED-GREEN-REFACTOR]")
@@ -267,11 +275,7 @@ export class TaskRehabilitationService {
       task.prompt.toLowerCase().includes("write unit test") ||
       task.prompt.toLowerCase().includes("unit tests verifying");
 
-    const isPureTestTask =
-      isTestObjective &&
-      (implFiles.length === 0 ||
-        rawFocus.every((f) => f.includes(".test.") || f.includes(".spec.")) ||
-        implFiles.length <= 1);
+    const isPureTestTask = isTestObjective;
 
     const subtasks: EnqueueTaskDto[] = [];
     const culpritContext = culpritCommitHash

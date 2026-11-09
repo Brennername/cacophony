@@ -612,6 +612,16 @@ _Completed & Archived — See [`docs/taskcade-history.md`](taskcade-history.md#a
 
 ## Rehabilitated Taskcade Queue
 
+### Task taskcade-t117.3 Rehabilitation [2026-11-08T05:16:48.684Z]
+- **Parent Task**: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass (`taskcade-t117.3`)
+- **Failure Count**: 3
+- **Failure Reason**: [TIMEOUT]: Task execution exceeded allocated timeout of 2400000ms for model 'phi4:latest'
+- **Decomposed Subtasks**:
+  - [ ] `taskcade-t117.3.1`: [Rehab 1/3] Type Contracts & Interfaces: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: type_specialist] [Files: packages/engine/src/bandit/BanditRoleGovernor.ts]
+  - [ ] `taskcade-t117.3.2`: [Rehab 2/3] Core Implementation Unit: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: implementer] [Files: packages/engine/src/bandit/BanditRoleGovernor.ts,packages/engine/src/bandit/BanditTaskScheduler.ts]
+  - [ ] `taskcade-t117.3.3`: [Rehab 3/3] Unit Test & Validation Suite: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass [Role: test_engineer] [Files: packages/engine/src/tests/bandit_role_governor.test.ts]
+
+
 ### Task taskcade-t117.3 Rehabilitation [2026-11-07T01:46:31.316Z]
 - **Parent Task**: T117.3: Dynamic Role Promotion & Demotion Engine: Automatically adjust primary model ass (`taskcade-t117.3`)
 - **Failure Count**: 3
