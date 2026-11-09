@@ -45,11 +45,29 @@ export class SandboxedProcessRunner {
       let stdout = "";
       let stderr = "";
 
-      const child = spawn(command, {
+      let sanitizedCommand = command;
+      if (
+        sanitizedCommand.includes("node --test") &&
+        !sanitizedCommand.includes("--test-concurrency")
+      ) {
+        sanitizedCommand = sanitizedCommand.replace(
+          "node --test",
+          "node --test --test-concurrency=1",
+        );
+      }
+
+      const mergedEnv: NodeJS.ProcessEnv = {
+        ...(options.env ?? process.env),
+      };
+      if (!mergedEnv["NODE_OPTIONS"]?.includes("--max-old-space-size")) {
+        mergedEnv["NODE_OPTIONS"] = `${mergedEnv["NODE_OPTIONS"] || ""} --max-old-space-size=2048`.trim();
+      }
+
+      const child = spawn(sanitizedCommand, {
         shell: true,
         cwd: options.cwd,
-        env: options.env ?? process.env,
-        detached: true, // Changed from false to true for asynchronous execution
+        env: mergedEnv,
+        detached: true,
       });
 
       let timeoutTimer: NodeJS.Timeout | null = null;
