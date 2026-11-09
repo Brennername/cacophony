@@ -1,6 +1,7 @@
-import { test, describe, beforeEach } from "node:test";
+import { LspDiagnosticIngestor } from '../lsp/LspDiagnosticIngestor.js';
+import { test, describe, beforeEach, it } from "node:test";
 import assert from "node:assert/strict";
-import { LspDiagnosticIngestor } from "../lsp/LspDiagnosticIngestor.js";
+
 import { type LspDiagnostic, DiagnosticSeverity } from "../lsp/ILspClient.js";
 
 describe("LspDiagnosticIngestor", () => {
@@ -186,5 +187,216 @@ describe("LspDiagnosticIngestor", () => {
       );
       assert.ok(feedback.includes("Please self-correct your implementation"));
     });
+  });
+
+  it('should normalize diagnostics correctly', () => {
+    const diagnostics: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 1,
+        code: 123,
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ];
+
+    const normalized = ingestor.ingest('file:///path/to/file.ts', diagnostics);
+    assert.deepStrictEqual(normalized, [
+      {
+        uri: 'file:///path/to/file.ts',
+        line: 0,
+        character: 0,
+        severity: 'ERROR',
+        code: '123',
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ]);
+  });
+
+  it('should store diagnostics by URI', () => {
+    const diagnostics: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 2,
+        code: undefined,
+        source: 'lsp',
+        message: 'Warning message',
+      },
+    ];
+
+    ingestor.ingest('file:///path/to/file.ts', diagnostics);
+    const storedDiagnostics = ingestor.getDiagnostics('file:///path/to/file.ts');
+    assert.deepStrictEqual(storedDiagnostics, [
+      {
+        uri: 'file:///path/to/file.ts',
+        line: 0,
+        character: 0,
+        severity: 'WARNING',
+        code: undefined,
+        source: 'lsp',
+        message: 'Warning message',
+      },
+    ]);
+  });
+
+  it('should return all diagnostics when URI is not provided', () => {
+    const diagnostics1: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file1.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 1,
+        code: 123,
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ];
+
+    const diagnostics2: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file2.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 2,
+        code: undefined,
+        source: 'lsp',
+        message: 'Warning message',
+      },
+    ];
+
+    ingestor.ingest('file:///path/to/file1.ts', diagnostics1);
+    ingestor.ingest('file:///path/to/file2.ts', diagnostics2);
+
+    const allDiagnostics = ingestor.getDiagnostics();
+    assert.deepStrictEqual(allDiagnostics, [
+      {
+        uri: 'file:///path/to/file1.ts',
+        line: 0,
+        character: 0,
+        severity: 'ERROR',
+        code: '123',
+        source: 'lsp',
+        message: 'Error message',
+      },
+      {
+        uri: 'file:///path/to/file2.ts',
+        line: 0,
+        character: 0,
+        severity: 'WARNING',
+        code: undefined,
+        source: 'lsp',
+        message: 'Warning message',
+      },
+    ]);
+  });
+
+  it('should return errors when URI is not provided', () => {
+    const diagnostics1: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file1.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 1,
+        code: 123,
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ];
+
+    const diagnostics2: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file2.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 2,
+        code: undefined,
+        source: 'lsp',
+        message: 'Warning message',
+      },
+    ];
+
+    ingestor.ingest('file:///path/to/file1.ts', diagnostics1);
+    ingestor.ingest('file:///path/to/file2.ts', diagnostics2);
+
+    const errors = ingestor.getErrors();
+    assert.deepStrictEqual(errors, [
+      {
+        uri: 'file:///path/to/file1.ts',
+        line: 0,
+        character: 0,
+        severity: 'ERROR',
+        code: '123',
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ]);
+  });
+
+  it('should clear diagnostics by URI', () => {
+    const diagnostics: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 1,
+        code: 123,
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ];
+
+    ingestor.ingest('file:///path/to/file.ts', diagnostics);
+    ingestor.clear('file:///path/to/file.ts');
+
+    const storedDiagnostics = ingestor.getDiagnostics('file:///path/to/file.ts');
+    assert.deepStrictEqual(storedDiagnostics, []);
+  });
+
+  it('should clear all diagnostics when URI is not provided', () => {
+    const diagnostics1: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file1.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 1,
+        code: 123,
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ];
+
+    const diagnostics2: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file2.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 2,
+        code: undefined,
+        source: 'lsp',
+        message: 'Warning message',
+      },
+    ];
+
+    ingestor.ingest('file:///path/to/file1.ts', diagnostics1);
+    ingestor.ingest('file:///path/to/file2.ts', diagnostics2);
+
+    ingestor.clear();
+
+    const allDiagnostics = ingestor.getDiagnostics();
+    assert.deepStrictEqual(allDiagnostics, []);
+  });
+
+  it('should format errors for feedback correctly', () => {
+    const diagnostics: readonly LspDiagnostic[] = [
+      {
+        uri: 'file:///path/to/file.ts',
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+        severity: 1,
+        code: 123,
+        source: 'lsp',
+        message: 'Error message',
+      },
+    ];
+
+    ingestor.ingest('file:///path/to/file.ts', diagnostics);
+
+    const feedback = ingestor.formatForFeedback();
+    assert.strictEqual(feedback, '[LSP COMPILER DIAGNOSTICS DETECTED]:\nThe following compiler / type errors were emitted by the language server post-edit:\n- file:///path/to/file.ts:1:1 [lsp (123)] Error message\n\nPlease self-correct your implementation to resolve all compiler errors.');
   });
 });
