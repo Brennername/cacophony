@@ -12,6 +12,7 @@ describe("LocateFeatureTool", () => {
   let context: ToolExecutionContext;
 
   before(async () => {
+    // Create a temporary directory for testing
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "cacophony-locate-test-"));
     tool = new LocateFeatureTool();
     context = {
@@ -19,6 +20,7 @@ describe("LocateFeatureTool", () => {
       taskId: "task-locate-101",
     };
 
+    // Set up test files in the temporary directory
     await fs.mkdir(path.join(tempDir, "services"), { recursive: true });
     await fs.mkdir(path.join(tempDir, "models"), { recursive: true });
 
@@ -42,6 +44,7 @@ describe("LocateFeatureTool", () => {
   });
 
   after(async () => {
+    // Clean up the temporary directory
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
