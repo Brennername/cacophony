@@ -1,7 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Mocking the ThermalGovernor class for testing purposes
 class MockThermalGovernor {
   public backoffCurve: number[] = [];
   public cooldownWaitPeriod: number = 0;
