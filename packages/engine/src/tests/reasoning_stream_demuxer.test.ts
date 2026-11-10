@@ -160,4 +160,139 @@ describe("ReasoningStreamDemuxer & Dual-Channel StreamTap", () => {
 
     assert.strictEqual(codeChunks.join(""), "const isSmaller = a <");
   });
+
+  it("should demux pre-code cognitive preamble and post-code explanation into reasoning when using triple backtick (```) code fences", () => {
+    const demuxer = new ReasoningStreamDemuxer();
+    const tokens = [
+      "To implement the `Dynamic Context Window Autoscaler` functionality, we need to modify the test file.\n",
+      "Below is a complete rewrite of the test file with the necessary logic.\n\n",
+      "```ts\n",
+      "import { describe, it } from 'node:test';\n",
+      "import assert from 'node:assert/strict';\n\n",
+      "describe('Autoscaler', () => {\n",
+      "  it('should autoscale context', () => {\n",
+      "    assert.ok(true);\n",
+      "  });\n",
+      "});\n",
+      "```\n",
+      "### Explanation:\n",
+      "1. Created unit tests for physical memory checking.\n",
+      "2. Verified optimal num_ctx calculation.",
+    ];
+
+    const reasoningChunks: string[] = [];
+    const codeChunks: string[] = [];
+
+    for (const tok of tokens) {
+      const chunks = demuxer.feed(tok);
+      for (const ch of chunks) {
+        if (ch.type === "reasoning") reasoningChunks.push(ch.content);
+        if (ch.type === "code") codeChunks.push(ch.content);
+      }
+    }
+    const flushed = demuxer.flush();
+    for (const ch of flushed) {
+      if (ch.type === "reasoning") reasoningChunks.push(ch.content);
+      if (ch.type === "code") codeChunks.push(ch.content);
+    }
+
+    const reasoning = demuxer.getAccumulatedReasoning();
+    const code = demuxer.getAccumulatedCode();
+
+    // Verify preamble is in reasoning
+    assert.ok(
+      reasoning.includes(
+        "To implement the `Dynamic Context Window Autoscaler` functionality",
+      ),
+    );
+    // Verify postamble explanation is in reasoning
+    assert.ok(reasoning.includes("### Explanation:"));
+    assert.ok(reasoning.includes("2. Verified optimal num_ctx calculation."));
+
+    // Verify code block contains clean executable code without markdown fences
+    assert.ok(code.includes("import { describe, it } from 'node:test';"));
+    assert.ok(code.includes("describe('Autoscaler'"));
+    assert.strictEqual(code.includes("```"), false);
+    assert.strictEqual(
+      code.includes("To implement the `Dynamic Context Window Autoscaler`"),
+      false,
+    );
+  });
+
+  it("should demux cognitive preamble, code, and postamble when using triple single-quote (''') code fences", () => {
+    const demuxer = new ReasoningStreamDemuxer();
+    const tokens = [
+      "Here is the targeted implementation using single-quote fences:\n\n",
+      "'''typescript\n",
+      "export class Autoscaler {\n",
+      "  public autoscale(): number { return 8192; }\n",
+      "}\n",
+      "'''\n",
+      "This concludes the autoscaler implementation.",
+    ];
+
+    for (const tok of tokens) {
+      demuxer.feed(tok);
+    }
+    demuxer.flush();
+
+    const reasoning = demuxer.getAccumulatedReasoning();
+    const code = demuxer.getAccumulatedCode();
+
+    assert.ok(
+      reasoning.includes("Here is the targeted implementation using single-quote fences:"),
+    );
+    assert.ok(reasoning.includes("This concludes the autoscaler implementation."));
+
+    assert.ok(code.includes("export class Autoscaler"));
+    assert.ok(code.includes("return 8192;"));
+    assert.strictEqual(code.includes("'''"), false);
+  });
+
+  it("should handle mixed code fence delimiters (``` and ''') and multiple blocks sequentially", () => {
+    const demuxer = new ReasoningStreamDemuxer();
+    demuxer.feed("Step 1:\n```ts\nconst step1 = true;\n```\nStep 2:\n'''ts\nconst step2 = true;\n'''\nFinished.");
+    demuxer.flush();
+
+    const reasoning = demuxer.getAccumulatedReasoning();
+    const code = demuxer.getAccumulatedCode();
+
+    assert.ok(reasoning.includes("Step 1:"));
+    assert.ok(reasoning.includes("Step 2:"));
+    assert.ok(reasoning.includes("Finished."));
+
+    assert.ok(code.includes("const step1 = true;"));
+    assert.ok(code.includes("const step2 = true;"));
+    assert.strictEqual(code.includes("Step 1:"), false);
+    assert.strictEqual(code.includes("Step 2:"), false);
+  });
+
+  it("should demux split chunks across triple single-quote (''') boundaries without leaking fence delimiters into code", () => {
+    const demuxer = new ReasoningStreamDemuxer();
+    const fragmentedTokens = [
+      "Preamble text\n",
+      "'",
+      "''",
+      "ts\n",
+      "const secret = 4",
+      "2;\n",
+      "'",
+      "''\n",
+      "All done.",
+    ];
+
+    for (const tok of fragmentedTokens) {
+      demuxer.feed(tok);
+    }
+    demuxer.flush();
+
+    assert.strictEqual(
+      demuxer.getAccumulatedReasoning(),
+      "Preamble text\nAll done.",
+    );
+    assert.strictEqual(
+      demuxer.getAccumulatedCode(),
+      "const secret = 42;\n",
+    );
+  });
 });

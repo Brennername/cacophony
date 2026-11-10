@@ -128,25 +128,38 @@ export class AdaptiveOutputFormatter {
     cleaned = cleaned.replace(/<\/?think>/gi, "").trim();
 
     // If all content was inside think tags but code fences exist inside, extract from rawContent
-    if (!cleaned && rawContent.includes("```")) {
+    if (!cleaned && (rawContent.includes("```") || rawContent.includes("'''"))) {
       cleaned = rawContent;
     }
 
     let cursor = 0;
     while (cursor < cleaned.length) {
-      const openIdx = cleaned.indexOf("```", cursor);
-      if (openIdx === -1) break;
+      const idxBacktick = cleaned.indexOf("```", cursor);
+      const idxQuote = cleaned.indexOf("'''", cursor);
 
-      let lineEnd = cleaned.indexOf("\n", openIdx + 3);
+      let openIdx = -1;
+      let delimiter = "";
+
+      if (idxBacktick !== -1 && (idxQuote === -1 || idxBacktick < idxQuote)) {
+        openIdx = idxBacktick;
+        delimiter = "```";
+      } else if (idxQuote !== -1) {
+        openIdx = idxQuote;
+        delimiter = "'''";
+      } else {
+        break;
+      }
+
+      let lineEnd = cleaned.indexOf("\n", openIdx + delimiter.length);
       if (lineEnd === -1) lineEnd = cleaned.length;
-      const langHeader = cleaned.slice(openIdx + 3, lineEnd).trim();
+      const langHeader = cleaned.slice(openIdx + delimiter.length, lineEnd).trim();
       const language = /^[a-zA-Z0-9_-]+$/.test(langHeader)
         ? langHeader
         : "text";
 
-      const closeIdx = cleaned.indexOf("```", lineEnd);
+      const closeIdx = cleaned.indexOf(delimiter, lineEnd);
       if (closeIdx === -1) {
-        // Fallback: If no closing ``` was found, handle truncated response
+        // Fallback: If no closing delimiter was found, handle truncated response
         const unclosedCode = cleaned.slice(lineEnd).trim();
         if (blocks.length === 0 && unclosedCode.length > 0) {
           blocks.push({
@@ -160,17 +173,17 @@ export class AdaptiveOutputFormatter {
 
       const code = cleaned.slice(lineEnd, closeIdx).trim();
       if (code.length > 0) {
-        if (code.includes("```")) {
+        if (code.includes(delimiter)) {
           const innerBlocks = this.extractCodeBlocks(code);
           if (innerBlocks.length > 0) {
             blocks.push(...innerBlocks);
-            cursor = closeIdx + 3;
+            cursor = closeIdx + delimiter.length;
             continue;
           }
         }
         blocks.push({ language, code });
       }
-      cursor = closeIdx + 3;
+      cursor = closeIdx + delimiter.length;
     }
 
     return blocks;

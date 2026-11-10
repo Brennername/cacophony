@@ -95,6 +95,26 @@ export function add(a: number, b: number): number {
       assert.ok(blocks[0]?.code.includes("return a + b;"));
       assert.equal(blocks[0]?.code.includes("</think>"), false);
     });
+
+    test("should extract code blocks delimited by triple single-quotes (''')", () => {
+      const sample = `
+Explanation preamble
+'''typescript
+export class MultiDelimiterService {
+  public execute(): boolean { return true; }
+}
+'''
+Closing explanation
+`;
+      const blocks = formatter.extractCodeBlocks(sample);
+      assert.equal(blocks.length, 1);
+      assert.equal(blocks[0]?.language, "typescript");
+      assert.ok(blocks[0]?.code.includes("MultiDelimiterService"));
+      assert.strictEqual(blocks[0]?.code.includes("'''"), false);
+
+      const primary = formatter.extractPrimaryCode(sample);
+      assert.ok(primary?.includes("MultiDelimiterService"));
+    });
   });
 
   describe("SelfHealingParser", () => {
@@ -105,6 +125,13 @@ export function add(a: number, b: number): number {
       const result = parser.validate(output);
       assert.equal(result.valid, true);
       assert.equal(result.code, "const x: number = 42;");
+    });
+
+    test("should validate compliant code block delimited by triple single-quotes (''')", () => {
+      const output = "'''ts\nconst x: number = 99;\n'''";
+      const result = parser.validate(output);
+      assert.equal(result.valid, true);
+      assert.equal(result.code, "const x: number = 99;");
     });
 
     test("should reject missing code fence and build correction prompt", () => {

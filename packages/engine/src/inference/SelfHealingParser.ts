@@ -73,13 +73,14 @@ export class SelfHealingParser {
       if (
         rawOutput.includes("<think>") &&
         rawOutput.includes("</think>") &&
-        !rawOutput.includes("```")
+        !rawOutput.includes("```") &&
+        !rawOutput.includes("'''")
       ) {
         return {
           valid: false,
           code: null,
           error:
-            "Thinking block completed, but response was cut off before emitting the code block. Provide the complete code implementation inside markdown code fences (```) now.",
+            "Thinking block completed, but response was cut off before emitting the code block. Provide the complete code implementation inside markdown code fences (``` or ''') now.",
           blocks: [],
         };
       }
@@ -97,7 +98,8 @@ export class SelfHealingParser {
 
       if (
         (hasCodeDeclaration || hasMultipleLinesOfCode) &&
-        !cleanedRaw.includes("```")
+        !cleanedRaw.includes("```") &&
+        !cleanedRaw.includes("'''")
       ) {
         return {
           valid: true,
@@ -110,7 +112,7 @@ export class SelfHealingParser {
         valid: false,
         code: null,
         error:
-          "Missing required markdown code fence (```<language> ... ```). Output must enclose complete code inside code fences.",
+          "Missing required markdown code fence (```<language> ... ``` or '''<language> ... '''). Output must enclose complete code inside code fences.",
         blocks: [],
       };
     }
@@ -120,7 +122,7 @@ export class SelfHealingParser {
         valid: false,
         code: null,
         error:
-          "Output was cut off before closing the code fence (```). Please continue immediately and provide the complete, fully closed code without cutting off.",
+          "Output was cut off before closing the code fence (``` or '''). Please continue immediately and provide the complete, fully closed code without cutting off.",
         blocks,
       };
     }
