@@ -1,12 +1,10 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Assuming TaskRecord is defined somewhere within the project or needs to be mocked for testing purposes.
 interface TaskRecord {
   id: string;
 }
 
-// Mocking FleetWebSocketClient and FleetMessage for demonstration purposes
 class FleetWebSocketClient {
   private isConnected = false;
   private heartbeatTimer: NodeJS.Timeout | null = null;
@@ -38,7 +36,7 @@ class FleetWebSocketClient {
     if (!this.isConnected) {
       throw new Error(`Cannot send heartbeat: worker node ${this.config.nodeId} offline`);
     }
-    // Simulate sending a heartbeat message
+
     const msg = { type: 'heartbeat', payload: _capacity };
     this.lastHeartbeatTimestamp = Date.now();
     (this as any).messageQueue.push(msg);
@@ -194,7 +192,6 @@ describe('FleetWebSocketClient', () => {
     };
     await client.sendHeartbeat(capacity);
 
-    // Simulate old heartbeat
     (client as any).lastHeartbeatTimestamp -= 20000;
 
     assert.strictEqual(client.isHealthy(), false);
