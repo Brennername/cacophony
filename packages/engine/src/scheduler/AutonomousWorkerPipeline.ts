@@ -294,17 +294,17 @@ export class AutonomousWorkerPipeline {
     if (normalizedLoad > 1.25) {
       shouldCoolOff = true;
       coolOffReason = `CPU 1m load average elevated (${loadAvg1m.toFixed(2)} across ${cpus} cores, ${(normalizedLoad * 100).toFixed(0)}% saturation)`;
-      coolOffMs = 4000;
+      coolOffMs = 2500;
     }
 
     // Detect thermal elevated conditions
     if (this.telemetryProvider) {
       try {
         const metrics = await this.telemetryProvider.sample();
-        if (metrics.edgeTempCelsius >= 85) {
+        if (metrics.edgeTempCelsius >= 88) {
           shouldCoolOff = true;
-          coolOffReason = `Hardware APU temperature elevated (${metrics.edgeTempCelsius}C >= 85C)`;
-          coolOffMs = Math.max(coolOffMs, 6000);
+          coolOffReason = `Hardware APU temperature elevated (${metrics.edgeTempCelsius}C >= 88C)`;
+          coolOffMs = Math.max(coolOffMs, 4000);
         }
       } catch {}
     }
@@ -1492,7 +1492,7 @@ export class AutonomousWorkerPipeline {
 
           if (testRemediationAttempts > 0) {
             // Cooldown pause between remediation attempts to allow CPU and memory to settle
-            await new Promise((resolve) => setTimeout(resolve, 2500));
+            await new Promise((resolve) => setTimeout(resolve, 1500));
           }
 
           await this.enforceSystemPacing(taskId, "test execution");

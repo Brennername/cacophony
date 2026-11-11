@@ -93,7 +93,7 @@ export class ThermalGovernor {
       return {
         tempCelsius,
         zone: "Danger",
-        pacingDelaySeconds: 10,
+        pacingDelaySeconds: 8,
         emergencyHalt: true,
       };
     }
@@ -135,7 +135,7 @@ export class ThermalGovernor {
       return {
         tempCelsius,
         zone: "Danger",
-        pacingDelaySeconds: this.coolOffEnabled ? 10 : 0,
+        pacingDelaySeconds: this.coolOffEnabled ? 8 : 0,
         emergencyHalt: isEmergency,
       };
     }
@@ -143,7 +143,7 @@ export class ThermalGovernor {
       return {
         tempCelsius,
         zone: "Danger",
-        pacingDelaySeconds: this.coolOffEnabled ? 5 : 0,
+        pacingDelaySeconds: this.coolOffEnabled ? 4 : 0,
         emergencyHalt: false,
       };
     }
@@ -151,7 +151,7 @@ export class ThermalGovernor {
       return {
         tempCelsius,
         zone: "Elevated",
-        pacingDelaySeconds: this.coolOffEnabled ? 3 : 0,
+        pacingDelaySeconds: this.coolOffEnabled ? 2 : 0,
         emergencyHalt: false,
       };
     }

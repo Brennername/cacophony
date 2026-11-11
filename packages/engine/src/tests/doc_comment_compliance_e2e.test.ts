@@ -89,6 +89,7 @@ describe("T-S13.7: End-to-End Function Doc-Comment & Advisory Compliance Suite",
       functionIdentifier,
       candidateText: "/** Verifies cryptographic token signature. */",
       modelId: "qwen2.5-coder:7b",
+      createdAt: new Date(Date.now() - 5000).toISOString(),
     });
 
     // Candidate 2: reroll with operator guidance
@@ -98,6 +99,7 @@ describe("T-S13.7: End-to-End Function Doc-Comment & Advisory Compliance Suite",
       candidateText: "/** Validates HMAC signature against public key, preventing algorithm confusion. */",
       userGuidance: "explain algorithm confusion prevention and decoupling",
       modelId: "qwen2.5-coder:7b",
+      createdAt: new Date().toISOString(),
     });
 
     // Check candidate query

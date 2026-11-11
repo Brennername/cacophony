@@ -145,10 +145,10 @@ export class DocCommentCandidateRepository {
     const sql = isPostgres
       ? `SELECT * FROM doc_comment_candidates
          WHERE file_path = $1 AND function_identifier = $2
-         ORDER BY created_at DESC`
+         ORDER BY created_at DESC, id DESC`
       : `SELECT * FROM doc_comment_candidates
          WHERE file_path = ? AND function_identifier = ?
-         ORDER BY created_at DESC`;
+         ORDER BY created_at DESC, id DESC`;
 
     const rows = await this.driver.query<DocCommentCandidateRow>(sql, [
       filePath,

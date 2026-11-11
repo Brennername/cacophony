@@ -34,19 +34,19 @@ describe("ThermalGovernor Unit Test Suite (T102.2.3)", () => {
     // yellowMax (90C) to orangeMax (95C): Elevated
     const evalElevated = governor.evaluate(92.0);
     assert.strictEqual(evalElevated.zone, "Elevated");
-    assert.strictEqual(evalElevated.pacingDelaySeconds, 3);
+    assert.strictEqual(evalElevated.pacingDelaySeconds, 2);
     assert.strictEqual(evalElevated.emergencyHalt, false);
 
     // orangeMax (95C) to redMax (100C): Danger (Hot)
     const evalOrange = governor.evaluate(97.0);
     assert.strictEqual(evalOrange.zone, "Danger");
-    assert.strictEqual(evalOrange.pacingDelaySeconds, 5);
+    assert.strictEqual(evalOrange.pacingDelaySeconds, 4);
     assert.strictEqual(evalOrange.emergencyHalt, false);
 
     // redMax (100C) to emergencyShutdown (105C): Danger (Critical)
     const evalRed = governor.evaluate(102.0);
     assert.strictEqual(evalRed.zone, "Danger");
-    assert.strictEqual(evalRed.pacingDelaySeconds, 10);
+    assert.strictEqual(evalRed.pacingDelaySeconds, 8);
     assert.strictEqual(evalRed.emergencyHalt, false);
 
     // At or above emergency shutdown (105C): Emergency halt triggered

@@ -3,7 +3,7 @@ import * as assert from "node:assert/strict";
 import { ThermalGovernor } from "../telemetry/ThermalGovernor.js";
 
 describe("T97.3.2: ThermalGovernor Pacing Delays Scale Across Zones", () => {
-  it("should scale pacing delays from 0s at Nominal to 10s at Danger zone when cool-off is enabled", () => {
+  it("should scale pacing delays from 0s at Nominal to 8s at Danger zone when cool-off is enabled", () => {
     const governor = new ThermalGovernor({ coolOffEnabled: true });
 
     // Nominal (<85C)
@@ -19,16 +19,16 @@ describe("T97.3.2: ThermalGovernor Pacing Delays Scale Across Zones", () => {
     // Elevated (>=90C, <95C)
     const elevated = governor.evaluate(92);
     assert.strictEqual(elevated.zone, "Elevated");
-    assert.strictEqual(elevated.pacingDelaySeconds, 3);
+    assert.strictEqual(elevated.pacingDelaySeconds, 2);
 
     // Danger (>=95C, <100C)
     const dangerOrange = governor.evaluate(96);
     assert.strictEqual(dangerOrange.zone, "Danger");
-    assert.strictEqual(dangerOrange.pacingDelaySeconds, 5);
+    assert.strictEqual(dangerOrange.pacingDelaySeconds, 4);
 
     // Danger (>=100C)
     const dangerRed = governor.evaluate(102);
     assert.strictEqual(dangerRed.zone, "Danger");
-    assert.strictEqual(dangerRed.pacingDelaySeconds, 10);
+    assert.strictEqual(dangerRed.pacingDelaySeconds, 8);
   });
 });
